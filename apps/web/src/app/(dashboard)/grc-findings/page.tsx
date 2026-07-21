@@ -32,12 +32,7 @@ import {
 
 type Severity = "critical" | "high" | "medium" | "low" | "observation";
 type Status =
-  | "open"
-  | "in_progress"
-  | "resolved"
-  | "verified"
-  | "closed"
-  | "accepted";
+  "open" | "in_progress" | "resolved" | "verified" | "closed" | "accepted";
 type Module =
   | "ics"
   | "audit"

@@ -50,9 +50,7 @@ export async function POST(req: Request) {
               ? ((entry.description as Record<string, string>).en ?? "")
               : "",
           controlType: entry.controlType as
-            | "preventive"
-            | "detective"
-            | "corrective",
+            "preventive" | "detective" | "corrective",
           frequency: entry.frequency,
           status: "draft",
           sourceLibraryRef: entry.controlRef,

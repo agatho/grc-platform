@@ -13,11 +13,7 @@ export interface GateBlocker {
 }
 
 export type ProcessStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "published"
-  | "archived";
+  "draft" | "in_review" | "approved" | "published" | "archived";
 
 interface CheckArgs {
   tx: any;

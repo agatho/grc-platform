@@ -74,12 +74,7 @@ export interface ControlDeficiency {
   title: string;
   classification: "deficiency" | "significant_deficiency" | "material_weakness";
   remediationStatus:
-    | "open"
-    | "in_progress"
-    | "remediated"
-    | "retesting"
-    | "closed"
-    | "accepted";
+    "open" | "in_progress" | "remediated" | "retesting" | "closed" | "accepted";
   rootCauseMethod?: string;
   rootCause?: string;
   remediationDeadline?: string;

@@ -100,10 +100,7 @@ export default function MaturityOverviewPage() {
                   <Badge
                     variant={
                       levelColors[model.currentLevel] as
-                        | "default"
-                        | "secondary"
-                        | "destructive"
-                        | "outline"
+                        "default" | "secondary" | "destructive" | "outline"
                     }
                   >
                     {model.currentLevel.replace(/_/g, " ")}

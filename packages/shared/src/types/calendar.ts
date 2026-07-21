@@ -1,18 +1,9 @@
 // Sprint 17: Compliance Calendar Types
 
 export type CalendarEventType =
-  | "meeting"
-  | "workshop"
-  | "review"
-  | "training"
-  | "deadline"
-  | "other";
+  "meeting" | "workshop" | "review" | "training" | "deadline" | "other";
 export type CalendarRecurrence =
-  | "none"
-  | "weekly"
-  | "monthly"
-  | "quarterly"
-  | "annually";
+  "none" | "weekly" | "monthly" | "quarterly" | "annually";
 export type CalendarDeadlineStatus = "open" | "overdue" | "completed";
 
 export interface ComplianceCalendarEvent {

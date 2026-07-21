@@ -2,10 +2,7 @@
 
 export type RiskMethodology = "qualitative" | "fair" | "hybrid";
 export type FairSimulationStatus =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed";
+  "pending" | "running" | "completed" | "failed";
 
 export interface LossComponents {
   productivity: number;

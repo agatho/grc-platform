@@ -46,11 +46,7 @@ export interface UserWithRoles {
 }
 
 export type TaskStatus =
-  | "open"
-  | "in_progress"
-  | "done"
-  | "overdue"
-  | "cancelled";
+  "open" | "in_progress" | "done" | "overdue" | "cancelled";
 export type TaskPriority = "low" | "medium" | "high" | "critical";
 
 export interface Task {

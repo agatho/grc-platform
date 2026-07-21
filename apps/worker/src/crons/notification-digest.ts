@@ -73,8 +73,7 @@ export const processNotificationDigest = withCronInstrumentation(
         }
 
         const lang = (digestUser.language === "en" ? "en" : "de") as
-          | "de"
-          | "en";
+          "de" | "en";
 
         const platformUrl =
           process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

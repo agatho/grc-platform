@@ -10,20 +10,10 @@ export type BoardKpiRiskCategory =
   | "esg";
 
 export type AssuranceModule =
-  | "erm"
-  | "isms"
-  | "ics"
-  | "dpms"
-  | "audit"
-  | "tprm"
-  | "bcms"
-  | "esg";
+  "erm" | "isms" | "ics" | "dpms" | "audit" | "tprm" | "bcms" | "esg";
 
 export type PostureDomain =
-  | "organizational"
-  | "people"
-  | "physical"
-  | "technological";
+  "organizational" | "people" | "physical" | "technological";
 
 export interface RiskAppetiteThresholdRow {
   id: string;

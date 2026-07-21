@@ -16,11 +16,7 @@
 //   * CMMI thresholds: <40 ML1, 40-60 ML2, 60-80 ML3, 80-90 ML4, >90 ML5.
 
 export type MaturitySource =
-  | "controls"
-  | "incidents"
-  | "audits"
-  | "training"
-  | "esg";
+  "controls" | "incidents" | "audits" | "training" | "esg";
 
 /** Minimum data points before a source is allowed to vote. */
 export const MIN_SAMPLES_PER_SOURCE: Record<MaturitySource, number> = {

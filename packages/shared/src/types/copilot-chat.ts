@@ -4,30 +4,13 @@ export type CopilotLanguage = "de" | "en" | "fr" | "es";
 export type CopilotMessageRole = "user" | "assistant" | "system";
 export type CopilotContentType = "text" | "markdown" | "chart" | "table";
 export type CopilotActionType =
-  | "create_task"
-  | "create_finding"
-  | "update_risk"
-  | "navigate"
-  | "export";
+  "create_task" | "create_finding" | "update_risk" | "navigate" | "export";
 export type CopilotActionStatus =
-  | "suggested"
-  | "accepted"
-  | "dismissed"
-  | "executed";
+  "suggested" | "accepted" | "dismissed" | "executed";
 export type PromptCategory =
-  | "risk"
-  | "control"
-  | "compliance"
-  | "general"
-  | "audit"
-  | "process";
+  "risk" | "control" | "compliance" | "general" | "audit" | "process";
 export type RagSourceType =
-  | "risk"
-  | "control"
-  | "process"
-  | "document"
-  | "policy"
-  | "finding";
+  "risk" | "control" | "process" | "document" | "policy" | "finding";
 
 export interface CopilotConversation {
   id: string;

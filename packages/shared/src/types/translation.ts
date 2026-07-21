@@ -1,16 +1,9 @@
 // Sprint 21: Multi-Language Content Management types
 
 export type TranslationStatusValue =
-  | "original"
-  | "draft_translation"
-  | "verified"
-  | "outdated";
+  "original" | "draft_translation" | "verified" | "outdated";
 export type TranslationMethod =
-  | "manual"
-  | "ai_claude"
-  | "ai_ollama"
-  | "xliff_import"
-  | "csv_import";
+  "manual" | "ai_claude" | "ai_ollama" | "xliff_import" | "csv_import";
 
 export interface TranslationStatusRecord {
   id: string;

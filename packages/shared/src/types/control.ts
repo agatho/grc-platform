@@ -11,11 +11,7 @@ export type ControlFrequency =
   | "ad_hoc";
 export type AutomationLevel = "manual" | "semi_automated" | "fully_automated";
 export type ControlStatus =
-  | "designed"
-  | "implemented"
-  | "effective"
-  | "ineffective"
-  | "retired";
+  "designed" | "implemented" | "effective" | "ineffective" | "retired";
 export type ControlAssertion =
   | "completeness"
   | "accuracy"
@@ -27,10 +23,7 @@ export type ControlAssertion =
   | "safeguarding_of_assets";
 export type TestType = "design_effectiveness" | "operating_effectiveness";
 export type TestResult =
-  | "effective"
-  | "ineffective"
-  | "partially_effective"
-  | "not_tested";
+  "effective" | "ineffective" | "partially_effective" | "not_tested";
 export type TestStatus = "planned" | "in_progress" | "completed" | "cancelled";
 export type CampaignStatus = "draft" | "active" | "completed" | "cancelled";
 // ISO 19011 § 3.4 — neue Werte plus Legacy-Synonyme (Migration 0293).
@@ -55,11 +48,7 @@ export type FindingStatus =
   | "accepted"
   | "closed";
 export type FindingSource =
-  | "control_test"
-  | "audit"
-  | "incident"
-  | "self_assessment"
-  | "external";
+  "control_test" | "audit" | "incident" | "self_assessment" | "external";
 export type EvidenceCategory =
   | "screenshot"
   | "document"
@@ -188,12 +177,7 @@ export type DocumentCategory =
   | "soa"
   | "other";
 export type DocumentStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "published"
-  | "archived"
-  | "expired";
+  "draft" | "in_review" | "approved" | "published" | "archived" | "expired";
 
 export interface Document {
   id: string;

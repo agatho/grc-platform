@@ -84,29 +84,21 @@ export interface ProcessorAgreement {
   vendorId?: string;
   processorName: string;
   agreementStatus:
-    | "pending"
-    | "negotiation"
-    | "active"
-    | "terminated"
-    | "expired";
+    "pending" | "negotiation" | "active" | "terminated" | "expired";
   complianceChecklist: Array<{
     requirement: string;
     status: "compliant" | "partial" | "missing";
     notes?: string;
   }>;
   overallComplianceStatus?:
-    | "compliant"
-    | "partially_compliant"
-    | "non_compliant";
+    "compliant" | "partially_compliant" | "non_compliant";
 }
 
 export interface SubProcessorNotification {
   id: string;
   agreementId: string;
   notificationType:
-    | "new_sub_processor"
-    | "changed_sub_processor"
-    | "removed_sub_processor";
+    "new_sub_processor" | "changed_sub_processor" | "removed_sub_processor";
   subProcessorName: string;
   subProcessorCountry?: string;
   responseDeadline: string;

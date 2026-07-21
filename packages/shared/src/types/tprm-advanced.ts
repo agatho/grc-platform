@@ -6,11 +6,7 @@ export interface VendorScorecard {
   vendorId: string;
   overallScore: number;
   tier:
-    | "strategic"
-    | "preferred"
-    | "approved"
-    | "under_review"
-    | "exit_candidate";
+    "strategic" | "preferred" | "approved" | "under_review" | "exit_candidate";
   dimensionScores: VendorDimensionScores;
   weights: Record<string, number>;
   computedAt: string;
@@ -81,10 +77,7 @@ export interface VendorExitPlan {
   id: string;
   vendorId: string;
   transitionApproach:
-    | "in_house"
-    | "alternative_vendor"
-    | "hybrid"
-    | "decommission";
+    "in_house" | "alternative_vendor" | "hybrid" | "decommission";
   dataMigrationPlan?: string;
   knowledgeTransferRequirements?: string;
   terminationNoticeDays?: number;

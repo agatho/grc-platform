@@ -6,12 +6,7 @@ export type TargetStatus = "on_track" | "at_risk" | "off_track" | "achieved";
 export type ReportStatus = "draft" | "in_review" | "approved" | "published";
 export type EsgFrequency = "annual" | "semi_annual" | "quarterly";
 export type VoterType =
-  | "internal"
-  | "customer"
-  | "supplier"
-  | "investor"
-  | "ngo"
-  | "regulator";
+  "internal" | "customer" | "supplier" | "investor" | "ngo" | "regulator";
 
 export interface EsgMaterialityAssessment {
   id: string;

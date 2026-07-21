@@ -197,11 +197,9 @@ export default function OrganizationDetailPage() {
         country: String(raw.country ?? raw.country_code ?? ""),
         isEu: Boolean(raw.isEu ?? raw.is_eu ?? false),
         parentOrgId: (raw.parentOrgId ?? raw.parent_org_id ?? null) as
-          | string
-          | null,
+          string | null,
         parentOrgName: (raw.parentOrgName ?? raw.parent_org_name ?? null) as
-          | string
-          | null,
+          string | null,
         legalForm: (raw.legalForm ?? raw.legal_form ?? null) as string | null,
         dpoName: (raw.dpoName ?? raw.dpo_name ?? null) as string | null,
         dpoEmail: (raw.dpoEmail ?? raw.dpo_email ?? null) as string | null,
@@ -213,8 +211,7 @@ export default function OrganizationDetailPage() {
           raw.supervisory_authority ??
           null) as string | null,
         dataResidency: (raw.dataResidency ?? raw.data_residency ?? null) as
-          | string
-          | null,
+          string | null,
         dpoUserId: (raw.dpoUserId ?? raw.dpo_user_id ?? null) as string | null,
         createdAt: String(raw.createdAt ?? raw.created_at ?? ""),
         deletedAt: (raw.deletedAt ?? raw.deleted_at ?? null) as string | null,

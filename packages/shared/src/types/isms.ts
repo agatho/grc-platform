@@ -126,16 +126,9 @@ export interface IncidentTimelineEntry {
 // Sprint 5b: ISMS Assessment types
 
 export type AssessmentStatus =
-  | "planning"
-  | "in_progress"
-  | "review"
-  | "completed"
-  | "cancelled";
+  "planning" | "in_progress" | "review" | "completed" | "cancelled";
 export type AssessmentScopeType =
-  | "full"
-  | "department"
-  | "asset_group"
-  | "custom";
+  "full" | "department" | "asset_group" | "custom";
 export type EvalResult =
   | "effective"
   | "partially_effective"
@@ -143,25 +136,13 @@ export type EvalResult =
   | "not_applicable"
   | "not_evaluated";
 export type RiskDecision =
-  | "accept"
-  | "mitigate"
-  | "transfer"
-  | "avoid"
-  | "pending";
+  "accept" | "mitigate" | "transfer" | "avoid" | "pending";
 export type SoaApplicability =
-  | "applicable"
-  | "not_applicable"
-  | "partially_applicable";
+  "applicable" | "not_applicable" | "partially_applicable";
 export type SoaImplementation =
-  | "implemented"
-  | "partially_implemented"
-  | "planned"
-  | "not_implemented";
+  "implemented" | "partially_implemented" | "planned" | "not_implemented";
 export type ReviewStatus =
-  | "planned"
-  | "in_progress"
-  | "completed"
-  | "cancelled";
+  "planned" | "in_progress" | "completed" | "cancelled";
 
 export interface AssessmentRun {
   id: string;

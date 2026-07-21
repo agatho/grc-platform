@@ -103,10 +103,7 @@ export default function DataRegionsPage() {
                     <Badge
                       variant={
                         statusColor(region.status) as
-                          | "default"
-                          | "secondary"
-                          | "destructive"
-                          | "outline"
+                          "default" | "secondary" | "destructive" | "outline"
                       }
                     >
                       {region.status}

@@ -15,36 +15,19 @@ export type PredictionAlgorithm =
   | "neural_net"
   | "ensemble";
 export type PredictionTargetMetric =
-  | "risk_score"
-  | "kri_value"
-  | "incident_count"
-  | "control_effectiveness";
+  "risk_score" | "kri_value" | "incident_count" | "control_effectiveness";
 export type PredictionModelStatus =
-  | "untrained"
-  | "training"
-  | "active"
-  | "degraded"
-  | "archived";
+  "untrained" | "training" | "active" | "degraded" | "archived";
 export type PredictionType =
-  | "score_forecast"
-  | "trend"
-  | "threshold_breach"
-  | "correlation";
+  "score_forecast" | "trend" | "threshold_breach" | "correlation";
 export type PredictionEntityType = "risk" | "kri" | "control" | "process";
 export type PredictiveTrendDirection = "increasing" | "stable" | "decreasing";
 export type RiskLevel = "critical" | "high" | "medium" | "low";
 export type AnomalyType =
-  | "spike"
-  | "drop"
-  | "pattern_break"
-  | "drift"
-  | "outlier";
+  "spike" | "drop" | "pattern_break" | "drift" | "outlier";
 export type AnomalySeverity = "critical" | "high" | "medium" | "low";
 export type AnomalyStatus =
-  | "new"
-  | "investigating"
-  | "resolved"
-  | "false_positive";
+  "new" | "investigating" | "resolved" | "false_positive";
 
 export interface RiskPredictionModel {
   id: string;

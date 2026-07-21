@@ -3,18 +3,10 @@
 export type AbacAccessLevel = "read" | "write" | "none";
 export type AbacDecision = "granted" | "denied";
 export type SimulationStatus =
-  | "draft"
-  | "ready"
-  | "running"
-  | "completed"
-  | "error";
+  "draft" | "ready" | "running" | "completed" | "error";
 export type DmnStatus = "draft" | "active" | "deprecated";
 export type DmnHitPolicy =
-  | "UNIQUE"
-  | "FIRST"
-  | "COLLECT"
-  | "RULE_ORDER"
-  | "ANY";
+  "UNIQUE" | "FIRST" | "COLLECT" | "RULE_ORDER" | "ANY";
 
 export interface AbacCondition {
   attribute: string;

@@ -10,10 +10,7 @@ export interface RetentionScheduleRule {
   basis: "legal_obligation" | "contract" | "consent" | "legitimate_interest";
   legalReference: string | null;
   triggerEvent:
-    | "contract_end"
-    | "consent_withdrawal"
-    | "last_interaction"
-    | "fixed_date";
+    "contract_end" | "consent_withdrawal" | "last_interaction" | "fixed_date";
   deletionStrategy: "hard_delete" | "anonymize" | "pseudonymize" | "archive";
 }
 

@@ -9,25 +9,15 @@ export type RiskCategory =
   | "esg";
 export type RiskSource = "isms" | "erm" | "bcm" | "project" | "process";
 export type RiskStatus =
-  | "identified"
-  | "assessed"
-  | "treated"
-  | "accepted"
-  | "closed";
+  "identified" | "assessed" | "treated" | "accepted" | "closed";
 export type TreatmentStrategy = "mitigate" | "accept" | "transfer" | "avoid";
 export type TreatmentStatus =
-  | "planned"
-  | "in_progress"
-  | "completed"
-  | "cancelled";
+  "planned" | "in_progress" | "completed" | "cancelled";
 export type KriAlertStatus = "green" | "yellow" | "red";
 export type KriTrend = "improving" | "stable" | "worsening";
 export type KriDirection = "asc" | "desc";
 export type KriMeasurementFrequency =
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "quarterly";
+  "daily" | "weekly" | "monthly" | "quarterly";
 export type KriMeasurementSource = "manual" | "api_import" | "calculated";
 
 export interface Risk {

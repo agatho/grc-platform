@@ -13,10 +13,7 @@ export type AiRiskCategory =
   | "gpai_sr";
 
 export type AiDevelopmentStage =
-  | "research"
-  | "prototype"
-  | "production"
-  | "retired";
+  "research" | "prototype" | "production" | "retired";
 
 export const AI_STAGE_ALLOWED_TRANSITIONS: Record<
   AiDevelopmentStage,

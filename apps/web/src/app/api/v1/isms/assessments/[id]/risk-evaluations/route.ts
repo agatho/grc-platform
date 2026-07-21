@@ -33,11 +33,7 @@ export async function GET(
       eq(
         assessmentRiskEval.decision,
         decisionFilter as
-          | "accept"
-          | "mitigate"
-          | "transfer"
-          | "avoid"
-          | "pending",
+          "accept" | "mitigate" | "transfer" | "avoid" | "pending",
       ),
     );
   }

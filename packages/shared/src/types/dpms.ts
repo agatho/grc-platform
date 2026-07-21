@@ -15,11 +15,7 @@ export type DpiaStatus =
   | "approved"
   | "rejected";
 export type DsrType =
-  | "access"
-  | "erasure"
-  | "restriction"
-  | "portability"
-  | "objection";
+  "access" | "erasure" | "restriction" | "portability" | "objection";
 export type DsrStatus =
   | "received"
   | "verified"

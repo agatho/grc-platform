@@ -227,8 +227,7 @@ describe("Multi-entity notification triggers (Wave-21-B8)", () => {
       async () => {
         const mod = await import(trigger.modulePath);
         const POST = (mod as { POST: unknown }).POST as
-          | undefined
-          | ((req: Request, ctx?: unknown) => Promise<Response>);
+          undefined | ((req: Request, ctx?: unknown) => Promise<Response>);
         if (typeof POST !== "function") {
           // Some entities may not have a POST handler exported as a
           // named export (e.g. wrapped). Skip if so — the trigger just

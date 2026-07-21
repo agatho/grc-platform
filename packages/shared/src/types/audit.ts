@@ -1,10 +1,6 @@
 // Audit Management types (Sprint 8)
 export type AuditType =
-  | "internal"
-  | "external"
-  | "certification"
-  | "surveillance"
-  | "follow_up";
+  "internal" | "external" | "certification" | "surveillance" | "follow_up";
 export type AuditStatus =
   | "planned"
   | "preparation"
@@ -97,11 +93,7 @@ export type AuditConclusion =
   | "major_nonconformity"
   | "not_applicable";
 export type UniverseEntityType =
-  | "process"
-  | "department"
-  | "it_system"
-  | "vendor"
-  | "custom";
+  "process" | "department" | "it_system" | "vendor" | "custom";
 
 export interface AuditUniverseEntry {
   id: string;

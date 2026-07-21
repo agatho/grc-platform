@@ -29,11 +29,7 @@ export async function GET(req: Request) {
       eq(
         assessmentRun.status,
         statusFilter as
-          | "planning"
-          | "in_progress"
-          | "review"
-          | "completed"
-          | "cancelled",
+          "planning" | "in_progress" | "review" | "completed" | "cancelled",
       ),
     );
   }

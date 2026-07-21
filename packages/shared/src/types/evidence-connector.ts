@@ -17,24 +17,13 @@ export type ConnectorType =
   | "file_import";
 
 export type ConnectorStatus =
-  | "inactive"
-  | "active"
-  | "error"
-  | "disabled"
-  | "pending_setup";
+  "inactive" | "active" | "error" | "disabled" | "pending_setup";
 
 export type ConnectorAuthMethod =
-  | "oauth2"
-  | "api_key"
-  | "service_account"
-  | "certificate"
-  | "basic_auth";
+  "oauth2" | "api_key" | "service_account" | "certificate" | "basic_auth";
 
 export type ConnectorHealthStatus =
-  | "healthy"
-  | "degraded"
-  | "unhealthy"
-  | "unknown";
+  "healthy" | "degraded" | "unhealthy" | "unknown";
 
 export type CredentialType =
   | "oauth2_token"
@@ -53,18 +42,10 @@ export type ArtifactType =
   | "api_response";
 
 export type TestResultStatus =
-  | "pass"
-  | "fail"
-  | "error"
-  | "skipped"
-  | "warning";
+  "pass" | "fail" | "error" | "skipped" | "warning";
 
 export type TestSeverity =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "informational";
+  "critical" | "high" | "medium" | "low" | "informational";
 
 export type TestCategory =
   | "iam"
@@ -79,10 +60,7 @@ export type TestCategory =
 export type ScheduleRunStatus = "success" | "partial_failure" | "failure";
 
 export type HealthCheckType =
-  | "connectivity"
-  | "authentication"
-  | "authorization"
-  | "data_access";
+  "connectivity" | "authentication" | "authorization" | "data_access";
 
 export interface FrameworkMappingRef {
   framework: string;

@@ -273,10 +273,7 @@ export interface TransparencyContext {
   applicableObligations: TransparencyObligationType[];
   implementedDisclosures: TransparencyObligationType[];
   disclosureMethod:
-    | "pre_interaction"
-    | "during_interaction"
-    | "post_interaction"
-    | null;
+    "pre_interaction" | "during_interaction" | "post_interaction" | null;
   userCanAcknowledge: boolean;
 }
 

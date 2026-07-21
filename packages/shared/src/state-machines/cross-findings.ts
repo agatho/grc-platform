@@ -14,19 +14,10 @@ export type FindingModule =
   | "bcms_exercise";
 
 export type NormalizedSeverity =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "observation";
+  "critical" | "high" | "medium" | "low" | "observation";
 
 export type NormalizedStatus =
-  | "open"
-  | "in_progress"
-  | "resolved"
-  | "verified"
-  | "closed"
-  | "accepted";
+  "open" | "in_progress" | "resolved" | "verified" | "closed" | "accepted";
 
 export interface CrossModuleFinding {
   id: string;

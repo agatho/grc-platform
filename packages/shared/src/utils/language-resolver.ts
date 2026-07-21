@@ -36,10 +36,7 @@ export const LANGUAGE_LABELS: Record<string, string> = {
 
 /** A translatable JSONB field: { "de": "Risiko", "en": "Risk" } */
 export type TranslatableField =
-  | Record<string, string>
-  | string
-  | null
-  | undefined;
+  Record<string, string> | string | null | undefined;
 
 export interface ResolveOptions {
   userLang: string;

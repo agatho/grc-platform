@@ -28,28 +28,15 @@ export type ArchRelationshipType =
 export type ElementStatus = "planned" | "active" | "phase_out" | "retired";
 export type EamCriticality = "critical" | "important" | "normal" | "low";
 export type LifecycleStatus =
-  | "planned"
-  | "active"
-  | "phase_out"
-  | "end_of_life"
-  | "retired";
+  "planned" | "active" | "phase_out" | "end_of_life" | "retired";
 export type TimeClassification =
-  | "tolerate"
-  | "invest"
-  | "migrate"
-  | "eliminate";
+  "tolerate" | "invest" | "migrate" | "eliminate";
 export type LicenseType = "saas" | "on_premise" | "hybrid" | "open_source";
 export type DataClassification =
-  | "public"
-  | "internal"
-  | "confidential"
-  | "restricted";
+  "public" | "internal" | "confidential" | "restricted";
 export type StrategicImportance = "core" | "supporting" | "commodity";
 export type ViolationStatus =
-  | "open"
-  | "acknowledged"
-  | "resolved"
-  | "false_positive";
+  "open" | "acknowledged" | "resolved" | "false_positive";
 
 export interface ArchitectureElement {
   id: string;

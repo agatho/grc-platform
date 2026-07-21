@@ -35,9 +35,7 @@ interface AuditData {
     ofi: number;
     total: number;
     auditReadiness:
-      | "READY_FOR_STAGE_1"
-      | "READY_AFTER_REMEDIATION"
-      | "NOT_READY";
+      "READY_FOR_STAGE_1" | "READY_AFTER_REMEDIATION" | "NOT_READY";
   };
   findings: Finding[];
   generatedAt: string;

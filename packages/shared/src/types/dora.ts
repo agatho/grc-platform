@@ -14,35 +14,17 @@ export type DoraThreatCategory =
   | "natural_disaster"
   | "third_party_failure";
 export type DoraLikelihood =
-  | "very_low"
-  | "low"
-  | "medium"
-  | "high"
-  | "very_high";
+  "very_low" | "low" | "medium" | "high" | "very_high";
 export type DoraImpact = "very_low" | "low" | "medium" | "high" | "very_high";
 export type DoraRiskLevel = "low" | "medium" | "high" | "critical";
 export type DoraTreatmentStrategy =
-  | "mitigate"
-  | "accept"
-  | "transfer"
-  | "avoid";
+  "mitigate" | "accept" | "transfer" | "avoid";
 export type DoraIctRiskStatus =
-  | "identified"
-  | "assessed"
-  | "treated"
-  | "accepted"
-  | "closed";
+  "identified" | "assessed" | "treated" | "accepted" | "closed";
 export type DoraTlptTestType =
-  | "red_team"
-  | "purple_team"
-  | "scenario_based"
-  | "full_tlpt";
+  "red_team" | "purple_team" | "scenario_based" | "full_tlpt";
 export type DoraTlptStatus =
-  | "draft"
-  | "planned"
-  | "in_progress"
-  | "completed"
-  | "remediation";
+  "draft" | "planned" | "in_progress" | "completed" | "remediation";
 export type DoraIncidentType =
   | "cyber_attack"
   | "system_outage"
@@ -51,11 +33,7 @@ export type DoraIncidentType =
   | "operational_disruption";
 export type DoraIncidentClassification = "major" | "significant" | "minor";
 export type DoraIncidentStatus =
-  | "detected"
-  | "investigating"
-  | "contained"
-  | "resolved"
-  | "closed";
+  "detected" | "investigating" | "contained" | "resolved" | "closed";
 export type DoraProviderServiceType =
   | "cloud"
   | "software"
@@ -71,26 +49,14 @@ export type DoraComplianceStatus =
   | "pending"
   | "not_assessed";
 export type DoraProviderStatus =
-  | "active"
-  | "under_review"
-  | "terminated"
-  | "pending";
+  "active" | "under_review" | "terminated" | "pending";
 export type DoraSharingType =
-  | "threat_intelligence"
-  | "vulnerability"
-  | "incident_info"
-  | "best_practice";
+  "threat_intelligence" | "vulnerability" | "incident_info" | "best_practice";
 export type DoraTlpClassification =
-  | "tlp_white"
-  | "tlp_green"
-  | "tlp_amber"
-  | "tlp_red";
+  "tlp_white" | "tlp_green" | "tlp_amber" | "tlp_red";
 export type DoraSharingStatus = "draft" | "approved" | "shared" | "revoked";
 export type DoraOverlapType =
-  | "full_overlap"
-  | "partial_overlap"
-  | "dora_only"
-  | "nis2_only";
+  "full_overlap" | "partial_overlap" | "dora_only" | "nis2_only";
 
 export interface DoraIctRisk {
   id: string;

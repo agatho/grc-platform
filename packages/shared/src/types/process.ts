@@ -1,17 +1,9 @@
 // BPMN Process Modeling types (Sprint 3 + 3b)
 export type ProcessNotation = "bpmn" | "value_chain" | "epc";
 export type ProcessStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "published"
-  | "archived";
+  "draft" | "in_review" | "approved" | "published" | "archived";
 export type StepType =
-  | "task"
-  | "gateway"
-  | "event"
-  | "subprocess"
-  | "call_activity";
+  "task" | "gateway" | "event" | "subprocess" | "call_activity";
 /** Prozesslandkarte: value-chain band (management / core / support) */
 export type ProcessMapCategory = "management" | "core" | "support";
 
@@ -70,11 +62,7 @@ export interface ProcessVersion {
 // B2.1: multi-stage approval chain (process_approval_step)
 export type ProcessApprovalStepType = "review" | "approval" | "acknowledgment";
 export type ProcessApprovalStepStatus =
-  | "pending"
-  | "in_progress"
-  | "completed"
-  | "rejected"
-  | "skipped";
+  "pending" | "in_progress" | "completed" | "rejected" | "skipped";
 
 export interface ProcessApprovalStep {
   id: string;

@@ -11,11 +11,7 @@ export type HorizonSourceType =
   | "national_gazette"
   | "custom";
 export type HorizonParserType =
-  | "rss"
-  | "html_scraper"
-  | "api"
-  | "email"
-  | "manual";
+  "rss" | "html_scraper" | "api" | "email" | "manual";
 export type HorizonItemType =
   | "regulation"
   | "directive"
@@ -25,11 +21,7 @@ export type HorizonItemType =
   | "standard"
   | "alert";
 export type HorizonClassification =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "informational";
+  "critical" | "high" | "medium" | "low" | "informational";
 export type HorizonItemStatus =
   | "new"
   | "triaged"
@@ -38,16 +30,9 @@ export type HorizonItemStatus =
   | "acknowledged"
   | "dismissed";
 export type HorizonImpactLevel =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "none";
+  "critical" | "high" | "medium" | "low" | "none";
 export type HorizonAssessmentStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "rejected";
+  "draft" | "in_review" | "approved" | "rejected";
 export type HorizonCalendarEventType =
   | "compliance_deadline"
   | "enforcement_date"

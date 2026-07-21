@@ -1,26 +1,14 @@
 // Sprint 37: EAM Advanced types
 
 export type TransferMechanism =
-  | "api"
-  | "file_transfer"
-  | "message_queue"
-  | "database_replication"
-  | "manual";
+  "api" | "file_transfer" | "message_queue" | "database_replication" | "manual";
 export type EncryptionType = "tls" | "vpn" | "none";
 export type EncryptionAtRest = "aes256" | "none";
 export type DataFlowFrequency =
-  | "real_time"
-  | "hourly"
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "on_demand";
+  "real_time" | "hourly" | "daily" | "weekly" | "monthly" | "on_demand";
 export type DataFlowStatus = "active" | "planned" | "deprecated";
 export type LegalBasis =
-  | "consent"
-  | "contract"
-  | "legitimate_interest"
-  | "legal_obligation";
+  "consent" | "contract" | "legitimate_interest" | "legal_obligation";
 export type SchremsIiSafeguard = "adequacy_decision" | "scc" | "bcr" | "none";
 export type InterfaceType =
   | "rest_api"
@@ -42,10 +30,7 @@ export type TechCategory =
   | "tool"
   | "platform";
 export type TechQuadrant =
-  | "languages_frameworks"
-  | "infrastructure"
-  | "data_management"
-  | "tools";
+  "languages_frameworks" | "infrastructure" | "data_management" | "tools";
 export type TechRing = "adopt" | "trial" | "assess" | "hold";
 export type AcrChangeType =
   | "add_element"
@@ -54,12 +39,7 @@ export type AcrChangeType =
   | "add_relationship"
   | "migration";
 export type AcrStatus =
-  | "draft"
-  | "submitted"
-  | "under_review"
-  | "approved"
-  | "rejected"
-  | "deferred";
+  "draft" | "submitted" | "under_review" | "approved" | "rejected" | "deferred";
 export type AcrRiskAssessment = "low" | "medium" | "high" | "critical";
 export type VoteChoice = "approve" | "reject" | "defer" | "abstain";
 export type EamCloudProvider = "aws" | "azure" | "gcp";

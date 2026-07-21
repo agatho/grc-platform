@@ -48,10 +48,7 @@ export interface RiskInterconnection {
   sourceRiskId: string;
   targetRiskId: string;
   correlationType:
-    | "amplifies"
-    | "triggers"
-    | "shares_cause"
-    | "shares_consequence";
+    "amplifies" | "triggers" | "shares_cause" | "shares_consequence";
   strength: "weak" | "moderate" | "strong";
   direction: "unidirectional" | "bidirectional";
   description?: string;
@@ -70,11 +67,7 @@ export interface EmergingRisk {
   responsibleId?: string;
   nextReviewDate?: string;
   status:
-    | "monitoring"
-    | "escalating"
-    | "materializing"
-    | "promoted"
-    | "archived";
+    "monitoring" | "escalating" | "materializing" | "promoted" | "archived";
   promotedToRiskId?: string;
 }
 

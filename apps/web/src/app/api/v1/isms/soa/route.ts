@@ -23,9 +23,7 @@ export async function GET(req: Request) {
       eq(
         soaEntry.applicability,
         applicabilityFilter as
-          | "applicable"
-          | "not_applicable"
-          | "partially_applicable",
+          "applicable" | "not_applicable" | "partially_applicable",
       ),
     );
   }

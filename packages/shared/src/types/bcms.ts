@@ -1,17 +1,8 @@
 // Business Continuity Management System (BCMS) types (Sprint 6)
 export type BiaStatus =
-  | "draft"
-  | "in_progress"
-  | "review"
-  | "approved"
-  | "archived";
+  "draft" | "in_progress" | "review" | "approved" | "archived";
 export type BcpStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "published"
-  | "archived"
-  | "superseded";
+  "draft" | "in_review" | "approved" | "published" | "archived" | "superseded";
 export type CrisisSeverity =
   | "level_1_incident"
   | "level_2_emergency"
@@ -19,10 +10,7 @@ export type CrisisSeverity =
   | "level_4_catastrophe";
 export type CrisisStatus = "standby" | "activated" | "resolved" | "post_mortem";
 export type ExerciseType =
-  | "tabletop"
-  | "walkthrough"
-  | "functional"
-  | "full_simulation";
+  "tabletop" | "walkthrough" | "functional" | "full_simulation";
 export type ExerciseStatus =
   | "planned"
   | "preparation"
@@ -47,16 +35,9 @@ export type BcpResourceType =
   | "other";
 export type ExerciseResult = "successful" | "partially_successful" | "failed";
 export type CrisisLogEntryType =
-  | "decision"
-  | "communication"
-  | "action"
-  | "status_change"
-  | "observation";
+  "decision" | "communication" | "action" | "status_change" | "observation";
 export type ExerciseFindingSeverity =
-  | "critical"
-  | "major"
-  | "minor"
-  | "observation";
+  "critical" | "major" | "minor" | "observation";
 
 export interface BiaAssessment {
   id: string;

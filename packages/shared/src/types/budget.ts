@@ -2,10 +2,7 @@
 
 export type BudgetStatus = "draft" | "submitted" | "approved" | "closed";
 export type BudgetType =
-  | "management_system"
-  | "department"
-  | "project"
-  | "custom";
+  "management_system" | "department" | "project" | "custom";
 export type GrcArea =
   | "erm"
   | "isms"
@@ -25,10 +22,7 @@ export type CostCategory =
   | "certification";
 export type CostType = "planned" | "actual" | "forecast";
 export type RoiMethod =
-  | "ale_reduction"
-  | "penalty_avoidance"
-  | "incident_prevention"
-  | "roni";
+  "ale_reduction" | "penalty_avoidance" | "incident_prevention" | "roni";
 
 export interface GrcBudget {
   id: string;

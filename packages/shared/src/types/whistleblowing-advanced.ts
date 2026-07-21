@@ -122,10 +122,7 @@ export interface WbOmbudspersonActivity {
   id: string;
   ombudspersonUserId: string;
   action:
-    | "case_viewed"
-    | "evidence_uploaded"
-    | "message_sent"
-    | "status_changed";
+    "case_viewed" | "evidence_uploaded" | "message_sent" | "status_changed";
   caseId?: string;
   detail: Record<string, unknown>;
   createdAt: string;

@@ -5,10 +5,7 @@
 // ──────────────────────────────────────────────────────────────
 
 export type SimulationScenarioType =
-  | "add_requirement"
-  | "tighten"
-  | "shorten_deadline"
-  | "add_reporting";
+  "add_requirement" | "tighten" | "shorten_deadline" | "add_reporting";
 
 // ──────────────────────────────────────────────────────────────
 // Simulation Gap
