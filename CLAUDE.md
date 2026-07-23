@@ -8,7 +8,7 @@ A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates 
 
 ## Tech Stack
 
-- **Frontend:** Next.js 15 + React 19 + Tailwind CSS 4 + shadcn/ui
+- **Frontend:** Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui
 - **Backend:** Node.js 22 + TypeScript 5 + Hono.js (Worker)
 - **ORM:** Drizzle ORM (type-safe, SQL-close)
 - **Database:** PostgreSQL 16 + TimescaleDB + pgvector + RLS
@@ -27,7 +27,7 @@ A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates 
 ```
 arctos/
 ├── apps/
-│   ├── web/          → Next.js 15 App Router (Frontend + API Routes)
+│   ├── web/          → Next.js 16 App Router (Frontend + API Routes)
 │   └── worker/       → Hono.js (Background Jobs, Cron)
 ├── packages/
 │   ├── db/           → Drizzle Schema, Migrations, Seed

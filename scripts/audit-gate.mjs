@@ -14,33 +14,14 @@
 // ============================================================================
 import { execSync } from "node:child_process";
 
-const ALLOWLIST = [
-  // Next.js Batch-Disclosure 2026-07-23 — kein Fix innerhalb von Next 15,
-  // gepatcht erst ab Next 16.3. Migration auf Next 16 als Arbeitspaket
-  // eingeplant. Exposition gemindert: Instanz läuft hinter Auth (alle
-  // API-Routen 401-gated, Auth-Smoke-Test) und Caddy-Reverse-Proxy.
-  ...[
-    "GHSA-m99w-x7hq-7vfj", // DoS in App Router Server Actions
-    "GHSA-89xv-2m56-2m9x", // SSRF in Server Actions (custom servers)
-    "GHSA-68g3-v927-f742", // cache confusion (request bodies)
-    "GHSA-4633-3j49-mh5q", // cache confusion (invalid UTF-8)
-    "GHSA-4c39-4ccg-62r3", // unbounded Server Action payload (Edge)
-    "GHSA-p9j2-gv94-2wf4", // SSRF via rewrites destination
-    "GHSA-q8wf-6r8g-63ch", // DoS Image Optimization SVGs
-    "GHSA-955p-x3mx-jcvp", // disclosure of Server Function endpoints
-  ].map((ghsa) => ({
-    ghsa,
-    until: "2026-10-31",
-    reason: "Next.js: Fix erst in v16.3, Migration geplant",
-  })),
-  {
-    // sharp wird ausschließlich als optionale Dependency von Next.js
-    // gezogen (Image Optimization); Fix kommt mit der Next-16-Migration.
-    ghsa: "GHSA-f88m-g3jw-g9cj",
-    until: "2026-10-31",
-    reason: "sharp: nur via next, Fix mit Next-16-Migration",
-  },
-];
+// Aktuell leer. Die Next.js-Batch-Disclosure vom 2026-07-23 (8 GHSA-IDs)
+// wurde mit der Migration auf Next 16.2.11 behoben (die GitHub-Advisories
+// nennen 16.2.11 als Fix der 16er-Linie — nicht erst 16.3, das es nur als
+// preview/canary gibt; Backport für die 15er-Linie: 15.5.21). sharp
+// (GHSA-f88m-g3jw-g9cj) ist via Root-`overrides.sharp: ">=0.35.0"` auf
+// die gefixte 0.35er-Linie gehoben (sharp kommt nur als optionale
+// next-Dependency in den Tree; next/image wird in apps/web nicht genutzt).
+const ALLOWLIST = [];
 
 const today = new Date().toISOString().slice(0, 10);
 let auditJson;

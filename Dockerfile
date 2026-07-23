@@ -81,7 +81,15 @@ ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
 ENV NEXT_PUBLIC_GIT_BRANCH=$GIT_BRANCH
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-# Run from workspace root so hoisted node_modules are resolved
+# Run from workspace root so hoisted node_modules are resolved.
+# Next 16: the build uses Turbopack (the v16 default). The legacy
+# `--webpack` pipeline was evaluated during the 16.2.11 migration and
+# rejected: it OOMs below a ~7-8GB heap on this app (Next-16 webpack
+# memory regression; Next 15 built fine at 3GB), while Turbopack builds
+# in ~2 min inside 4GB. pdfkit stays runtime-external via
+# serverExternalPackages + outputFileTracingIncludes (.afm font
+# metrics) — presence in .next/standalone is part of the migration
+# verification.
 RUN AUTH_SECRET="$AUTH_SECRET" \
     AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
     DATABASE_URL="$DATABASE_URL" \

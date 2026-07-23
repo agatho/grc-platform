@@ -141,6 +141,42 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Next-16-Migration (2026-07-23)
+
+- **BREAKING (Betrieb/Build):** `apps/web` von Next.js 15.5.18 auf
+  **16.2.11** migriert — behebt die 8 Advisories der Next.js-Batch-Disclosure
+  2026-07-23 (Fix der 16er-Linie in 16.2.11 laut GHSA/OSV; „16.3" existiert
+  nur als preview/canary). sharp via Root-Override auf ≥0.35.0
+  (GHSA-f88m-g3jw-g9cj). `scripts/audit-gate.mjs`-Allowlist geleert —
+  Gate ist ohne Ausnahmen grün.
+- **Prod-Build läuft jetzt auf Turbopack** (v16-Default). Der
+  Legacy-Pfad `next build --webpack` wurde evaluiert und verworfen: OOM
+  unterhalb ~7-8 GB Heap (Next-16-Webpack-Speicherregression; Next 15
+  baute mit 3 GB), Turbopack baut in ~2 min innerhalb 4 GB. pdfkit-
+  `.afm`-Tracing + Standalone-Layout unter Turbopack verifiziert.
+  `next dev` läuft weiter Turbopack (jetzt Default, `--turbo`-Flag
+  entfernt). `next.config.ts` pinnt `outputFileTracingRoot` +
+  `turbopack.root` auf die Monorepo-Root (deterministisches
+  Standalone-Layout unabhängig von streunenden Lockfiles).
+- **`NODE_ENV=development` aus `.env`-Files entfernt** — bricht unter
+  Next 16 jeden `next build` beim `/_global-error`-Prerender mit
+  `Cannot read properties of null (reading 'useContext')`
+  (non-standard-node-env, React-Dev/Prod-Mismatch). Docker/CI waren
+  nie betroffen.
+- **Pages-Router-Shims entfernt** (`src/pages/404.tsx`,
+  `src/pages/_error.tsx`; Next-15-Export-Workaround) — ersetzt durch
+  kontextfreies `src/app/global-error.tsx` (App-Router-Konvention).
+- `eslint`-Option aus `next.config.ts` entfernt (Option in v16
+  gestrichen; `next build` lintet nicht mehr — CI lintet separat).
+- `src/middleware.ts` bleibt vorerst Middleware (v16-Deprecation
+  zugunsten `proxy.ts` mit Node-Runtime; Umbenennung = eigenes
+  Arbeitspaket). Keine weiteren Code-Änderungen nötig: async
+  Request-APIs, `params: Promise<…>` etc. waren bereits Next-15-konform.
+- Kompatibilität ohne Bumps: next-intl 4.13.2 + next-auth
+  5.0.0-beta.31 deklarieren bereits `next ^16` als Peer;
+  eslint-config-next auf 16.2.11 nachgezogen; React-Override 19.2.7
+  und Node 22.20 (Container) erfüllen die v16-Minima.
+
 ### Wave-26 — Overnight enhancement marathon (2026-05-21 / 2026-05-22)
 
 User asked for ≥200 iterations of enhance / enrich / harden / perf

@@ -115,7 +115,7 @@ Toggle DE↔EN via user menu. Default language is German. All 109 sidebar pages,
 ## Architecture
 
 ```
-apps/web/     → Next.js 15 (App Router, Turbopack dev)
+apps/web/     → Next.js 16 (App Router, Turbopack dev + build)
 apps/worker/  → Hono.js (background jobs, requires RESEND_API_KEY)
 packages/db/  → Drizzle ORM (338 tables, 76 migrations)
 packages/auth/→ Auth.js v5 (credentials + optional Azure AD SSO)

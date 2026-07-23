@@ -99,7 +99,7 @@ The setup seeds a complete demo scenario for **Meridian Holdings GmbH** — a Ge
 
 | Layer    | Technology                                                         |
 | -------- | ------------------------------------------------------------------ |
-| Frontend | Next.js 15, React 19, Tailwind CSS 4, shadcn/ui, recharts, bpmn-js |
+| Frontend | Next.js 16, React 19, Tailwind CSS 4, shadcn/ui, recharts, bpmn-js |
 | Backend  | Node.js 22, TypeScript, Hono.js (Worker)                           |
 | Database | PostgreSQL 16 + TimescaleDB, Drizzle ORM, RLS                      |
 | Auth     | Auth.js v5 (self-hosted) + Custom RBAC + Three Lines of Defense    |
@@ -112,7 +112,7 @@ The setup seeds a complete demo scenario for **Meridian Holdings GmbH** — a Ge
 ```
 arctos/
 ├── apps/
-│   ├── web/            Next.js 15 (Frontend + API routes)
+│   ├── web/            Next.js 16 (Frontend + API routes)
 │   └── worker/         Hono.js (Cron jobs, background tasks)
 ├── packages/
 │   ├── db/             Drizzle schema, migrations, seeds
