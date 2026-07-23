@@ -698,7 +698,9 @@ jobs:
       - run: npm ci
 
       - name: npm audit (production deps)
-        run: npm audit --omit=dev --audit-level=high
+        # Gate mit dokumentierter, befristeter Allowlist — failt bei jedem
+        # neuen high/critical-Advisory, siehe scripts/audit-gate.mjs.
+        run: node scripts/audit-gate.mjs
 
       - name: Check for leaked secrets
         uses: trufflesecurity/trufflehog@v3.95.9
