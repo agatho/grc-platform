@@ -152,7 +152,17 @@ services:
       - uploads:/app/uploads
       - branding:/app/apps/web/public/uploads
     environment:
+      # DATABASE_URL (superuser grc) is used by the docker-entrypoint ONLY,
+      # to run migrations at container start.
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
+      # #SEC-F01: the RUNTIME app pool connects as the non-superuser role
+      # grc_app so Row-Level Security is actually enforced (grc has BYPASSRLS
+      # and would silently disable every RLS policy). grc_app is provisioned
+      # by deploy/provision-grc-app.sh, which update-all.sh + setup-hetzner.sh
+      # run before (re)starting these containers. If GRC_APP_PASSWORD is unset
+      # the app falls back to DATABASE_URL in code — do NOT rely on that in
+      # production; set GRC_APP_PASSWORD in .env.
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:-}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
@@ -228,7 +238,11 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
+      # DATABASE_URL (superuser grc) — kept for any admin/migration tooling.
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
+      # #SEC-F01: worker runtime also connects as the non-superuser grc_app
+      # so cron jobs run under enforced RLS. Same provisioning as web.
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:-}@postgres:5432/grc_platform
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379

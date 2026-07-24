@@ -520,11 +520,27 @@ jobs:
           "
           ROWS=$(PGPASSWORD=grc_app_pass psql -h localhost -U grc_app -d grc_platform \
             -t -c "SELECT count(*) FROM organization;" | tr -d ' ')
-          echo "Rows visible without context: $ROWS"
+          echo "Rows visible without context (grc_app, non-superuser): $ROWS"
           if [ "$ROWS" != "0" ]; then
             echo "::error::RLS FAILURE — expected 0 rows without org context, got $ROWS"
             exit 1
           fi
+
+          # ── #SEC-F05 canary: prove the SUPERUSER path bypasses RLS ──
+          # This is the whole point of running the app as grc_app: under
+          # the superuser `grc` (BYPASSRLS) the very same query WITHOUT any
+          # org context returns ALL rows. Asserting it here documents the
+          # danger and guarantees the regression test itself is meaningful
+          # (if this ever returned 0, RLS-enforcement semantics changed and
+          # the grc_app assertion above would be a false comfort).
+          SU_ROWS=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform \
+            -t -c "SELECT count(*) FROM organization;" | tr -d ' ')
+          echo "Rows visible without context (grc, SUPERUSER — RLS bypassed): $SU_ROWS"
+          if [ "${SU_ROWS:-0}" -lt 1 ]; then
+            echo "::error::Expected the superuser to bypass RLS and see >=1 org (seed created one). Got $SU_ROWS — RLS canary is broken."
+            exit 1
+          fi
+          echo "F-05 canary OK: superuser bypasses RLS (>=1 row), grc_app is blocked (0 rows). App MUST run as grc_app in prod."
 
   # ────────────────────────────────────────────────
   # 5. Production build + Docker image
@@ -726,3 +742,25 @@ jobs:
         run: |
           npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0" \
             --excludePrivatePackages --summary
+
+      # ── #SEC-F05: prevent regressing to a superuser prod runtime ──
+      # The pentest HIGH F-01 was that the app connected as the superuser
+      # `grc` (BYPASSRLS), disabling RLS in production. This assertion
+      # fails the build if the production compose ever stops pointing the
+      # runtime (web + worker) at the non-superuser role `grc_app` via
+      # APP_DATABASE_URL — i.e. nobody can silently redeploy as superuser.
+      - name: Verify production runtime connects as non-superuser (grc_app)
+        run: |
+          COMPOSE=docker-compose.production.yml
+          # Both web and worker must declare APP_DATABASE_URL=grc_app.
+          COUNT=$(grep -cE '^\s*APP_DATABASE_URL:\s*postgresql://grc_app:' "$COMPOSE" || true)
+          echo "APP_DATABASE_URL=grc_app declarations found: $COUNT (expected >= 2)"
+          if [ "${COUNT:-0}" -lt 2 ]; then
+            echo "::error::$COMPOSE must point web AND worker runtime at grc_app via APP_DATABASE_URL (F-01/F-05). Found $COUNT."
+            exit 1
+          fi
+          # And the runtime URL must never be the superuser grc.
+          if grep -qE '^\s*APP_DATABASE_URL:\s*postgresql://grc:' "$COMPOSE"; then
+            echo "::error::APP_DATABASE_URL points at superuser grc — RLS would be bypassed."
+            exit 1
+          fi

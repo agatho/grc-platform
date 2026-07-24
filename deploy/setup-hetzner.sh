@@ -74,6 +74,8 @@ if [ ! -f ".env" ]; then
   WB_KEY=$(openssl rand -hex 32)
   CRON_SECRET=$(openssl rand -hex 16)
   DB_PW=$(openssl rand -base64 24 | tr -d '=/+' | head -c 24)
+  # #SEC-F01: Passwort fuer die Nicht-Superuser-Runtime-Rolle grc_app.
+  GRC_APP_PW=$(openssl rand -hex 24)
 
   cat > .env << ENVEOF
 # ARCTOS GRC Platform — Production
@@ -86,6 +88,10 @@ AUTH_TRUST_HOST=true
 
 DB_PASSWORD=$DB_PW
 DATABASE_URL=postgresql://grc:$DB_PW@postgres:5432/grc_platform
+# #SEC-F01: Runtime-Rolle grc_app (Nicht-Superuser, RLS wirkt). Die App
+# verbindet zur Laufzeit ueber APP_DATABASE_URL=grc_app (siehe
+# docker-compose.production.yml); Migrationen laufen weiter als grc.
+GRC_APP_PASSWORD=$GRC_APP_PW
 
 WB_ENCRYPTION_KEY=$WB_KEY
 CRON_SECRET=$CRON_SECRET
@@ -122,6 +128,32 @@ echo "  Caddy konfiguriert fuer $DOMAIN"
 echo "[8/8] ARCTOS starten..."
 cd /opt/arctos
 docker compose -f docker-compose.production.yml up -d --build
+
+# ── 8b. grc_app-Rolle provisionieren (#SEC-F01) ────────────
+# Der Web-Entrypoint hat die Migrationen als grc ausgefuehrt (Tabellen
+# existieren). Jetzt die Nicht-Superuser-Rolle grc_app anlegen + granten und
+# web+worker neu starten, damit sie ueber APP_DATABASE_URL=grc_app verbinden.
+echo ""
+echo "[8b] grc_app-Rolle provisionieren..."
+GRC_APP_PW=$(grep -E '^GRC_APP_PASSWORD=' /opt/arctos/.env | head -1 | cut -d= -f2-)
+if [ -n "$GRC_APP_PW" ] && [ -f /opt/arctos/deploy/provision-grc-app.sh ]; then
+  # Warten bis Postgres gesund ist (Migrationen des Entrypoints koennen laufen).
+  for i in $(seq 1 30); do
+    if docker compose -f docker-compose.production.yml exec -T postgres \
+         pg_isready -U grc -d grc_platform >/dev/null 2>&1; then
+      break
+    fi
+    sleep 2
+  done
+  GRC_APP_PASSWORD="$GRC_APP_PW" \
+  COMPOSE_FILE=/opt/arctos/docker-compose.production.yml \
+    bash /opt/arctos/deploy/provision-grc-app.sh grc_platform 2>&1 | sed 's/^/  /' || \
+    echo "  WARNUNG: Provisionierung meldete Fehler — bitte pruefen."
+  echo "  web+worker neu starten (verbinden nun als grc_app)..."
+  docker compose -f docker-compose.production.yml up -d --force-recreate web worker 2>&1 | tail -3
+else
+  echo "  WARNUNG: GRC_APP_PASSWORD oder provision-grc-app.sh fehlt — grc_app nicht provisioniert."
+fi
 
 echo ""
 echo "============================================="
