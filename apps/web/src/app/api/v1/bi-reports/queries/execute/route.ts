@@ -24,6 +24,22 @@ import { executeBiQuerySchema } from "@grc/shared";
 // the string starts with SELECT, has no semicolons (no multi-
 // statement), and has no comment sequences — those guards remain.
 // What changes is the LRS/read-only enforcement, which is now real.
+//
+// #SEC-F02 (defense-in-depth, pentest HIGH): RLS alone is NOT a
+// sufficient tenant boundary here. If the app pool ever connects as a
+// superuser / BYPASSRLS role (the historical prod misconfig this whole
+// branch fixes), set_config('app.current_org_id', …) is silently
+// ignored and this endpoint becomes a cross-tenant SELECT primitive for
+// any admin/risk_manager. We therefore force the stored query to run
+// under the non-privileged role `grc_app` via `SET LOCAL ROLE grc_app`
+// INSIDE the same transaction. SET LOCAL ROLE demotes the session to a
+// role that has no BYPASSRLS, so the RLS policies apply regardless of
+// how the app itself authenticated — this is the strongest protection
+// that is effective immediately, independent of the F-01 connection
+// rollout. If the role is missing (e.g. a dev box that never ran the
+// provisioning script) the SET fails, the transaction rolls back and we
+// return 500 — we NEVER fall through to an unguarded execution.
+const BI_QUERY_EXEC_ROLE = "grc_app";
 
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
@@ -75,13 +91,26 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Single transaction holds: SET LOCAL app.current_org_id + SET
-    // TRANSACTION READ ONLY + user query. The SET LOCALs are scoped to
-    // this transaction (Postgres semantics) and visible to the user
-    // query that follows on the SAME connection.
+    // Single transaction holds: SET LOCAL ROLE grc_app + SET LOCAL
+    // app.current_org_id + SET TRANSACTION READ ONLY + user query. The
+    // SET LOCALs are scoped to this transaction (Postgres semantics) and
+    // visible to the user query that follows on the SAME connection; the
+    // role automatically resets at COMMIT/ROLLBACK, so nothing leaks onto
+    // the pooled connection.
     const queryResult = await db.transaction(async (tx) => {
+      // #SEC-F02: demote to the non-privileged role FIRST. `SET LOCAL
+      // ROLE` works whether the app authenticated as the superuser `grc`
+      // (superuser may assume any role) or already as `grc_app` (a role
+      // is implicitly a member of itself). Under grc_app there is no
+      // BYPASSRLS, so every RLS policy below is enforced. Postgres uses
+      // the identifier grammar for role names here — grc_app is a fixed
+      // internal constant, never user input, so there is no injection
+      // surface. If the role does not exist this throws and we surface a
+      // 500 (see catch) rather than run the query unguarded.
+      await tx.execute(sql.raw(`SET LOCAL ROLE ${BI_QUERY_EXEC_ROLE}`));
       // RLS context — every RLS policy in the schema reads
-      // current_setting('app.current_org_id').
+      // current_setting('app.current_org_id'). Set AFTER the role switch
+      // so it is the grc_app session that carries the org scope.
       await tx.execute(
         sql`SELECT set_config('app.current_org_id', ${ctx.orgId}, true)`,
       );
@@ -107,6 +136,27 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+
+    // #SEC-F02: distinguish "the org-scoping role is missing" from a
+    // normal query failure. If `grc_app` does not exist (unprovisioned
+    // environment) the SET LOCAL ROLE throws — we must FAIL CLOSED with a
+    // 500 and an operator-actionable hint, never silently run the query
+    // without the RLS-enforcing role. Postgres reports a missing role for
+    // SET ROLE with SQLSTATE 22023 ("role \"grc_app\" does not exist").
+    const pgCode = (err as { code?: string })?.code;
+    if (pgCode === "22023" || /role .*does not exist/i.test(message)) {
+      console.error(
+        `[bi-reports/execute] SEC-F02 role '${BI_QUERY_EXEC_ROLE}' unavailable — refusing to run query unguarded`,
+        err,
+      );
+      return Response.json(
+        {
+          error:
+            "Query execution is unavailable: the org-scoping database role is not provisioned. Run deploy/provision-grc-app.sh.",
+        },
+        { status: 500 },
+      );
+    }
 
     await db
       .update(biQuery)

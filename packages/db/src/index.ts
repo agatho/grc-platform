@@ -140,14 +140,28 @@ import * as entityCommentSchema from "./schema/entity-comment";
 // Pre-warm: trigger one trivial query at module load so the first user-facing
 // request doesn't pay TCP+TLS+startup. Postgres-js has no `min` option, so
 // this is the closest equivalent.
-const client = postgres(process.env.DATABASE_URL!, {
+//
+// #SEC-F01 (RLS-hardening / ADR-005): the RUNTIME app pool connects via
+// APP_DATABASE_URL when set — that URL points at the non-superuser role
+// `grc_app` (no BYPASSRLS), so the RLS policies actually take effect for
+// every read/write the app performs. When APP_DATABASE_URL is unset we fall
+// back to DATABASE_URL so dev/CI (which only set DATABASE_URL = superuser
+// `grc`) keep working unchanged. Migrations, seeds and provisioning use a
+// SEPARATE client bound to DATABASE_URL (superuser) — see migrate-all.ts,
+// create-missing-tables.ts and the docker entrypoint — so schema changes and
+// GRANTs still run with the privileges they need. withReadContext /
+// withAuditContext run their set_config('app.current_org_id', …) on THIS
+// runtime pool, which is exactly where RLS now becomes effective.
+const RUNTIME_DATABASE_URL =
+  process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL!;
+const client = postgres(RUNTIME_DATABASE_URL, {
   max: 10,
   idle_timeout: 20,
   max_lifetime: 60 * 30,
   connect_timeout: 10,
 });
 
-if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
+if (process.env.NODE_ENV === "production" && RUNTIME_DATABASE_URL) {
   void client`SELECT 1`.catch((err) => {
     // Cold-start prewarm failed — log but don't block module import. The next
     // real request will retry and surface the error through api-wrapper.

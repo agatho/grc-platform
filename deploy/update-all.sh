@@ -78,6 +78,12 @@ ensure_env_hint() {
 # Ohne Key verweigern die betroffenen Routen das Speichern (fail-hard by design).
 ensure_env_secret "SECRET_ENCRYPTION_KEY" "openssl rand -base64 32"
 
+# Pflicht (#SEC-F01): Passwort fuer die Nicht-Superuser-Runtime-Rolle grc_app.
+# Die App verbindet zur Laufzeit als grc_app (RLS wirkt); Migrationen laufen
+# weiter als grc. provision-grc-app.sh (weiter unten) legt die Rolle mit
+# diesem Passwort an und grantet Least-Privilege-DML.
+ensure_env_secret "GRC_APP_PASSWORD" "openssl rand -hex 24"
+
 # MinIO-Sidecar (docker-compose.production.yml): Root-Passwort generieren.
 # Aktiviert wird das S3-Backend erst durch STORAGE_BACKEND=s3 + S3_*-Werte.
 ensure_env_secret "MINIO_ROOT_PASSWORD" "openssl rand -hex 24"
@@ -241,6 +247,35 @@ if [ -f "$DEMO_JULY" ]; then
   docker compose -f "$COMPOSE_FILE" exec -T postgres \
     psql -U grc -d grc_platform -v ON_ERROR_STOP=1 -q -f /dev/stdin \
     < "$DEMO_JULY" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
+fi
+
+# ── 3d. grc_app-Rolle provisionieren (#SEC-F01) ───────────
+# Nach den Migrationen (Tabellen existieren) und VOR dem Container-Restart:
+# die Nicht-Superuser-Rolle grc_app anlegen/aktualisieren und Least-Privilege-
+# Grants auf alle DBs setzen. Erst danach dürfen web+worker mit
+# APP_DATABASE_URL=grc_app neu starten. ALTER DEFAULT PRIVILEGES deckt künftige
+# Tabellen ab. Schließt zugleich #SEC-F09 (FORCE RLS auf organization).
+echo ""
+echo "[3d/5] grc_app-Rolle provisionieren (Runtime als Nicht-Superuser)..."
+GRC_APP_PW=$(grep -E '^GRC_APP_PASSWORD=' "$ENV_FILE" | head -1 | cut -d= -f2-)
+PROVISION=/opt/arctos/deploy/provision-grc-app.sh
+if [ -z "$GRC_APP_PW" ]; then
+  echo "  WARNUNG: GRC_APP_PASSWORD fehlt in .env — grc_app wird nicht provisioniert."
+elif [ ! -f "$PROVISION" ]; then
+  echo "  WARNUNG: $PROVISION fehlt — grc_app wird nicht provisioniert."
+else
+  chmod +x "$PROVISION" 2>/dev/null || true
+  # DB-Liste: Main + alle Tenants (grc_<tenant>)
+  PROV_DBS=(grc_platform)
+  if [ -d /opt/arctos/tenants ]; then
+    for tdir in /opt/arctos/tenants/*/; do
+      [ -d "$tdir" ] || continue
+      PROV_DBS+=("grc_$(basename "$tdir")")
+    done
+  fi
+  GRC_APP_PASSWORD="$GRC_APP_PW" COMPOSE_FILE="$COMPOSE_FILE" \
+    bash "$PROVISION" "${PROV_DBS[@]}" 2>&1 | sed 's/^/  /' || \
+    echo "  WARNUNG: provision-grc-app.sh meldete Fehler — bitte prüfen."
 fi
 
 # ── 4. Haupt-Container neu starten (web + worker) ─────────
