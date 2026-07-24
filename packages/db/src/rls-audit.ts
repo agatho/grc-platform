@@ -64,8 +64,22 @@ export interface RlsAuditReport {
  * A whitelist of tenant-named tables that are ALLOWED to have no RLS.
  * Usually log tables that accumulate platform-wide and are queried via
  * app-level filters with audit context, never directly.
+ *
+ * These tables MUST NOT carry active RLS: they are written org-less by the
+ * auth-/worker-flow (e.g. `access_log` is written at login time before any
+ * org is known — org_id is NULL). A row-level policy of the shape
+ * `org_id = current_setting('app.current_org_id')` would reject those
+ * org-less INSERTs and break login under the non-superuser `grc_app` role
+ * (Pentest F-01). Migration `0379_logtables_rls_exception.sql` therefore
+ * explicitly DISABLEs + NO FORCEs RLS and drops all policies on exactly this
+ * set of tables, undoing the RLS that migrations 0000 / 0315 / 0336 had put
+ * on them. See also `tests/rls/logtable-rls-exception.test.ts`, which fails
+ * in CI should a future gap-closure migration re-enable RLS here.
+ *
+ * Exported so the regression test and the audit share a single source of
+ * truth for the exception set.
  */
-const TENANT_TABLE_RLS_EXCEPTIONS = new Set<string>([
+export const TENANT_TABLE_RLS_EXCEPTIONS = new Set<string>([
   // Append-only logs: filtered by org_id server-side, own integrity
   // guarantee via hash chain. Opening RLS on these would prevent
   // platform admins from running the integrity check.
