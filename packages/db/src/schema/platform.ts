@@ -414,6 +414,13 @@ export const accessLog = pgTable(
   "access_log",
   {
     id: uuid("id").primaryKey().defaultRandom(),
+    // F-03: Mandantenbezug. Nullable — Pre-Auth-/Unknown-User-Events (z. B.
+    // fehlgeschlagene Logins unbekannter E-Mails, Multi-Org-User) bleiben
+    // org-los und werden NICHT an Org-admins ausgeliefert. Append-only-Log-
+    // Tabelle: server-seitig gefiltert, KEIN RLS-FORCE (wie audit_log).
+    orgId: uuid("org_id").references(() => organization.id, {
+      onDelete: "set null",
+    }),
     userId: uuid("user_id").references(() => user.id),
     emailAttempted: varchar("email_attempted", { length: 255 }),
     eventType: accessEventTypeEnum("event_type").notNull(),
@@ -430,6 +437,9 @@ export const accessLog = pgTable(
   (table) => [
     index("acl_user_idx").on(table.userId),
     index("acl_event_idx").on(table.eventType, table.createdAt),
+    // NOT "acl_org_idx" — that name is already taken by audit_checklist's
+    // org_id index (schema-global index names). Migration 0378.
+    index("access_log_org_idx").on(table.orgId, table.createdAt),
   ],
 );
 

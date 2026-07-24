@@ -10,9 +10,61 @@ import { user, userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
 import type { RoleAssignment } from "./types";
 import type { Provider } from "next-auth/providers";
 
-/** Write an entry to the access_log table. */
+/**
+ * Pure attribution rule (F-03): a login is attributable to an org only when
+ * the user is a member of exactly ONE org. Zero orgs (unknown / not yet
+ * provisioned) or multiple orgs → org-less (null). Exported for unit testing.
+ */
+export function pickAttributableOrgId(
+  orgIds: readonly (string | null | undefined)[],
+): string | null {
+  const distinct = [...new Set(orgIds.filter((o): o is string => !!o))];
+  return distinct.length === 1 ? distinct[0] : null;
+}
+
+/**
+ * F-03: Resolve the org an access-log row belongs to.
+ *
+ * A login event is only attributed to an org when the user is unambiguously
+ * a member of exactly ONE org. If the user is unknown (no userId), or belongs
+ * to multiple orgs, we return null → the row stays org-less and is NOT exposed
+ * to any single Org-admin via GET /api/v1/access-log (which filters
+ * org_id = <caller org> and thereby excludes NULL rows). Platform-wide review
+ * of org-less events (e.g. brute-force against unknown emails) is a DB/DBA
+ * concern, matching the append-only-log design of audit_log.
+ */
+async function resolveAccessLogOrgId(
+  userId: string | undefined,
+): Promise<string | null> {
+  if (!userId) return null;
+  try {
+    const rows = await db
+      .select({ orgId: userOrganizationRole.orgId })
+      .from(userOrganizationRole)
+      .where(
+        and(
+          eq(userOrganizationRole.userId, userId),
+          isNull(userOrganizationRole.deletedAt),
+        ),
+      );
+    return pickAttributableOrgId(rows.map((r) => r.orgId));
+  } catch {
+    // Never let attribution failure break the auth flow — fall back to org-less.
+    return null;
+  }
+}
+
+/**
+ * Write an entry to the access_log table.
+ *
+ * F-03: `orgId` is filled server-side. Callers that already know the org may
+ * pass it explicitly; otherwise it is derived from the user's single org
+ * membership (see resolveAccessLogOrgId). Rows with a NULL org_id are treated
+ * as org-less and never returned to Org-admins.
+ */
 export async function logAccessEvent(params: {
   userId?: string;
+  orgId?: string;
   emailAttempted: string;
   eventType:
     | "login_success"
@@ -31,7 +83,9 @@ export async function logAccessEvent(params: {
   ipAddress?: string;
   userAgent?: string;
 }) {
+  const orgId = params.orgId ?? (await resolveAccessLogOrgId(params.userId));
   await db.insert(accessLog).values({
+    orgId: orgId ?? null,
     userId: params.userId,
     emailAttempted: params.emailAttempted,
     eventType: params.eventType,

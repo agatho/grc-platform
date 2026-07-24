@@ -68,11 +68,20 @@ if [ -n "$DATABASE_URL" ] && command -v psql >/dev/null 2>&1; then
       PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
     done
     if [ "$SEED_DEMO_DATA" = "true" ]; then
-      echo "Seeding demo data (SEED_DEMO_DATA=true)..."
-      for f in /app/packages/db/sql/seed_demo_*.sql; do
-        [ -f "$f" ] || continue
-        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
-      done
+      # #SEC-F04: Demo/RBAC-test accounts ship with KNOWN passwords
+      # (admin@arctos.dev, *@arctistx.test, ...). Seeding them onto a
+      # production instance that holds real data is unacceptable. Refuse
+      # unless the operator explicitly opts in via ALLOW_DEMO_SEED_IN_PROD.
+      # Dev/CI (NODE_ENV != production) is unaffected.
+      if [ "$NODE_ENV" = "production" ] && [ "$ALLOW_DEMO_SEED_IN_PROD" != "true" ]; then
+        echo "WARNING: refusing to seed demo/test accounts in production; set ALLOW_DEMO_SEED_IN_PROD=true to override (SEED_DEMO_DATA=true was set)."
+      else
+        echo "Seeding demo data (SEED_DEMO_DATA=true)..."
+        for f in /app/packages/db/sql/seed_demo_*.sql; do
+          [ -f "$f" ] || continue
+          PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
+        done
+      fi
     else
       echo "Skipping demo data (SEED_DEMO_DATA != true)."
     fi
