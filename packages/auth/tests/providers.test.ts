@@ -3,7 +3,11 @@
 // These functions can be tested without DB access.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { isAzureAdConfigured, extractRequestInfo } from "../src/providers";
+import {
+  isAzureAdConfigured,
+  extractRequestInfo,
+  pickAttributableOrgId,
+} from "../src/providers";
 
 // ---------------------------------------------------------------------------
 // isAzureAdConfigured
@@ -195,5 +199,37 @@ describe("extractRequestInfo", () => {
     });
     const info = extractRequestInfo(request);
     expect(info.ipAddress).toBe("2001:db8::1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// pickAttributableOrgId — F-03 access_log tenant attribution
+// ---------------------------------------------------------------------------
+
+describe("pickAttributableOrgId (F-03)", () => {
+  const orgA = "11111111-1111-1111-1111-111111111111";
+  const orgB = "22222222-2222-2222-2222-222222222222";
+
+  it("returns the org when the user belongs to exactly one org", () => {
+    expect(pickAttributableOrgId([orgA])).toBe(orgA);
+  });
+
+  it("collapses duplicate rows of the same org to that single org", () => {
+    expect(pickAttributableOrgId([orgA, orgA, orgA])).toBe(orgA);
+  });
+
+  it("returns null (org-less) for an unknown user with no orgs", () => {
+    expect(pickAttributableOrgId([])).toBeNull();
+  });
+
+  it("returns null (org-less) when the user spans multiple orgs", () => {
+    // Must not leak a login into one tenant's access-log when the user is
+    // also a member of another tenant.
+    expect(pickAttributableOrgId([orgA, orgB])).toBeNull();
+  });
+
+  it("ignores null/undefined entries before deciding", () => {
+    expect(pickAttributableOrgId([null, orgA, undefined])).toBe(orgA);
+    expect(pickAttributableOrgId([null, undefined])).toBeNull();
   });
 });

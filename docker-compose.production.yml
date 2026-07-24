@@ -22,6 +22,11 @@ services:
     #   image: timescale/timescaledb@sha256:...
     image: timescale/timescaledb:2.26.3-pg16
     restart: unless-stopped
+    # #SEC-F07: block privilege escalation via setuid binaries. Postgres
+    # itself is otherwise unchanged (it still needs a writable data dir on
+    # the pgdata volume, so no read_only here).
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_USER: grc
       # #DEP-CONFIG-HIGH-3: fail-fast on missing. The previous fallback
@@ -176,7 +181,12 @@ services:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       RUN_SEEDS: ${RUN_SEEDS:-false}
+      # #SEC-F04: SEED_DEMO_DATA seeds accounts with KNOWN passwords — keep
+      # false on any instance with real data. Even if set to true, the
+      # entrypoint refuses in production unless ALLOW_DEMO_SEED_IN_PROD=true
+      # is also set (demo/throwaway boxes only).
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-false}
+      ALLOW_DEMO_SEED_IN_PROD: ${ALLOW_DEMO_SEED_IN_PROD:-false}
       # Optional
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
@@ -237,6 +247,15 @@ services:
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+    # #SEC-F07: immutable root filesystem, matching the web service. The
+    # worker writes to exactly two places: /app/uploads (retention-purge /
+    # erase, mounted as a volume below) and transient caches. The cache
+    # dirs (tsx/esbuild transpile cache, npx/npm) are redirected onto the
+    # /tmp tmpfs via the *_CACHE / TMPDIR env vars below so a read-only
+    # rootfs never blocks them.
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       # DATABASE_URL (superuser grc) — kept for any admin/migration tooling.
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
@@ -265,6 +284,11 @@ services:
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
       PORT: "3001"
+      # #SEC-F07: keep every transient write on the /tmp tmpfs so read_only
+      # rootfs holds. `npx tsx` (CMD) + esbuild transpile-cache honour these.
+      TMPDIR: /tmp
+      XDG_CACHE_HOME: /tmp/.cache
+      NPM_CONFIG_CACHE: /tmp/.npm
     volumes:
       # Gleiche Sicht auf lokale Uploads wie web (Retention-Purge/Erase)
       - uploads:/app/uploads

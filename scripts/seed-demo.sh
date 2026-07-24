@@ -14,6 +14,15 @@ DB_USER="${DB_USER:-grc}"
 DB_PASS="${DB_PASS:-grc_dev_password}"
 DB_NAME="${DB_NAME:-grc_platform}"
 
+# #SEC-F04: same guard as scripts/docker-entrypoint.sh. This helper seeds
+# accounts with KNOWN passwords — never let it run against a production
+# instance unless explicitly overridden. Dev/CI (NODE_ENV != production,
+# usually unset) is unaffected.
+if [ "${NODE_ENV:-}" = "production" ] && [ "${ALLOW_DEMO_SEED_IN_PROD:-}" != "true" ]; then
+  echo "WARNING: refusing to seed demo/test accounts in production; set ALLOW_DEMO_SEED_IN_PROD=true to override." >&2
+  exit 0
+fi
+
 echo "Seeding demo data..."
 
 for f in \
