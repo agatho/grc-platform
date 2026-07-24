@@ -5,6 +5,7 @@ import { requireRole } from "@grc/auth";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import type { Session } from "next-auth";
 import type { UserRole } from "@grc/shared";
 
@@ -50,6 +51,80 @@ function authProblem(
   );
 }
 
+/**
+ * #SEC-F01b — Establish the request-scoped RLS context for the rest of THIS
+ * request's async execution.
+ *
+ * A Next.js route handler cannot wrap "the rest of itself" in a callback, so we
+ * use `AsyncLocalStorage.enterWith` (propagates the store to every subsequent
+ * `await` in the handler) and register cleanup with `after()` (runs once the
+ * response has finished — including on error — which is our request-end
+ * `finally`). The connection is reserved and configured FIRST; only once
+ * `after(release)` is registered do we `enterWith`, so a released connection is
+ * never pinned to the ALS.
+ *
+ * Failure modes are all safe-fail:
+ *  - `after()` unavailable (a unit test calling withAuth outside a request):
+ *    release immediately, do NOT enterWith → the request falls back to the base
+ *    pool (its pre-existing behaviour). Nothing leaks.
+ *  - reserve() fails (pool exhausted / DB blip): log and continue without a
+ *    context rather than turning a transient hiccup into a 500 on every
+ *    authenticated request. The handler then sees RLS-filtered (empty) reads,
+ *    which is the safe direction to fail.
+ */
+async function establishRequestScopedContext(ctx: {
+  orgId: string;
+  userId: string;
+  userEmail?: string | null;
+  userName?: string | null;
+}): Promise<void> {
+  // The context helpers are imported DYNAMICALLY (not as top-level named
+  // imports) so the many unit tests that `vi.mock("@grc/db", …)` with just a
+  // `db` stub don't fail the strict missing-named-export check. When the module
+  // is mocked (no `reserveRequestContext`), we simply skip context setup — the
+  // test then exercises withAuth against its mocked `db`, exactly as before.
+  let reserved:
+    | { store: unknown; release: () => Promise<void> }
+    | undefined;
+  try {
+    const dbmod = (await import("@grc/db")) as {
+      reserveRequestContext?: (c: typeof ctx) => Promise<{
+        store: unknown;
+        release: () => Promise<void>;
+      }>;
+      requestDbStorage?: { enterWith: (s: unknown) => void };
+    };
+    const reserveRequestContext = dbmod.reserveRequestContext;
+    const requestDbStorage = dbmod.requestDbStorage;
+    if (typeof reserveRequestContext !== "function" || !requestDbStorage) {
+      // @grc/db is mocked (unit test) — nothing to establish.
+      return;
+    }
+
+    reserved = await reserveRequestContext(ctx);
+    try {
+      after(reserved.release);
+    } catch {
+      // Not inside a Next request scope (e.g. a direct unit-test call to
+      // withAuth). Release now and skip enterWith so nothing is pinned to a
+      // connection we just handed back.
+      await reserved.release();
+      return;
+    }
+    // after() is registered → safe to pin the reserved client to this request.
+    requestDbStorage.enterWith(reserved.store);
+  } catch (err) {
+    if (reserved) {
+      // reserve succeeded but enterWith/after threw — don't leak the connection.
+      await reserved.release().catch(() => {});
+    }
+    console.error(
+      "[rls-context] failed to establish request-scoped context:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
 /** Authenticate, resolve org, check roles. Returns context or error Response. */
 export async function withAuth(
   ...roles: UserRole[]
@@ -77,6 +152,17 @@ export async function withAuth(
       requestId,
     );
   }
+
+  // #SEC-F01b — establish the request-scoped RLS context now, BEFORE the role
+  // checks below, so even the permission-lookup queries run under this org's
+  // RLS scope. From here on every query the handler makes through the global
+  // `db` proxy is org/user-scoped, without any route change.
+  await establishRequestScopedContext({
+    orgId,
+    userId: session.user.id,
+    userEmail: session.user.email,
+    userName: session.user.name,
+  });
 
   if (roles.length) {
     const check = requireRole(...roles)(session, orgId, requestId);

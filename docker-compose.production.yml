@@ -257,11 +257,16 @@ services:
     tmpfs:
       - /tmp
     environment:
-      # DATABASE_URL (superuser grc) — kept for any admin/migration tooling.
+      # #SEC-F01b: the worker runs cross-org SYSTEM jobs ("for every org, do
+      # …" — 128 cron files). Under grc_app + RLS those would need an org
+      # context per row and, without one, see 0 rows → the crons would silently
+      # do nothing. So the worker deliberately connects as the PRIVILEGED
+      # superuser `grc` (BYPASSRLS): it is trusted, non-user-facing, and
+      # cross-org by design. Only the user-facing WEB app runs least-privilege
+      # (grc_app + per-request RLS context, #SEC-F01b/request-context.ts).
+      # Because APP_DATABASE_URL is intentionally NOT set here, packages/db
+      # falls back to DATABASE_URL (grc) for the worker's runtime pool.
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
-      # #SEC-F01: worker runtime also connects as the non-superuser grc_app
-      # so cron jobs run under enforced RLS. Same provisioning as web.
-      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:-}@postgres:5432/grc_platform
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379

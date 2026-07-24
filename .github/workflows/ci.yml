@@ -187,6 +187,11 @@ jobs:
         run: npm run test:rls
         env:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+          # #SEC-F01b: point the GLOBAL `db` (packages/db) at the non-superuser
+          # grc_app so request-scoped-context.test.ts exercises the exact pool a
+          # real route uses and proves RLS is enforced through the `db` proxy.
+          # (The other RLS tests use their own helper clients and ignore this.)
+          APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
 
   # ────────────────────────────────────────────────
   # 3b. E2E smoke — release gate
@@ -745,22 +750,38 @@ jobs:
 
       # ── #SEC-F05: prevent regressing to a superuser prod runtime ──
       # The pentest HIGH F-01 was that the app connected as the superuser
-      # `grc` (BYPASSRLS), disabling RLS in production. This assertion
-      # fails the build if the production compose ever stops pointing the
-      # runtime (web + worker) at the non-superuser role `grc_app` via
-      # APP_DATABASE_URL — i.e. nobody can silently redeploy as superuser.
-      - name: Verify production runtime connects as non-superuser (grc_app)
+      # `grc` (BYPASSRLS), disabling RLS in production. This assertion fails
+      # the build if the production compose ever stops pointing the USER-FACING
+      # WEB runtime at the non-superuser role `grc_app` via APP_DATABASE_URL.
+      #
+      # #SEC-F01b update: the WORKER now intentionally runs as the privileged
+      # superuser `grc`. It executes cross-org SYSTEM cron jobs that must see
+      # every org's rows; under grc_app + RLS (which has no per-request org
+      # context in a background job) it would see nothing. So we assert grc_app
+      # for WEB only, and explicitly assert the worker service does NOT declare
+      # APP_DATABASE_URL (i.e. it falls back to DATABASE_URL = grc).
+      - name: Verify production runtime connects as non-superuser (grc_app) — web
         run: |
           COMPOSE=docker-compose.production.yml
-          # Both web and worker must declare APP_DATABASE_URL=grc_app.
+          # WEB must declare APP_DATABASE_URL=grc_app (exactly one such line now
+          # that the worker no longer sets it).
           COUNT=$(grep -cE '^\s*APP_DATABASE_URL:\s*postgresql://grc_app:' "$COMPOSE" || true)
-          echo "APP_DATABASE_URL=grc_app declarations found: $COUNT (expected >= 2)"
-          if [ "${COUNT:-0}" -lt 2 ]; then
-            echo "::error::$COMPOSE must point web AND worker runtime at grc_app via APP_DATABASE_URL (F-01/F-05). Found $COUNT."
+          echo "APP_DATABASE_URL=grc_app declarations found: $COUNT (expected >= 1, web)"
+          if [ "${COUNT:-0}" -lt 1 ]; then
+            echo "::error::$COMPOSE must point the WEB runtime at grc_app via APP_DATABASE_URL (F-01/F-05). Found $COUNT."
             exit 1
           fi
-          # And the runtime URL must never be the superuser grc.
+          # The runtime URL must never be the superuser grc.
           if grep -qE '^\s*APP_DATABASE_URL:\s*postgresql://grc:' "$COMPOSE"; then
             echo "::error::APP_DATABASE_URL points at superuser grc — RLS would be bypassed."
             exit 1
           fi
+          # #SEC-F01b: the worker must NOT set APP_DATABASE_URL — it runs as the
+          # privileged grc (cross-org system jobs). If a future edit re-adds it,
+          # this fails so the decision stays deliberate and documented.
+          WORKER_APP_URL=$(awk '/^  worker:/{w=1} w&&/APP_DATABASE_URL:/{print; exit}' "$COMPOSE" || true)
+          if [ -n "$WORKER_APP_URL" ]; then
+            echo "::error::worker declares APP_DATABASE_URL ($WORKER_APP_URL). Per #SEC-F01b the worker runs as privileged grc (cross-org crons) and must NOT set APP_DATABASE_URL."
+            exit 1
+          fi
+          echo "F-05 OK: web=grc_app (RLS enforced), worker=grc (privileged, cross-org)."
