@@ -1,5 +1,11 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+// #SEC-F01b — request-scoped RLS context. Imported here so the `db` proxy can
+// consult the AsyncLocalStorage. request-context.ts imports `requestClient` +
+// `schema` back from this module; the cycle is safe because both sides only
+// touch the other's bindings inside function bodies (runtime), never at
+// module-eval time.
+import { requestDbStorage } from "./request-context";
 import * as platform from "./schema/platform";
 import * as risk from "./schema/risk";
 import * as processSchema from "./schema/process";
@@ -154,8 +160,39 @@ import * as entityCommentSchema from "./schema/entity-comment";
 // runtime pool, which is exactly where RLS now becomes effective.
 const RUNTIME_DATABASE_URL =
   process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL!;
+
+// Base pool — used by ALL non-request code paths: the worker's 128 cron files,
+// the event-bus / webhook-dispatch, seeds, and any web query that runs OUTSIDE
+// an authenticated request (public routes, login). These connections are never
+// pinned to an org context at session level (withReadContext/withAuditContext
+// still use SET LOCAL inside a transaction, which self-reverts), so the base
+// pool always stays "clean" (app.current_org_id unset → RLS returns 0 rows,
+// never throws).
 const client = postgres(RUNTIME_DATABASE_URL, {
   max: 10,
+  idle_timeout: 20,
+  max_lifetime: 60 * 30,
+  connect_timeout: 10,
+});
+
+// #SEC-F01b — Request pool. A SEPARATE pool used exclusively by
+// request-context.ts to `reserve()` one connection per authenticated request
+// and pin the org/user GUCs onto it at SESSION level. Kept separate from the
+// base pool on purpose: once a custom GUC is set on a connection it can never
+// be reset back to NULL (only to ''), and ''::uuid throws in the RLS policies —
+// so a request connection must never fall back into the base pool where a
+// context-less query could land on it. Every reserve re-sets all GUCs, so a
+// poisoned '' value here is harmless (it is never read context-less).
+//
+// Pool sizing: because each in-flight authenticated request holds one reserved
+// connection for its whole duration (including slow/streaming AI-assist calls —
+// which are safe here precisely because there is NO open transaction, just a
+// session GUC), `max` here is the per-pod ceiling on CONCURRENT authenticated
+// requests. 25 balances that against Postgres `max_connections` (base 10 +
+// request 25 = 35 per web pod). Raise together with Postgres if a pod needs
+// more concurrency.
+export const requestClient = postgres(RUNTIME_DATABASE_URL, {
+  max: 25,
   idle_timeout: 20,
   max_lifetime: 60 * 30,
   connect_timeout: 10,
@@ -168,123 +205,155 @@ if (process.env.NODE_ENV === "production" && RUNTIME_DATABASE_URL) {
     console.error("[db] connection prewarm failed:", err?.message ?? err);
   });
 }
-export const db = drizzle(client, {
-  schema: {
-    ...platform,
-    ...risk,
-    ...processSchema,
-    ...taskSchema,
-    ...moduleSchema,
-    ...assetSchema,
-    ...workItemSchema,
-    ...controlSchema,
-    ...controlEmbeddingSchema,
-    ...documentSchema,
-    ...documentSignatureSchema,
-    ...catalogSchema,
-    ...ismsSchema,
-    ...bcmsSchema,
-    ...dpmsSchema,
-    ...auditMgmtSchema,
-    ...tprmSchema,
-    ...supplierPortalSchema,
-    ...esgSchema,
-    ...intelligenceSchema,
-    ...whistleblowingSchema,
-    ...budgetSchema,
-    ...brandingSchema,
-    ...rcsaSchema,
-    ...policyAcknowledgmentSchema,
-    ...playbookSchema,
-    ...calendarSchema,
-    ...dashboardSchema,
-    ...importExportSchema,
-    ...identitySchema,
-    ...translationSchema,
-    ...eventBusSchema,
-    ...boardKpiSchema,
-    ...nis2CertificationSchema,
-    ...fairSchema,
-    ...ismsIntelligenceSchema,
-    ...complianceCultureSchema,
-    ...automationSchema,
-    ...reportingSchema,
-    ...regulatorySimulatorSchema,
-    ...riskPropagationSchema,
-    ...auditAnalyticsSchema,
-    ...abacSchema,
-    ...agentsSchema,
-    ...eamSchema,
-    ...eamAdvancedSchema,
-    ...platformAdvancedSchema,
-    ...ermAdvancedSchema,
-    ...icsAdvancedSchema,
-    ...bcmsAdvancedSchema,
-    ...dpmsAdvancedSchema,
-    ...auditAdvancedSchema,
-    ...tprmAdvancedSchema,
-    ...esgAdvancedSchema,
-    ...whistleblowingAdvancedSchema,
-    ...bpmAdvancedSchema,
-    ...eamDashboardsSchema,
-    ...eamDataArchitectureSchema,
-    ...eamAiSchema,
-    ...eamCatalogSchema,
-    ...eamGovernanceSchema,
-    ...riskEvaluationSchema,
-    ...incidentTimelineSchema,
-    ...processRaciSchema,
-    ...processGrcSchema,
-    ...processApprovalSchema,
-    ...apiPlatformSchema,
-    ...extensionSchema,
-    ...onboardingSchema,
-    ...mobileSchema,
-    ...saasMeteringSchema,
-    ...evidenceConnectorSchema,
-    ...cloudConnectorSchema,
-    ...identitySaasConnectorSchema,
-    ...devopsConnectorSchema,
-    ...frameworkMappingSchema,
-    ...copilotChatSchema,
-    ...evidenceReviewSchema,
-    ...regulatoryChangeSchema,
-    ...controlTestingAgentSchema,
-    ...predictiveRiskSchema,
-    ...doraSchema,
-    ...aiActSchema,
-    ...taxCmsSchema,
-    ...horizonScannerSchema,
-    ...certWizardSchema,
-    ...biReportingSchema,
-    ...benchmarkingSchema,
-    ...riskQuantificationSchema,
-    ...dataSovereigntySchema,
-    ...roleDashboardsSchema,
-    ...marketplaceSchema,
-    ...stakeholderPortalSchema,
-    ...academySchema,
-    ...simulationSchema,
-    ...communitySchema,
-    ...aiActExtendedSchema,
-    ...approvalWorkflowSchema,
-    ...auditExtrasSchema,
-    ...checklistSchema,
-    ...connectorSchema,
-    ...contentNarrativeSchema,
-    ...controlMonitoringSchema,
-    ...dataGovernanceSchema,
-    ...esefXbrlSchema,
-    ...ismsCapSchema,
-    ...riskAcceptanceSchema,
-    ...phase3ExtrasSchema,
-    ...stakeholderRegisterSchema,
-    ...programmeSchema,
-    ...entityCommentSchema,
-  },
-});
 
-export type Database = typeof db;
+// The full Drizzle schema, exported so request-context.ts can build a drizzle
+// client over a reserved connection with the identical schema.
+export const schema = {
+  ...platform,
+  ...risk,
+  ...processSchema,
+  ...taskSchema,
+  ...moduleSchema,
+  ...assetSchema,
+  ...workItemSchema,
+  ...controlSchema,
+  ...controlEmbeddingSchema,
+  ...documentSchema,
+  ...documentSignatureSchema,
+  ...catalogSchema,
+  ...ismsSchema,
+  ...bcmsSchema,
+  ...dpmsSchema,
+  ...auditMgmtSchema,
+  ...tprmSchema,
+  ...supplierPortalSchema,
+  ...esgSchema,
+  ...intelligenceSchema,
+  ...whistleblowingSchema,
+  ...budgetSchema,
+  ...brandingSchema,
+  ...rcsaSchema,
+  ...policyAcknowledgmentSchema,
+  ...playbookSchema,
+  ...calendarSchema,
+  ...dashboardSchema,
+  ...importExportSchema,
+  ...identitySchema,
+  ...translationSchema,
+  ...eventBusSchema,
+  ...boardKpiSchema,
+  ...nis2CertificationSchema,
+  ...fairSchema,
+  ...ismsIntelligenceSchema,
+  ...complianceCultureSchema,
+  ...automationSchema,
+  ...reportingSchema,
+  ...regulatorySimulatorSchema,
+  ...riskPropagationSchema,
+  ...auditAnalyticsSchema,
+  ...abacSchema,
+  ...agentsSchema,
+  ...eamSchema,
+  ...eamAdvancedSchema,
+  ...platformAdvancedSchema,
+  ...ermAdvancedSchema,
+  ...icsAdvancedSchema,
+  ...bcmsAdvancedSchema,
+  ...dpmsAdvancedSchema,
+  ...auditAdvancedSchema,
+  ...tprmAdvancedSchema,
+  ...esgAdvancedSchema,
+  ...whistleblowingAdvancedSchema,
+  ...bpmAdvancedSchema,
+  ...eamDashboardsSchema,
+  ...eamDataArchitectureSchema,
+  ...eamAiSchema,
+  ...eamCatalogSchema,
+  ...eamGovernanceSchema,
+  ...riskEvaluationSchema,
+  ...incidentTimelineSchema,
+  ...processRaciSchema,
+  ...processGrcSchema,
+  ...processApprovalSchema,
+  ...apiPlatformSchema,
+  ...extensionSchema,
+  ...onboardingSchema,
+  ...mobileSchema,
+  ...saasMeteringSchema,
+  ...evidenceConnectorSchema,
+  ...cloudConnectorSchema,
+  ...identitySaasConnectorSchema,
+  ...devopsConnectorSchema,
+  ...frameworkMappingSchema,
+  ...copilotChatSchema,
+  ...evidenceReviewSchema,
+  ...regulatoryChangeSchema,
+  ...controlTestingAgentSchema,
+  ...predictiveRiskSchema,
+  ...doraSchema,
+  ...aiActSchema,
+  ...taxCmsSchema,
+  ...horizonScannerSchema,
+  ...certWizardSchema,
+  ...biReportingSchema,
+  ...benchmarkingSchema,
+  ...riskQuantificationSchema,
+  ...dataSovereigntySchema,
+  ...roleDashboardsSchema,
+  ...marketplaceSchema,
+  ...stakeholderPortalSchema,
+  ...academySchema,
+  ...simulationSchema,
+  ...communitySchema,
+  ...aiActExtendedSchema,
+  ...approvalWorkflowSchema,
+  ...auditExtrasSchema,
+  ...checklistSchema,
+  ...connectorSchema,
+  ...contentNarrativeSchema,
+  ...controlMonitoringSchema,
+  ...dataGovernanceSchema,
+  ...esefXbrlSchema,
+  ...ismsCapSchema,
+  ...riskAcceptanceSchema,
+  ...phase3ExtrasSchema,
+  ...stakeholderRegisterSchema,
+  ...programmeSchema,
+  ...entityCommentSchema,
+};
+
+// Base drizzle client over the base pool. Not exported directly — routes and
+// background code import the `db` proxy below.
+const baseDb = drizzle(client, { schema });
+
+// #SEC-F01b — The exported `db` is a Proxy. On every property access it checks
+// the request-scoped AsyncLocalStorage: inside an authenticated request it
+// delegates to that request's reserved drizzle client (which already has the
+// org/user GUCs pinned, so RLS scopes every query); otherwise it delegates to
+// `baseDb` (worker crons, event-bus, seeds, migrations, public routes — all
+// unchanged). Because `import { db }` stays identical, none of the ~1.800 route
+// handlers change.
+//
+// Methods are bound to whichever client is active so `this` is correct;
+// `db.query.*`, `db.transaction`, `db.execute`, `db.select` etc. all resolve
+// against the active client. A nested `db.transaction(...)` inside a request
+// therefore runs on the reserved connection with context already set — which is
+// exactly what withReadContext/withAuditContext rely on.
+export const db = new Proxy(baseDb, {
+  get(target, prop) {
+    const store = requestDbStorage.getStore();
+    const active = store ? store.db : target;
+    const value = Reflect.get(active, prop, active);
+    // `$client` is the raw postgres `Sql` — itself callable but carrying
+    // methods like `.end`/`.reserve`. Binding would strip those, so hand it
+    // back untouched. Everything else that is a function is a drizzle method
+    // (which may use private fields) and must stay bound to its own instance.
+    if (prop === "$client") return value;
+    return typeof value === "function" ? value.bind(active) : value;
+  },
+}) as typeof baseDb;
+
+export type Database = typeof baseDb;
 export * from "./schema/platform";
 export * from "./schema/risk";
 export * from "./schema/process";
@@ -409,6 +478,19 @@ export * from "./schema/phase3-extras";
 export * from "./schema/stakeholder-register";
 export * from "./schema/programme";
 export * from "./schema/entity-comment";
+
+// #SEC-F01b — request-scoped RLS context public API. api.ts uses
+// reserveRequestContext + enterWith + Next `after()`; tests/scripts use
+// runWithRequestContext.
+export {
+  requestDbStorage,
+  reserveRequestContext,
+  releaseRequestContext,
+  runWithRequestContext,
+  getRequestStore,
+  type RequestContextInput,
+  type RequestDbStore,
+} from "./request-context";
 
 // ADR-001 RLS audit helper — re-exported so API routes + CLI can import it
 export * from "./rls-audit";

@@ -21,7 +21,22 @@ import { execSync } from "node:child_process";
 // (GHSA-f88m-g3jw-g9cj) ist via Root-`overrides.sharp: ">=0.35.0"` auf
 // die gefixte 0.35er-Linie gehoben (sharp kommt nur als optionale
 // next-Dependency in den Tree; next/image wird in apps/web nicht genutzt).
-const ALLOWLIST = [];
+const ALLOWLIST = [
+  {
+    // Neu veröffentlichtes Advisory (nach dem letzten Allowlist-Reset), das
+    // die CI repo-weit rot färbt — unabhängig von einzelnen PRs.
+    // brace-expansion kommt ausschließlich TRANSITIV über Build-/Test-Tooling
+    // (glob → minimatch → brace-expansion) in den Tree; es liegt NICHT im
+    // Runtime-Request-Pfad der App. Der DoS greift nur bei Angreifer-
+    // kontrollierten Brace-Pattern-Strings, die es hier nicht gibt.
+    // Ein sauberer non-breaking Root-Bump ist ohne Lockfile-Neuaufbau nicht
+    // verfügbar; das läuft über das separate npm-Lockfile-Verfahren nach.
+    ghsa: "GHSA-mh99-v99m-4gvg",
+    reason:
+      "brace-expansion ReDoS/OOM — nur transitiv über Build-Tooling (glob/minimatch), nicht im Runtime-Pfad; Fix folgt mit Lockfile-Refresh.",
+    until: "2026-09-15",
+  },
+];
 
 const today = new Date().toISOString().slice(0, 10);
 let auditJson;
