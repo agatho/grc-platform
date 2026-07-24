@@ -246,10 +246,21 @@ fi
 # ── 4. Haupt-Container neu starten (web + worker) ─────────
 echo ""
 echo "[4/5] Haupt-Container neu starten (web + worker)..."
-# Sidecars (MinIO/ClamAV/minio-init) zuerst sicherstellen — up ohne
-# --force-recreate startet sie nur, wenn sie fehlen/geaendert sind.
-docker compose -f "$COMPOSE_FILE" up -d minio clamav 2>&1 | tail -3 || true
-docker compose -f "$COMPOSE_FILE" up -d minio-init 2>&1 | tail -2 || true
+# Sidecars nur starten, wenn sie in der .env aktiviert sind (2026-07-24:
+# ClamAV hat auf dem 16-GB-Server einen Host-OOM mit verursacht — wer den
+# Scan will, setzt CLAMAV_HOST aktiv; MinIO nur bei STORAGE_BACKEND=s3).
+if grep -q '^STORAGE_BACKEND=s3' "$ENV_FILE" 2>/dev/null; then
+  docker compose -f "$COMPOSE_FILE" up -d minio 2>&1 | tail -2 || true
+  docker compose -f "$COMPOSE_FILE" up -d minio-init 2>&1 | tail -2 || true
+else
+  echo "  MinIO uebersprungen (STORAGE_BACKEND != s3)"
+fi
+if grep -q '^CLAMAV_HOST=' "$ENV_FILE" 2>/dev/null; then
+  docker compose -f "$COMPOSE_FILE" up -d clamav 2>&1 | tail -2 || true
+else
+  echo "  ClamAV uebersprungen (CLAMAV_HOST nicht aktiv in .env)"
+  docker compose -f "$COMPOSE_FILE" stop clamav 2>/dev/null || true
+fi
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate web worker 2>&1 | tail -5
 
 # Worker-Health quick-check: zeigt sofort ob die Cron-Engine startet
