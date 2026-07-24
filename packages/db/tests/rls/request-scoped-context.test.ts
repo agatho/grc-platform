@@ -60,11 +60,19 @@ describe("#SEC-F01b request-scoped RLS context (global db proxy)", () => {
 
     const [orgA] = await adminDb.db
       .insert(organization)
-      .values({ name: `F01b Org A ${suffix}`, type: "subsidiary", country: "DEU" })
+      .values({
+        name: `F01b Org A ${suffix}`,
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning({ id: organization.id });
     const [orgB] = await adminDb.db
       .insert(organization)
-      .values({ name: `F01b Org B ${suffix}`, type: "subsidiary", country: "AUT" })
+      .values({
+        name: `F01b Org B ${suffix}`,
+        type: "subsidiary",
+        country: "AUT",
+      })
       .returning({ id: organization.id });
     orgAId = orgA.id;
     orgBId = orgB.id;
@@ -107,17 +115,27 @@ describe("#SEC-F01b request-scoped RLS context (global db proxy)", () => {
   afterAll(async () => {
     // Teardown as superuser, skipping triggers/rules for a clean delete.
     await adminDb.client.unsafe(`SET session_replication_role = 'replica'`);
-    await adminDb.client.unsafe(`DELETE FROM risk WHERE id IN ('${riskAId}', '${riskBId}')`);
-    await adminDb.client.unsafe(`DELETE FROM audit_log WHERE org_id IN ('${orgAId}', '${orgBId}')`);
-    await adminDb.client.unsafe(`DELETE FROM user_organization_role WHERE org_id IN ('${orgAId}', '${orgBId}')`);
+    await adminDb.client.unsafe(
+      `DELETE FROM risk WHERE id IN ('${riskAId}', '${riskBId}')`,
+    );
+    await adminDb.client.unsafe(
+      `DELETE FROM audit_log WHERE org_id IN ('${orgAId}', '${orgBId}')`,
+    );
+    await adminDb.client.unsafe(
+      `DELETE FROM user_organization_role WHERE org_id IN ('${orgAId}', '${orgBId}')`,
+    );
     await adminDb.client.unsafe(`DELETE FROM "user" WHERE id = '${userAId}'`);
-    await adminDb.client.unsafe(`DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}')`);
+    await adminDb.client.unsafe(
+      `DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}')`,
+    );
     await adminDb.client.unsafe(`SET session_replication_role = 'origin'`);
 
     await adminDb.client.end();
     // Close the global proxy's pools so the vitest fork can exit cleanly.
     await requestClient.end();
-    await (db as unknown as { $client: { end: () => Promise<void> } }).$client.end();
+    await (
+      db as unknown as { $client: { end: () => Promise<void> } }
+    ).$client.end();
   });
 
   it("WITHOUT a request context, the global db sees 0 rows (RLS enforced)", async () => {
@@ -149,7 +167,8 @@ describe("#SEC-F01b request-scoped RLS context (global db proxy)", () => {
   it("directly querying Org B's row under Org A context returns nothing", async () => {
     const rows = await runWithRequestContext(
       { orgId: orgAId, userId: userAId },
-      async () => db.select({ id: risk.id }).from(risk).where(eq(risk.id, riskBId)),
+      async () =>
+        db.select({ id: risk.id }).from(risk).where(eq(risk.id, riskBId)),
     );
     expect(rows).toHaveLength(0);
   });

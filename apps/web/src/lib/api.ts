@@ -83,9 +83,7 @@ async function establishRequestScopedContext(ctx: {
   // `db` stub don't fail the strict missing-named-export check. When the module
   // is mocked (no `reserveRequestContext`), we simply skip context setup — the
   // test then exercises withAuth against its mocked `db`, exactly as before.
-  let reserved:
-    | { store: unknown; release: () => Promise<void> }
-    | undefined;
+  let reserved: { store: unknown; release: () => Promise<void> } | undefined;
   try {
     const dbmod = (await import("@grc/db")) as {
       reserveRequestContext?: (c: typeof ctx) => Promise<{
