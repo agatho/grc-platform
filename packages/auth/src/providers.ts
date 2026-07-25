@@ -38,15 +38,21 @@ async function resolveAccessLogOrgId(
 ): Promise<string | null> {
   if (!userId) return null;
   try {
-    const rows = await db
-      .select({ orgId: userOrganizationRole.orgId })
-      .from(userOrganizationRole)
-      .where(
-        and(
-          eq(userOrganizationRole.userId, userId),
-          isNull(userOrganizationRole.deletedAt),
+    // #SEC-AUTH-BOOTSTRAP: runs during login (no request context). Set
+    // app.current_user_id so the uor_self_read policy (migration 0380) lets
+    // grc_app read this user's own rows; org-scoped policies match nothing
+    // pre-login. See withUserReadContext below.
+    const rows = await withUserReadContext(userId, (tx) =>
+      tx
+        .select({ orgId: userOrganizationRole.orgId })
+        .from(userOrganizationRole)
+        .where(
+          and(
+            eq(userOrganizationRole.userId, userId),
+            isNull(userOrganizationRole.deletedAt),
+          ),
         ),
-      );
+    );
     return pickAttributableOrgId(rows.map((r) => r.orgId));
   } catch {
     // Never let attribution failure break the auth flow — fall back to org-less.
@@ -96,20 +102,52 @@ export async function logAccessEvent(params: {
   });
 }
 
-async function loadRoles(userId: string): Promise<RoleAssignment[]> {
-  const rows = await db
-    .select({
-      orgId: userOrganizationRole.orgId,
-      role: userOrganizationRole.role,
-      lineOfDefense: userOrganizationRole.lineOfDefense,
-    })
-    .from(userOrganizationRole)
-    .where(
-      and(
-        eq(userOrganizationRole.userId, userId),
-        isNull(userOrganizationRole.deletedAt),
-      ),
+/**
+ * Auth-bootstrap RLS context (#SEC-AUTH-BOOTSTRAP).
+ *
+ * loadRoles / resolveAccessLogOrgId read `user_organization_role` during
+ * `authorize()` and SSO JIT provisioning — code paths that run OUTSIDE any
+ * request-scoped context (Auth.js-internal, no `withAuth`). Under the
+ * non-superuser runtime role `grc_app` the table's RLS is enforced, and the
+ * org-scoped policies match nothing because no `app.current_org_id` is set yet
+ * (the org is exactly what we are trying to resolve — henne-ei).
+ *
+ * Migration 0380 adds a permissive `uor_self_read` SELECT policy that lets a
+ * user read THEIR OWN rows via `app.current_user_id`. This helper sets that GUC
+ * (SET LOCAL, transaction-scoped, auto-reverting) so the self-read policy
+ * applies. On the base pool (login) the transaction reserves a connection,
+ * BEGINs, sets the local GUC, runs the read, and COMMITs — leaving the pooled
+ * connection clean. Under the dev/CI superuser (`grc`, BYPASSRLS) the GUC is
+ * harmless and the query behaves exactly as before.
+ */
+async function withUserReadContext<T>(
+  userId: string,
+  fn: (tx: typeof db) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT set_config('app.current_user_id', ${userId}, true)`,
     );
+    return fn(tx as unknown as typeof db);
+  });
+}
+
+async function loadRoles(userId: string): Promise<RoleAssignment[]> {
+  const rows = await withUserReadContext(userId, (tx) =>
+    tx
+      .select({
+        orgId: userOrganizationRole.orgId,
+        role: userOrganizationRole.role,
+        lineOfDefense: userOrganizationRole.lineOfDefense,
+      })
+      .from(userOrganizationRole)
+      .where(
+        and(
+          eq(userOrganizationRole.userId, userId),
+          isNull(userOrganizationRole.deletedAt),
+        ),
+      ),
+  );
   return rows as RoleAssignment[];
 }
 
