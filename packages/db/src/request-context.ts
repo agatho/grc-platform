@@ -216,6 +216,76 @@ export async function withUserReadContext<T>(
 }
 
 /**
+ * #SEC-CTXLESS-ORG — read (or write) org-scoped rows OUTSIDE an established
+ * request context, with `app.current_org_id` pinned deterministically.
+ *
+ * Why this exists
+ * ---------------
+ * Some code reads org-scoped, RLS-protected tables from paths that do NOT run
+ * inside `withAuth`'s request-scoped context (so the `db` proxy is NOT routed to
+ * a context-pinned connection). The proven case is the module-guard cache
+ * (`packages/auth/src/cache/module-config-cache.ts`): `requireModule` runs early
+ * in the pipeline and, whenever the ambient request context is not (yet)
+ * established, its context-less `module_config` read matches no RLS policy under
+ * `grc_app` and returns 0 rows SILENTLY → `requireModule` answers a bogus 404
+ * even though the module is enabled in the DB. Same failure class as the
+ * loadRoles / session-refresh bugs (#406/#412), same remedy: pin the GUC on the
+ * exact connection the query runs on.
+ *
+ * Mechanism (deterministic, connection-pinned)
+ * --------------------------------------------
+ * Reserve ONE connection, set `app.current_org_id` (and optionally
+ * `app.current_user_id`) at SESSION level on THAT connection, build a drizzle
+ * client bound to it, run `fn`, then scrub the GUCs and release. Because
+ * `set_config` and the query run on the same reserved connection they always
+ * observe the same GUC — independent of pool routing, the `db` proxy, or the
+ * ambient request context (if any). Nesting inside a live request is safe: this
+ * reserves its OWN connection, so it never disturbs the request's pinned one.
+ *
+ * REQUEST pool (not `baseClient`) on purpose: org-scoped RLS policies vary in
+ * shape — many still cast `current_setting('app.current_org_id', true)::uuid`
+ * WITHOUT a NULLIF guard (e.g. `rls_module_config`), so an `''::uuid` THROWS.
+ * `releaseRequestContext` scrubs request-pool connections to `''` at rest, and
+ * the request pool is NEVER used context-less (every reserve re-sets the GUC),
+ * so a scrubbed `''` here is harmless. A base-pool connection, by contrast, is
+ * used context-less by background jobs/public routes — leaving `''` on it would
+ * poison those reads. Under the dev/CI superuser (`grc`) RLS is bypassed and the
+ * helper behaves like a plain read/write.
+ */
+export async function withOrgReadContext<T>(
+  orgId: string,
+  fn: (db: PostgresJsDatabase<typeof schema>) => Promise<T>,
+  opts?: { userId?: string | null },
+): Promise<T> {
+  const reserved = await requestClient.reserve();
+  try {
+    await reserved`SELECT
+      set_config('app.current_org_id',  ${orgId},               false),
+      set_config('app.current_user_id', ${opts?.userId ?? ""},  false)`;
+    // drizzle's postgres-js driver reads client.options.parsers/serializers at
+    // construction; reserved connections don't expose `.options`, so borrow the
+    // parent pool's (identical config) — same trick as reserveAndConfigure.
+    const r = reserved as unknown as { options?: unknown };
+    if (r.options === undefined) {
+      r.options = (requestClient as unknown as { options: unknown }).options;
+    }
+    const reservedDb = drizzle(reserved, { schema });
+    return await fn(reservedDb);
+  } finally {
+    try {
+      // Scrub back to '' — safe on the request pool (never read context-less;
+      // every reserve re-sets the GUC before use).
+      await reserved`SELECT
+        set_config('app.current_org_id',  '', false),
+        set_config('app.current_user_id', '', false)`;
+    } catch {
+      // Ignore — releasing the connection is what actually matters.
+    }
+    reserved.release();
+  }
+}
+
+/**
  * Wrapper form: run `fn` with an established request context and guaranteed
  * release. Use when the caller can enclose the work in a callback (tests,
  * scripts, or any future non-Next entrypoint). API routes use the enterWith +

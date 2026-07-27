@@ -1,7 +1,7 @@
 // Sprint 1.3: Module Config Cache — In-memory cache with 5-minute TTL
 // Used by requireModule middleware for fast module status lookups.
 
-import { db } from "@grc/db";
+import { withOrgReadContext } from "@grc/db";
 import { moduleConfig, moduleDefinition } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import type { ModuleKey, ModuleUiStatus } from "@grc/shared";
@@ -53,34 +53,50 @@ export async function get(
     return cached.data;
   }
 
-  // Cache miss or expired — query DB
-  const rows = await db
-    .select({
-      moduleKey: moduleConfig.moduleKey,
-      uiStatus: moduleConfig.uiStatus,
-      isDataActive: moduleConfig.isDataActive,
-      config: moduleConfig.config,
-      enabledAt: moduleConfig.enabledAt,
-      licenseTier: moduleConfig.licenseTier,
-      displayNameDe: moduleDefinition.displayNameDe,
-      displayNameEn: moduleDefinition.displayNameEn,
-      descriptionDe: moduleDefinition.descriptionDe,
-      descriptionEn: moduleDefinition.descriptionEn,
-      icon: moduleDefinition.icon,
-      navPath: moduleDefinition.navPath,
-      navSection: moduleDefinition.navSection,
-      navOrder: moduleDefinition.navOrder,
-      requiresModules: moduleDefinition.requiresModules,
-    })
-    .from(moduleConfig)
-    .innerJoin(
-      moduleDefinition,
-      eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
-    )
-    .where(
-      and(eq(moduleConfig.orgId, orgId), eq(moduleConfig.moduleKey, moduleKey)),
-    )
-    .limit(1);
+  // Cache miss or expired — query DB.
+  //
+  // #SEC-CTXLESS-ORG: `module_config` is org-scoped and RLS-protected (policy
+  // `rls_module_config` casts `current_setting('app.current_org_id')::uuid`
+  // WITHOUT a NULLIF guard). requireModule runs early in the request pipeline
+  // and this read must NOT depend on whether the ambient request-scoped RLS
+  // context happens to be established yet — otherwise, under the non-superuser
+  // runtime role `grc_app`, a context-less read matches no policy, returns 0
+  // rows silently, and requireModule answers a bogus 404 for an enabled module.
+  // We know the orgId (it is passed to requireModule), so we pin it on a
+  // dedicated reserved connection for exactly this read. (`moduleDefinition` is
+  // a global, non-RLS table; only the `module_config` side needs the context.)
+  const rows = await withOrgReadContext(orgId, (rdb) =>
+    rdb
+      .select({
+        moduleKey: moduleConfig.moduleKey,
+        uiStatus: moduleConfig.uiStatus,
+        isDataActive: moduleConfig.isDataActive,
+        config: moduleConfig.config,
+        enabledAt: moduleConfig.enabledAt,
+        licenseTier: moduleConfig.licenseTier,
+        displayNameDe: moduleDefinition.displayNameDe,
+        displayNameEn: moduleDefinition.displayNameEn,
+        descriptionDe: moduleDefinition.descriptionDe,
+        descriptionEn: moduleDefinition.descriptionEn,
+        icon: moduleDefinition.icon,
+        navPath: moduleDefinition.navPath,
+        navSection: moduleDefinition.navSection,
+        navOrder: moduleDefinition.navOrder,
+        requiresModules: moduleDefinition.requiresModules,
+      })
+      .from(moduleConfig)
+      .innerJoin(
+        moduleDefinition,
+        eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
+      )
+      .where(
+        and(
+          eq(moduleConfig.orgId, orgId),
+          eq(moduleConfig.moduleKey, moduleKey),
+        ),
+      )
+      .limit(1),
+  );
 
   if (rows.length === 0) {
     return null;
