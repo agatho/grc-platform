@@ -20,8 +20,8 @@ async function GET__ctx(req: Request) {
     SELECT
       count(*)::int as total_tasks,
       count(*) FILTER (WHERE status = 'open')::int as open_tasks,
-      count(*) FILTER (WHERE status = 'overdue' OR (due_date < now() AND status != 'completed'))::int as overdue_tasks,
-      count(*) FILTER (WHERE status = 'completed')::int as completed_tasks
+      count(*) FILTER (WHERE status = 'overdue' OR (due_date < now() AND status NOT IN ('done', 'cancelled')))::int as overdue_tasks,
+      count(*) FILTER (WHERE status = 'done')::int as completed_tasks
     FROM task WHERE org_id = ${ctx.orgId} AND assignee_id = ${ctx.userId}
   `);
 
@@ -29,16 +29,16 @@ async function GET__ctx(req: Request) {
   const [riskSummary] = await db.execute(sql`
     SELECT
       count(*)::int as total_risks,
-      count(*) FILTER (WHERE risk_level IN ('critical', 'high'))::int as high_priority_risks
-    FROM risk WHERE org_id = ${ctx.orgId} AND owner_id = ${ctx.userId}
+      count(*) FILTER (WHERE risk_score_residual >= 15)::int as high_priority_risks
+    FROM risk WHERE org_id = ${ctx.orgId} AND owner_id = ${ctx.userId} AND deleted_at IS NULL
   `);
 
   // Controls owned
   const [controlSummary] = await db.execute(sql`
     SELECT
       count(*)::int as total_controls,
-      count(*) FILTER (WHERE effectiveness = 'effective')::int as effective
-    FROM control WHERE org_id = ${ctx.orgId} AND owner_id = ${ctx.userId}
+      count(*) FILTER (WHERE status = 'effective')::int as effective
+    FROM control WHERE org_id = ${ctx.orgId} AND owner_id = ${ctx.userId} AND deleted_at IS NULL
   `);
 
   return Response.json({
