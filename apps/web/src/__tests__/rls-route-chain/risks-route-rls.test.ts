@@ -68,6 +68,7 @@ const h = vi.hoisted(() => ({
   sessionEmail: "" as string | null,
   sessionName: "" as string | null,
   currentOrgId: "" as string | null,
+  roles: [] as Array<{ orgId: string; role: string }>,
   afterCbs: [] as Array<() => unknown | Promise<unknown>>,
 }));
 
@@ -79,6 +80,7 @@ vi.mock("@/auth", () => ({
             id: h.sessionUserId,
             email: h.sessionEmail,
             name: h.sessionName,
+            roles: h.roles,
           },
         }
       : null,
@@ -114,6 +116,7 @@ let orgBId = "";
 let userAId = "";
 const riskAIds: string[] = [];
 const riskBIds: string[] = [];
+const createdRiskIds: string[] = [];
 
 function makeBaseStore(): RequestDbStore {
   return { db: baseDb, reserved: null, orgId: "", userId: "", released: true };
@@ -135,6 +138,29 @@ async function callRisksGet(): Promise<{
   )) as Response;
   expect(res.status).toBe(200);
   return res.json();
+}
+
+/**
+ * Invoke the REAL `POST /api/v1/risks` inside the same outer request frame. This
+ * exercises `withAuditContext` -> `db.transaction()` on the reserved connection —
+ * the path that regressed with `this.client.begin is not a function` once the
+ * run()+mutate fix made the reserved connection the request-active one.
+ */
+async function callRisksPost(title: string): Promise<Response> {
+  const { POST } = await import("@/app/api/v1/risks/route");
+  const req = new Request("http://localhost/api/v1/risks", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      title,
+      description: "rls-route-chain regression",
+      riskCategory: "operational",
+      riskSource: "erm",
+    }),
+  });
+  return (await requestDbStorage.run(makeBaseStore(), () =>
+    POST(req, undefined as never),
+  )) as Response;
 }
 
 describe("#SEC-F01b-RUN risks route under grc_app (real withErrorHandler→withAuth→db)", () => {
@@ -250,7 +276,7 @@ describe("#SEC-F01b-RUN risks route under grc_app (real withErrorHandler→withA
   });
 
   afterAll(async () => {
-    const allRiskIds = [...riskAIds, ...riskBIds];
+    const allRiskIds = [...riskAIds, ...riskBIds, ...createdRiskIds];
     await suClient.unsafe(`SET session_replication_role = 'replica'`);
     if (allRiskIds.length) {
       await adminDb.delete(risk).where(inArray(risk.id, allRiskIds));
@@ -306,5 +332,28 @@ describe("#SEC-F01b-RUN risks route under grc_app (real withErrorHandler→withA
     expect(body.data).toHaveLength(2);
     expect(body.data.every((r) => r.orgId === orgBId)).toBe(true);
     expect(body.data.some((r) => riskAIds.includes(r.id))).toBe(false);
+  });
+
+  it("Org A: POST create succeeds via withAuditContext transaction on the reserved connection (regression: this.client.begin is not a function)", async () => {
+    h.sessionUserId = userAId;
+    h.sessionEmail = "f01brun@test.dev";
+    h.sessionName = "F01bRUN User";
+    h.roles = [{ orgId: orgAId, role: "admin" }];
+    h.currentOrgId = orgAId;
+
+    const title = `F01bRUN Created ${suffix}`;
+    const res = await callRisksPost(title);
+    const body = (await res.json()) as {
+      data?: { id?: string; orgId?: string; title?: string };
+    };
+
+    // Without begin/savepoint on the reserved connection this is a 500
+    // ("this.client.begin is not a function"). With the fix it is a 201 and the
+    // whole workItem+risk transaction committed on the pinned connection.
+    expect(res.status, JSON.stringify(body)).toBe(201);
+    expect(body.data?.id).toBeTruthy();
+    expect(body.data?.orgId).toBe(orgAId);
+    expect(body.data?.title).toBe(title);
+    if (body.data?.id) createdRiskIds.push(body.data.id);
   });
 });
