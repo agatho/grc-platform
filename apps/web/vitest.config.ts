@@ -13,7 +13,12 @@ export default defineConfig({
     // Raised to 15s (2026-07-10) — real hangs still fail fast enough.
     testTimeout: 15000,
     include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
-    exclude: ["src/__tests__/api/helpers/**"],
+    // rls-route-chain needs a live DB + grc_app (APP_DATABASE_URL); it runs via
+    // vitest.rls.config.ts in the integration-tests CI job, not the DB-less unit run.
+    exclude: [
+      "src/__tests__/api/helpers/**",
+      "src/__tests__/rls-route-chain/**",
+    ],
     // `environmentMatchGlobs` was removed in vitest 4; component tests now
     // pick up jsdom via the `@vitest-environment jsdom` pragma at the top of
     // each .test.tsx file. Re-add a `projects`-based mapping later if needed.

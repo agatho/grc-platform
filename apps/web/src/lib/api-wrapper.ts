@@ -85,6 +85,64 @@ export function withErrorHandler<TCtx = unknown>(
   routeLabel?: string,
 ): RouteHandler<TCtx> {
   return async (req, ctx) => {
+    // #SEC-F01b-RUN — Establish the request-scoped RLS context frame HERE, once,
+    // around every wrapped handler. We seed the AsyncLocalStorage with a MUTABLE
+    // initial store (`db: baseDb`, no reserved connection) via
+    // `requestDbStorage.run(...)`. Later, withAuth → establishRequestScopedContext
+    // reserves an org/user-pinned connection and MUTATES this same store object
+    // (`store.db = reservedDb`), instead of calling `enterWith`.
+    //
+    // Why: under the Next App Router runtime, `enterWith()` called inside an
+    // awaited helper (withAuth) is silently dropped when control returns to the
+    // route body across the `await` boundary — so the handler's `db` queries ran
+    // context-less and RLS filtered every row (200 with `{data:[],total:0}`).
+    // `run()` establishes the ALS frame for the ENTIRE async execution of the
+    // handler, and a mutation of the store object is observed by the `db` proxy
+    // on every property access — which is reliable. (Empirically verified: a
+    // nested `enterWith` under an enclosing `run()` does NOT propagate, but a
+    // mutation of the run()-bound store object does.)
+    // @grc/db is imported DYNAMICALLY (not a top-level named import) so the many
+    // unit tests that `vi.mock("@grc/db", …)` with just a `db` stub don't trip
+    // Vitest's strict "no <export> defined on the mock" guard on
+    // requestDbStorage/baseDb. When the module is mocked (no requestDbStorage /
+    // baseDb) we skip the ALS frame and run the handler directly — exactly the
+    // pre-existing behaviour those tests expect (establishRequestScopedContext
+    // no-ops the same way). In the real runtime both are defined and the
+    // run()+mutate frame is established. Same dynamic-import rationale as api.ts.
+    let requestDbStorage:
+      { run: <T>(store: unknown, cb: () => T) => T } | undefined;
+    let baseDb: unknown;
+    try {
+      const dbmod = (await import("@grc/db")) as {
+        requestDbStorage?: { run: <T>(store: unknown, cb: () => T) => T };
+        baseDb?: unknown;
+      };
+      requestDbStorage = dbmod.requestDbStorage;
+      baseDb = dbmod.baseDb;
+    } catch {
+      // @grc/db is mocked without requestDbStorage/baseDb (Vitest's strict mock
+      // guard throws on the missing named export) — run without the ALS frame,
+      // exactly like the pre-existing behaviour. Same try/catch rationale as
+      // establishRequestScopedContext in api.ts.
+    }
+    if (
+      !requestDbStorage ||
+      typeof requestDbStorage.run !== "function" ||
+      !baseDb
+    ) {
+      return runHandler(req, ctx);
+    }
+    const initialStore = {
+      db: baseDb,
+      reserved: null,
+      orgId: "",
+      userId: "",
+      released: true,
+    };
+    return requestDbStorage.run(initialStore, () => runHandler(req, ctx));
+  };
+
+  async function runHandler(req: Request, ctx: TCtx): Promise<Response> {
     const requestId = getRequestId(req);
     const label = routeLabel ?? `${req.method} ${new URL(req.url).pathname}`;
 
@@ -260,5 +318,5 @@ export function withErrorHandler<TCtx = unknown>(
         },
       );
     }
-  };
+  }
 }

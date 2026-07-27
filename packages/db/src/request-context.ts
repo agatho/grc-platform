@@ -61,7 +61,12 @@ type ReservedConnection = Awaited<ReturnType<typeof requestClient.reserve>>;
 
 export interface RequestDbStore {
   db: PostgresJsDatabase<typeof schema>;
-  reserved: ReservedConnection;
+  // Nullable: withErrorHandler (#SEC-F01b-RUN) seeds an INITIAL store with no
+  // reserved connection (`db: baseDb`, `reserved: null`) and enters it via
+  // `requestDbStorage.run(...)`. withAuth → establishRequestScopedContext then
+  // MUTATES that same store, swapping in the reserved connection. Stores created
+  // by reserveAndConfigure always carry a real reserved connection.
+  reserved: ReservedConnection | null;
   orgId: string;
   userId: string;
   released: boolean;
@@ -137,11 +142,16 @@ export async function releaseRequestContext(
 ): Promise<void> {
   if (store.released) return;
   store.released = true;
+  // Defensive: an initial (baseDb) store never carries a reserved connection.
+  // Such a store is never handed to releaseRequestContext, but guard anyway so
+  // a future caller can't NPE on `store.reserved`.
+  if (!store.reserved) return;
+  const reserved = store.reserved;
   try {
     // Best-effort scrub (PII + org id). Not strictly required — the request
     // pool is never used context-less and every reserve re-sets all GUCs — but
     // it keeps idle pooled connections free of user identity.
-    await store.reserved`SELECT
+    await reserved`SELECT
       set_config('app.current_org_id',     '', false),
       set_config('app.current_user_id',    '', false),
       set_config('app.current_user_email', '', false),
@@ -149,7 +159,7 @@ export async function releaseRequestContext(
   } catch {
     // Ignore — releasing the connection is what actually matters.
   } finally {
-    store.reserved.release();
+    reserved.release();
   }
 }
 

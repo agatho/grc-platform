@@ -83,14 +83,25 @@ async function establishRequestScopedContext(ctx: {
   // `db` stub don't fail the strict missing-named-export check. When the module
   // is mocked (no `reserveRequestContext`), we simply skip context setup — the
   // test then exercises withAuth against its mocked `db`, exactly as before.
-  let reserved: { store: unknown; release: () => Promise<void> } | undefined;
+  type MutableStore = {
+    db: unknown;
+    reserved: unknown;
+    orgId: string;
+    userId: string;
+    released: boolean;
+  };
+  let reserved:
+    { store: MutableStore; release: () => Promise<void> } | undefined;
   try {
     const dbmod = (await import("@grc/db")) as {
       reserveRequestContext?: (c: typeof ctx) => Promise<{
-        store: unknown;
+        store: MutableStore;
         release: () => Promise<void>;
       }>;
-      requestDbStorage?: { enterWith: (s: unknown) => void };
+      requestDbStorage?: {
+        enterWith: (s: unknown) => void;
+        getStore: () => MutableStore | undefined;
+      };
     };
     const reserveRequestContext = dbmod.reserveRequestContext;
     const requestDbStorage = dbmod.requestDbStorage;
@@ -100,16 +111,43 @@ async function establishRequestScopedContext(ctx: {
     }
 
     reserved = await reserveRequestContext(ctx);
+
+    // #SEC-F01b-RUN — Preferred path: withErrorHandler already opened a
+    // `requestDbStorage.run(...)` frame around this handler, so there is a
+    // mutable store bound to the current async context. MUTATE it (swap in the
+    // reserved, org/user-pinned connection). Because `run()` establishes the ALS
+    // frame for the WHOLE async execution and the `db` proxy reads `store.db`
+    // dynamically, this propagates reliably back into the route body — unlike
+    // `enterWith`, which Next silently drops across the withAuth `await`.
+    const current = requestDbStorage.getStore();
+    if (current) {
+      current.db = reserved.store.db;
+      current.reserved = reserved.store.reserved;
+      current.orgId = reserved.store.orgId;
+      current.userId = reserved.store.userId;
+      current.released = false;
+      try {
+        after(reserved.release);
+      } catch {
+        // Not inside a Next request scope (e.g. an integration test invoking the
+        // handler directly). The reserved connection is released when the pool
+        // closes; production always has after() inside a request, so there is no
+        // per-request leak. The store stays mutated so the chain still works.
+      }
+      return;
+    }
+
+    // Fallback: no run() frame (route NOT wrapped in withErrorHandler, or a
+    // non-Next caller). Use the previous enterWith best-effort path — it may not
+    // propagate under Next, but there is no run-bound store to mutate here. Such
+    // routes are listed in the fix PR's coverage analysis; they should adopt
+    // withErrorHandler.
     try {
       after(reserved.release);
     } catch {
-      // Not inside a Next request scope (e.g. a direct unit-test call to
-      // withAuth). Release now and skip enterWith so nothing is pinned to a
-      // connection we just handed back.
       await reserved.release();
       return;
     }
-    // after() is registered → safe to pin the reserved client to this request.
     requestDbStorage.enterWith(reserved.store);
   } catch (err) {
     if (reserved) {
