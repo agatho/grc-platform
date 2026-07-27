@@ -738,6 +738,13 @@ jobs:
         # neuen high/critical-Advisory, siehe scripts/audit-gate.mjs.
         run: node scripts/audit-gate.mjs
 
+      - name: RLS request-context ratchet
+        # #SEC-F01b-RUN / PR #414: failt, sobald eine NEUE Route authentifizierte
+        # bare `db.*`-Reads ohne withErrorHandler-/Read-Context-Frame macht (liefe
+        # kontextlos → RLS-gefiltert leer / 500). Baseline darf nur schrumpfen,
+        # siehe scripts/route-rls-context-baseline.txt.
+        run: node scripts/check-route-rls-context.mjs
+
       - name: Check for leaked secrets
         uses: trufflesecurity/trufflehog@v3.95.9
         with:

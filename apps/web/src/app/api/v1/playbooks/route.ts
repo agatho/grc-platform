@@ -10,16 +10,21 @@ import {
   createPlaybookTemplateSchema,
   playbookListQuerySchema,
 } from "@grc/shared";
-import { eq, and, ilike, sql, desc } from "drizzle-orm";
+import { eq, and, ilike, inArray, sql, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/playbooks — List playbook templates
-export async function GET(req: Request) {
+// #SEC-F01b-RUN: wrapped in withErrorHandler so the request-scoped RLS context
+// frame is opened around this handler (withAuth mutates it). Without the frame
+// the bare `db.*` reads below ran context-less → RLS-filtered empty. The wrapper
+// also turns the previously empty-body 500 into a structured problem+json.
+export const GET = withErrorHandler(async (req: Request) => {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -79,7 +84,7 @@ export async function GET(req: Request) {
         const [taskCountResult] = await db
           .select({ count: sql<number>`count(*)::int` })
           .from(playbookTaskTemplate)
-          .where(sql`${playbookTaskTemplate.phaseId} = ANY(${phaseIds})`);
+          .where(inArray(playbookTaskTemplate.phaseId, phaseIds));
         taskCount = taskCountResult?.count ?? 0;
       }
 
@@ -105,7 +110,7 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(allRows.length / limit),
     },
   });
-}
+});
 
 // POST /api/v1/playbooks — Create playbook template with phases + tasks
 export async function POST(req: Request) {

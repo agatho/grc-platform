@@ -2,12 +2,13 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 /**
  * GET /api/v1/esg/erm-stats
  * Returns summary stats for ESG risk IROs and their ERM sync status.
  */
-export async function GET(req: Request) {
+async function GET__ctx(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -31,3 +32,9 @@ export async function GET(req: Request) {
     },
   });
 }
+
+// #SEC-F01b-RUN: wrap handlers so the request-scoped RLS context frame
+// (opened by withErrorHandler, mutated by withAuth) is present around the bare
+// db.* reads above — otherwise they run context-less under grc_app and RLS
+// filters/faults. Also converts prior empty-body 500s to structured problem+json.
+export const GET = withErrorHandler(GET__ctx);

@@ -6,6 +6,7 @@ import { withAuth } from "@/lib/api";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // Strip HTML/script tags from user input
 const safeString = (max: number) =>
@@ -25,7 +26,7 @@ const createTagSchema = z.object({
   description: safeString(1000).optional(),
 });
 
-export async function GET(req: Request) {
+async function GET__ctx(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -53,7 +54,7 @@ export async function GET(req: Request) {
   });
 }
 
-export async function POST(req: Request) {
+async function POST__ctx(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -88,3 +89,10 @@ export async function POST(req: Request) {
     { status: 201 },
   );
 }
+
+// #SEC-F01b-RUN: wrap handlers so the request-scoped RLS context frame
+// (opened by withErrorHandler, mutated by withAuth) is present around the bare
+// db.* reads above — otherwise they run context-less under grc_app and RLS
+// filters/faults. Also converts prior empty-body 500s to structured problem+json.
+export const GET = withErrorHandler(GET__ctx);
+export const POST = withErrorHandler(POST__ctx);

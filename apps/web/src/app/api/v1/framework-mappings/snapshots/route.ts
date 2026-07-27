@@ -2,8 +2,9 @@ import { db, frameworkCoverageSnapshot } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, count, desc } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+async function GET__ctx(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
@@ -22,3 +23,9 @@ export async function GET(req: Request) {
   ]);
   return paginatedResponse(items, total, page, limit);
 }
+
+// #SEC-F01b-RUN: wrap handlers so the request-scoped RLS context frame
+// (opened by withErrorHandler, mutated by withAuth) is present around the bare
+// db.* reads above — otherwise they run context-less under grc_app and RLS
+// filters/faults. Also converts prior empty-body 500s to structured problem+json.
+export const GET = withErrorHandler(GET__ctx);
