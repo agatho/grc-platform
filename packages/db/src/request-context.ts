@@ -48,7 +48,7 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { requestClient, schema } from "./index";
+import { requestClient, baseClient, schema } from "./index";
 
 export interface RequestContextInput {
   orgId: string;
@@ -150,6 +150,68 @@ export async function releaseRequestContext(
     // Ignore — releasing the connection is what actually matters.
   } finally {
     store.reserved.release();
+  }
+}
+
+/**
+ * #SEC-AUTH-BOOTSTRAP — read a user's OWN rows under the migration-0380
+ * `uor_self_read` policy, WITHOUT relying on the `db` proxy, `db.transaction`,
+ * or AsyncLocalStorage routing.
+ *
+ * Why this exists
+ * ---------------
+ * loadRoles / resolveAccessLogOrgId (packages/auth) and the NextAuth `session`
+ * callback's fresh-role fetch (apps/web/src/auth.ts) run OUTSIDE any
+ * request-scoped context — during `authorize()` and, crucially, on every
+ * `/api/auth/session` read, which is served by NextAuth's own handler and is
+ * NEVER wrapped by `withAuth`. Under the non-superuser runtime role `grc_app`
+ * (RLS enforced) a context-less read of `user_organization_role` matches no
+ * policy (both `app.current_org_id` and `app.current_user_id` are unset) and
+ * returns 0 rows SILENTLY — so the session ends up with `roles: []` and every
+ * data endpoint answers 400 no-org-selected. (See the empirical root-cause
+ * write-up in the fix PR.)
+ *
+ * Mechanism (deterministic, connection-pinned)
+ * --------------------------------------------
+ * Reserve ONE connection from the BASE pool, set `app.current_user_id` at
+ * SESSION level on THAT exact connection, build a drizzle client bound to it,
+ * run `fn`, then scrub the GUC and release. Because `set_config` and the SELECT
+ * both run on the same reserved connection, they are guaranteed to observe the
+ * same GUC — independent of pool routing, the `db` proxy, or transaction
+ * atomicity.
+ *
+ * BASE pool (not `requestClient`) on purpose: request-pool connections carry
+ * `app.current_org_id = ''` at rest (scrubbed after each request), and the
+ * `org_isolation` policy casts it as `''::uuid`, which THROWS. Base-pool
+ * connections never set that GUC, so it stays NULL → `NULL::uuid` → no match,
+ * no error. Under the dev/CI superuser (`grc`) RLS is bypassed and the helper
+ * behaves exactly like a plain read.
+ */
+export async function withUserReadContext<T>(
+  userId: string,
+  fn: (db: PostgresJsDatabase<typeof schema>) => Promise<T>,
+): Promise<T> {
+  const reserved = await baseClient.reserve();
+  try {
+    await reserved`SELECT set_config('app.current_user_id', ${userId}, false)`;
+    // drizzle's postgres-js driver reads client.options.parsers/serializers at
+    // construction; reserved connections don't expose `.options`, so borrow the
+    // parent pool's (identical config) — same trick as reserveAndConfigure.
+    const r = reserved as unknown as { options?: unknown };
+    if (r.options === undefined) {
+      r.options = (baseClient as unknown as { options: unknown }).options;
+    }
+    const reservedDb = drizzle(reserved, { schema });
+    return await fn(reservedDb);
+  } finally {
+    try {
+      // Scrub back to '' (NULLIF-safe for uor_self_read; current_org_id is never
+      // touched here, so org_isolation stays NULL-safe on the base pool).
+      await reserved`SELECT set_config('app.current_user_id', '', false)`;
+    } catch {
+      // Ignore — releasing the connection is what actually matters.
+    }
+    reserved.release();
   }
 }
 

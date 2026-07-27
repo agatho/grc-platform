@@ -5,7 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { compare } from "bcryptjs";
 import { eq, and, isNull, sql, inArray } from "drizzle-orm";
-import { db } from "@grc/db";
+import { db, withUserReadContext } from "@grc/db";
 import { user, userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
 import type { RoleAssignment } from "./types";
 import type { Provider } from "next-auth/providers";
@@ -102,37 +102,16 @@ export async function logAccessEvent(params: {
   });
 }
 
-/**
- * Auth-bootstrap RLS context (#SEC-AUTH-BOOTSTRAP).
- *
- * loadRoles / resolveAccessLogOrgId read `user_organization_role` during
- * `authorize()` and SSO JIT provisioning — code paths that run OUTSIDE any
- * request-scoped context (Auth.js-internal, no `withAuth`). Under the
- * non-superuser runtime role `grc_app` the table's RLS is enforced, and the
- * org-scoped policies match nothing because no `app.current_org_id` is set yet
- * (the org is exactly what we are trying to resolve — henne-ei).
- *
- * Migration 0380 adds a permissive `uor_self_read` SELECT policy that lets a
- * user read THEIR OWN rows via `app.current_user_id`. This helper sets that GUC
- * (SET LOCAL, transaction-scoped, auto-reverting) so the self-read policy
- * applies. On the base pool (login) the transaction reserves a connection,
- * BEGINs, sets the local GUC, runs the read, and COMMITs — leaving the pooled
- * connection clean. Under the dev/CI superuser (`grc`, BYPASSRLS) the GUC is
- * harmless and the query behaves exactly as before.
- */
-async function withUserReadContext<T>(
-  userId: string,
-  fn: (tx: typeof db) => Promise<T>,
-): Promise<T> {
-  return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT set_config('app.current_user_id', ${userId}, true)`,
-    );
-    return fn(tx as unknown as typeof db);
-  });
-}
+// Auth-bootstrap RLS context (#SEC-AUTH-BOOTSTRAP) is provided by the shared
+// `withUserReadContext` helper in @grc/db (packages/db/src/request-context.ts).
+// It reserves a dedicated BASE-pool connection and sets `app.current_user_id`
+// on THAT exact connection, so the migration-0380 `uor_self_read` policy applies
+// deterministically — without depending on the `db` proxy or db.transaction
+// atomicity. loadRoles / resolveAccessLogOrgId (which run during authorize() and
+// SSO JIT, outside any request context) and the NextAuth session callback's
+// fresh-role fetch all route through it.
 
-async function loadRoles(userId: string): Promise<RoleAssignment[]> {
+export async function loadRoles(userId: string): Promise<RoleAssignment[]> {
   const rows = await withUserReadContext(userId, (tx) =>
     tx
       .select({
