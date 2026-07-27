@@ -103,22 +103,18 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
     otherOrgId = other.id;
 
     // Primary org: erm ENABLED. Other org: erm ENABLED too (for isolation test).
-    await adminDb.db
-      .insert(moduleConfig)
-      .values({
-        orgId,
-        moduleKey: "erm",
-        uiStatus: "enabled",
-        isDataActive: true,
-      });
-    await adminDb.db
-      .insert(moduleConfig)
-      .values({
-        orgId: otherOrgId,
-        moduleKey: "erm",
-        uiStatus: "enabled",
-        isDataActive: true,
-      });
+    await adminDb.db.insert(moduleConfig).values({
+      orgId,
+      moduleKey: "erm",
+      uiStatus: "enabled",
+      isDataActive: true,
+    });
+    await adminDb.db.insert(moduleConfig).values({
+      orgId: otherOrgId,
+      moduleKey: "erm",
+      uiStatus: "enabled",
+      isDataActive: true,
+    });
   });
 
   afterAll(async () => {
