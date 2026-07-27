@@ -84,31 +84,55 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
 
     const [org] = await adminDb.db
       .insert(organization)
-      .values({ name: `Ctxless Org ${suffix}`, type: "subsidiary", country: "DEU" })
+      .values({
+        name: `Ctxless Org ${suffix}`,
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning({ id: organization.id });
     orgId = org.id;
 
     const [other] = await adminDb.db
       .insert(organization)
-      .values({ name: `Ctxless Other ${suffix}`, type: "subsidiary", country: "DEU" })
+      .values({
+        name: `Ctxless Other ${suffix}`,
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning({ id: organization.id });
     otherOrgId = other.id;
 
     // Primary org: erm ENABLED. Other org: erm ENABLED too (for isolation test).
     await adminDb.db
       .insert(moduleConfig)
-      .values({ orgId, moduleKey: "erm", uiStatus: "enabled", isDataActive: true });
+      .values({
+        orgId,
+        moduleKey: "erm",
+        uiStatus: "enabled",
+        isDataActive: true,
+      });
     await adminDb.db
       .insert(moduleConfig)
-      .values({ orgId: otherOrgId, moduleKey: "erm", uiStatus: "enabled", isDataActive: true });
+      .values({
+        orgId: otherOrgId,
+        moduleKey: "erm",
+        uiStatus: "enabled",
+        isDataActive: true,
+      });
   });
 
   afterAll(async () => {
     await adminDb.client.unsafe(`SET session_replication_role = 'replica'`);
     for (const id of [orgId, otherOrgId]) {
-      await adminDb.client.unsafe(`DELETE FROM audit_log WHERE org_id = '${id}'`);
-      await adminDb.client.unsafe(`DELETE FROM module_config WHERE org_id = '${id}'`);
-      await adminDb.client.unsafe(`DELETE FROM organization WHERE id = '${id}'`);
+      await adminDb.client.unsafe(
+        `DELETE FROM audit_log WHERE org_id = '${id}'`,
+      );
+      await adminDb.client.unsafe(
+        `DELETE FROM module_config WHERE org_id = '${id}'`,
+      );
+      await adminDb.client.unsafe(
+        `DELETE FROM organization WHERE id = '${id}'`,
+      );
     }
     await adminDb.client.unsafe(`SET session_replication_role = 'origin'`);
 
@@ -165,14 +189,22 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
     // A brand-new org with no module_config at all.
     const [ghost] = await adminDb.db
       .insert(organization)
-      .values({ name: `Ctxless Ghost ${suffix}`, type: "subsidiary", country: "DEU" })
+      .values({
+        name: `Ctxless Ghost ${suffix}`,
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning({ id: organization.id });
     moduleConfigCache.clearAll();
     const res = await requireModule("erm", ghost.id, "GET");
     expect(res?.status).toBe(404);
     await adminDb.client.unsafe(`SET session_replication_role = 'replica'`);
-    await adminDb.client.unsafe(`DELETE FROM audit_log WHERE org_id = '${ghost.id}'`);
-    await adminDb.client.unsafe(`DELETE FROM organization WHERE id = '${ghost.id}'`);
+    await adminDb.client.unsafe(
+      `DELETE FROM audit_log WHERE org_id = '${ghost.id}'`,
+    );
+    await adminDb.client.unsafe(
+      `DELETE FROM organization WHERE id = '${ghost.id}'`,
+    );
     await adminDb.client.unsafe(`SET session_replication_role = 'origin'`);
   });
 
@@ -192,13 +224,11 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
     // withOrgContext now delegates entirely to runWithRequestContext; assert the
     // delegation target returns org-scoped data through the `db` proxy where a
     // context-less read would see nothing.
-    const rows = await runWithRequestContext(
-      { orgId, userId: "" },
-      () =>
-        db
-          .select({ k: moduleConfig.moduleKey })
-          .from(moduleConfig)
-          .where(eq(moduleConfig.orgId, orgId)),
+    const rows = await runWithRequestContext({ orgId, userId: "" }, () =>
+      db
+        .select({ k: moduleConfig.moduleKey })
+        .from(moduleConfig)
+        .where(eq(moduleConfig.orgId, orgId)),
     );
     expect(rows.length).toBeGreaterThan(0);
     expect(rows[0].k).toBe("erm");
