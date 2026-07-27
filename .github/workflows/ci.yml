@@ -193,6 +193,21 @@ jobs:
           # (The other RLS tests use their own helper clients and ignore this.)
           APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
 
+      - name: Route-chain RLS test (real withErrorHandler→withAuth→db)
+        # #SEC-F01b-RUN — drives the REAL Next route pipeline (withErrorHandler →
+        # withAuth → establishRequestScopedContext → requireModule → route db
+        # reads) under grc_app, inside an outer async-context frame that emulates
+        # the Next App Router. RED before the run()+mutate fix (0 rows), GREEN
+        # after (org rows + cross-tenant isolation). This is the coverage the
+        # isolated request-context primitives tests never had.
+        working-directory: apps/web
+        run: npm run test:rls
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+          APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
+          AUTH_SECRET: ci-build-placeholder
+          AUTH_TRUST_HOST: "true"
+
   # ────────────────────────────────────────────────
   # 3b. E2E smoke — release gate
   # ────────────────────────────────────────────────

@@ -330,9 +330,12 @@ export const schema = {
   ...entityCommentSchema,
 };
 
-// Base drizzle client over the base pool. Not exported directly — routes and
-// background code import the `db` proxy below.
+// Base drizzle client over the base pool. Routes and background code normally
+// import the `db` proxy below; `baseDb` is ALSO exported so api-wrapper.ts can
+// seed the request-scoped AsyncLocalStorage with a context-less default store
+// (see #SEC-F01b-RUN — the run()+mutate fix).
 const baseDb = drizzle(client, { schema });
+export { baseDb };
 
 // #SEC-F01b — The exported `db` is a Proxy. On every property access it checks
 // the request-scoped AsyncLocalStorage: inside an authenticated request it

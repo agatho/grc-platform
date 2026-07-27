@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest",
+    "test:rls": "vitest run --config vitest.rls.config.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:coverage": "vitest run --coverage --passWithNoTests"

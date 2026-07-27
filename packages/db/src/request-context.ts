@@ -61,7 +61,12 @@ type ReservedConnection = Awaited<ReturnType<typeof requestClient.reserve>>;
 
 export interface RequestDbStore {
   db: PostgresJsDatabase<typeof schema>;
-  reserved: ReservedConnection;
+  // Nullable: withErrorHandler (#SEC-F01b-RUN) seeds an INITIAL store with no
+  // reserved connection (`db: baseDb`, `reserved: null`) and enters it via
+  // `requestDbStorage.run(...)`. withAuth → establishRequestScopedContext then
+  // MUTATES that same store, swapping in the reserved connection. Stores created
+  // by reserveAndConfigure always carry a real reserved connection.
+  reserved: ReservedConnection | null;
   orgId: string;
   userId: string;
   released: boolean;
@@ -74,6 +79,86 @@ export const requestDbStorage = new AsyncLocalStorage<RequestDbStore>();
 /** The store active for the current request, if any. */
 export function getRequestStore(): RequestDbStore | undefined {
   return requestDbStorage.getStore();
+}
+
+/**
+ * postgres.js `reserve()` returns a bare `Sql` bound to a single connection that
+ * LACKS the pool-level `.begin` / `.savepoint` helpers — those are only assigned
+ * to the root pool `sql`. drizzle's `db.transaction()` calls
+ * `this.client.begin(...)`, so a transaction issued through the `db` proxy while
+ * a request context is active (e.g. `withAuditContext` / `withReadContext` on any
+ * write route) throws `this.client.begin is not a function`.
+ *
+ * This never surfaced before #SEC-F01b-RUN because the pre-fix `enterWith` was
+ * silently dropped under Next, so the `db` proxy fell back to the base pool for
+ * EVERY query — transactions never actually ran on a reserved connection. Now
+ * that the run()+mutate fix makes the reserved connection the active one, they
+ * do, and the reserved `Sql` must support transactions.
+ *
+ * Since the reserved `Sql` runs every query on its single pinned connection, we
+ * emulate `begin` / `savepoint` by bracketing the callback with BEGIN/COMMIT (or
+ * SAVEPOINT/RELEASE) issued on that same connection — which is exactly what a
+ * transaction on a dedicated connection is. On error we ROLLBACK and rethrow.
+ */
+function attachTransactionMethods(reserved: ReservedConnection): void {
+  const r = reserved as unknown as {
+    begin?: unknown;
+    savepoint?: unknown;
+    unsafe: (q: string) => Promise<unknown>;
+  };
+  if (typeof r.begin !== "function") {
+    r.begin = async (
+      optsOrFn: unknown,
+      maybeFn?: unknown,
+    ): Promise<unknown> => {
+      const fn = (typeof optsOrFn === "function" ? optsOrFn : maybeFn) as (
+        c: ReservedConnection,
+      ) => Promise<unknown>;
+      const opts =
+        typeof optsOrFn === "string" && optsOrFn ? ` ${optsOrFn}` : "";
+      await r.unsafe(`begin${opts}`);
+      try {
+        const res = await fn(reserved);
+        await r.unsafe("commit");
+        return res;
+      } catch (err) {
+        try {
+          await r.unsafe("rollback");
+        } catch {
+          // Surfacing the original error matters more than the rollback result.
+        }
+        throw err;
+      }
+    };
+  }
+  if (typeof r.savepoint !== "function") {
+    let spId = 0;
+    r.savepoint = async (
+      nameOrFn: unknown,
+      maybeFn?: unknown,
+    ): Promise<unknown> => {
+      const fn = (typeof nameOrFn === "function" ? nameOrFn : maybeFn) as (
+        c: ReservedConnection,
+      ) => Promise<unknown>;
+      const name =
+        typeof nameOrFn === "string" && nameOrFn
+          ? nameOrFn
+          : `drz_sp_${spId++}`;
+      await r.unsafe(`savepoint ${name}`);
+      try {
+        const res = await fn(reserved);
+        await r.unsafe(`release savepoint ${name}`);
+        return res;
+      } catch (err) {
+        try {
+          await r.unsafe(`rollback to savepoint ${name}`);
+        } catch {
+          // Ignore — the original error is what the caller needs to see.
+        }
+        throw err;
+      }
+    };
+  }
 }
 
 /**
@@ -102,6 +187,10 @@ async function reserveAndConfigure(
     if (r.options === undefined) {
       r.options = (requestClient as unknown as { options: unknown }).options;
     }
+    // Give the reserved connection working `.begin`/`.savepoint` so
+    // `db.transaction()` (withAuditContext / withReadContext on write routes)
+    // works once this connection is the request-active one.
+    attachTransactionMethods(reserved);
     const reservedDb = drizzle(reserved, { schema });
     return {
       db: reservedDb,
@@ -137,11 +226,16 @@ export async function releaseRequestContext(
 ): Promise<void> {
   if (store.released) return;
   store.released = true;
+  // Defensive: an initial (baseDb) store never carries a reserved connection.
+  // Such a store is never handed to releaseRequestContext, but guard anyway so
+  // a future caller can't NPE on `store.reserved`.
+  if (!store.reserved) return;
+  const reserved = store.reserved;
   try {
     // Best-effort scrub (PII + org id). Not strictly required — the request
     // pool is never used context-less and every reserve re-sets all GUCs — but
     // it keeps idle pooled connections free of user identity.
-    await store.reserved`SELECT
+    await reserved`SELECT
       set_config('app.current_org_id',     '', false),
       set_config('app.current_user_id',    '', false),
       set_config('app.current_user_email', '', false),
@@ -149,7 +243,7 @@ export async function releaseRequestContext(
   } catch {
     // Ignore — releasing the connection is what actually matters.
   } finally {
-    store.reserved.release();
+    reserved.release();
   }
 }
 
@@ -201,6 +295,7 @@ export async function withUserReadContext<T>(
     if (r.options === undefined) {
       r.options = (baseClient as unknown as { options: unknown }).options;
     }
+    attachTransactionMethods(reserved);
     const reservedDb = drizzle(reserved, { schema });
     return await fn(reservedDb);
   } finally {
@@ -269,6 +364,7 @@ export async function withOrgReadContext<T>(
     if (r.options === undefined) {
       r.options = (requestClient as unknown as { options: unknown }).options;
     }
+    attachTransactionMethods(reserved);
     const reservedDb = drizzle(reserved, { schema });
     return await fn(reservedDb);
   } finally {
