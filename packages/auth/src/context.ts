@@ -2,8 +2,7 @@
 // getCurrentOrgId reads the org cookie; withOrgContext sets RLS per request.
 
 import { cookies } from "next/headers";
-import { db, type Database } from "@grc/db";
-import { sql } from "drizzle-orm";
+import { db, runWithRequestContext, type Database } from "@grc/db";
 import type { Session } from "next-auth";
 
 const ORG_COOKIE = "arctos-org-id";
@@ -56,30 +55,39 @@ export async function setCurrentOrgId(orgId: string): Promise<void> {
 }
 
 /**
- * Execute a DB operation with RLS context set for the given org and user.
- * Sets PostgreSQL session variables that RLS policies and audit triggers read.
+ * Execute a DB operation with RLS + audit context set for the given org and
+ * user. Sets the PostgreSQL session variables that RLS policies and audit
+ * triggers read (`app.current_org_id`, `app.current_user_id`, and the
+ * user_email/user_name used by the audit trigger).
+ *
+ * #SEC-CTXLESS-ORG — robustness fix. The previous implementation issued four
+ * `set_config(..., is_local => true)` statements through the shared `db` proxy
+ * OUTSIDE any transaction. Each ran as its own implicit transaction, so the
+ * `LOCAL` setting was reverted the instant that statement committed — by the
+ * time `fn(db)` ran, none of the GUCs were set. Inside a `withAuth` request the
+ * call happened to work anyway, because the `db` proxy is already routed to a
+ * connection whose GUCs were pinned at session level by #406; but OUTSIDE a
+ * request (any non-`withAuth` caller) it silently produced 0-row reads under
+ * `grc_app`. We now delegate to the same proven reserved-connection mechanism:
+ * `runWithRequestContext` reserves a connection, pins ALL of org/user/email/name
+ * on it at session level, routes the `db` proxy to it for the duration of `fn`,
+ * and releases it afterwards — correct both inside and outside a request, and a
+ * no-op-safe under the dev/CI superuser (RLS bypassed).
  */
 export async function withOrgContext<T>(
   orgId: string,
   session: Session | null,
   fn: (db: Database) => Promise<T>,
 ): Promise<T> {
-  const userId = session?.user?.id ?? "";
-  const userEmail = session?.user?.email ?? "";
-  const userName = session?.user?.name ?? "";
-
-  await db.execute(
-    sql`SELECT set_config('app.current_org_id', ${orgId}, true)`,
+  return runWithRequestContext(
+    {
+      orgId,
+      userId: session?.user?.id ?? "",
+      userEmail: session?.user?.email ?? "",
+      userName: session?.user?.name ?? "",
+    },
+    // Inside runWithRequestContext the `db` proxy resolves to the reserved,
+    // context-pinned connection, so every query `fn` makes is org/user-scoped.
+    () => fn(db),
   );
-  await db.execute(
-    sql`SELECT set_config('app.current_user_id', ${userId}, true)`,
-  );
-  await db.execute(
-    sql`SELECT set_config('app.current_user_email', ${userEmail}, true)`,
-  );
-  await db.execute(
-    sql`SELECT set_config('app.current_user_name', ${userName}, true)`,
-  );
-
-  return fn(db);
 }
