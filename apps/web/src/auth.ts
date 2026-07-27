@@ -9,27 +9,39 @@ import {
   jitProvisionSsoUser,
 } from "@grc/auth/providers";
 import type { Provider } from "next-auth/providers";
-import { db, userOrganizationRole } from "@grc/db";
+import { userOrganizationRole, withUserReadContext } from "@grc/db";
 import { and, eq, isNull } from "drizzle-orm";
 import type { RoleAssignment } from "@grc/auth";
 import { log } from "@/lib/logger";
 
 const ORG_COOKIE = "arctos-org-id";
 
+/**
+ * #SEC-AUTH-BOOTSTRAP — the `session` callback runs on every `/api/auth/session`
+ * read (served by NextAuth's own handler, NOT wrapped by `withAuth`), so NO
+ * request-scoped RLS context exists. Under the non-superuser runtime role
+ * `grc_app`, a context-less read of `user_organization_role` matches no policy
+ * and silently returns 0 rows → `roles: []` → 400 no-org-selected everywhere.
+ * Route through the shared self-read helper (reserves its own base-pool
+ * connection + sets `app.current_user_id`) so a user always sees their OWN
+ * roles. Under the dev/CI superuser this behaves like a plain read.
+ */
 async function fetchFreshRoles(userId: string): Promise<RoleAssignment[]> {
-  const rows = await db
-    .select({
-      orgId: userOrganizationRole.orgId,
-      role: userOrganizationRole.role,
-      lineOfDefense: userOrganizationRole.lineOfDefense,
-    })
-    .from(userOrganizationRole)
-    .where(
-      and(
-        eq(userOrganizationRole.userId, userId),
-        isNull(userOrganizationRole.deletedAt),
+  const rows = await withUserReadContext(userId, (rdb) =>
+    rdb
+      .select({
+        orgId: userOrganizationRole.orgId,
+        role: userOrganizationRole.role,
+        lineOfDefense: userOrganizationRole.lineOfDefense,
+      })
+      .from(userOrganizationRole)
+      .where(
+        and(
+          eq(userOrganizationRole.userId, userId),
+          isNull(userOrganizationRole.deletedAt),
+        ),
       ),
-    );
+  );
   return rows as RoleAssignment[];
 }
 

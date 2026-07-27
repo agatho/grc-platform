@@ -175,6 +175,14 @@ const client = postgres(RUNTIME_DATABASE_URL, {
   connect_timeout: 10,
 });
 
+// #SEC-AUTH-BOOTSTRAP — exported so request-context.ts (withUserReadContext) can
+// `reserve()` a base-pool connection for the auth-bootstrap self-read. The base
+// pool is chosen on purpose: its connections NEVER carry a session-level
+// `app.current_org_id` (it stays NULL), so the org-scoped `org_isolation` policy
+// evaluates `NULL::uuid` (no match, no error) instead of `''::uuid` (which THROWS
+// on the request pool, whose connections are scrubbed to '' at rest).
+export { client as baseClient };
+
 // #SEC-F01b — Request pool. A SEPARATE pool used exclusively by
 // request-context.ts to `reserve()` one connection per authenticated request
 // and pin the org/user GUCs onto it at SESSION level. Kept separate from the
@@ -488,6 +496,7 @@ export {
   releaseRequestContext,
   runWithRequestContext,
   getRequestStore,
+  withUserReadContext,
   type RequestContextInput,
   type RequestDbStore,
 } from "./request-context";
