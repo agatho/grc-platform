@@ -7,9 +7,22 @@
 # previously `node:22-alpine` — a moving tag that could pick up a new
 # minor each rebuild). See apps/web/Dockerfile for the digest-pinning
 # alternative if maximum immutability is needed.
+#
+# #SEC-IMG-SLIM (Pentest v2 / Trivy): the previous build ran a full
+# `npm ci` at the monorepo root, which pulled EVERY devDependency —
+# including Playwright, vitest, typescript and drizzle-kit — into the
+# runtime image (~5.6 GB). Those never run in the worker at runtime but
+# ballooned the attack surface and dragged in the bulk of the node-pkg
+# CVEs Trivy flagged (npm-bundled tar/minimatch, build-tool glob, etc.).
+# This build installs PRODUCTION deps only (`npm ci --omit=dev`) and adds
+# back just `tsx` (the TS runtime executor, otherwise a devDependency) as
+# a small global install — so no package.json / package-lock.json change
+# is required. Expect the image to shrink by multiple GB.
 
 ARG NODE_IMAGE=node:22.20-alpine
+ARG TSX_VERSION=4.23.1
 
+# ── deps: production dependencies only ──────────────────────────────────────
 FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 
@@ -26,8 +39,12 @@ COPY packages/reporting/package.json packages/reporting/
 COPY packages/auth/package.json packages/auth/
 COPY packages/ui/package.json packages/ui/
 
-RUN npm ci --ignore-scripts
+# --omit=dev drops root + workspace devDependencies (Playwright, vitest,
+# typescript, drizzle-kit, tsx, …). Prod deps still land in their per-
+# workspace node_modules, so the full /app copy below stays correct.
+RUN npm ci --omit=dev --ignore-scripts
 
+# ── runner ──────────────────────────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
@@ -36,16 +53,21 @@ WORKDIR /app
 # worker image.
 RUN apk upgrade --no-cache
 
+# tsx is the runtime executor (CMD below) but is a devDependency, so it is
+# NOT in the --omit=dev tree. Install it globally instead of moving it to
+# `dependencies` — that keeps package.json/package-lock.json untouched.
+# tsx bundles esbuild and transpiles the TS worker + @grc/* workspace
+# sources on the fly, so no separate `typescript` install is needed.
+RUN npm install -g "tsx@${TSX_VERSION}" && npm cache clean --force
+
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 arctos && \
     adduser --system --uid 1001 arctos
 
-# Copy the deps-stage /app completely — that brings the root
-# node_modules AND every per-workspace node_modules. npm workspaces
-# don't hoist every dep; @anthropic-ai/sdk for example lives only
-# in packages/ai/node_modules/. Without this the worker crash-loops
-# with "Cannot find module '@anthropic-ai/sdk'".
+# Copy the prod-only deps-stage /app — brings the root node_modules AND
+# every per-workspace node_modules (npm workspaces don't hoist every dep;
+# @anthropic-ai/sdk for example lives only in packages/ai/node_modules/).
 COPY --from=deps /app ./
 
 # Overlay the source. .dockerignore excludes node_modules, so the
@@ -56,4 +78,6 @@ USER arctos
 
 EXPOSE 3001
 
-CMD ["npx", "tsx", "apps/worker/src/index.ts"]
+# Use the global tsx (on PATH) rather than `npx tsx` — npx would try to
+# resolve/-install tsx from the (now dev-pruned) local tree.
+CMD ["tsx", "apps/worker/src/index.ts"]
