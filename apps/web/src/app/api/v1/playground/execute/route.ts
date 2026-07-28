@@ -16,11 +16,19 @@ const executeSchema = z.object({
     .string()
     .min(1)
     .max(500)
-    .refine((p) => p.startsWith("/") && !p.startsWith("//"), {
-      message:
-        "path must be a relative URL beginning with '/' — absolute URLs " +
-        "and protocol-relative URLs are blocked (SSRF prevention)",
-    }),
+    // #SEC-HIGH-SSRF (F-A): reject absolute URLs, protocol-relative "//host",
+    // AND backslash variants. The WHATWG URL parser normalizes "\" → "/" for
+    // http(s), so "/\evil.com" would otherwise pass startsWith checks and
+    // resolve host=evil.com. Belt: forbid any backslash outright. Suspenders:
+    // a same-origin assertion after URL construction below.
+    .refine(
+      (p) => p.startsWith("/") && !p.startsWith("//") && !p.includes("\\"),
+      {
+        message:
+          "path must be a relative URL beginning with '/' — absolute URLs, " +
+          "protocol-relative URLs and backslash escapes are blocked (SSRF prevention)",
+      },
+    ),
   headers: z.record(z.string(), z.string()).default({}),
   queryParams: z.record(z.string(), z.string()).default({}),
   body: z.string().max(50000).optional(),
@@ -44,6 +52,18 @@ export async function POST(req: Request) {
   try {
     const baseUrl = new URL(req.url).origin;
     const targetUrl = new URL(body.data.path, baseUrl);
+    // #SEC-HIGH-SSRF (F-A): hard same-origin gate. The playground only ever
+    // proxies the app's own API; anything that resolves off-origin (via any
+    // parser normalization trick) is refused before fetch().
+    if (targetUrl.origin !== baseUrl) {
+      return Response.json(
+        {
+          error:
+            "path must resolve to a same-origin relative URL (SSRF prevention)",
+        },
+        { status: 422 },
+      );
+    }
     Object.entries(body.data.queryParams).forEach(([k, v]) => {
       targetUrl.searchParams.set(k, v);
     });
