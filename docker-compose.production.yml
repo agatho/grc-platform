@@ -59,6 +59,35 @@ services:
     networks:
       - arctos
 
+  # ── Garage (S3-kompatibler Objektspeicher, self-hosted) ───────
+  # ERSATZ für MinIO (Community-Edition Feb 2026 archiviert → keine
+  # Security-Patches mehr; Trivy fand 4 CRITICAL + 42 HIGH). Garage ist
+  # leichtgewichtig (Rust), aktiv gepflegt, S3-kompatibel. Bootstrap
+  # (Layout/Bucket/Key) + Datenmigration: siehe deploy/MINIO-TO-GARAGE-MIGRATION.md.
+  # Läuft zunächst PARALLEL zu minio; nach verifizierter Umstellung wird der
+  # minio-Block entfernt.
+  garage:
+    image: dxflrs/garage:v2.3.0
+    restart: unless-stopped
+    mem_limit: 1g
+    environment:
+      # 32-Byte-Hex, von update-all.sh generiert (analog MINIO_ROOT_PASSWORD).
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-}
+    volumes:
+      - ./deploy/garage/garage.toml:/etc/garage.toml:ro
+      - garagemeta:/var/lib/garage/meta
+      - garagedata:/var/lib/garage/data
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    networks:
+      - arctos
+    # Kein Port exposed — nur intern. S3-API :3900, Admin :3903, RPC :3901.
+
   # ── MinIO (S3-kompatibler Objektspeicher, self-hosted) ────────
   # DMS-File-Storage. Der Web-Container ist read_only — lokales FS
   # funktioniert dort nur über das uploads-Volume; MinIO ist der
@@ -70,9 +99,12 @@ services:
     # (CVE-2026-33322) und Session-Policy-Privilege-Escalation (CVE-2025-62506).
     # Nicht ins Internet exponiert (nur Docker-Netz), aber via SSRF/Foothold real.
     # HINWEIS: minio/minio + minio/mc wurden im Juli 2026 upstream ARCHIVIERT.
-    # Vor `up` unbedingt `docker pull` testen (Tag-Existenz!). Community-Fork
-    # `pgsty/minio` ist die langfristige Migrationsoption — Entscheidung offen.
-    image: minio/minio:RELEASE.2026-03-12T15-15-27Z
+    # Letztes brauchbares Community-Release (fixt CVE-2025-62506 + OS-Pakete).
+    # Die reinen 2026-CVEs (unauth write CVE-2026-40344/-41145, JWT CVE-2026-33322)
+    # haben im Community-Zweig ggf. KEINEN Fix mehr — dafuer Migration auf den
+    # gepflegten Fork `pgsty/minio` noetig (offene Architektur-Entscheidung).
+    # Vor `up` per `docker pull` auf Tag-Existenz pruefen.
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
     restart: unless-stopped
     # RAM-Deckel: verhindert, dass der Sidecar den Host in den OOM treibt
     mem_limit: 512m
@@ -320,7 +352,9 @@ volumes:
   pgdata:
   uploads:
   branding:
-  miniodata:
+  miniodata:      # wird nach der Garage-Migration entfernt
+  garagemeta:
+  garagedata:
   clamdb:
 
 networks:

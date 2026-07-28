@@ -1,0 +1,36 @@
+# ============================================================================
+# ARCTOS — Garage S3 object storage (single-node)
+# Replaces MinIO (community edition archived Feb 2026 — no more security patches).
+# ============================================================================
+#
+# Single Hetzner host, DMS document storage. The app talks plain S3 (SigV4,
+# path-style, simple PUT/GET/DELETE/HEAD — no multipart, no presigned URLs),
+# so Garage is a drop-in backend once `s3_region` matches what the app signs
+# with (S3_REGION, default "us-east-1").
+#
+# Secrets (rpc_secret, admin_token) are NOT stored here — they are injected via
+# the GARAGE_RPC_SECRET / GARAGE_ADMIN_TOKEN environment variables (see
+# docker-compose.production.yml + .env). That keeps them out of git and matches
+# how MINIO_ROOT_PASSWORD was handled.
+
+metadata_dir = "/var/lib/garage/meta"
+data_dir     = "/var/lib/garage/data"
+db_engine    = "lmdb"
+
+# Single node → no redundancy. (Multi-node/geo would raise this to 3.)
+replication_factor = 1
+
+rpc_bind_addr   = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+# rpc_secret injected via GARAGE_RPC_SECRET (32-byte hex).
+
+[s3_api]
+# MUST equal the region the app signs requests with (S3_REGION). The app
+# defaults to us-east-1, so keep this aligned or SigV4 auth will fail.
+s3_region      = "us-east-1"
+api_bind_addr  = "[::]:3900"
+# No root_domain → path-style only (…/bucket/key), exactly what the app uses.
+
+[admin]
+api_bind_addr = "[::]:3903"
+# admin_token injected via GARAGE_ADMIN_TOKEN.
