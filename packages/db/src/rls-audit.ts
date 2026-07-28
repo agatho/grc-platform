@@ -80,15 +80,21 @@ export interface RlsAuditReport {
  * truth for the exception set.
  */
 export const TENANT_TABLE_RLS_EXCEPTIONS = new Set<string>([
-  // Append-only logs: filtered by org_id server-side, own integrity
-  // guarantee via hash chain. Opening RLS on these would prevent
-  // platform admins from running the integrity check.
-  "audit_log",
+  // access_log — written ORG-LESS at login (org_id NULL, before any org is
+  // known) and read back by the auth/rate-limit flow. A per-org policy would
+  // reject the login INSERT and hide the org-less rows the brute-force check
+  // needs (Pentest F-01).
   "access_log",
-  "data_export_log",
-  "notification",
-  // Anchor table — accessed by worker and API, both server-scoped
+  // audit_log / audit_anchor — read across the ORG HIERARCHY (the audit-log
+  // route's descendant scope) and by the platform integrity check. A per-org
+  // policy would hide rows that admins/auditors are meant to see.
+  "audit_log",
   "audit_anchor",
+  // NOTE: `notification` and `data_export_log` were previously exempt too, but
+  // migration 0381_notification_dataexport_rls.sql restored a read-side RLS
+  // second line for them (split policies: permissive INSERT + org-scoped
+  // SELECT/UPDATE/DELETE). They are therefore NO LONGER exceptions — they must
+  // carry active RLS, which the coverage audit now enforces.
 ]);
 
 export async function runRlsAudit(): Promise<RlsAuditReport> {
