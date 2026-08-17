@@ -746,7 +746,7 @@ jobs:
         run: node scripts/check-route-rls-context.mjs
 
       - name: Check for leaked secrets
-        uses: trufflesecurity/trufflehog@v3.95.9
+        uses: trufflesecurity/trufflehog@v3.97.0
         with:
           extra_args: --only-verified --results=verified
 
