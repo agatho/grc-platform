@@ -8,11 +8,11 @@
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "react": "^19.2.6",
-    "resend": "^6.17.2"
+    "react": "^19.2.8",
+    "resend": "^6.21.0"
   },
   "devDependencies": {
-    "@types/react": "^19.2.17",
+    "@types/react": "^19.2.18",
     "@vitest/coverage-v8": "^4.1.10",
     "typescript": "^5.7",
     "vitest": "^4.1.5"
