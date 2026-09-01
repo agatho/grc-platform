@@ -1,0 +1,30 @@
+export {
+  XMLNS_URI,
+  XSI_URI,
+  canonicalize,
+  countNodes,
+  diffCanonical,
+  diffCounts,
+  elementCount,
+  elementNames,
+  type CanonicalDifference,
+  type CanonicalizeOptions,
+  type CountComparison,
+  type CountDifference,
+  type NodeCounts,
+} from "./xml-canonical.js";
+
+export {
+  XmlParseError,
+  decodeEntities,
+  parseXml,
+  walkElements,
+  type XmlAttribute,
+  type XmlComment,
+  type XmlDoctype,
+  type XmlDocument,
+  type XmlElement,
+  type XmlNode,
+  type XmlProcessingInstruction,
+  type XmlText,
+} from "./xml-parse.js";

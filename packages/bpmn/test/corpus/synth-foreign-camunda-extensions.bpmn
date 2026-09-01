@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:zeebe="http://camunda.org/schema/zeebe/1.0"
+                  xmlns:signavio="http://www.signavio.com/bpmn20"
+                  xmlns:arctos="https://arctos.grc/schema/bpmn/1.0"
+                  id="Definitions_Foreign" targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="Camunda Modeler" exporterVersion="5.22.0">
+  <bpmn:process id="Process_Foreign" isExecutable="true" camunda:historyTimeToLive="180" camunda:versionTag="1.4">
+    <bpmn:extensionElements>
+      <signavio:signavioDiagramMetaData metaDataId="revision" metaDataValue="42"/>
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="F_Start" name="Start">
+      <bpmn:outgoing>FF_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="F_Task" name="Rechnung freigeben" camunda:assignee="demo" camunda:candidateGroups="finance">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="approved" label="Freigegeben?" type="boolean">
+            <camunda:validation>
+              <camunda:constraint name="required"/>
+            </camunda:validation>
+          </camunda:formField>
+        </camunda:formData>
+        <camunda:taskListener event="create" class="com.example.Listener"/>
+        <zeebe:assignmentDefinition assignee="=user" candidateGroups="=groups"/>
+        <arctos:grcMetadata lineOfDefense="first" isCriticalProcess="true">
+          <arctos:riskRefs>
+            <arctos:riskRef id="00000000-0000-0000-0000-0000000000aa" title="Doppelzahlung" inherentScore="16" residualScore="8" status="open"/>
+          </arctos:riskRefs>
+          <arctos:raci responsibleRoleId="role-1" accountableRoleId="role-2" consultedRoleIds="role-3,role-4" informedRoleIds="role-5"/>
+        </arctos:grcMetadata>
+      </bpmn:extensionElements>
+      <bpmn:incoming>FF_1</bpmn:incoming>
+      <bpmn:outgoing>FF_2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="F_Service" name="Buchen" camunda:type="external" camunda:topic="booking">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="amount">${invoice.amount}</camunda:inputParameter>
+          <camunda:outputParameter name="bookingId">${result}</camunda:outputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
+      <bpmn:incoming>FF_2</bpmn:incoming>
+      <bpmn:outgoing>FF_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="F_End" name="Ende">
+      <bpmn:incoming>FF_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="FF_1" sourceRef="F_Start" targetRef="F_Task"/>
+    <bpmn:sequenceFlow id="FF_2" sourceRef="F_Task" targetRef="F_Service"/>
+    <bpmn:sequenceFlow id="FF_3" sourceRef="F_Service" targetRef="F_End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Foreign">
+    <bpmndi:BPMNPlane id="Plane_Foreign" bpmnElement="Process_Foreign">
+      <bpmndi:BPMNShape id="F_Start_di" bpmnElement="F_Start">
+        <dc:Bounds x="152" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="F_Task_di" bpmnElement="F_Task">
+        <dc:Bounds x="240" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="F_Service_di" bpmnElement="F_Service">
+        <dc:Bounds x="400" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="F_End_di" bpmnElement="F_End">
+        <dc:Bounds x="562" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="FF_1_di" bpmnElement="FF_1">
+        <di:waypoint x="188" y="120"/>
+        <di:waypoint x="240" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="FF_2_di" bpmnElement="FF_2">
+        <di:waypoint x="340" y="120"/>
+        <di:waypoint x="400" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="FF_3_di" bpmnElement="FF_3">
+        <di:waypoint x="500" y="120"/>
+        <di:waypoint x="562" y="120"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

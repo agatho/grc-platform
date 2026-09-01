@@ -1,0 +1,368 @@
+/// <reference lib="dom" />
+
+import { svgAppend, svgAttr, svgCreate } from "./svg.js";
+import {
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE,
+  LINE_HEIGHT_FACTOR,
+} from "./theme.js";
+
+/**
+ * Textlayout ohne DOM-Messung.
+ *
+ * Begründung: der Renderer muss auch dort umbrechen, wo nicht gemessen werden
+ * kann — in jsdom (Tests), im Worker (serverseitiges PDF/PNG) und beim
+ * SVG-Export. `getComputedTextLength()` existiert in jsdom nicht und ist im
+ * Browser zudem teuer (Reflow je Aufruf). Deshalb eine deterministische
+ * Breitenschätzung über eine Tabelle relativer Vorschubbreiten einer
+ * Grotesk-Schrift (Arial/Helvetica/Liberation Sans, Werte in em).
+ *
+ * Die Schätzung ist bewusst leicht großzügig: zu breit geschätzt bricht früher
+ * um (Text bleibt im Element), zu schmal geschätzt lässt Text überstehen.
+ */
+
+const DEFAULT_ADVANCE = 0.55;
+
+const ADVANCE: Readonly<Record<string, number>> = {
+  " ": 0.278,
+  "!": 0.278,
+  '"': 0.355,
+  "#": 0.556,
+  $: 0.556,
+  "%": 0.889,
+  "&": 0.667,
+  "'": 0.191,
+  "(": 0.333,
+  ")": 0.333,
+  "*": 0.389,
+  "+": 0.584,
+  ",": 0.278,
+  "-": 0.333,
+  ".": 0.278,
+  "/": 0.278,
+  ":": 0.278,
+  ";": 0.278,
+  "<": 0.584,
+  "=": 0.584,
+  ">": 0.584,
+  "?": 0.556,
+  "@": 1.015,
+  "[": 0.278,
+  "\\": 0.278,
+  "]": 0.278,
+  "^": 0.469,
+  _: 0.556,
+  "`": 0.333,
+  "{": 0.334,
+  "|": 0.26,
+  "}": 0.334,
+  "~": 0.584,
+  "0": 0.556,
+  "1": 0.556,
+  "2": 0.556,
+  "3": 0.556,
+  "4": 0.556,
+  "5": 0.556,
+  "6": 0.556,
+  "7": 0.556,
+  "8": 0.556,
+  "9": 0.556,
+  a: 0.556,
+  b: 0.556,
+  c: 0.5,
+  d: 0.556,
+  e: 0.556,
+  f: 0.278,
+  g: 0.556,
+  h: 0.556,
+  i: 0.222,
+  j: 0.222,
+  k: 0.5,
+  l: 0.222,
+  m: 0.833,
+  n: 0.556,
+  o: 0.556,
+  p: 0.556,
+  q: 0.556,
+  r: 0.333,
+  s: 0.5,
+  t: 0.278,
+  u: 0.556,
+  v: 0.5,
+  w: 0.722,
+  x: 0.5,
+  y: 0.5,
+  z: 0.5,
+  A: 0.667,
+  B: 0.667,
+  C: 0.722,
+  D: 0.722,
+  E: 0.667,
+  F: 0.611,
+  G: 0.778,
+  H: 0.722,
+  I: 0.278,
+  J: 0.5,
+  K: 0.667,
+  L: 0.556,
+  M: 0.833,
+  N: 0.722,
+  O: 0.778,
+  P: 0.667,
+  Q: 0.778,
+  R: 0.722,
+  S: 0.667,
+  T: 0.611,
+  U: 0.722,
+  V: 0.667,
+  W: 0.944,
+  X: 0.667,
+  Y: 0.667,
+  Z: 0.611,
+  ä: 0.556,
+  ö: 0.556,
+  ü: 0.556,
+  Ä: 0.667,
+  Ö: 0.778,
+  Ü: 0.722,
+  ß: 0.556,
+  "–": 0.556,
+  "—": 1,
+  "„": 0.333,
+  "“": 0.333,
+  "”": 0.333,
+  "…": 1,
+};
+
+/** Geschätzte Breite eines Textes in px. */
+export function measureText(text: string, fontSize: number): number {
+  let em = 0;
+  for (const char of text) {
+    em += ADVANCE[char] ?? DEFAULT_ADVANCE;
+  }
+  return em * fontSize;
+}
+
+export interface TextLayoutOptions {
+  /** Verfügbare Breite in px. */
+  readonly width: number;
+  readonly fontSize?: number;
+  readonly lineHeightFactor?: number;
+  /** Höhenbegrenzung; überzählige Zeilen werden mit „…" gekürzt. */
+  readonly maxHeight?: number;
+}
+
+export interface TextLayout {
+  readonly lines: readonly string[];
+  readonly lineHeight: number;
+  readonly fontSize: number;
+  /** Breite der breitesten Zeile. */
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * Bricht `text` auf `width` um.
+ *
+ * Bricht bevorzugt an Leerzeichen, dann an `-` und `/`, zuletzt hart mitten im
+ * Wort (lange IDs, URLs). Vorhandene Zeilenumbrüche bleiben erhalten.
+ */
+export function layoutText(
+  text: string,
+  options: TextLayoutOptions,
+): TextLayout {
+  const fontSize = options.fontSize ?? DEFAULT_FONT_SIZE;
+  const lineHeight =
+    fontSize * (options.lineHeightFactor ?? LINE_HEIGHT_FACTOR);
+  const available = Math.max(options.width, fontSize);
+
+  const lines: string[] = [];
+  for (const paragraph of text.split(/\r?\n/)) {
+    const trimmed = paragraph.trim();
+    if (trimmed === "") {
+      lines.push("");
+      continue;
+    }
+    lines.push(...wrapParagraph(trimmed, available, fontSize));
+  }
+
+  let result = lines;
+  if (options.maxHeight !== undefined) {
+    const maxLines = Math.max(1, Math.floor(options.maxHeight / lineHeight));
+    if (lines.length > maxLines) {
+      result = lines.slice(0, maxLines);
+      const last = result[maxLines - 1];
+      if (last !== undefined) {
+        result[maxLines - 1] = truncate(last, available, fontSize);
+      }
+    }
+  }
+
+  const width = result.reduce(
+    (max, line) => Math.max(max, measureText(line, fontSize)),
+    0,
+  );
+  return {
+    lines: result,
+    lineHeight,
+    fontSize,
+    width,
+    height: result.length * lineHeight,
+  };
+}
+
+function wrapParagraph(
+  paragraph: string,
+  available: number,
+  fontSize: number,
+): string[] {
+  const words = paragraph.split(/\s+/).filter((word) => word.length > 0);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current === "" ? word : `${current} ${word}`;
+    if (measureText(candidate, fontSize) <= available) {
+      current = candidate;
+      continue;
+    }
+    if (current !== "") {
+      lines.push(current);
+      current = "";
+    }
+    if (measureText(word, fontSize) <= available) {
+      current = word;
+      continue;
+    }
+    // Wort passt allein nicht: an Trennzeichen, sonst hart brechen.
+    const pieces = breakLongWord(word, available, fontSize);
+    const last = pieces.pop();
+    lines.push(...pieces);
+    current = last ?? "";
+  }
+
+  if (current !== "") {
+    lines.push(current);
+  }
+  return lines.length > 0 ? lines : [""];
+}
+
+function breakLongWord(
+  word: string,
+  available: number,
+  fontSize: number,
+): string[] {
+  const pieces: string[] = [];
+  let current = "";
+  for (const char of word) {
+    const candidate = current + char;
+    if (current !== "" && measureText(candidate, fontSize) > available) {
+      pieces.push(current);
+      current = char;
+      continue;
+    }
+    current = candidate;
+    // Nach einem Trennzeichen darf umgebrochen werden.
+    if (
+      (char === "-" || char === "/") &&
+      measureText(current, fontSize) > available * 0.6
+    ) {
+      pieces.push(current);
+      current = "";
+    }
+  }
+  if (current !== "") {
+    pieces.push(current);
+  }
+  return pieces.length > 0 ? pieces : [word];
+}
+
+function truncate(line: string, available: number, fontSize: number): string {
+  let text = line;
+  while (text.length > 1 && measureText(`${text}…`, fontSize) > available) {
+    text = text.slice(0, -1);
+  }
+  return `${text.trimEnd()}…`;
+}
+
+export type TextAlign = "center" | "left" | "right";
+export type TextVerticalAlign = "middle" | "top" | "bottom";
+
+export interface RenderTextOptions extends TextLayoutOptions {
+  readonly box: { x: number; y: number; width: number; height: number };
+  readonly align?: TextAlign;
+  readonly verticalAlign?: TextVerticalAlign;
+  readonly fill?: string;
+  readonly fontFamily?: string;
+  readonly className?: string;
+  /** Dreht den Text um den Mittelpunkt der Box (Pool-/Lane-Beschriftung). */
+  readonly rotate?: number;
+}
+
+/**
+ * Zeichnet umgebrochenen Text als `<text>` mit einem `<tspan>` je Zeile.
+ *
+ * Gibt `null` zurück, wenn nichts zu zeichnen ist — Aufrufer müssen keine
+ * Leerbeschriftungen abfangen.
+ */
+export function renderText(
+  parent: SVGElement,
+  text: string,
+  options: RenderTextOptions,
+): SVGTextElement | null {
+  const content = text.trim();
+  if (content === "") {
+    return null;
+  }
+
+  const layout = layoutText(content, options);
+  const align = options.align ?? "center";
+  const verticalAlign = options.verticalAlign ?? "middle";
+  const box = options.box;
+
+  const anchorX =
+    align === "center"
+      ? box.x + box.width / 2
+      : align === "left"
+        ? box.x
+        : box.x + box.width;
+  const textAnchor =
+    align === "center" ? "middle" : align === "left" ? "start" : "end";
+
+  const blockHeight = layout.height;
+  const top =
+    verticalAlign === "middle"
+      ? box.y + (box.height - blockHeight) / 2
+      : verticalAlign === "top"
+        ? box.y
+        : box.y + box.height - blockHeight;
+
+  const node = svgCreate("text", {
+    "font-family": options.fontFamily ?? DEFAULT_FONT_FAMILY,
+    "font-size": layout.fontSize,
+    fill: options.fill ?? "#12181f",
+    "text-anchor": textAnchor,
+    "dominant-baseline": "alphabetic",
+    class: options.className ?? "djs-label",
+    "xml:space": "preserve",
+  });
+
+  if (options.rotate) {
+    svgAttr(node, {
+      transform: `rotate(${options.rotate} ${box.x + box.width / 2} ${box.y + box.height / 2})`,
+    });
+  }
+
+  layout.lines.forEach((line, index) => {
+    const tspan = svgCreate("tspan", {
+      x: anchorX,
+      // Grundlinie: Zeilenoberkante + Zeilenhöhe abzüglich Unterlänge.
+      y: top + index * layout.lineHeight + layout.fontSize * 0.85,
+    });
+    tspan.textContent = line;
+    svgAppend(node, tspan);
+  });
+
+  svgAppend(parent, node);
+  return node;
+}

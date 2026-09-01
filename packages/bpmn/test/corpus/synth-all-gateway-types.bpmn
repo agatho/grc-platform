@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_Gateways" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_Gateways" isExecutable="false">
+    <bpmn:startEvent id="G_Start">
+      <bpmn:outgoing>GF_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Gw_Exclusive" name="Betrag &gt; 10.000?" default="GF_Ex_Default">
+      <bpmn:incoming>GF_1</bpmn:incoming>
+      <bpmn:outgoing>GF_Ex_Ja</bpmn:outgoing>
+      <bpmn:outgoing>GF_Ex_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:parallelGateway id="Gw_Parallel" name="Parallel">
+      <bpmn:incoming>GF_Ex_Ja</bpmn:incoming>
+      <bpmn:outgoing>GF_P_1</bpmn:outgoing>
+      <bpmn:outgoing>GF_P_2</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:inclusiveGateway id="Gw_Inclusive" name="Inklusiv" default="GF_I_Default">
+      <bpmn:incoming>GF_P_1</bpmn:incoming>
+      <bpmn:outgoing>GF_I_Default</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:eventBasedGateway id="Gw_EventBased" name="Ereignisbasiert" instantiate="false" eventGatewayType="Exclusive">
+      <bpmn:incoming>GF_P_2</bpmn:incoming>
+      <bpmn:outgoing>GF_EB_1</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:complexGateway id="Gw_Complex" name="Komplex">
+      <bpmn:incoming>GF_I_Default</bpmn:incoming>
+      <bpmn:incoming>GF_EB_1</bpmn:incoming>
+      <bpmn:outgoing>GF_C_1</bpmn:outgoing>
+    </bpmn:complexGateway>
+    <bpmn:endEvent id="G_End">
+      <bpmn:incoming>GF_C_1</bpmn:incoming>
+      <bpmn:incoming>GF_Ex_Default</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="GF_1" sourceRef="G_Start" targetRef="Gw_Exclusive"/>
+    <bpmn:sequenceFlow id="GF_Ex_Ja" name="ja" sourceRef="Gw_Exclusive" targetRef="Gw_Parallel">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">${betrag &gt; 10000}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="GF_Ex_Default" name="sonst" sourceRef="Gw_Exclusive" targetRef="G_End"/>
+    <bpmn:sequenceFlow id="GF_P_1" sourceRef="Gw_Parallel" targetRef="Gw_Inclusive"/>
+    <bpmn:sequenceFlow id="GF_P_2" sourceRef="Gw_Parallel" targetRef="Gw_EventBased"/>
+    <bpmn:sequenceFlow id="GF_I_Default" sourceRef="Gw_Inclusive" targetRef="Gw_Complex"/>
+    <bpmn:sequenceFlow id="GF_EB_1" sourceRef="Gw_EventBased" targetRef="Gw_Complex"/>
+    <bpmn:sequenceFlow id="GF_C_1" sourceRef="Gw_Complex" targetRef="G_End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Gateways">
+    <bpmndi:BPMNPlane id="Plane_Gateways" bpmnElement="Process_Gateways">
+      <bpmndi:BPMNShape id="G_Start_di" bpmnElement="G_Start">
+        <dc:Bounds x="152" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Exclusive_di" bpmnElement="Gw_Exclusive" isMarkerVisible="true">
+        <dc:Bounds x="245" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Parallel_di" bpmnElement="Gw_Parallel">
+        <dc:Bounds x="355" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Inclusive_di" bpmnElement="Gw_Inclusive">
+        <dc:Bounds x="465" y="105" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_EventBased_di" bpmnElement="Gw_EventBased">
+        <dc:Bounds x="465" y="245" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gw_Complex_di" bpmnElement="Gw_Complex">
+        <dc:Bounds x="585" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="G_End_di" bpmnElement="G_End">
+        <dc:Bounds x="702" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="GF_1_di" bpmnElement="GF_1">
+        <di:waypoint x="188" y="200"/>
+        <di:waypoint x="245" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_Ex_Ja_di" bpmnElement="GF_Ex_Ja">
+        <di:waypoint x="295" y="200"/>
+        <di:waypoint x="355" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_Ex_Default_di" bpmnElement="GF_Ex_Default">
+        <di:waypoint x="270" y="225"/>
+        <di:waypoint x="270" y="400"/>
+        <di:waypoint x="720" y="400"/>
+        <di:waypoint x="720" y="218"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_P_1_di" bpmnElement="GF_P_1">
+        <di:waypoint x="405" y="200"/>
+        <di:waypoint x="435" y="200"/>
+        <di:waypoint x="435" y="130"/>
+        <di:waypoint x="465" y="130"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_P_2_di" bpmnElement="GF_P_2">
+        <di:waypoint x="405" y="200"/>
+        <di:waypoint x="435" y="200"/>
+        <di:waypoint x="435" y="270"/>
+        <di:waypoint x="465" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_I_Default_di" bpmnElement="GF_I_Default">
+        <di:waypoint x="515" y="130"/>
+        <di:waypoint x="610" y="130"/>
+        <di:waypoint x="610" y="175"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_EB_1_di" bpmnElement="GF_EB_1">
+        <di:waypoint x="515" y="270"/>
+        <di:waypoint x="610" y="270"/>
+        <di:waypoint x="610" y="225"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="GF_C_1_di" bpmnElement="GF_C_1">
+        <di:waypoint x="635" y="200"/>
+        <di:waypoint x="702" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,17 @@
+{
+  // Eigene BPMN-Engine auf diagram-js (MIT) und bpmn-moddle (MIT).
+  // Anders als die Bestandspakete startet dieses Paket mit den strengen
+  // Flags aus tsconfig.base.json — hier gibt es keinen Altbestand, den man
+  // erst abtragen müsste, und Geometriecode ist genau die Sorte Code, bei
+  // der noUncheckedIndexedAccess sich auszahlt.
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"],
+    "module": "preserve",
+    "jsx": "react-jsx"
+  },
+  "include": ["src", "test"]
+}

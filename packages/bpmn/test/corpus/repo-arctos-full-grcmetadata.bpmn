@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:arctos="https://arctos.grc/schema/bpmn/1.0">
+  <bpmn:process id="Proc">
+    <bpmn:userTask id="Task_1" name="Approve">
+      <bpmn:extensionElements>
+        <arctos:grcMetadata lineOfDefense="first">
+          <arctos:riskRefs>
+            <arctos:riskRef id="00000000-0000-0000-0000-000000000001" title="Fraud" inherentScore="12" residualScore="6"/>
+          </arctos:riskRefs>
+          <arctos:controlRefs>
+            <arctos:controlRef id="00000000-0000-0000-0000-000000000002" title="Dual approval" effectiveness="effective"/>
+          </arctos:controlRefs>
+          <arctos:documentRefs>
+            <arctos:documentRef id="00000000-0000-0000-0000-000000000003" title="SOP" documentType="sop"/>
+          </arctos:documentRefs>
+          <arctos:ropa isProcessingActivity="true" purpose="Order processing" legalBasis="contract"/>
+        </arctos:grcMetadata>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+  </bpmn:process>
+</bpmn:definitions>

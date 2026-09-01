@@ -106,6 +106,13 @@ export const COVERAGE_FLOORS: Record<string, CoverageFloor> = {
   // (tests/integration, tests/rls), which run as separate vitest projects
   // whose v8 coverage is NOT merged into this number.
   "packages/db": { lines: 28, branches: 26 },
+  // @grc/bpmn: new package (own BPMN engine on diagram-js + bpmn-moddle).
+  // Provisional floor — the package is being written by two workstreams in
+  // parallel (model/round-trip and draw/viewer), so this is a starting ratchet,
+  // not a measured post-remediation baseline. Re-measure and raise it once both
+  // halves have landed. Without an entry here `coverageFor` throws and the
+  // package's vitest config cannot even be loaded.
+  "packages/bpmn": { lines: 40, branches: 30 },
 };
 
 /**

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="Definitions_NoDi" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_NoDi" name="KI-generiert, ohne Layout" isExecutable="false">
+    <bpmn:startEvent id="ND_Start" name="Bedarf gemeldet">
+      <bpmn:outgoing>ND_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="ND_T1" name="Bedarf pruefen">
+      <bpmn:incoming>ND_F1</bpmn:incoming>
+      <bpmn:outgoing>ND_F2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="ND_Gw" name="Genehmigt?">
+      <bpmn:incoming>ND_F2</bpmn:incoming>
+      <bpmn:outgoing>ND_F3</bpmn:outgoing>
+      <bpmn:outgoing>ND_F4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="ND_T2" name="Bestellung ausloesen">
+      <bpmn:incoming>ND_F3</bpmn:incoming>
+      <bpmn:outgoing>ND_F5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="ND_End_Ok" name="Bestellt">
+      <bpmn:incoming>ND_F5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="ND_End_Nok" name="Abgelehnt">
+      <bpmn:incoming>ND_F4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="ND_F1" sourceRef="ND_Start" targetRef="ND_T1"/>
+    <bpmn:sequenceFlow id="ND_F2" sourceRef="ND_T1" targetRef="ND_Gw"/>
+    <bpmn:sequenceFlow id="ND_F3" name="ja" sourceRef="ND_Gw" targetRef="ND_T2"/>
+    <bpmn:sequenceFlow id="ND_F4" name="nein" sourceRef="ND_Gw" targetRef="ND_End_Nok"/>
+    <bpmn:sequenceFlow id="ND_F5" sourceRef="ND_T2" targetRef="ND_End_Ok"/>
+  </bpmn:process>
+</bpmn:definitions>

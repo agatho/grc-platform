@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_Umlaute" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_Umlaute" name="Prüfung &amp; Genehmigung — Fördermittelantrag" isExecutable="false">
+    <bpmn:documentation id="Doc_1"><![CDATA[Dieser Prozess enthält Sonderzeichen: <tag>, &amp;, "Anführungszeichen",
+Zeilenumbrüche und Umlaute (ÄÖÜäöüß). Er dient als Härtefall für die Serialisierung.]]></bpmn:documentation>
+    <bpmn:startEvent id="U_Start" name="Antrag eingegangen (Ö-Prüfstelle)">
+      <bpmn:outgoing>U_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:userTask id="U_Task" name="Fördermittel prüfen &amp; bewilligen (&lt;=30 Tage)">
+      <bpmn:documentation id="Doc_2"><![CDATA[Regel: wenn Betrag > 50.000 € && Risiko != "niedrig" -> Vier-Augen-Prinzip]]></bpmn:documentation>
+      <bpmn:incoming>U_F1</bpmn:incoming>
+      <bpmn:outgoing>U_F2</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="U_Gw" name="Bewilligt?">
+      <bpmn:incoming>U_F2</bpmn:incoming>
+      <bpmn:outgoing>U_F3</bpmn:outgoing>
+      <bpmn:outgoing>U_F4</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="U_End_Ja" name="Bewilligt — Bescheid verschickt">
+      <bpmn:incoming>U_F3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="U_End_Nein" name="Abgelehnt (§ 44 BHO)">
+      <bpmn:incoming>U_F4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="U_F1" sourceRef="U_Start" targetRef="U_Task"/>
+    <bpmn:sequenceFlow id="U_F2" sourceRef="U_Task" targetRef="U_Gw"/>
+    <bpmn:sequenceFlow id="U_F3" name="ja &gt;= 80 %" sourceRef="U_Gw" targetRef="U_End_Ja">
+      <bpmn:conditionExpression id="Cond_1"><![CDATA[score >= 80 && !gesperrt]]></bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="U_F4" name="nein &lt; 80 %" sourceRef="U_Gw" targetRef="U_End_Nein"/>
+    <bpmn:textAnnotation id="U_Anno">
+      <bpmn:text>„Typografische Anführungszeichen“, Gedankenstrich – und ein Emoji: ⚠</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="U_Assoc" sourceRef="U_Task" targetRef="U_Anno"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Umlaute">
+    <bpmndi:BPMNPlane id="Plane_Umlaute" bpmnElement="Process_Umlaute">
+      <bpmndi:BPMNShape id="U_Start_di" bpmnElement="U_Start">
+        <dc:Bounds x="152" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="U_Task_di" bpmnElement="U_Task">
+        <dc:Bounds x="240" y="160" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="U_Gw_di" bpmnElement="U_Gw" isMarkerVisible="true">
+        <dc:Bounds x="395" y="175" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="U_End_Ja_di" bpmnElement="U_End_Ja">
+        <dc:Bounds x="522" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="U_End_Nein_di" bpmnElement="U_End_Nein">
+        <dc:Bounds x="522" y="262" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="U_Anno_di" bpmnElement="U_Anno">
+        <dc:Bounds x="240" y="40" width="200" height="60"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="U_F1_di" bpmnElement="U_F1">
+        <di:waypoint x="188" y="200"/>
+        <di:waypoint x="240" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="U_F2_di" bpmnElement="U_F2">
+        <di:waypoint x="340" y="200"/>
+        <di:waypoint x="395" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="U_F3_di" bpmnElement="U_F3">
+        <di:waypoint x="420" y="175"/>
+        <di:waypoint x="420" y="120"/>
+        <di:waypoint x="522" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="U_F4_di" bpmnElement="U_F4">
+        <di:waypoint x="420" y="225"/>
+        <di:waypoint x="420" y="280"/>
+        <di:waypoint x="522" y="280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="U_Assoc_di" bpmnElement="U_Assoc">
+        <di:waypoint x="290" y="160"/>
+        <di:waypoint x="290" y="100"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
