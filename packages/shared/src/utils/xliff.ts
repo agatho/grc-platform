@@ -3,7 +3,14 @@
  * Standard format for Translation Memory tools (SDL Trados, memoQ)
  */
 
-import { sanitizeTranslation } from "./language-resolver";
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-18] `sanitizeTranslation()` escaped
+// früher HTML-Entities und wurde damit auf JEDE gespeicherte Übersetzung
+// angewendet — auch auf die aus der Anwendung selbst, wo es die Fachtexte
+// verfälschte ("> 10.000 EUR" wurde zu "&gt; 10.000 EUR"). Das Escaping
+// heisst jetzt, was es ist, und wird nur noch hier verwendet: für Text aus
+// einer EXTERNEN Übersetzungsdatei. Das Verhalten dieses Importpfads
+// ändert sich dadurch nicht.
+import { escapeHtmlEntities } from "./language-resolver";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -114,7 +121,7 @@ export function parseXliff(xml: string): XliffDocument {
       field: unescapeXml(fieldMatch[1]),
       source: unescapeXml(sourceMatch[1]),
       target: targetMatch
-        ? sanitizeTranslation(unescapeXml(targetMatch[1]))
+        ? escapeHtmlEntities(unescapeXml(targetMatch[1]))
         : "",
     });
   }
@@ -184,7 +191,7 @@ export function parseCsv(csv: string): {
       entityId: cols[2],
       field: cols[3],
       source: cols[4],
-      target: sanitizeTranslation(cols[5]),
+      target: escapeHtmlEntities(cols[5]),
     });
   }
 

@@ -5,6 +5,7 @@
 import { db, aiIncident, notification } from "@grc/db";
 import { and, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface AiIncidentMonitorResult {
   processed: number;
@@ -84,32 +85,35 @@ export const processAiActIncidentDeadlineMonitor = withCronInstrumentation(
                 ? "CRITICAL"
                 : "WARNING";
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: incident.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "ai_incident",
-          entityId: incident.id,
-          title: `[${urgencyLevel}] AI-Act Art. 73: ${incident.title}`,
-          message:
-            hoursRemaining <= 0
-              ? `OVERDUE by ${Math.abs(hoursRemaining)}h: Market-Surveillance-Authority notification for AI incident "${incident.title}" is past deadline (Art. 73).`
-              : `AI incident "${incident.title}" has ${hoursRemaining}h remaining until the Art. 73 authority notification deadline.`,
-          channel: "both" as const,
-          templateKey: "ai_act_incident_deadline",
-          templateData: {
-            incidentId: incident.id,
-            incidentTitle: incident.title,
-            severity: incident.severity,
-            isSerious: incident.isSerious,
-            hoursRemaining: Math.max(0, hoursRemaining),
-            hoursOverdue: hoursRemaining < 0 ? Math.abs(hoursRemaining) : 0,
-            deadline: deadline.toISOString(),
-            urgencyLevel,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: incident.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "ai_incident",
+            entityId: incident.id,
+            title: `[${urgencyLevel}] AI-Act Art. 73: ${incident.title}`,
+            message:
+              hoursRemaining <= 0
+                ? `OVERDUE by ${Math.abs(hoursRemaining)}h: Market-Surveillance-Authority notification for AI incident "${incident.title}" is past deadline (Art. 73).`
+                : `AI incident "${incident.title}" has ${hoursRemaining}h remaining until the Art. 73 authority notification deadline.`,
+            channel: "both" as const,
+            templateKey: "ai_act_incident_deadline",
+            templateData: {
+              incidentId: incident.id,
+              incidentTitle: incident.title,
+              severity: incident.severity,
+              isSerious: incident.isSerious,
+              hoursRemaining: Math.max(0, hoursRemaining),
+              hoursOverdue: hoursRemaining < 0 ? Math.abs(hoursRemaining) : 0,
+              deadline: deadline.toISOString(),
+              urgencyLevel,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "ai-act-incident-deadline-monitor" },
+        );
 
         notified++;
       } catch (err) {

@@ -10,10 +10,11 @@
 // is parsed with safeJsonParse and validated with Zod — parse failure
 // returns 422, never a crash.
 
-import { db, catalog, catalogEntry, aiPromptLog } from "@grc/db";
+import { db, catalog, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
-  aiComplete,
+  AiPolicyViolationError,
+  aiCompleteGoverned,
   buildPolicyDraftPrompt,
   getAvailableProviders,
   safeJsonParse,
@@ -21,7 +22,7 @@ import {
 import { aiDraftPolicySchema, aiPolicyDraftResponseSchema } from "@grc/shared";
 import { eq, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import { rateLimit, LIMITS } from "@/lib/rate-limit";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
 
 export async function POST(req: Request) {
   const ctx = await withAuth(
@@ -37,28 +38,8 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("dms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  // ADR-019 pattern (see copilot messages route): per-user token bucket.
-  const limit = await rateLimit({
-    key: `ai-assist:${ctx.userId}`,
-    ...LIMITS.AI_ASSIST,
-  });
-  if (!limit.allowed) {
-    return new Response(
-      JSON.stringify({
-        type: "https://arctos.charliehund.de/errors/rate-limited",
-        title: "Rate limit exceeded",
-        status: 429,
-        detail: `AI-assist rate limit exceeded. Retry in ${limit.retryAfterSeconds}s.`,
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/problem+json; charset=utf-8",
-          "Retry-After": String(limit.retryAfterSeconds),
-        },
-      },
-    );
-  }
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
   const body = aiDraftPolicySchema.safeParse(
     await req.json().catch(() => null),
@@ -70,13 +51,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // [WP6 · S05-02] Frueh scheitern, bevor die Route DB-Arbeit leistet:
+  // hat der Betreiber ueberhaupt keinen Provider freigeschaltet, ist der
+  // Aufruf aussichtslos. Die eigentliche Richtlinienpruefung (Org-Ebene,
+  // Jurisdiktion, Nutzerwunsch) macht `aiCompleteGoverned`.
   if (getAvailableProviders().length === 0) {
-    return Response.json(
-      {
-        error:
-          "AI features require a configured LLM provider. Set an API key (or enable Ollama) in the server environment.",
-      },
-      { status: 503 },
+    return aiErrorResponse(
+      new AiPolicyViolationError({
+        code: "no_provider_configured",
+        message:
+          "Es ist kein KI-Provider konfiguriert. Der Betreiber muss einen Provider " +
+          "ausdruecklich freischalten (lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; " +
+          "Cloud: ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_AI_API_KEY / " +
+          "CLAUDE_CLI_ENABLED=true).",
+      }),
     );
   }
 
@@ -118,54 +106,30 @@ export async function POST(req: Request) {
     })),
   });
 
-  const startMs = Date.now();
-  let response;
   try {
-    response = await aiComplete({
+    const result = await aiCompleteGoverned({
+      feature: "ai.draft_policy",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
       messages: prompt,
       maxTokens: 4000,
       temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: aiPolicyDraftResponseSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  // Cost transparency: log usage regardless of parse outcome.
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "ai-assist/draft-policy",
-    inputTokens: response.usage?.inputTokens ?? 0,
-    outputTokens: response.usage?.outputTokens ?? 0,
-    model: response.model,
-    latencyMs: Date.now() - startMs,
-    cachedResult: false,
-  });
-
-  const parsed = safeJsonParse<unknown>(response.text);
-  const validated = aiPolicyDraftResponseSchema.safeParse(parsed);
-  if (!validated.success) {
-    return Response.json(
+    return aiJson(
       {
-        error:
-          "The AI returned an unparseable or invalid draft. Please try again.",
-        rawSample: response.text.slice(0, 300),
+        title: result.data.title,
+        content: result.data.content,
+        coveredRequirements: result.data.coveredRequirements,
+        requirements: entries.map((e) => ({ id: e.id, code: e.code })),
+        provider: result.provider,
+        model: result.model,
       },
-      { status: 422 },
+      result.disclosure,
     );
+  } catch (err) {
+    return aiErrorResponse(err);
   }
-
-  return Response.json({
-    data: {
-      title: validated.data.title,
-      content: validated.data.content,
-      coveredRequirements: validated.data.coveredRequirements,
-      requirements: entries.map((e) => ({ id: e.id, code: e.code })),
-      provider: response.provider,
-      model: response.model,
-    },
-  });
 }

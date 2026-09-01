@@ -68,7 +68,11 @@ export const wbReport = pgTable(
     }).notNull(),
     category: wbCategoryEnum("category").notNull(),
     description: text("description").notNull(), // AES-256-GCM encrypted
-    contactEmail: varchar("contact_email", { length: 320 }), // optional, encrypted
+    // #WP8 (Migration 0433): `text`, nicht varchar(320). Die Spalte haelt
+    // das AES-256-GCM-Chiffrat, nicht die Klartextadresse — bei einer
+    // laengeren Adresse war der Wert breiter als die Spalte und der
+    // Meldevorgang brach mit 22001 ab, nachdem die Meldung abgesetzt war.
+    contactEmail: text("contact_email"), // optional, encrypted
     language: varchar("language", { length: 2 }).notNull().default("de"),
     ipHash: varchar("ip_hash", { length: 64 }), // SHA-256, NOT plaintext
     submittedAt: timestamp("submitted_at", { withTimezone: true })
@@ -179,6 +183,12 @@ export const wbCaseEvidence = pgTable(
       .notNull()
       .defaultNow(),
     isImmutable: boolean("is_immutable").notNull().default(true),
+    // #WP8-S07-20 (Migration 0433): Nachweis, dass der Dateiinhalt
+    // tatsaechlich im Objektspeicher liegt. NULL heisst: es gibt keine
+    // Datei zu dieser Zeile. Vorher quittierte die Upload-Route jeden
+    // Vorgang mit 201, ohne je etwas zu speichern.
+    storedAt: timestamp("stored_at", { withTimezone: true }),
+    storageBackend: text("storage_backend"),
   },
   (table) => [index("wce_case_idx").on(table.caseId)],
 );

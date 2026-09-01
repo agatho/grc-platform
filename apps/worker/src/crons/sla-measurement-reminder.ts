@@ -10,6 +10,8 @@ import {
 } from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface SlaMeasurementReminderResult {
   processed: number;
@@ -54,30 +56,40 @@ export const processSlaMeasurementReminder = withCronInstrumentation(
         const recipientId = sla.contractOwnerId;
         if (!recipientId) continue;
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: sla.orgId,
-          type: "task_assigned" as const,
-          entityType: "contract_sla",
-          entityId: sla.slaId,
-          title: `SLA measurement due: ${sla.metricName}`,
-          message: `SLA "${sla.metricName}" for contract "${sla.contractTitle}" needs a ${sla.measurementFrequency} measurement. Please submit the current period's data.`,
-          channel: "both" as const,
-          templateKey: "sla_measurement_due",
-          templateData: {
-            slaId: sla.slaId,
-            contractId: sla.contractId,
-            metricName: sla.metricName,
-            contractTitle: sla.contractTitle,
-            frequency: sla.measurementFrequency,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: sla.orgId,
+            type: "task_assigned" as const,
+            entityType: "contract_sla",
+            entityId: sla.slaId,
+            title: `SLA measurement due: ${sla.metricName}`,
+            message: `SLA "${sla.metricName}" for contract "${sla.contractTitle}" needs a ${sla.measurementFrequency} measurement. Please submit the current period's data.`,
+            channel: "both" as const,
+            templateKey: "sla_measurement_due",
+            templateData: {
+              slaId: sla.slaId,
+              contractId: sla.contractId,
+              metricName: sla.metricName,
+              contractTitle: sla.contractTitle,
+              frequency: sla.measurementFrequency,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "sla-measurement-reminder" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "sla-measurement-reminder",
+            scope: "Check if measurement is due based on frequenc",
+          },
+          err,
+        );
       }
     }
 

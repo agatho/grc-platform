@@ -11,9 +11,18 @@
 //   4. All providers fail → AllProvidersFailedError with per-provider
 //      error details preserved (the audit-log path consumes these).
 //   5. Privacy override (containsPersonalData=true) chooses Ollama as
-//      the PRIMARY even if a different `provider` was requested —
-//      and the failover chain still runs if Ollama dies.
+//      the PRIMARY — und seit WP6/S05-15 werden Cloud-Fallbacks in
+//      diesem Fall NICHT mehr angehaengt.
 //   6. onAttempt hook fires for every attempt, success and failure.
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-02, S05-15] Zwei Vertragsaenderungen,
+// die diese Datei nachzieht:
+//   * Ein Fallback muss KONFIGURIERT sein. Vorher wurde jeder genannte
+//     Provider versucht, auch wenn der Betreiber ihn nie freigeschaltet
+//     hatte (`claude_cli` war ohnehin immer "verfuegbar").
+//   * Ein Fallback muss die Richtlinie bestehen. Bei
+//     containsPersonalData werden Cloud-Fallbacks verworfen statt
+//     versucht.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -119,6 +128,8 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
   it("falls back when primary times out (timeoutMs option)", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
+    // WP6: der Fallback muss vom Betreiber freigeschaltet sein.
+    process.env.CLAUDE_CLI_ENABLED = "true";
     process.env.AI_DEFAULT_PROVIDER = "openai";
     // Primary never resolves within the timeout.
     callOpenAIMock.mockImplementation(
@@ -138,6 +149,8 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
   it("throws AllProvidersFailedError with attempt details when every provider fails", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
+    process.env.GOOGLE_AI_API_KEY = "g-test";
+    process.env.CLAUDE_CLI_ENABLED = "true";
     process.env.AI_DEFAULT_PROVIDER = "openai";
     callOpenAIMock.mockRejectedValue(new Error("rate limited"));
     callGeminiMock.mockRejectedValue(new Error("invalid api key"));
@@ -145,13 +158,14 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
 
     const { aiCompleteWithFailover, AllProvidersFailedError } =
       await import("../src/router");
+    void AllProvidersFailedError;
 
     await expect(
       aiCompleteWithFailover(
         { messages: [{ role: "user", content: "hi" }] },
         { fallbackProviders: ["gemini", "claude_cli"] },
       ),
-    ).rejects.toBeInstanceOf(AllProvidersFailedError);
+    ).rejects.toMatchObject({ name: "AllProvidersFailedError" });
 
     try {
       await aiCompleteWithFailover(
@@ -168,30 +182,53 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
     }
   });
 
-  it("privacy override: containsPersonalData routes to ollama as primary", async () => {
+  it("privacy override: containsPersonalData routes to ollama, Cloud-Fallback wird verworfen", async () => {
     resetEnv();
     process.env.OLLAMA_ENABLED = "true";
     process.env.OPENAI_API_KEY = "sk-test";
     callOllamaMock.mockResolvedValue(ok("ollama"));
 
     const { aiCompleteWithFailover } = await import("../src/router");
+    const rejected: string[] = [];
     const result = await aiCompleteWithFailover(
       {
         messages: [{ role: "user", content: "patient John Doe" }],
         containsPersonalData: true,
-        provider: "openai", // <-- explicitly requested but should be overridden
       },
-      { fallbackProviders: ["openai"] },
+      {
+        fallbackProviders: ["openai"],
+        onRejectedFallback: (p) => rejected.push(p),
+      },
     );
 
     expect(result.provider).toBe("ollama");
     expect(callOllamaMock).toHaveBeenCalledOnce();
+    expect(callOpenAIMock).not.toHaveBeenCalled();
+    // [WP6 · S05-15] Der Cloud-Fallback wird gar nicht erst in die
+    // Versuchsliste aufgenommen.
+    expect(rejected).toEqual(["openai"]);
+  });
+
+  it("privacy: eine ausdrueckliche Cloud-Wahl wird abgelehnt statt ueberschrieben", async () => {
+    resetEnv();
+    process.env.OLLAMA_ENABLED = "true";
+    process.env.OPENAI_API_KEY = "sk-test";
+
+    const { aiCompleteWithFailover } = await import("../src/router");
+    await expect(
+      aiCompleteWithFailover({
+        messages: [{ role: "user", content: "patient John Doe" }],
+        containsPersonalData: true,
+        provider: "openai",
+      }),
+    ).rejects.toMatchObject({ name: "AiPolicyViolationError" });
     expect(callOpenAIMock).not.toHaveBeenCalled();
   });
 
   it("onAttempt hook fires for every attempt with success/error metadata", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
+    process.env.GOOGLE_AI_API_KEY = "g-test";
     process.env.AI_DEFAULT_PROVIDER = "openai";
     callOpenAIMock.mockRejectedValue(new Error("503"));
     callGeminiMock.mockResolvedValue(ok("gemini"));
@@ -225,6 +262,7 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
   it("de-duplicates fallback providers when one matches the primary", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
+    process.env.GOOGLE_AI_API_KEY = "g-test";
     process.env.AI_DEFAULT_PROVIDER = "openai";
     callOpenAIMock.mockRejectedValue(new Error("fail"));
     callGeminiMock.mockResolvedValue(ok("gemini"));

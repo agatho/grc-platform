@@ -5,6 +5,7 @@
 import { db, consentType, consentRecord, notification } from "@grc/db";
 import { eq, and, isNotNull, count } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface MetricsResult {
   processed: number;
@@ -59,20 +60,23 @@ export const processConsentMetrics = withCronInstrumentation(
 
       // Alert if withdrawal rate exceeds threshold
       if (withdrawalRate > DEFAULT_WITHDRAWAL_THRESHOLD && ct.createdBy) {
-        await db.insert(notification).values({
-          orgId: ct.orgId,
-          userId: ct.createdBy,
-          type: "escalation",
-          title: `High Withdrawal Rate: ${ct.name}`,
-          message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
-          entityType: "consent_type",
-          entityId: ct.id,
-          templateData: {
-            module: "dpms",
-            priority: "high",
-            subtype: "consent_withdrawal_alert",
+        await insertNotification(
+          {
+            orgId: ct.orgId,
+            userId: ct.createdBy,
+            type: "escalation",
+            title: `High Withdrawal Rate: ${ct.name}`,
+            message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
+            entityType: "consent_type",
+            entityId: ct.id,
+            templateData: {
+              module: "dpms",
+              priority: "high",
+              subtype: "consent_withdrawal_alert",
+            },
           },
-        });
+          { job: "consent-metrics-updater" },
+        );
         alerts++;
       }
     }

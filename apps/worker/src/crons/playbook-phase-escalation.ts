@@ -14,6 +14,8 @@ import {
 } from "@grc/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface PhaseEscalationResult {
   processed: number;
@@ -160,10 +162,17 @@ export const processPlaybookPhaseEscalation = withCronInstrumentation(
           if (now > phaseDeadline && currentPhase.escalationRoleOnOverdue) {
             // Find user with escalation role
             const escalationUser = await db.execute(sql`
+            -- [WP9 · S10-07] Revoking an org role is a SOFT delete
+            -- (user_organization_role.deleted_at). Without this filter a
+            -- former member kept receiving this organisation's playbook
+            -- escalations. u.is_active is also required: the user row stays
+            -- active while the person is a member of ANY org.
             SELECT u.id FROM "user" u
             INNER JOIN user_organization_role uor ON u.id = uor.user_id
             WHERE uor.org_id = ${orgId}
               AND uor.role IN ('admin', 'risk_manager')
+              AND uor.deleted_at IS NULL
+              AND u.is_active = true
               AND u.deleted_at IS NULL
             LIMIT 1
           `);
@@ -189,24 +198,34 @@ export const processPlaybookPhaseEscalation = withCronInstrumentation(
                   (now.getTime() - phaseDeadline.getTime()) / (1000 * 60 * 60),
                 );
 
-                await db.insert(notification).values({
-                  orgId,
-                  userId,
-                  type: "escalation",
-                  title: `Phase overdue: "${currentPhase.name}"`,
-                  message: `Phase "${currentPhase.name}" is ${hoursOverdue}h overdue. ${phaseTasks.filter((t) => t.status === "open" || t.status === "in_progress").length} tasks remaining.`,
-                  channel: "both",
-                  entityType: "security_incident",
-                  entityId: activation.incidentId,
-                });
+                await insertNotification(
+                  {
+                    orgId,
+                    userId,
+                    type: "escalation",
+                    title: `Phase overdue: "${currentPhase.name}"`,
+                    message: `Phase "${currentPhase.name}" is ${hoursOverdue}h overdue. ${phaseTasks.filter((t) => t.status === "open" || t.status === "in_progress").length} tasks remaining.`,
+                    channel: "both",
+                    entityType: "security_incident",
+                    entityId: activation.incidentId,
+                  },
+                  { job: "playbook-phase-escalation" },
+                );
 
                 escalated++;
               }
             }
           }
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "playbook-phase-escalation",
+            scope: "Check if we already sent an escalation notifi",
+          },
+          err,
+        );
       }
     }
 

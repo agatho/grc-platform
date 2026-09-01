@@ -11,6 +11,8 @@ import {
 } from "@grc/db";
 import { and, eq, sql, desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface EsgTargetStatusResult {
   processed: number;
@@ -124,32 +126,42 @@ export const processEsgTargetStatus = withCronInstrumentation(
               .where(eq(esrsMetric.id, target.metricId));
 
             if (metric?.responsibleUserId) {
-              await db.insert(notification).values({
-                userId: metric.responsibleUserId,
-                orgId: target.orgId,
-                type: "status_change" as const,
-                entityType: "esg_target",
-                entityId: target.id,
-                title: `ESG Target "${target.name}": ${newStatus.replace("_", " ")}`,
-                message: `Target "${target.name}" status changed to ${newStatus.replace("_", " ")}. Current value: ${currentValue}, expected: ${expectedValue.toFixed(2)}, target: ${targetVal}.`,
-                channel: "both" as const,
-                templateKey: "esg_target_status_change",
-                templateData: {
-                  targetId: target.id,
-                  targetName: target.name,
-                  oldStatus: target.status,
-                  newStatus,
-                  currentValue,
+              await insertNotification(
+                {
+                  userId: metric.responsibleUserId,
+                  orgId: target.orgId,
+                  type: "status_change" as const,
+                  entityType: "esg_target",
+                  entityId: target.id,
+                  title: `ESG Target "${target.name}": ${newStatus.replace("_", " ")}`,
+                  message: `Target "${target.name}" status changed to ${newStatus.replace("_", " ")}. Current value: ${currentValue}, expected: ${expectedValue.toFixed(2)}, target: ${targetVal}.`,
+                  channel: "both" as const,
+                  templateKey: "esg_target_status_change",
+                  templateData: {
+                    targetId: target.id,
+                    targetName: target.name,
+                    oldStatus: target.status,
+                    newStatus,
+                    currentValue,
+                  },
+                  createdAt: now,
+                  updatedAt: now,
                 },
-                createdAt: now,
-                updatedAt: now,
-              });
+                { job: "esg-target-status" },
+              );
               notified++;
             }
           }
         }
-      } catch {
-        // Wrapper logs structured error; loop continues to next target.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "esg-target-status",
+            scope: "6. Notify metric owner if at_risk or off_trac",
+          },
+          err,
+        );
       }
     }
 

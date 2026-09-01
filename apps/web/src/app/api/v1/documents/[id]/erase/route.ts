@@ -1,9 +1,9 @@
 import { db, document, documentFile, workItem, auditLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eraseDocumentSchema } from "@grc/shared";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { getFileStorage } from "@grc/shared/lib/file-storage";
+import { getFileStorage, orgScopedStorage } from "@grc/shared/lib/file-storage";
 
 // DELETE /api/v1/documents/:id/erase — GDPR Art. 17 hard erasure (D3).
 // Admin only, mandatory justification. Removes the document, ALL
@@ -95,6 +95,15 @@ export async function DELETE(
         },
       });
 
+      // #S06-16: migration 0421 makes document_signature append-only —
+      // a decided chain link cannot be deleted. The Art. 17 erasure is
+      // the one legitimate exception, and it announces itself instead
+      // of the guard having to guess: the trigger releases the DELETE
+      // only inside this marked transaction.
+      await tx.execute(
+        sql`SELECT set_config('app.dms_signature_purge', 'all', true)`,
+      );
+
       // Hard delete: versions, acknowledgments, entity links, approval
       // steps and file rows are removed via ON DELETE CASCADE.
       await tx
@@ -120,7 +129,9 @@ export async function DELETE(
   // failed delete must not roll back the erasure (orphaned files are
   // preferable to a half-erased record). Storage-agnostic: local FS
   // or S3, depending on STORAGE_BACKEND.
-  const storage = getFileStorage();
+  // #S06-10: every key this handler touches must live under this
+  // org's prefix — enforced, not assumed.
+  const storage = orgScopedStorage(getFileStorage(), ctx.orgId);
   for (const relPath of filePaths) {
     try {
       await storage.delete(relPath);

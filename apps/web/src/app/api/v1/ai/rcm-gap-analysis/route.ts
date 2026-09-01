@@ -1,15 +1,37 @@
-import { db, risk, riskControl, control, aiPromptLog } from "@grc/db";
-import { eq, and, isNull, sql, count, inArray } from "drizzle-orm";
-import { withAuth } from "@/lib/api";
-import { aiRcmGapAnalysisSchema } from "@grc/shared";
-import { aiComplete } from "@grc/ai";
-
 // POST /api/v1/ai/rcm-gap-analysis — AI-driven RCM gap analysis
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
+// Vorher: Inline-Prompt mit `JSON.stringify(riskData.slice(0,50))` im
+// Fliesstext, kein Rate-Limit, `result = { gaps: [] }` als stiller
+// Fallback bei unparsebarer Antwort — ein leeres Ergebnis war nicht von
+// „keine Lücken gefunden" zu unterscheiden.
+
+import { db, risk, riskControl, control } from "@grc/db";
+import { eq, and, isNull, sql, inArray } from "drizzle-orm";
+import { withAuth } from "@/lib/api";
+import { requireModule } from "@grc/auth";
+import { aiRcmGapAnalysisSchema } from "@grc/shared";
+import {
+  aiCompleteGoverned,
+  buildRcmGapPrompt,
+  rcmGapsSchema,
+  safeJsonParse,
+} from "@grc/ai";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
+
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
-  const body = aiRcmGapAnalysisSchema.safeParse(await req.json());
+  const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
+  const body = aiRcmGapAnalysisSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -17,9 +39,7 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fetch risks with their linked control counts
   const riskConditions = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
-
   if (body.data.scope === "high_risk") {
     riskConditions.push(sql`${risk.riskScoreInherent} >= 15`);
   }
@@ -35,12 +55,8 @@ export async function POST(req: Request) {
     .from(risk)
     .where(and(...riskConditions));
 
-  // Fetch control linkage for ALL risks in one query.
-  //
-  // #PERF-N-PLUS-1: was one riskControl ⋈ control query per risk —
-  // on a 500-risk register that's 500 sequential round-trips before
-  // the AI call even starts. Replaced with a single inArray query
-  // plus in-memory grouping (same pattern as erm/residual/recompute).
+  // #PERF-N-PLUS-1: one inArray query plus in-memory grouping instead of
+  // one riskControl ⋈ control query per risk.
   const riskIds = risks.map((r) => r.id);
   const links =
     riskIds.length > 0
@@ -69,27 +85,14 @@ export async function POST(req: Request) {
   for (const l of links) {
     if (l.riskId == null) continue;
     const bucket = linksByRisk.get(l.riskId) ?? [];
-    bucket.push({
-      title: l.title,
-      type: l.controlType,
-      frequency: l.frequency,
-    });
+    bucket.push({ title: l.title, type: l.controlType, frequency: l.frequency });
     linksByRisk.set(l.riskId, bucket);
   }
 
-  const riskData: Array<{
-    id: string;
-    title: string;
-    category: string;
-    inherentScore: number | null;
-    controls: Array<{ title: string; type: string; frequency: string }>;
-  }> = [];
-
+  const riskData = [];
   for (const r of risks) {
     const controls = linksByRisk.get(r.id) ?? [];
-
     if (body.data.scope === "unlinked" && controls.length > 0) continue;
-
     riskData.push({
       id: r.id,
       title: r.title,
@@ -99,66 +102,37 @@ export async function POST(req: Request) {
     });
   }
 
-  const prompt = `You are a GRC expert performing a Risk-Control Matrix (RCM) gap analysis.
+  const knownRiskIds = new Set(riskData.map((r) => r.id));
 
-Analyze the following risks and their linked controls. Identify gaps:
-1. Risks with NO controls (unmitigated)
-2. Risks with only one control type (e.g. only detective, missing preventive)
-3. Controls that appear orphaned (linked but risk is low-priority)
-4. High-risk items with insufficient control frequency
-
-Risk-Control data:
-${JSON.stringify(riskData.slice(0, 50), null, 2)}
-
-Return JSON: {"gaps": [{"riskId": string, "riskTitle": string, "gapType": "unmitigated"|"type_gap"|"frequency_gap"|"orphaned", "severity": "high"|"medium"|"low", "recommendation": string}]}`;
-
-  const startMs = Date.now();
-
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown.",
-      },
-      { role: "user", content: prompt },
-    ],
-    maxTokens: 4000,
-    temperature: 0.2,
-  });
-
-  const latencyMs = Date.now() - startMs;
-
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "rcm-gap-analysis",
-    inputTokens: aiResponse.usage?.inputTokens ?? 0,
-    outputTokens: aiResponse.usage?.outputTokens ?? 0,
-    model: aiResponse.model,
-    latencyMs,
-    costUsd: String(
-      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
-    ),
-    cachedResult: false,
-  });
-
-  let result: unknown;
   try {
-    const cleaned = aiResponse.text.replace(/```json\n?|\n?```/g, "").trim();
-    result = JSON.parse(cleaned);
-  } catch {
-    result = { gaps: [] };
-  }
+    const result = await aiCompleteGoverned({
+      feature: "ai.rcm_gap_analysis",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      messages: buildRcmGapPrompt({ scope: body.data.scope, risks: riskData }),
+      maxTokens: 4000,
+      temperature: 0.2,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: rcmGapsSchema,
+    });
 
-  return Response.json({
-    data: {
-      scope: body.data.scope,
-      risksAnalyzed: riskData.length,
-      ...(result as object),
-      model: aiResponse.model,
-      provider: aiResponse.provider,
-    },
-  });
+    // Serverseitige Härtung analog ai/suggest-controls: eine Lücke darf
+    // sich nur auf ein Risiko beziehen, das der Server selbst geliefert
+    // hat. Erfundene oder eingeschleuste IDs fallen heraus.
+    const gaps = result.data.gaps.filter((g) => knownRiskIds.has(g.riskId));
+
+    return aiJson(
+      {
+        scope: body.data.scope,
+        risksAnalyzed: riskData.length,
+        gaps,
+        discardedGaps: result.data.gaps.length - gaps.length,
+        model: result.model,
+        provider: result.provider,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
 }

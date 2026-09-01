@@ -13,6 +13,7 @@ import { eq, and, isNull, desc } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { computeCES, computeTrend } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface CesRecomputeResult {
   processed: number;
@@ -149,8 +150,8 @@ export const processCesRecompute = withCronInstrumentation(
 
           processed++;
         } catch (err) {
-          // Wrapper logs structured error; bump per-control counter.
-          void err;
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError({ job: "ces-recompute", scope: "Upsert" }, err);
           errors++;
         }
       }

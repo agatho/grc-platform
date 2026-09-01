@@ -30,6 +30,7 @@ import type {
   CCIRawMetrics,
   CCIRawMetricDetail,
 } from "@grc/shared";
+import { reportJobError } from "../lib/job-runtime";
 
 interface AggregationResult {
   orgsProcessed: number;
@@ -64,9 +65,9 @@ export const processCCIMonthlyAggregation = withCronInstrumentation(
         if (result) snapshotsCreated++;
         orgsProcessed++;
       } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "cci-monthly-aggregation", scope: "org" }, err);
         errors++;
-        // Wrapper logs structured error; bump per-org counter.
-        void err;
       }
     }
 

@@ -4,6 +4,7 @@
 import { db, ddSession, notification, vendor } from "@grc/db";
 import { and, sql, eq, isNull, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface DdReminderResult {
   processed: number;
@@ -71,27 +72,30 @@ export const processDdReminder = withCronInstrumentation(
 
         // Create notification for the internal user who created the session
         if (session.createdBy) {
-          await db.insert(notification).values({
-            userId: session.createdBy,
-            orgId: session.orgId,
-            type: "deadline_approaching" as const,
-            entityType: "dd_session",
-            entityId: session.sessionId,
-            title: `DD reminder: ${session.vendorName} — ${daysUntilDeadline} days remaining`,
-            message: `The due diligence questionnaire for "${session.vendorName}" (${session.supplierEmail}) is due in ${daysUntilDeadline} day(s). Current progress: ${session.progressPercent}%.`,
-            channel: "both" as const,
-            templateKey: "dd_session_reminder",
-            templateData: {
-              sessionId: session.sessionId,
-              vendorName: session.vendorName,
-              supplierEmail: session.supplierEmail,
-              daysRemaining: daysUntilDeadline,
-              progressPercent: session.progressPercent,
-              deadline: deadline.toISOString(),
+          await insertNotification(
+            {
+              userId: session.createdBy,
+              orgId: session.orgId,
+              type: "deadline_approaching" as const,
+              entityType: "dd_session",
+              entityId: session.sessionId,
+              title: `DD reminder: ${session.vendorName} — ${daysUntilDeadline} days remaining`,
+              message: `The due diligence questionnaire for "${session.vendorName}" (${session.supplierEmail}) is due in ${daysUntilDeadline} day(s). Current progress: ${session.progressPercent}%.`,
+              channel: "both" as const,
+              templateKey: "dd_session_reminder",
+              templateData: {
+                sessionId: session.sessionId,
+                vendorName: session.vendorName,
+                supplierEmail: session.supplierEmail,
+                daysRemaining: daysUntilDeadline,
+                progressPercent: session.progressPercent,
+                deadline: deadline.toISOString(),
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "dd-reminder" },
+          );
         }
 
         // Update last reminder timestamp

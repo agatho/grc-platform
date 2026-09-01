@@ -549,6 +549,12 @@ export const notification = pgTable(
     emailMessageId: varchar("email_message_id", { length: 255 }),
     emailError: text("email_error"),
     retryCount: integer("retry_count").notNull().default(0),
+    // [WP9 · S10-10 / Migration 0435] Idempotenzschlüssel für wiederkehrende
+    // Cron-Benachrichtigungen. NULL = kein Dedup (Einzelereignisse aus der
+    // Web-App). Der partielle UNIQUE-Index (org_id, dedupe_key) setzt ihn in
+    // der Datenbank durch, damit der Guard nicht in 44 Cron-Dateien einzeln
+    // richtig sein muss.
+    dedupeKey: text("dedupe_key"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -564,6 +570,43 @@ export const notification = pgTable(
   (table) => [
     index("notif_user_unread_idx").on(table.userId, table.isRead),
     index("notif_org_idx").on(table.orgId),
+    // Nicht partiell — siehe Migration 0435: ein partieller Index taugt
+    // nur dann als ON-CONFLICT-Arbiter, wenn jedes INSERT sein Prädikat
+    // wiederholt. NULL kollidiert nie mit NULL, das reicht.
+    uniqueIndex("notification_dedupe_uidx").on(table.orgId, table.dedupeKey),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// job_run — Betriebsprotokoll der Worker-Jobs (WP9 · S10-02, S10-12)
+// ──────────────────────────────────────────────────────────────
+// Vor diesem Audit existierte weder ein Scheduler noch irgendeine Spur
+// darüber, ob ein Job gelaufen ist: Fehlläufe antworteten mit HTTP 200 und
+// `success: true`. Der In-Process-Scheduler (apps/worker/src/lib/scheduler.ts)
+// schreibt hier je Lauf eine Zeile.
+export const jobRun = pgTable(
+  "job_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobName: varchar("job_name", { length: 120 }).notNull(),
+    /** scheduler | http | manual */
+    triggerSource: varchar("trigger_source", { length: 20 })
+      .notNull()
+      .default("scheduler"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    durationMs: integer("duration_ms"),
+    /** running | success | partial | failed | skipped_locked */
+    status: varchar("status", { length: 20 }).notNull().default("running"),
+    failedItems: integer("failed_items").notNull().default(0),
+    result: jsonb("result"),
+    error: text("error"),
+    host: varchar("host", { length: 120 }),
+  },
+  (table) => [
+    index("job_run_name_started_idx").on(table.jobName, table.startedAt),
   ],
 );
 

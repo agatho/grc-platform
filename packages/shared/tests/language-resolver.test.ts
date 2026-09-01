@@ -246,14 +246,31 @@ describe("computeSourceHash", () => {
 });
 
 describe("sanitizeTranslation", () => {
-  it("should escape HTML entities", () => {
+  // [ARCTOS-FULL-2026-08-31 / WP6 · S05-18]
+  // `sanitizeTranslation` escaped HTML-Entities IN DEN BESTAND. Eine
+  // Kontrolle "Vier-Augen-Prinzip bei Betraegen > 10.000 EUR" wurde als
+  // "... &gt; 10.000 EUR" gespeichert und erschien so in CSV-, XLSX- und
+  // PDF-Exporten sowie in nachgelagerten Prompts. Escaping gehoert an
+  // die Ausgabe (React tut es von selbst), nicht in die Datenbank —
+  // zumal an dieser Stelle gar kein XSS-Pfad besteht (S05-21).
+  it("escaped NICHT mehr — der Bestand bleibt roher Text", () => {
     expect(sanitizeTranslation('<script>alert("xss")</script>')).toBe(
-      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;",
+      '<script>alert("xss")</script>',
+    );
+    expect(sanitizeTranslation("Betraege > 10.000 EUR")).toBe(
+      "Betraege > 10.000 EUR",
     );
   });
 
-  it("should escape ampersand", () => {
-    expect(sanitizeTranslation("A & B")).toBe("A &amp; B");
+  it("laesst kaufmaennisches Und unveraendert", () => {
+    expect(sanitizeTranslation("A & B")).toBe("A & B");
+  });
+
+  it("entfernt Steuerzeichen und unsichtbare Zeichen", () => {
+    const rlo = String.fromCharCode(0x202e);
+    const bell = String.fromCharCode(0x07);
+    expect(sanitizeTranslation("a" + rlo + "b")).toBe("ab");
+    expect(sanitizeTranslation("a" + bell + "b")).toBe("a b");
   });
 
   it("should leave plain text unchanged (except &)", () => {

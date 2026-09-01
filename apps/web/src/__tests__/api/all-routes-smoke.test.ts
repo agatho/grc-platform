@@ -87,15 +87,39 @@ vi.mock("@grc/events", () => ({
   emitEntityDeleted: vi.fn(),
 }));
 
-vi.mock("@grc/ai", () => ({
-  generateEmbedding: vi.fn().mockResolvedValue([0, 0, 0]),
-  getEmbeddingProvider: vi.fn().mockReturnValue(null),
-  callLlm: vi.fn().mockResolvedValue({ content: "" }),
-  routeRequest: vi.fn().mockResolvedValue({ content: "" }),
-  getAvailableProviders: vi.fn().mockReturnValue([]),
-  getDefaultProvider: vi.fn().mockReturnValue("ollama"),
-  DEFAULT_MODELS: {},
-}));
+// [ARCTOS-FULL-2026-08-31 / WP6] Der Smoke-Test importiert jede Route.
+// Mehrere AI-Routen nutzen Konstanten aus `@grc/ai` bereits auf
+// Modulebene (`z.enum(ALL_PROVIDERS)`), deshalb muss der Mock die echten
+// Werte liefern statt eines Teilausschnitts. `importActual` haelt die
+// Liste automatisch aktuell — ein handgepflegtes Duplikat waere genau die
+// Drift, die S05-14 beschreibt.
+vi.mock("@grc/ai", async () => {
+  const actual = await vi.importActual<typeof import("@grc/ai")>("@grc/ai");
+  return {
+    ...actual,
+    generateEmbedding: vi.fn().mockResolvedValue([0, 0, 0]),
+    getEmbeddingProvider: vi.fn().mockReturnValue(null),
+    callLlm: vi.fn().mockResolvedValue({ content: "" }),
+    routeRequest: vi.fn().mockResolvedValue({ content: "" }),
+    getAvailableProviders: vi.fn().mockReturnValue([]),
+    getDefaultProvider: vi.fn().mockReturnValue("ollama"),
+    loadOrgAiPolicy: vi.fn(async (orgId: string) => ({
+      ...actual.defaultPolicySnapshot(orgId),
+      requireTransparencyNotice: true,
+    })),
+    aiComplete: vi.fn().mockResolvedValue({
+      text: "{}",
+      provider: "ollama",
+      model: "test",
+    }),
+    aiCompleteGoverned: vi.fn().mockRejectedValue(
+      new actual.AiPolicyViolationError({
+        code: "no_provider_configured",
+        message: "smoke: kein Provider konfiguriert",
+      }),
+    ),
+  };
+});
 
 vi.mock("@grc/automation", () => ({
   AutomationEngine: class {

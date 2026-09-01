@@ -12,6 +12,7 @@ import {
 } from "@grc/db";
 import { and, eq, sql, isNull, count } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface EsgCompletenessResult {
   processed: number;
@@ -107,24 +108,27 @@ export const processEsgCompletenessCheck = withCronInstrumentation(
           for (const user of responsibleUsers) {
             if (!user.userId) continue;
             try {
-              await db.insert(notification).values({
-                userId: user.userId,
-                orgId: report.orgId,
-                type: "deadline_approaching" as const,
-                entityType: "esg_annual_report",
-                entityId: report.id,
-                title: `ESG Report ${currentYear}: Completeness at ${pct}%`,
-                message: `The ESRS report for ${currentYear} is currently at ${pct}% completeness. The reporting deadline is approaching. Please ensure all mandatory datapoints have measurements recorded.`,
-                channel: "both" as const,
-                templateKey: "esg_completeness_low",
-                templateData: {
-                  reportId: report.id,
-                  year: currentYear,
-                  completeness: pct,
+              await insertNotification(
+                {
+                  userId: user.userId,
+                  orgId: report.orgId,
+                  type: "deadline_approaching" as const,
+                  entityType: "esg_annual_report",
+                  entityId: report.id,
+                  title: `ESG Report ${currentYear}: Completeness at ${pct}%`,
+                  message: `The ESRS report for ${currentYear} is currently at ${pct}% completeness. The reporting deadline is approaching. Please ensure all mandatory datapoints have measurements recorded.`,
+                  channel: "both" as const,
+                  templateKey: "esg_completeness_low",
+                  templateData: {
+                    reportId: report.id,
+                    year: currentYear,
+                    completeness: pct,
+                  },
+                  createdAt: now,
+                  updatedAt: now,
                 },
-                createdAt: now,
-                updatedAt: now,
-              });
+                { job: "esg-completeness-check" },
+              );
               notified++;
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err);

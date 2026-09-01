@@ -9,7 +9,12 @@ import {
 } from "@grc/db";
 import { resolveOrgByCode } from "@grc/auth/anonymous-token";
 import { submitReportSchema } from "@grc/shared";
-import { encrypt, hashIp, generateMailboxToken } from "@grc/shared";
+import {
+  encrypt,
+  hashIp,
+  generateMailboxToken,
+  isWbCryptoConfigured,
+} from "@grc/shared";
 import { sql } from "drizzle-orm";
 
 interface RouteParams {
@@ -69,6 +74,28 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
 
+  // #WP8-S07-19.5 — ohne WB_ENCRYPTION_KEY wirft `encrypt()` erst mitten im
+  // Vorgang, nachdem die hinweisgebende Person ihre Meldung bereits
+  // abgesetzt hat, und die Antwort ist ein nichtssagender 500. Der nach
+  // HinSchG §12 vorgeschriebene Meldekanal ist dann unbemerkt tot. Die
+  // Prüfung steht bewusst NACH Organisations- und Eingabevalidierung: ein
+  // beliebiger Aufrufer soll den Konfigurationszustand nicht erfragen
+  // können.
+  if (!isWbCryptoConfigured()) {
+    console.error(
+      "[portal/report] SECURITY: WB_ENCRYPTION_KEY is not configured — " +
+        "the whistleblowing intake channel is refusing reports instead of " +
+        "storing them unencrypted or losing them (HinSchG §12).",
+    );
+    return Response.json(
+      {
+        error:
+          "The reporting channel is temporarily unavailable. Please contact the reporting office directly.",
+      },
+      { status: 503 },
+    );
+  }
+
   const now = new Date();
   const tokenExpires = new Date(now.getTime() + 6 * 30 * 24 * 60 * 60 * 1000); // ~6 months
   const acknowledgeDeadline = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -89,7 +116,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     req.headers.get("x-forwarded-for") ||
     req.headers.get("x-real-ip") ||
     "unknown";
-  const ipHashed = hashIp(ip);
+  // #WP8-S07-02 — HMAC statt ungesalzenem SHA-256, mit Mandanten-
+  // Diskriminator: Duplikaterkennung innerhalb der Organisation bleibt,
+  // die Verknuepfbarkeit ueber Mandanten hinweg entfaellt.
+  const ipHashed = hashIp(ip, org.id);
 
   // Generate case number: WB-YYYY-NNN
   const year = now.getFullYear();

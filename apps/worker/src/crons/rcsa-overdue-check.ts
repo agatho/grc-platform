@@ -4,6 +4,7 @@
 import { db, rcsaCampaign, rcsaAssignment, notification } from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface RcsaOverdueResult {
   processed: number;
@@ -66,24 +67,27 @@ export const processRcsaOverdueCheck = withCronInstrumentation(
           ];
 
           try {
-            await db.insert(notification).values({
-              orgId: campaign.orgId,
-              userId: campaign.createdBy,
-              type: "escalation",
-              entityType: "rcsa_campaign",
-              entityId: campaign.id,
-              title: `RCSA Overdue: ${campaign.name}`,
-              message: `${overdueAssignments.length} assessment(s) in "${campaign.name}" are overdue from ${overdueUserIds.length} participant(s).`,
-              channel: "both",
-              templateKey: "rcsa_escalation",
-              templateData: {
-                campaignName: campaign.name,
-                overdueCount: overdueAssignments.length,
-                overdueParticipants: overdueUserIds.length,
+            await insertNotification(
+              {
+                orgId: campaign.orgId,
+                userId: campaign.createdBy,
+                type: "escalation",
+                entityType: "rcsa_campaign",
+                entityId: campaign.id,
+                title: `RCSA Overdue: ${campaign.name}`,
+                message: `${overdueAssignments.length} assessment(s) in "${campaign.name}" are overdue from ${overdueUserIds.length} participant(s).`,
+                channel: "both",
+                templateKey: "rcsa_escalation",
+                templateData: {
+                  campaignName: campaign.name,
+                  overdueCount: overdueAssignments.length,
+                  overdueParticipants: overdueUserIds.length,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "rcsa-overdue-check" },
+            );
 
             escalationsSent++;
           } catch (err) {

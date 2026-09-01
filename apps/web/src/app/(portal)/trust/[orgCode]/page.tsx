@@ -228,8 +228,16 @@ export default async function TrustCenterPage({ params }: Props) {
                 desc: "Kryptographisch gesicherter Audit-Trail (SHA-256 Hash-Chain).",
               },
               {
+                // #S06-11 (ARCTOS-FULL-2026-08-31): der frühere Text
+                // versprach „im Transit (TLS 1.3) und at Rest (AES-256)"
+                // als Produktzusage. At Rest war für den Dokumentenspeicher
+                // NICHT implementiert: kein SSE-Header beim PUT, keine
+                // applikative Verschlüsselung, das lokale Backend schreibt
+                // Klartextdateien. Die Zusage wird auf das zurückgenommen,
+                // was das Produkt selbst leistet, und der betrieblich
+                // erbrachte Teil wird als solcher benannt.
                 title: "Verschlüsselung",
-                desc: "Daten werden im Transit (TLS 1.3) und at Rest (AES-256) verschlüsselt.",
+                desc: "Transportverschlüsselung mit TLS 1.3. Besonders schutzbedürftige Daten — Hinweisgebermeldungen und Zugangsdaten von Konnektoren — sind zusätzlich applikativ mit AES-256-GCM verschlüsselt. Die Verschlüsselung des Datenträgers und, wo der Objektspeicher es unterstützt, die serverseitige Verschlüsselung des Dokumentenspeichers werden vom Betreiber der Installation konfiguriert.",
               },
               {
                 title: "Incident Response",

@@ -1,21 +1,52 @@
 // Cron Job: Calendar Weekly Digest
 // WEEKLY Monday 07:00 — Send email digest per user with this week's GRC deadlines
+//
+// [ARCTOS-FULL-2026-08-31 / WP9 · S10-14, S10-10, S10-07, S10-12]
+// Handed over by WP3 together with `calendar-overdue-check.ts`.
+//
+// The org context was set with `set_config('app.current_org_id', X, false)`
+// on the SHARED base pool. Three consequences, all real:
+//   * `false` = session-local, and `db.execute` takes an arbitrary pooled
+//     connection — the very next query (the events SELECT) usually ran on a
+//     different connection, so the context did not apply where it was meant
+//     to;
+//   * the GUC stayed on that connection afterwards. `request-context.ts`
+//     documents that it can never be reset to NULL, only to `''`, and
+//     `''::uuid` THROWS inside the RLS policies — a poisoned base-pool
+//     connection breaks unrelated context-less queries later on;
+//   * consequently the whole loop only "worked" because the worker ran as
+//     a superuser with RLS inactive. Under `grc_worker` it would have
+//     returned another org's rows or none at all.
+//
+// It now uses one transaction per (user, org) with a transaction-local
+// context — the pattern from `risk-acceptance-expiry.ts`, extracted into
+// `lib/org-context.ts`.
+//
+// Also fixed here: the digest had no dedup guard (S10-10, a second run in
+// the same week produced a second digest), recipients were resolved without
+// the `deleted_at` filter (S10-07), and errors were returned inside an
+// HTTP-200 `success: true` body (S10-12).
 
 import { db, notification } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { withOrgContext } from "../lib/org-context";
+import { createRunReport } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface CalendarDigestResult {
   processed: number;
-  emailsSent: number;
+  digestsCreated: number;
+  ok: boolean;
+  failed: number;
   errors: string[];
 }
 
 export const processCalendarDigest = withCronInstrumentation(
   "calendar-digest",
   async (): Promise<CalendarDigestResult> => {
-    const errors: string[] = [];
-    let emailsSent = 0;
+    const report = createRunReport("calendar-digest");
+    let digestsCreated = 0;
     const now = new Date();
 
     // Calculate this week's date range (Monday to Sunday)
@@ -37,12 +68,15 @@ export const processCalendarDigest = withCronInstrumentation(
       sql`SELECT DISTINCT uor.org_id, uor.user_id, u.name as user_name, u.email
         FROM user_organization_role uor
         JOIN "user" u ON u.id = uor.user_id
-        WHERE u.is_active = true AND u.deleted_at IS NULL`,
+        -- [S10-07] A revoked org role is a SOFT delete; without this filter
+        -- former members kept receiving that organisation's digest.
+        WHERE uor.deleted_at IS NULL
+          AND u.is_active = true AND u.deleted_at IS NULL`,
     );
 
     if (!orgs || orgs.length === 0) {
       console.log("[cron:calendar-digest] No active users found");
-      return { processed: 0, emailsSent: 0, errors: [] };
+      return report.toResult({ processed: 0, digestsCreated: 0 });
     }
 
     // Group by user (a user may have multiple orgs)
@@ -66,16 +100,15 @@ export const processCalendarDigest = withCronInstrumentation(
 
     // For each user, find events across their orgs this week
     for (const [userId, userData] of userOrgMap.entries()) {
-      try {
-        for (const orgId of userData.orgIds) {
-          // Set RLS context
-          await db.execute(
-            sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
-          );
-
-          // Query calendar events for this week across all sources
-          // Simplified: check manual events + audit + control tests
-          const weekEvents = await db.execute(sql`
+      for (const orgId of userData.orgIds) {
+        try {
+          // One transaction per (user, org): the context is
+          // transaction-local, applies to every statement below, and
+          // reverts on commit — no session state on a pooled connection.
+          await withOrgContext(orgId, async (tx) => {
+            // Query calendar events for this week across all sources
+            // Simplified: check manual events + audit + control tests
+            const weekEvents = await tx.execute(sql`
           SELECT title, start_at, 'manual' as module FROM compliance_calendar_event
           WHERE org_id = ${orgId} AND start_at >= ${weekStartStr}::timestamptz AND start_at <= ${weekEndStr}::timestamptz AND deleted_at IS NULL
           UNION ALL
@@ -85,43 +118,55 @@ export const processCalendarDigest = withCronInstrumentation(
           LIMIT 20
         `);
 
-          if (weekEvents && weekEvents.length > 0) {
-            // Create in-app notification as digest
-            await db.insert(notification).values({
-              orgId,
-              userId,
-              type: "deadline_approaching",
-              entityType: "calendar_digest",
-              title: `Weekly Calendar Digest: ${weekEvents.length} event(s) this week`,
-              message: `You have ${weekEvents.length} compliance calendar event(s) scheduled this week.`,
-              channel: "both",
-              templateKey: "calendar_weekly_digest",
-              templateData: {
-                userName: userData.name,
-                eventCount: weekEvents.length,
-                weekStart: weekStartStr,
-                weekEnd: weekEndStr,
-                events: (weekEvents as Array<Record<string, unknown>>)
-                  .slice(0, 10)
-                  .map((e) => ({
-                    title: String(e.title),
-                    startAt: String(e.start_at),
-                    module: String(e.module),
-                  })),
-              },
-              createdAt: now,
-              updatedAt: now,
-            });
-
-            emailsSent++;
-          }
+            if (weekEvents && weekEvents.length > 0) {
+              const written = await insertNotification(
+                {
+                  orgId,
+                  userId,
+                  type: "deadline_approaching",
+                  entityType: "calendar_digest",
+                  title: `Weekly Calendar Digest: ${weekEvents.length} event(s) this week`,
+                  message: `You have ${weekEvents.length} compliance calendar event(s) scheduled this week.`,
+                  channel: "both",
+                  templateKey: "calendar_weekly_digest",
+                  templateData: {
+                    userName: userData.name,
+                    eventCount: weekEvents.length,
+                    weekStart: weekStartStr,
+                    weekEnd: weekEndStr,
+                    events: (weekEvents as Array<Record<string, unknown>>)
+                      .slice(0, 10)
+                      .map((e) => ({
+                        title: String(e.title),
+                        startAt: String(e.start_at),
+                        module: String(e.module),
+                      })),
+                  },
+                  scheduledFor: now,
+                  createdAt: now,
+                  updatedAt: now,
+                },
+                {
+                  job: "calendar-digest",
+                  tx,
+                  // [S10-10] One digest per user, org and calendar week —
+                  // a re-run, a manual trigger or a second worker instance
+                  // must not produce a second digest.
+                  dedupeKey: `calendar-digest|${orgId}|${userId}|${weekStartStr.slice(0, 10)}`,
+                },
+              );
+              if (written) digestsCreated++;
+            }
+          });
+        } catch (err) {
+          report.fail(`user ${userId} / org ${orgId}`, err);
         }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        errors.push(`User ${userId}: ${message}`);
       }
     }
 
-    return { processed: userOrgMap.size, emailsSent, errors };
+    return report.toResult({
+      processed: userOrgMap.size,
+      digestsCreated,
+    });
   },
 );

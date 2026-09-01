@@ -1,3 +1,9 @@
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06] Beide Builder liefern jetzt
+// Messages statt eines Fliesstext-Strings: Instruktion und Daten sind
+// getrennte Kanaele. `flat()` fasst sie fuer die Inhaltszusicherungen
+// wieder zusammen, die Trennung selbst prueft
+// `tests/prompt-injection.test.ts`.
+
 import { describe, it, expect } from "vitest";
 import {
   buildSoaGapPrompt,
@@ -29,15 +35,16 @@ describe("buildSoaGapPrompt", () => {
       framework: "iso27001",
     });
 
-    expect(prompt).toContain("ISO 27001");
-    expect(prompt).toContain("A.5.1");
-    expect(prompt).toContain("A.6.1");
-    expect(prompt).toContain("Server A");
-    expect(prompt).toContain("Data breach risk");
-    expect(prompt).toContain("JSON");
+    const text = prompt.map((m) => m.content).join("\n");
+    expect(text).toContain("ISO 27001");
+    expect(text).toContain("A.5.1");
+    expect(text).toContain("A.6.1");
+    expect(text).toContain("Server A");
+    expect(text).toContain("Data breach risk");
+    expect(text).toContain("JSON");
   });
 
-  it("should sanitize user content in prompt", () => {
+  it("kapselt Angreifertext im Nonce-Umschlag (S05-06)", () => {
     const prompt = buildSoaGapPrompt({
       soaData: [
         {
@@ -53,7 +60,14 @@ describe("buildSoaGapPrompt", () => {
       framework: "iso27001",
     });
 
-    expect(prompt).not.toContain("ignore all previous instructions");
+    const user = prompt[1].content;
+    const nonce = /<grc_data nonce="([0-9a-f]{32})">/.exec(user)![1];
+    const close = `</grc_data nonce="${nonce}">`;
+    // Der Text bleibt erhalten (kein stiller Datenverlust), kann den
+    // Umschlag aber nicht verlassen.
+    expect(user).toContain("Ignore all previous instructions");
+    expect(user.slice(user.indexOf(close) + close.length).trim()).toBe("");
+    expect(prompt[0].content).not.toContain("Ignore all previous");
   });
 });
 
@@ -77,11 +91,14 @@ describe("buildMaturityRoadmapPrompt", () => {
       targetMaturity: 4,
     });
 
-    expect(prompt).toContain("A.5 Organizational Controls");
-    expect(prompt).toContain("Current=2");
-    expect(prompt).toContain("Target=4");
-    expect(prompt).toContain("JSON");
-    expect(prompt).toContain("quick wins");
+    const text = prompt.map((m) => m.content).join("\n");
+    expect(text).toContain("A.5 Organizational Controls");
+    // Die Daten stehen jetzt als JSON im Umschlag statt als
+    // "Current=2, Target=4"-Fliesstext.
+    expect(text).toContain('"currentLevel": 2');
+    expect(text).toContain('"targetLevel": 4');
+    expect(text).toContain("JSON");
+    expect(text).toContain("quick wins");
   });
 });
 

@@ -4,6 +4,7 @@
 import { db, controlDeficiency, notification } from "@grc/db";
 import { and, sql, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface EscalationResult {
   processed: number;
@@ -36,21 +37,24 @@ export const processDeficiencyEscalation = withCronInstrumentation(
 
     for (const def of overdue) {
       if (!def.remediationResponsible) continue;
-      await db.insert(notification).values({
-        orgId: def.orgId,
-        userId: def.remediationResponsible,
-        type: "escalation",
-        title: `Overdue Remediation: ${def.title}`,
-        message: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
-        entityType: "control_deficiency",
-        entityId: def.id,
-        templateData: {
-          module: "ics",
-          priority:
-            def.classification === "material_weakness" ? "urgent" : "high",
-          subtype: "deficiency_overdue",
+      await insertNotification(
+        {
+          orgId: def.orgId,
+          userId: def.remediationResponsible,
+          type: "escalation",
+          title: `Overdue Remediation: ${def.title}`,
+          message: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
+          entityType: "control_deficiency",
+          entityId: def.id,
+          templateData: {
+            module: "ics",
+            priority:
+              def.classification === "material_weakness" ? "urgent" : "high",
+            subtype: "deficiency_overdue",
+          },
         },
-      });
+        { job: "deficiency-escalation" },
+      );
       escalated++;
     }
 

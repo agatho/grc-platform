@@ -6,6 +6,11 @@ import {
   isHinSchgAllowedPath,
   isPublicPath,
 } from "@grc/auth";
+// [WP9 · S10-05] Edge-safe: rate-limit.ts imports only the logger.
+import {
+  checkRequestRateLimit,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 
 // Middleware uses the edge-safe config (no DB imports).
 // It only verifies the JWT — no credential validation happens here.
@@ -62,9 +67,38 @@ function nextWithRoutingHeaders(req: Request, pathname: string) {
   return NextResponse.next({ request: { headers: requestHeaders } });
 }
 
-export default auth((req) => {
+export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const requestId = ensureRequestId(req);
+
+  // ── [ARCTOS-FULL-2026-08-31 / WP9 · S10-05] Rate limiting ──────────
+  //
+  // This is the only place in the request path that sees EVERY route, so it
+  // is where coverage has to be decided. Before this, `rateLimit()` was
+  // opted into by 5 of 1.357 route files, and the Auth.js login callback —
+  // the most attacked endpoint of any application — had no limit at all.
+  //
+  // Deliberately placed BEFORE the authentication check: brute force
+  // happens on unauthenticated requests. The policy table, the
+  // trusted-proxy handling (`TRUSTED_PROXY_HOPS`) and the
+  // fail-open/fail-closed decision live in `lib/rate-limit.ts`.
+  //
+  // This file is owned by WP3 (S02-04 allowlist). This block is the minimal
+  // wiring WP9 requires and is recorded as a cross-package edit in
+  // /work/audit/remediation/WP9.md — an unwired limiter would have been
+  // exactly the placebo fix the remediation plan forbids.
+  const limited = await checkRequestRateLimit(
+    req,
+    pathname,
+    (req.auth?.user as { id?: string } | undefined)?.id,
+  );
+  if (limited && !limited.result.allowed) {
+    return tooManyRequestsResponse({
+      pathname,
+      requestId,
+      retryAfterSeconds: limited.result.retryAfterSeconds,
+    });
+  }
 
   // Public routes — no auth required. The complete list, with a reason per
   // entry, lives in PUBLIC_EXACT_PATHS / PUBLIC_PREFIXES / PUBLIC_PATTERNS

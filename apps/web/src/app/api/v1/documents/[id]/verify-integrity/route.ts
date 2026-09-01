@@ -2,7 +2,7 @@ import { db, document, auditLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { getFileStorage } from "@grc/shared/lib/file-storage";
+import { getFileStorage, orgScopedStorage } from "@grc/shared/lib/file-storage";
 import { createHash } from "crypto";
 
 // GET /api/v1/documents/:id/verify-integrity — Recompute the SHA-256
@@ -55,7 +55,9 @@ export async function GET(
   let actual: string | null = null;
   let fileMissing = false;
   try {
-    const buffer = await getFileStorage().get(doc.filePath);
+    const buffer = await orgScopedStorage(getFileStorage(), ctx.orgId).get(
+      doc.filePath,
+    );
     actual = createHash("sha256").update(buffer).digest("hex");
   } catch {
     fileMissing = true;

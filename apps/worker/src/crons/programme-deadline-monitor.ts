@@ -15,6 +15,8 @@ import {
 } from "@grc/db";
 import { and, eq, inArray, isNull, lt, or } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface ProgrammeDeadlineResult {
   stepsScanned: number;
@@ -88,27 +90,30 @@ export const processProgrammeDeadlineMonitor = withCronInstrumentation(
         if (recipient) {
           const dueMs = Date.parse(s.dueDate + "T00:00:00Z");
           const overdueDays = Math.floor((now.getTime() - dueMs) / 86_400_000);
-          await db.insert(notification).values({
-            userId: recipient,
-            orgId: s.orgId,
-            type: "deadline_approaching" as const,
-            entityType: "programme_journey_step",
-            entityId: s.id,
-            title: `Programmschritt überfällig: ${s.name}`,
-            message: `Schritt "${s.name}" ist seit ${overdueDays} Tag(en) überfällig (${s.dueDate}).`,
-            channel: "both" as const,
-            templateKey: "programme_step_overdue",
-            templateData: {
-              stepName: s.name,
-              stepCode: s.code,
-              dueDate: s.dueDate,
-              overdueDays,
-              journeyName: journeyMeta?.name ?? "",
-              journeyId: s.journeyId,
+          await insertNotification(
+            {
+              userId: recipient,
+              orgId: s.orgId,
+              type: "deadline_approaching" as const,
+              entityType: "programme_journey_step",
+              entityId: s.id,
+              title: `Programmschritt überfällig: ${s.name}`,
+              message: `Schritt "${s.name}" ist seit ${overdueDays} Tag(en) überfällig (${s.dueDate}).`,
+              channel: "both" as const,
+              templateKey: "programme_step_overdue",
+              templateData: {
+                stepName: s.name,
+                stepCode: s.code,
+                dueDate: s.dueDate,
+                overdueDays,
+                journeyName: journeyMeta?.name ?? "",
+                journeyId: s.journeyId,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "programme-deadline-monitor" },
+          );
           notified++;
         }
 
@@ -121,8 +126,12 @@ export const processProgrammeDeadlineMonitor = withCronInstrumentation(
           payload: { dueDate: s.dueDate, code: s.code },
         });
         events++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "programme-deadline-monitor", scope: "item" },
+          err,
+        );
       }
     }
 

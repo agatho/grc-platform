@@ -4,6 +4,8 @@
 import { db, ropaEntry, notification } from "@grc/db";
 import { and, isNull, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface RopaReviewResult {
   processed: number;
@@ -49,28 +51,32 @@ export const processRopaReviewReminders = withCronInstrumentation(
             )
           : 0;
 
-        await db.insert(notification).values({
-          userId: entry.responsibleId!,
-          orgId: entry.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "ropa_entry",
-          entityId: entry.id,
-          title: `RoPA review upcoming: ${entry.title}`,
-          message: `Processing activity "${entry.title}" is due for review in ${daysUntilReview} day(s) (${reviewDate}).`,
-          channel: "both" as const,
-          templateKey: "ropa_review_reminder",
-          templateData: {
-            ropaTitle: entry.title,
-            reviewDate,
-            daysUntilReview,
+        await insertNotification(
+          {
+            userId: entry.responsibleId!,
+            orgId: entry.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "ropa_entry",
+            entityId: entry.id,
+            title: `RoPA review upcoming: ${entry.title}`,
+            message: `Processing activity "${entry.title}" is due for review in ${daysUntilReview} day(s) (${reviewDate}).`,
+            channel: "both" as const,
+            templateKey: "ropa_review_reminder",
+            templateData: {
+              ropaTitle: entry.title,
+              reviewDate,
+              daysUntilReview,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "ropa-review-reminder" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "ropa-review-reminder", scope: "entry" }, err);
       }
     }
 

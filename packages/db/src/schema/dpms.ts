@@ -371,6 +371,15 @@ export const dsr = pgTable(
     closedAt: timestamp("closed_at", { withTimezone: true }),
     handlerId: uuid("handler_id").references(() => user.id),
     notes: text("notes"),
+    // #WP8-S07-13 (Migration 0430) — Art. 15/17/20 waren reine
+    // Vorgangssteuerung: `dsr` hatte keinen Bezug auf gefundene
+    // Datensaetze und kein Ergebnisartefakt. Diese vier Spalten sind der
+    // Anker fuer den Sammellauf `dsr_collect_subject_data()` und den
+    // Loeschlauf `gdpr_erase_subject()`.
+    subjectUserId: uuid("subject_user_id"),
+    collectedAt: timestamp("collected_at", { withTimezone: true }),
+    collectedBy: uuid("collected_by"),
+    collectionSummary: jsonb("collection_summary"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

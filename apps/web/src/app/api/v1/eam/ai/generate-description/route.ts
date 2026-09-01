@@ -1,10 +1,30 @@
-import { db, eamAiConfig, architectureElement } from "@grc/db";
+// POST /api/v1/eam/ai/generate-description — Generate description for entity
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-13.4, S05-06, S05-09, S05-10, S05-12]
+//
+// Die Route antwortete
+//     note: "Description generation executed through provider abstraction layer"
+// ohne je ein Modell aufgerufen zu haben — eine Aussage über eine
+// Ausführung, die nicht stattgefunden hat. Sie führt den Aufruf jetzt
+// tatsächlich durch, über denselben richtliniengebundenen Weg wie alle
+// anderen KI-Funktionen. `eam_ai_config.provider` geht als WUNSCH ein;
+// ob er zulässig ist, entscheidet `ai_org_policy` (S05-03/S05-22).
+
+import { db, architectureElement } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { generateDescriptionSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import {
+  aiCompleteGoverned,
+  buildEamDescriptionPrompt,
+  eamDescriptionSchema,
+  isAiProvider,
+  safeJsonParse,
+} from "@grc/ai";
+import { loadEamAiConfig } from "../_shared/config";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../../../ai/_shared/ai-route";
 
-// POST /api/v1/eam/ai/generate-description/:id — Generate description for entity
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -12,15 +32,11 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const config = await db
-    .select()
-    .from(eamAiConfig)
-    .where(
-      and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)),
-    )
-    .limit(1);
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
-  if (!config.length) {
+  const config = await loadEamAiConfig(ctx.orgId);
+  if (!config) {
     return Response.json(
       {
         error:
@@ -30,8 +46,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
-  const parsed = generateDescriptionSchema.safeParse(body);
+  const parsed = generateDescriptionSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!parsed.success)
     return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
@@ -49,17 +66,42 @@ export async function POST(req: Request) {
   if (!element.length)
     return Response.json({ error: "Entity not found" }, { status: 404 });
 
-  const decryptedConfig = JSON.parse(
-    Buffer.from(config[0].configEncrypted, "base64").toString(),
-  );
+  try {
+    const result = await aiCompleteGoverned({
+      feature: "eam.generate_description",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "architecture_element",
+      entityId: element[0].id,
+      requestedProvider: isAiProvider(config.provider)
+        ? config.provider
+        : null,
+      messages: buildEamDescriptionPrompt({
+        elementName: element[0].name,
+        elementType: String(
+          (element[0] as Record<string, unknown>).elementType ?? "unknown",
+        ),
+        existingDescription:
+          (element[0] as Record<string, unknown>).description as string | null,
+      }),
+      maxTokens: 800,
+      temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: eamDescriptionSchema,
+    });
 
-  return Response.json({
-    data: {
-      entityId: parsed.data.entityId,
-      entityName: element[0].name,
-      provider: decryptedConfig.provider,
-      model: decryptedConfig.model,
-      note: "Description generation executed through provider abstraction layer",
-    },
-  });
+    return aiJson(
+      {
+        entityId: parsed.data.entityId,
+        entityName: element[0].name,
+        description: result.data.description,
+        rationale: result.data.rationale ?? null,
+        provider: result.provider,
+        model: result.model,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
 }

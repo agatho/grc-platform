@@ -81,7 +81,21 @@ export const policyAcknowledgment = pgTable(
       .references(() => user.id),
     status: varchar("status", { length: 20 }).notNull().default("pending"), // pending | acknowledged | overdue | failed_quiz
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    /**
+     * #S06-02: an unkeyed SHA-512 over values that all live in this very
+     * row. It is a CHECKSUM, not a digital signature — no key material,
+     * no certificate, no chaining. The UI wording was corrected
+     * accordingly; see migration 0423 for the column comments.
+     */
     signatureHash: varchar("signature_hash", { length: 128 }),
+    /** 1 = legacy formula, 2 = binds file hash + evidence fields (0423). */
+    signatureHashVersion: integer("signature_hash_version")
+      .notNull()
+      .default(1),
+    /** The document hash this acknowledgment was actually bound to. */
+    documentSha256: varchar("document_sha256", { length: 64 }),
+    /** file | version_content | document_content | none */
+    documentHashSource: varchar("document_hash_source", { length: 24 }),
     quizScore: integer("quiz_score"),
     quizPassed: boolean("quiz_passed"),
     readDurationSeconds: integer("read_duration_seconds"),

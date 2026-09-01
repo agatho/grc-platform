@@ -19,6 +19,8 @@ import {
   gte,
 } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface ProcessReviewResult {
   processed: number;
@@ -95,28 +97,32 @@ export const processReviewReminders = withCronInstrumentation(
           reviewDateStr = nextReview.toISOString().split("T")[0];
         }
 
-        await db.insert(notification).values({
-          userId: proc.processOwnerId!,
-          orgId: proc.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "process",
-          entityId: proc.id,
-          title: `Process review upcoming: ${proc.name}`,
-          message: `Process "${proc.name}" is due for review in ${daysUntilReview} day(s) (${reviewDateStr}).`,
-          channel: "both" as const,
-          templateKey: "process_review_reminder",
-          templateData: {
-            processName: proc.name,
-            reviewDate: reviewDateStr,
-            daysUntilReview,
+        await insertNotification(
+          {
+            userId: proc.processOwnerId!,
+            orgId: proc.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "process",
+            entityId: proc.id,
+            title: `Process review upcoming: ${proc.name}`,
+            message: `Process "${proc.name}" is due for review in ${daysUntilReview} day(s) (${reviewDateStr}).`,
+            channel: "both" as const,
+            templateKey: "process_review_reminder",
+            templateData: {
+              processName: proc.name,
+              reviewDate: reviewDateStr,
+              daysUntilReview,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "process-review-reminder" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "process-review-reminder", scope: "item" }, err);
       }
     }
 
@@ -183,29 +189,32 @@ export const processReviewReminders = withCronInstrumentation(
             ? "DUE TODAY"
             : `in ${daysUntilReview} day(s)`;
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: sched.orgId,
-          type: isOverdue
-            ? ("escalation" as const)
-            : ("deadline_approaching" as const),
-          entityType: "process",
-          entityId: sched.processId,
-          title: `Process review ${urgencyLabel}: ${sched.processName}`,
-          message: `Process "${sched.processName}" review is ${urgencyLabel} (${reviewDateStr}).`,
-          channel: "both" as const,
-          templateKey: isOverdue
-            ? "process_review_overdue"
-            : "process_review_reminder",
-          templateData: {
-            processName: sched.processName,
-            reviewDate: reviewDateStr,
-            daysUntilReview,
-            isOverdue,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: sched.orgId,
+            type: isOverdue
+              ? ("escalation" as const)
+              : ("deadline_approaching" as const),
+            entityType: "process",
+            entityId: sched.processId,
+            title: `Process review ${urgencyLabel}: ${sched.processName}`,
+            message: `Process "${sched.processName}" review is ${urgencyLabel} (${reviewDateStr}).`,
+            channel: "both" as const,
+            templateKey: isOverdue
+              ? "process_review_overdue"
+              : "process_review_reminder",
+            templateData: {
+              processName: sched.processName,
+              reviewDate: reviewDateStr,
+              daysUntilReview,
+              isOverdue,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "process-review-reminder" },
+        );
 
         // Update last_reminder_sent_at
         await db
@@ -214,8 +223,15 @@ export const processReviewReminders = withCronInstrumentation(
           .where(eq(processReviewSchedule.id, sched.scheduleId));
 
         scheduleNotified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "process-review-reminder",
+            scope: "Update last_reminder_sent_at",
+          },
+          err,
+        );
       }
     }
 

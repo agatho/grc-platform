@@ -5,6 +5,7 @@
 import { db, dsr, notification } from "@grc/db";
 import { and, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface DsrSlaResult {
   processed: number;
@@ -55,26 +56,29 @@ export const processDsrSlaMonitor = withCronInstrumentation(
         const recipientId = dsrRow.handlerId ?? dsrRow.createdBy;
         if (!recipientId) continue;
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: dsrRow.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "dsr",
-          entityId: dsrRow.id,
-          title: `DSR deadline approaching: ${dsrRow.subjectName ?? dsrRow.requestType}`,
-          message: `Data subject request (${dsrRow.requestType}) for "${dsrRow.subjectName}" has ${daysRemaining} day(s) remaining until the 30-day GDPR deadline.`,
-          channel: "both" as const,
-          templateKey: "dsr_sla_warning",
-          templateData: {
-            dsrId: dsrRow.id,
-            requestType: dsrRow.requestType,
-            subjectName: dsrRow.subjectName,
-            daysRemaining,
-            deadline: deadlineDate.toISOString(),
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: dsrRow.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "dsr",
+            entityId: dsrRow.id,
+            title: `DSR deadline approaching: ${dsrRow.subjectName ?? dsrRow.requestType}`,
+            message: `Data subject request (${dsrRow.requestType}) for "${dsrRow.subjectName}" has ${daysRemaining} day(s) remaining until the 30-day GDPR deadline.`,
+            channel: "both" as const,
+            templateKey: "dsr_sla_warning",
+            templateData: {
+              dsrId: dsrRow.id,
+              requestType: dsrRow.requestType,
+              subjectName: dsrRow.subjectName,
+              daysRemaining,
+              deadline: deadlineDate.toISOString(),
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "dsr-sla-monitor" },
+        );
 
         notified++;
       } catch (err) {

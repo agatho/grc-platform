@@ -11,7 +11,8 @@
     "pending": "Pending",
     "completed": "Completed",
     "declined": "Declined",
-    "cancelled": "Cancelled"
+    "cancelled": "Cancelled",
+    "invalidated": "Invalidated — file changed after the request"
   },
   "requestDialog": {
     "trigger": "Request signature",
@@ -37,7 +38,7 @@
   },
   "signArea": {
     "title": "Your signature is requested",
-    "legalNotice": "By clicking \"Sign\" you provide an electronic signature within the meaning of Art. 25 eIDAS (simple electronic signature). Timestamp, IP address and a cryptographic hash of the document are recorded in a tamper-evident log."
+    "legalNotice": "By clicking \"Sign\" you provide a simple electronic signature as defined in Art. 3 no. 10 eIDAS; its legal effect follows Art. 25(1) eIDAS. This is not a qualified signature (QES). Timestamp, IP address, user agent and a cryptographic hash of the file are captured, included in the signature hash chain and written to the chained audit trail. Where an external time-stamping authority is reachable, the time is additionally attested under RFC 3161; otherwise it comes from the server clock — the certificate states which."
   },
   "signConfirm": {
     "title": "Sign document electronically?",
@@ -60,12 +61,17 @@
     "certificate": "Certificate (PDF)"
   },
   "verify": {
-    "valid": "Signature valid — hash chain and file integrity verified",
+    "valid": "Signature valid — chain complete, file re-hashed and unchanged",
     "invalid": "Verification failed",
     "chainValid": "Hash chain intact",
     "chainBroken": "Hash chain broken at link {index}",
-    "fileUnchanged": "File unchanged",
-    "fileChanged": "File was modified after the request"
+    "fileUnchanged": "File unchanged (bytes re-hashed from object storage)",
+    "fileChanged": "File was modified after the request",
+    "fileUnverifiable": "File not verifiable — the stored object could not be read",
+    "chainIncomplete": "Chain incomplete — links are missing from the end of the ceremony",
+    "timestampMissing": "No external timestamp — the time comes from the server clock",
+    "ipSelfReported": "IP address is a client self-declaration",
+    "creatorIsSigner": "Requester and signer are the same person"
   },
   "toasts": {
     "requestCreated": "Signature request created",

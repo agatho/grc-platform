@@ -18,7 +18,7 @@ import {
   organization,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, isNull, gte, lte, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 type RouteParams = { params: Promise<{ year: string }> };
@@ -47,27 +47,45 @@ export async function GET(_req: Request, { params }: RouteParams) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
   }
 
+  // #WP8-S07-17 — Der Jahresbericht ist der Rechenschaftsnachweis nach
+  // Art. 5(2)/Art. 30 gegenüber der Aufsichtsbehörde. Er zählte
+  // soft-gelöschte Verarbeitungstätigkeiten, DSFAs und TIAs mit: eine
+  // Organisation, die zwölf veraltete Verarbeitungen gelöscht hat, wies
+  // sie im Nachweis weiterhin aus. Alle Zählpfade filtern jetzt
+  // `deleted_at IS NULL`.
   // RoPA-Coverage
   const [{ ropaTotal }] = await db
     .select({ ropaTotal: sql<number>`count(*)::int` })
     .from(ropaEntry)
-    .where(eq(ropaEntry.orgId, ctx.orgId));
+    .where(and(eq(ropaEntry.orgId, ctx.orgId), isNull(ropaEntry.deletedAt)));
 
   const [{ ropaActive }] = await db
     .select({ ropaActive: sql<number>`count(*)::int` })
     .from(ropaEntry)
-    .where(and(eq(ropaEntry.orgId, ctx.orgId), eq(ropaEntry.status, "active")));
+    .where(
+      and(
+        eq(ropaEntry.orgId, ctx.orgId),
+        eq(ropaEntry.status, "active"),
+        isNull(ropaEntry.deletedAt),
+      ),
+    );
 
   // DPIA-Stats
   const [{ dpiaTotal }] = await db
     .select({ dpiaTotal: sql<number>`count(*)::int` })
     .from(dpia)
-    .where(eq(dpia.orgId, ctx.orgId));
+    .where(and(eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)));
 
   const [{ dpiaApproved }] = await db
     .select({ dpiaApproved: sql<number>`count(*)::int` })
     .from(dpia)
-    .where(and(eq(dpia.orgId, ctx.orgId), eq(dpia.status, "approved")));
+    .where(
+      and(
+        eq(dpia.orgId, ctx.orgId),
+        eq(dpia.status, "approved"),
+        isNull(dpia.deletedAt),
+      ),
+    );
 
   // DSR-Stats im Jahr
   const dsrRows = await db
@@ -138,7 +156,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const [{ tiaActive }] = await db
     .select({ tiaActive: sql<number>`count(*)::int` })
     .from(tia)
-    .where(eq(tia.orgId, ctx.orgId));
+    .where(and(eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)));
 
   // Consent-Stats im Jahr
   const consentRows = await db

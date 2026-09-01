@@ -4,6 +4,7 @@
 import { db, benchmarkSubmission, benchmarkPool } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface BenchmarkAggregatorResult {
   poolsUpdated: number;
@@ -77,13 +78,25 @@ export const processBenchmarkAggregator = withCronInstrumentation(
           });
           result.poolsUpdated++;
         } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            {
+              job: "benchmark-aggregator",
+              scope: "Upsert into benchmark_pool",
+            },
+            err,
+          );
           result.errors++;
         }
       }
 
       result.submissionsProcessed = (aggregations as Array<unknown>).length;
-    } catch {
-      // Wrapper logs structured error; bump the in-result error counter
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        { job: "benchmark-aggregator", scope: "Upsert into benchmark_pool" },
+        err,
+      );
       // for downstream callers that inspect it.
       result.errors++;
     }

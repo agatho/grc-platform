@@ -14,6 +14,8 @@ import {
   daysBetween,
 } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface DocumentReviewReminderResult {
   scanned: number;
@@ -74,32 +76,35 @@ export const processDocumentReviewReminders = withCronInstrumentation(
         if (recipients.length === 0) continue;
 
         for (const recipientId of recipients) {
-          await db.insert(notification).values({
-            userId: recipientId,
-            orgId: doc.orgId,
-            type: isOverdue
-              ? ("escalation" as const)
-              : ("deadline_approaching" as const),
-            entityType: "document",
-            entityId: doc.id,
-            title: isOverdue
-              ? `Document review overdue: ${doc.title}`
-              : `Document review due in ${daysUntilReview} day(s): ${doc.title}`,
-            message: `Document "${doc.title}" is due for review on ${reviewDateStr}${isOverdue ? " (overdue)" : ""}.`,
-            channel: "both" as const,
-            templateKey: isOverdue
-              ? "document_review_overdue"
-              : "document_review_reminder",
-            templateData: {
-              documentId: doc.id,
-              documentTitle: doc.title,
-              reviewDate: reviewDateStr,
-              daysUntilReview,
-              stage,
+          await insertNotification(
+            {
+              userId: recipientId,
+              orgId: doc.orgId,
+              type: isOverdue
+                ? ("escalation" as const)
+                : ("deadline_approaching" as const),
+              entityType: "document",
+              entityId: doc.id,
+              title: isOverdue
+                ? `Document review overdue: ${doc.title}`
+                : `Document review due in ${daysUntilReview} day(s): ${doc.title}`,
+              message: `Document "${doc.title}" is due for review on ${reviewDateStr}${isOverdue ? " (overdue)" : ""}.`,
+              channel: "both" as const,
+              templateKey: isOverdue
+                ? "document_review_overdue"
+                : "document_review_reminder",
+              templateData: {
+                documentId: doc.id,
+                documentTitle: doc.title,
+                reviewDate: reviewDateStr,
+                daysUntilReview,
+                stage,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "document-review-reminder" },
+          );
           notified++;
         }
 
@@ -109,8 +114,12 @@ export const processDocumentReviewReminders = withCronInstrumentation(
           .where(eq(document.id, doc.id));
 
         remindersSent++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "document-review-reminder", scope: "recipientId" },
+          err,
+        );
       }
     }
 

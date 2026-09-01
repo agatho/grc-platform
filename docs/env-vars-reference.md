@@ -74,9 +74,32 @@ und `packages/**/src`. Sortiert nach Scope.
 
 ## Whistleblowing (isolated module)
 
-| Variable            | req/opt                             | Beschreibung                                                        |
-| ------------------- | ----------------------------------- | ------------------------------------------------------------------- |
-| `WB_ENCRYPTION_KEY` | req wenn whistleblowing aktiv · sec | 32-byte hex fuer Ende-zu-Ende-Verschluesselung der Case-Attachments |
+<!-- #WP8-S07-19.4 — Doku-Drift korrigiert (Audit ARCTOS-FULL-2026-08-31).
+     Die frühere Zeile sagte "32-byte hex fuer Ende-zu-Ende-Verschluesselung
+     der Case-Attachments". Beides traf nicht zu: der Server hält den
+     Schlüssel und entschlüsselt selbst (Verschlüsselung at rest, nicht
+     Ende-zu-Ende), und Anhänge wurden überhaupt nicht verschlüsselt — bis
+     zur Remediation wurden sie nicht einmal gespeichert (S07-20). -->
+
+| Variable                     | req/opt                             | Beschreibung                                                                                                                                                                  |
+| ---------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WB_ENCRYPTION_KEY`          | req wenn whistleblowing aktiv · sec | 32-byte hex. Verschluesselung **at rest** (AES-256-GCM) der Meldungsfreitexte, Kontaktadressen und Fallnachrichten. Der Server haelt den Schluessel und entschluesselt selbst.  |
+| `WB_ENCRYPTION_KEY_PREVIOUS` | opt · sec                           | Vorheriger Schluessel waehrend einer Rotation. Chiffrate, die unter dem aktuellen Schluessel nicht aufgehen, werden damit gelesen. Nach dem Re-Seal entfernen.                 |
+| `WB_ENCRYPTION_KEY_ID`       | opt                                 | Kennung, die in neue Chiffrate geschrieben wird (`v2:<keyId>:…`). Vorgabe `default`.                                                                                           |
+| `WB_PSEUDONYM_KEY`           | empfohlen · sec                     | 32-byte hex. HMAC-Schluessel fuer `wb_report.ip_hash` (S07-02). Fehlt er, wird er aus `WB_ENCRYPTION_KEY` abgeleitet — ein ungesalzener Hash entsteht in keinem Fall.          |
+| `PII_PSEUDONYM_KEY`          | empfohlen · sec                     | 32-byte hex. HMAC-Schluessel fuer die Pseudonymisierung im Audit-Trail und im Hinweisgeber-Fachlog (S07-03/-08). Ohne ihn greift ein Installationsschluessel in der Datenbank. |
+| `PII_PSEUDONYM_KEY_ID`       | opt                                 | Kennung des Pseudonymisierungsschluessels; erscheint als `env:<id>` an jedem Pseudonym.                                                                                        |
+
+**Betriebshinweis (S07-19.5):** Ohne `WB_ENCRYPTION_KEY` startet die
+Anwendung, das Meldeportal nimmt aber keine Meldungen mehr an — es
+antwortet mit `503` und protokolliert den Grund. Vorher lief es klaglos
+weiter und quittierte jede eingehende Meldung mit einem `500`; der nach
+§ 12 HinSchG vorgeschriebene Meldekanal war unbemerkt tot.
+
+**Zum Ablegen der beiden Pseudonymisierungsschluessel:** sie gehoeren
+NICHT in dieselbe Datenbank, deren Inhalt sie pseudonymisieren. Liegen sie
+in der Prozessumgebung, enthaelt ein Datenbank-Dump sie nicht — genau das
+ist ihr Zweck (vgl. `AUDIT_SEAL_KEY`).
 
 ## Connector Framework (Sprint 62-66)
 

@@ -21,6 +21,8 @@ import { checkWebhookUrl } from "@grc/shared";
 import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
+import { resolveOrgRecipients } from "../lib/recipients";
+import { insertNotification } from "../lib/notify";
 
 // #S10-16 (ARCTOS-FULL-2026-08-31, Medium): tables the `change_status`
 // automation action may write to.
@@ -62,14 +64,16 @@ async function resolveOrgUserForRole(
   orgId: string,
   role: string,
 ): Promise<string | null> {
-  const rows = await db.execute(sql`
-    SELECT user_id FROM user_organization_role
-    WHERE org_id = ${orgId}::uuid
-      AND role IN (${role}, 'admin')
-    ORDER BY CASE WHEN role = ${role} THEN 0 ELSE 1 END
-    LIMIT 1
-  `);
-  return (rows as unknown as Array<{ user_id: string }>)[0]?.user_id ?? null;
+  // [WP9 · S10-07] This query used to ignore `deleted_at`. Revoking an org
+  // role is a SOFT delete (`UPDATE user_organization_role SET deleted_at =
+  // now()`), so a person who had left the organisation kept being resolved
+  // as the recipient of automation tasks and escalations. Delegated to the
+  // shared resolver so the filter is not maintained in nine places.
+  const [userId] = await resolveOrgRecipients(orgId, [role, "admin"], {
+    limit: 1,
+    preferRole: role,
+  });
+  return userId ?? null;
 }
 
 /**
@@ -134,10 +138,53 @@ const automationActionServices: ActionServices = {
   },
 
   sendEmail: async (params) => {
-    // Email sending via Resend SDK — placeholder for Sprint 28
-    console.log(
-      `[AutomationServices] sendEmail: template=${params.templateKey} role=${params.recipientRole}`,
-    );
+    // [WP9 · S10-15] This was `console.log`. The automation engine's e-mail
+    // action — one of five actions a rule author can pick in the UI — did
+    // nothing at all, and reported success.
+    //
+    // It now writes a real notification on the `email` channel with the
+    // rule's template key and data. `scheduled-notifications` picks it up
+    // and delivers it, which is the same path every other e-mail in the
+    // platform takes; an unknown template key is rejected at this point
+    // (S10-03) rather than three failed deliveries later.
+    try {
+      const recipients = await resolveOrgRecipients(
+        params.orgId,
+        [params.recipientRole],
+        { limit: 25 },
+      );
+      if (recipients.length === 0) {
+        console.error(
+          `[AutomationServices] sendEmail: no active member with role ${params.recipientRole} in org ${params.orgId}`,
+        );
+        return;
+      }
+      const title =
+        typeof params.data.title === "string"
+          ? params.data.title
+          : `Automation: ${params.templateKey}`;
+      for (const userId of recipients) {
+        await insertNotification(
+          {
+            orgId: params.orgId,
+            userId,
+            type: "escalation",
+            title,
+            message:
+              typeof params.data.message === "string"
+                ? params.data.message
+                : null,
+            channel: "email",
+            templateKey: params.templateKey,
+            templateData: params.data,
+            scheduledFor: new Date(),
+          },
+          { job: "automation-engine", dedupeWindow: "day" },
+        );
+      }
+    } catch (err) {
+      console.error("[AutomationServices] sendEmail failed:", err);
+    }
   },
 
   changeStatus: async (params) => {

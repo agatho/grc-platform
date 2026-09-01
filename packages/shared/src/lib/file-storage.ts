@@ -27,6 +27,27 @@
 //   S3_ACCESS_KEY_ID           (s3; required)
 //   S3_SECRET_ACCESS_KEY       (s3; required)
 //   S3_FORCE_PATH_STYLE=1      (s3; path-style URLs — required for MinIO)
+//   S3_SSE                     (s3; e.g. "AES256" or "aws:kms" — sets
+//                               x-amz-server-side-encryption on PUT)
+//   S3_SSE_KMS_KEY_ID          (s3; only with S3_SSE=aws:kms)
+//
+// ── #S06-10 (tenant separation) ─────────────────────────────────────
+// There is one bucket and one key pair for the whole installation; the
+// only tenant boundary is the "{orgId}/…" key prefix that the upload
+// route builds. Any future code path that obtains a file_path from
+// somewhere other than its own org's row (import, cross-org copy,
+// report generator, AI retrieval) would read another tenant's objects
+// without any further check, and the object store itself cannot stop
+// it. `assertKeyBelongsToOrg` and `orgScopedStorage` below make that
+// boundary an enforced precondition instead of a convention.
+//
+// ── #S06-11 (encryption at rest) ────────────────────────────────────
+// Nothing was ever encrypted: no SSE header on PUT, no application-side
+// encryption, and the local backend writes plaintext files. The trust
+// portal claimed "at Rest (AES-256)". `S3_SSE` adds the server-side
+// header for backends that support it; the portal text was corrected to
+// describe what the product actually guarantees. See WP7.md for why
+// application-level envelope encryption was NOT introduced here.
 
 import { mkdir, readFile, stat, unlink, writeFile } from "fs/promises";
 import { dirname, resolve, sep } from "path";
@@ -131,6 +152,10 @@ export interface S3StorageConfig {
   secretAccessKey: string;
   /** Path-style URLs (…/bucket/key) — required for MinIO. */
   forcePathStyle: boolean;
+  /** #S06-11: server-side encryption algorithm, e.g. "AES256". */
+  serverSideEncryption?: string;
+  /** #S06-11: KMS key id, only meaningful with sse = "aws:kms". */
+  sseKmsKeyId?: string;
   /** Fetch override for tests. */
   fetchFn?: typeof fetch;
 }
@@ -184,6 +209,16 @@ export class S3Storage implements FileStorage {
       "x-amz-content-sha256": payloadHash,
     };
     if (contentType) headersToSign["content-type"] = contentType;
+    // #S06-11: SSE headers are part of the signature (x-amz-*), so they
+    // must go in before signRequest.
+    if (method === "PUT" && this.cfg.serverSideEncryption) {
+      headersToSign["x-amz-server-side-encryption"] =
+        this.cfg.serverSideEncryption;
+      if (this.cfg.sseKmsKeyId) {
+        headersToSign["x-amz-server-side-encryption-aws-kms-key-id"] =
+          this.cfg.sseKmsKeyId;
+      }
+    }
 
     const signed = signRequest({
       method,
@@ -284,6 +319,8 @@ export function getFileStorage(): FileStorage {
     process.env.S3_BUCKET ?? "",
     process.env.S3_ACCESS_KEY_ID ?? "",
     process.env.S3_FORCE_PATH_STYLE ?? "",
+    process.env.S3_SSE ?? "",
+    process.env.S3_SSE_KMS_KEY_ID ?? "",
   ].join("|");
   if (cachedStorage && cachedSignature === signature) return cachedStorage;
 
@@ -308,6 +345,8 @@ export function getFileStorage(): FileStorage {
       accessKeyId: process.env.S3_ACCESS_KEY_ID as string,
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY as string,
       forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "1",
+      serverSideEncryption: process.env.S3_SSE || undefined,
+      sseKmsKeyId: process.env.S3_SSE_KMS_KEY_ID || undefined,
     });
   } else {
     throw new Error(
@@ -317,4 +356,88 @@ export function getFileStorage(): FileStorage {
 
   cachedSignature = signature;
   return cachedStorage;
+}
+
+// ──────────────────────────────────────────────────────────────
+// #S06-10 — tenant boundary in the object store
+// ──────────────────────────────────────────────────────────────
+//
+// There is one bucket, one key pair and no bucket policy for the whole
+// installation. The only separation between tenants is the leading
+// "{orgId}/" segment of the key, produced by the upload route — a
+// convention, not a control. `filePath` is in no Zod schema of the DMS
+// routes and `LocalFsStorage.resolveKey` refuses traversal, so today no
+// user can choose a key; the exposure is the next code path that reads
+// a `file_path` from a row it did not org-scope.
+//
+// The helpers below turn the convention into a precondition. Callers
+// that hold an org context wrap the storage once and cannot then reach
+// a foreign object even if the key came from a compromised row.
+
+export class CrossTenantStorageKeyError extends Error {
+  readonly key: string;
+  readonly orgId: string;
+  constructor(key: string, orgId: string) {
+    super(
+      `Storage key "${key}" does not belong to organization ${orgId} — refused (S06-10).`,
+    );
+    this.name = "CrossTenantStorageKeyError";
+    this.key = key;
+    this.orgId = orgId;
+  }
+}
+
+/** The org segment a DMS key must start with. */
+export function storageKeyOrgPrefix(orgId: string): string {
+  return `${orgId}/`;
+}
+
+/**
+ * @throws {CrossTenantStorageKeyError} when `key` is not inside the
+ *         org's prefix. Keys that predate the {orgId}/… layout do not
+ *         exist in this product — the layout is documented as
+ *         historical in the module header — so an exception is correct
+ *         rather than a warning.
+ */
+export function assertKeyBelongsToOrg(key: string, orgId: string): void {
+  if (!orgId) throw new CrossTenantStorageKeyError(key, orgId);
+  // Normalise the obvious evasions before comparing; resolveKey covers
+  // traversal for the local backend, but S3 keys never pass through it.
+  const normalised = key.replace(/\\/g, "/").replace(/^\/+/, "");
+  if (normalised.includes("..")) {
+    throw new CrossTenantStorageKeyError(key, orgId);
+  }
+  if (!normalised.startsWith(storageKeyOrgPrefix(orgId))) {
+    throw new CrossTenantStorageKeyError(key, orgId);
+  }
+}
+
+/**
+ * Wrap a FileStorage so every operation is checked against one org.
+ *
+ * Usage in a request handler:
+ *   const storage = orgScopedStorage(getFileStorage(), ctx.orgId);
+ */
+export function orgScopedStorage(
+  inner: FileStorage,
+  orgId: string,
+): FileStorage {
+  return {
+    async put(key, data, meta) {
+      assertKeyBelongsToOrg(key, orgId);
+      return inner.put(key, data, meta);
+    },
+    async get(key) {
+      assertKeyBelongsToOrg(key, orgId);
+      return inner.get(key);
+    },
+    async delete(key) {
+      assertKeyBelongsToOrg(key, orgId);
+      return inner.delete(key);
+    },
+    async exists(key) {
+      assertKeyBelongsToOrg(key, orgId);
+      return inner.exists(key);
+    },
+  };
 }

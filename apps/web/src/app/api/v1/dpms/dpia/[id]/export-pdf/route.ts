@@ -2,6 +2,7 @@ import { db, dpia, dpiaMeasure, organization, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { clientIpForAudit, logExportOrThrow } from "@/lib/export-audit";
 import { renderHtmlToPdfResponse } from "@/lib/pdf";
 
 function esc(s: string | null | undefined): string {
@@ -397,5 +398,22 @@ export async function GET(
   // produces a valid application/pdf (no fallback to HTML masquerading
   // as a PDF).
   const filename = `DSFA-${(row.title ?? "Export").replace(/[^a-zA-Z0-9\-_]/g, "_")}`;
+
+  // #WP8-S07-14 — diese Route stand auf der Liste der 19 Exportpfade
+  // ohne jede Protokollierung. Eine DSFA enthält die Beschreibung der
+  // Verarbeitung, die Betroffenenkategorien und die Risikobewertung;
+  // ihr Abfluss ist genau der Vorgang, den `data_export_log` belegen soll.
+  await logExportOrThrow({
+    orgId: ctx.orgId,
+    userId: ctx.userId,
+    exportType: "pdf_report",
+    entityType: "dpia",
+    description: `DPIA PDF export (${String(row.title ?? id)})`,
+    recordCount: 1,
+    containsPersonalData: true,
+    fileName: `${filename}.pdf`,
+    ipAddress: clientIpForAudit(req),
+  });
+
   return renderHtmlToPdfResponse(html, filename);
 }

@@ -4,6 +4,7 @@
 import { db, policyDistribution, document, notification } from "@grc/db";
 import { eq, and, sql, ne } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface PolicyVersionCheckResult {
   processed: number;
@@ -49,26 +50,29 @@ export const processPolicyVersionCheck = withCronInstrumentation(
 
         // Notify the distribution creator about the version mismatch
         if (distributedBy) {
-          await db.insert(notification).values({
-            userId: distributedBy,
-            orgId,
-            type: "status_change",
-            entityType: "policy_distribution",
-            entityId: distId,
-            title: `New version available: ${dist.documentTitle} v${dist.currentDocVersion}`,
-            message: `The document "${dist.documentTitle}" has been updated to version ${dist.currentDocVersion}. Distribution "${dist.title}" references version ${dist.distributionVersion}. Consider creating a new distribution for re-acknowledgment.`,
-            channel: "both",
-            templateKey: "policy_distribution",
-            templateData: {
-              policyTitle: dist.title as string,
-              documentTitle: dist.documentTitle as string,
-              oldVersion: dist.distributionVersion as number,
-              newVersion: dist.currentDocVersion as number,
-              distributionId: distId,
+          await insertNotification(
+            {
+              userId: distributedBy,
+              orgId,
+              type: "status_change",
+              entityType: "policy_distribution",
+              entityId: distId,
+              title: `New version available: ${dist.documentTitle} v${dist.currentDocVersion}`,
+              message: `The document "${dist.documentTitle}" has been updated to version ${dist.currentDocVersion}. Distribution "${dist.title}" references version ${dist.distributionVersion}. Consider creating a new distribution for re-acknowledgment.`,
+              channel: "both",
+              templateKey: "policy_distribution",
+              templateData: {
+                policyTitle: dist.title as string,
+                documentTitle: dist.documentTitle as string,
+                oldVersion: dist.distributionVersion as number,
+                newVersion: dist.currentDocVersion as number,
+                distributionId: distId,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "policy-version-check" },
+          );
         }
 
         flagged++;

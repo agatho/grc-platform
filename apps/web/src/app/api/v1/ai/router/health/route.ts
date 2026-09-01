@@ -1,72 +1,69 @@
 // GET /api/v1/ai/router/health
 //
-// #WAVE21-B1: Wave-21 QA verified that there's no public health probe
-// for the AI router. CLAUDE.md mentions a multi-provider router but
-// callers had no way to know which providers are reachable, what the
-// privacy-tier routing looks like, or when the last failover happened.
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-14, S05-10]
 //
-// Returns provider availability + a privacy-tier routing map +
-// last-failover timestamp (best-effort from in-process state). The
-// response is read-only; a deeper "synthesise a 1-token completion"
-// liveness probe lives behind a `?probe=true` query string and runs
-// against each available provider, returning latency or the error
-// string per provider.
+// Drei Defekte des Auditstands:
 //
-// Auth: any authenticated user can read. The route does not expose
-// API keys or secrets — only configured/healthy/degraded labels.
+//  1. **Die angezeigte Privacy-Matrix war erfunden.** `tierRouting()`
+//     hatte `?? "ollama"` als Fallback: war Ollama NICHT konfiguriert,
+//     meldete die Antwort dem Administrator trotzdem
+//     `confidential: "ollama"`, während `aiComplete()` für dieselbe
+//     Anfrage in die Cloud routete. Der Administrator sah eine
+//     Schutzmassnahme, die es nicht gab. Die Matrix wird jetzt aus
+//     `selectProvider()` abgeleitet — derselben Funktion, die im
+//     Ernstfall entscheidet — und meldet ausdrücklich `null` plus den
+//     Ablehnungsgrund, wenn eine Stufe nicht bedient werden kann.
+//
+//  2. **`?probe=true` war ein unlimitierter Kostenhebel.** Die Route war
+//     mit `withAuth()` ohne Rollenliste geschützt (jeder Nutzer inkl.
+//     `viewer`) und löste pro Aufruf eine Completion gegen JEDEN
+//     konfigurierten Provider aus. Der Probe ist jetzt auf `admin`
+//     beschränkt und hat einen eigenen Rate-Limit-Eimer.
+//
+//  3. **Provider-Fehlertexte an jeden Nutzer.** `p.error = err.message`
+//     enthielt Ziel-URLs und interne Pfade („Claude CLI not found at
+//     '/opt/…'"). Der Rohtext geht nur noch an `admin`; alle anderen
+//     sehen den Status.
 
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import {
   getAvailableProviders,
   getDefaultProvider,
+  loadOrgAiPolicy,
+  selectProvider,
+  providerPlacements,
+  localModelRegion,
   DEFAULT_MODELS,
   type AiProvider,
 } from "@grc/ai";
+import { aiRateLimit } from "../../_shared/ai-route";
 
 interface ProviderStatus {
   name: AiProvider;
   configured: boolean;
-  status: "healthy" | "degraded" | "unconfigured" | "unknown";
+  /** Nach der Richtlinie dieser Organisation zulässig? */
+  permitted: boolean;
+  placement: "local" | "third_country";
+  country: string;
+  status: "healthy" | "degraded" | "unconfigured" | "blocked" | "unknown";
   model: string;
   latencyMs?: number;
   error?: string;
 }
 
-// Privacy-tier routing matrix mirrors packages/ai/src/router.ts —
-// confidential / restricted route to a local model when available.
-function tierRouting(available: Set<AiProvider>): Record<string, AiProvider> {
-  const localPreferred: AiProvider[] = ["ollama", "lmstudio"];
-  const cloudPreferred: AiProvider[] = [
-    "claude_cli",
-    "claude_api",
-    "openai",
-    "gemini",
-  ];
-  const local = localPreferred.find((p) => available.has(p)) ?? "ollama";
-  const cloud = cloudPreferred.find((p) => available.has(p)) ?? "claude_cli";
-  return {
-    public: cloud,
-    internal: cloud,
-    confidential: local,
-    restricted: local,
-  };
-}
-
-// In-process last-failover timestamp. The failover wrapper in
-// packages/ai/src/router.ts can write here on every fall-back; for
-// now we just expose a static field so the response shape is stable.
-// A future PR can wire the wrapper's onAttempt callback to update it.
-const lastFailover: { at: string | null } = { at: null };
-
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const available = new Set(getAvailableProviders());
-  const defaultProvider = getDefaultProvider();
   const url = new URL(req.url);
-  const probe = url.searchParams.get("probe") === "true";
+  const probeRequested = url.searchParams.get("probe") === "true";
+  const isAdmin = (ctx.roles ?? []).includes("admin");
+
+  const policy = await loadOrgAiPolicy(ctx.orgId);
+  const configured = new Set(getAvailableProviders());
+  const configuredList = [...configured];
+  const placements = providerPlacements(localModelRegion());
 
   const ALL: AiProvider[] = [
     "claude_cli",
@@ -77,24 +74,82 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     "lmstudio",
   ];
 
-  const providers: ProviderStatus[] = ALL.map((p) => ({
-    name: p,
-    configured: available.has(p),
-    // Without an active probe, "configured" is the closest we can get
-    // to "healthy" — env-var presence implies the provider should work.
-    // The deep ?probe=true variant overrides this with an actual call.
-    status: available.has(p) ? "healthy" : "unconfigured",
-    model: DEFAULT_MODELS[p],
-  }));
+  const permit = (p: AiProvider, personalData = false): boolean => {
+    if (!configured.has(p)) return false;
+    try {
+      selectProvider({
+        policy: { ...policy, allowUserProviderChoice: true },
+        configured: configuredList,
+        requested: p,
+        containsPersonalData: personalData,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
+  const providers: ProviderStatus[] = ALL.map((p) => {
+    const isConfigured = configured.has(p);
+    const isPermitted = permit(p);
+    return {
+      name: p,
+      configured: isConfigured,
+      permitted: isPermitted,
+      placement: placements[p].kind,
+      country: placements[p].country,
+      status: !isConfigured ? "unconfigured" : isPermitted ? "healthy" : "blocked",
+      model: DEFAULT_MODELS[p],
+    };
+  });
+
+  // Die Stufenmatrix wird AUS DER ENTSCHEIDUNGSFUNKTION abgeleitet.
+  // `null` heisst: diese Stufe kann derzeit nicht bedient werden — was
+  // fachlich korrekt ist und vorher als "ollama" gemeldet wurde.
+  const tier = (personalData: boolean) => {
+    try {
+      const sel = selectProvider({
+        policy,
+        configured: configuredList,
+        operatorDefault: getDefaultProvider(),
+        containsPersonalData: personalData,
+      });
+      return { provider: sel.provider, placement: sel.placement.kind };
+    } catch (err) {
+      return {
+        provider: null,
+        placement: null,
+        blockedReason: err instanceof Error ? err.message : String(err),
+      };
+    }
+  };
+
+  const publicTier = tier(false);
+  const confidentialTier = tier(true);
+
+  if (probeRequested && !isAdmin) {
+    return Response.json(
+      {
+        error:
+          "Die Liveness-Probe löst kostenpflichtige Modellaufrufe aus und ist Administratoren vorbehalten.",
+      },
+      { status: 403 },
+    );
+  }
+
+  const probe = probeRequested && isAdmin;
   if (probe) {
-    // Optional liveness probe — run a 1-token completion per provider
-    // and time it. Wrapped in Promise.allSettled so one slow provider
-    // doesn't gate the response. Each probe carries a hard 5s timeout.
+    const limited = await aiRateLimit(ctx.userId, {
+      bucket: "router-probe",
+      capacity: 3,
+      windowSeconds: 300,
+    });
+    if (limited) return limited;
+
     const { aiCompleteWithFailover } = await import("@grc/ai");
     await Promise.allSettled(
       providers
-        .filter((p) => p.configured)
+        .filter((p) => p.configured && p.permitted)
         .map(async (p) => {
           const start = Date.now();
           try {
@@ -103,6 +158,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
                 messages: [{ role: "user", content: "ping" }],
                 provider: p.name,
                 maxTokens: 1,
+                policy: { ...policy, allowUserProviderChoice: true },
               },
               { timeoutMs: 5_000 },
             );
@@ -120,12 +176,18 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   return Response.json({
     data: {
       asOf: new Date().toISOString(),
-      defaultProvider,
-      privacyRoutingEnabled:
-        available.has("ollama") || available.has("lmstudio"),
-      privacyTierRouting: tierRouting(available),
+      egressMode: policy.egressMode,
+      policySource: policy.modeSource,
+      dataResidency: policy.dataResidency,
+      providerChoiceAllowed: policy.allowUserProviderChoice,
+      effectiveRouting: {
+        // "public"/"internal": normale Fachdaten
+        standard: publicTier,
+        // "confidential"/"restricted": containsPersonalData = true
+        personalData: confidentialTier,
+      },
+      privacyRoutingEffective: confidentialTier.provider !== null,
       providers,
-      lastFailover: lastFailover.at,
       probe,
     },
   });

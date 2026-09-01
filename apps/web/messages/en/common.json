@@ -4838,11 +4838,11 @@
       "readTime": "Reading time",
       "submit": "Acknowledge",
       "success": "Successfully acknowledged",
-      "successDesc": "Your acknowledgment has been saved. The digital signature serves as proof.",
+      "successDesc": "Your acknowledgment has been saved and recorded in the audit trail. The checksum protects the entry against undetected change.",
       "quizFailed": "Quiz not passed",
       "quizFailedDesc": "You scored {score}%. Required: {threshold}%.",
       "date": "Acknowledged on",
-      "signatureHash": "Digital Signature"
+      "signatureHash": "Acknowledgment checksum"
     },
     "quiz": {
       "title": "Comprehension Questions",

@@ -6,10 +6,13 @@ import { db, notification, user } from "@grc/db";
 import { eq, and, isNull, gte, sql } from "drizzle-orm";
 import { emailService } from "@grc/email";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface DigestResult {
   usersProcessed: number;
   emailsSent: number;
+  /** Digests NOT sent — delivery off or rejected by the provider (S10-04). */
+  skippedUsers: number;
 }
 
 export const processNotificationDigest = withCronInstrumentation(
@@ -17,6 +20,8 @@ export const processNotificationDigest = withCronInstrumentation(
   async (): Promise<DigestResult> => {
     const now = new Date();
     let emailsSent = 0;
+    // Digests not sent because delivery is off or was rejected (S10-04).
+    let skippedUsers = 0;
 
     // Find users who have opted into daily digest emails
     const digestUsers = await db
@@ -36,7 +41,7 @@ export const processNotificationDigest = withCronInstrumentation(
       );
 
     if (digestUsers.length === 0) {
-      return { usersProcessed: 0, emailsSent: 0 };
+      return { usersProcessed: 0, emailsSent: 0, skippedUsers: 0 };
     }
 
     // 24 hours ago
@@ -98,7 +103,7 @@ export const processNotificationDigest = withCronInstrumentation(
           },
         );
 
-        await emailService.send({
+        const result = await emailService.send({
           to: digestUser.email,
           templateKey: "notification_digest",
           data: {
@@ -109,6 +114,17 @@ export const processNotificationDigest = withCronInstrumentation(
           },
           lang,
         });
+
+        // [WP9 · S10-04 B] The return value was ignored and every included
+        // notification was stamped `emailSentAt`. With `EMAIL_ENABLED`
+        // unset — the compose default — `send()` returns null without
+        // sending, and the stamp permanently excluded those rows from ever
+        // being delivered. Nothing is marked unless the provider accepted
+        // the digest.
+        if (!result?.messageId) {
+          skippedUsers++;
+          continue;
+        }
 
         // Mark all included notifications as email-sent
         const notificationIds = unreadNotifications.map((n) => n.id);
@@ -121,11 +137,22 @@ export const processNotificationDigest = withCronInstrumentation(
           .where(sql`${notification.id} = ANY(${notificationIds}::uuid[])`);
 
         emailsSent++;
-      } catch {
-        // Wrapper logs structured error; loop continues to next user.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "notification-digest",
+            scope: "Mark all included notifications as email-sent",
+          },
+          err,
+        );
       }
     }
 
-    return { usersProcessed: digestUsers.length, emailsSent };
+    return {
+      usersProcessed: digestUsers.length,
+      emailsSent,
+      skippedUsers,
+    };
   },
 );

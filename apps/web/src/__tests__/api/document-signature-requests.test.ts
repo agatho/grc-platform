@@ -16,6 +16,7 @@
 //     %PDF magic bytes
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createHash } from "node:crypto";
 
 // ─── Mocks ──────────────────────────────────────────────────────────
 
@@ -51,6 +52,41 @@ vi.mock("@grc/db", () => ({
   notification: {},
   user: {},
   userOrganizationRole: {},
+  // #S06-05: sign()/decline() now write a signature_chain_anchor entry
+  // so the link hangs off the FreeTSA-anchored audit chain.
+  auditLog: {},
+}));
+
+// #S06-04: verify()/sign() re-hash the stored bytes instead of comparing
+// two DB columns, so the storage layer is part of the contract now.
+const SIGNED_BYTES = Buffer.from("%PDF-1.4 signed document bytes");
+const storageGet = vi.fn(async () => SIGNED_BYTES);
+vi.mock("@grc/shared/lib/file-storage", async () => {
+  const actual = await vi.importActual<
+    typeof import("@grc/shared/lib/file-storage")
+  >("@grc/shared/lib/file-storage");
+  return {
+    ...actual,
+    getFileStorage: () => ({
+      get: (...a: unknown[]) => storageGet(...(a as [])),
+      put: vi.fn(),
+      delete: vi.fn(),
+      exists: vi.fn(),
+    }),
+  };
+});
+
+// #S06-05: no external TSA call in unit tests — the status is asserted.
+vi.mock("@/lib/documents/signature-timestamp", () => ({
+  timestampChainLink: vi.fn(async () => ({
+    status: "unavailable",
+    genTime: null,
+    serialNumber: null,
+    policyOid: null,
+    proof: null,
+    chainVerified: false,
+  })),
+  isSignatureTsaEnabled: () => false,
 }));
 
 vi.mock("drizzle-orm", () => {
@@ -126,7 +162,9 @@ import {
 const ME = "aaaaaaaa-0000-4000-8000-000000000001";
 const OTHER = "bbbbbbbb-0000-4000-8000-000000000002";
 const CREATOR = "cccccccc-0000-4000-8000-000000000003";
-const SHA = "a".repeat(64);
+/** #S06-04: the frozen hash must be the hash of the bytes the storage
+ *  actually returns — that is exactly the check the fix introduced. */
+const SHA = createHash("sha256").update(SIGNED_BYTES).digest("hex");
 
 function makeCtx() {
   return {
@@ -317,10 +355,31 @@ describe("POST /signature-requests/[id]/sign", () => {
     selectQueue.push([requestRow()]);
     selectQueue.push([sigRow()]);
     selectQueue.push([{ versionSha: "b".repeat(64), docSha: null }]);
+    selectQueue.push([
+      { versionPath: "org-1/doc-1/file.pdf", docPath: null },
+    ]);
     const res = await call();
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.code).toBe("integrity");
+
+    // #S06-23: the request no longer stays "pending" forever — it is
+    // moved to an explicit end state and the open signers are told.
+    const reqUpdate = updated.find((u) => u.table === documentSignatureRequest);
+    expect((reqUpdate!.set as { status: string }).status).toBe("invalidated");
+  });
+
+  // #S06-04: the old code compared two database columns. If the bytes
+  // cannot be read at all, "unchanged" is not a statement we may make —
+  // so signing is refused rather than assumed safe.
+  it("refuses to sign when the stored bytes cannot be read (S06-04)", async () => {
+    selectQueue.push([requestRow()]);
+    selectQueue.push([sigRow()]);
+    selectQueue.push([{ versionSha: SHA, docSha: null }]);
+    selectQueue.push([{ versionPath: null, docPath: null }]);
+    const res = await call();
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("integrity");
   });
 
   it("signs as last signer → chain link anchored, request completed, creator notified", async () => {
@@ -340,6 +399,9 @@ describe("POST /signature-requests/[id]/sign", () => {
       sigRow({ id: "sig-me", signerUserId: ME, signOrder: 2 }),
     ]);
     selectQueue.push([{ versionSha: SHA, docSha: null }]);
+    selectQueue.push([
+      { versionPath: "org-1/doc-1/file.pdf", docPath: null },
+    ]);
     updateReturning.push([
       sigRow({ id: "sig-me", signerUserId: ME, status: "signed" }),
     ]);
@@ -364,9 +426,35 @@ describe("POST /signature-requests/[id]/sign", () => {
     expect(set.contentHash).toMatch(/^[0-9a-f]{64}$/);
     expect(set.chainHash).toMatch(/^[0-9a-f]{64}$/);
     expect(set.ipAddress).toBe("203.0.113.7");
+    // #S06-03: without a declared proxy topology the address is a
+    // client self-declaration and is stored as such.
+    expect(
+      (set as unknown as { ipTrusted: boolean }).ipTrusted,
+    ).toBe(false);
+    // #S06-03: hash version 2 — the evidence fields are inside the hash.
+    expect((set as unknown as { hashVersion: number }).hashVersion).toBe(2);
+    // #S06-05: the timestamp outcome is recorded, never assumed.
+    expect((set as unknown as { tsaStatus: string }).tsaStatus).toBe(
+      "unavailable",
+    );
+
+    // #S06-15: the expected chain head + length are recorded, so a
+    // later truncation at the END of the chain becomes detectable.
+    const shapeUpdate = updated.find(
+      (u) =>
+        u.table === documentSignatureRequest &&
+        (u.set as { finalChainHash?: string }).finalChainHash !== undefined,
+    );
+    expect((shapeUpdate!.set as { finalChainHash: string }).finalChainHash).toBe(
+      set.chainHash,
+    );
 
     // Request completed
-    const reqUpdate = updated.find((u) => u.table === documentSignatureRequest);
+    const reqUpdate = updated.find(
+      (u) =>
+        u.table === documentSignatureRequest &&
+        (u.set as { status?: string }).status !== undefined,
+    );
     expect((reqUpdate!.set as { status: string }).status).toBe("completed");
 
     // Creator notified

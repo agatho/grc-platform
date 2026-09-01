@@ -78,10 +78,78 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
-vi.mock("@grc/ai", () => ({
+// [ARCTOS-FULL-2026-08-31 / WP6] Die drei Routen rufen nicht mehr
+// `aiComplete()` direkt, sondern `aiCompleteGoverned()` — den zentralen
+// Aufrufpunkt mit Richtlinienpruefung, Ausgabevalidierung und
+// Protokollierung. Der Mock bildet genau dieses Verhalten nach, damit die
+// bestehenden Faelle unveraendert gelten:
+//   * `getAvailableProvidersMock` leer -> AiPolicyViolationError
+//     (`no_provider_configured`) -> 503
+//   * `outputSchema` schlaegt fehl     -> AiOutputInvalidError -> 422
+// Die echten Fehlerklassen kommen aus dem echten Modul, damit die
+// `instanceof`-Pruefung in `_shared/ai-route.ts` greift.
+vi.mock("@grc/ai", async () => {
+  const actual = await vi.importActual<typeof import("@grc/ai")>("@grc/ai");
+  return {
+  ...actual,
   get aiComplete() {
     return aiCompleteMock;
   },
+  aiCompleteGoverned: async (req: {
+    parse?: (raw: string) => unknown;
+    outputSchema?: {
+      safeParse: (v: unknown) => { success: boolean; data?: unknown };
+    };
+  }) => {
+    if ((getAvailableProvidersMock() ?? []).length === 0) {
+      throw new actual.AiPolicyViolationError({
+        code: "no_provider_configured",
+        message: "Es ist kein KI-Provider konfiguriert.",
+      });
+    }
+    const resp = await aiCompleteMock(req);
+    const raw = req.parse ? req.parse(resp.text) : resp.text;
+    let data: unknown = raw;
+    if (req.outputSchema) {
+      const parsed = req.outputSchema.safeParse(raw);
+      if (!parsed.success || parsed.data === undefined) {
+        throw new actual.AiOutputInvalidError(
+          "Die Modellausgabe entspricht nicht dem erwarteten Schema.",
+          String(resp.text ?? "").slice(0, 300),
+        );
+      }
+      data = parsed.data;
+    }
+    return {
+      data,
+      text: resp.text,
+      provider: resp.provider ?? "ollama",
+      model: resp.model ?? "test-model",
+      usage: resp.usage,
+      latencyMs: 1,
+      egressLogId: null,
+      promptSha256: "0".repeat(64),
+      policy: actual.defaultPolicySnapshot("org-1"),
+      disclosure: {
+        feature: "test",
+        aiGenerated: true,
+        provider: resp.provider ?? "ollama",
+        model: resp.model ?? "test-model",
+        processing: "local",
+        processingCountry: "DE",
+        processingController: "self-hosted",
+        thirdCountryTransfer: false,
+        egressMode: "any_configured",
+        policySource: "operator_default",
+        notice: "KI-generierter Vorschlag.",
+        humanReviewRequired: true,
+      },
+    };
+  },
+  loadOrgAiPolicy: async (orgId: string) => ({
+    ...actual.defaultPolicySnapshot(orgId),
+    requireTransparencyNotice: true,
+  }),
   get getAvailableProviders() {
     return getAvailableProvidersMock;
   },
@@ -112,7 +180,8 @@ vi.mock("@grc/ai", () => ({
       return null;
     }
   },
-}));
+  };
+});
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
@@ -253,7 +322,10 @@ describe("POST /api/v1/ai/draft-policy", () => {
     const res = await call(validBody);
     expect(res.status).toBe(503);
     const json = await res.json();
-    expect(json.error).toMatch(/provider/i);
+    // [WP6] Fehlerantworten der AI-Routen sind RFC-7807 (problem+json)
+    // statt `{ error }` — einheitlich ueber `_shared/ai-route.ts`.
+    expect(json.detail).toMatch(/provider/i);
+    expect(json.code).toBe("no_provider_configured");
     expect(aiCompleteMock).not.toHaveBeenCalled();
   });
 
@@ -292,7 +364,15 @@ describe("POST /api/v1/ai/draft-policy", () => {
     expect(json.data.coveredRequirements).toEqual(["A.5.1"]);
     expect(json.data.provider).toBe("ollama");
     // Usage was logged to ai_prompt_log
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {
@@ -318,7 +398,9 @@ describe("POST /api/v1/ai/draft-policy", () => {
     const res = await call(validBody);
     expect(res.status).toBe(422);
     const json = await res.json();
-    expect(json.error).toMatch(/unparseable|invalid/i);
+    expect(`${json.title} ${json.detail}`).toMatch(
+      /unbrauchbar|erwarteten Format/i,
+    );
   });
 
   it("returns 502 when the AI provider throws", async () => {
@@ -457,7 +539,15 @@ describe("POST /api/v1/ai/suggest-controls", () => {
     );
     expect(linkSuggestion.controlId).toBe(UUID_B);
     expect(linkSuggestion.controlTitle).toBe("Endpoint detection and response");
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {
@@ -692,7 +782,15 @@ describe("POST /api/v1/ai/explain-gap", () => {
     expect(json.data.suggestedSteps).toHaveLength(3);
     expect(json.data.suggestedEvidence).toHaveLength(3);
     expect(json.data.soaEntryId).toBe(UUID_A);
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {

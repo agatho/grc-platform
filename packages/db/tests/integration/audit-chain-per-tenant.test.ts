@@ -293,10 +293,32 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     expect(after.pii_tombstoned_at).toBeTruthy();
     expect(after.pii_tombstone_reason).toBe("gdpr_art_17");
 
-    // Tombstoning a second time must fail
+    // #WP8-S07-04 — hier stand vorher:
+    //
+    //   // Tombstoning a second time must fail
+    //   await expect(… 'double_tombstone')).rejects.toThrow(/already tombstoned/)
+    //
+    // Diese Zusicherung machte den Befund S07-04 unbehebbar: ein
+    // Audit-Eintrag kann mehrere Personen betreffen (Akteur, Gegenstand,
+    // Erwähnung in `changes`). Wird Person A heute und Person B in zwei
+    // Jahren gelöscht, war die zweite Löschung technisch unmöglich. Die
+    // Invariante des Guards — diese Spalten ändern sich AUSSCHLIESSLICH
+    // im Zuge einer protokollierten Redaktion — bleibt vollständig
+    // erhalten: der Guard verlangt jetzt einen VORRÜCKENDEN
+    // `pii_tombstoned_at`, ein gewöhnliches UPDATE wird weiterhin
+    // abgewiesen (siehe die beiden folgenden Prüfungen).
+    await client`SELECT tombstone_audit_entry(${row.id}::uuid, 'second_subject')`;
+
+    const [twice] = await client<
+      { entry_hash: string; pii_tombstone_reason: string | null }[]
+    >`SELECT entry_hash, pii_tombstone_reason FROM audit_log WHERE id = ${row.id}`;
+    expect(twice.entry_hash).toBe(originalHash);
+    expect(twice.pii_tombstone_reason).toBe("second_subject");
+
+    // Ein UPDATE ohne Redaktion bleibt verboten.
     await expect(
-      client`SELECT tombstone_audit_entry(${row.id}::uuid, 'double_tombstone')`,
-    ).rejects.toThrow(/already tombstoned/);
+      client`UPDATE audit_log SET user_email = 'x@y.z' WHERE id = ${row.id}`,
+    ).rejects.toThrow(/append-only|tombstone/i);
 
     await client`SELECT set_config('app.current_user_email', '', false)`;
     await client`SELECT set_config('app.current_user_name', '', false)`;

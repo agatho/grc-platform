@@ -4,6 +4,7 @@
 import { db, doraIctIncident, notification } from "@grc/db";
 import { and, sql, isNull, isNotNull, ne } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface DoraDeadlineResult {
   processed: number;
@@ -39,24 +40,27 @@ export const processDoraIncidentDeadlineMonitor = withCronInstrumentation(
     for (const incident of overdueInitial) {
       if (!incident.handlerId) continue;
       try {
-        await db.insert(notification).values({
-          userId: incident.handlerId,
-          orgId: incident.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "dora_ict_incident",
-          entityId: incident.id,
-          title: `DORA: Initial report overdue for ${incident.incidentCode}`,
-          message: `ICT incident "${incident.title}" has an overdue initial report (4h deadline). Due: ${incident.initialReportDue?.toISOString()}`,
-          channel: "both" as const,
-          templateKey: "dora_report_overdue",
-          templateData: {
-            incidentCode: incident.incidentCode,
-            title: incident.title,
-            deadline: "4h",
+        await insertNotification(
+          {
+            userId: incident.handlerId,
+            orgId: incident.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "dora_ict_incident",
+            entityId: incident.id,
+            title: `DORA: Initial report overdue for ${incident.incidentCode}`,
+            message: `ICT incident "${incident.title}" has an overdue initial report (4h deadline). Due: ${incident.initialReportDue?.toISOString()}`,
+            channel: "both" as const,
+            templateKey: "dora_report_overdue",
+            templateData: {
+              incidentCode: incident.incidentCode,
+              title: incident.title,
+              deadline: "4h",
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "dora-incident-deadline-monitor" },
+        );
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

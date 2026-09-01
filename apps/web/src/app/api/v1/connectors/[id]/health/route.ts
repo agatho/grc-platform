@@ -59,34 +59,28 @@ export async function POST(
     return Response.json({ error: "Connector not found" }, { status: 404 });
   }
 
-  // Simulate health check (real implementation would ping the connector)
-  const startMs = Date.now();
-  const healthStatus = connector.status === "active" ? "healthy" : "unhealthy";
-  const responseTimeMs = Date.now() - startMs;
-
-  const created = await withAuditContext(ctx, async (tx) => {
-    const [check] = await tx
-      .insert(connectorHealthCheck)
-      .values({
-        orgId: ctx.orgId,
-        connectorId: id,
-        status: healthStatus,
-        responseTimeMs,
-        checkType: "connectivity",
-        details: {
-          connectorType: connector.connectorType,
-          providerKey: connector.providerKey,
-        },
-      })
-      .returning();
-
-    await tx
-      .update(evidenceConnector)
-      .set({ lastHealthCheck: new Date(), healthStatus, updatedAt: new Date() })
-      .where(eq(evidenceConnector.id, id));
-
-    return check;
-  });
-
-  return Response.json({ data: created }, { status: 201 });
+  // ── [ARCTOS-FULL-2026-08-31 / WP9 · S14-02] ──────────────────────────
+  //
+  // `const healthStatus = connector.status === "active" ? "healthy" :
+  // "unhealthy"` derived connectivity from a row in our own database — a
+  // connector whose credentials expired last month is "active", therefore
+  // "healthy", with a `responseTimeMs` measured across two adjacent
+  // `Date.now()` calls (always 0). The row landed in
+  // `connector_health_check`, which is what the connector dashboard and any
+  // evidence-freshness argument rely on.
+  //
+  // Nothing is written until something is actually measured.
+  return Response.json(
+    {
+      error: "Not implemented",
+      detail:
+        "Connector health cannot be measured in this build: no provider " +
+        "client is wired up, and the configured status in our own database " +
+        "is not evidence of connectivity. Refusing to record an unmeasured " +
+        "health check.",
+      connectorId: id,
+      configuredStatus: connector.status,
+    },
+    { status: 501 },
+  );
 }

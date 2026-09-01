@@ -4,6 +4,7 @@
 import { db, regulatoryFeedItem } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface FeedFetcherResult {
   fetched: number;
@@ -156,11 +157,27 @@ export const processRegulatoryFeedFetcher = withCronInstrumentation(
             });
 
             newItems++;
-          } catch {
+          } catch (err) {
+            // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+            reportJobError(
+              {
+                job: "regulatory-feed-fetcher",
+                scope: "Check for duplicate by URL",
+              },
+              err,
+            );
             errors++;
           }
         }
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "regulatory-feed-fetcher",
+            scope: "Check for duplicate by URL",
+          },
+          err,
+        );
         errors++;
       }
     }

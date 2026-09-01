@@ -5,6 +5,7 @@
 import { db, organization } from "@grc/db";
 import { isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface CacheWarmerResult {
   orgsProcessed: number;
@@ -36,7 +37,15 @@ export const processQueryCacheWarmer = withCronInstrumentation(
       const DASHBOARD_TYPES_PER_ORG = 5;
       orgsProcessed = orgs.length;
       keysWarmed = orgs.length * DASHBOARD_TYPES_PER_ORG;
-    } catch {
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        {
+          job: "query-cache-warmer",
+          scope: "Until thats wired up count what we WOULD ha",
+        },
+        err,
+      );
       errors++;
     }
 

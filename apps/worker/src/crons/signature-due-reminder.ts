@@ -30,6 +30,8 @@ import {
   shouldEscalateSignatureRequest,
 } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 export interface SignerSlot {
   signerUserId: string;
@@ -128,32 +130,35 @@ export const processSignatureDueReminders = withCronInstrumentation(
         ) {
           const recipients = selectReminderRecipients(slots, req.sequential);
           for (const recipientId of recipients) {
-            await db.insert(notification).values({
-              userId: recipientId,
-              orgId: req.orgId,
-              type: isOverdue
-                ? ("escalation" as const)
-                : ("deadline_approaching" as const),
-              entityType: "document",
-              entityId: req.documentId,
-              title: isOverdue
-                ? `Signature overdue: ${req.title}`
-                : `Signature due in ${daysUntilDue} day(s): ${req.title}`,
-              message: `Your signature on '${req.title}' is due on ${dueDateStr}${isOverdue ? " (overdue)" : ""}.`,
-              channel: "both" as const,
-              templateKey: isOverdue
-                ? "document_signature_overdue"
-                : "document_signature_due_reminder",
-              templateData: {
-                requestId: req.id,
-                documentId: req.documentId,
-                documentTitle: req.title,
-                dueDate: dueDateStr,
-                daysUntilDue,
+            await insertNotification(
+              {
+                userId: recipientId,
+                orgId: req.orgId,
+                type: isOverdue
+                  ? ("escalation" as const)
+                  : ("deadline_approaching" as const),
+                entityType: "document",
+                entityId: req.documentId,
+                title: isOverdue
+                  ? `Signature overdue: ${req.title}`
+                  : `Signature due in ${daysUntilDue} day(s): ${req.title}`,
+                message: `Your signature on '${req.title}' is due on ${dueDateStr}${isOverdue ? " (overdue)" : ""}.`,
+                channel: "both" as const,
+                templateKey: isOverdue
+                  ? "document_signature_overdue"
+                  : "document_signature_due_reminder",
+                templateData: {
+                  requestId: req.id,
+                  documentId: req.documentId,
+                  documentTitle: req.title,
+                  dueDate: dueDateStr,
+                  daysUntilDue,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "signature-due-reminder" },
+            );
             notified++;
           }
           if (recipients.length > 0) {
@@ -187,27 +192,30 @@ export const processSignatureDueReminders = withCronInstrumentation(
             ),
           ];
           for (const recipientId of escalationRecipients) {
-            await db.insert(notification).values({
-              userId: recipientId,
-              orgId: req.orgId,
-              type: "escalation" as const,
-              entityType: "document",
-              entityId: req.documentId,
-              title: `Signature request overdue: ${req.title}`,
-              message: `Signature request '${req.title}' was due on ${dueDateStr} — ${pendingCount} of ${slots.length} signature(s) still pending. The request is not cancelled automatically; please follow up with the signers or cancel it.`,
-              channel: "both" as const,
-              templateKey: "document_signature_escalation",
-              templateData: {
-                requestId: req.id,
-                documentId: req.documentId,
-                documentTitle: req.title,
-                dueDate: dueDateStr,
-                pendingCount,
-                totalCount: slots.length,
+            await insertNotification(
+              {
+                userId: recipientId,
+                orgId: req.orgId,
+                type: "escalation" as const,
+                entityType: "document",
+                entityId: req.documentId,
+                title: `Signature request overdue: ${req.title}`,
+                message: `Signature request '${req.title}' was due on ${dueDateStr} — ${pendingCount} of ${slots.length} signature(s) still pending. The request is not cancelled automatically; please follow up with the signers or cancel it.`,
+                channel: "both" as const,
+                templateKey: "document_signature_escalation",
+                templateData: {
+                  requestId: req.id,
+                  documentId: req.documentId,
+                  documentTitle: req.title,
+                  dueDate: dueDateStr,
+                  pendingCount,
+                  totalCount: slots.length,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "signature-due-reminder" },
+            );
             notified++;
           }
 
@@ -217,8 +225,12 @@ export const processSignatureDueReminders = withCronInstrumentation(
             .where(eq(documentSignatureRequest.id, req.id));
           escalated++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues to next request.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "signature-due-reminder", scope: "recipientId" },
+          err,
+        );
       }
     }
 

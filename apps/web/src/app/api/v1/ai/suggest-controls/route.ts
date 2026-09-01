@@ -21,10 +21,11 @@
 // "link_existing" suggestions are additionally filtered server-side to
 // the candidate set — the model cannot smuggle in foreign control IDs.
 
-import { db, risk, control, riskControl, aiPromptLog } from "@grc/db";
+import { db, risk, control, riskControl } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
-  aiComplete,
+  AiPolicyViolationError,
+  aiCompleteGoverned,
   buildControlAdvisorPrompt,
   generateEmbedding,
   getAvailableProviders,
@@ -37,7 +38,7 @@ import {
 } from "@grc/shared";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import { rateLimit, LIMITS } from "@/lib/rate-limit";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
 
 function tokenize(text: string): Set<string> {
   return new Set(
@@ -126,27 +127,8 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const limit = await rateLimit({
-    key: `ai-assist:${ctx.userId}`,
-    ...LIMITS.AI_ASSIST,
-  });
-  if (!limit.allowed) {
-    return new Response(
-      JSON.stringify({
-        type: "https://arctos.charliehund.de/errors/rate-limited",
-        title: "Rate limit exceeded",
-        status: 429,
-        detail: `AI-assist rate limit exceeded. Retry in ${limit.retryAfterSeconds}s.`,
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/problem+json; charset=utf-8",
-          "Retry-After": String(limit.retryAfterSeconds),
-        },
-      },
-    );
-  }
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
   const body = aiSuggestControlsSchema.safeParse(
     await req.json().catch(() => null),
@@ -158,13 +140,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // [WP6 · S05-02] Frueh scheitern, bevor die Route DB-Arbeit leistet:
+  // hat der Betreiber ueberhaupt keinen Provider freigeschaltet, ist der
+  // Aufruf aussichtslos. Die eigentliche Richtlinienpruefung (Org-Ebene,
+  // Jurisdiktion, Nutzerwunsch) macht `aiCompleteGoverned`.
   if (getAvailableProviders().length === 0) {
-    return Response.json(
-      {
-        error:
-          "AI features require a configured LLM provider. Set an API key (or enable Ollama) in the server environment.",
-      },
-      { status: 503 },
+    return aiErrorResponse(
+      new AiPolicyViolationError({
+        code: "no_provider_configured",
+        message:
+          "Es ist kein KI-Provider konfiguriert. Der Betreiber muss einen Provider " +
+          "ausdruecklich freischalten (lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; " +
+          "Cloud: ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_AI_API_KEY / " +
+          "CLAUDE_CLI_ENABLED=true).",
+      }),
     );
   }
 
@@ -267,67 +256,46 @@ export async function POST(req: Request) {
     locale: "de",
   });
 
-  const startMs = Date.now();
-  let response;
   try {
-    response = await aiComplete({
+    const result = await aiCompleteGoverned({
+      feature: "ai.suggest_controls",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "risk",
+      entityId: riskRow.id,
       messages: prompt,
       maxTokens: 2000,
       temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: aiControlSuggestionsResponseSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "ai-assist/suggest-controls",
-    inputTokens: response.usage?.inputTokens ?? 0,
-    outputTokens: response.usage?.outputTokens ?? 0,
-    model: response.model,
-    latencyMs: Date.now() - startMs,
-    cachedResult: false,
-  });
+    // Server-side hardening: link_existing must reference a candidate the
+    // server offered — anything else (hallucinated or injected IDs) drops.
+    const candidateById = new Map(candidates.map((c) => [c.id, c]));
+    const suggestions = result.data.suggestions
+      .filter((s) => s.type !== "link_existing" || candidateById.has(s.controlId))
+      .slice(0, 5)
+      .map((s) =>
+        s.type === "link_existing"
+          ? {
+              ...s,
+              controlTitle: candidateById.get(s.controlId)?.title ?? "",
+              controlType: candidateById.get(s.controlId)?.controlType ?? "",
+            }
+          : s,
+      );
 
-  const parsed = safeJsonParse<unknown>(response.text);
-  const validated = aiControlSuggestionsResponseSchema.safeParse(parsed);
-  if (!validated.success) {
-    return Response.json(
+    return aiJson(
       {
-        error:
-          "The AI returned unparseable or invalid suggestions. Please try again.",
-        rawSample: response.text.slice(0, 300),
+        riskId: body.data.riskId,
+        suggestions,
+        provider: result.provider,
+        model: result.model,
       },
-      { status: 422 },
+      result.disclosure,
     );
+  } catch (err) {
+    return aiErrorResponse(err);
   }
-
-  // Server-side hardening: link_existing must reference a candidate the
-  // server offered — anything else (hallucinated or injected IDs) drops.
-  const candidateById = new Map(candidates.map((c) => [c.id, c]));
-  const suggestions = validated.data.suggestions
-    .filter((s) => s.type !== "link_existing" || candidateById.has(s.controlId))
-    .slice(0, 5)
-    .map((s) =>
-      s.type === "link_existing"
-        ? {
-            ...s,
-            controlTitle: candidateById.get(s.controlId)?.title ?? "",
-            controlType: candidateById.get(s.controlId)?.controlType ?? "",
-          }
-        : s,
-    );
-
-  return Response.json({
-    data: {
-      riskId: body.data.riskId,
-      suggestions,
-      provider: response.provider,
-      model: response.model,
-    },
-  });
 }

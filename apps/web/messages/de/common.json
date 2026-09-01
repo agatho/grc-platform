@@ -4838,11 +4838,11 @@
       "readTime": "Lesezeit",
       "submit": "Bestätigen",
       "success": "Erfolgreich bestätigt",
-      "successDesc": "Ihre Bestätigung wurde gespeichert. Die digitale Signatur dient als Nachweis.",
+      "successDesc": "Ihre Bestätigung wurde gespeichert und im Audit-Trail protokolliert. Die Prüfsumme sichert die Unverändertheit des Eintrags.",
       "quizFailed": "Quiz nicht bestanden",
       "quizFailedDesc": "Sie haben {score}% erreicht. Erforderlich sind {threshold}%.",
       "date": "Bestätigt am",
-      "signatureHash": "Digitale Signatur"
+      "signatureHash": "Bestätigungs-Prüfsumme"
     },
     "quiz": {
       "title": "Verstaendnisfragen",

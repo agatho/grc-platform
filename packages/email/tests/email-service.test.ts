@@ -444,26 +444,37 @@ describe("EmailService", () => {
       process.env.EMAIL_ENABLED = "true";
     });
 
-    it("should return empty string messageId when data.id is null", async () => {
-      mockResendSend.mockResolvedValueOnce({
-        data: { id: null },
-        error: null,
-      });
+    // [ARCTOS-FULL-2026-08-31 / WP9 · S10-04] These two cases used to assert
+    // `{ messageId: "" }` — i.e. they PINNED the defect. The Resend SDK never
+    // throws: it returns `{ data: null, error }` for HTTP errors and network
+    // failures alike, so a 422 ("domain not verified"), a 429, a wrong API key
+    // or a DNS outage all produced an empty message id that the caller
+    // recorded as a successful delivery, complete with `email_sent_at`. In a
+    // platform where that column is the evidence that a statutory deadline
+    // was communicated, "delivered" must mean the provider accepted the
+    // message. A missing id now raises, and the three retries — previously
+    // unreachable dead code — actually run.
+    it("throws when the provider returns no message id", async () => {
+      mockResendSend.mockResolvedValue({ data: { id: null }, error: null });
 
-      const result = await service.send(baseParams);
-
-      expect(result).toEqual({ messageId: "" });
+      await expect(service.send(baseParams)).rejects.toThrow(/not delivered/);
     });
 
-    it("should return empty string messageId when data is null", async () => {
-      mockResendSend.mockResolvedValueOnce({
+    it("throws when the provider returns no data at all", async () => {
+      mockResendSend.mockResolvedValue({ data: null, error: null });
+
+      await expect(service.send(baseParams)).rejects.toThrow(/not delivered/);
+    });
+
+    it("throws with the provider's message when it reports an error", async () => {
+      mockResendSend.mockResolvedValue({
         data: null,
-        error: null,
+        error: { name: "validation_error", message: "domain not verified" },
       });
 
-      const result = await service.send(baseParams);
-
-      expect(result).toEqual({ messageId: "" });
+      await expect(service.send(baseParams)).rejects.toThrow(
+        /domain not verified/,
+      );
     });
   });
 });

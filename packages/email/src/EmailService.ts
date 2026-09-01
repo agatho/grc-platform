@@ -101,10 +101,32 @@ import {
   VendorReassessmentDue,
   getSubject as vendorReassessmentDueSubject,
 } from "./templates/VendorReassessmentDue";
+// [WP9 · S10-03] Shared renderer for the 65 keys that had no template.
+import {
+  GenericNotification,
+  getSubject as genericNotificationSubject,
+} from "./templates/GenericNotification";
+import {
+  GENERIC_TEMPLATES,
+  isGenericTemplateKey,
+  type GenericTemplateKey,
+} from "./template-registry";
+import { EmailDeliveryError } from "./types";
 
 interface RenderedTemplate {
   subject: string;
   component: React.ReactElement;
+}
+
+/**
+ * [WP9 · S10-24] Keep the diagnostic value of the log line (which domain,
+ * which template) without writing the personal data itself to stdout.
+ */
+function redactEmail(address: string): string {
+  const at = address.lastIndexOf("@");
+  if (at <= 0) return "<redacted>";
+  const local = address.slice(0, at);
+  return `${local.slice(0, 1)}***@${address.slice(at + 1)}`;
 }
 
 const RETRY_DELAYS = [1_000, 5_000, 30_000];
@@ -136,13 +158,28 @@ export class EmailService {
   /**
    * Send a transactional email via Resend.
    *
-   * When EMAIL_ENABLED !== 'true', logs the call and returns null (dev/test no-op).
-   * Retries up to 3 times with exponential backoff (1s, 5s, 30s).
+   * Contract (tightened for S10-04):
+   *   * returns `{ messageId }` ONLY when the provider accepted the message
+   *     and gave us an id;
+   *   * returns `null` when e-mail delivery is switched off — this means
+   *     "NOT sent", and callers must not record a delivery timestamp;
+   *   * THROWS `EmailDeliveryError` on any provider or network failure,
+   *     after up to 3 attempts with backoff.
+   *
+   * Callers that recorded `emailSentAt` for a `null` result were the second
+   * half of the defect: with the compose default `EMAIL_ENABLED=false`, the
+   * platform marked every notification as delivered without sending
+   * anything, and `isNull(emailSentAt)` then excluded those rows forever.
    */
   async send(params: EmailParams): Promise<EmailResult | null> {
     if (process.env.EMAIL_ENABLED !== "true") {
+      // [S10-24] The recipient address is personal data and this is the
+      // DEFAULT path in production (`EMAIL_ENABLED:-false`), so it used to
+      // write every recipient to stdout, from where ADR-017 phase 2 ships
+      // logs to a third party. The template key and the domain are enough
+      // to diagnose a misconfiguration.
       console.log(
-        `[EmailService] disabled, skipping: ${params.templateKey} -> ${params.to}`,
+        `[EmailService] disabled, skipping: ${params.templateKey} -> ${redactEmail(params.to)}`,
       );
       return null;
     }
@@ -167,7 +204,29 @@ export class EmailService {
           subject: template.subject,
           react: template.component,
         });
-        return { messageId: result.data?.id ?? "" };
+
+        // [S10-04 A] The SDK reports failures as a RETURN VALUE, never as a
+        // thrown error. Without this branch a 422 ("domain not verified"),
+        // a 429, a 401 or a DNS outage all produced `{ messageId: "" }` and
+        // were counted as delivered.
+        const providerError = (
+          (result ?? {}) as {
+            error?: { name?: string; message?: string } | null;
+          }
+        ).error;
+        if (providerError) {
+          throw new EmailDeliveryError(
+            `Resend rejected the message: ${providerError.message ?? providerError.name ?? "unknown error"}`,
+            providerError.name,
+          );
+        }
+        const messageId = result?.data?.id;
+        if (!messageId) {
+          throw new EmailDeliveryError(
+            "Resend returned neither a message id nor an error — treating as not delivered",
+          );
+        }
+        return { messageId };
       } catch (err) {
         lastError = err;
         if (attempt < MAX_ATTEMPTS - 1) {
@@ -176,7 +235,9 @@ export class EmailService {
       }
     }
 
-    throw lastError;
+    throw lastError instanceof Error
+      ? lastError
+      : new EmailDeliveryError(String(lastError));
   }
 
   /**
@@ -590,9 +651,45 @@ export class EmailService {
           }),
         };
 
+      // [WP9 · S10-03] Every remaining registry key renders through the
+      // shared layout. Before this arm existed, 36 of the 38 keys the crons
+      // actually wrote fell into `default: throw` — the mail was retried
+      // three times and then permanently excluded by `retry_count < 3`.
       default: {
-        const _exhaustive: never = key;
-        throw new Error(`Unknown email template key: ${_exhaustive}`);
+        if (!isGenericTemplateKey(key)) {
+          // Unreachable for a key from the registry; kept as a real guard
+          // because `notification.template_key` is a varchar column and a
+          // stale row can still carry an obsolete value.
+          throw new Error(`Unknown email template key: ${String(key)}`);
+        }
+        const spec = GENERIC_TEMPLATES[key as GenericTemplateKey];
+        const headline = spec.subject[lang];
+        const title =
+          (data.notificationTitle as string) || (data.title as string) || "";
+        const message =
+          (data.notificationMessage as string) ||
+          (data.message as string) ||
+          undefined;
+        const facts = Array.isArray(data.facts)
+          ? (data.facts as Array<{ label: string; value: string }>)
+          : undefined;
+        return {
+          subject: genericNotificationSubject(
+            { ...data, __headline: headline },
+            lang,
+          ),
+          component: React.createElement(GenericNotification, {
+            lang,
+            headline,
+            severity: spec.severity,
+            title,
+            message,
+            facts,
+            actionUrl: (data.actionUrl as string) || (data.url as string),
+            recipientName: data.recipientName as string | undefined,
+            orgName: data.orgName as string | undefined,
+          }),
+        };
       }
     }
   }

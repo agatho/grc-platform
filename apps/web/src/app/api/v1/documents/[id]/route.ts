@@ -5,6 +5,7 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createDocumentVersion } from "@/lib/document-versioning";
 import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
+import { contentMutableForStatus } from "@/lib/documents/download-policy";
 
 // GET /api/v1/documents/:id — Document detail
 export async function GET(
@@ -110,6 +111,43 @@ export async function PUT(
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
       { status: 422 },
+    );
+  }
+
+  // ── #S06-14 (ARCTOS-FULL-2026-08-31, Medium) ──────────────────────
+  // The route never looked at `existing.status`. A process_owner could
+  // change the CONTENT of a published document: a new minor version was
+  // created with is_current = true, the document status stayed
+  // `published`, and the new text was served immediately. `checkFourEyes`
+  // only runs on status transitions in [id]/status/route.ts and was
+  // therefore never reached — the release workflow was bypassable
+  // without touching it. The code comment ("minor bump (draft edit)")
+  // described an assumption the implementation did not enforce.
+  //
+  // Content edits are now confined to the mutable states; metadata
+  // (title, owner, tags, retention, legal hold, review dates) stays
+  // editable in every state. VALID_DOCUMENT_TRANSITIONS provides the
+  // legitimate revision path: published → archived → draft → in_review
+  // → approved → published, with four-eyes on the way out.
+  const wantsContentChange =
+    body.data.content !== undefined && body.data.content !== existing.content;
+  if (wantsContentChange && !contentMutableForStatus(existing.status)) {
+    return Response.json(
+      {
+        error: `Document is '${existing.status}' — the content of a released document must not be changed in place. Move it back to 'draft' via PUT /api/v1/documents/${id}/status first; approve/publish then re-apply the four-eyes check.`,
+        code: "document_released",
+        status: existing.status,
+      },
+      { status: 409 },
+    );
+  }
+  if (wantsContentChange && existing.legalHold) {
+    return Response.json(
+      {
+        error: "Document is under legal hold — its content must not change.",
+        code: "legal_hold",
+      },
+      { status: 409 },
     );
   }
 

@@ -9,6 +9,8 @@ import {
 } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface CollectionReminderResult {
   processed: number;
@@ -46,18 +48,26 @@ export const processEsgCollectionReminder = withCronInstrumentation(
 
       for (const assignment of pending) {
         try {
-          await db.insert(notification).values({
-            userId: assignment.assigneeId,
-            orgId: campaign.orgId,
-            type: "deadline_approaching" as const,
-            entityType: "esg_collection_assignment",
-            entityId: assignment.id,
-            title: `ESG data collection: "${campaign.title}" — submission due ${campaign.deadline}`,
-            message: `Please submit your ESG metric data for campaign "${campaign.title}". Deadline: ${campaign.deadline}.`,
-            channel: "both" as const,
-          });
+          await insertNotification(
+            {
+              userId: assignment.assigneeId,
+              orgId: campaign.orgId,
+              type: "deadline_approaching" as const,
+              entityType: "esg_collection_assignment",
+              entityId: assignment.id,
+              title: `ESG data collection: "${campaign.title}" — submission due ${campaign.deadline}`,
+              message: `Please submit your ESG metric data for campaign "${campaign.title}". Deadline: ${campaign.deadline}.`,
+              channel: "both" as const,
+            },
+            { job: "esg-collection-reminder" },
+          );
           reminders++;
-        } catch {
+        } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            { job: "esg-collection-reminder", scope: "assignment" },
+            err,
+          );
           /* skip */
         }
       }

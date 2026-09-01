@@ -4,6 +4,7 @@
 import { db, crossRegionReplication, sovereigntyAuditLog } from "@grc/db";
 import { eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface ReplicationMonitorResult {
   checked: number;
@@ -69,11 +70,27 @@ export const processReplicationMonitor = withCronInstrumentation(
               result.alerts++;
             }
           }
-        } catch {
+        } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            {
+              job: "replication-monitor",
+              scope: "Check if last sync is older than 1 hour",
+            },
+            err,
+          );
           result.errors++;
         }
       }
-    } catch {
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        {
+          job: "replication-monitor",
+          scope: "Check if last sync is older than 1 hour",
+        },
+        err,
+      );
       result.errors++;
     }
 

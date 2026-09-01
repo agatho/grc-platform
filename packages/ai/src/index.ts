@@ -1,6 +1,17 @@
 // AI Abstraction Layer (ADR-008)
-// Multi-provider: Claude CLI (subscription), OpenAI, Gemini, Ollama
-// Privacy-Router: personal data → Ollama (local), else → configured default
+//
+// [ARCTOS-FULL-2026-08-31 / WP6]
+// Der produktive Weg ist `aiCompleteGoverned()` (governed.ts): Er
+// entscheidet den Provider nach der Richtlinie der Organisation
+// (fail-closed), validiert die Modellausgabe gegen ein Schema,
+// protokolliert Provider und Jurisdiktion und liefert den
+// Transparenzhinweis mit. `aiComplete()` bleibt der Low-Level-Weg für
+// Aufrufer ohne Org-Kontext — auch er ist fail-closed, kennt aber nur
+// die Betreiber-Ebene.
+//
+// `llm-provider.ts` (428 Zeilen, „ZERO vendor lock-in", nirgends
+// importiert, ohne `response.ok`-Prüfung) ist mit S05-16 entfernt
+// worden; die verdrahtete Abstraktion ist dieses Modul.
 
 export {
   aiComplete,
@@ -8,9 +19,55 @@ export {
   aiCompleteWithFailover,
   AllProvidersFailedError,
   getAvailableProviders,
+  getLocalProviders,
   getDefaultProvider,
+  operatorPolicySnapshot,
+  localModelRegion,
+  isAiProvider,
+  ALL_PROVIDERS,
   type FailoverOptions,
 } from "./router";
+export {
+  AiPolicyViolationError,
+  DEFAULT_LOCAL_REGION,
+  EU_ADEQUATE_REGIONS,
+  EU_BOUND_COUNTRIES,
+  AI_EGRESS_MODES,
+  isAiEgressMode,
+  defaultPolicySnapshot,
+  evaluateProvider,
+  selectProvider,
+  providerPlacements,
+  modeFromDataResidency,
+  type AiEgressMode,
+  type AiPolicyViolationCode,
+  type OrgAiPolicySnapshot,
+  type ProviderPlacement,
+  type ProviderSelection,
+  type ResidencyRuleSnapshot,
+} from "./policy";
+export {
+  loadOrgAiPolicy,
+  invalidateOrgAiPolicy,
+  type LoadedOrgAiPolicy,
+} from "./org-policy";
+export {
+  aiCompleteGoverned,
+  AiOutputInvalidError,
+  type AiDisclosure,
+  type GovernedRequest,
+  type GovernedResult,
+  type OutputSchema,
+} from "./governed";
+export {
+  buildDataPrompt,
+  buildDataPromptWithNonce,
+  safeText,
+  safeTextList,
+  safeData,
+  DEFAULT_FIELD_CAP,
+  type DataPromptArgs,
+} from "./prompt-safety";
 export {
   generateEmbedding,
   getEmbeddingProvider,
@@ -33,6 +90,7 @@ export type {
   AiProviderConfig,
 } from "./types";
 export { DEFAULT_MODELS } from "./types";
+export * from "./output-schemas";
 export {
   buildTranslatePrompt,
   buildBatchTranslatePrompt,
@@ -81,3 +139,17 @@ export {
   buildGapExplanationPrompt,
   type GapExplanationPromptArgs,
 } from "./prompts/compliance";
+export {
+  buildIcsControlSuggestionPrompt,
+  buildTestPlanPrompt,
+  buildRcmGapPrompt,
+  buildRootCausePatternPrompt,
+} from "./prompts/ics";
+export {
+  buildRegulatoryRelevancePrompt,
+  buildCopilotPrompt,
+  buildEamDescriptionPrompt,
+  buildEamSuggestionsPrompt,
+  GRC_MODULES,
+  type CopilotRagSnippet,
+} from "./prompts/platform";

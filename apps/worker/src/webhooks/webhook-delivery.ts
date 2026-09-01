@@ -4,7 +4,7 @@
 
 import { db, webhookRegistration, webhookDeliveryLog } from "@grc/db";
 import { formatWebhookPayload, signPayload } from "@grc/events";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNotNull, lte } from "drizzle-orm";
 import type { GrcEvent } from "@grc/events";
 import { checkWebhookUrl } from "@grc/shared";
 import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
@@ -266,40 +266,63 @@ export async function processWebhookDispatch(): Promise<{
 }
 
 /**
- * Process pending retries — called by cron job.
- * Finds deliveries in 'retrying' status where next_retry_at has passed.
+ * Process pending retries — called by the `webhook-retry` cron.
+ * Finds deliveries in 'retrying' status whose `next_retry_at` has passed.
+ *
+ * [ARCTOS-FULL-2026-08-31 / WP9 · S10-17]
+ *
+ * The previous version applied `LIMIT 50` to ALL rows in `retrying` and
+ * only then filtered `next_retry_at <= now` in JavaScript, with no
+ * `ORDER BY` — so the 50 rows came back in physical heap order.
+ *
+ * The audit's scenario: one customer endpoint is down overnight, 400
+ * deliveries sit in `retrying` with `next_retry_at` half an hour out. A
+ * different, important delivery then fails and becomes due in 60 seconds.
+ * The query returns 50 arbitrary rows of the 401; the chance the due one is
+ * among them is about 12 %. While the backlog exists, due retries are not
+ * processed — and the backlog cannot drain, because it blocks itself.
+ *
+ * Both halves of the predicate now live in SQL, and the oldest due delivery
+ * goes first, so the queue is FIFO among what is actually due.
  */
 export async function processWebhookRetries(): Promise<{
   processed: number;
+  due: number;
 }> {
+  const now = new Date();
+
   const pendingRetries = await db
     .select()
     .from(webhookDeliveryLog)
-    .where(eq(webhookDeliveryLog.status, "retrying"))
+    .where(
+      and(
+        eq(webhookDeliveryLog.status, "retrying"),
+        isNotNull(webhookDeliveryLog.nextRetryAt),
+        lte(webhookDeliveryLog.nextRetryAt, now),
+      ),
+    )
+    .orderBy(asc(webhookDeliveryLog.nextRetryAt))
     .limit(50);
 
   let processed = 0;
-  const now = new Date();
 
   for (const delivery of pendingRetries) {
-    if (delivery.nextRetryAt && new Date(delivery.nextRetryAt) <= now) {
-      const payload = delivery.payload as Record<string, unknown>;
-      await processWebhookDelivery({
-        webhookId: delivery.webhookId,
-        event: {
-          orgId: (payload.orgId as string) ?? "",
-          eventType: delivery.eventType as GrcEvent["eventType"],
-          entityType: delivery.entityType,
-          entityId: delivery.entityId,
-          payload: (payload.payload as GrcEvent["payload"]) ?? {},
-          emittedAt: new Date(delivery.createdAt),
-        },
-        deliveryLogId: delivery.id,
-        retryCount: delivery.retryCount,
-      });
-      processed++;
-    }
+    const payload = delivery.payload as Record<string, unknown>;
+    await processWebhookDelivery({
+      webhookId: delivery.webhookId,
+      event: {
+        orgId: (payload.orgId as string) ?? "",
+        eventType: delivery.eventType as GrcEvent["eventType"],
+        entityType: delivery.entityType,
+        entityId: delivery.entityId,
+        payload: (payload.payload as GrcEvent["payload"]) ?? {},
+        emittedAt: new Date(delivery.createdAt),
+      },
+      deliveryLogId: delivery.id,
+      retryCount: delivery.retryCount,
+    });
+    processed++;
   }
 
-  return { processed };
+  return { processed, due: pendingRetries.length };
 }

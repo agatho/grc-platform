@@ -4,6 +4,7 @@
 import { db, communityEditionConfig } from "@grc/db";
 import { eq, and, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processCommunityLicenseCheck = withCronInstrumentation(
   "community-license-check",
@@ -36,8 +37,15 @@ export const processCommunityLicenseCheck = withCronInstrumentation(
           .where(eq(communityEditionConfig.id, config.id));
 
         downgradeCount++;
-      } catch {
-        // Wrapper logs structured error; loop continues to next org.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "community-license-check",
+            scope: "Downgrade to community edition",
+          },
+          err,
+        );
       }
     }
 

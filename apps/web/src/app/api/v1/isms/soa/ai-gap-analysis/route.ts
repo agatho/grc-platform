@@ -12,8 +12,13 @@ import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { triggerSoaGapAnalysisSchema } from "@grc/shared";
 import { parseQueryParams } from "@/lib/query-schema";
-import { aiComplete } from "@grc/ai";
-import { buildSoaGapPrompt, parseSoaGapResponse } from "@grc/ai";
+import {
+  aiCompleteGoverned,
+  buildSoaGapPrompt,
+  soaGapArraySchema,
+  parseJsonArray,
+} from "@grc/ai";
+import { aiErrorResponse, aiRateLimit } from "../../../ai/_shared/ai-route";
 import { z } from "zod";
 
 // POST /api/v1/isms/soa/ai-gap-analysis — Trigger AI gap analysis
@@ -24,7 +29,14 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
+  const limited = await aiRateLimit(ctx.userId, {
+    bucket: "isms-gap",
+    capacity: 3,
+    windowSeconds: 300,
+  });
+  if (limited) return limited;
+
+  const body = await req.json().catch(() => null);
   const parsed = triggerSoaGapAnalysisSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
@@ -125,43 +137,28 @@ export async function POST(req: Request) {
     framework: parsed.data.framework,
   });
 
-  // Call AI
-  let aiResponse;
+  // [WP6 · S05-01/-03] Vorher stand hier `provider: "claude_api"` plus ein
+  // hartkodierter Modellname — eine Route, die den Drittlandtransfer
+  // unabhängig von jeder Betreiber- oder Org-Einstellung erzwang.
+  // Provider und Modell bestimmt jetzt die Richtlinie.
+  let aiResult;
   try {
-    aiResponse = await aiComplete({
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an ISO 27001 compliance auditor. Respond only with valid JSON.",
-        },
-        { role: "user", content: prompt },
-      ],
-      model: "claude-sonnet-4-20250514",
+    aiResult = await aiCompleteGoverned({
+      feature: "isms.soa_gap_analysis",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      messages: prompt,
       maxTokens: 4096,
       temperature: 0.3,
-      provider: "claude_api",
+      parse: parseJsonArray,
+      outputSchema: soaGapArraySchema,
     });
   } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
+    // Nichts wird persistiert, wenn die Ausgabe unbrauchbar ist.
+    return aiErrorResponse(err);
   }
 
-  // Parse response (defensive — AI may return malformed JSON)
-  let gaps;
-  try {
-    gaps = parseSoaGapResponse(aiResponse.text);
-  } catch (err) {
-    return Response.json(
-      {
-        error: "AI returned malformed response — please retry",
-        details: (err as Error).message,
-      },
-      { status: 502 },
-    );
-  }
+  const gaps = aiResult.data;
 
   if (gaps.length === 0) {
     return Response.json({
@@ -199,6 +196,22 @@ export async function POST(req: Request) {
         .returning();
       suggestions.push(row);
     }
+
+    // [WP6 · S05-11] Provenienz der persistierten KI-Bewertung. Die
+    // Spalten kommen aus Migration 0417 und sind (noch) nicht im
+    // Drizzle-Schema von `soa_ai_suggestion` deklariert — das Schemafile
+    // gehört einem anderen Paket, deshalb hier als expliziter UPDATE
+    // statt als Feld im `values()`-Objekt.
+    await tx.execute(sql`
+      UPDATE soa_ai_suggestion
+         SET ai_provider = ${aiResult.provider},
+             ai_model = ${aiResult.model},
+             prompt_sha256 = ${aiResult.promptSha256},
+             egress_log_id = ${aiResult.egressLogId}::uuid
+       WHERE analysis_run_id = ${analysisRunId}::uuid
+         AND org_id = ${ctx.orgId}::uuid
+    `);
+
     return suggestions;
   });
 
@@ -216,6 +229,7 @@ export async function POST(req: Request) {
       gapsByType,
       suggestions: result,
       analyzedAt: new Date().toISOString(),
+      aiDisclosure: aiResult.disclosure,
     },
   });
 }

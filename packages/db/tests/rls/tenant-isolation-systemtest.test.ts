@@ -180,6 +180,19 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     expect(seedErrors.length).toBeLessThan(20);
   });
 
+  // #WP8-S07-09 — Objekte, deren Lesepolicy zusätzlich zur Mandantengrenze
+  // eine ROLLE verlangt. Diese Verbindung setzt `app.current_user_role`
+  // nicht, sieht die eigene Zeile also zu Recht nicht. Das ist keine
+  // vacuous isolation, sondern eine schärfere Bedingung als die, die
+  // dieser Test prüft: `whistleblowing_audit_log` ist nach ADR-011 rev.2
+  // §82-83 ausschliesslich für `whistleblowing_officer` und
+  // `ombudsperson` lesbar (HinSchG §8). Vor der WP8-Remediation stand
+  // dort zusätzlich `admin`, und die Tabelle hatte überhaupt kein
+  // `org_id` — sie war deshalb gar nicht seedbar und tauchte in diesem
+  // Test nie auf. Die Mandantengrenze wird für sie in
+  // packages/db/tests/integration/gdpr-privacy.test.ts geprüft.
+  const ROLE_GATED_TABLES = new Set(["whistleblowing_audit_log"]);
+
   // ── 1. Der Kern: Cross-Tenant-Lesen und -Schreiben über ALLE Objekte ────
   it("denies cross-tenant SELECT on every seeded object", async () => {
     const leaks: string[] = [];
@@ -205,7 +218,7 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
       if (foreign.n > 0) leaks.push(`${s.tbl}: foreign row visible`);
       // Die eigene Zeile MUSS sichtbar sein — sonst ist "0 fremde Zeilen"
       // nur ein Artefakt einer deny-all-Policy und beweist nichts.
-      if (own.n === 0) blind.push(s.tbl);
+      if (own.n === 0 && !ROLE_GATED_TABLES.has(s.tbl)) blind.push(s.tbl);
     }
     expect(leaks, `cross-tenant READ leaks:\n${leaks.join("\n")}`).toEqual([]);
     // Deny-all ist für die Auth.js-Token-Tabellen gewollt; sie sind für

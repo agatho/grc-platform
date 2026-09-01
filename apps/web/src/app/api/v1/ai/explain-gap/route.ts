@@ -19,11 +19,11 @@ import {
   controlCatalogEntry,
   controlCatalog,
   control,
-  aiPromptLog,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
-  aiComplete,
+  AiPolicyViolationError,
+  aiCompleteGoverned,
   buildGapExplanationPrompt,
   getAvailableProviders,
   safeJsonParse,
@@ -34,7 +34,7 @@ import {
 } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import { rateLimit, LIMITS } from "@/lib/rate-limit";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
 
 interface RequirementInfo {
   code: string;
@@ -119,27 +119,8 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const limit = await rateLimit({
-    key: `ai-assist:${ctx.userId}`,
-    ...LIMITS.AI_ASSIST,
-  });
-  if (!limit.allowed) {
-    return new Response(
-      JSON.stringify({
-        type: "https://arctos.charliehund.de/errors/rate-limited",
-        title: "Rate limit exceeded",
-        status: 429,
-        detail: `AI-assist rate limit exceeded. Retry in ${limit.retryAfterSeconds}s.`,
-      }),
-      {
-        status: 429,
-        headers: {
-          "Content-Type": "application/problem+json; charset=utf-8",
-          "Retry-After": String(limit.retryAfterSeconds),
-        },
-      },
-    );
-  }
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
   const body = aiExplainGapSchema.safeParse(await req.json().catch(() => null));
   if (!body.success) {
@@ -149,13 +130,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // [WP6 · S05-02] Frueh scheitern, bevor die Route DB-Arbeit leistet:
+  // hat der Betreiber ueberhaupt keinen Provider freigeschaltet, ist der
+  // Aufruf aussichtslos. Die eigentliche Richtlinienpruefung (Org-Ebene,
+  // Jurisdiktion, Nutzerwunsch) macht `aiCompleteGoverned`.
   if (getAvailableProviders().length === 0) {
-    return Response.json(
-      {
-        error:
-          "AI features require a configured LLM provider. Set an API key (or enable Ollama) in the server environment.",
-      },
-      { status: 503 },
+    return aiErrorResponse(
+      new AiPolicyViolationError({
+        code: "no_provider_configured",
+        message:
+          "Es ist kein KI-Provider konfiguriert. Der Betreiber muss einen Provider " +
+          "ausdruecklich freischalten (lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; " +
+          "Cloud: ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_AI_API_KEY / " +
+          "CLAUDE_CLI_ENABLED=true).",
+      }),
     );
   }
 
@@ -266,58 +254,37 @@ export async function POST(req: Request) {
     locale: body.data.language,
   });
 
-  const startMs = Date.now();
-  let response;
   try {
-    response = await aiComplete({
+    const result = await aiCompleteGoverned({
+      feature: "ai.explain_gap",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "soa_entry",
+      entityId: soaRow?.id ?? null,
       messages: prompt,
       maxTokens: 2000,
       temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: aiGapExplanationResponseSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "ai-assist/explain-gap",
-    inputTokens: response.usage?.inputTokens ?? 0,
-    outputTokens: response.usage?.outputTokens ?? 0,
-    model: response.model,
-    latencyMs: Date.now() - startMs,
-    cachedResult: false,
-  });
-
-  const parsed = safeJsonParse<unknown>(response.text);
-  const validated = aiGapExplanationResponseSchema.safeParse(parsed);
-  if (!validated.success) {
-    return Response.json(
+    return aiJson(
       {
-        error:
-          "The AI returned an unparseable or invalid explanation. Please try again.",
-        rawSample: response.text.slice(0, 300),
+        requirement: {
+          code: requirement.code,
+          title: requirement.title,
+          framework: requirement.framework,
+        },
+        soaEntryId: soaRow?.id ?? null,
+        explanation: result.data.explanation,
+        suggestedSteps: result.data.suggestedSteps,
+        suggestedEvidence: result.data.suggestedEvidence,
+        provider: result.provider,
+        model: result.model,
       },
-      { status: 422 },
+      result.disclosure,
     );
+  } catch (err) {
+    return aiErrorResponse(err);
   }
-
-  return Response.json({
-    data: {
-      requirement: {
-        code: requirement.code,
-        title: requirement.title,
-        framework: requirement.framework,
-      },
-      soaEntryId: soaRow?.id ?? null,
-      explanation: validated.data.explanation,
-      suggestedSteps: validated.data.suggestedSteps,
-      suggestedEvidence: validated.data.suggestedEvidence,
-      provider: response.provider,
-      model: response.model,
-    },
-  });
 }

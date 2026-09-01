@@ -4,6 +4,7 @@
 import { db, controlTestScript, controlTestExecution } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processControlTestScheduler = withCronInstrumentation(
   "control-test-scheduler",
@@ -46,8 +47,12 @@ export const processControlTestScheduler = withCronInstrumentation(
           });
           testsScheduled++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues to next script.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "control-test-scheduler", scope: "Check last execution time" },
+          err,
+        );
       }
     }
 

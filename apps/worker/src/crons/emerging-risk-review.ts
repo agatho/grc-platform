@@ -4,6 +4,7 @@
 import { db, emergingRisk, notification } from "@grc/db";
 import { and, isNotNull, sql, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface ReviewResult {
   processed: number;
@@ -35,20 +36,23 @@ export const processEmergingRiskReviews = withCronInstrumentation(
 
     for (const risk of upcomingReviews) {
       if (!risk.responsibleId) continue;
-      await db.insert(notification).values({
-        orgId: risk.orgId,
-        userId: risk.responsibleId,
-        type: "deadline_approaching",
-        title: `Emerging Risk Review Due: ${risk.title}`,
-        message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
-        entityType: "emerging_risk",
-        entityId: risk.id,
-        templateData: {
-          module: "erm",
-          priority: "normal",
-          subtype: "emerging_risk_review",
+      await insertNotification(
+        {
+          orgId: risk.orgId,
+          userId: risk.responsibleId,
+          type: "deadline_approaching",
+          title: `Emerging Risk Review Due: ${risk.title}`,
+          message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
+          entityType: "emerging_risk",
+          entityId: risk.id,
+          templateData: {
+            module: "erm",
+            priority: "normal",
+            subtype: "emerging_risk_review",
+          },
         },
-      });
+        { job: "emerging-risk-review" },
+      );
       notified++;
     }
 

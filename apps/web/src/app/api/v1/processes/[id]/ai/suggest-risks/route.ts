@@ -1,29 +1,22 @@
 // BPM Overhaul Phase 7: Suggest risks for a process.
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
 
+import { db, process, processStep } from "@grc/db";
 import {
-  db,
-  process,
-  processStep,
-  processRisk,
-  processStepRisk,
-  risk,
-} from "@grc/db";
-import { aiComplete, buildRiskSuggestionPrompt, safeJsonParse } from "@grc/ai";
+  aiCompleteGoverned,
+  buildRiskSuggestionPrompt,
+  riskSuggestionsSchema,
+  safeJsonParse,
+} from "@grc/ai";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, inArray, sql } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../../../../ai/_shared/ai-route";
 
 const schema = z.object({
   locale: z.enum(["de", "en"]).optional(),
 });
-
-interface Suggestion {
-  title: string;
-  category?: string;
-  description?: string;
-  rationale?: string;
-}
 
 export async function POST(
   req: Request,
@@ -33,6 +26,9 @@ export async function POST(
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
   if (m) return m;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
   const { id } = await params;
   const [existing] = await db
@@ -60,8 +56,7 @@ export async function POST(
     .from(processStep)
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
 
-  // Existing risks linked to process (via process or any step)
-  const existingRisks = await db.execute(sql`
+  const existingRisks = (await db.execute(sql`
     SELECT r.title
     FROM risk r
     WHERE r.deleted_at IS NULL
@@ -73,37 +68,37 @@ export async function POST(
         JOIN process_step ps ON ps.id = psr.process_step_id
         WHERE ps.process_id = ${id}
       )
-  `);
-  const existingTitles = (existingRisks as any[]).map((r) => r.title);
+  `)) as unknown as Array<{ title: string }>;
 
-  const prompt = buildRiskSuggestionPrompt({
-    processName: existing.name,
-    processDescription: existing.description,
-    activityNames: steps.map((s) => s.name).filter(Boolean) as string[],
-    existingRiskTitles: existingTitles,
-    locale,
-  });
-
-  let resp;
   try {
-    resp = await aiComplete({
-      messages: prompt,
+    const result = await aiCompleteGoverned({
+      feature: "bpm.suggest_risks",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "process",
+      entityId: existing.id,
+      messages: buildRiskSuggestionPrompt({
+        processName: existing.name,
+        processDescription: existing.description,
+        activityNames: steps.map((s) => s.name).filter(Boolean) as string[],
+        existingRiskTitles: existingRisks.map((r) => r.title),
+        locale,
+      }),
       maxTokens: 1500,
       temperature: 0.5,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: riskSuggestionsSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  const parsed = safeJsonParse<{ risks?: Suggestion[] }>(resp.text);
-  return Response.json({
-    data: {
-      suggestions: parsed?.risks ?? [],
-      provider: resp.provider,
-      model: resp.model,
-    },
-  });
+    return aiJson(
+      {
+        suggestions: result.data.risks,
+        provider: result.provider,
+        model: result.model,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
 }

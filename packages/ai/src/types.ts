@@ -14,6 +14,8 @@
  * 4. Fallback: first available provider
  */
 
+import type { OrgAiPolicySnapshot } from "./policy";
+
 export type AiProvider =
   "claude_cli" | "claude_api" | "openai" | "gemini" | "ollama" | "lmstudio";
 
@@ -27,8 +29,24 @@ export interface AiCompletionRequest {
   model?: string;
   maxTokens?: number;
   temperature?: number;
+  /**
+   * Wunsch-Provider. Wird IMMER gegen die Richtlinie geprüft
+   * (`policy.ts` → `selectProvider`); ein Request-Feld allein entscheidet
+   * seit WP6/S05-22 nichts mehr.
+   */
   provider?: AiProvider;
+  /**
+   * Personenbezogene Daten im Prompt. Seit WP6/S05-01 eine BEDINGUNG,
+   * keine Präferenz: ohne konfiguriertes lokales Modell scheitert der
+   * Aufruf, statt in die Cloud auszuweichen.
+   */
   containsPersonalData?: boolean;
+  /**
+   * Richtlinien-Schnappschuss der Organisation. Von
+   * `aiCompleteGoverned()` gesetzt; ohne ihn gilt nur die
+   * Betreiber-Ebene.
+   */
+  policy?: OrgAiPolicySnapshot;
 }
 
 export interface AiCompletionResponse {

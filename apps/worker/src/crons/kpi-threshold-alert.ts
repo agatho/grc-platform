@@ -9,6 +9,8 @@ import {
 } from "@grc/db";
 import { eq, sql, desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface KpiAlertResult {
   processed: number;
@@ -34,19 +36,24 @@ export const processKpiThresholdAlert = withCronInstrumentation(
       if (!m.owner_id) continue;
       try {
         const urgency = m.status === "red" ? "urgent" : "warning";
-        await db.insert(notification).values({
-          userId: m.owner_id,
-          orgId: m.org_id,
-          type: "escalation" as const,
-          entityType: "process_kpi_measurement",
-          entityId: m.id,
-          title: `KPI ${urgency}: "${m.kpi_name}" is ${m.status}`,
-          message: `KPI "${m.kpi_name}" measured ${m.actual_value} against target ${m.target_value}. Status: ${m.status.toUpperCase()}.`,
-          channel: "both" as const,
-          templateData: { subtype: "kpi_threshold_alert", urgency },
-        });
+        await insertNotification(
+          {
+            userId: m.owner_id,
+            orgId: m.org_id,
+            type: "escalation" as const,
+            entityType: "process_kpi_measurement",
+            entityId: m.id,
+            title: `KPI ${urgency}: "${m.kpi_name}" is ${m.status}`,
+            message: `KPI "${m.kpi_name}" measured ${m.actual_value} against target ${m.target_value}. Status: ${m.status.toUpperCase()}.`,
+            channel: "both" as const,
+            templateData: { subtype: "kpi_threshold_alert", urgency },
+          },
+          { job: "kpi-threshold-alert" },
+        );
         alerts++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "kpi-threshold-alert", scope: "m" }, err);
         /* skip */
       }
     }

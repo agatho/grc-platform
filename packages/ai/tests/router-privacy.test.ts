@@ -4,10 +4,14 @@
 // getDefaultProvider(). What's NOT covered is the actual aiComplete()
 // routing logic for personal data — the GDPR-critical branch (ADR-008).
 //
-// Contract under test:
-//   - containsPersonalData=true → prefer ollama → lmstudio → explicit → default
-//   - containsPersonalData=false → explicit > default
-//   - unknown provider → throws
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-01, S05-02, S05-22]
+// Der Vertrag hat sich an drei Stellen geaendert; diese Datei zieht nach:
+//   - containsPersonalData=true → ollama → lmstudio → SONST FEHLER.
+//     Vorher fiel der Router still auf den Cloud-Default zurueck; genau
+//     das war S05-01 (High).
+//   - containsPersonalData=false → Wunschprovider NUR, wenn die
+//     Richtlinie die Wahl freigibt (S05-22).
+//   - kein konfigurierter Provider → Fehler statt claude_cli (S05-02).
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -84,7 +88,8 @@ describe("aiComplete privacy routing", () => {
   it("routes personal data to ollama when ollama is available", async () => {
     resetEnv();
     process.env.OLLAMA_ENABLED = "true";
-    // CLI also available by default — but ollama must win for personal data
+    process.env.CLAUDE_CLI_ENABLED = "true";
+    // CLI ist freigeschaltet — ollama muss fuer personenbezogene Daten gewinnen
     const { aiComplete } = await import("../src/router");
     await aiComplete({
       messages: [{ role: "user", content: "patient John Doe" }],
@@ -108,41 +113,45 @@ describe("aiComplete privacy routing", () => {
     expect(callOllamaMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to explicit provider when no local model is available", async () => {
+  it("BLOCKIERT statt auf einen ausdruecklich gewuenschten Cloud-Provider auszuweichen", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
-    process.env.CLAUDE_CLI_ENABLED = "false";
-    // Note: this is the GDPR risk surface — the router does NOT block,
-    // it only PREFERS local. Caller must understand this.
+    // Auditstand: der Router blockierte NICHT, er bevorzugte nur lokal.
+    // Genau daran ist S05-01 haengen geblieben.
     const { aiComplete } = await import("../src/router");
-    await aiComplete({
-      messages: [{ role: "user", content: "personenbezogene daten" }],
-      containsPersonalData: true,
-      provider: "openai",
-    });
-    expect(callOpenAIMock).toHaveBeenCalledOnce();
+    await expect(
+      aiComplete({
+        messages: [{ role: "user", content: "personenbezogene daten" }],
+        containsPersonalData: true,
+        provider: "openai",
+      }),
+    ).rejects.toMatchObject({ name: "AiPolicyViolationError" });
+    expect(callOpenAIMock).not.toHaveBeenCalled();
     expect(callOllamaMock).not.toHaveBeenCalled();
   });
 
-  it("falls back to default when personal data + no local + no explicit", async () => {
+  it("BLOCKIERT bei personenbezogenen Daten ohne lokales Modell", async () => {
     resetEnv();
-    // Only CLI available
+    process.env.CLAUDE_CLI_ENABLED = "true";
     const { aiComplete } = await import("../src/router");
-    await aiComplete({
-      messages: [{ role: "user", content: "personal" }],
-      containsPersonalData: true,
-    });
-    expect(callClaudeCliMock).toHaveBeenCalledOnce();
+    await expect(
+      aiComplete({
+        messages: [{ role: "user", content: "personal" }],
+        containsPersonalData: true,
+      }),
+    ).rejects.toMatchObject({ code: "no_local_provider" });
+    expect(callClaudeCliMock).not.toHaveBeenCalled();
   });
 
-  it("uses explicit provider when containsPersonalData is false", async () => {
+  it("uses explicit provider when containsPersonalData is false AND die Richtlinie es erlaubt", async () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
     process.env.OLLAMA_ENABLED = "true";
-    const { aiComplete } = await import("../src/router");
+    const { aiComplete, operatorPolicySnapshot } = await import("../src/router");
     await aiComplete({
       messages: [{ role: "user", content: "Hello" }],
       provider: "openai",
+      policy: { ...operatorPolicySnapshot(), allowUserProviderChoice: true },
     });
     expect(callOpenAIMock).toHaveBeenCalledOnce();
     expect(callOllamaMock).not.toHaveBeenCalled();
@@ -171,7 +180,12 @@ describe("aiComplete privacy routing", () => {
       containsPersonalData: true,
     };
     await aiComplete(req);
-    expect(callOllamaMock).toHaveBeenCalledWith(req);
+    // Der gewaehlte Provider wird jetzt explizit mitgegeben, damit
+    // Provider-Implementierung und Protokollierung dasselbe sehen.
+    expect(callOllamaMock).toHaveBeenCalledWith({
+      ...req,
+      provider: "ollama",
+    });
   });
 
   it("aiRouter is an alias for aiComplete (back-compat)", async () => {

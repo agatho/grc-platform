@@ -4,6 +4,7 @@
 import { db, contract, notification } from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface ContractExpiryResult {
   processed: number;
@@ -56,24 +57,27 @@ export const processContractExpiryMonitor = withCronInstrumentation(
             .where(eq(contract.id, c.id));
 
           if (c.ownerId) {
-            await db.insert(notification).values({
-              userId: c.ownerId,
-              orgId: c.orgId,
-              type: "status_change" as const,
-              entityType: "contract",
-              entityId: c.id,
-              title: `Contract auto-renewed: ${c.title}`,
-              message: `Contract "${c.title}" has been auto-renewed until ${newExpDate.toISOString().split("T")[0]}.`,
-              channel: "both" as const,
-              templateKey: "contract_auto_renewed",
-              templateData: {
-                contractId: c.id,
-                contractTitle: c.title,
-                newExpDate: newExpDate.toISOString(),
+            await insertNotification(
+              {
+                userId: c.ownerId,
+                orgId: c.orgId,
+                type: "status_change" as const,
+                entityType: "contract",
+                entityId: c.id,
+                title: `Contract auto-renewed: ${c.title}`,
+                message: `Contract "${c.title}" has been auto-renewed until ${newExpDate.toISOString().split("T")[0]}.`,
+                channel: "both" as const,
+                templateKey: "contract_auto_renewed",
+                templateData: {
+                  contractId: c.id,
+                  contractTitle: c.title,
+                  newExpDate: newExpDate.toISOString(),
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "contract-expiry-monitor" },
+            );
             notified++;
           }
         } else {
@@ -84,20 +88,23 @@ export const processContractExpiryMonitor = withCronInstrumentation(
             .where(eq(contract.id, c.id));
 
           if (c.ownerId) {
-            await db.insert(notification).values({
-              userId: c.ownerId,
-              orgId: c.orgId,
-              type: "deadline_approaching" as const,
-              entityType: "contract",
-              entityId: c.id,
-              title: `Contract expired: ${c.title}`,
-              message: `Contract "${c.title}" has expired as of ${c.expirationDate}.`,
-              channel: "both" as const,
-              templateKey: "contract_expired",
-              templateData: { contractId: c.id, contractTitle: c.title },
-              createdAt: now,
-              updatedAt: now,
-            });
+            await insertNotification(
+              {
+                userId: c.ownerId,
+                orgId: c.orgId,
+                type: "deadline_approaching" as const,
+                entityType: "contract",
+                entityId: c.id,
+                title: `Contract expired: ${c.title}`,
+                message: `Contract "${c.title}" has expired as of ${c.expirationDate}.`,
+                channel: "both" as const,
+                templateKey: "contract_expired",
+                templateData: { contractId: c.id, contractTitle: c.title },
+                createdAt: now,
+                updatedAt: now,
+              },
+              { job: "contract-expiry-monitor" },
+            );
             notified++;
           }
         }
@@ -134,25 +141,28 @@ export const processContractExpiryMonitor = withCronInstrumentation(
       try {
         if (!c.ownerId) continue;
 
-        await db.insert(notification).values({
-          userId: c.ownerId,
-          orgId: c.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "contract",
-          entityId: c.id,
-          title: `Contract notice period reached: ${c.title}`,
-          message: `Contract "${c.title}" reaches its notice period today. Expiration: ${c.expirationDate}. Notice period: ${c.noticePeriodDays} days.`,
-          channel: "both" as const,
-          templateKey: "contract_notice_period",
-          templateData: {
-            contractId: c.id,
-            contractTitle: c.title,
-            expirationDate: c.expirationDate,
-            noticePeriodDays: c.noticePeriodDays,
+        await insertNotification(
+          {
+            userId: c.ownerId,
+            orgId: c.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "contract",
+            entityId: c.id,
+            title: `Contract notice period reached: ${c.title}`,
+            message: `Contract "${c.title}" reaches its notice period today. Expiration: ${c.expirationDate}. Notice period: ${c.noticePeriodDays} days.`,
+            channel: "both" as const,
+            templateKey: "contract_notice_period",
+            templateData: {
+              contractId: c.id,
+              contractTitle: c.title,
+              expirationDate: c.expirationDate,
+              noticePeriodDays: c.noticePeriodDays,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "contract-expiry-monitor" },
+        );
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

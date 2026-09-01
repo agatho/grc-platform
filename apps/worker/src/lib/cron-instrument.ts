@@ -54,6 +54,17 @@ type CronHandler<R extends CronResult, A extends unknown[] = []> = (
 
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-worker";
 
+// [WP9 · S10-11] Exported so job-runtime.ts can emit the SAME NDJSON shape
+// for errors caught inside a job's own loop. Those never reach the wrapper's
+// catch — which is precisely why the 39 empty `catch {}` blocks were
+// invisible in production despite the comment claiming otherwise.
+export function emitCronEvent(
+  level: "info" | "error",
+  payload: Record<string, unknown>,
+): void {
+  emit(level, payload);
+}
+
 function emit(level: "info" | "error", payload: Record<string, unknown>): void {
   const line = JSON.stringify({
     ts: new Date().toISOString(),

@@ -3,11 +3,13 @@ import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { triggerMaturityRoadmapSchema } from "@grc/shared";
-import { aiComplete } from "@grc/ai";
 import {
+  aiCompleteGoverned,
   buildMaturityRoadmapPrompt,
-  parseMaturityRoadmapResponse,
+  maturityRoadmapArraySchema,
+  parseJsonArray,
 } from "@grc/ai";
+import { aiErrorResponse, aiRateLimit } from "../../../ai/_shared/ai-route";
 
 // POST /api/v1/isms/maturity/ai-roadmap — Generate AI maturity roadmap
 export async function POST(req: Request) {
@@ -17,7 +19,14 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
+  const limited = await aiRateLimit(ctx.userId, {
+    bucket: "isms-roadmap",
+    capacity: 3,
+    windowSeconds: 300,
+  });
+  if (limited) return limited;
+
+  const body = await req.json().catch(() => null);
   const parsed = triggerMaturityRoadmapSchema.safeParse(body);
   if (!parsed.success) {
     return Response.json(
@@ -107,42 +116,25 @@ export async function POST(req: Request) {
     targetMaturity: parsed.data.targetMaturity,
   });
 
-  let aiResponse;
+  // [WP6 · S05-01/-03] wie in isms/soa/ai-gap-analysis: der hartkodierte
+  // `provider: "claude_api"` ist entfallen, die Richtlinie entscheidet.
+  let aiResult;
   try {
-    aiResponse = await aiComplete({
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an ISMS maturity consultant. Respond only with valid JSON.",
-        },
-        { role: "user", content: prompt },
-      ],
-      model: "claude-sonnet-4-20250514",
+    aiResult = await aiCompleteGoverned({
+      feature: "isms.maturity_roadmap",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      messages: prompt,
       maxTokens: 4096,
       temperature: 0.4,
-      provider: "claude_api",
+      parse: parseJsonArray,
+      outputSchema: maturityRoadmapArraySchema,
     });
   } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
+    return aiErrorResponse(err);
   }
 
-  // Parse response (defensive — AI may return malformed JSON)
-  let actions;
-  try {
-    actions = parseMaturityRoadmapResponse(aiResponse.text);
-  } catch (err) {
-    return Response.json(
-      {
-        error: "AI returned malformed response — please retry",
-        details: (err as Error).message,
-      },
-      { status: 502 },
-    );
-  }
+  const actions = aiResult.data;
 
   if (actions.length === 0) {
     return Response.json({
@@ -182,6 +174,18 @@ export async function POST(req: Request) {
         .returning();
       inserted.push(row);
     }
+
+    // [WP6 · S05-11] Provenienz, siehe isms/soa/ai-gap-analysis.
+    await tx.execute(sql`
+      UPDATE maturity_roadmap_action
+         SET ai_provider = ${aiResult.provider},
+             ai_model = ${aiResult.model},
+             prompt_sha256 = ${aiResult.promptSha256},
+             egress_log_id = ${aiResult.egressLogId}::uuid
+       WHERE roadmap_run_id = ${roadmapRunId}::uuid
+         AND org_id = ${ctx.orgId}::uuid
+    `);
+
     return inserted;
   });
 
@@ -192,6 +196,7 @@ export async function POST(req: Request) {
       quickWins: result.filter((a) => a.isQuickWin).length,
       actions: result,
       generatedAt: new Date().toISOString(),
+      aiDisclosure: aiResult.disclosure,
     },
   });
 }

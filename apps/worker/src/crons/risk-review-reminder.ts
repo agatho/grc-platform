@@ -5,6 +5,8 @@
 import { db, risk, notification } from "@grc/db";
 import { and, isNull, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface RiskReviewResult {
   processed: number;
@@ -50,28 +52,32 @@ export const processRiskReviewReminders = withCronInstrumentation(
             )
           : 0;
 
-        await db.insert(notification).values({
-          userId: riskRow.ownerId!,
-          orgId: riskRow.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "risk",
-          entityId: riskRow.id,
-          title: `Risk review upcoming: ${riskRow.title}`,
-          message: `Risk "${riskRow.title}" is due for review in ${daysUntilReview} day(s) (${reviewDate}).`,
-          channel: "both" as const,
-          templateKey: "risk_review_reminder",
-          templateData: {
-            riskTitle: riskRow.title,
-            reviewDate,
-            daysUntilReview,
+        await insertNotification(
+          {
+            userId: riskRow.ownerId!,
+            orgId: riskRow.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "risk",
+            entityId: riskRow.id,
+            title: `Risk review upcoming: ${riskRow.title}`,
+            message: `Risk "${riskRow.title}" is due for review in ${daysUntilReview} day(s) (${reviewDate}).`,
+            channel: "both" as const,
+            templateKey: "risk_review_reminder",
+            templateData: {
+              riskTitle: riskRow.title,
+              reviewDate,
+              daysUntilReview,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "risk-review-reminder" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "risk-review-reminder", scope: "riskRow" }, err);
       }
     }
 

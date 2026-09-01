@@ -1,17 +1,29 @@
 // DPMS Overhaul: AI-draft mitigation measures for identified DPIA risks.
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-01, S05-06, S05-09, S05-10, S05-12]
+// Zweiter Pfad aus S05-01 — siehe den Kommentar in
+// dpms/ropa/[id]/ai/draft-fields/route.ts.
 
 import { db, dpia, dpiaRisk } from "@grc/db";
 import {
-  aiComplete,
+  aiCompleteGoverned,
   buildDpiaMeasureDraftPrompt,
+  dpiaMeasuresSchema,
   safeJsonParse,
 } from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../../../../../ai/_shared/ai-route";
 
 const schema = z.object({ locale: z.enum(["de", "en"]).optional() });
+
+interface DpiaRiskRow {
+  title: string;
+  description: string | null;
+  inherentRiskScore: number | null;
+}
 
 export async function POST(
   req: Request,
@@ -22,6 +34,9 @@ export async function POST(
   const m = await requireModule("dpms", ctx.orgId, req.method);
   if (m) return m;
 
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
   const { id } = await params;
   const [d] = await db
     .select()
@@ -31,7 +46,10 @@ export async function POST(
     );
   if (!d) return Response.json({ error: "DPIA not found" }, { status: 404 });
 
-  const risks = await db.select().from(dpiaRisk).where(eq(dpiaRisk.dpiaId, id));
+  const risks = (await db
+    .select()
+    .from(dpiaRisk)
+    .where(eq(dpiaRisk.dpiaId, id))) as unknown as DpiaRiskRow[];
 
   if (risks.length === 0) {
     return Response.json({
@@ -45,38 +63,39 @@ export async function POST(
   const body = schema.safeParse(await req.json().catch(() => ({})));
   const locale = body.success ? (body.data.locale ?? "de") : "de";
 
-  const prompt = buildDpiaMeasureDraftPrompt({
-    dpiaTitle: d.title,
-    processingDescription: d.processingDescription,
-    identifiedRisks: risks.map((r: any) => ({
-      title: r.title,
-      description: r.description,
-      inherentRiskScore: r.inherentRiskScore ?? null,
-    })),
-    locale,
-  });
-
-  let resp;
   try {
-    resp = await aiComplete({
-      messages: prompt,
+    const result = await aiCompleteGoverned({
+      feature: "dpms.dpia_draft_measures",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "dpia",
+      entityId: d.id,
+      containsPersonalData: true,
+      messages: buildDpiaMeasureDraftPrompt({
+        dpiaTitle: d.title,
+        processingDescription: d.processingDescription,
+        identifiedRisks: risks.map((r) => ({
+          title: r.title,
+          description: r.description,
+          inherentRiskScore: r.inherentRiskScore ?? null,
+        })),
+        locale,
+      }),
       maxTokens: 2000,
       temperature: 0.3,
-      containsPersonalData: true,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: dpiaMeasuresSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  const parsed = safeJsonParse<{ measures?: any[] }>(resp.text);
-  return Response.json({
-    data: {
-      measures: parsed?.measures ?? [],
-      provider: resp.provider,
-      model: resp.model,
-    },
-  });
+    return aiJson(
+      {
+        measures: result.data.measures,
+        provider: result.provider,
+        model: result.model,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
 }

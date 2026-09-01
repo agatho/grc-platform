@@ -105,3 +105,20 @@ export {
   VendorReassessmentDue,
   getSubject as getVendorReassessmentDueSubject,
 } from "./templates/VendorReassessmentDue";
+
+// [ARCTOS-FULL-2026-08-31 / WP9 · S10-03] Template registry — single source
+// of truth for the key set. `isEmailTemplateKey` is what lets the worker's
+// notification write path reject an unrenderable key at the point where the
+// bug is, instead of three failed delivery attempts later.
+export {
+  GenericNotification,
+  getSubject as getGenericNotificationSubject,
+} from "./templates/GenericNotification";
+export {
+  DEDICATED_TEMPLATE_KEYS,
+  GENERIC_TEMPLATES,
+  allEmailTemplateKeys,
+  isEmailTemplateKey,
+  isGenericTemplateKey,
+} from "./template-registry";
+export { EmailDeliveryError } from "./types";

@@ -74,6 +74,11 @@ export const exportRequestSchema = z.object({
 export const bulkExportSchema = z.object({
   entityTypes: z.array(z.enum(importEntityTypeValues)).min(1).max(8),
   format: z.enum(exportFormatValues).default("csv"),
+  // #WP8-S07-14 / #WP3-S02-07 — Kennung einer Freigabe, die eine ZWEITE
+  // Person erteilt hat (`export_approval`, Migration 0432). Pflicht, sobald
+  // der Export personenbezogene Daten berührt; die Route entscheidet das
+  // über `decideBulkExport()`, nicht das Schema.
+  approvalId: z.string().uuid().optional().nullable(),
 });
 
 // ─── Export Schedule ────────────────────────────────────────
