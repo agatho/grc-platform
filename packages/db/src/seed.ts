@@ -66,7 +66,9 @@ function seedPassword(envVar: string, label: string): string {
   const supplied = process.env[envVar];
   if (supplied && supplied.length >= 12) return supplied;
   if (supplied) {
-    console.error(`${envVar} is set but shorter than 12 characters — refusing.`);
+    console.error(
+      `${envVar} is set but shorter than 12 characters — refusing.`,
+    );
     process.exit(1);
   }
   const generated = randomBytes(18).toString("base64url");

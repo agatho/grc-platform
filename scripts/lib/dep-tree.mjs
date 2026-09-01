@@ -48,8 +48,13 @@ function walk(node, sink, isRoot = false) {
         license: dep.license ?? null,
         description: dep.description ?? null,
         homepage: dep.homepage ?? null,
-        author: typeof dep.author === "string" ? dep.author : (dep.author?.name ?? null),
-        isWorkspace: Boolean(dep.resolved?.startsWith?.("file:")) || dep.linkedFrom != null,
+        author:
+          typeof dep.author === "string"
+            ? dep.author
+            : (dep.author?.name ?? null),
+        isWorkspace:
+          Boolean(dep.resolved?.startsWith?.("file:")) ||
+          dep.linkedFrom != null,
       });
     }
     walk(dep, sink);
@@ -61,7 +66,9 @@ function walk(node, sink, isRoot = false) {
 function enrichFromDisk(entry) {
   if (!entry.path || !existsSync(entry.path)) return entry;
   try {
-    const pkg = JSON.parse(readFileSync(join(entry.path, "package.json"), "utf8"));
+    const pkg = JSON.parse(
+      readFileSync(join(entry.path, "package.json"), "utf8"),
+    );
     if (!entry.license) {
       if (typeof pkg.license === "string") entry.license = pkg.license;
       else if (pkg.license?.type) entry.license = pkg.license.type;
@@ -71,10 +78,14 @@ function enrichFromDisk(entry) {
     entry.description ??= pkg.description ?? null;
     entry.homepage ??= pkg.homepage ?? null;
     entry.repository ??=
-      typeof pkg.repository === "string" ? pkg.repository : (pkg.repository?.url ?? null);
+      typeof pkg.repository === "string"
+        ? pkg.repository
+        : (pkg.repository?.url ?? null);
     if (!entry.author) {
       entry.author =
-        typeof pkg.author === "string" ? pkg.author : (pkg.author?.name ?? null);
+        typeof pkg.author === "string"
+          ? pkg.author
+          : (pkg.author?.name ?? null);
     }
     entry.private = Boolean(pkg.private);
   } catch {

@@ -206,8 +206,7 @@ export async function checkRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
     rolsuper: false,
     rolbypassrls: false,
   };
-  const privilegedAllowed =
-    process.env.ARCTOS_ALLOW_PRIVILEGED_DB === "true";
+  const privilegedAllowed = process.env.ARCTOS_ALLOW_PRIVILEGED_DB === "true";
   const privileged = row.rolsuper || row.rolbypassrls;
   return {
     role: row.rolname,
@@ -453,6 +452,11 @@ export const db = new Proxy(baseDb, {
 }) as typeof baseDb;
 
 export type Database = typeof baseDb;
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] treiberunabhängige Normalisierung
+// von `execute()`-Ergebnissen — siehe ./sql-result.ts
+export * from "./sql-result";
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Grenzwandler numeric/timestamp
+export * from "./column-input";
 export * from "./schema/platform";
 // ADR-011 rev.4 audit-chain integrity tables (WP4 / S03-01, -12, -14, -16)
 export * from "./schema/audit-chain";

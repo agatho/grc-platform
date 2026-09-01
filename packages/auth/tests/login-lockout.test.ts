@@ -51,7 +51,9 @@ vi.mock("@grc/db", () => ({
           row.lockedUntil = Date.now() + 15 * 60_000;
         }
         state.set(email, row);
-        return [{ out_attempts: row.attempts, out_locked_until: row.lockedUntil }];
+        return [
+          { out_attempts: row.attempts, out_locked_until: row.lockedUntil },
+        ];
       }
       if (text.includes("auth_register_login_success")) {
         state.clear();
@@ -134,13 +136,18 @@ describe("S02-09 — account lockout after repeated failures", () => {
       await registerLoginFailure(normaliseEmail("Victim@Example.Test"));
     }
     expect((await checkLoginLock(normaliseEmail(EMAIL))).locked).toBe(true);
-    expect(normaliseEmail("  Max.Muster@Firma.DE ")).toBe("max.muster@firma.de");
+    expect(normaliseEmail("  Max.Muster@Firma.DE ")).toBe(
+      "max.muster@firma.de",
+    );
   });
 
   it("a DB failure in the lock check does not lock everyone out", async () => {
     const dbmod = await import("@grc/db");
-    (dbmod.db.execute as unknown as { mockRejectedValueOnce: (e: Error) => void })
-      .mockRejectedValueOnce(new Error("connection reset"));
+    (
+      dbmod.db.execute as unknown as {
+        mockRejectedValueOnce: (e: Error) => void;
+      }
+    ).mockRejectedValueOnce(new Error("connection reset"));
     const lock = await checkLoginLock(EMAIL);
     expect(lock.locked).toBe(false);
   });

@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
@@ -24,7 +24,7 @@ export async function GET(
     const res = await tx.execute(
       sql`SELECT * FROM ai_corrective_action WHERE id = ${id} AND org_id = ${ctx.orgId}`,
     );
-    const rows = Array.isArray(res) ? res : (res?.rows ?? []);
+    const rows = toRows(res);
     return rows[0];
   });
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
@@ -87,7 +87,7 @@ export async function PUT(
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       FOR UPDATE
     `);
-    const lockRows = Array.isArray(lockRes) ? lockRes : (lockRes?.rows ?? []);
+    const lockRows = toRows(lockRes);
     if (lockRows.length === 0) {
       return null;
     }
@@ -115,7 +115,7 @@ export async function PUT(
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
 
   if (!result) return Response.json({ error: "Not found" }, { status: 404 });

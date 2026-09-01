@@ -27,83 +27,83 @@ trägt. Vorher gab es keine Prüfung: eine Installation mit nur
 jede Anfrage als Superuser mit BYPASSRLS aus — jeder Mandant sah die Daten
 jedes anderen, ohne irgendein Signal.
 
-| Variable | web | worker | Ohne sie |
-| --- | :-: | :-: | --- |
-| `DATABASE_URL` | ✅ | ✅ | keine Migrationen, keine Provisionierung |
-| `APP_DATABASE_URL` | ✅ | — | **RLS wirkungslos** (S13-09/S13-10) |
-| `GRC_APP_PASSWORD` | ✅ | — | `APP_DATABASE_URL` unbrauchbar (leeres Passwort) |
-| `GRC_WORKER_PASSWORD` | — | ✅ | Worker startet nicht (WP2/S01-09) |
-| `AUTH_SECRET` | ✅ | — | Sitzungen nicht signierbar |
-| `AUTH_URL` / `NEXTAUTH_URL` | ✅ | — | SSO-/SCIM-/SAML-Callbacks zeigen ins Leere |
-| `CRON_SECRET` | ✅ | ✅ | Worker antwortet auf `/crons/*` mit 500 |
-| `AUDIT_SEAL_KEY` | ✅ | ✅ | Anker unsigniert — Integritätsprüfung statt Tamper-Evidence (WP4/S03-01) |
-| `PII_PSEUDONYM_KEY` | ✅ | ✅ | Installationsschlüssel **in der Datenbank**, also im selben Dump wie die Daten (WP8/S07-03) |
-| `WB_ENCRYPTION_KEY` | ✅ | ✅ | Meldeportal weist mit 503 ab |
-| `CONNECTOR_ENCRYPTION_KEY` | ✅ | ✅ | Connector-Zugangsdaten nicht speicherbar |
-| `SECRET_ENCRYPTION_KEY` | ✅ | ✅ | SSO-/OAuth-Secrets nicht speicherbar |
-| `REDIS_URL` | ✅ | — | Rate-Limit prozesslokal (WP9/S10-05) |
-| `TRUSTED_PROXY_HOPS` | ✅ | — | Login-Limit per `X-Forwarded-For` umgehbar |
-| `STORAGE_BACKEND` | ✅ | ✅ | bei `local` ohne `UPLOAD_DIR`: Dokumente weg beim nächsten Update |
-| `ARCTOS_ALLOW_PRIVILEGED_DB` | ❌ **nie** | ✅ `true` | Worker beendet sich (S01-10). Für `web` gesetzt = Mandantentrennung aufgehoben |
+| Variable                     |    web     |  worker   | Ohne sie                                                                                    |
+| ---------------------------- | :--------: | :-------: | ------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`               |     ✅     |    ✅     | keine Migrationen, keine Provisionierung                                                    |
+| `APP_DATABASE_URL`           |     ✅     |     —     | **RLS wirkungslos** (S13-09/S13-10)                                                         |
+| `GRC_APP_PASSWORD`           |     ✅     |     —     | `APP_DATABASE_URL` unbrauchbar (leeres Passwort)                                            |
+| `GRC_WORKER_PASSWORD`        |     —      |    ✅     | Worker startet nicht (WP2/S01-09)                                                           |
+| `AUTH_SECRET`                |     ✅     |     —     | Sitzungen nicht signierbar                                                                  |
+| `AUTH_URL` / `NEXTAUTH_URL`  |     ✅     |     —     | SSO-/SCIM-/SAML-Callbacks zeigen ins Leere                                                  |
+| `CRON_SECRET`                |     ✅     |    ✅     | Worker antwortet auf `/crons/*` mit 500                                                     |
+| `AUDIT_SEAL_KEY`             |     ✅     |    ✅     | Anker unsigniert — Integritätsprüfung statt Tamper-Evidence (WP4/S03-01)                    |
+| `PII_PSEUDONYM_KEY`          |     ✅     |    ✅     | Installationsschlüssel **in der Datenbank**, also im selben Dump wie die Daten (WP8/S07-03) |
+| `WB_ENCRYPTION_KEY`          |     ✅     |    ✅     | Meldeportal weist mit 503 ab                                                                |
+| `CONNECTOR_ENCRYPTION_KEY`   |     ✅     |    ✅     | Connector-Zugangsdaten nicht speicherbar                                                    |
+| `SECRET_ENCRYPTION_KEY`      |     ✅     |    ✅     | SSO-/OAuth-Secrets nicht speicherbar                                                        |
+| `REDIS_URL`                  |     ✅     |     —     | Rate-Limit prozesslokal (WP9/S10-05)                                                        |
+| `TRUSTED_PROXY_HOPS`         |     ✅     |     —     | Login-Limit per `X-Forwarded-For` umgehbar                                                  |
+| `STORAGE_BACKEND`            |     ✅     |    ✅     | bei `local` ohne `UPLOAD_DIR`: Dokumente weg beim nächsten Update                           |
+| `ARCTOS_ALLOW_PRIVILEGED_DB` | ❌ **nie** | ✅ `true` | Worker beendet sich (S01-10). Für `web` gesetzt = Mandantentrennung aufgehoben              |
 
 **Schlüssel, die NICHT beliebig rotierbar sind:**
 
-| Variable | Was ein Wechsel bedeutet |
-| --- | --- |
-| `AUDIT_SEAL_KEY` | Bestehende Ankersiegel werden unverifizierbar. Rotation nur mit neuer `AUDIT_SEAL_KEY_ID` und Aufbewahrung der alten Schlüssel. **Niemals vernichten.** |
-| `PII_PSEUDONYM_KEY` | Alte und neue Pseudonyme derselben Person sind nicht mehr verknüpfbar. Die **Vernichtung** ist der DSGVO-Löschpfad und hat ein eigenes Verfahren: `docs/runbook.md` §7 (Vier-Augen-Prinzip, Off-Host-Kopie, Backup-Ablauf). |
-| `WB_ENCRYPTION_KEY` | Bestandschiffrate nur über `WB_ENCRYPTION_KEY_PREVIOUS` lesbar; Re-Seal nötig. |
-| `CONNECTOR_ENCRYPTION_KEY` | Macht **jede** gespeicherte Connector-Zugangsdatenzeile unbrauchbar. |
-| `SECRET_ENCRYPTION_KEY` | Über `SECRET_ENCRYPTION_KEY_PREVIOUS` + `scripts/encrypt-connector-secrets.mjs` re-sealbar. |
-| `/opt/arctos/.backup.key` (Datei, keine Env) | Ohne ihn ist **kein Backup** wiederherstellbar. Off-Host-Kopie ist Pflicht — `docs/dr-playbook.md` Szenario 0. |
+| Variable                                     | Was ein Wechsel bedeutet                                                                                                                                                                                                    |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AUDIT_SEAL_KEY`                             | Bestehende Ankersiegel werden unverifizierbar. Rotation nur mit neuer `AUDIT_SEAL_KEY_ID` und Aufbewahrung der alten Schlüssel. **Niemals vernichten.**                                                                     |
+| `PII_PSEUDONYM_KEY`                          | Alte und neue Pseudonyme derselben Person sind nicht mehr verknüpfbar. Die **Vernichtung** ist der DSGVO-Löschpfad und hat ein eigenes Verfahren: `docs/runbook.md` §7 (Vier-Augen-Prinzip, Off-Host-Kopie, Backup-Ablauf). |
+| `WB_ENCRYPTION_KEY`                          | Bestandschiffrate nur über `WB_ENCRYPTION_KEY_PREVIOUS` lesbar; Re-Seal nötig.                                                                                                                                              |
+| `CONNECTOR_ENCRYPTION_KEY`                   | Macht **jede** gespeicherte Connector-Zugangsdatenzeile unbrauchbar.                                                                                                                                                        |
+| `SECRET_ENCRYPTION_KEY`                      | Über `SECRET_ENCRYPTION_KEY_PREVIOUS` + `scripts/encrypt-connector-secrets.mjs` re-sealbar.                                                                                                                                 |
+| `/opt/arctos/.backup.key` (Datei, keine Env) | Ohne ihn ist **kein Backup** wiederherstellbar. Off-Host-Kopie ist Pflicht — `docs/dr-playbook.md` Szenario 0.                                                                                                              |
 
 ## Monitoring und Alarme (#S13-11 / #S13-12)
 
-| Variable | req/opt | Beschreibung |
-| --- | --- | --- |
-| `ALERT_WEBHOOK_URL` | opt · sec | JSON-POST-Ziel für Betriebsalarme (Slack, Teams, Mattermost, Alertmanager). **Ohne ihn landen Alarme nur im Container-Log** — niemand wird geweckt. |
-| `HEALTHCHECKS_URL` | opt · sec | Dead-Man's-Switch (healthchecks.io o. ä.). Der einzige Mechanismus, der auch „Host komplett tot" meldet. |
-| `OPS_METRICS_PORT` | opt | Standard `9105` |
-| `OPS_INTERVAL_SECONDS` | opt | Auswertungsintervall, Standard `60` |
-| `ALERT_FAILED_LOGINS_5M` | opt | Standard `20` |
-| `ALERT_FAILED_LOGINS_ACCOUNT_5M` | opt | Standard `10` |
-| `ALERT_EXPORT_ROWS_1H` / `_24H` | opt | Standard `50000` / `200000` |
-| `ALERT_JOB_FAILURES_1H` | opt | Standard `3` |
-| `ALERT_BACKUP_AGE_SECONDS` / `ALERT_OFFSITE_AGE_SECONDS` | opt | Standard `93600` (26 h, ADR-015 §92) |
-| `ALERT_DRILL_AGE_SECONDS` | opt | Standard `3456000` (40 Tage) |
-| `ALERT_RESEND_AFTER_SECONDS` | opt | Anti-Flapping, Standard `3600` |
-| `ARCTOS_SKIP_CONFIG_ASSERT` | opt | Not-Aus für die Startup-Validierung. Bewusst lang und greppbar; erscheint im Log. |
+| Variable                                                 | req/opt   | Beschreibung                                                                                                                                        |
+| -------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ALERT_WEBHOOK_URL`                                      | opt · sec | JSON-POST-Ziel für Betriebsalarme (Slack, Teams, Mattermost, Alertmanager). **Ohne ihn landen Alarme nur im Container-Log** — niemand wird geweckt. |
+| `HEALTHCHECKS_URL`                                       | opt · sec | Dead-Man's-Switch (healthchecks.io o. ä.). Der einzige Mechanismus, der auch „Host komplett tot" meldet.                                            |
+| `OPS_METRICS_PORT`                                       | opt       | Standard `9105`                                                                                                                                     |
+| `OPS_INTERVAL_SECONDS`                                   | opt       | Auswertungsintervall, Standard `60`                                                                                                                 |
+| `ALERT_FAILED_LOGINS_5M`                                 | opt       | Standard `20`                                                                                                                                       |
+| `ALERT_FAILED_LOGINS_ACCOUNT_5M`                         | opt       | Standard `10`                                                                                                                                       |
+| `ALERT_EXPORT_ROWS_1H` / `_24H`                          | opt       | Standard `50000` / `200000`                                                                                                                         |
+| `ALERT_JOB_FAILURES_1H`                                  | opt       | Standard `3`                                                                                                                                        |
+| `ALERT_BACKUP_AGE_SECONDS` / `ALERT_OFFSITE_AGE_SECONDS` | opt       | Standard `93600` (26 h, ADR-015 §92)                                                                                                                |
+| `ALERT_DRILL_AGE_SECONDS`                                | opt       | Standard `3456000` (40 Tage)                                                                                                                        |
+| `ALERT_RESEND_AFTER_SECONDS`                             | opt       | Anti-Flapping, Standard `3600`                                                                                                                      |
+| `ARCTOS_SKIP_CONFIG_ASSERT`                              | opt       | Not-Aus für die Startup-Validierung. Bewusst lang und greppbar; erscheint im Log.                                                                   |
 
 ## Backup (Dateien und `/etc/default/arctos-backup`)
 
-| Variable | Beschreibung |
-| --- | --- |
-| `BACKUP_RETENTION_DAYS` | **Die eine** Quelle der lokalen Aufbewahrungsfrist (Standard 30). `db-backup.sh` und `backup-rotate.sh` lesen sie beide — bis 2026-08-31 löschte das eine nach 30, das andere nach 14 Tagen (S13-24). |
-| `BACKUP_SIZE_CAP_GB` | Harte Kappung, Standard 20. Greift sie, MELDET die Rotation das jetzt; vorher verkürzte sie die Aufbewahrung stillschweigend. |
-| `BACKUP_KEY_FILE` | Standard `/opt/arctos/.backup.key` |
-| `BACKUP_ALLOW_PLAINTEXT` | Ausdrückliche Ausnahme: unverschlüsselt sichern (nicht empfohlen) |
-| `OFFSITE_ALLOW_PLAINTEXT` | Ausdrückliche Ausnahme: Klartext nach B2 übertragen (nicht empfohlen) |
-| `B2_REMOTE` | Standard `b2-arctos:arctos-backups` |
+| Variable                  | Beschreibung                                                                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BACKUP_RETENTION_DAYS`   | **Die eine** Quelle der lokalen Aufbewahrungsfrist (Standard 30). `db-backup.sh` und `backup-rotate.sh` lesen sie beide — bis 2026-08-31 löschte das eine nach 30, das andere nach 14 Tagen (S13-24). |
+| `BACKUP_SIZE_CAP_GB`      | Harte Kappung, Standard 20. Greift sie, MELDET die Rotation das jetzt; vorher verkürzte sie die Aufbewahrung stillschweigend.                                                                         |
+| `BACKUP_KEY_FILE`         | Standard `/opt/arctos/.backup.key`                                                                                                                                                                    |
+| `BACKUP_ALLOW_PLAINTEXT`  | Ausdrückliche Ausnahme: unverschlüsselt sichern (nicht empfohlen)                                                                                                                                     |
+| `OFFSITE_ALLOW_PLAINTEXT` | Ausdrückliche Ausnahme: Klartext nach B2 übertragen (nicht empfohlen)                                                                                                                                 |
+| `B2_REMOTE`               | Standard `b2-arctos:arctos-backups`                                                                                                                                                                   |
 
 ## Deploy
 
-| Variable | Beschreibung |
-| --- | --- |
-| `ARCTOS_ALLOW_UNVERIFIED_DEPLOY` | Überspringt die CI-Status-Prüfung des Ziel-Commits (S13-19). Wird im Deploy-Protokoll vermerkt. |
-| `ARCTOS_SKIP_PREDEPLOY_BACKUP` | Überspringt das Pre-Deploy-Backup (S13-04a). Nicht empfohlen. |
-| `ALLOW_DEMO_SEED_IN_PROD` | Spielt die Demo-Seeds ein. **Nur auf Wegwerf-Instanzen** — sie schreiben Demo-Fachdaten in die produktive Haupt-DB und in die Hash-Kette (S13-20). |
-| `IMAGE_TAG` | Der von `docker-compose.production.yml` gelesene Tag. **Nicht** `ARCTOS_IMAGE_TAG` — diese Variable liest nichts und war die Ursache eines still wirkungslosen Rollbacks (S13-05a). Rollback bitte über `deploy/rollback.sh`. |
+| Variable                         | Beschreibung                                                                                                                                                                                                                  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ARCTOS_ALLOW_UNVERIFIED_DEPLOY` | Überspringt die CI-Status-Prüfung des Ziel-Commits (S13-19). Wird im Deploy-Protokoll vermerkt.                                                                                                                               |
+| `ARCTOS_SKIP_PREDEPLOY_BACKUP`   | Überspringt das Pre-Deploy-Backup (S13-04a). Nicht empfohlen.                                                                                                                                                                 |
+| `ALLOW_DEMO_SEED_IN_PROD`        | Spielt die Demo-Seeds ein. **Nur auf Wegwerf-Instanzen** — sie schreiben Demo-Fachdaten in die produktive Haupt-DB und in die Hash-Kette (S13-20).                                                                            |
+| `IMAGE_TAG`                      | Der von `docker-compose.production.yml` gelesene Tag. **Nicht** `ARCTOS_IMAGE_TAG` — diese Variable liest nichts und war die Ursache eines still wirkungslosen Rollbacks (S13-05a). Rollback bitte über `deploy/rollback.sh`. |
 
 ## Core — ohne laeuft nichts
 
-| Variable                          | req/opt   | Beispiel                                           | Beschreibung                                                       |
-| --------------------------------- | --------- | -------------------------------------------------- | ------------------------------------------------------------------ |
-| `DATABASE_URL`                    | req · sec | `postgresql://grc:***@localhost:5432/grc_platform` | PostgreSQL-Connection-String (Superuser `grc`; nur Migrationen/Provisionierung) |
+| Variable                          | req/opt       | Beispiel                                              | Beschreibung                                                                                                                                                                                      |
+| --------------------------------- | ------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                    | req · sec     | `postgresql://grc:***@localhost:5432/grc_platform`    | PostgreSQL-Connection-String (Superuser `grc`; nur Migrationen/Provisionierung)                                                                                                                   |
 | `APP_DATABASE_URL`                | **req** · sec | `postgresql://grc_app:***@postgres:5432/grc_platform` | **Laufzeit-Pool der Web-App** als Nicht-Superuser. Nur damit wirkt RLS. Fehlt sie, fällt der Code auf `DATABASE_URL` zurück — Superuser, BYPASSRLS, Mandantentrennung aufgehoben (S13-09/S13-10). |
-| `NODE_ENV`                        | req       | `production` / `development` / `test`              | Runtime-Mode                                                       |
-| `NEXTAUTH_URL`                    | req       | `https://arctos.charliehund.de`                    | Base-URL fuer Auth.js (muss mit Caddy-Hostname matchen)            |
-| `NEXT_PUBLIC_APP_URL`             | req       | `https://arctos.charliehund.de`                    | Base-URL fuer Frontend (in Browser sichtbar)                       |
-| `AUTH_SECRET` / `NEXTAUTH_SECRET` | req · sec | 64-char hex                                        | Auth.js JWT-Signing-Key. **Rotieren** = alle Sessions invalidieren |
+| `NODE_ENV`                        | req           | `production` / `development` / `test`                 | Runtime-Mode                                                                                                                                                                                      |
+| `NEXTAUTH_URL`                    | req           | `https://arctos.charliehund.de`                       | Base-URL fuer Auth.js (muss mit Caddy-Hostname matchen)                                                                                                                                           |
+| `NEXT_PUBLIC_APP_URL`             | req           | `https://arctos.charliehund.de`                       | Base-URL fuer Frontend (in Browser sichtbar)                                                                                                                                                      |
+| `AUTH_SECRET` / `NEXTAUTH_SECRET` | req · sec     | 64-char hex                                           | Auth.js JWT-Signing-Key. **Rotieren** = alle Sessions invalidieren                                                                                                                                |
 
 ## Auth — optional je nach SSO-Setup
 
@@ -140,12 +140,12 @@ jedes anderen, ohne irgendein Signal.
 
 ## Background / Worker
 
-| Variable      | req/opt   | Beschreibung                                                      |
-| ------------- | --------- | ----------------------------------------------------------------- |
-| `REDIS_URL`   | **req** in Produktion | `redis://redis:6379` — Queue, Cache und **gemeinsames Rate-Limit-Backend**. Ohne ihn ist der Limiter prozesslokal: bei N Web-Containern ist das effektive Limit `N × capacity`, und ein Neustart hebt jeden Login-Lockout auf (WP9/S10-05). |
-| `CRON_SECRET` | **req** · sec | Shared-Secret fuer Worker-Cron-Auth (verhindert drive-by-Trigger) |
-| `CRON_SCHEDULER_ENABLED` | opt | Standard `true`. Der In-Process-Scheduler des Workers. Vor der Remediation gab es KEINEN Scheduler — die 128 Cron-Endpunkte rief niemand auf, es lief also keine Löschfrist, keine Fristenüberwachung und keine Verankerung der Audit-Kette (S10-02/S13-14). |
-| `JOB_RUN_RETENTION_DAYS` | opt | Aufbewahrung des Laufprotokolls `job_run` (Standard 90; Fehlläufe doppelt) |
+| Variable                 | req/opt               | Beschreibung                                                                                                                                                                                                                                                 |
+| ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REDIS_URL`              | **req** in Produktion | `redis://redis:6379` — Queue, Cache und **gemeinsames Rate-Limit-Backend**. Ohne ihn ist der Limiter prozesslokal: bei N Web-Containern ist das effektive Limit `N × capacity`, und ein Neustart hebt jeden Login-Lockout auf (WP9/S10-05).                  |
+| `CRON_SECRET`            | **req** · sec         | Shared-Secret fuer Worker-Cron-Auth (verhindert drive-by-Trigger)                                                                                                                                                                                            |
+| `CRON_SCHEDULER_ENABLED` | opt                   | Standard `true`. Der In-Process-Scheduler des Workers. Vor der Remediation gab es KEINEN Scheduler — die 128 Cron-Endpunkte rief niemand auf, es lief also keine Löschfrist, keine Fristenüberwachung und keine Verankerung der Audit-Kette (S10-02/S13-14). |
+| `JOB_RUN_RETENTION_DAYS` | opt                   | Aufbewahrung des Laufprotokolls `job_run` (Standard 90; Fehlläufe doppelt)                                                                                                                                                                                   |
 
 ## Logging
 
@@ -189,9 +189,9 @@ dem Anschluss an einen externen Log-Empfänger sind sie umzustellen.
      Ende-zu-Ende), und Anhänge wurden überhaupt nicht verschlüsselt — bis
      zur Remediation wurden sie nicht einmal gespeichert (S07-20). -->
 
-| Variable                     | req/opt                             | Beschreibung                                                                                                                                                                  |
-| ---------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `WB_ENCRYPTION_KEY`          | req wenn whistleblowing aktiv · sec | 32-byte hex. Verschluesselung **at rest** (AES-256-GCM) der Meldungsfreitexte, Kontaktadressen und Fallnachrichten. Der Server haelt den Schluessel und entschluesselt selbst.  |
+| Variable                     | req/opt                             | Beschreibung                                                                                                                                                                   |
+| ---------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WB_ENCRYPTION_KEY`          | req wenn whistleblowing aktiv · sec | 32-byte hex. Verschluesselung **at rest** (AES-256-GCM) der Meldungsfreitexte, Kontaktadressen und Fallnachrichten. Der Server haelt den Schluessel und entschluesselt selbst. |
 | `WB_ENCRYPTION_KEY_PREVIOUS` | opt · sec                           | Vorheriger Schluessel waehrend einer Rotation. Chiffrate, die unter dem aktuellen Schluessel nicht aufgehen, werden damit gelesen. Nach dem Re-Seal entfernen.                 |
 | `WB_ENCRYPTION_KEY_ID`       | opt                                 | Kennung, die in neue Chiffrate geschrieben wird (`v2:<keyId>:…`). Vorgabe `default`.                                                                                           |
 | `WB_PSEUDONYM_KEY`           | empfohlen · sec                     | 32-byte hex. HMAC-Schluessel fuer `wb_report.ip_hash` (S07-02). Fehlt er, wird er aus `WB_ENCRYPTION_KEY` abgeleitet — ein ungesalzener Hash entsteht in keinem Fall.          |

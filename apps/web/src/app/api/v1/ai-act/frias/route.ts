@@ -19,7 +19,17 @@ export async function POST(req: Request) {
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
       .insert(aiFria)
-      .values({ ...body.data, orgId: ctx.orgId, createdBy: ctx.userId })
+      // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `mitigationPlan` (Zod) heisst in
+      // der Tabelle `mitigation_measures`; `createdBy` existiert auf `ai_fria`
+      // nicht. Beide Felder gingen beim Spread verloren bzw. waren unbekannt.
+      .values({
+        orgId: ctx.orgId,
+        aiSystemId: body.data.aiSystemId,
+        assessmentCode: body.data.assessmentCode,
+        rightsAssessed: body.data.rightsAssessed ?? [],
+        overallImpact: body.data.overallImpact,
+        mitigationMeasures: body.data.mitigationPlan,
+      })
       .returning();
     return created;
   });

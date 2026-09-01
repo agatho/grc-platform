@@ -17,6 +17,7 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
 import { securityIncident } from "./isms";
@@ -138,6 +139,11 @@ export const ropaEntry = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    processId: uuid("process_id"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("ropa_org_idx").on(t.orgId),
@@ -264,6 +270,11 @@ export const dpia = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    processId: uuid("process_id"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("dpia_org_idx").on(t.orgId),
@@ -299,6 +310,13 @@ export const dpiaRisk = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    ermRiskId: uuid("erm_risk_id"),
+    ermSyncedAt: timestamp("erm_synced_at", { withTimezone: true }),
+    numericImpact: integer("numeric_impact"),
+    numericLikelihood: integer("numeric_likelihood"),
+    riskScore: integer("risk_score").generatedAlwaysAs(
+      sql`(COALESCE(numeric_likelihood, 0) * COALESCE(numeric_impact, 0))`,
+    ),
   },
   (t) => [
     index("dpia_risk_org_idx").on(t.orgId),
@@ -387,6 +405,10 @@ export const dsr = pgTable(
       .notNull()
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("dsr_org_idx").on(t.orgId),
@@ -470,6 +492,13 @@ export const dataBreach = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    affectedProcessIds: uuid("affected_process_ids")
+      .array()
+      .default(sql`'{}'::uuid[]`),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("db_org_idx").on(t.orgId),

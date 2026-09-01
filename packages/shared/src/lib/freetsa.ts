@@ -1,4 +1,9 @@
-import { randomBytes, createHash, createVerify, X509Certificate } from "node:crypto";
+import {
+  randomBytes,
+  createHash,
+  createVerify,
+  X509Certificate,
+} from "node:crypto";
 import {
   encodeSequence,
   encodeInteger,
@@ -275,9 +280,7 @@ export function verifyTimestampResponse(
   }
   const sd = readChildren(sdSeq);
 
-  const encapIdx = sd.findIndex(
-    (n) => n.tag === 0x30 && looksLikeEncap(n),
-  );
+  const encapIdx = sd.findIndex((n) => n.tag === 0x30 && looksLikeEncap(n));
   if (encapIdx < 0) {
     throw new TimestampValidationError(
       "malformed",
@@ -322,9 +325,7 @@ export function verifyTimestampResponse(
 
   // nonce: the first INTEGER after genTime that is not `ordering`.
   if (expectedNonce) {
-    const nonceNode = tst
-      .slice(5)
-      .find((n) => n.tag === 0x02);
+    const nonceNode = tst.slice(5).find((n) => n.tag === 0x02);
     if (!nonceNode) {
       throw new TimestampValidationError(
         "nonce_missing",
@@ -575,8 +576,11 @@ export function parseTimestampResponse(resp: Buffer): {
 function looksLikeEncap(node: DerNode): boolean {
   try {
     const kids = readChildren(node);
-    return kids.length >= 1 && kids[0].tag === 0x06 &&
-      decodeOid(kids[0]) === OID_CT_TST_INFO;
+    return (
+      kids.length >= 1 &&
+      kids[0].tag === 0x06 &&
+      decodeOid(kids[0]) === OID_CT_TST_INFO
+    );
   } catch {
     return false;
   }

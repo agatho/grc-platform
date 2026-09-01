@@ -16,6 +16,7 @@ import {
   uniqueIndex,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { asset } from "./asset";
 import { control } from "./control";
@@ -138,6 +139,12 @@ export const process = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    lineOfDefense: varchar("line_of_defense", { length: 10 }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("process_org_idx").on(table.orgId),

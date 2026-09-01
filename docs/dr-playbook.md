@@ -24,14 +24,14 @@ Es ergaenzt [`docs/runbook.md`](./runbook.md) um Katastrophen-Faelle.
 
 ## RPO / RTO-Ziele
 
-| Szenario                        | RPO (max. Datenverlust) | RTO (max. Downtime)                      |
-| ------------------------------- | ----------------------- | ---------------------------------------- |
-| Einzelner Container-Crash       | 0                       | 5 min                                    |
+| Szenario                  | RPO (max. Datenverlust) | RTO (max. Downtime) |
+| ------------------------- | ----------------------- | ------------------- |
+| Einzelner Container-Crash | 0                       | 5 min               |
 
-| DB-Korruption                   | 24h (nightly dump)      | 2h                                       |
-| Kompletter Host-Ausfall         | 24h                     | 8h (neuer Hetzner-Host + Restore)        |
-| Region-Ausfall (Falkenstein)    | 24h                     | 12h (B2 -> neuer Host in anderer Region) |
-| Ransomware / Malware-Eindringen | 24h                     | 24h (forensischer Clean-Restore)         |
+| DB-Korruption | 24h (nightly dump) | 2h |
+| Kompletter Host-Ausfall | 24h | 8h (neuer Hetzner-Host + Restore) |
+| Region-Ausfall (Falkenstein) | 24h | 12h (B2 -> neuer Host in anderer Region) |
+| Ransomware / Malware-Eindringen | 24h | 24h (forensischer Clean-Restore) |
 
 RTO misst von "Incident Confirmed" bis "Service Back Online fuer >50 % der
 Tenants". RPO misst den max. Datenverlust, gemessen vom letzten bekannten
@@ -66,16 +66,16 @@ Pseudonyme nicht mehr zuordenbar (docs/runbook.md §7).
 
 ## Backup-Inventar
 
-| Scope | Frequenz | Ort | Retention |
-| --- | --- | --- | --- |
-| PostgreSQL-Dumps (alle `grc_*`-DBs), **verschlüsselt** | nächtlich 03:00 UTC | `/opt/arctos/backups/*.dump.gpg` | `BACKUP_RETENTION_DAYS` aus `/etc/default/arctos-backup` (Standard 30 Tage) |
-| **DMS-Objektspeicher** (`uploads`, `branding`, `garagedata`, `garagemeta`), verschlüsselt | nächtlich, im selben Lauf | `/opt/arctos/backups/objects-*.tar.gz.gpg` | wie oben |
-| Off-Site-Kopie (nur verschlüsselte Artefakte) | nächtlich, **verkettet NACH** dem Backup | Backblaze B2 EU (ADR-015) | 90 Tage, append-only |
-| **Backup-Schlüssel** | bei Erzeugung / Wechsel | `/opt/arctos/.backup.key` (0400 root) **+ Off-Host-Kopie** | solange Backups aus seiner Zeit existieren |
-| Docker-Images (Vorgänger) | bei jedem Deploy | lokal als `arctos-rollback/grc-<svc>:<old-sha>` + GHCR per Commit-SHA | lokal bis zum übernächsten Deploy |
-| Code (Repo) | bei jedem Commit | GitHub + lokal `/opt/arctos/` | unbegrenzt |
-| ENV-Files + Secrets | bei manueller Änderung | `/opt/arctos/.env` (0600) + Passwort-Safe | live |
-| Deploy-Protokoll | bei jedem Deploy/Rollback | `/opt/arctos/deploy-history.jsonl` | unbegrenzt |
+| Scope                                                                                     | Frequenz                                 | Ort                                                                   | Retention                                                                   |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| PostgreSQL-Dumps (alle `grc_*`-DBs), **verschlüsselt**                                    | nächtlich 03:00 UTC                      | `/opt/arctos/backups/*.dump.gpg`                                      | `BACKUP_RETENTION_DAYS` aus `/etc/default/arctos-backup` (Standard 30 Tage) |
+| **DMS-Objektspeicher** (`uploads`, `branding`, `garagedata`, `garagemeta`), verschlüsselt | nächtlich, im selben Lauf                | `/opt/arctos/backups/objects-*.tar.gz.gpg`                            | wie oben                                                                    |
+| Off-Site-Kopie (nur verschlüsselte Artefakte)                                             | nächtlich, **verkettet NACH** dem Backup | Backblaze B2 EU (ADR-015)                                             | 90 Tage, append-only                                                        |
+| **Backup-Schlüssel**                                                                      | bei Erzeugung / Wechsel                  | `/opt/arctos/.backup.key` (0400 root) **+ Off-Host-Kopie**            | solange Backups aus seiner Zeit existieren                                  |
+| Docker-Images (Vorgänger)                                                                 | bei jedem Deploy                         | lokal als `arctos-rollback/grc-<svc>:<old-sha>` + GHCR per Commit-SHA | lokal bis zum übernächsten Deploy                                           |
+| Code (Repo)                                                                               | bei jedem Commit                         | GitHub + lokal `/opt/arctos/`                                         | unbegrenzt                                                                  |
+| ENV-Files + Secrets                                                                       | bei manueller Änderung                   | `/opt/arctos/.env` (0600) + Passwort-Safe                             | live                                                                        |
+| Deploy-Protokoll                                                                          | bei jedem Deploy/Rollback                | `/opt/arctos/deploy-history.jsonl`                                    | unbegrenzt                                                                  |
 
 > **Was hier bis 2026-08-31 fehlte:** der Objektspeicher (S13-06). Gesichert
 > wurde ausschliesslich `pg_dump`, also allein das Volume `pgdata`. Nach
@@ -262,13 +262,13 @@ einen "sauberen" Vorher-Stand als Evidenz.
 
 ## Regelmaessige Uebungen
 
-| Test | Frequenz | Owner | Ausloeser | Nachweis |
-| --- | --- | --- | --- | --- |
-| Backup-Restore aller DBs + Objektspeicher + Application-Restore | monatlich | Ops | **automatisch**: `/etc/cron.d/arctos-backup`, 1. des Monats 05:00 UTC | `bc_exercise`-Zeile + `/opt/arctos/backups/.dr-drill-last-run.json` |
-| B2-Download + Restore-Dry-Run | quartalsweise | Ops | manuell: `offsite-sync.sh --download latest` + `dr-restore-drill.sh` | `bc_exercise` |
-| Runbook-Durchspiel Szenario 2 | halbjaehrlich | Maintainer + Ops | manuell | `bc_exercise` |
-| Region-Ausfall Tabletop | jaehrlich | Maintainer | manuell | `bc_exercise` |
-| **Schluesselwiederherstellung aus der Off-Host-Ablage** (Szenario 0) | halbjaehrlich | Maintainer | manuell | `bc_exercise` |
+| Test                                                                 | Frequenz      | Owner            | Ausloeser                                                             | Nachweis                                                            |
+| -------------------------------------------------------------------- | ------------- | ---------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Backup-Restore aller DBs + Objektspeicher + Application-Restore      | monatlich     | Ops              | **automatisch**: `/etc/cron.d/arctos-backup`, 1. des Monats 05:00 UTC | `bc_exercise`-Zeile + `/opt/arctos/backups/.dr-drill-last-run.json` |
+| B2-Download + Restore-Dry-Run                                        | quartalsweise | Ops              | manuell: `offsite-sync.sh --download latest` + `dr-restore-drill.sh`  | `bc_exercise`                                                       |
+| Runbook-Durchspiel Szenario 2                                        | halbjaehrlich | Maintainer + Ops | manuell                                                               | `bc_exercise`                                                       |
+| Region-Ausfall Tabletop                                              | jaehrlich     | Maintainer       | manuell                                                               | `bc_exercise`                                                       |
+| **Schluesselwiederherstellung aus der Off-Host-Ablage** (Szenario 0) | halbjaehrlich | Maintainer       | manuell                                                               | `bc_exercise`                                                       |
 
 > **Was hier nicht stimmte (S13-08).** Der monatliche Drill war auf den
 > 2026-05-01 terminiert und am Prüftag **vier Monate überfällig**; kein Cron

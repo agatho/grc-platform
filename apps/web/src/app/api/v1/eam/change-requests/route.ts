@@ -1,4 +1,4 @@
-import { db, architectureChangeRequest } from "@grc/db";
+import { db, architectureChangeRequest, toNumericInput } from "@grc/db";
 import { createAcrSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
@@ -22,7 +22,12 @@ export async function POST(req: Request) {
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
       .insert(architectureChangeRequest)
-      .values({ ...body.data, orgId: ctx.orgId, createdBy: ctx.userId })
+      .values({
+        ...body.data,
+        costEstimate: toNumericInput(body.data.costEstimate),
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+      })
       .returning();
     return created;
   });

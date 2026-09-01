@@ -339,7 +339,9 @@ async function main() {
 
   console.log(
     `Applying ${files.length} migrations` +
-      (applied.size > 0 ? ` (${applied.size} already recorded as applied)` : "") +
+      (applied.size > 0
+        ? ` (${applied.size} already recorded as applied)`
+        : "") +
       `...\n`,
   );
 
@@ -353,14 +355,20 @@ async function main() {
     console.log(`      deferred: ${f.file} — ${f.error}`);
   }
 
-  const pass2 = await runPass(pass1.fail.map((f) => f.file), applied);
+  const pass2 = await runPass(
+    pass1.fail.map((f) => f.file),
+    applied,
+  );
   console.log(
     `  Pass 2: ${pass2.ok.length} recovered, ${pass2.fail.length} still failing`,
   );
 
   let pass3: PassResult | null = null;
   if (pass2.fail.length > 0) {
-    pass3 = await runPass(pass2.fail.map((f) => f.file), applied);
+    pass3 = await runPass(
+      pass2.fail.map((f) => f.file),
+      applied,
+    );
     console.log(
       `  Pass 3: ${pass3.ok.length} recovered, ${pass3.fail.length} still failing`,
     );

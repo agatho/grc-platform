@@ -1,4 +1,4 @@
-import { db, threat } from "@grc/db";
+import { db, threat, toIntegerInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -60,7 +60,10 @@ export async function PUT(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(threat)
-      .set(parsed.data)
+      .set({
+        ...parsed.data,
+        likelihoodRating: toIntegerInput(parsed.data.likelihoodRating),
+      })
       .where(and(eq(threat.id, id), eq(threat.orgId, ctx.orgId)))
       .returning();
     return updated;

@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
           WHERE org_id = ${ctx.orgId} AND module_key = 'esg'
           LIMIT 1`,
     );
-    const threshold = configResult.rows?.[0]?.score_threshold ?? 15;
+    const threshold = firstRow(configResult)?.score_threshold ?? 15;
 
     // 2. Find material risk IROs eligible for sync
     const candidates = await tx.execute(
@@ -46,14 +46,14 @@ export async function POST(req: Request) {
             AND mi.erm_risk_id IS NULL`,
     );
 
-    if (!candidates.rows?.length) {
+    if (!toRows(candidates).length) {
       return [];
     }
 
     const results: Array<{ iroId: string; riskId: string; title: string }> = [];
 
     // 3. For each candidate, create a risk entry and link back
-    for (const row of candidates.rows) {
+    for (const row of toRows(candidates)) {
       const title = `ESG-Risiko: ${row.title}`;
       const description = `ESRS ${row.esrs_topic} — Automatisch aus ESG-Wesentlichkeitsanalyse synchronisiert. Finanzielle Wesentlichkeit: ${row.financial_materiality_score}, Impact: ${row.impact_materiality_score ?? "k.A."}`;
 
@@ -74,7 +74,7 @@ export async function POST(req: Request) {
             RETURNING id`,
       );
 
-      const riskId = riskResult.rows?.[0]?.id as string;
+      const riskId = firstRow(riskResult)?.id as string;
 
       // 4. Update materiality_iro with erm_risk_id
       await tx.execute(

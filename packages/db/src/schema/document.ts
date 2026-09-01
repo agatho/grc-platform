@@ -19,7 +19,9 @@ import {
   pgEnum,
   index,
   unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
+import { tsvector } from "./custom-types";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
@@ -142,6 +144,10 @@ export const document = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    searchVector: tsvector("search_vector").generatedAlwaysAs(
+      sql`((setweight(to_tsvector('simple'::regconfig, (COALESCE(title, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('simple'::regconfig, COALESCE(content, ''::text)), 'B'::"char")) || setweight(to_tsvector('simple'::regconfig, COALESCE(file_text, ''::text)), 'C'::"char"))`,
+    ),
   },
   (table) => [
     index("document_org_status_idx").on(table.orgId, table.status),

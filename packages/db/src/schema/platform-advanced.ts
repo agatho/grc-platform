@@ -14,7 +14,8 @@ import {
   uniqueIndex,
   date,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { tsvector } from "./custom-types";
+import { relations, sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
@@ -116,6 +117,12 @@ export const searchIndex = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    tags: text("tags")
+      .array()
+      .default(sql`'{}'::text[]`),
+    tsv: tsvector("tsv").generatedAlwaysAs(
+      sql`(setweight(to_tsvector('simple'::regconfig, (COALESCE(title, ''::character varying))::text), 'A'::"char") || setweight(to_tsvector('simple'::regconfig, COALESCE(content, ''::text)), 'B'::"char"))`,
+    ),
   },
   (table) => [
     index("sii_org_idx").on(table.orgId),

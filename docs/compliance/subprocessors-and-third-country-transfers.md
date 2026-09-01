@@ -35,17 +35,17 @@ Mandanten.
 
 ## Bestandsaufnahme — wer welche Daten bekommt
 
-| Empfänger | Zweck | Daten | Ort | Aktiv, wenn |
-|---|---|---|---|---|
-| Hetzner Online GmbH | Hosting, Rechenzentrum | alle Mandantendaten | DE | immer |
-| Resend | Transaktions-E-Mail | Empfängeradresse, Betreff, Inhalt der Benachrichtigung | EU/DE | `RESEND_API_KEY` gesetzt |
-| Backblaze B2 | Objektspeicher (geplant) | Dokumente, Beweismittel | EU-Region | Storage-Backend konfiguriert |
-| **Anthropic** | KI-Assistenz (Copilot, Vorschläge) | Prompt-Inhalte aus Fach- und Freitextfeldern | **US** | `ANTHROPIC_API_KEY` gesetzt |
-| **OpenAI** | KI-Assistenz **und Einbettungen** | Prompt- und Einbettungstexte | **US** | `OPENAI_API_KEY` gesetzt |
-| **Google** | KI-Assistenz | Prompt-Inhalte | **US** | `GOOGLE_AI_API_KEY` gesetzt |
-| FreeTSA | RFC-3161-Zeitstempel für Audit-Anker | Merkle-Root-Hash (kein Personenbezug); Metadaten der Verbindung | AT | Ankerlauf aktiv |
-| OpenTimestamps-Calendars | Zusätzliche Verankerung | Merkle-Root-Hash | verteilt | Ankerlauf aktiv |
-| Lokale Modelle (`claude_cli`, `ollama`, `lmstudio`) | KI-Assistenz | verlassen die Installation nicht | lokal | entsprechend konfiguriert |
+| Empfänger                                           | Zweck                                | Daten                                                           | Ort       | Aktiv, wenn                  |
+| --------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------- | --------- | ---------------------------- |
+| Hetzner Online GmbH                                 | Hosting, Rechenzentrum               | alle Mandantendaten                                             | DE        | immer                        |
+| Resend                                              | Transaktions-E-Mail                  | Empfängeradresse, Betreff, Inhalt der Benachrichtigung          | EU/DE     | `RESEND_API_KEY` gesetzt     |
+| Backblaze B2                                        | Objektspeicher (geplant)             | Dokumente, Beweismittel                                         | EU-Region | Storage-Backend konfiguriert |
+| **Anthropic**                                       | KI-Assistenz (Copilot, Vorschläge)   | Prompt-Inhalte aus Fach- und Freitextfeldern                    | **US**    | `ANTHROPIC_API_KEY` gesetzt  |
+| **OpenAI**                                          | KI-Assistenz **und Einbettungen**    | Prompt- und Einbettungstexte                                    | **US**    | `OPENAI_API_KEY` gesetzt     |
+| **Google**                                          | KI-Assistenz                         | Prompt-Inhalte                                                  | **US**    | `GOOGLE_AI_API_KEY` gesetzt  |
+| FreeTSA                                             | RFC-3161-Zeitstempel für Audit-Anker | Merkle-Root-Hash (kein Personenbezug); Metadaten der Verbindung | AT        | Ankerlauf aktiv              |
+| OpenTimestamps-Calendars                            | Zusätzliche Verankerung              | Merkle-Root-Hash                                                | verteilt  | Ankerlauf aktiv              |
+| Lokale Modelle (`claude_cli`, `ollama`, `lmstudio`) | KI-Assistenz                         | verlassen die Installation nicht                                | lokal     | entsprechend konfiguriert    |
 
 ## Was daraus folgt
 

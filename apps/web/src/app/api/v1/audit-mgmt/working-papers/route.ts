@@ -85,7 +85,9 @@ export async function POST(req: Request) {
 
     const reference = generateWpReference(
       folder.code,
-      existingWps.map((w: { reference: string | null }) => w.reference),
+      existingWps
+        .map((w: { reference: string | null }) => w.reference)
+        .filter((r): r is string => r !== null),
     );
 
     const [row] = await tx

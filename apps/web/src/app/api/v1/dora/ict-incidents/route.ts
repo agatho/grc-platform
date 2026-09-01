@@ -1,4 +1,4 @@
-import { db, doraIctIncident } from "@grc/db";
+import { db, doraIctIncident, toNumericInput } from "@grc/db";
 import {
   createDoraIctIncidentSchema,
   doraIctIncidentQuerySchema,
@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       .insert(doraIctIncident)
       .values({
         ...body.data,
+        financialImpact: toNumericInput(body.data.financialImpact),
         orgId: ctx.orgId,
         detectedAt,
         // Auto-calculate DORA reporting deadlines: 4h, 72h, 1 month

@@ -170,7 +170,9 @@ export async function resolveIcalTokenHash(
   const row = await callResolver(
     sql`SELECT * FROM public.auth_resolve_ical_token(${tokenHash})`,
   );
-  return row ? { userId: String(row.user_id), orgId: String(row.org_id) } : null;
+  return row
+    ? { userId: String(row.user_id), orgId: String(row.org_id) }
+    : null;
 }
 
 /**
@@ -200,7 +202,9 @@ export async function consumeSamlAssertionId(
  */
 export async function withAnonymousTokenContext<T>(
   orgId: string,
-  fn: (scopedDb: Parameters<Parameters<typeof withOrgReadContext>[1]>[0]) => Promise<T>,
+  fn: (
+    scopedDb: Parameters<Parameters<typeof withOrgReadContext>[1]>[0],
+  ) => Promise<T>,
   opts?: { userId?: string | null },
 ): Promise<T> {
   return withOrgReadContext(orgId, fn, opts);

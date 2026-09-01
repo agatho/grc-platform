@@ -53,13 +53,7 @@ if (!DB_URL) {
 
 const res = spawnSync(
   "npx",
-  [
-    "vitest",
-    "run",
-    "--config",
-    "vitest.rls.config.ts",
-    "--passWithNoTests",
-  ],
+  ["vitest", "run", "--config", "vitest.rls.config.ts", "--passWithNoTests"],
   { stdio: "inherit", env: process.env },
 );
 process.exit(res.status ?? 1);

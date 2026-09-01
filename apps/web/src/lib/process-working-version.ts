@@ -8,7 +8,7 @@
 import { eq, and, isNull, sql } from "drizzle-orm";
 // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
 // the `any` that stood on every `tx` parameter here.
-import type { DbTransaction } from "@/lib/db-types";
+import type { DbTransaction, DbReader } from "@/lib/db-types";
 import { process, processVersion, processStep } from "@grc/db";
 import { parseBpmnXml } from "@grc/shared";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
@@ -29,7 +29,10 @@ export interface PromotedVersion {
 /** Return the working version of a process, if one exists. */
 export async function findWorkingVersion(
   // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
-  tx: DbTransaction,
+  // [Restarbeiten] `DbReader`, weil diese reine Lesefunktion sowohl mit dem
+  // Transaktionsobjekt als auch mit dem request-skopierten `db`-Proxy
+  // aufgerufen wird (approval-steps/route.ts, versions/route.ts).
+  tx: DbReader,
   processId: string,
 ): Promise<{
   id: string;

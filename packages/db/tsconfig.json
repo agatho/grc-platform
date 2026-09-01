@@ -35,7 +35,12 @@
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "types": ["node"],
+    // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `vite/client` deklariert
+    // `ImportMeta.glob`. Ohne den Eintrag scheiterte
+    // tests/unit/all-schemas-smoke.test.ts (WP11 · S11-10) mit TS2339/TS18046 —
+    // unter Vitest laeuft der Test korrekt, nur der Typcheck kannte die
+    // Vite-Erweiterung von `import.meta` nicht.
+    "types": ["node", "vite/client"],
     "module": "preserve",
     "noUncheckedIndexedAccess": false,
     "noUnusedLocals": false

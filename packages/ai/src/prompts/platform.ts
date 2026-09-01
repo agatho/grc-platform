@@ -142,8 +142,7 @@ Output ONLY a JSON object of this exact shape — no prose, no markdown fences:
 }
 Describe purpose, typical responsibilities and typical interfaces. Do not invent product names, vendors or version numbers.
 Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
-    instruction:
-      "Describe the architecture element in the data envelope.",
+    instruction: "Describe the architecture element in the data envelope.",
     data: {
       elementName: safeText(args.elementName, 300),
       elementType: safeText(args.elementType, 100),

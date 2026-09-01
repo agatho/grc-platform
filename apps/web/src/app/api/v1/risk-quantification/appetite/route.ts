@@ -1,4 +1,4 @@
-import { db, riskAppetiteThreshold } from "@grc/db";
+import { db, riskAppetiteThreshold, toNumericInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -65,6 +65,7 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         ...body,
+        maxResidualAle: toNumericInput(body.maxResidualAle),
       })
       .returning();
     return created;

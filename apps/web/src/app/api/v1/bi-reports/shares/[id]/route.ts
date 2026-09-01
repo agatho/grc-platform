@@ -1,4 +1,4 @@
-import { db, biSharedDashboard } from "@grc/db";
+import { db, biSharedDashboard, toTimestampInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -18,7 +18,7 @@ export async function PATCH(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(biSharedDashboard)
-      .set(body)
+      .set({ ...body, expiresAt: toTimestampInput(body.expiresAt) })
       .where(
         and(
           eq(biSharedDashboard.id, id),

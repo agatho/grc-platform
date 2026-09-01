@@ -1,4 +1,4 @@
-import { db, riskEvent } from "@grc/db";
+import { db, riskEvent, toNumericInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
 import {
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
         orgId: ctx.orgId,
         createdBy: ctx.userId,
         ...body.data,
+        actualImpactEur: toNumericInput(body.data.actualImpactEur),
       })
       .returning();
     return item;

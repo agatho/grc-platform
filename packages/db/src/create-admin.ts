@@ -32,7 +32,9 @@ function flag(name: string): boolean {
 async function main() {
   const email = arg("email")?.trim().toLowerCase();
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-    console.error("Usage: db:create-admin -- --email <address> [--name <name>] [--org <uuid>] [--platform-admin]");
+    console.error(
+      "Usage: db:create-admin -- --email <address> [--name <name>] [--org <uuid>] [--platform-admin]",
+    );
     process.exit(1);
   }
   const name = arg("name") ?? email.split("@")[0];
@@ -46,7 +48,8 @@ async function main() {
   const sql = postgres(url, { max: 1 });
 
   try {
-    const password = process.env.ADMIN_PASSWORD ?? randomBytes(18).toString("base64url");
+    const password =
+      process.env.ADMIN_PASSWORD ?? randomBytes(18).toString("base64url");
     if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length < 12) {
       console.error("ADMIN_PASSWORD must be at least 12 characters.");
       process.exit(1);
@@ -59,11 +62,15 @@ async function main() {
         SELECT id, name FROM organization WHERE deleted_at IS NULL ORDER BY created_at LIMIT 2
       `;
       if (orgs.length === 0) {
-        console.error("No organization exists yet — create one first, or pass --org.");
+        console.error(
+          "No organization exists yet — create one first, or pass --org.",
+        );
         process.exit(1);
       }
       if (orgs.length > 1) {
-        console.error("More than one organization exists — pass --org <uuid> explicitly.");
+        console.error(
+          "More than one organization exists — pass --org <uuid> explicitly.",
+        );
         process.exit(1);
       }
       orgId = orgs[0].id;

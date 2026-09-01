@@ -19,10 +19,10 @@
 Alle REST-Endpoints liegen unter `/api/v1/**` — **mit zwei dokumentierten
 Ausnahmen** (rev.2, S14-17/D10):
 
-| Pfad | Warum ausserhalb der Versionierung |
-|---|---|
-| `/api/health` | Liveness-/Readiness-Probe. Ein Orchestrator-Health-Check darf nicht brechen, wenn die API-Version wechselt; er ist kein Teil des Consumer-Contracts. |
-| `/api/auth/[...nextauth]` | Von Auth.js vorgegebener Pfad, nicht frei waehlbar. |
+| Pfad                      | Warum ausserhalb der Versionierung                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/health`             | Liveness-/Readiness-Probe. Ein Orchestrator-Health-Check darf nicht brechen, wenn die API-Version wechselt; er ist kein Teil des Consumer-Contracts. |
+| `/api/auth/[...nextauth]` | Von Auth.js vorgegebener Pfad, nicht frei waehlbar.                                                                                                  |
 
 Diese beiden sind von der v1→v2-Overlap-Regel ausgenommen und werden in
 `docs/API_REFERENCE.md` unter "Outside `/api/v1`" gefuehrt.
@@ -126,12 +126,12 @@ zahlreiche Endpoints pauschal als "(paginated)" auswies.
 vollstaendig; sie war nur nirgends dokumentiert und nicht als die einzige
 gueltige Form benannt.
 
-| Parameter | Bedeutung | Default | Grenzen |
-|---|---|---|---|
-| `limit` | Seitengroesse | `DEFAULT_PAGE_SIZE` = 20 | 1 ... `MAX_PAGE_SIZE` = 100. Groesser ⇒ **422**, kein stilles Kappen: ein stiller Cap laesst den Client glauben, er habe das vollstaendige Ergebnis. |
-| `page` | 1-basierte Seitennummer | 1 | ≥ 1; `0`, negativ oder nicht-numerisch ⇒ 422 |
-| `offset` | Alternative zu `page` | — | Muss ein Vielfaches von `limit` sein, sonst 422. Wird zu `page = offset/limit + 1`. Bei gleichzeitigem `page` gewinnt `page`. |
-| `sortBy` / `sortOrder` | Sortierung | — | Werden auf die kanonischen `sort` / `sortDir` normalisiert. |
+| Parameter              | Bedeutung               | Default                  | Grenzen                                                                                                                                              |
+| ---------------------- | ----------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`                | Seitengroesse           | `DEFAULT_PAGE_SIZE` = 20 | 1 ... `MAX_PAGE_SIZE` = 100. Groesser ⇒ **422**, kein stilles Kappen: ein stiller Cap laesst den Client glauben, er habe das vollstaendige Ergebnis. |
+| `page`                 | 1-basierte Seitennummer | 1                        | ≥ 1; `0`, negativ oder nicht-numerisch ⇒ 422                                                                                                         |
+| `offset`               | Alternative zu `page`   | —                        | Muss ein Vielfaches von `limit` sein, sonst 422. Wird zu `page = offset/limit + 1`. Bei gleichzeitigem `page` gewinnt `page`.                        |
+| `sortBy` / `sortOrder` | Sortierung              | —                        | Werden auf die kanonischen `sort` / `sortDir` normalisiert.                                                                                          |
 
 **Nicht** Teil des Contracts und daher abgewiesen: `pageSize`, `perPage`,
 `per_page`, `take`, `skip`, `cursor`. `paginate()` wirft fuer die haeufigsten

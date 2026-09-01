@@ -147,7 +147,8 @@ describe("aiComplete privacy routing", () => {
     resetEnv();
     process.env.OPENAI_API_KEY = "sk-test";
     process.env.OLLAMA_ENABLED = "true";
-    const { aiComplete, operatorPolicySnapshot } = await import("../src/router");
+    const { aiComplete, operatorPolicySnapshot } =
+      await import("../src/router");
     await aiComplete({
       messages: [{ role: "user", content: "Hello" }],
       provider: "openai",

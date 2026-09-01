@@ -158,7 +158,10 @@ function rows<T>(res: unknown): T[] {
 
 export async function runRlsAudit(): Promise<RlsAuditReport> {
   // ── 1. Relations: tables, views, matviews ────────────────────────────────
-  const relations = await db.execute<{ table_name: string; relkind: string }>(sql`
+  const relations = await db.execute<{
+    table_name: string;
+    relkind: string;
+  }>(sql`
     SELECT c.relname AS table_name, c.relkind::text AS relkind
       FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -293,7 +296,9 @@ export async function runRlsAudit(): Promise<RlsAuditReport> {
     const writeCmd = cmd === "ALL" || cmd === "INSERT" || cmd === "UPDATE";
 
     if (expr.includes("app.bypass_rls")) {
-      slot.defects.push(`${p.policyname}: app.bypass_rls escape hatch (S01-02)`);
+      slot.defects.push(
+        `${p.policyname}: app.bypass_rls escape hatch (S01-02)`,
+      );
     }
     if (
       (p.qual ?? "").trim() === "true" ||
@@ -319,7 +324,9 @@ export async function runRlsAudit(): Promise<RlsAuditReport> {
       );
     }
     if (expr.includes("(org_id)::text = current_setting")) {
-      slot.defects.push(`${p.policyname}: text comparison instead of uuid (S01-25)`);
+      slot.defects.push(
+        `${p.policyname}: text comparison instead of uuid (S01-25)`,
+      );
     }
     policiesByTable.set(p.tablename, slot);
   }

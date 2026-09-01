@@ -6,10 +6,15 @@
  *   DATABASE_URL=… npx tsx tests/schema-drift-report.ts [--fail-on-drift] [--json]
  *
  * Exit code 1 with `--fail-on-drift` when anything the code declares is
- * missing or differs in the database. `extraInDb` (objects in the database
- * that the Drizzle schema does not declare) is reported but never fails the
- * run: a number of tables predate the TypeScript schema and are managed by
- * SQL alone.
+ * missing or differs in the database. `extraInDb` — whole TABLES the Drizzle
+ * schema does not declare — is reported but never fails the run: a number of
+ * tables predate the TypeScript schema and are managed by SQL alone.
+ *
+ * [ARCTOS-FULL-2026-08-31 / Restdefekte · O-6] Extra COLUMNS are a different
+ * matter and DO fail the run. They sit on a table the code claims to model,
+ * so `db.select()` on that table silently drops them and `$inferSelect`
+ * denies they exist. They are reported as `column drift` of kind
+ * `extra-in-db`, which is why the counter below is now labelled by direction.
  */
 import postgres from "postgres";
 import * as schemas from "../src/index";
@@ -52,9 +57,15 @@ async function main() {
       console.log(
         `Drizzle tables: ${report.expectedTableCount}   DB tables: ${report.dbTableCount}`,
       );
-      console.log(`missing in DB : ${report.missingInDb.length}`);
-      console.log(`extra in DB   : ${report.extraInDb.length} (informational)`);
-      console.log(`column drift  : ${report.columnDrift.length}`);
+      console.log(`missing tables: ${report.missingInDb.length}`);
+      console.log(`extra tables  : ${report.extraInDb.length} (informational)`);
+      const extraCols = report.columnDrift.filter(
+        (c) => c.kind === "extra-in-db",
+      ).length;
+      console.log(
+        `column drift  : ${report.columnDrift.length}` +
+          ` (thereof ${extraCols} only-in-DB columns)`,
+      );
       console.log(`RLS drift     : ${report.rlsDrift.length}`);
       console.log(`duplicate defs: ${duplicates.length}`);
 

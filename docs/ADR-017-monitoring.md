@@ -3,7 +3,7 @@
 | **ADR-ID**  | **017**                                                                                                                                                                                                                                   |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Title**   | **Grafana Cloud Free + JSON-Logs als Basis; OpenTelemetry als spätere Erweiterung**                                                                                                                                                       |
-| **Status**  | **Accepted** (2026-09-01 — Phase 1 umgesetzt, siehe §Umsetzungsstand)                                                                                                                                                                                                                              |
+| **Status**  | **Accepted** (2026-09-01 — Phase 1 umgesetzt, siehe §Umsetzungsstand)                                                                                                                                                                     |
 | **Date**    | 2026-04-18                                                                                                                                                                                                                                |
 | **Context** | Aktuell gibt es `/api/v1/health`, den Schema-Drift-Check und den Audit-Integrity-Endpoint, aber kein Monitoring-Backend das sie regelmäßig abruft + alarmiert. Die Plattform ist GRC — Ausfälle müssen innerhalb Minuten entdeckt werden. |
 
@@ -14,7 +14,7 @@
 > ergab eine vollständige Suche über `apps/web/src`, `apps/worker/src`,
 > `packages/*/src`, `deploy`, `scripts`, `.github` und beide Compose-Dateien
 > nach `healthchecks.io|alertmanager|prometheus|promtail|loki|sentry|
-> opentelemetry|statsd|datadog` **null Treffer** (S13-11). Kein Client in
+opentelemetry|statsd|datadog` **null Treffer** (S13-11). Kein Client in
 > einer `package.json`, kein Exporter in einer Compose-Datei, kein Heartbeat
 > in `deploy/` oder `scripts/`, kein `schedule:`-Workflow, der einen
 > Health-Endpunkt abruft. Der in Zeile 50 angekündigte Endpunkt
@@ -26,17 +26,17 @@
 > einen Incident bestätigt. Und es gab keinen Alarm auf ein einziges
 > sicherheitsrelevantes Ereignis (S13-12).
 
-| Zusage | Stand 2026-08-31 | Stand 2026-09-01 |
-|---|---|---|
-| Metriken im Prometheus-Format | nicht vorhanden | `scripts/ops-metrics.mjs`, Compose-Dienst `ops-metrics`, `GET :9105/metrics` |
-| `/api/v1/metrics` (Zeile 50) | nicht vorhanden | **bewusst nicht dort** — siehe „Abweichung" unten |
-| Health-/Readiness-Endpunkte | nur `/api/v1/health` (prüfte `SELECT 1`) | dazu `:9105/healthz`, `:9105/readyz`, Container-`HEALTHCHECK` für `web` (S13-13) und `worker` |
-| Alarm: fehlgeschlagene Logins | keiner | `failed_logins_burst`, `failed_logins_single_account` |
-| Alarm: Massenexport | keiner | `mass_export_hourly`, `mass_export_daily` |
-| Alarm: Bruch der Audit-Kette | keiner | `audit_chain_broken`, `audit_chain_unverifiable`, `audit_write_attempt` |
-| Alarm: Job-Fehler | keiner | `job_failures`, zusätzlich `scheduler_silent` |
-| Alarm: Backup / Off-Site / DR-Drill | keiner | `backup_stale`, `backup_failed`, `backup_unencrypted`, `backup_without_objects`, `offsite_stale`, `dr_drill_overdue` |
-| Field-Scrubbing im Logger (§Consequences) | **behauptet, nicht vorhanden** (S13-15) | implementiert — siehe unten |
+| Zusage                                    | Stand 2026-08-31                         | Stand 2026-09-01                                                                                                     |
+| ----------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Metriken im Prometheus-Format             | nicht vorhanden                          | `scripts/ops-metrics.mjs`, Compose-Dienst `ops-metrics`, `GET :9105/metrics`                                         |
+| `/api/v1/metrics` (Zeile 50)              | nicht vorhanden                          | **bewusst nicht dort** — siehe „Abweichung" unten                                                                    |
+| Health-/Readiness-Endpunkte               | nur `/api/v1/health` (prüfte `SELECT 1`) | dazu `:9105/healthz`, `:9105/readyz`, Container-`HEALTHCHECK` für `web` (S13-13) und `worker`                        |
+| Alarm: fehlgeschlagene Logins             | keiner                                   | `failed_logins_burst`, `failed_logins_single_account`                                                                |
+| Alarm: Massenexport                       | keiner                                   | `mass_export_hourly`, `mass_export_daily`                                                                            |
+| Alarm: Bruch der Audit-Kette              | keiner                                   | `audit_chain_broken`, `audit_chain_unverifiable`, `audit_write_attempt`                                              |
+| Alarm: Job-Fehler                         | keiner                                   | `job_failures`, zusätzlich `scheduler_silent`                                                                        |
+| Alarm: Backup / Off-Site / DR-Drill       | keiner                                   | `backup_stale`, `backup_failed`, `backup_unencrypted`, `backup_without_objects`, `offsite_stale`, `dr_drill_overdue` |
+| Field-Scrubbing im Logger (§Consequences) | **behauptet, nicht vorhanden** (S13-15)  | implementiert — siehe unten                                                                                          |
 
 **Abweichung von der ursprünglichen Entscheidung — und ihr Grund.**
 Zeile 50 sah `/api/v1/metrics` in der Web-App vor. Umgesetzt ist stattdessen

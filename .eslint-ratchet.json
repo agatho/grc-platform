@@ -1,16 +1,12 @@
 {
   "_comment": "#S13-17 ESLint-Ratsche für apps/worker, packages/* und scripts/*. Zahlen dürfen nur SINKEN. Neu setzen: node scripts/lint-ratchet.mjs --update. apps/web hat eine eigene, strengere Konfiguration (WP12) und wird hier nicht gezählt.",
   "_updatedAt": "2026-09-01",
-  "_targets": [
-    "apps/worker",
-    "packages",
-    "scripts"
-  ],
+  "_targets": ["apps/worker", "packages", "scripts"],
   "counts": {
     "(fatal-or-directive)": 1,
     "@typescript-eslint/no-explicit-any": 26,
     "@typescript-eslint/no-require-imports": 1,
-    "@typescript-eslint/no-unused-vars": 251,
+    "@typescript-eslint/no-unused-vars": 249,
     "no-console": 121,
     "no-control-regex": 3,
     "no-empty": 2,

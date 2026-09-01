@@ -10,27 +10,27 @@ Diese Datei listet jedes Paket, das im **ausgelieferten Produktionsbaum** (`npm 
 
 ## Lizenzübersicht
 
-| Lizenz | Pakete |
-|---|---:|
-| `MIT` | 357 |
-| `ISC` | 30 |
-| `Apache-2.0` | 21 |
-| `BSD-3-Clause` | 6 |
-| `BSD-2-Clause` | 4 |
-| `Unlicense` | 3 |
-| `MPL-2.0` | 3 |
-| `LGPL-3.0-or-later` | 2 |
-| `Apache-2.0 AND MIT` | 2 |
-| `UNKNOWN` | 2 |
-| `MIT/X11` | 2 |
-| `0BSD` | 2 |
-| `Apache-2.0 AND LGPL-3.0-or-later AND MIT` | 1 |
-| `SEE LICENSE IN LICENSE` | 1 |
-| `CC-BY-4.0` | 1 |
-| `(MIT OR GPL-3.0-or-later)` | 1 |
-| `(MIT AND Zlib)` | 1 |
-| `MIT-0` | 1 |
-| `MIT AND ISC` | 1 |
+| Lizenz                                     | Pakete |
+| ------------------------------------------ | -----: |
+| `MIT`                                      |    357 |
+| `ISC`                                      |     30 |
+| `Apache-2.0`                               |     21 |
+| `BSD-3-Clause`                             |      6 |
+| `BSD-2-Clause`                             |      4 |
+| `Unlicense`                                |      3 |
+| `MPL-2.0`                                  |      3 |
+| `LGPL-3.0-or-later`                        |      2 |
+| `Apache-2.0 AND MIT`                       |      2 |
+| `UNKNOWN`                                  |      2 |
+| `MIT/X11`                                  |      2 |
+| `0BSD`                                     |      2 |
+| `Apache-2.0 AND LGPL-3.0-or-later AND MIT` |      1 |
+| `SEE LICENSE IN LICENSE`                   |      1 |
+| `CC-BY-4.0`                                |      1 |
+| `(MIT OR GPL-3.0-or-later)`                |      1 |
+| `(MIT AND Zlib)`                           |      1 |
+| `MIT-0`                                    |      1 |
+| `MIT AND ISC`                              |      1 |
 
 ## Dokumentierte Lizenzwahlen und Zusatzpflichten
 
@@ -7279,18 +7279,18 @@ The MIT License
 
 Copyright (c) 2013 Brian J. Brennan
 
-Permission is hereby granted, free of charge, to any person obtaining a copy 
-of this software and associated documentation files (the "Software"), to deal in 
-the Software without restriction, including without limitation the rights to use, 
-copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
-Software, and to permit persons to whom the Software is furnished to do so, 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
 subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all 
+The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
 PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
 FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
@@ -7464,7 +7464,7 @@ exhaustive, and do not form part of our licenses.
      such as asking that all changes be marked or described.
      Although not required by our licenses, you are encouraged to
      respect those requests where reasonable. More_considerations
-     for the public: 
+     for the public:
 	wiki.creativecommons.org/Considerations_for_licensees
 
 =======================================================================
@@ -8213,7 +8213,7 @@ IN THE SOFTWARE.
 
 - Lizenz: `Apache-2.0`
 - Homepage: https://sheetjs.com/
-- Copyright (C) 2014-present   SheetJS LLC
+- Copyright (C) 2014-present SheetJS LLC
 
 <details><summary>Lizenztext (LICENSE)</summary>
 
@@ -9422,18 +9422,18 @@ Copyright (c) 2013, Deoxxa Development
 ======================================
 All rights reserved.
 --------------------
-  
+
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:  
+modification, are permitted provided that the following conditions are met:
 1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions and the following disclaimer.  
+   notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright
    notice, this list of conditions and the following disclaimer in the
-   documentation and/or other materials provided with the distribution.  
+   documentation and/or other materials provided with the distribution.
 3. Neither the name of Deoxxa Development nor the names of its contributors
    may be used to endorse or promote products derived from this software
-   without specific prior written permission.  
-  
+   without specific prior written permission.
+
 THIS SOFTWARE IS PROVIDED BY DEOXXA DEVELOPMENT ''AS IS'' AND ANY
 EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -10433,10 +10433,10 @@ deal in the Software without restriction, including without limitation the
 rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 sell copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -16364,23 +16364,23 @@ SOFTWARE.
 (MIT License)
 
 Copyright (c) 2014-2016 Matt Zabriskie. All rights reserved.
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"), 
-to deal in the Software without restriction, including without limitation 
-the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-and/or sell copies of the Software, and to permit persons to whom the 
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
 Software is furnished to do so, subject to the following conditions:
- 
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
- 
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
@@ -17295,7 +17295,7 @@ THE SOFTWARE.
 ### saxen@11.0.2
 
 - Lizenz: `MIT`
-- Copyright (c) 2012 Vopilovskii Konstantin   <flash.vkv@gmail.com>
+- Copyright (c) 2012 Vopilovskii Konstantin <flash.vkv@gmail.com>
 - Copyright (c) 2017-present Nico Rehwaldt
 
 <details><summary>Lizenztext (LICENSE)</summary>
@@ -18286,7 +18286,7 @@ SOFTWARE.
 Copyright 2010 James Halliday (mail@substack.net)
 
 This project is free software released under the MIT/X11 license:
-http://www.opensource.org/licenses/mit-license.php 
+http://www.opensource.org/licenses/mit-license.php
 
 Copyright 2010 James Halliday (mail@substack.net)
 
@@ -18844,9 +18844,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 <details><summary>Lizenztext (LICENSE)</summary>
 
 ```text
-MIT License 
+MIT License
 
-Copyright (c) 2018 Cameron McCormack 
+Copyright (c) 2018 Cameron McCormack
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

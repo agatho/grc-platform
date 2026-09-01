@@ -54,33 +54,33 @@ Dev pushes to branch
 > uebersprungenen zu unterscheiden war. Die Tabelle unten ist auf den
 > gemessenen Ist-Zustand nach der Remediation gesetzt.
 
-| Gate | Tool | Blockiert Merge | Umfang (Stand 2026-09-01) |
-| --- | --- | --- | --- |
-| Prettier | `ci.yml` | ✅ | repo-weit |
-| ESLint `apps/web` | `ci.yml` | ✅ | eigener, strenger Regelsatz (WP12) |
-| ESLint-Ratsche `apps/worker`, `packages/*`, `scripts/*` | `ci.yml` | ✅ | 11 Workspaces; Altbestand in `.eslint-ratchet.json` eingefroren, JEDE neue Verletzung failt (S13-17) |
-| TypeScript `web` + `worker` | `ci.yml` | ✅ | |
-| Unit Tests | `ci.yml` | ✅ | `turbo test`; alle 12 Workspaces haben jetzt ein `test`-Skript |
-| Integration Tests | `ci.yml` | ✅ | `packages/db`, gegen ein aus den Migrationen gebautes Schema |
-| Worker-Laufzeittests (Lock, Atomaritaet, Dedup) | `ci.yml` | ✅ | neu verdrahtet; lief vorher in KEINEM Workflow (stiller `describe.skip`) |
-| RLS-Isolationstests | `ci.yml` | ✅ | `packages/db` + Route-Chain, unter `grc_app` |
-| RLS-Coverage (0 Luecken) | `ci.yml` | ✅ | gegen die frisch migrierte DB gemessen |
-| DB-Integritaet | `ci.yml` | ✅ | `scripts/verify-db-integrity.mjs` gegen gemessene Baseline (594 Tabellen, 2.624 Policies, 547 FORCE-RLS, 283 Audit-Trigger), Toleranz 2 % (S13-02) |
-| E2E (Playwright) | `ci.yml` | ✅ | **alle** Specs, nicht mehr nur `ci-smoke.spec.ts` (S13-18) |
-| k6-Perf-Baseline | `ci.yml` | ✅ | Binary per SHA-256 geprueft (S13-27) |
-| Docker-Build + Trivy | `ci.yml` | ✅ | Scan VOR dem Push nach ghcr.io (S08-07) |
-| `npm audit`-Gate | `ci.yml` | ✅ | Allowlist mit Pflichtfeld `package`, Runtime-Behauptung maschinell geprueft (S08-06) |
-| Lizenz-Gate | `ci.yml` | ✅ | SPDX-Ausdruecke, UNKNOWN/Custom erzwingen Freigabe, bpmn.io-Wasserzeichen technisch geprueft (S08-10/S08-02) |
-| SBOM + NOTICE aktuell | `ci.yml` | ✅ | CycloneDX 1.5, `--check` gegen den eingecheckten Stand (S08-12/S08-16) |
-| Action-Pinning | `ci.yml` | ✅ | alle 54 Refs per Commit-SHA (S08-05/S08-08) |
-| `.env.example` vollstaendig | `ci.yml` | ✅ | jede gelesene Variable dokumentiert, Pflichtvariablen unauskommentiert (S13-28) |
-| Coverage-Ratsche | `coverage.yml` | ✅ | Testfehler blockieren; Gesamt- und Paketabdeckung duerfen nicht unter die Baseline fallen (S13-25) |
-| Security-Scan (CodeQL) | `codeql.yml` | warn-only (bewusst) | |
-| Migration-Location-Policy | `migration-policy.yml` | ✅ | pfadgefiltert auf `packages/db/**` |
-| Schema-Drift / RLS-Regression | `schema-drift.yml` | ✅ | pfadgefiltert auf `packages/db/**` |
-| Dependency-Review | `dependency-review.yml` | warn-only | nur geaenderte Abhaengigkeiten in PRs |
-| Pilot-Readiness-Gate | `ci.yml` | ✅ | failt jetzt ohne `STAGING_URL` und bei abweichendem Staging-Commit; „nicht anwendbar" nur noch bei Fork-PRs (S13-30) |
-| Vollstaendiger Historien-Secret-Scan | `secret-scanning.yml` | woechentlich, Artefakt | schliesst die `--only-verified`-Luecke (S08-15) |
+| Gate                                                    | Tool                    | Blockiert Merge        | Umfang (Stand 2026-09-01)                                                                                                                          |
+| ------------------------------------------------------- | ----------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Prettier                                                | `ci.yml`                | ✅                     | repo-weit                                                                                                                                          |
+| ESLint `apps/web`                                       | `ci.yml`                | ✅                     | eigener, strenger Regelsatz (WP12)                                                                                                                 |
+| ESLint-Ratsche `apps/worker`, `packages/*`, `scripts/*` | `ci.yml`                | ✅                     | 11 Workspaces; Altbestand in `.eslint-ratchet.json` eingefroren, JEDE neue Verletzung failt (S13-17)                                               |
+| TypeScript `web` + `worker`                             | `ci.yml`                | ✅                     |                                                                                                                                                    |
+| Unit Tests                                              | `ci.yml`                | ✅                     | `turbo test`; alle 12 Workspaces haben jetzt ein `test`-Skript                                                                                     |
+| Integration Tests                                       | `ci.yml`                | ✅                     | `packages/db`, gegen ein aus den Migrationen gebautes Schema                                                                                       |
+| Worker-Laufzeittests (Lock, Atomaritaet, Dedup)         | `ci.yml`                | ✅                     | neu verdrahtet; lief vorher in KEINEM Workflow (stiller `describe.skip`)                                                                           |
+| RLS-Isolationstests                                     | `ci.yml`                | ✅                     | `packages/db` + Route-Chain, unter `grc_app`                                                                                                       |
+| RLS-Coverage (0 Luecken)                                | `ci.yml`                | ✅                     | gegen die frisch migrierte DB gemessen                                                                                                             |
+| DB-Integritaet                                          | `ci.yml`                | ✅                     | `scripts/verify-db-integrity.mjs` gegen gemessene Baseline (594 Tabellen, 2.624 Policies, 547 FORCE-RLS, 283 Audit-Trigger), Toleranz 2 % (S13-02) |
+| E2E (Playwright)                                        | `ci.yml`                | ✅                     | **alle** Specs, nicht mehr nur `ci-smoke.spec.ts` (S13-18)                                                                                         |
+| k6-Perf-Baseline                                        | `ci.yml`                | ✅                     | Binary per SHA-256 geprueft (S13-27)                                                                                                               |
+| Docker-Build + Trivy                                    | `ci.yml`                | ✅                     | Scan VOR dem Push nach ghcr.io (S08-07)                                                                                                            |
+| `npm audit`-Gate                                        | `ci.yml`                | ✅                     | Allowlist mit Pflichtfeld `package`, Runtime-Behauptung maschinell geprueft (S08-06)                                                               |
+| Lizenz-Gate                                             | `ci.yml`                | ✅                     | SPDX-Ausdruecke, UNKNOWN/Custom erzwingen Freigabe, bpmn.io-Wasserzeichen technisch geprueft (S08-10/S08-02)                                       |
+| SBOM + NOTICE aktuell                                   | `ci.yml`                | ✅                     | CycloneDX 1.5, `--check` gegen den eingecheckten Stand (S08-12/S08-16)                                                                             |
+| Action-Pinning                                          | `ci.yml`                | ✅                     | alle 54 Refs per Commit-SHA (S08-05/S08-08)                                                                                                        |
+| `.env.example` vollstaendig                             | `ci.yml`                | ✅                     | jede gelesene Variable dokumentiert, Pflichtvariablen unauskommentiert (S13-28)                                                                    |
+| Coverage-Ratsche                                        | `coverage.yml`          | ✅                     | Testfehler blockieren; Gesamt- und Paketabdeckung duerfen nicht unter die Baseline fallen (S13-25)                                                 |
+| Security-Scan (CodeQL)                                  | `codeql.yml`            | warn-only (bewusst)    |                                                                                                                                                    |
+| Migration-Location-Policy                               | `migration-policy.yml`  | ✅                     | pfadgefiltert auf `packages/db/**`                                                                                                                 |
+| Schema-Drift / RLS-Regression                           | `schema-drift.yml`      | ✅                     | pfadgefiltert auf `packages/db/**`                                                                                                                 |
+| Dependency-Review                                       | `dependency-review.yml` | warn-only              | nur geaenderte Abhaengigkeiten in PRs                                                                                                              |
+| Pilot-Readiness-Gate                                    | `ci.yml`                | ✅                     | failt jetzt ohne `STAGING_URL` und bei abweichendem Staging-Commit; „nicht anwendbar" nur noch bei Fork-PRs (S13-30)                               |
+| Vollstaendiger Historien-Secret-Scan                    | `secret-scanning.yml`   | woechentlich, Artefakt | schliesst die `--only-verified`-Luecke (S08-15)                                                                                                    |
 
 **Pfadfilter-Konsequenz (unveraendert gueltig):** vier Workflows laufen nur
 bei Aenderungen in ihren Pfaden. Der als „required" gedachte Satz an Checks

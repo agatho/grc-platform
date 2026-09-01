@@ -69,11 +69,7 @@ describe("encrypt / decrypt", () => {
     const { decrypt } = await load();
     const { createCipheriv, randomBytes } = await import("crypto");
     const iv = randomBytes(16);
-    const c = createCipheriv(
-      "aes-256-gcm",
-      Buffer.from(TEST_KEY, "hex"),
-      iv,
-    );
+    const c = createCipheriv("aes-256-gcm", Buffer.from(TEST_KEY, "hex"), iv);
     let enc = c.update("Bestandsmeldung", "utf8", "hex");
     enc += c.final("hex");
     const legacy = Buffer.from(
@@ -117,7 +113,9 @@ describe("encrypt / decrypt", () => {
     const { encrypt, decrypt } = await load();
     const ct = encrypt("Original-Hinweis");
     // Decode, flip last byte of the ciphertext part, re-encode
-    const payload = ct.startsWith("v2:") ? ct.split(":").slice(3).join(":") : ct;
+    const payload = ct.startsWith("v2:")
+      ? ct.split(":").slice(3).join(":")
+      : ct;
     const decoded = Buffer.from(payload, "base64").toString("utf8");
     const [iv, tag, ciphertext] = decoded.split(":");
     const tamperedHex =
@@ -223,7 +221,9 @@ describe("hashIp", () => {
     const b = hashIp("203.0.113.42", "22222222-2222-2222-2222-222222222222");
     expect(a).not.toBe(b);
     // innerhalb eines Mandanten bleibt die Duplikaterkennung erhalten
-    expect(a).toBe(hashIp("203.0.113.42", "11111111-1111-1111-1111-111111111111"));
+    expect(a).toBe(
+      hashIp("203.0.113.42", "11111111-1111-1111-1111-111111111111"),
+    );
   });
 
   it("verifies a candidate address only with the key", async () => {

@@ -1,4 +1,4 @@
-import { db, riskQuantificationConfig } from "@grc/db";
+import { db, riskQuantificationConfig, toNumericInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -33,14 +33,22 @@ export async function PUT(req: Request) {
     if (existing) {
       const [updated] = await tx
         .update(riskQuantificationConfig)
-        .set({ ...body, updatedAt: new Date() })
+        .set({
+          ...body,
+          confidenceLevel: toNumericInput(body.confidenceLevel),
+          updatedAt: new Date(),
+        })
         .where(eq(riskQuantificationConfig.orgId, ctx.orgId))
         .returning();
       return updated;
     }
     const [created] = await tx
       .insert(riskQuantificationConfig)
-      .values({ orgId: ctx.orgId, ...body })
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+        confidenceLevel: toNumericInput(body.confidenceLevel),
+      })
       .returning();
     return created;
   });

@@ -16,19 +16,19 @@
 > §1, §3 und §4 sind inzwischen umgesetzt (WP1), §2 und der Deploy-Pfad in
 > dieser Runde (WP10). Der Status ist deshalb **Accepted**.
 
-| Punkt | Stand 2026-08-31 | Stand 2026-09-01 | Von |
-|---|---|---|---|
-| `ON_ERROR_STOP=1`, stderr erhalten | `ON_ERROR_STOP=0`, `>/dev/null 2>&1` — der Operator erfuhr eine Zahl, nie WELCHE Datei mit WELCHEM Fehler | je Datei `ON_ERROR_STOP=1`; jede Fehlermeldung wird gesammelt und vollstaendig ausgegeben | WP1 |
-| Abbruch statt Weiterstart | Container startete unbedingt; `/api/v1/health` lieferte 200, betroffene Routen 500 | `exit 1` vor `exec "$@"` — die App startet nicht, der alte Container laeuft weiter | WP1 |
-| Atomizitaet / Serialisierung | keine; mehrere Container fuhren dieselbe DDL nebenlaeufig | Session-Advisory-Lock; der zweite Container wartet | WP1 |
-| Applied-State | `__drizzle_migrations` kannte 25 von 360 Dateien | `_arctos_migrations` mit SHA-256 je Datei, alle Dateien | WP1 |
-| Rehearsal-Pipeline (§3) | keine | Job `migration-rehearsal` in `migration-policy.yml` | WP1 |
-| Metadaten-Header (§4) | keiner | `migration-policy.yml` erzwingt `-- Migration/-- Breaking/-- Estimated-Duration/-- Locking/-- Compensating-Required/-- Reviewer` | WP1 |
-| **Pre-Deploy-Backup im Deploy-Pfad** | `db-backup.sh --pre-migration` existierte und wurde von `update-all.sh` NIE aufgerufen (S13-04a) | Schritt [1d/6] in `update-all.sh`, **blockierend** | WP10 |
-| **Deploy bricht bei Migrationsfehler ab** | `psql … \|\| true` je Datei je Produktiv-DB (S13-04b) | Ledger-Runner im worker-Container, Fehler = `abort` | WP10 |
-| **Funktionierender Rollback-Pfad** | alle drei dokumentierten Kommandos falsch (S13-05) | `deploy/rollback.sh` (`--list`, `--image`, `--db`, `--full`) | WP10 |
-| **Vorgaenger-Image auf dem Host** | existierte nicht — `update-all.sh` baut lokal und ueberschreibt das Tag (S13-05b) | vor dem Build als `arctos-rollback/grc-<svc>:<old-sha>` getaggt | WP10 |
-| Rollback-SQL je Migration | keins (`find . -name "*down*.sql"` leer) | **bewusst weiterhin keins** — siehe unten | — |
+| Punkt                                     | Stand 2026-08-31                                                                                          | Stand 2026-09-01                                                                                                                 | Von  |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| `ON_ERROR_STOP=1`, stderr erhalten        | `ON_ERROR_STOP=0`, `>/dev/null 2>&1` — der Operator erfuhr eine Zahl, nie WELCHE Datei mit WELCHEM Fehler | je Datei `ON_ERROR_STOP=1`; jede Fehlermeldung wird gesammelt und vollstaendig ausgegeben                                        | WP1  |
+| Abbruch statt Weiterstart                 | Container startete unbedingt; `/api/v1/health` lieferte 200, betroffene Routen 500                        | `exit 1` vor `exec "$@"` — die App startet nicht, der alte Container laeuft weiter                                               | WP1  |
+| Atomizitaet / Serialisierung              | keine; mehrere Container fuhren dieselbe DDL nebenlaeufig                                                 | Session-Advisory-Lock; der zweite Container wartet                                                                               | WP1  |
+| Applied-State                             | `__drizzle_migrations` kannte 25 von 360 Dateien                                                          | `_arctos_migrations` mit SHA-256 je Datei, alle Dateien                                                                          | WP1  |
+| Rehearsal-Pipeline (§3)                   | keine                                                                                                     | Job `migration-rehearsal` in `migration-policy.yml`                                                                              | WP1  |
+| Metadaten-Header (§4)                     | keiner                                                                                                    | `migration-policy.yml` erzwingt `-- Migration/-- Breaking/-- Estimated-Duration/-- Locking/-- Compensating-Required/-- Reviewer` | WP1  |
+| **Pre-Deploy-Backup im Deploy-Pfad**      | `db-backup.sh --pre-migration` existierte und wurde von `update-all.sh` NIE aufgerufen (S13-04a)          | Schritt [1d/6] in `update-all.sh`, **blockierend**                                                                               | WP10 |
+| **Deploy bricht bei Migrationsfehler ab** | `psql … \|\| true` je Datei je Produktiv-DB (S13-04b)                                                     | Ledger-Runner im worker-Container, Fehler = `abort`                                                                              | WP10 |
+| **Funktionierender Rollback-Pfad**        | alle drei dokumentierten Kommandos falsch (S13-05)                                                        | `deploy/rollback.sh` (`--list`, `--image`, `--db`, `--full`)                                                                     | WP10 |
+| **Vorgaenger-Image auf dem Host**         | existierte nicht — `update-all.sh` baut lokal und ueberschreibt das Tag (S13-05b)                         | vor dem Build als `arctos-rollback/grc-<svc>:<old-sha>` getaggt                                                                  | WP10 |
+| Rollback-SQL je Migration                 | keins (`find . -name "*down*.sql"` leer)                                                                  | **bewusst weiterhin keins** — siehe unten                                                                                        | —    |
 
 **Warum es weiterhin keine `down`-Skripte gibt.** §2 dieses ADR hatte
 Compensating-Migrations statt Rollback-Skripten beschlossen, und diese

@@ -85,9 +85,7 @@ export const frameworkMappingsSchema = z.object({
         frameworkCode: shortText(80),
         entryCode: optionalText(120),
         title: optionalText(500),
-        mappingStrength: z
-          .enum(["covers", "partial", "references"])
-          .optional(),
+        mappingStrength: z.enum(["covers", "partial", "references"]).optional(),
         rationale: optionalText(2000),
       }),
     )
@@ -230,11 +228,7 @@ export const dpiaMeasuresSchema = z.object({
         description: optionalText(4000),
         measureType: z.enum(["technical", "organizational"]).optional(),
         addressesRiskTitle: optionalText(500),
-        expectedResidualReductionPct: z
-          .number()
-          .min(0)
-          .max(100)
-          .optional(),
+        expectedResidualReductionPct: z.number().min(0).max(100).optional(),
       }),
     )
     .max(50),

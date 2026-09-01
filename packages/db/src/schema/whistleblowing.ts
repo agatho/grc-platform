@@ -13,6 +13,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
@@ -124,6 +125,9 @@ export const wbCase = pgTable(
       .notNull()
       .defaultNow(),
     createdBy: uuid("created_by"),
+    channel: varchar("channel", { length: 20 }).default(
+      sql`'web_form'::character varying`,
+    ),
   },
   (table) => [
     index("wc_org_idx").on(table.orgId),

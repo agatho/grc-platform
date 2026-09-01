@@ -41,16 +41,16 @@ extra in DB   : 3        # _arctos_migrations, bpm_simulation_result, whistleblo
 
 ## Was sich geändert hat
 
-| Vorher | Jetzt |
-|---|---|
-| 43 Migrationen liefen gegen eine leere Datenbank dauerhaft nicht (S09-01) | 0 |
-| 533 Tabellen nach `migrate-all`, 576 nach dem CI-Pfad, wieder andere in Produktion (S09-02) | ein Pfad, ein Schema: 584 Tabellen |
-| `create-missing-tables.ts` legte fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an (S09-03) | ersatzlos entfernt; CI baut das Schema aus den Migrationen |
-| `0315_rls_gap_closure_v4.sql` brach auf Tabelle 1 von 142 ab, 570 Policies entstanden nie (S09-04) | 2552 Policies auf 508 Tabellen |
-| Der Runner entfernte `BEGIN;`/`COMMIT;` und erzwang eine Transaktion pro Datei (S09-05) | der Runner respektiert die Transaktionssteuerung der Datei |
-| Kein Applied-State für 329 von 354 Dateien (S09-06) | Ledger `_arctos_migrations` mit SHA-256 je Datei, von Runner und Entrypoint gemeinsam genutzt |
-| Entrypoint mit `ON_ERROR_STOP=0`, `2>/dev/null`, ohne Abbruch (S13-03) | `ON_ERROR_STOP=1`, stderr erhalten, Exit ≠ 0, App startet nicht |
-| Drei Sortierungen (`sort`, `sort -V`, JS `.sort()`) (S09-15, S13-21) | überall Byte-Reihenfolge (`LC_ALL=C sort` ≡ `Array.prototype.sort()`) |
+| Vorher                                                                                                  | Jetzt                                                                                         |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 43 Migrationen liefen gegen eine leere Datenbank dauerhaft nicht (S09-01)                               | 0                                                                                             |
+| 533 Tabellen nach `migrate-all`, 576 nach dem CI-Pfad, wieder andere in Produktion (S09-02)             | ein Pfad, ein Schema: 584 Tabellen                                                            |
+| `create-missing-tables.ts` legte fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an (S09-03) | ersatzlos entfernt; CI baut das Schema aus den Migrationen                                    |
+| `0315_rls_gap_closure_v4.sql` brach auf Tabelle 1 von 142 ab, 570 Policies entstanden nie (S09-04)      | 2552 Policies auf 508 Tabellen                                                                |
+| Der Runner entfernte `BEGIN;`/`COMMIT;` und erzwang eine Transaktion pro Datei (S09-05)                 | der Runner respektiert die Transaktionssteuerung der Datei                                    |
+| Kein Applied-State für 329 von 354 Dateien (S09-06)                                                     | Ledger `_arctos_migrations` mit SHA-256 je Datei, von Runner und Entrypoint gemeinsam genutzt |
+| Entrypoint mit `ON_ERROR_STOP=0`, `2>/dev/null`, ohne Abbruch (S13-03)                                  | `ON_ERROR_STOP=1`, stderr erhalten, Exit ≠ 0, App startet nicht                               |
+| Drei Sortierungen (`sort`, `sort -V`, JS `.sort()`) (S09-15, S13-21)                                    | überall Byte-Reihenfolge (`LC_ALL=C sort` ≡ `Array.prototype.sort()`)                         |
 
 ## Applied-State
 
@@ -139,16 +139,16 @@ dem ADR-023-Metadaten-Header — das prüft
 Die alte Einteilung (Kategorien A–G, „≈30 fehlschlagend", „483 Tabellen") war
 zum Zeitpunkt des Audits in sieben Punkten sachlich falsch:
 
-* Kategorie D („Enum, both fixed") — `IF NOT EXISTS` adressiert `55P04`
+- Kategorie D („Enum, both fixed") — `IF NOT EXISTS` adressiert `55P04`
   („unsafe use of new value") nicht; `0096` scheiterte weiterhin.
-* Kategorie F („TimescaleDB, both fixed") — der `DO`-Block fängt nur die
-  *fehlende* Extension ab; ist sie da, schlagen beide Dateien fehl.
-* Kategorie B („Ziel-Tabellen existieren via `create-missing-tables.ts`") — die
+- Kategorie F („TimescaleDB, both fixed") — der `DO`-Block fängt nur die
+  _fehlende_ Extension ab; ist sie da, schlagen beide Dateien fehl.
+- Kategorie B („Ziel-Tabellen existieren via `create-missing-tables.ts`") — die
   so erzeugten Tabellen hatten weder FKs noch Indizes, Constraints oder RLS.
-* `0053` → vermutet `exercise_date`, real `planned_date`.
-* `0092` → vermutet `o.code`, real `org_code`.
-* `0061` → vermutet `risk_level`/`inherent_score`, real `risk_score_inherent`.
-* `0064` → „auf einer Tabelle die kein `name`-Feld hat", konkret
+- `0053` → vermutet `exercise_date`, real `planned_date`.
+- `0092` → vermutet `o.code`, real `org_code`.
+- `0061` → vermutet `risk_level`/`inherent_score`, real `risk_score_inherent`.
+- `0064` → „auf einer Tabelle die kein `name`-Feld hat", konkret
   `business_capability`, Zeile 99.
 
 Die Einteilung ist ersatzlos entfallen, weil es die Fehlschläge nicht mehr

@@ -97,11 +97,9 @@ export function approvalConflictActors(
   sod: ApprovalSoDContext | undefined,
 ): string[] {
   if (!sod) return [];
-  return [
-    sod.submittedBy,
-    sod.chainCreatedBy,
-    sod.versionCreatedBy,
-  ].filter((v): v is string => !!v);
+  return [sod.submittedBy, sod.chainCreatedBy, sod.versionCreatedBy].filter(
+    (v): v is string => !!v,
+  );
 }
 
 /**

@@ -107,19 +107,24 @@ describe("Schema drift — required FK columns + tables (Wave-21-W22-A1A2)", () 
   // is dropping the field (the alternative QA hypothesis), this test
   // catches it cleanly — without depending on the API layer.
   //
-  // Best-effort only: the audit triggers may auto-create work_item
-  // rows with type_keys that depend on later migrations being applied.
-  // If the trigger setup is incomplete (e.g. work_item_type_key
-  // 'finding' not seeded yet on this DB), we log + skip rather than
-  // fail — the column-existence assertions above already cover the
-  // primary diagnostic question. The round-trip is gravy.
-  it("finding.control_id round-trips through a raw INSERT/SELECT (best-effort)", async () => {
-    const orgRows = await dbCtx.client<{ id: string }[]>`
-      SELECT id FROM organization LIMIT 1
+  // [ARCTOS-FULL-2026-08-31 / Restdefekte · O-4] This probe used to be
+  // "best-effort": it swallowed every error with a console.warn, and it
+  // returned early when the database happened to hold no organization. The
+  // error it was swallowing was not an environment quirk — it was the defect
+  // O-4 names. The BEFORE-INSERT trigger `finding_auto_create_work_item()`
+  // writes a `work_item` with `type_key = 'finding'`, and 'finding' was never
+  // registered in `work_item_type`, so the FK failed and `POST /api/v1/findings`
+  // answered 500 in production. Migration 0439 registers it; the swallow is
+  // gone, and the test now brings its own organization instead of hoping one
+  // exists. A green run of this test therefore means something.
+  it("finding.control_id round-trips through a raw INSERT/SELECT", async () => {
+    const suffix = Date.now();
+    const [org] = await dbCtx.client<{ id: string }[]>`
+      INSERT INTO organization (name, type, country)
+      VALUES (${`A1-diag Org ${suffix}`}, 'holding', 'DEU')
+      RETURNING id
     `;
-    if (orgRows.length === 0) return; // empty DB; skip
-
-    const orgId = orgRows[0].id;
+    const orgId = org.id;
     const ctlId = "00000000-0000-0000-0000-0000000000aa";
     const fid = "00000000-0000-0000-0000-0000000000bb";
 
@@ -138,27 +143,44 @@ describe("Schema drift — required FK columns + tables (Wave-21-W22-A1A2)", () 
         ON CONFLICT (id) DO NOTHING
       `);
 
-      const rows = await dbCtx.client<{ control_id: string | null }[]>`
-        SELECT control_id FROM finding WHERE id = ${fid}::uuid
+      const rows = await dbCtx.client<
+        {
+          control_id: string | null;
+          work_item_id: string | null;
+        }[]
+      >`
+        SELECT control_id, work_item_id FROM finding WHERE id = ${fid}::uuid
       `;
       expect(rows.length).toBe(1);
       expect(
         rows[0].control_id,
         "finding.control_id is NULL after raw INSERT — schema accepts the column but doesn't store it. Investigate triggers.",
       ).toBe(ctlId);
-    } catch (err) {
-      // Trigger-side FK violations (work_item_type_key etc.) mean the
-      // surrounding seed/trigger graph isn't fully wired on this DB.
-      // That's an environment issue, not what this test is probing.
-      const msg = err instanceof Error ? err.message : String(err);
-      console.warn(
-        `[schema-drift] round-trip skipped due to trigger FK: ${msg}`,
-      );
+
+      // The trigger's work_item must exist and carry the catalog type — this
+      // is the assertion the swallowed FK error used to hide.
+      const wi = await dbCtx.client<{ type_key: string }[]>`
+        SELECT type_key FROM work_item WHERE id = ${rows[0].work_item_id}::uuid
+      `;
+      expect(wi.map((r) => r.type_key)).toEqual(["finding"]);
     } finally {
-      // Cleanup is also best-effort.
+      // Cleanup stays best-effort: a failed assertion above must surface as
+      // the assertion, not as a follow-on cleanup error.
       try {
+        await dbCtx.client.unsafe(
+          `DELETE FROM work_item WHERE id IN (SELECT work_item_id FROM finding WHERE id = '${fid}')`,
+        );
         await dbCtx.client.unsafe(`DELETE FROM finding WHERE id = '${fid}'`);
         await dbCtx.client.unsafe(`DELETE FROM control WHERE id = '${ctlId}'`);
+        await dbCtx.client.unsafe(
+          `DELETE FROM audit_log WHERE org_id = '${orgId}'`,
+        );
+        await dbCtx.client.unsafe(
+          `DELETE FROM work_item WHERE org_id = '${orgId}'`,
+        );
+        await dbCtx.client.unsafe(
+          `DELETE FROM organization WHERE id = '${orgId}'`,
+        );
       } catch {
         /* ignore cleanup errors */
       }

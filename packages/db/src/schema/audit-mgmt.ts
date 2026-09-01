@@ -14,6 +14,7 @@ import {
   index,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
 import { control } from "./control";
@@ -167,6 +168,10 @@ export const auditPlan = pgTable(
       .notNull()
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("ap_org_year_idx").on(table.orgId, table.year),
@@ -251,6 +256,10 @@ export const audit = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("audit_org_status_idx").on(table.orgId, table.status),

@@ -22,7 +22,16 @@ import type { PgColumn } from "drizzle-orm/pg-core";
 export interface ColumnDrift {
   table: string;
   column: string;
-  kind: "missing-in-db" | "type-mismatch" | "nullability-mismatch";
+  // [ARCTOS-FULL-2026-08-31 / Restdefekte · O-6] `extra-in-db` is the second
+  // direction. Until it existed the check only asked "does the database have
+  // everything the code declares?" and never "does the code know everything
+  // the database has?" — so `control.source_library_ref` stayed invisible
+  // while the report said `column drift: 0`, and 203 further columns did the
+  // same. An undeclared column is not cosmetic: `db.select()` silently omits
+  // it, `$inferSelect` denies it exists, and every read of it has to leave the
+  // ORM for raw SQL.
+  kind:
+    "missing-in-db" | "extra-in-db" | "type-mismatch" | "nullability-mismatch";
   expected?: string;
   actual?: string;
 }
@@ -193,9 +202,11 @@ export function compareSchema(
   for (const [tableName, table] of expected) {
     const actual = colsByTable.get(tableName);
     if (!actual) continue; // whole table missing — already reported
+    const declaredNames = new Set<string>();
     for (const col of Object.values(
       getTableColumns(table) as Record<string, PgColumn>,
     )) {
+      declaredNames.add(col.name);
       const found = actual.get(col.name);
       if (!found) {
         columnDrift.push({
@@ -229,6 +240,24 @@ export function compareSchema(
           actual: "NULL",
         });
       }
+    }
+
+    // O-6 — the other direction: columns the database has and the Drizzle
+    // declaration does not. Only for tables the code claims: a table that is
+    // entirely unknown to the schema is `extraInDb` and stays informational
+    // (a number of tables predate the TypeScript schema and are managed by
+    // SQL alone). There is deliberately NO exception list here — the five
+    // GENERATED columns are declared with `.generatedAlwaysAs(...)`, which
+    // keeps them out of the insert/update types, so "the ORM must not write
+    // it" is expressed in the schema instead of in a waiver.
+    for (const [columnName, dbCol] of actual) {
+      if (declaredNames.has(columnName)) continue;
+      columnDrift.push({
+        table: tableName,
+        column: columnName,
+        kind: "extra-in-db",
+        actual: normalizeDbType(dbCol.data_type, dbCol.udt_name),
+      });
     }
   }
 

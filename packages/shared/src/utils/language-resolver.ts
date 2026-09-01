@@ -59,8 +59,7 @@ export interface ResolvedEntityMeta {
    * the contract instead of an undocumented side effect.
    */
   [preservedTranslations: `${string}_translations`]:
-    | Record<string, string>
-    | undefined;
+    Record<string, string> | undefined;
 }
 
 // ── Core resolver functions ────────────────────────────────────────

@@ -67,71 +67,70 @@ interface VerifyResult {
 export const processAuditChainVerify = withCronInstrumentation<
   VerifyResult,
   [string | undefined]
->(
-  "audit-chain-verify",
-  async (onlyScope?: string): Promise<VerifyResult> => {
-    const sealKey = process.env.AUDIT_SEAL_KEY ?? "";
-    const scopes = await listScopes(onlyScope);
+>("audit-chain-verify", async (onlyScope?: string): Promise<VerifyResult> => {
+  const sealKey = process.env.AUDIT_SEAL_KEY ?? "";
+  const scopes = await listScopes(onlyScope);
 
-    const unhealthy: ScopeResult[] = [];
-    let rowsChecked = 0;
+  const unhealthy: ScopeResult[] = [];
+  let rowsChecked = 0;
 
-    for (const scope of scopes) {
-      // One transaction: the seal key has to be visible to
-      // audit_anchor_verify() on the same connection, and the recorded
-      // run has to be written on it too.
-      const report = await db.transaction(async (tx) => {
-        if (sealKey) {
-          await tx.execute(
-            sql`SELECT set_config('app.audit_seal_key', ${sealKey}, true)`,
-          );
-        }
-        const result = await tx.execute<{ report: Record<string, unknown> }>(
-          sql`SELECT audit_chain_verify_and_record(${scope}, 'cron') AS report`,
+  for (const scope of scopes) {
+    // One transaction: the seal key has to be visible to
+    // audit_anchor_verify() on the same connection, and the recorded
+    // run has to be written on it too.
+    const report = await db.transaction(async (tx) => {
+      if (sealKey) {
+        await tx.execute(
+          sql`SELECT set_config('app.audit_seal_key', ${sealKey}, true)`,
         );
-        const raw = Array.isArray(result) ? result[0]?.report : undefined;
-        return (raw ?? {}) as Record<string, unknown>;
-      });
+      }
+      const result = await tx.execute<{ report: Record<string, unknown> }>(
+        sql`SELECT audit_chain_verify_and_record(${scope}, 'cron') AS report`,
+      );
+      const raw = Array.isArray(result) ? result[0]?.report : undefined;
+      return (raw ?? {}) as Record<string, unknown>;
+    });
 
-      const total = Number(report.total ?? 0);
-      rowsChecked += total;
+    const total = Number(report.total ?? 0);
+    rowsChecked += total;
 
-      if (report.healthy !== true) {
-        unhealthy.push({
-          scope,
-          orgId: scope.startsWith("org:") && scope !== "org:platform"
+    if (report.healthy !== true) {
+      unhealthy.push({
+        scope,
+        orgId:
+          scope.startsWith("org:") && scope !== "org:platform"
             ? scope.slice(4)
             : null,
-          rowsChecked: total,
-          healthy: false,
-          problems: describeProblems(report),
-        });
-      }
+        rowsChecked: total,
+        healthy: false,
+        problems: describeProblems(report),
+      });
     }
+  }
 
-    // Re-verify stored RFC-3161 proofs against the roots they claim to
-    // attest to. This is what finally writes `audit_anchor.verified_at`
-    // — a column that existed since ADR-011 rev.3 and was never set.
-    const { reverified, failing } = await reverifyTimestamps();
+  // Re-verify stored RFC-3161 proofs against the roots they claim to
+  // attest to. This is what finally writes `audit_anchor.verified_at`
+  // — a column that existed since ADR-011 rev.3 and was never set.
+  const { reverified, failing } = await reverifyTimestamps();
 
-    const refusedResult = await db.execute<{ n: number }>(sql`
+  const refusedResult = await db.execute<{ n: number }>(sql`
       SELECT count(*)::int AS n FROM audit_log_write_attempt
       WHERE attempted_at > now() - interval '24 hours'
     `);
-    const refused = Number(
-      (Array.isArray(refusedResult) ? refusedResult[0]?.n : 0) ?? 0,
-    );
+  const refused = Number(
+    (Array.isArray(refusedResult) ? refusedResult[0]?.n : 0) ?? 0,
+  );
 
-    // S03-10 finding 3: a FreeTSA outage used to produce a permanent,
-    // silent gap in the tamper evidence — nothing alarmed, nothing
-    // retried. A day with audit activity and no completed anchor after
-    // 48 hours is a hole in the external commitment, and it is reported
-    // here even when every hash in the chain verifies.
-    const gapRows = await db.execute<{
-      org_id: string;
-      day: string;
-      rows: number;
-    }>(sql`
+  // S03-10 finding 3: a FreeTSA outage used to produce a permanent,
+  // silent gap in the tamper evidence — nothing alarmed, nothing
+  // retried. A day with audit activity and no completed anchor after
+  // 48 hours is a hole in the external commitment, and it is reported
+  // here even when every hash in the chain verifies.
+  const gapRows = await db.execute<{
+    org_id: string;
+    day: string;
+    rows: number;
+  }>(sql`
       WITH activity AS (
         SELECT org_id, (created_at AT TIME ZONE 'UTC')::date AS day, count(*)::int AS rows
         FROM audit_log
@@ -151,56 +150,55 @@ export const processAuditChainVerify = withCronInstrumentation<
       ORDER BY a.day DESC
       LIMIT 100
     `);
-    const anchorGaps: AnchorGap[] = (
-      Array.isArray(gapRows) ? gapRows : []
-    ).map((r) => ({ orgId: r.org_id, day: r.day, rows: Number(r.rows) }));
+  const anchorGaps: AnchorGap[] = (Array.isArray(gapRows) ? gapRows : []).map(
+    (r) => ({ orgId: r.org_id, day: r.day, rows: Number(r.rows) }),
+  );
 
-    if (anchorGaps.length > 0) {
-      console.warn(
-        `[cron:audit-chain-verify] ${anchorGaps.length} tenant-day(s) older than 48h have audit activity but no external anchor. ` +
-          "Those events are outside the tamper-evidence guarantee. Check that a scheduler actually calls POST /crons/daily-audit-anchor — " +
-          "the worker ships no scheduler of its own.",
-      );
-    }
+  if (anchorGaps.length > 0) {
+    console.warn(
+      `[cron:audit-chain-verify] ${anchorGaps.length} tenant-day(s) older than 48h have audit activity but no external anchor. ` +
+        "Those events are outside the tamper-evidence guarantee. Check that a scheduler actually calls POST /crons/daily-audit-anchor — " +
+        "the worker ships no scheduler of its own.",
+    );
+  }
 
-    const healthy = unhealthy.length === 0 && failing === 0;
+  const healthy = unhealthy.length === 0 && failing === 0;
 
-    if (!healthy) {
-      // Deliberately loud and unstructured-readable in addition to the
-      // NDJSON the instrumentation emits: this is the line an operator
-      // greps for at 03:00.
+  if (!healthy) {
+    // Deliberately loud and unstructured-readable in addition to the
+    // NDJSON the instrumentation emits: this is the line an operator
+    // greps for at 03:00.
+    console.error(
+      "[cron:audit-chain-verify] AUDIT TRAIL INTEGRITY FAILURE — " +
+        `${unhealthy.length} scope(s) unhealthy, ${failing} anchor(s) fail re-verification. ` +
+        "This is a tamper signal until proven otherwise. Do NOT run a rehash: " +
+        "recomputing hashes from the current content makes whatever changed it permanent.",
+    );
+    for (const u of unhealthy) {
       console.error(
-        "[cron:audit-chain-verify] AUDIT TRAIL INTEGRITY FAILURE — " +
-          `${unhealthy.length} scope(s) unhealthy, ${failing} anchor(s) fail re-verification. ` +
-          "This is a tamper signal until proven otherwise. Do NOT run a rehash: " +
-          "recomputing hashes from the current content makes whatever changed it permanent.",
-      );
-      for (const u of unhealthy) {
-        console.error(
-          `[cron:audit-chain-verify]   ${u.scope}: ${u.problems.join("; ")}`,
-        );
-      }
-    }
-
-    if (refused > 0) {
-      console.warn(
-        `[cron:audit-chain-verify] ${refused} destructive operation(s) against the log tables were refused in the last 24h — see audit_log_write_attempt`,
+        `[cron:audit-chain-verify]   ${u.scope}: ${u.problems.join("; ")}`,
       );
     }
+  }
 
-    return {
-      scopesChecked: scopes.length,
-      scopesUnhealthy: unhealthy.length,
-      rowsChecked,
-      anchorsReverified: reverified,
-      anchorsFailingReverification: failing,
-      refusedWriteAttempts24h: refused,
-      anchorGaps,
-      healthy,
-      unhealthy,
-    };
-  },
-);
+  if (refused > 0) {
+    console.warn(
+      `[cron:audit-chain-verify] ${refused} destructive operation(s) against the log tables were refused in the last 24h — see audit_log_write_attempt`,
+    );
+  }
+
+  return {
+    scopesChecked: scopes.length,
+    scopesUnhealthy: unhealthy.length,
+    rowsChecked,
+    anchorsReverified: reverified,
+    anchorsFailingReverification: failing,
+    refusedWriteAttempts24h: refused,
+    anchorGaps,
+    healthy,
+    unhealthy,
+  };
+});
 
 async function listScopes(onlyScope?: string): Promise<string[]> {
   if (onlyScope) return [onlyScope];

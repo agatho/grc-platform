@@ -14,6 +14,7 @@ import {
   inet,
   integer,
   bigint,
+  bigserial,
   smallint,
   numeric,
   date,
@@ -214,6 +215,12 @@ export const organization = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    activeLanguages: jsonb("active_languages")
+      .notNull()
+      .default(sql`'["de"]'::jsonb`),
+    defaultLanguage: varchar("default_language", { length: 5 })
+      .notNull()
+      .default(sql`'de'::character varying`),
   },
   (table) => [index("org_parent_idx").on(table.parentOrgId)],
 );
@@ -272,6 +279,9 @@ export const user = pgTable("user", {
   updatedBy: uuid("updated_by"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   deletedBy: uuid("deleted_by"),
+  contentLanguage: varchar("content_language", { length: 5 }).default(
+    sql`NULL::character varying`,
+  ),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -351,7 +361,20 @@ export const auditLog = pgTable(
     // chain_seq is non-ambiguous even within a single transaction
     // (multiple audit rows from one PUT).
     hashVersion: integer("hash_version").notNull().default(1),
-    chainSeq: bigint("chain_seq", { mode: "number" }).notNull(),
+    // [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+    // In der Datenbank ist die Spalte seit jeher
+    // `bigint NOT NULL DEFAULT nextval('audit_log_chain_seq_seq')` — also ein
+    // BIGSERIAL — und seit WP4 (Migration 0401) weist der BEFORE-INSERT-
+    // Trigger `audit_log_chain_assign()` die Kettenwerte ohnehin selbst zu
+    // und VERWIRFT vom Aufrufer gelieferte. Die Deklaration als schlichtes
+    // `bigint().notNull()` behauptete dagegen eine Pflichtangabe beim Insert
+    // und machte `chainSeq` in `$inferInsert` zu einem Required-Feld. Genau
+    // das brach nach dem Entfernen von `typescript.ignoreBuildErrors` acht
+    // Aufrufstellen (Dokumenten-Upload/-Erase/-Integrität, Controlled Copy,
+    // Signatur-Provider, Bulk-Prozesse). `bigserial` bildet die DB-Realität
+    // exakt ab (identischer `udt_name` int8, kein Schema-Drift) und macht die
+    // Spalte beim Insert korrekt optional.
+    chainSeq: bigserial("chain_seq", { mode: "number" }),
     // ADR-011 rev.4 (ARCTOS-FULL-2026-08-31 / WP4 · S03-02, S03-03, S03-06):
     // SHA-256 over the redactable payload — changes, user_email, user_name,
     // ip_address, entity_title. v4 hashes THIS instead of the payload

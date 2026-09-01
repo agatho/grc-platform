@@ -14,3 +14,17 @@
 import { db } from "@grc/db";
 
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+ *
+ * Lesender Ausführungskontext. `DbTransaction` ist der richtige Typ für alles,
+ * was innerhalb von `withAuditContext` / `withReadContext` schreibt. Reine
+ * Lesehelfer werden aber an beiden Stellen aufgerufen — mal mit dem
+ * Transaktionsobjekt, mal mit dem request-skopierten `db`-Proxy (der seinerseits
+ * bereits die RLS-gebundene Verbindung liefert). Für sie ist die Menge der
+ * benötigten Methoden der ehrlichere Vertrag als "genau eine der beiden
+ * Klassen"; ohne ihn erzwang der Typ entweder ein `as unknown as`-Cast an jeder
+ * Aufrufstelle oder ein `any` in der Signatur.
+ */
+export type DbReader = Pick<DbTransaction, "select" | "execute">;

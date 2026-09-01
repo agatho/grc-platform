@@ -142,20 +142,18 @@ Default-Fehlerseite mehr.
       der 970 Route-Bodies von Hand anfasst, ist weder review- noch
       abschliessbar, und die Erfahrung mit genau diesem Plan belegt das.
       Stattdessen normalisiert `normaliseErrorResponse()` die Antwort **am
-      Ausgang** des Wrappers:
-
-      * eine Route darf `Response.json({ error: "Not found" }, { status: 404 })`
-        zurueckgeben und bleibt unveraendert;
-      * der Client bekommt `application/problem+json` mit `type`, `title`,
-        `status`, `instance` und `requestId`;
-      * **alle** urspruenglichen Felder bleiben als RFC-7807-Extension-Member
-        erhalten, damit kein Client bricht, der heute `json.error` liest;
-      * 2xx-Antworten, Nicht-JSON-Antworten (Datei-Downloads, CSV-Exporte) und
-        bereits problem-konforme Antworten werden nicht angefasst.
-
+      Ausgang** des Wrappers. Eine Route darf weiterhin
+      `Response.json({ error: "Not found" }, { status: 404 })` zurueckgeben und
+      bleibt unveraendert; der Client bekommt `application/problem+json` mit
+      `type`, `title`, `status`, `instance` und `requestId`. Alle
+      urspruenglichen Felder bleiben als RFC-7807-Extension-Member erhalten,
+      damit kein Client bricht, der heute `json.error` liest. 2xx-Antworten,
+      Nicht-JSON-Antworten (Datei-Downloads, CSV-Exporte) und bereits
+      problem-konforme Antworten werden nicht angefasst.
       Damit gilt der Contract fuer jede Route, die durch `withErrorHandler`
       laeuft, statt fuer neun. Der Ist-Stand je Route steht in der Spalte
       "Errors" von `docs/API_REFERENCE.md`, generiert aus dem Code.
+
 - [ ] **Phase 3b (offen): die Routen ohne Wrapper.** Nicht jede Route ist in
       `withErrorHandler` gewickelt. Fuer die uebrigen bleibt der Contract
       unerfuellt, und das ist in `docs/API_REFERENCE.md` sichtbar

@@ -1,4 +1,4 @@
-import { db, taxRisk } from "@grc/db";
+import { db, taxRisk, toNumericInput } from "@grc/db";
 import { createTaxRiskSchema, taxRiskQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
@@ -18,7 +18,11 @@ export async function POST(req: Request) {
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
       .insert(taxRisk)
-      .values({ ...body.data, orgId: ctx.orgId })
+      .values({
+        ...body.data,
+        financialExposure: toNumericInput(body.data.financialExposure),
+        orgId: ctx.orgId,
+      })
       .returning();
     return created;
   });

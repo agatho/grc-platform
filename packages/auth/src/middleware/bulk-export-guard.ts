@@ -51,10 +51,7 @@ export interface BulkExportRequest {
 export interface BulkExportDecision {
   allowed: boolean;
   /** Machine-readable reason; the route maps it to a problem+json body. */
-  reason?:
-    | "role_required"
-    | "too_many_entity_types"
-    | "four_eyes_required";
+  reason?: "role_required" | "too_many_entity_types" | "four_eyes_required";
   detail?: string;
   /** True when the request touches personal data (drives logging + approval). */
   containsPersonalData: boolean;

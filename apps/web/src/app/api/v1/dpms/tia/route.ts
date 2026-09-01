@@ -33,7 +33,10 @@ export async function POST(req: Request) {
         orgId: ctx.orgId,
         typeKey: "tia",
         name: body.data.title,
-        status: "open",
+        // [ARCTOS-FULL-2026-08-31 / Restarbeiten] "open" ist kein Wert des
+        // Enums work_item_status_generic — der INSERT brach ab. Alle anderen
+        // Routen legen Work Items als "draft" an.
+        status: "draft",
         responsibleId: body.data.responsibleId,
         grcPerspective: ["dpms"],
         createdBy: ctx.userId,

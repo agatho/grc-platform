@@ -1,4 +1,4 @@
-import { db, taxAuditPrep } from "@grc/db";
+import { db, taxAuditPrep, toNumericInput } from "@grc/db";
 import { updateTaxAuditPrepSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -34,7 +34,11 @@ export async function PATCH(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(taxAuditPrep)
-      .set({ ...body.data, updatedAt: new Date() })
+      .set({
+        ...body.data,
+        totalExposure: toNumericInput(body.data.totalExposure),
+        updatedAt: new Date(),
+      })
       .where(and(eq(taxAuditPrep.id, id), eq(taxAuditPrep.orgId, ctx.orgId)))
       .returning();
     return updated;

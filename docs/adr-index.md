@@ -11,33 +11,33 @@ All architecture decisions in chronological order. Each ADR links to full contex
 > **Datei** unterscheidet jetzt zwischen "als Dokument vorhanden" und "nur als
 > Zeile in diesem Index".
 
-| #   | Title                                                                             | Status   | Date       | Datei |
-| --- | --------------------------------------------------------------------------------- | -------- | ---------- | ----- |
-| 001 | Multi-entity isolation via PostgreSQL RLS                                         | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 002 | Next.js 15 + React 19 + Tailwind + shadcn/ui — **im Einsatz ist Next.js 16.2.11** (S14-23/C13; ein rev.-Eintrag fehlt) | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 003 | Turborepo + npm workspaces monorepo                                               | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 004 | Claude API + Ollama for AI features                                               | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 005 | REST + OpenAPI 3.1 (API style)                                                    | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 006 | Drizzle ORM (type-safe, SQL-close)                                                | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
-| 007 | [Auth.js + Custom RBAC + Three Lines of Defense](./ADR-007-rev1.md) (rev. 1 replaces Clerk) | Accepted | 2026-03-23 | vorhanden (`ADR-007-rev1.md`) |
-| 008 | Resend SDK + React Email Templates                                                | Accepted | 2026-03-24 | — (nur Index-Eintrag) |
-| 009 | Hono.js for Worker (background jobs)                                              | Accepted | 2026-03-24 | — (nur Index-Eintrag) |
-| 010 | Docker-only deployment (Hetzner)                                                  | Accepted | 2026-03-25 | — (nur Index-Eintrag) |
-| 011 | [Append-only audit trail with SHA-256 hash chain](./ADR-011-rev3.md)              | Accepted | 2026-03-25, rev.3 | vorhanden (`ADR-011-rev2.md`, `ADR-011-rev3.md`) |
-| 012 | Feature-flags via module_config (per-org)                                         | Accepted | 2026-03-27 | — (nur Index-Eintrag) |
-| 013 | Generic catalog + catalog_entry (replaces typed risk/control catalogs)            | Accepted | 2026-04-01 | — (nur Index-Eintrag) |
-| 014 | [DB Migration Policy: Drizzle-only](./ADR-014-migration-policy.md)                | Accepted | 2026-04-17 | vorhanden |
-| 015 | [Off-Site Backup via Backblaze B2](./ADR-015-offsite-backup.md)                   | Accepted | 2026-04-18, rev. 2026-09-01 | vorhanden |
-| 016 | [CI/CD Pipeline Architecture](./ADR-016-cicd-pipeline.md)                         | Accepted | 2026-04-18 | vorhanden |
-| 017 | [Monitoring & Alerting Strategy](./ADR-017-monitoring.md)                         | Accepted | 2026-04-18 | vorhanden |
-| 018 | [Secret Management](./ADR-018-secret-management.md)                               | Accepted | 2026-04-18 | vorhanden |
-| 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md)                              | Accepted | 2026-04-18 (rev. WP9) | vorhanden |
-| 020 | [API Versioning Strategy](./ADR-020-api-versioning.md)                            | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden |
-| 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md)                 | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden |
-| 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md)           | Accepted | 2026-04-18 | vorhanden |
-| 023 | [Migration-Rollback-Strategy](./ADR-023-migration-rollback.md)                    | Accepted | 2026-04-18, rev. 2026-09-01 | vorhanden |
-| 024 | [Search Architecture (Postgres-FTS + pgvector)](./ADR-024-search-architecture.md) | Proposed | 2026-04-18 | vorhanden |
-| 026 | [Hash-Chain v3 Migration](./ADR-026-hash-chain-v3-migration.md)                   | Accepted | 2026-05 | vorhanden |
+| #   | Title                                                                                                                  | Status   | Date                         | Datei                                            |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | -------- | ---------------------------- | ------------------------------------------------ |
+| 001 | Multi-entity isolation via PostgreSQL RLS                                                                              | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 002 | Next.js 15 + React 19 + Tailwind + shadcn/ui — **im Einsatz ist Next.js 16.2.11** (S14-23/C13; ein rev.-Eintrag fehlt) | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 003 | Turborepo + npm workspaces monorepo                                                                                    | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 004 | Claude API + Ollama for AI features                                                                                    | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 005 | REST + OpenAPI 3.1 (API style)                                                                                         | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 006 | Drizzle ORM (type-safe, SQL-close)                                                                                     | Accepted | 2026-03-22                   | — (nur Index-Eintrag)                            |
+| 007 | [Auth.js + Custom RBAC + Three Lines of Defense](./ADR-007-rev1.md) (rev. 1 replaces Clerk)                            | Accepted | 2026-03-23                   | vorhanden (`ADR-007-rev1.md`)                    |
+| 008 | Resend SDK + React Email Templates                                                                                     | Accepted | 2026-03-24                   | — (nur Index-Eintrag)                            |
+| 009 | Hono.js for Worker (background jobs)                                                                                   | Accepted | 2026-03-24                   | — (nur Index-Eintrag)                            |
+| 010 | Docker-only deployment (Hetzner)                                                                                       | Accepted | 2026-03-25                   | — (nur Index-Eintrag)                            |
+| 011 | [Append-only audit trail with SHA-256 hash chain](./ADR-011-rev3.md)                                                   | Accepted | 2026-03-25, rev.3            | vorhanden (`ADR-011-rev2.md`, `ADR-011-rev3.md`) |
+| 012 | Feature-flags via module_config (per-org)                                                                              | Accepted | 2026-03-27                   | — (nur Index-Eintrag)                            |
+| 013 | Generic catalog + catalog_entry (replaces typed risk/control catalogs)                                                 | Accepted | 2026-04-01                   | — (nur Index-Eintrag)                            |
+| 014 | [DB Migration Policy: Drizzle-only](./ADR-014-migration-policy.md)                                                     | Accepted | 2026-04-17                   | vorhanden                                        |
+| 015 | [Off-Site Backup via Backblaze B2](./ADR-015-offsite-backup.md)                                                        | Accepted | 2026-04-18, rev. 2026-09-01  | vorhanden                                        |
+| 016 | [CI/CD Pipeline Architecture](./ADR-016-cicd-pipeline.md)                                                              | Accepted | 2026-04-18                   | vorhanden                                        |
+| 017 | [Monitoring & Alerting Strategy](./ADR-017-monitoring.md)                                                              | Accepted | 2026-04-18                   | vorhanden                                        |
+| 018 | [Secret Management](./ADR-018-secret-management.md)                                                                    | Accepted | 2026-04-18                   | vorhanden                                        |
+| 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md)                                                                   | Accepted | 2026-04-18 (rev. WP9)        | vorhanden                                        |
+| 020 | [API Versioning Strategy](./ADR-020-api-versioning.md)                                                                 | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden                                        |
+| 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md)                                                      | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden                                        |
+| 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md)                                                | Accepted | 2026-04-18                   | vorhanden                                        |
+| 023 | [Migration-Rollback-Strategy](./ADR-023-migration-rollback.md)                                                         | Accepted | 2026-04-18, rev. 2026-09-01  | vorhanden                                        |
+| 024 | [Search Architecture (Postgres-FTS + pgvector)](./ADR-024-search-architecture.md)                                      | Proposed | 2026-04-18                   | vorhanden                                        |
+| 026 | [Hash-Chain v3 Migration](./ADR-026-hash-chain-v3-migration.md)                                                        | Accepted | 2026-05                      | vorhanden                                        |
 
 ## Companion Documents
 

@@ -73,3 +73,10 @@ apps/web/e2e/.auth/*
 **/.auth/*.json
 **/playwright/.auth/
 storage-state*.json
+
+# Audit-Remediation ARCTOS-FULL-2026-08-31: Testartefakte gehoeren nicht ins Repository
+coverage/
+**/coverage/
+playwright-report/
+test-results/
+.turbo/

@@ -3,7 +3,12 @@
 // #WAVE21-B4: Bulk-create findings. Same contract as /risks/bulk —
 // max 100 items per request, per-item audit-log entries.
 
-import { finding, workItem } from "@grc/db";
+import {
+  finding,
+  workItem,
+  findingSeverityEnum,
+  findingSourceEnum,
+} from "@grc/db";
 import { createFindingSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -12,11 +17,18 @@ import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
 
 // Manual type — see comment in /risks/bulk/route.ts on why we don't
 // use z.infer here.
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Die Enum-Felder standen hier als
+// blankes `string` und passten damit auf keine der pgEnum-Spalten. Sie
+// leiten sich jetzt aus den Enums selbst ab: aendert sich ein Enum, bricht
+// der Typ — statt erst der INSERT.
+type FindingSeverityValue = (typeof findingSeverityEnum.enumValues)[number];
+type FindingSourceValue = (typeof findingSourceEnum.enumValues)[number];
+
 interface FindingInput {
   title: string;
   description?: string;
-  severity: string;
-  source?: string;
+  severity: FindingSeverityValue;
+  source?: FindingSourceValue;
   controlId?: string;
   controlTestId?: string;
   riskId?: string;

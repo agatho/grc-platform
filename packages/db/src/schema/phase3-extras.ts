@@ -25,7 +25,9 @@ import {
   date,
   jsonb,
   AnyPgColumn,
+  numeric,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { catalogEntry } from "./catalog";
 import { moduleDefinition } from "./module";
@@ -114,6 +116,9 @@ export const inlineComment = pgTable("inline_comment", {
   createdBy: uuid("created_by")
     .notNull()
     .references(() => user.id),
+  mentionedUsers: uuid("mentioned_users")
+    .array()
+    .default(sql`'{}'::uuid[]`),
 });
 
 // ─────────── Messaging Integration ───────────
@@ -135,6 +140,9 @@ export const messagingIntegration = pgTable("messaging_integration", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  eventTypes: text("event_types")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 // ─────────── Module Navigation ───────────
@@ -153,6 +161,9 @@ export const moduleNavItem = pgTable("module_nav_item", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  requiredRoles: text("required_roles")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 // ─────────── Reminder Rule ───────────
@@ -205,6 +216,11 @@ export const soxScoping = pgTable("sox_scoping", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  coveragePct: numeric("coverage_pct", { precision: 5, scale: 2 }),
+  materialityThreshold: numeric("materiality_threshold", {
+    precision: 15,
+    scale: 2,
+  }),
 });
 
 // ─────────── Tag Definitions ───────────

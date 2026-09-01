@@ -1,4 +1,9 @@
-import { db, applicationPortfolio, architectureElement } from "@grc/db";
+import {
+  db,
+  applicationPortfolio,
+  architectureElement,
+  toNumericInput,
+} from "@grc/db";
 import { applicationPortfolioSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
@@ -79,14 +84,22 @@ export async function PUT(
     if (existing) {
       const [updated] = await tx
         .update(applicationPortfolio)
-        .set(body.data)
+        .set({
+          ...body.data,
+          annualCost: toNumericInput(body.data.annualCost),
+        })
         .where(eq(applicationPortfolio.elementId, id))
         .returning();
       return updated;
     } else {
       const [created] = await tx
         .insert(applicationPortfolio)
-        .values({ ...body.data, elementId: id, orgId: ctx.orgId })
+        .values({
+          ...body.data,
+          annualCost: toNumericInput(body.data.annualCost),
+          elementId: id,
+          orgId: ctx.orgId,
+        })
         .returning();
       return created;
     }

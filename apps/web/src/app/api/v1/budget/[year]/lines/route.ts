@@ -1,4 +1,10 @@
-import { db, grcBudget, grcBudgetLine } from "@grc/db";
+import {
+  db,
+  grcBudget,
+  grcBudgetLine,
+  grcAreaEnum,
+  costCategoryEnum,
+} from "@grc/db";
 import {
   createBudgetLineSchema,
   bulkCreateBudgetLinesSchema,
@@ -75,8 +81,12 @@ export async function POST(
       (line) => ({
         orgId: ctx.orgId,
         budgetId: budget.id,
-        grcArea: line.grcArea as string,
-        costCategory: line.costCategory as string,
+        // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `as string` passte auf keine
+        // der beiden pgEnum-Spalten; die Werte sind durch das Zod-Schema
+        // bereits auf genau diese Mengen eingeschraenkt.
+        grcArea: line.grcArea as (typeof grcAreaEnum.enumValues)[number],
+        costCategory:
+          line.costCategory as (typeof costCategoryEnum.enumValues)[number],
         plannedAmount: String(line.plannedAmount),
         q1Amount: line.q1Amount != null ? String(line.q1Amount) : undefined,
         q2Amount: line.q2Amount != null ? String(line.q2Amount) : undefined,

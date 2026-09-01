@@ -123,9 +123,7 @@ describe("verifyTimestampResponse — forged and mismatched responses", () => {
   it("rejects a status-only response with no timeStampToken", () => {
     // The shape the old implementation happily accepted: PKIStatus 0 and
     // nothing else at all.
-    const statusOnly = Buffer.from([
-      0x30, 0x05, 0x30, 0x03, 0x02, 0x01, 0x00,
-    ]);
+    const statusOnly = Buffer.from([0x30, 0x05, 0x30, 0x03, 0x02, 0x01, 0x00]);
     expect(parseTimestampResponse(statusOnly).statusCode).toBe(0);
     expect(() =>
       verifyTimestampResponse(statusOnly, imprint, nonce),

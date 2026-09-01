@@ -22,7 +22,20 @@ export async function POST(req: Request) {
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
       .insert(aiFrameworkMapping)
-      .values({ ...body.data, orgId: ctx.orgId })
+      // [ARCTOS-FULL-2026-08-31 / Restarbeiten] Der Spread schrieb `controlRef`
+      // und `evidence` — beide Spalten heissen anders (`control_reference`,
+      // `evidence_ids`). `control_reference` ist NOT NULL, der POST lief also
+      // in eine Constraint-Verletzung. Jetzt explizit gemappt.
+      .values({
+        orgId: ctx.orgId,
+        framework: body.data.framework,
+        controlReference: body.data.controlRef,
+        controlTitle: body.data.controlTitle,
+        aiActArticle: body.data.aiActArticle,
+        implementationStatus: body.data.implementationStatus,
+        evidenceIds: body.data.evidence ?? [],
+        notes: body.data.notes,
+      })
       .returning();
     return created;
   });

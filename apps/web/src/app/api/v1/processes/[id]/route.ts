@@ -1,4 +1,11 @@
-import { db, process, processVersion, processStep, user } from "@grc/db";
+import {
+  db,
+  process,
+  processVersion,
+  processStep,
+  user,
+  toTimestampInput,
+} from "@grc/db";
 import { processRisk } from "@grc/db";
 import { updateProcessSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
@@ -172,6 +179,7 @@ export async function PUT(
       .update(process)
       .set({
         ...body.data,
+        reviewDate: toTimestampInput(body.data.reviewDate),
         updatedBy: ctx.userId,
         updatedAt: new Date(),
       })

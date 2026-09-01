@@ -83,7 +83,11 @@ export function rejectXXE(xml: string): void {
 function toPem(cert: string): string {
   const trimmed = cert.trim();
   if (trimmed.includes("BEGIN CERTIFICATE")) return trimmed;
-  const body = trimmed.replace(/\s+/g, "").match(/.{1,64}/g)?.join("\n") ?? "";
+  const body =
+    trimmed
+      .replace(/\s+/g, "")
+      .match(/.{1,64}/g)
+      ?.join("\n") ?? "";
   return `-----BEGIN CERTIFICATE-----\n${body}\n-----END CERTIFICATE-----`;
 }
 
@@ -298,9 +302,9 @@ export function verifySamlResponse(
         throw new Error("signature contains no Reference DigestMethod");
       }
       for (let i = 0; i < digestMethods.length; i++) {
-        const alg = (
-          digestMethods[i] as unknown as Element
-        ).getAttribute("Algorithm");
+        const alg = (digestMethods[i] as unknown as Element).getAttribute(
+          "Algorithm",
+        );
         if (!alg || !ALLOWED_DIGEST_ALGORITHMS.has(alg)) {
           throw new Error(
             `unsupported or weak SAML digest algorithm: ${alg ?? "(none)"}`,
@@ -487,7 +491,8 @@ export function validateSAMLAssertion(
   const assertionId =
     (root.localName === "Assertion"
       ? (root.getAttribute("ID") ?? root.getAttribute("Id"))
-      : null) ?? firstByLocalName("Assertion")?.getAttribute("ID") ??
+      : null) ??
+    firstByLocalName("Assertion")?.getAttribute("ID") ??
     root.getAttribute("ID");
   if (!assertionId) {
     // #WP3-S02-23: was `if (assertionId) { … }` — an assertion without an ID

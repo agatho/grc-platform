@@ -17,6 +17,7 @@ import {
   integer,
   timestamp,
   jsonb,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { control } from "./control";
@@ -62,4 +63,7 @@ export const controlMonitoringResult = pgTable("control_monitoring_result", {
   checkedAt: timestamp("checked_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  deviation: numeric("deviation", { precision: 10, scale: 4 }),
+  expectedValue: numeric("expected_value", { precision: 15, scale: 4 }),
+  value: numeric("value", { precision: 15, scale: 4 }),
 });

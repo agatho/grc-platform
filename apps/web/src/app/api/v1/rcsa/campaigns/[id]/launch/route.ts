@@ -166,7 +166,10 @@ export async function POST(req: Request, { params }: RouteParams) {
       await tx.insert(notification).values({
         orgId: ctx.orgId,
         userId,
-        type: "action_required",
+        // [ARCTOS-FULL-2026-08-31 / Restarbeiten] "action_required" existiert im
+        // Enum notification_type nicht; die Zuweisung einer RCSA-Aufgabe ist
+        // fachlich ein "task_assigned".
+        type: "task_assigned",
         entityType: "rcsa_campaign",
         entityId: id,
         title: `RCSA Assessment: ${campaign.name}`,

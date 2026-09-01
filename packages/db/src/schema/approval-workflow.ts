@@ -21,6 +21,7 @@ import {
   date,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ─────────── Approval ───────────
@@ -158,6 +159,11 @@ export const attestationCampaign = pgTable("attestation_campaign", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  policyIds: uuid("policy_ids").array(),
+  reminderDays: integer("reminder_days")
+    .array()
+    .default(sql`'{7,3,1}'::integer[]`),
+  targetUsers: uuid("target_users").array(),
 });
 
 export const attestationResponse = pgTable("attestation_response", {

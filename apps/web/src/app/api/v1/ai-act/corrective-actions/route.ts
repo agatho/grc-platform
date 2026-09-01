@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   withAuth,
@@ -49,21 +49,16 @@ export async function GET(req: Request) {
       tx.execute(query),
       tx.execute(countQuery),
     ]);
-    const rows = Array.isArray(r) ? r : (r?.rows ?? []);
-    const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
+    const rows = toRows(r);
+    const countArr = toRows(c);
     return { rows, count: Number((countArr[0] as any)?.count ?? 0) };
   });
-  // shadow the pre-existing variable names so the unchanged Response.json lines below still work.
-  const rows = { rows: result.rows };
-  const countResult = { rows: [{ count: result.count }] };
   return Response.json({
-    data: rows.rows,
+    data: result.rows,
     pagination: {
       page: Math.floor(offset / limit) + 1,
       limit,
-      total: Number(
-        countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0,
-      ),
+      total: result.count,
     },
   });
 }
@@ -98,7 +93,7 @@ export async function POST(req: Request) {
       VALUES (${ctx.orgId}, ${title}, ${description ?? null}, ${ai_system_id ?? null}, ${action_type}, ${priority}, 'open', ${due_date ?? null}, ${is_recall ?? false}, ${is_withdrawal ?? false}, ${ctx.userId}, ${ctx.userId})
       RETURNING *
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
   return Response.json({ data: result }, { status: 201 });
 }

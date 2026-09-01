@@ -174,6 +174,27 @@ describe("#SEC-F01b-RUN risks route under grc_app (real withErrorHandler→withA
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / Restarbeiten · S01-04, S01-08]
+      -- Gegenstueck zum pauschalen GRANT darueber. ON ALL TABLES erfasst
+      -- auch die Auth.js-Token-Tabellen (deny-all seit Migration 0392) und
+      -- die Materialized Views (koennen keine RLS tragen, Migration 0393).
+      -- Ohne diesen REVOKE hebt dieser Test die beiden Kontrollen in der
+      -- Datenbank dauerhaft auf: gemessen am 2026-09-01 stand
+      -- has_table_privilege('grc_app','session','SELECT') nach einem
+      -- vollstaendigen npm-test-Lauf auf true, und
+      -- packages/db/tests/rls/tenant-isolation-systemtest.test.ts meldete
+      -- danach fuenf RLS-Luecken — es bestand nur, weil es VOR diesem Test
+      -- lief. Die acht RLS-Tests unter packages/db/tests/rls tragen denselben
+      -- Block; hier fehlte er.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
     // Global module definition (no RLS) — requireModule JOINs against it.

@@ -15,16 +15,16 @@ Die Vorversion schloss mit „**ARCTOS-GDPR-Readiness: ~95 %**" und wies 32 von 
 Anforderungen als erfüllt aus. Der Audit hat acht dieser Positionen einzeln
 geprüft; **keine hielt der Prüfung stand**. Die Abweichungen waren nicht klein:
 
-| Position der Vorversion | dort | tatsächlich (Stand 2026-08-31) |
-|---|---|---|
-| Art. 5(1)(e) „automatisierte Deletion" | ✅ | Der einzige Retention-Job erzeugte Tickets und löschte nichts; die Frist lief gegen das Anlagedatum der Regel statt gegen das Alter der Daten |
-| Art. 5(1)(f) „Audit-Chain + RLS" | ✅ | `audit_log` hatte keinerlei RLS; der Hinweisgeberkanal war über einen zweiten Trigger org-weit lesbar |
-| Art. 15 Auskunft | ✅ | reines Workflow-Ticket, kein Sammelmechanismus über die 449 Tabellen mit Personenbezug |
-| Art. 17 Löschung „+ automatisierte Data-Deletion" | ✅ | Redaktion unwirksam (26 von 96 direkt identifizierenden Spalten, keine Rekursion), Klarname per Guard unveränderbar, kein Löschjob |
-| Art. 20 Übertragbarkeit „+ Export-Format" | ✅ | ein Export-Format existierte nicht |
-| Art. 25 Privacy by Design | ✅ | Passwort-Hashes wurden bei jeder Registrierung in den unlöschbaren Log kopiert |
-| Art. 35 Schwellenwert-Trigger | ✅ | vom Aufrufer per `requiresDpia: false` abschaltbar |
-| Art. 44–49 „keine Drittlandsübermittlung" | ✅ | drei US-KI-Anbieter nicht gelistet, nicht steuerbar, nicht angezeigt |
+| Position der Vorversion                           | dort | tatsächlich (Stand 2026-08-31)                                                                                                                |
+| ------------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Art. 5(1)(e) „automatisierte Deletion"            | ✅   | Der einzige Retention-Job erzeugte Tickets und löschte nichts; die Frist lief gegen das Anlagedatum der Regel statt gegen das Alter der Daten |
+| Art. 5(1)(f) „Audit-Chain + RLS"                  | ✅   | `audit_log` hatte keinerlei RLS; der Hinweisgeberkanal war über einen zweiten Trigger org-weit lesbar                                         |
+| Art. 15 Auskunft                                  | ✅   | reines Workflow-Ticket, kein Sammelmechanismus über die 449 Tabellen mit Personenbezug                                                        |
+| Art. 17 Löschung „+ automatisierte Data-Deletion" | ✅   | Redaktion unwirksam (26 von 96 direkt identifizierenden Spalten, keine Rekursion), Klarname per Guard unveränderbar, kein Löschjob            |
+| Art. 20 Übertragbarkeit „+ Export-Format"         | ✅   | ein Export-Format existierte nicht                                                                                                            |
+| Art. 25 Privacy by Design                         | ✅   | Passwort-Hashes wurden bei jeder Registrierung in den unlöschbaren Log kopiert                                                                |
+| Art. 35 Schwellenwert-Trigger                     | ✅   | vom Aufrufer per `requiresDpia: false` abschaltbar                                                                                            |
+| Art. 44–49 „keine Drittlandsübermittlung"         | ✅   | drei US-KI-Anbieter nicht gelistet, nicht steuerbar, nicht angezeigt                                                                          |
 
 **Legende ab hier:** ✅ technisch umgesetzt und durch einen Test belegt ·
 ◑ teilweise, Einschränkung genannt · ☐ nicht umgesetzt · ⚙ organisatorisch,
@@ -34,15 +34,15 @@ nicht technisch erzwungen
 
 ## Art. 5 — Grundsätze
 
-| Grundsatz | ARCTOS-Support | Status |
-|---|---|---|
-| (a) Rechtmäßigkeit | `ropa_entry.legal_basis` + Katalog #26 | ✅ |
-| (b) Zweckbindung | `ropa_entry.processing_purpose` | ✅ |
-| (c) Datenminimierung | Katalog #25 + `ropa_data_category`; Authentifikatoren werden beim Schreiben aus dem Audit-Log entfernt (`audit_sensitive_column`) | ◑ — die Kataloge sind Dokumentation, die Scrub-Liste ist wirksam |
-| (d) Richtigkeit | `dsr`-Berichtigungsvorgang; Sekundärbestände (`search_index`, `copilot_rag_source`) folgen jetzt dem Soft-Delete | ✅ |
-| (e) Speicherbegrenzung | `retention_binding` + `retention_purge_table()` + drei Cron-Jobs; jeder Lauf wird in `retention_run_log` belegt | ◑ — **siehe Einschränkung unten** |
-| (f) Integrität/Vertraulichkeit | Hash-Kette v4 mit externem HMAC-Siegel, FORCE-RLS auf `audit_log`, HinSchG-Trennung durchgesetzt | ✅ |
-| Art. 5(2) Rechenschaft | `audit_log`, `access_log`, `data_export_log`, `retention_run_log`, `gdpr_erasure_log` | ✅ |
+| Grundsatz                      | ARCTOS-Support                                                                                                                    | Status                                                           |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| (a) Rechtmäßigkeit             | `ropa_entry.legal_basis` + Katalog #26                                                                                            | ✅                                                               |
+| (b) Zweckbindung               | `ropa_entry.processing_purpose`                                                                                                   | ✅                                                               |
+| (c) Datenminimierung           | Katalog #25 + `ropa_data_category`; Authentifikatoren werden beim Schreiben aus dem Audit-Log entfernt (`audit_sensitive_column`) | ◑ — die Kataloge sind Dokumentation, die Scrub-Liste ist wirksam |
+| (d) Richtigkeit                | `dsr`-Berichtigungsvorgang; Sekundärbestände (`search_index`, `copilot_rag_source`) folgen jetzt dem Soft-Delete                  | ✅                                                               |
+| (e) Speicherbegrenzung         | `retention_binding` + `retention_purge_table()` + drei Cron-Jobs; jeder Lauf wird in `retention_run_log` belegt                   | ◑ — **siehe Einschränkung unten**                                |
+| (f) Integrität/Vertraulichkeit | Hash-Kette v4 mit externem HMAC-Siegel, FORCE-RLS auf `audit_log`, HinSchG-Trennung durchgesetzt                                  | ✅                                                               |
+| Art. 5(2) Rechenschaft         | `audit_log`, `access_log`, `data_export_log`, `retention_run_log`, `gdpr_erasure_log`                                             | ✅                                                               |
 
 **Einschränkung zu (e):** Die Fristen werden für die eingetragenen
 `retention_binding`-Zeilen durchgesetzt (Zugriffs- und Sitzungsprotokolle,
@@ -58,12 +58,12 @@ vorausgesetzt, der Scheduler läuft im Betrieb tatsächlich.
 
 ## Art. 6/7 — Rechtsgrundlagen und Einwilligung
 
-| Anforderung | ARCTOS-Support | Status |
-|---|---|---|
-| Art. 6 Rechtsgrundlagen (a)–(f) | `ropa_entry.legal_basis` | ✅ |
-| 7(1) Nachweis | `consent_record.consent_proof_ref` | ✅ |
-| 7(3) Widerruf | `consent_record.withdrawn_at` + Widerrufsvorgang | ✅ |
-| 7(4) Koppelungsverbot | in der Zweckanalyse dokumentiert | ⚙ |
+| Anforderung                     | ARCTOS-Support                                   | Status |
+| ------------------------------- | ------------------------------------------------ | ------ |
+| Art. 6 Rechtsgrundlagen (a)–(f) | `ropa_entry.legal_basis`                         | ✅     |
+| 7(1) Nachweis                   | `consent_record.consent_proof_ref`               | ✅     |
+| 7(3) Widerruf                   | `consent_record.withdrawn_at` + Widerrufsvorgang | ✅     |
+| 7(4) Koppelungsverbot           | in der Zweckanalyse dokumentiert                 | ⚙      |
 
 ## Art. 13/14 — Informationspflichten
 
@@ -71,16 +71,16 @@ vorausgesetzt, der Scheduler läuft im Betrieb tatsächlich.
 
 ## Art. 15–22 — Betroffenenrechte
 
-| Art. | Recht | ARCTOS-Support | Status |
-|---|---|---|---|
-| 15 | Auskunft | `POST/GET /api/v1/dpms/dsr/:id/collect` → `dsr_collect_subject_data()` sammelt über ein aus dem Datenbankkatalog erzeugtes Fundstellenregister; Ausgabe als JSON-Anlage | ✅ |
-| 16 | Berichtigung | `dsr.request_type = 'rectification'` | ⚙ — Vorgang, die Änderung erfolgt im Fachmodul |
-| 17 | Löschung | `POST /api/v1/dpms/dsr/:id/erase` → `gdpr_erase_subject()`: Fachdaten anonymisiert, Zugangsdaten vernichtet, Sitzungen gelöscht, Audit-Trail redigiert, Nachweis geschrieben | ✅ — siehe `gdpr-erasure-vs-immutability.md` |
-| 18 | Einschränkung | `dsr.request_type = 'restriction'` | ⚙ |
-| 19 | Mitteilung an Empfänger | `dsr` + `ropa_recipient` | ⚙ — manuell |
-| 20 | Übertragbarkeit | `GET …/collect?scope=portability` — JSON, ohne Protokolle und abgeleitete Bewertungen | ✅ |
-| 21 | Widerspruch | `dsr.request_type = 'objection'` | ⚙ |
-| 22 | Automatisierte Entscheidung | EU-AI-Act-Modul (Katalog #13) | ◑ — Dokumentation, kein technischer Blocker |
+| Art. | Recht                       | ARCTOS-Support                                                                                                                                                               | Status                                         |
+| ---- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 15   | Auskunft                    | `POST/GET /api/v1/dpms/dsr/:id/collect` → `dsr_collect_subject_data()` sammelt über ein aus dem Datenbankkatalog erzeugtes Fundstellenregister; Ausgabe als JSON-Anlage      | ✅                                             |
+| 16   | Berichtigung                | `dsr.request_type = 'rectification'`                                                                                                                                         | ⚙ — Vorgang, die Änderung erfolgt im Fachmodul |
+| 17   | Löschung                    | `POST /api/v1/dpms/dsr/:id/erase` → `gdpr_erase_subject()`: Fachdaten anonymisiert, Zugangsdaten vernichtet, Sitzungen gelöscht, Audit-Trail redigiert, Nachweis geschrieben | ✅ — siehe `gdpr-erasure-vs-immutability.md`   |
+| 18   | Einschränkung               | `dsr.request_type = 'restriction'`                                                                                                                                           | ⚙                                              |
+| 19   | Mitteilung an Empfänger     | `dsr` + `ropa_recipient`                                                                                                                                                     | ⚙ — manuell                                    |
+| 20   | Übertragbarkeit             | `GET …/collect?scope=portability` — JSON, ohne Protokolle und abgeleitete Bewertungen                                                                                        | ✅                                             |
+| 21   | Widerspruch                 | `dsr.request_type = 'objection'`                                                                                                                                             | ⚙                                              |
+| 22   | Automatisierte Entscheidung | EU-AI-Act-Modul (Katalog #13)                                                                                                                                                | ◑ — Dokumentation, kein technischer Blocker    |
 
 **Zwei Einschränkungen, die zur Auskunft gehören:**
 
@@ -94,20 +94,20 @@ vorausgesetzt, der Scheduler läuft im Betrieb tatsächlich.
 
 ## Art. 25 — Privacy by Design und by Default
 
-| Anforderung | ARCTOS-Support | Status |
-|---|---|---|
-| Keine Authentifikatoren im Protokoll | `audit_scrub_changes()` + `audit_sensitive_column`; Bestandszeilen einmalig bereinigt (Migration 0428) | ✅ |
-| Pseudonymisierung nach Stand der Technik | HMAC unter einem Schlüssel außerhalb der Datenbank für Melder-IP, Akteur im Fachlog und Tombstone-Hash | ✅ |
-| Voreinstellungen | `module_config` default-false für sensible Module | ✅ |
-| TOMs | Katalog #24 (56 Einträge) | ⚙ — Katalog, keine technische Kontrolle |
+| Anforderung                              | ARCTOS-Support                                                                                         | Status                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| Keine Authentifikatoren im Protokoll     | `audit_scrub_changes()` + `audit_sensitive_column`; Bestandszeilen einmalig bereinigt (Migration 0428) | ✅                                      |
+| Pseudonymisierung nach Stand der Technik | HMAC unter einem Schlüssel außerhalb der Datenbank für Melder-IP, Akteur im Fachlog und Tombstone-Hash | ✅                                      |
+| Voreinstellungen                         | `module_config` default-false für sensible Module                                                      | ✅                                      |
+| TOMs                                     | Katalog #24 (56 Einträge)                                                                              | ⚙ — Katalog, keine technische Kontrolle |
 
 ## Art. 28 — Auftragsverarbeiter
 
-| Anforderung | ARCTOS-Support | Status |
-|---|---|---|
-| 28(1) Auswahl | `vendor_due_diligence` + Scorecards | ✅ |
-| 28(3) Vertragsmindestinhalte | `contract` + `contract_obligation` | ◑ — AVV-Vorlagen-Seed fehlt |
-| 28(4) Sub-Prozessor-Kette | `vendor.sub_processor` + Freigabelauf | ✅ |
+| Anforderung                  | ARCTOS-Support                        | Status                      |
+| ---------------------------- | ------------------------------------- | --------------------------- |
+| 28(1) Auswahl                | `vendor_due_diligence` + Scorecards   | ✅                          |
+| 28(3) Vertragsmindestinhalte | `contract` + `contract_obligation`    | ◑ — AVV-Vorlagen-Seed fehlt |
+| 28(4) Sub-Prozessor-Kette    | `vendor.sub_processor` + Freigabelauf | ✅                          |
 
 ## Art. 30 — Verzeichnis der Verarbeitungstätigkeiten
 
@@ -121,14 +121,14 @@ Verarbeitungen weiter aus.
 
 ## Art. 32 — Sicherheit der Verarbeitung
 
-| Maßnahme | Stand |
-|---|---|
-| Verschlüsselung in transit | ✅ |
-| Verschlüsselung der Hinweisgeberdaten at rest | ✅ AES-256-GCM, an die Zeile gebunden (AAD), mit Rotationspfad |
-| Verschlüsselung der übrigen Daten at rest | ⚙ — Speicher-/Backup-Ebene, nicht im Prüfumfang dieses Audits |
-| Mandantentrennung | ✅ FORCE-RLS, Systemtest über alle mandantenbezogenen Objekte (WP2) |
-| Manipulationserkennung im Protokoll | ✅ Hash-Kette v4 + HMAC-gesiegelte Anker (WP4) |
-| Wiederherstellbarkeit | ⚙ — Runbook vorhanden, ein durchgeführter Restore-Drill fehlt |
+| Maßnahme                                      | Stand                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------- |
+| Verschlüsselung in transit                    | ✅                                                                  |
+| Verschlüsselung der Hinweisgeberdaten at rest | ✅ AES-256-GCM, an die Zeile gebunden (AAD), mit Rotationspfad      |
+| Verschlüsselung der übrigen Daten at rest     | ⚙ — Speicher-/Backup-Ebene, nicht im Prüfumfang dieses Audits       |
+| Mandantentrennung                             | ✅ FORCE-RLS, Systemtest über alle mandantenbezogenen Objekte (WP2) |
+| Manipulationserkennung im Protokoll           | ✅ Hash-Kette v4 + HMAC-gesiegelte Anker (WP4)                      |
+| Wiederherstellbarkeit                         | ⚙ — Runbook vorhanden, ein durchgeführter Restore-Drill fehlt       |
 
 ## Art. 33/34 — Datenschutzverletzungen
 
@@ -151,13 +151,13 @@ Rolle `dpo` im RBAC, zweite Verteidigungslinie. ✅
 
 ## Art. 44–49 — Drittlandübermittlung
 
-| Instrument | ARCTOS-Support | Status |
-|---|---|---|
-| Angemessenheitsbeschluss | `ropa_recipient.adequacy_decision` | ✅ |
-| Standardvertragsklauseln | `contract.scc_version` | ✅ |
-| TIA | `tia` | ✅ |
-| BCR | `vendor.binding_corporate_rules_id` | ◑ — nur Kennzeichen |
-| **Steuerbarkeit der KI-Anbieter je Mandant** | — | ☐ **offen** |
+| Instrument                                   | ARCTOS-Support                      | Status              |
+| -------------------------------------------- | ----------------------------------- | ------------------- |
+| Angemessenheitsbeschluss                     | `ropa_recipient.adequacy_decision`  | ✅                  |
+| Standardvertragsklauseln                     | `contract.scc_version`              | ✅                  |
+| TIA                                          | `tia`                               | ✅                  |
+| BCR                                          | `vendor.binding_corporate_rules_id` | ◑ — nur Kennzeichen |
+| **Steuerbarkeit der KI-Anbieter je Mandant** | —                                   | ☐ **offen**         |
 
 **Klarstellung, die die Vorversion nicht hatte:** die Aussage „keine
 Drittlandsübermittlung" trifft nur zu, solange ausschliesslich lokale Modelle
@@ -173,29 +173,29 @@ liegt bei S05-01/-03/-22.
 
 ## HinSchG (nationale Ergänzung, kein DSGVO-Artikel)
 
-| Anforderung | ARCTOS-Support | Status |
-|---|---|---|
-| § 8 Vertraulichkeit der Identität | Kein `wb_*`-Vorgang schreibt mehr in den org-weiten `audit_log`; der vertrauliche Kanal führt ein eigenes, mandantengetrenntes Log mit HMAC-pseudonymisiertem Akteur | ✅ |
-| § 10 Dokumentation | `whistleblowing_audit_log`, jetzt über `GET /api/v1/whistleblowing/audit-log` auch für die Meldestelle lesbar | ✅ |
-| § 11 Abs. 5 Löschung nach drei Jahren | `whistleblowing_retention_purge()` + `whistleblowing_orphan_report_purge()`, Cron `retention-whistleblowing` | ✅ |
-| § 12 Funktionsfähiger Meldekanal | Portal weist bei fehlender Schlüsselkonfiguration mit 503 ab, statt Meldungen zu verlieren | ✅ |
-| Beweismittel werden verwahrt | Upload speichert erst, verifiziert, dann entsteht die Datenbankzeile; bei Speicherfehler kein 201 | ✅ |
+| Anforderung                           | ARCTOS-Support                                                                                                                                                       | Status |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| § 8 Vertraulichkeit der Identität     | Kein `wb_*`-Vorgang schreibt mehr in den org-weiten `audit_log`; der vertrauliche Kanal führt ein eigenes, mandantengetrenntes Log mit HMAC-pseudonymisiertem Akteur | ✅     |
+| § 10 Dokumentation                    | `whistleblowing_audit_log`, jetzt über `GET /api/v1/whistleblowing/audit-log` auch für die Meldestelle lesbar                                                        | ✅     |
+| § 11 Abs. 5 Löschung nach drei Jahren | `whistleblowing_retention_purge()` + `whistleblowing_orphan_report_purge()`, Cron `retention-whistleblowing`                                                         | ✅     |
+| § 12 Funktionsfähiger Meldekanal      | Portal weist bei fehlender Schlüsselkonfiguration mit 503 ab, statt Meldungen zu verlieren                                                                           | ✅     |
+| Beweismittel werden verwahrt          | Upload speichert erst, verifiziert, dann entsteht die Datenbankzeile; bei Speicherfehler kein 201                                                                    | ✅     |
 
 ---
 
 ## Offene Punkte
 
-| Punkt | Art | Anmerkung |
-|---|---|---|
-| Scheduler im Betrieb überwachen | betrieblich | Die vier Retention-Jobs sind eingeplant und werfen bei Fehlern, statt grün zu melden. Ein stiller Ausfall des Schedulers ist eine nicht durchgesetzte Frist und braucht einen Alarm. |
-| `PII_PSEUDONYM_KEY` in der Produktionsumgebung setzen | betrieblich | ohne ihn greift der Installationsschlüssel in der Datenbank — schwächer, aber nicht wirkungslos |
-| `audit_log.metadata` ist nicht redigierbar | technisch, Restrisiko | Hashformel v4, siehe `gdpr-erasure-vs-immutability.md` §7 |
-| Backups nach einer Löschung | betrieblich | Löschung wirkt endgültig, sobald das letzte Backup aus der Zeit vor dem Antrag abgelaufen ist |
-| Legal Hold gegen Art. 17 | technisch, zurückgestellt | ADR-011 rev.2 „R5", heute organisatorisch geprüft |
-| KI-Anbieterwahl je Mandant | technisch | S05-01/-03/-22 (WP6) |
-| 19 Exportrouten ohne Nachweis | technisch | zentraler Helfer `lib/export-audit.ts` steht bereit, Einbau je Route offen |
-| AVV-Vorlagenpaket, BCR-Upload, Art.-19-Automatik | Inhalt/Komfort | wie in der Vorversion |
-| Cookie-/Tracker-Discovery | außerhalb des Produktzwecks | eigene Werkzeugklasse |
+| Punkt                                                 | Art                         | Anmerkung                                                                                                                                                                            |
+| ----------------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Scheduler im Betrieb überwachen                       | betrieblich                 | Die vier Retention-Jobs sind eingeplant und werfen bei Fehlern, statt grün zu melden. Ein stiller Ausfall des Schedulers ist eine nicht durchgesetzte Frist und braucht einen Alarm. |
+| `PII_PSEUDONYM_KEY` in der Produktionsumgebung setzen | betrieblich                 | ohne ihn greift der Installationsschlüssel in der Datenbank — schwächer, aber nicht wirkungslos                                                                                      |
+| `audit_log.metadata` ist nicht redigierbar            | technisch, Restrisiko       | Hashformel v4, siehe `gdpr-erasure-vs-immutability.md` §7                                                                                                                            |
+| Backups nach einer Löschung                           | betrieblich                 | Löschung wirkt endgültig, sobald das letzte Backup aus der Zeit vor dem Antrag abgelaufen ist                                                                                        |
+| Legal Hold gegen Art. 17                              | technisch, zurückgestellt   | ADR-011 rev.2 „R5", heute organisatorisch geprüft                                                                                                                                    |
+| KI-Anbieterwahl je Mandant                            | technisch                   | S05-01/-03/-22 (WP6)                                                                                                                                                                 |
+| 19 Exportrouten ohne Nachweis                         | technisch                   | zentraler Helfer `lib/export-audit.ts` steht bereit, Einbau je Route offen                                                                                                           |
+| AVV-Vorlagenpaket, BCR-Upload, Art.-19-Automatik      | Inhalt/Komfort              | wie in der Vorversion                                                                                                                                                                |
+| Cookie-/Tracker-Discovery                             | außerhalb des Produktzwecks | eigene Werkzeugklasse                                                                                                                                                                |
 
 ## Zusammenfassung
 

@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
         RETURNING id
       `);
 
-      const riskId = riskInsert.rows?.[0]?.id;
+      const riskId = firstRow(riskInsert)?.id;
       if (!riskId) continue;
 
       await tx.execute(sql`

@@ -1,4 +1,9 @@
-import { db, nis2IncidentReport, securityIncident } from "@grc/db";
+import {
+  db,
+  nis2IncidentReport,
+  securityIncident,
+  toTimestampInput,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
         orgId: ctx.orgId,
         incidentId: body.incidentId,
         reportType: body.reportType,
-        deadlineAt: body.deadlineAt,
+        deadlineAt: toTimestampInput(body.deadlineAt),
         bsiReference: body.bsiReference,
         reportContent: body.reportContent,
         contactPerson: body.contactPerson,

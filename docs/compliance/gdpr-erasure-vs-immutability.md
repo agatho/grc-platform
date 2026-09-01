@@ -67,13 +67,13 @@ Nr. 5 DSGVO war das eine Pseudonymisierung, keine Löschung.
 
 Seit Migration 0425 gilt:
 
-| | |
-|---|---|
-| Verfahren | HMAC-SHA256 mit Domänentrennung je Einsatzzweck |
+|                             |                                                                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Verfahren                   | HMAC-SHA256 mit Domänentrennung je Einsatzzweck                                                                     |
 | Schlüsselquelle (bevorzugt) | `PII_PSEUDONYM_KEY` aus der Prozessumgebung — liegt dann **nicht** in der Datenbank und **nicht** im Datenbank-Dump |
-| Schlüsselquelle (Rückfall) | Installationsschlüssel in `pii_pseudonym_key`; deny-all RLS, keine Grants, für keine Anwendungsrolle lesbar |
-| Sichtbarkeit | `key_id` an jedem Pseudonym (`env:…` / `db-local` / `destroyed`) |
-| Vernichtung | `pii_pseudonym_key_destroy(key_id, reason)` — überschreibt das Material unwiderruflich |
+| Schlüsselquelle (Rückfall)  | Installationsschlüssel in `pii_pseudonym_key`; deny-all RLS, keine Grants, für keine Anwendungsrolle lesbar         |
+| Sichtbarkeit                | `key_id` an jedem Pseudonym (`env:…` / `db-local` / `destroyed`)                                                    |
+| Vernichtung                 | `pii_pseudonym_key_destroy(key_id, reason)` — überschreibt das Material unwiderruflich                              |
 
 **Erst die Schlüsselvernichtung macht aus der Pseudonymisierung eine Löschung.**
 Sie ist bewusst nicht über eine API erreichbar: sie betrifft alle Pseudonyme der
@@ -85,13 +85,13 @@ kein Klick im DSB-Arbeitsvorrat.
 `POST /api/v1/dpms/dsr/:id/erase` (Rollen `admin`, `dpo`; Identitätsprüfung nach
 Art. 12 Abs. 6 vorausgesetzt) ruft `gdpr_erase_subject()` auf:
 
-| Schritt | Wirkung | Umsetzung |
-|---|---|---|
-| 1 | Kontaktangaben in allen registrierten Tabellen werden durch einen Platzhalter ersetzt | `dsr_subject_index` (aus dem Datenbankkatalog erzeugt, Migration 0430) |
-| 2 | Authentifikatoren der Person werden vernichtet, das Konto deaktiviert | `user.password_hash` überschrieben, `ical_token`/`avatar_url` geleert |
-| 3 | Sitzungen und Geräte werden hart gelöscht | `session`, `mobile_session` |
-| 4 | Audit-Trail wird redigiert, nicht gelöscht | `tombstone_audit_entries_for_subject()` (Migration 0428) |
-| 5 | Nachweis wird geschrieben | `gdpr_erasure_log` — die E-Mail-Adresse steht dort nur als HMAC, damit der Löschnachweis nicht die letzte Kopie des Personenbezugs ist |
+| Schritt | Wirkung                                                                               | Umsetzung                                                                                                                              |
+| ------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1       | Kontaktangaben in allen registrierten Tabellen werden durch einen Platzhalter ersetzt | `dsr_subject_index` (aus dem Datenbankkatalog erzeugt, Migration 0430)                                                                 |
+| 2       | Authentifikatoren der Person werden vernichtet, das Konto deaktiviert                 | `user.password_hash` überschrieben, `ical_token`/`avatar_url` geleert                                                                  |
+| 3       | Sitzungen und Geräte werden hart gelöscht                                             | `session`, `mobile_session`                                                                                                            |
+| 4       | Audit-Trail wird redigiert, nicht gelöscht                                            | `tombstone_audit_entries_for_subject()` (Migration 0428)                                                                               |
+| 5       | Nachweis wird geschrieben                                                             | `gdpr_erasure_log` — die E-Mail-Adresse steht dort nur als HMAC, damit der Löschnachweis nicht die letzte Kopie des Personenbezugs ist |
 
 Der Vorlauf `dryRun: true` ist der Regelfall: der DSB sieht, welche Tabellen mit
 wie vielen Zeilen betroffen wären, bevor etwas unumkehrbar wird. Die echte
@@ -159,11 +159,11 @@ aber eine spätere, weitere Redaktion ist möglich. `hash_version` und
 
 ## 8. Belege
 
-| Zusage | Prüfbar über |
-|---|---|
-| Löschung wirkt über alle Schemas | `packages/db/tests/integration/gdpr-privacy.test.ts` → „erases the subject across all schemas and keeps the chain healthy" |
-| Kette verifiziert nach der Löschung | derselbe Test; `audit_chain_verify('org:<id>')` → `healthy: true` |
-| Tombstone-Hash ist nicht rückrechenbar | „the tombstone hash is not sha256(value \|\| '\|' \|\| entry_hash)" |
-| `entity_title` wird redigiert | „redacts entity_title, which was previously unreachable by design" |
-| Guard-Invariante hält weiter | „a plain UPDATE is still refused" / „hash_version and content_commitment stay out of the allowlist" |
-| Löschnachweis ohne PII-Kopie | „leaves an accountability record that is not itself a PII copy" |
+| Zusage                                 | Prüfbar über                                                                                                               |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Löschung wirkt über alle Schemas       | `packages/db/tests/integration/gdpr-privacy.test.ts` → „erases the subject across all schemas and keeps the chain healthy" |
+| Kette verifiziert nach der Löschung    | derselbe Test; `audit_chain_verify('org:<id>')` → `healthy: true`                                                          |
+| Tombstone-Hash ist nicht rückrechenbar | „the tombstone hash is not sha256(value \|\| '\|' \|\| entry_hash)"                                                        |
+| `entity_title` wird redigiert          | „redacts entity_title, which was previously unreachable by design"                                                         |
+| Guard-Invariante hält weiter           | „a plain UPDATE is still refused" / „hash_version and content_commitment stay out of the allowlist"                        |
+| Löschnachweis ohne PII-Kopie           | „leaves an accountability record that is not itself a PII copy"                                                            |

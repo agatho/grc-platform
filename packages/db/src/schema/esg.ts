@@ -227,6 +227,12 @@ export const esgMeasurement = pgTable(
     recordedAt: timestamp("recorded_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    previousYearValue: numeric("previous_year_value", {
+      precision: 15,
+      scale: 4,
+    }),
+    yoyChangePercent: numeric("yoy_change_percent", { precision: 8, scale: 2 }),
+    yoyExplanation: text("yoy_explanation"),
   },
   (table) => [
     index("emeas_org_metric_idx").on(table.orgId, table.metricId),

@@ -197,7 +197,10 @@ export function isHinSchgAllowedPath(pathname: string): boolean {
  * would inherit the public exception without anyone touching the middleware.
  * The same shape affected `/api/v1/meta` and `/login`.
  */
-export function isPublicExactOrUnder(pathname: string, prefix: string): boolean {
+export function isPublicExactOrUnder(
+  pathname: string,
+  prefix: string,
+): boolean {
   return pathname === prefix || pathname.startsWith(prefix + "/");
 }
 
@@ -299,7 +302,9 @@ const PUBLIC_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
 
 export function isPublicPath(pathname: string): boolean {
   if (PUBLIC_EXACT_PATHS.some(([p]) => p === pathname)) return true;
-  if (PUBLIC_PREFIXES.some(([prefix]) => isPublicExactOrUnder(pathname, prefix)))
+  if (
+    PUBLIC_PREFIXES.some(([prefix]) => isPublicExactOrUnder(pathname, prefix))
+  )
     return true;
   return PUBLIC_PATTERNS.some(([re]) => re.test(pathname));
 }
@@ -312,4 +317,3 @@ export const PUBLIC_PATH_TABLE = {
   isPublicPath,
   isExactOrUnder: isPublicExactOrUnder,
 };
-

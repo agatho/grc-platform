@@ -125,7 +125,8 @@ Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
           .map((a) => safeText(a, 200)),
       },
       recentTests: (args.recentTests ?? []).slice(0, 5).map((t) => ({
-        testDate: t.testDate instanceof Date ? t.testDate.toISOString() : t.testDate,
+        testDate:
+          t.testDate instanceof Date ? t.testDate.toISOString() : t.testDate,
         todResult: safeText(t.todResult, 50),
         toeResult: safeText(t.toeResult, 50),
         conclusion: safeText(t.conclusion, 500),

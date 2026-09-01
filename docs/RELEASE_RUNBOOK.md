@@ -117,14 +117,14 @@ sudo bash /opt/arctos/deploy/update-all.sh
 > docker compose pull && docker compose up -d --no-build
 > ```
 >
-> * `db-backup.sh` legt **nicht** `db-<timestamp>.sql.gz` an, sondern
+> - `db-backup.sh` legt **nicht** `db-<timestamp>.sql.gz` an, sondern
 >   `<db>-<YYYYMMDD-HHMMSS>[-label].dump` je Datenbank (seit 2026-09-01
 >   `.dump.gpg`). Der Pfad im Runbook existierte nie.
-> * Der `sed`-Aufruf editierte `docker-compose.yml`. Die Produktions-Compose
+> - Der `sed`-Aufruf editierte `docker-compose.yml`. Die Produktions-Compose
 >   heisst `docker-compose.production.yml` **und enthaelt keinen
 >   `@sha256:`-Digest** — das Kommando fand nichts zu ersetzen und meldete
 >   das nicht (S13-05d).
-> * `docker compose pull` allein zieht das Image, provisioniert aber weder
+> - `docker compose pull` allein zieht das Image, provisioniert aber weder
 >   `grc_app`/`grc_worker` noch prueft es den Gesundheitszustand danach.
 >
 > `update-all.sh` macht die Schritte in der richtigen Reihenfolge und bricht

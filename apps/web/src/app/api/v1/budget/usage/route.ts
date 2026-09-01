@@ -1,3 +1,4 @@
+import { toRows } from "@grc/db";
 import { withAuth, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
       : await tx.execute(
           sql`SELECT * FROM v_budget_usage WHERE org_id = ${ctx.orgId}`,
         );
-    return Array.isArray(r) ? r : (r?.rows ?? []);
+    return toRows(r);
   });
 
   const data = (rowsResult as any[]).map((r: any) => ({

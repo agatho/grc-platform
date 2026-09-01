@@ -105,6 +105,8 @@ export const workItem = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    emergencyPlanId: uuid("emergency_plan_id"),
+    resourceClassification: varchar("resource_classification", { length: 20 }),
   },
   (table) => [
     index("work_item_org_type_idx").on(table.orgId, table.typeKey),

@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
@@ -128,7 +128,7 @@ export async function POST(req: Request) {
       `);
     }
 
-    return res.rows[0];
+    return firstRow(res);
   });
   return Response.json({ data: result }, { status: 201 });
 }

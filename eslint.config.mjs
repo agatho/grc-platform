@@ -163,7 +163,12 @@ export default tseslint.config(
     // `__VU` und `__ITER` sind dort Laufzeit-Globals.
     files: ["scripts/perf/**/*.js"],
     languageOptions: {
-      globals: { __ENV: "readonly", __VU: "readonly", __ITER: "readonly", console: "readonly" },
+      globals: {
+        __ENV: "readonly",
+        __VU: "readonly",
+        __ITER: "readonly",
+        console: "readonly",
+      },
     },
   },
 );

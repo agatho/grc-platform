@@ -1,4 +1,4 @@
-import { db, controlLibraryEntry, control } from "@grc/db";
+import { db, controlLibraryEntry, control, controlFreqEnum } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -51,8 +51,20 @@ export async function POST(req: Request) {
               : "",
           controlType: entry.controlType as
             "preventive" | "detective" | "corrective",
-          frequency: entry.frequency,
-          status: "draft",
+          // [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+          // `control_library_entry.frequency` ist ein freies varchar(20), die
+          // Zielspalte ein pgEnum. Nicht abbildbare Werte fallen auf den
+          // Spaltendefault zurueck, statt den INSERT zu sprengen.
+          frequency: (controlFreqEnum.enumValues as readonly string[]).includes(
+            entry.frequency ?? "",
+          )
+            ? (entry.frequency as (typeof controlFreqEnum.enumValues)[number])
+            : undefined,
+          // "draft" ist kein Wert des Enums control_status (designed |
+          // implemented | effective | ineffective | retired) — der INSERT
+          // brach ab. Eine frisch adoptierte Bibliothekskontrolle ist
+          // entworfen, aber noch nicht implementiert.
+          status: "designed",
           sourceLibraryRef: entry.controlRef,
           createdBy: ctx.userId,
         })

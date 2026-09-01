@@ -1,6 +1,11 @@
 import { db, regulatoryCalendarEvent } from "@grc/db";
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Die Route validierte gegen das
+// GENERISCHE Kalender-Schema (startAt/endAt/isAllDay/recurrence). Die Tabelle
+// `regulatory_calendar_event` verlangt `event_date` NOT NULL und kennt keines
+// dieser Felder — jeder POST lief in eine Constraint-Verletzung. Das passende
+// Schema liegt seit jeher daneben in schemas/regulatory-change.ts.
 import {
-  createCalendarEventSchema,
+  createRegulatoryCalendarEventSchema,
   calendarEventQuerySchema,
 } from "@grc/shared";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
@@ -11,7 +16,7 @@ export async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
-  const body = createCalendarEventSchema.safeParse(await req.json());
+  const body = createRegulatoryCalendarEventSchema.safeParse(await req.json());
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },

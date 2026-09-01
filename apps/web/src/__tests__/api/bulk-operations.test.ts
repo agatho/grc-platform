@@ -18,7 +18,16 @@ const requireModuleMock = vi.fn();
 const withAuditContextMock = vi.fn();
 let auditCallCount = 0;
 
-vi.mock("@grc/db", () => ({
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Der Mock zaehlt die Exporte von
+// `@grc/db` einzeln auf. Die Route nutzt zusaetzlich die reinen
+// Grenzwandler aus packages/db/src/column-input.ts (numeric/timestamp).
+// Sie haben keine DB-Abhaengigkeit und werden deshalb ECHT eingebunden,
+// statt nachgebaut zu werden — ein nachgebauter Konverter wuerde genau
+// die Umwandlung nicht pruefen, um die es geht.
+vi.mock("@grc/db", async () => ({
+  ...(await vi.importActual<Record<string, unknown>>(
+    "@grc/db/src/column-input",
+  )),
   get db() {
     return {
       select() {

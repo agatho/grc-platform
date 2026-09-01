@@ -154,87 +154,89 @@ describe("S05-20 (Info, positiv) — pgvector-Pre-Filter, statisch", () => {
 const DB_URL = process.env.DATABASE_URL;
 const describeDb = DB_URL ? describe : describe.skip;
 
-describeDb("S05-20 (Info, positiv) — pgvector-Pre-Filter gegen die Datenbank", () => {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  let sql: any;
-  const ORG_A = "aaaaaaaa-0000-4000-8000-000000000001";
-  const ORG_B = "bbbbbbbb-0000-4000-8000-000000000002";
-  let available = false;
+describeDb(
+  "S05-20 (Info, positiv) — pgvector-Pre-Filter gegen die Datenbank",
+  () => {
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    let sql: any;
+    const ORG_A = "aaaaaaaa-0000-4000-8000-000000000001";
+    const ORG_B = "bbbbbbbb-0000-4000-8000-000000000002";
+    let available = false;
 
-  beforeAll(async () => {
-    const postgres = (await import("postgres")).default;
-    sql = postgres(DB_URL!, { max: 1, onnotice: () => {} });
-    const [{ has }] = await sql`
+    beforeAll(async () => {
+      const postgres = (await import("postgres")).default;
+      sql = postgres(DB_URL!, { max: 1, onnotice: () => {} });
+      const [{ has }] = await sql`
       SELECT (to_regclass('public.control_embedding') IS NOT NULL) AS has`;
-    available = Boolean(has);
-    if (!available) return;
+      available = Boolean(has);
+      if (!available) return;
 
-    await sql`DELETE FROM control_embedding WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
-    await sql`DELETE FROM control WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
+      await sql`DELETE FROM control_embedding WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
+      await sql`DELETE FROM control WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
 
-    // Die beiden Fixture-Organisationen werden NICHT geloescht: seit WP2
-    // tragen die referenzierenden Tabellen FORCE RLS, und die
-    // FK-Integritaetsabfrage von `DELETE FROM organization` scheitert
-    // dann mit "referential integrity query gave unexpected result".
-    // Idempotentes Anlegen genuegt.
-    await sql`INSERT INTO organization (id, name)
+      // Die beiden Fixture-Organisationen werden NICHT geloescht: seit WP2
+      // tragen die referenzierenden Tabellen FORCE RLS, und die
+      // FK-Integritaetsabfrage von `DELETE FROM organization` scheitert
+      // dann mit "referential integrity query gave unexpected result".
+      // Idempotentes Anlegen genuegt.
+      await sql`INSERT INTO organization (id, name)
               VALUES (${ORG_A}::uuid, 'WP6 Org A'),
                      (${ORG_B}::uuid, 'WP6 Org B')
               ON CONFLICT (id) DO NOTHING`;
 
-    const dim = 1536;
-    const near = (i: number) => {
-      const v = new Array<number>(dim).fill(0);
-      v[0] = 1;
-      v[1] = i / 1000;
-      return `[${v.join(",")}]`;
-    };
-    const far = () => {
-      const v = new Array<number>(dim).fill(0);
-      v[0] = 1;
-      v[5] = 0.5;
-      return `[${v.join(",")}]`;
-    };
+      const dim = 1536;
+      const near = (i: number) => {
+        const v = new Array<number>(dim).fill(0);
+        v[0] = 1;
+        v[1] = i / 1000;
+        return `[${v.join(",")}]`;
+      };
+      const far = () => {
+        const v = new Array<number>(dim).fill(0);
+        v[0] = 1;
+        v[5] = 0.5;
+        return `[${v.join(",")}]`;
+      };
 
-    // OrgA bekommt EIN weit entferntes Embedding, OrgB drei nahe. Bei
-    // einem Post-Filter nach LIMIT hätte OrgA null Treffer.
-    const [a] = await sql`
+      // OrgA bekommt EIN weit entferntes Embedding, OrgB drei nahe. Bei
+      // einem Post-Filter nach LIMIT hätte OrgA null Treffer.
+      const [a] = await sql`
       INSERT INTO control (org_id, title, control_type)
       VALUES (${ORG_A}::uuid, 'A-Far control', 'preventive')
       RETURNING id`;
-    await sql`INSERT INTO control_embedding (org_id, control_id, embedding, content_hash, model)
+      await sql`INSERT INTO control_embedding (org_id, control_id, embedding, content_hash, model)
               VALUES (${ORG_A}::uuid, ${a.id}::uuid, ${far()}::vector, 'h-a', 'wp6-test-model')`;
 
-    for (let i = 0; i < 3; i++) {
-      const [b] = await sql`
+      for (let i = 0; i < 3; i++) {
+        const [b] = await sql`
         INSERT INTO control (org_id, title, control_type)
         VALUES (${ORG_B}::uuid, ${"B-Near control " + i}, 'preventive')
         RETURNING id`;
-      await sql`INSERT INTO control_embedding (org_id, control_id, embedding, content_hash, model)
+        await sql`INSERT INTO control_embedding (org_id, control_id, embedding, content_hash, model)
                 VALUES (${ORG_B}::uuid, ${b.id}::uuid, ${near(i)}::vector, ${"h-b" + i}, 'wp6-test-model')`;
-    }
-  }, 60_000);
+      }
+    }, 60_000);
 
-  afterAll(async () => {
-    if (!sql) return;
-    try {
-      await sql`DELETE FROM control_embedding WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
-      await sql`DELETE FROM control WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
-    } catch {
-      // Aufräumen ist best effort.
-    }
-    await sql.end({ timeout: 5 });
-  }, 60_000);
+    afterAll(async () => {
+      if (!sql) return;
+      try {
+        await sql`DELETE FROM control_embedding WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
+        await sql`DELETE FROM control WHERE org_id IN (${ORG_A}::uuid, ${ORG_B}::uuid)`;
+      } catch {
+        // Aufräumen ist best effort.
+      }
+      await sql.end({ timeout: 5 });
+    }, 60_000);
 
-  it("liefert für OrgA NUR die eigene Kontrolle, obwohl OrgB näher liegt", async () => {
-    if (!available) return;
-    const q = new Array<number>(1536).fill(0);
-    q[0] = 1;
-    q[1] = 0.0005;
-    const vec = `[${q.join(",")}]`;
+    it("liefert für OrgA NUR die eigene Kontrolle, obwohl OrgB näher liegt", async () => {
+      if (!available) return;
+      const q = new Array<number>(1536).fill(0);
+      q[0] = 1;
+      q[1] = 0.0005;
+      const vec = `[${q.join(",")}]`;
 
-    // Die wörtliche Query aus suggest-controls/route.ts.
-    const rows = await sql`
+      // Die wörtliche Query aus suggest-controls/route.ts.
+      const rows = await sql`
       SELECT c.title, 1 - (ce.embedding <=> ${vec}::vector) AS score
       FROM control_embedding ce
       INNER JOIN control c ON c.id = ce.control_id
@@ -245,18 +247,18 @@ describeDb("S05-20 (Info, positiv) — pgvector-Pre-Filter gegen die Datenbank",
       ORDER BY ce.embedding <=> ${vec}::vector ASC
       LIMIT 40`;
 
-    expect(rows.map((r: { title: string }) => r.title)).toEqual([
-      "A-Far control",
-    ]);
-  }, 60_000);
+      expect(rows.map((r: { title: string }) => r.title)).toEqual([
+        "A-Far control",
+      ]);
+    }, 60_000);
 
-  it("führt den org_id-Filter unterhalb von Sort/Limit aus (EXPLAIN)", async () => {
-    if (!available) return;
-    const q = new Array<number>(1536).fill(0);
-    q[0] = 1;
-    const vec = `[${q.join(",")}]`;
+    it("führt den org_id-Filter unterhalb von Sort/Limit aus (EXPLAIN)", async () => {
+      if (!available) return;
+      const q = new Array<number>(1536).fill(0);
+      q[0] = 1;
+      const vec = `[${q.join(",")}]`;
 
-    const plan = await sql`
+      const plan = await sql`
       EXPLAIN
       SELECT c.title
       FROM control_embedding ce
@@ -266,27 +268,28 @@ describeDb("S05-20 (Info, positiv) — pgvector-Pre-Filter gegen die Datenbank",
       ORDER BY ce.embedding <=> ${vec}::vector ASC
       LIMIT 40`;
 
-    const text = plan
-      .map((r: Record<string, string>) => Object.values(r)[0])
-      .join("\n");
+      const text = plan
+        .map((r: Record<string, string>) => Object.values(r)[0])
+        .join("\n");
 
-    const limitAt = text.indexOf("Limit");
-    const filterAt = text.search(/org_id/);
-    expect(limitAt).toBeGreaterThanOrEqual(0);
-    expect(filterAt).toBeGreaterThan(limitAt); // Filter tiefer im Plan
-  }, 60_000);
+      const limitAt = text.indexOf("Limit");
+      const filterAt = text.search(/org_id/);
+      expect(limitAt).toBeGreaterThanOrEqual(0);
+      expect(filterAt).toBeGreaterThan(limitAt); // Filter tiefer im Plan
+    }, 60_000);
 
-  it("hat RLS mit FORCE auf control_embedding", async () => {
-    if (!available) return;
-    const [row] = await sql`
+    it("hat RLS mit FORCE auf control_embedding", async () => {
+      if (!available) return;
+      const [row] = await sql`
       SELECT relrowsecurity, relforcerowsecurity
         FROM pg_class WHERE relname = 'control_embedding'`;
-    expect(row.relrowsecurity).toBe(true);
-    expect(row.relforcerowsecurity).toBe(true);
+      expect(row.relrowsecurity).toBe(true);
+      expect(row.relforcerowsecurity).toBe(true);
 
-    const policies = await sql`
+      const policies = await sql`
       SELECT policyname FROM pg_policies
        WHERE tablename = 'control_embedding'`;
-    expect(policies.length).toBeGreaterThan(0);
-  }, 60_000);
-});
+      expect(policies.length).toBeGreaterThan(0);
+    }, 60_000);
+  },
+);

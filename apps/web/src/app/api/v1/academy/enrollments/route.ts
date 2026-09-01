@@ -1,4 +1,4 @@
-import { db, academyEnrollment } from "@grc/db";
+import { db, academyEnrollment, toTimestampInput } from "@grc/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import {
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         ...body,
+        dueDate: toTimestampInput(body.dueDate),
         assignedBy: ctx.userId,
       })
       .returning();

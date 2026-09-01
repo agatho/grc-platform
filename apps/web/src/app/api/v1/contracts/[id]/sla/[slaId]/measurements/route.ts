@@ -1,4 +1,9 @@
-import { db, contractSla, contractSlaMeasurement } from "@grc/db";
+import {
+  db,
+  contractSla,
+  contractSlaMeasurement,
+  toNumericInput,
+} from "@grc/db";
 import { createSlaMeasurementSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
@@ -47,7 +52,7 @@ export async function POST(
         orgId: ctx.orgId,
         periodStart: body.data.periodStart,
         periodEnd: body.data.periodEnd,
-        actualValue: body.data.actualValue,
+        actualValue: toNumericInput(body.data.actualValue),
         isBreach: body.data.isBreach,
         notes: body.data.notes,
         measuredBy: ctx.userId,

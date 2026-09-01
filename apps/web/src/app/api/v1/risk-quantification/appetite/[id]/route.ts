@@ -1,4 +1,4 @@
-import { db, riskAppetiteThreshold } from "@grc/db";
+import { db, riskAppetiteThreshold, toNumericInput } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -41,7 +41,11 @@ export async function PATCH(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(riskAppetiteThreshold)
-      .set({ ...body, updatedAt: new Date() })
+      .set({
+        ...body,
+        maxResidualAle: toNumericInput(body.maxResidualAle),
+        updatedAt: new Date(),
+      })
       .where(
         and(
           eq(riskAppetiteThreshold.id, id),

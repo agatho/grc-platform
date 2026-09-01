@@ -1,4 +1,4 @@
-import { db, doraIctIncident } from "@grc/db";
+import { db, doraIctIncident, toTimestampInput } from "@grc/db";
 import { updateDoraIctIncidentSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -37,7 +37,16 @@ export async function PATCH(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(doraIctIncident)
-      .set({ ...body.data, updatedAt: new Date() })
+      .set({
+        ...body.data,
+        resolvedAt: toTimestampInput(body.data.resolvedAt),
+        initialReportSent: toTimestampInput(body.data.initialReportSent),
+        intermediateReportSent: toTimestampInput(
+          body.data.intermediateReportSent,
+        ),
+        finalReportSent: toTimestampInput(body.data.finalReportSent),
+        updatedAt: new Date(),
+      })
       .where(
         and(eq(doraIctIncident.id, id), eq(doraIctIncident.orgId, ctx.orgId)),
       )

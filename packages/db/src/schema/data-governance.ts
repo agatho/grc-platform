@@ -66,6 +66,7 @@ export const dataLineageEntry = pgTable("data_lineage_entry", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  reportedIn: text("reported_in").array(),
 });
 
 // ─────────── Data Link ───────────

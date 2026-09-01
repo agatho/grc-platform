@@ -94,7 +94,11 @@ vi.mock("@grc/db", () => {
       _orgId: string,
       fn: (tx: unknown) => Promise<unknown>,
     ) => fn(makeTx(rowsFor)),
-    organization: { id: "organization.id", name: "organization.name", deletedAt: "organization.deleted_at" },
+    organization: {
+      id: "organization.id",
+      name: "organization.name",
+      deletedAt: "organization.deleted_at",
+    },
     regulatoryFeedItem: { fetchedAt: "regulatory_feed_item.fetched_at" },
     regulatoryRelevanceScore: {
       id: "regulatory_relevance_score.id",
@@ -145,9 +149,8 @@ describe("regulatory-relevance-scorer — nichts persistieren bei unbrauchbarer 
       new AiOutputInvalidError("schema", '{"relevanceScore":"hoch"}'),
     );
 
-    const { processRegulatoryRelevanceScorer } = await import(
-      "../../../apps/worker/src/crons/regulatory-relevance-scorer"
-    );
+    const { processRegulatoryRelevanceScorer } =
+      await import("../../../apps/worker/src/crons/regulatory-relevance-scorer");
     const result = (await processRegulatoryRelevanceScorer()) as {
       scored: number;
       invalidOutput: number;
@@ -170,9 +173,8 @@ describe("regulatory-relevance-scorer — nichts persistieren bei unbrauchbarer 
       }),
     );
 
-    const { processRegulatoryRelevanceScorer } = await import(
-      "../../../apps/worker/src/crons/regulatory-relevance-scorer"
-    );
+    const { processRegulatoryRelevanceScorer } =
+      await import("../../../apps/worker/src/crons/regulatory-relevance-scorer");
     const result = (await processRegulatoryRelevanceScorer()) as {
       scored: number;
       policyBlocked: number;
@@ -200,9 +202,8 @@ describe("regulatory-relevance-scorer — nichts persistieren bei unbrauchbarer 
       policy: {},
     });
 
-    const { processRegulatoryRelevanceScorer } = await import(
-      "../../../apps/worker/src/crons/regulatory-relevance-scorer"
-    );
+    const { processRegulatoryRelevanceScorer } =
+      await import("../../../apps/worker/src/crons/regulatory-relevance-scorer");
     const result = (await processRegulatoryRelevanceScorer()) as {
       scored: number;
       notified: number;

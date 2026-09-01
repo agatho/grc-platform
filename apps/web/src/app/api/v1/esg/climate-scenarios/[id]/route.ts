@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
@@ -25,7 +25,7 @@ export async function GET(
     const res = await tx.execute(
       sql`SELECT * FROM climate_risk_scenario WHERE id = ${id} AND org_id = ${ctx.orgId}`,
     );
-    const rows = Array.isArray(res) ? res : (res?.rows ?? []);
+    const rows = toRows(res);
     return rows[0];
   });
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
@@ -78,7 +78,7 @@ export async function PATCH(
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
 
   if (!result) return Response.json({ error: "Not found" }, { status: 404 });
@@ -99,7 +99,7 @@ export async function DELETE(
     const res = await tx.execute(sql`
       DELETE FROM climate_risk_scenario WHERE id = ${id} AND org_id = ${ctx.orgId} RETURNING id
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
 
   if (!result) return Response.json({ error: "Not found" }, { status: 404 });

@@ -30,11 +30,7 @@ import {
   type LoadedOrgAiPolicy,
   type SqlExecutor,
 } from "./org-policy";
-import type {
-  AiCompletionResponse,
-  AiMessage,
-  AiProvider,
-} from "./types";
+import type { AiCompletionResponse, AiMessage, AiProvider } from "./types";
 
 /** Minimalvertrag, den ein Zod-Schema strukturell erfüllt. */
 export interface OutputSchema<T> {

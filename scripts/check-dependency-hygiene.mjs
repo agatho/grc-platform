@@ -61,10 +61,20 @@
 // ============================================================================
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync, statSync, openSync, readSync, closeSync } from "node:fs";
+import {
+  readFileSync,
+  readdirSync,
+  statSync,
+  openSync,
+  readSync,
+  closeSync,
+} from "node:fs";
 import { join, relative } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 
 // ── Bewertete Ausnahmen ─────────────────────────────────────────────────
 // Jeder Eintrag braucht eine Begruendung. Ein Paket hier einzutragen ist
@@ -95,7 +105,8 @@ const ACKNOWLEDGED = [
   {
     pkg: "sharp",
     kinds: ["binary", "installHook"],
-    reason: "libvips-Bindings fuer Bildverarbeitung; native Abhaengigkeit per Konstruktion.",
+    reason:
+      "libvips-Bindings fuer Bildverarbeitung; native Abhaengigkeit per Konstruktion.",
   },
   {
     pkg: "lightningcss",
@@ -135,7 +146,12 @@ function productionPackages() {
     out = execFileSync(
       "npm",
       ["ls", "--omit=dev", "--all", "--json", "--long"],
-      { cwd: ROOT, encoding: "utf8", maxBuffer: 512 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] },
+      {
+        cwd: ROOT,
+        encoding: "utf8",
+        maxBuffer: 512 * 1024 * 1024,
+        stdio: ["ignore", "pipe", "ignore"],
+      },
     );
   } catch (e) {
     // `npm ls` endet mit Exit != 0, sobald irgendwo eine Peer-Warnung steht.
@@ -143,15 +159,21 @@ function productionPackages() {
     out = e.stdout?.toString() ?? "";
   }
   if (!out.trim()) {
-    console.error("check-dependency-hygiene: `npm ls --omit=dev` lieferte keine Ausgabe.");
-    console.error("  Ist `npm ci` gelaufen? Ohne node_modules kann nicht geprueft werden.");
+    console.error(
+      "check-dependency-hygiene: `npm ls --omit=dev` lieferte keine Ausgabe.",
+    );
+    console.error(
+      "  Ist `npm ci` gelaufen? Ohne node_modules kann nicht geprueft werden.",
+    );
     process.exit(2);
   }
   let tree;
   try {
     tree = JSON.parse(out);
   } catch {
-    console.error("check-dependency-hygiene: Ausgabe von `npm ls` ist kein gueltiges JSON.");
+    console.error(
+      "check-dependency-hygiene: Ausgabe von `npm ls` ist kein gueltiges JSON.",
+    );
     process.exit(2);
   }
 
@@ -277,15 +299,26 @@ const INSTALL_HOOKS = ["preinstall", "install", "postinstall"];
 // `dev`, `docs`, `test`) laufen auf unseren Rechnern nie und sind kein
 // Befund, auch wenn sie `npx` enthalten.
 const REMOTE_EXEC = [
-  { name: "npx auf Fremdpaket", re: /\bnpx\s+(?:-y\s+|--yes\s+)?[@\w][\w@/.-]*/ },
-  { name: "curl|wget in eine Shell", re: /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+)?(?:ba)?sh\b/ },
-  { name: "node -e mit Netzwerkabruf", re: /\bnode\s+-e\b[^\n]*\b(?:https?|fetch|request)\b/ },
+  {
+    name: "npx auf Fremdpaket",
+    re: /\bnpx\s+(?:-y\s+|--yes\s+)?[@\w][\w@/.-]*/,
+  },
+  {
+    name: "curl|wget in eine Shell",
+    re: /\b(?:curl|wget)\b[^\n|]*\|\s*(?:sudo\s+)?(?:ba)?sh\b/,
+  },
+  {
+    name: "node -e mit Netzwerkabruf",
+    re: /\bnode\s+-e\b[^\n]*\b(?:https?|fetch|request)\b/,
+  },
 ];
 
 // ── Auswertung ──────────────────────────────────────────────────────────
 const pkgs = productionPackages();
 if (pkgs.length === 0) {
-  console.error("check-dependency-hygiene: Produktionsbaum ist leer — das kann nicht stimmen.");
+  console.error(
+    "check-dependency-hygiene: Produktionsbaum ist leer — das kann nicht stimmen.",
+  );
   process.exit(2);
 }
 
@@ -305,7 +338,8 @@ for (const p of pkgs) {
 
   const record = (kind, detail) => {
     const entry = { pkg: label, kind, detail, path: rel };
-    if (ack?.kinds.includes(kind)) acknowledged.push({ ...entry, reason: ack.reason });
+    if (ack?.kinds.includes(kind))
+      acknowledged.push({ ...entry, reason: ack.reason });
     else findings.push(entry);
   };
 
@@ -354,7 +388,9 @@ if (acknowledged.length) {
 }
 
 if (findings.length === 0) {
-  console.log("\n✓ Keine unerklaerten Binaries, Install-Hooks, Netz-Nachladungen oder Arbeitsdateien.");
+  console.log(
+    "\n✓ Keine unerklaerten Binaries, Install-Hooks, Netz-Nachladungen oder Arbeitsdateien.",
+  );
   process.exit(0);
 }
 

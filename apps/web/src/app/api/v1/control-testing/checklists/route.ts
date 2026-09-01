@@ -1,4 +1,4 @@
-import { db, controlTestChecklist } from "@grc/db";
+import { db, controlTestChecklist, toTimestampInput } from "@grc/db";
 import { createChecklistSchema, checklistQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -21,6 +21,7 @@ export async function POST(req: Request) {
       .insert(controlTestChecklist)
       .values({
         ...body.data,
+        dueDate: toTimestampInput(body.data.dueDate),
         orgId: ctx.orgId,
         createdBy: ctx.userId,
         aiGenerated: false,

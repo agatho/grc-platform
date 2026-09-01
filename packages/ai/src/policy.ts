@@ -129,9 +129,39 @@ export const EU_ADEQUATE_REGIONS = new Set([
  * die beiden Angemessenheitsländer.
  */
 export const EU_BOUND_COUNTRIES = new Set([
-  "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR",
-  "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
-  "SI", "ES", "SE", "IS", "LI", "NO", "CH", "GB", "EU",
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
+  "IS",
+  "LI",
+  "NO",
+  "CH",
+  "GB",
+  "EU",
 ]);
 
 // ──────────────────────────────────────────────────────────────
@@ -139,10 +169,7 @@ export const EU_BOUND_COUNTRIES = new Set([
 // ──────────────────────────────────────────────────────────────
 
 export type AiEgressMode =
-  | "disabled"
-  | "local_only"
-  | "eu_only"
-  | "any_configured";
+  "disabled" | "local_only" | "eu_only" | "any_configured";
 
 export const AI_EGRESS_MODES: AiEgressMode[] = [
   "disabled",
@@ -302,7 +329,9 @@ export function evaluateProvider(
   // 3 — data_residency_rule (rule_type = 'processing')
   for (const rule of policy.residencyRules) {
     if (!rule.isEnforced) continue;
-    const denied = placement.regions.some((r) => rule.deniedRegions.includes(r));
+    const denied = placement.regions.some((r) =>
+      rule.deniedRegions.includes(r),
+    );
     const outsideAllowed =
       rule.allowedRegions.length > 0 &&
       !placement.regions.every((r) => rule.allowedRegions.includes(r));
@@ -458,13 +487,13 @@ export function selectProvider(args: SelectProviderArgs): ProviderSelection {
     };
   }
 
-  const pick = (
-    p: AiProvider | null | undefined,
-  ): AiProvider | null => (p && pool.includes(p) ? p : null);
+  const pick = (p: AiProvider | null | undefined): AiProvider | null =>
+    p && pool.includes(p) ? p : null;
 
   if (args.containsPersonalData) {
     const local =
-      pick(policy.defaultProvider) ?? pool.find((p) => placements[p].kind === "local");
+      pick(policy.defaultProvider) ??
+      pool.find((p) => placements[p].kind === "local");
     if (local) {
       return {
         provider: local,
@@ -500,8 +529,7 @@ export function selectProvider(args: SelectProviderArgs): ProviderSelection {
 
   // Kein Default gesetzt: lokale Modelle gehen vor — die Reihenfolge ist
   // die Produktzusage, nicht der Zufall der Env-Reihenfolge.
-  const chosen =
-    pool.find((p) => placements[p].kind === "local") ?? pool[0];
+  const chosen = pool.find((p) => placements[p].kind === "local") ?? pool[0];
   return {
     provider: chosen,
     placement: placements[chosen],

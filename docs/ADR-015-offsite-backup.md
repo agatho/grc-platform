@@ -3,7 +3,7 @@
 | **ADR-ID**  | **015**                                                                                                                                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Title**   | **Off-Site Backup via Backblaze B2 + rclone**                                                                                                                                                           |
-| **Status**  | **Accepted** (2026-09-01 — Umsetzung abgeschlossen, siehe §Umsetzungsstand)                                                                                                                                                                                            |
+| **Status**  | **Accepted** (2026-09-01 — Umsetzung abgeschlossen, siehe §Umsetzungsstand)                                                                                                                             |
 | **Date**    | 2026-04-18                                                                                                                                                                                              |
 | **Context** | ADR-014 setzte den On-Host-Backup-Prozess (`deploy/db-backup.sh`) auf. Ein zweites Failure-Domain fehlt noch: wenn der Hetzner-Host ausfällt (Disk, Ransomware, Storage-Delete), sind alle Backups weg. |
 
@@ -55,15 +55,15 @@ Reihenfolge:
 > alle drei sind jetzt implementiert. Der Status ist **Accepted**, weil er
 > ab hier den Ist-Zustand beschreibt — nicht die Absicht.
 
-| Zusage des ADR | Stand 2026-08-31 (Audit) | Stand 2026-09-01 |
-|---|---|---|
-| Verschlüsselte Übertragung (§1) | **nicht implementiert** — nacktes `rclone copyto` gegen ein `type = b2`-Remote; `/opt/arctos/.rclone.key` wurde von keinem Skript erzeugt oder gelesen (**S13-07**) | implementiert, aber **an anderer Stelle** — siehe §1 unten |
-| Cron installiert | **nein** — `backup-cron-install.sh` schrieb nur die Backup-Zeile; der Sync existierte als Copy-&-Paste-Vorschlag (**S13-23a**) | `backup-cron-install.sh` installiert Backup, Rotation und Sync in EINER verketteten Zeile |
-| Reihenfolge Backup → Sync | **verdreht** — Doku nannte 02:30 für den Sync, das Backup lief 03:00; der Off-Site-RPO war faktisch 48 h statt 24 h (**S13-23b**) | verkettet, Sync läuft nach dem Backup |
-| Fehler sichtbar | **nein** — bei fehlgeschlagenen Uploads endete das Skript mit Exit 0 und `"uploaded":0` (**S13-23c**) | Exit 2 bei Fehlern, Exit 3 wenn nichts zu übertragen war, Exit 5 bei Klartext |
-| `arctos_offsite_backup_age_seconds` (§Monitoring) | **nicht implementiert** (**S13-23d**) | `scripts/ops-metrics.mjs` exportiert die Metrik und alarmiert ab 26 h |
-| Objektspeicher gesichert | **nein** — nur `pg_dump`; die signierten DMS-Dokumente waren in keinem Backup (**S13-06**) | `db-backup.sh --with-objects` (Standard) sichert `uploads`, `branding`, `garagedata`, `garagemeta` |
-| Restore je getestet | **nein** — Drill seit 2026-05-01 überfällig, ohne Cron, ohne Nachweis (**S13-08**) | monatlicher Cron, Ergebnis in `bc_exercise` und als JSON-Stempel |
+| Zusage des ADR                                    | Stand 2026-08-31 (Audit)                                                                                                                                            | Stand 2026-09-01                                                                                   |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Verschlüsselte Übertragung (§1)                   | **nicht implementiert** — nacktes `rclone copyto` gegen ein `type = b2`-Remote; `/opt/arctos/.rclone.key` wurde von keinem Skript erzeugt oder gelesen (**S13-07**) | implementiert, aber **an anderer Stelle** — siehe §1 unten                                         |
+| Cron installiert                                  | **nein** — `backup-cron-install.sh` schrieb nur die Backup-Zeile; der Sync existierte als Copy-&-Paste-Vorschlag (**S13-23a**)                                      | `backup-cron-install.sh` installiert Backup, Rotation und Sync in EINER verketteten Zeile          |
+| Reihenfolge Backup → Sync                         | **verdreht** — Doku nannte 02:30 für den Sync, das Backup lief 03:00; der Off-Site-RPO war faktisch 48 h statt 24 h (**S13-23b**)                                   | verkettet, Sync läuft nach dem Backup                                                              |
+| Fehler sichtbar                                   | **nein** — bei fehlgeschlagenen Uploads endete das Skript mit Exit 0 und `"uploaded":0` (**S13-23c**)                                                               | Exit 2 bei Fehlern, Exit 3 wenn nichts zu übertragen war, Exit 5 bei Klartext                      |
+| `arctos_offsite_backup_age_seconds` (§Monitoring) | **nicht implementiert** (**S13-23d**)                                                                                                                               | `scripts/ops-metrics.mjs` exportiert die Metrik und alarmiert ab 26 h                              |
+| Objektspeicher gesichert                          | **nein** — nur `pg_dump`; die signierten DMS-Dokumente waren in keinem Backup (**S13-06**)                                                                          | `db-backup.sh --with-objects` (Standard) sichert `uploads`, `branding`, `garagedata`, `garagemeta` |
+| Restore je getestet                               | **nein** — Drill seit 2026-05-01 überfällig, ohne Cron, ohne Nachweis (**S13-08**)                                                                                  | monatlicher Cron, Ergebnis in `bc_exercise` und als JSON-Stempel                                   |
 
 ### Key Security Decisions
 
@@ -94,6 +94,7 @@ Reihenfolge:
    damit jede Wiederherstellbarkeit, obwohl die Off-Site-Kopien intakt
    sind. Das ist der Preis der Verschlüsselung und steht als Schritt 0 im
    DR-Playbook.
+
 2. **Append-Only Bucket**: B2-Application-Key mit Capability `listBuckets + listFiles + readFiles + writeFiles` — **kein `deleteFiles`**. Ransomware im Host kann Backups nicht von dort aus löschen. Retention-Bereinigung nur über B2-UI oder separaten Key.
 3. **EU-Region**: Bucket in `eu-central-003` (Amsterdam) — verhindert US-Data-Transfer (Schrems-II-Compliance).
 4. **Kein Private-Key in Git**: Setup-Script erstellt `.rclone.conf`, der User trägt Application-Key manuell ein. Templatierung per Umgebungsvariable.

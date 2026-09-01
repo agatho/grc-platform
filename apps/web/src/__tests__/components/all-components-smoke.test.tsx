@@ -386,8 +386,9 @@ describe("Design-system primitives render with their accessibility contract", ()
       string,
       unknown
     >;
-    const Spinner = (mod.LoadingSpinner ??
-      mod.default) as React.ComponentType<Record<string, unknown>>;
+    const Spinner = (mod.LoadingSpinner ?? mod.default) as React.ComponentType<
+      Record<string, unknown>
+    >;
     const { container } = render(<Spinner />);
     // An ARIA live/status role or an accessible name must be present: a purely
     // decorative spinner leaves a screen reader with silence.

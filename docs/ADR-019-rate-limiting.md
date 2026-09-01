@@ -47,6 +47,7 @@ Mehrstufiges Rate-Limit mit:
    `TRUSTED_PROXY_HOPS` gleich 1 sein. Vor der Remediation nahm der Code den
    ERSTEN (also den vom Client gelieferten) Eintrag — ein Header pro Versuch
    genuegte, um das Login-Limit vollstaendig zu umgehen (S02-09/S10-05).
+
 2. **Middleware (Auth-Ebene)** — neu: Token-Bucket-Limit pro `user_id`
    auf `/api/v1/**`, Default 300 req/min
 3. **Per-Endpoint-Override** — fuer sensible oder teure Endpoints:

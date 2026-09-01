@@ -106,9 +106,8 @@ afterEach(() => {
 
 describe("Verfügbarkeit — kein Provider ohne Betreiberentscheidung (S05-02)", () => {
   it("meldet OHNE jede AI-Variable eine LEERE Providerliste", async () => {
-    const { getAvailableProviders, getDefaultProvider } = await import(
-      "../src/router"
-    );
+    const { getAvailableProviders, getDefaultProvider } =
+      await import("../src/router");
     // Auditstand: ["claude_cli"] — jeder Prompt ging ohne Betreiber-
     // entscheidung an Anthropic.
     expect(getAvailableProviders()).toEqual([]);

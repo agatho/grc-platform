@@ -42,7 +42,8 @@
 import { spawnSync } from "node:child_process";
 
 const WORKER_URL = process.env.WORKER_DATABASE_URL;
-const DB_URL = WORKER_URL ?? process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL;
+const DB_URL =
+  WORKER_URL ?? process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL;
 
 if (!DB_URL) {
   if (process.env.ALLOW_SKIP_DB_TESTS === "1") {

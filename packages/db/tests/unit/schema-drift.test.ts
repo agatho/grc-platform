@@ -114,6 +114,56 @@ describe("column-level comparison (S09-09)", () => {
       ),
     ).toBe(true);
   });
+
+  // [ARCTOS-FULL-2026-08-31 / Restdefekte · O-6] The direction the check was
+  // missing. Without it the comparison only ever asked whether the database
+  // has everything the code declares; a column that exists ONLY in the
+  // database (`control.source_library_ref` and 203 others) stayed invisible
+  // and the report still said "column drift: 0".
+  it("reports a column the DATABASE has and the schema does not declare", () => {
+    const cols = [
+      ...columnsOf(table),
+      {
+        table_name: table,
+        column_name: "legacy_only_in_db",
+        data_type: "character varying",
+        udt_name: "varchar",
+        is_nullable: "YES",
+      },
+    ];
+    const report = compareSchema(exports_, [table], cols, flags);
+    expect(report.columnDrift).toContainEqual({
+      table,
+      column: "legacy_only_in_db",
+      kind: "extra-in-db",
+      actual: "varchar",
+    });
+    // …and it has to make the report unhealthy. A direction that is reported
+    // but does not fail the gate would leave "drift empty" half true.
+    expect(report.healthy).toBe(false);
+  });
+
+  it("does not report extra columns for tables the schema does not claim", () => {
+    // Tables that predate the TypeScript schema are `extraInDb` as a whole and
+    // stay informational; their columns must not flood the column report.
+    const report = compareSchema(
+      exports_,
+      [table, "some_sql_only_table"],
+      [
+        ...columnsOf(table),
+        {
+          table_name: "some_sql_only_table",
+          column_name: "whatever",
+          data_type: "text",
+          udt_name: "text",
+          is_nullable: "YES",
+        },
+      ],
+      flags,
+    );
+    expect(report.columnDrift).toEqual([]);
+    expect(report.extraInDb).toContain("some_sql_only_table");
+  });
 });
 
 describe("RLS comparison", () => {

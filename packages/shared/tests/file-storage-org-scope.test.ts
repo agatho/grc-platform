@@ -199,4 +199,3 @@ describe("S3 server-side encryption header (S06-11)", () => {
     );
   });
 });
-

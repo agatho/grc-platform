@@ -165,19 +165,19 @@ docker compose down -v              # ACHTUNG: löscht ALLE Daten inkl. Uploads
 
 ## Dateien
 
-| Datei                    | Zweck                                                     |
-| ------------------------ | --------------------------------------------------------- |
-| `docker-compose.yml`     | Single-Host-Stack: postgres, redis, web, worker, caddy     |
-| `.env.sample`            | Vorlage — nach `.env` kopieren und ausfüllen               |
-| `init-extensions.sql`    | PostgreSQL-Extensions (läuft beim ersten DB-Init)          |
-| `Caddyfile.compose`      | Reverse-Proxy, TLS, Security-Header (Container-Variante)   |
-| `Caddyfile`              | dieselbe Rolle für den Hetzner-Host-Pfad (setup-hetzner.sh)|
-| `provision-grc-app.sh`   | Legt `grc_app` und `grc_worker` an (Least Privilege)       |
-| `db-backup.sh`           | Backup: alle DBs + DMS-Objektspeicher, verschlüsselt       |
-| `offsite-sync.sh`        | Off-Site-Kopie nach B2 (nur verschlüsselte Artefakte)      |
-| `backup-cron-install.sh` | Installiert Backup-, Off-Site- und DR-Drill-Cron           |
+| Datei                    | Zweck                                                       |
+| ------------------------ | ----------------------------------------------------------- |
+| `docker-compose.yml`     | Single-Host-Stack: postgres, redis, web, worker, caddy      |
+| `.env.sample`            | Vorlage — nach `.env` kopieren und ausfüllen                |
+| `init-extensions.sql`    | PostgreSQL-Extensions (läuft beim ersten DB-Init)           |
+| `Caddyfile.compose`      | Reverse-Proxy, TLS, Security-Header (Container-Variante)    |
+| `Caddyfile`              | dieselbe Rolle für den Hetzner-Host-Pfad (setup-hetzner.sh) |
+| `provision-grc-app.sh`   | Legt `grc_app` und `grc_worker` an (Least Privilege)        |
+| `db-backup.sh`           | Backup: alle DBs + DMS-Objektspeicher, verschlüsselt        |
+| `offsite-sync.sh`        | Off-Site-Kopie nach B2 (nur verschlüsselte Artefakte)       |
+| `backup-cron-install.sh` | Installiert Backup-, Off-Site- und DR-Drill-Cron            |
 | `rollback.sh`            | Image- und/oder Datenbank-Rollback                          |
-| `update-all.sh`          | Mehr-Mandanten-Update mit Backup, CI-Gate und Health-Gate  |
+| `update-all.sh`          | Mehr-Mandanten-Update mit Backup, CI-Gate und Health-Gate   |
 
 ## Architektur
 

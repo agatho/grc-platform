@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
           WHERE org_id = ${ctx.orgId} AND module_key = 'bcms'
           LIMIT 1`,
     );
-    const threshold = configResult.rows?.[0]?.score_threshold ?? 12;
+    const threshold = firstRow(configResult)?.score_threshold ?? 12;
 
     // 2. Find crisis scenarios eligible for sync
     const candidates = await tx.execute(
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
             AND deleted_at IS NULL`,
     );
 
-    if (!candidates.rows?.length) {
+    if (!toRows(candidates).length) {
       return [];
     }
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
       [];
 
     // 3. For each candidate, create a risk entry and link back
-    for (const row of candidates.rows) {
+    for (const row of toRows(candidates)) {
       const title = `BC-Risiko: ${row.name}`;
       const riskResult = await tx.execute(
         sql`INSERT INTO risk (
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
             RETURNING id`,
       );
 
-      const riskId = riskResult.rows?.[0]?.id as string;
+      const riskId = firstRow(riskResult)?.id as string;
 
       // 4. Update crisis_scenario with erm_risk_id
       await tx.execute(

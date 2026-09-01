@@ -31,23 +31,23 @@ _Last updated: 2026-04-18._
 > noch den Platzhalter trägt. **Das ist beabsichtigt**: ein nicht startender
 > Container ist der deutlich harmlosere Ausgang.
 
-| Variable | web | worker | Erzeugen | Ohne sie |
-| --- | :-: | :-: | --- | --- |
-| `DATABASE_URL` | ✅ | ✅ | — | Migrationen und Provisionierung unmöglich |
-| `APP_DATABASE_URL` | ✅ | — | aus `GRC_APP_PASSWORD` | **RLS wirkungslos**, Mandantentrennung aufgehoben (S13-09/S13-10) |
-| `GRC_APP_PASSWORD` | ✅ | — | `openssl rand -hex 24` | s. o. |
-| `GRC_WORKER_PASSWORD` | — | ✅ | `openssl rand -hex 24` | Worker startet nicht (WP2/S01-09) |
-| `AUTH_SECRET` | ✅ | — | `openssl rand -hex 32` | Sitzungen nicht signierbar |
-| `AUTH_URL` / `NEXTAUTH_URL` | ✅ | — | öffentliche **https**-Basis-URL | SSO-/SCIM-/SAML-Callbacks zeigen ins Leere |
-| `CRON_SECRET` | ✅ | ✅ | `openssl rand -hex 16` | Worker antwortet auf `/crons/*` mit 500 |
-| `AUDIT_SEAL_KEY` | ✅ | ✅ | `openssl rand -hex 32` | Anker verkettet, aber **unsigniert** — Integritätsprüfung statt Tamper-Evidence (WP4/S03-01) |
-| `PII_PSEUDONYM_KEY` | ✅ | ✅ | `openssl rand -hex 32` | Installationsschlüssel **in der Datenbank** — das „zusätzliche Wissen" nach Art. 4 Nr. 5 DSGVO läge im selben Dump wie die Daten (WP8/S07-03) |
-| `WB_ENCRYPTION_KEY` | ✅ | ✅ | `openssl rand -hex 32` | Meldeportal weist Meldungen mit 503 ab |
-| `CONNECTOR_ENCRYPTION_KEY` | ✅ | ✅ | `openssl rand -hex 32` | Connector-Zugangsdaten nicht speicherbar |
-| `SECRET_ENCRYPTION_KEY` | ✅ | ✅ | `openssl rand -base64 32` | SSO-/OAuth-Secrets nicht speicherbar |
-| `REDIS_URL` | ✅ | — | `redis://redis:6379` | Rate-Limit prozesslokal: effektives Limit `N × capacity`, Lockout überlebt keinen Neustart (WP9/S10-05) |
-| `TRUSTED_PROXY_HOPS` | ✅ | — | Anzahl eigener Proxys (Caddy = `1`) | Login-Rate-Limit per `X-Forwarded-For` umgehbar |
-| `STORAGE_BACKEND` | ✅ | ✅ | `local` oder `s3` | bei `local` ohne `UPLOAD_DIR`: Dokumente im Container, weg beim nächsten Update (S13-09b) |
+| Variable                    | web | worker | Erzeugen                            | Ohne sie                                                                                                                                      |
+| --------------------------- | :-: | :----: | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`              | ✅  |   ✅   | —                                   | Migrationen und Provisionierung unmöglich                                                                                                     |
+| `APP_DATABASE_URL`          | ✅  |   —    | aus `GRC_APP_PASSWORD`              | **RLS wirkungslos**, Mandantentrennung aufgehoben (S13-09/S13-10)                                                                             |
+| `GRC_APP_PASSWORD`          | ✅  |   —    | `openssl rand -hex 24`              | s. o.                                                                                                                                         |
+| `GRC_WORKER_PASSWORD`       |  —  |   ✅   | `openssl rand -hex 24`              | Worker startet nicht (WP2/S01-09)                                                                                                             |
+| `AUTH_SECRET`               | ✅  |   —    | `openssl rand -hex 32`              | Sitzungen nicht signierbar                                                                                                                    |
+| `AUTH_URL` / `NEXTAUTH_URL` | ✅  |   —    | öffentliche **https**-Basis-URL     | SSO-/SCIM-/SAML-Callbacks zeigen ins Leere                                                                                                    |
+| `CRON_SECRET`               | ✅  |   ✅   | `openssl rand -hex 16`              | Worker antwortet auf `/crons/*` mit 500                                                                                                       |
+| `AUDIT_SEAL_KEY`            | ✅  |   ✅   | `openssl rand -hex 32`              | Anker verkettet, aber **unsigniert** — Integritätsprüfung statt Tamper-Evidence (WP4/S03-01)                                                  |
+| `PII_PSEUDONYM_KEY`         | ✅  |   ✅   | `openssl rand -hex 32`              | Installationsschlüssel **in der Datenbank** — das „zusätzliche Wissen" nach Art. 4 Nr. 5 DSGVO läge im selben Dump wie die Daten (WP8/S07-03) |
+| `WB_ENCRYPTION_KEY`         | ✅  |   ✅   | `openssl rand -hex 32`              | Meldeportal weist Meldungen mit 503 ab                                                                                                        |
+| `CONNECTOR_ENCRYPTION_KEY`  | ✅  |   ✅   | `openssl rand -hex 32`              | Connector-Zugangsdaten nicht speicherbar                                                                                                      |
+| `SECRET_ENCRYPTION_KEY`     | ✅  |   ✅   | `openssl rand -base64 32`           | SSO-/OAuth-Secrets nicht speicherbar                                                                                                          |
+| `REDIS_URL`                 | ✅  |   —    | `redis://redis:6379`                | Rate-Limit prozesslokal: effektives Limit `N × capacity`, Lockout überlebt keinen Neustart (WP9/S10-05)                                       |
+| `TRUSTED_PROXY_HOPS`        | ✅  |   —    | Anzahl eigener Proxys (Caddy = `1`) | Login-Rate-Limit per `X-Forwarded-For` umgehbar                                                                                               |
+| `STORAGE_BACKEND`           | ✅  |   ✅   | `local` oder `s3`                   | bei `local` ohne `UPLOAD_DIR`: Dokumente im Container, weg beim nächsten Update (S13-09b)                                                     |
 
 Zusätzlich für den Worker: `ARCTOS_ALLOW_PRIVILEGED_DB=true` — die
 Startup-Assertion aus S01-10 verlangt diese Zustimmung ausdrücklich, damit
@@ -126,7 +126,7 @@ Neustart. **Die Migrationslaufzeit fehlte in der alten Angabe** — bei einer
 `update-all.sh` fährt `up -d --force-recreate`: der Container wird gestoppt
 und neu gestartet. **Es gibt keine zweite Replik und damit kein echtes
 Zero-Downtime** (S13-22). Was seit der Remediation besteht, ist ein
-*gesteuertes* Fenster: beide Images haben einen `HEALTHCHECK`, der Deploy
+_gesteuertes_ Fenster: beide Images haben einen `HEALTHCHECK`, der Deploy
 wartet darauf und rollt bei Misserfolg automatisch zurück, statt eine tote
 Instanz stehen zu lassen.
 
@@ -310,27 +310,27 @@ sudo bash /opt/arctos/deploy/backup-cron-install.sh  # Cron + Schluessel + Reten
 
 > **Was hier bis 2026-08-31 stand — und warum es falsch war.**
 >
-> * Zwei getrennte Cron-Zeilen mit eigenen Uhrzeiten: Backup 03:00,
+> - Zwei getrennte Cron-Zeilen mit eigenen Uhrzeiten: Backup 03:00,
 >   Off-Site-Sync 02:30. Der Sync lief also **30 Minuten VOR** dem Backup
 >   und übertrug dauerhaft den Stand des Vortags — der Off-Site-RPO war
 >   faktisch 48 h statt der im DR-Playbook zugesagten 24 h (S13-23b). Und
 >   der Sync-Cron wurde von keinem Skript installiert; er existierte nur
 >   als Copy-&-Paste-Vorschlag an drei Stellen (S13-23a).
-> * „Rotation: > 30 Tage löscht das Script selbst" — das von
+> - „Rotation: > 30 Tage löscht das Script selbst" — das von
 >   `backup-cron-install.sh` erzeugte `backup-rotate.sh` löschte nach **14**
 >   Tagen, und die schärfere Regel gewann. Effektiv galt 14, während dieses
 >   Dokument und das DR-Playbook 30 zusagten (S13-24).
-> * Gesichert wurde ausschliesslich `pg_dump`. Der **DMS-Objektspeicher**
+> - Gesichert wurde ausschliesslich `pg_dump`. Der **DMS-Objektspeicher**
 >   war in keinem Backup (S13-06), und **verschlüsselt war nichts**,
 >   obwohl ADR-015 §1 es zusagte (S13-07).
 
 ### Was gesichert wird
 
-| Artefakt | Datei | Verschlüsselt |
-| --- | --- | --- |
-| Jede `grc_*`-Datenbank | `<db>-<zeitstempel>[-label].dump.gpg` | ja (GPG/AES-256) |
-| DMS-Objektspeicher (`uploads`, `branding`, `garagedata`, `garagemeta`) | `objects-<zeitstempel>.tar.gz.gpg` | ja |
-| Prüfsumme je Artefakt | `*.sha256` | — |
+| Artefakt                                                               | Datei                                 | Verschlüsselt    |
+| ---------------------------------------------------------------------- | ------------------------------------- | ---------------- |
+| Jede `grc_*`-Datenbank                                                 | `<db>-<zeitstempel>[-label].dump.gpg` | ja (GPG/AES-256) |
+| DMS-Objektspeicher (`uploads`, `branding`, `garagedata`, `garagemeta`) | `objects-<zeitstempel>.tar.gz.gpg`    | ja               |
+| Prüfsumme je Artefakt                                                  | `*.sha256`                            | —                |
 
 ### Prüfen, ob es läuft
 
@@ -413,13 +413,13 @@ GRC_APP_PASSWORD=… GRC_WORKER_PASSWORD=… \
 
 ## Disaster Recovery
 
-| Szenario                         | RTO    | RPO   | Prozedur                                                           |
-| -------------------------------- | ------ | ----- | ------------------------------------------------------------------ |
-| Einzelner Container crasht       | 1 min  | 0s    | Docker-Restart-Policy (`unless-stopped`) greift automatisch        |
-| Container **hängt** (Event-Loop blockiert, Pool erschöpft) | 2 min | 0s | `HEALTHCHECK` in beiden Images meldet `unhealthy`, `ops-metrics` alarmiert. **Bis 2026-08-31 gab es dafür keinen Mechanismus**: `restart: unless-stopped` reagiert nur auf einen BEENDETEN Prozess, `web` hatte keinen Healthcheck, und externes Monitoring existierte nicht (S13-13) |
-| Tenant-DB korrupt                | 30 min | ≤ 24h | Restore aus lokalem Backup (siehe oben)                            |
-| Host kompromittiert (Ransomware) | 4h     | ≤ 24h | Neuer Host + Restore aus B2 (ADR-015)                              |
-| Schrems-III / B2 nicht verfügbar | 8h     | ≤ 24h | Fallback auf lokalen Backup-Bestand; B2-Restore via rclone ohne DR |
+| Szenario                                                   | RTO    | RPO   | Prozedur                                                                                                                                                                                                                                                                              |
+| ---------------------------------------------------------- | ------ | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Einzelner Container crasht                                 | 1 min  | 0s    | Docker-Restart-Policy (`unless-stopped`) greift automatisch                                                                                                                                                                                                                           |
+| Container **hängt** (Event-Loop blockiert, Pool erschöpft) | 2 min  | 0s    | `HEALTHCHECK` in beiden Images meldet `unhealthy`, `ops-metrics` alarmiert. **Bis 2026-08-31 gab es dafür keinen Mechanismus**: `restart: unless-stopped` reagiert nur auf einen BEENDETEN Prozess, `web` hatte keinen Healthcheck, und externes Monitoring existierte nicht (S13-13) |
+| Tenant-DB korrupt                                          | 30 min | ≤ 24h | Restore aus lokalem Backup (siehe oben)                                                                                                                                                                                                                                               |
+| Host kompromittiert (Ransomware)                           | 4h     | ≤ 24h | Neuer Host + Restore aus B2 (ADR-015)                                                                                                                                                                                                                                                 |
+| Schrems-III / B2 nicht verfügbar                           | 8h     | ≤ 24h | Fallback auf lokalen Backup-Bestand; B2-Restore via rclone ohne DR                                                                                                                                                                                                                    |
 
 ## §8 Monitoring und Alarme
 
@@ -428,7 +428,7 @@ GRC_APP_PASSWORD=… GRC_WORKER_PASSWORD=… \
 > abrufen kann**. Es gab niemanden und nichts, das sie abrief: eine
 > vollständige Suche über den gesamten Baum nach
 > `healthchecks.io|alertmanager|prometheus|promtail|loki|sentry|
-> opentelemetry|statsd|datadog` ergab null Treffer. Die Plattform war
+opentelemetry|statsd|datadog` ergab null Treffer. Die Plattform war
 > unbeobachtet, ein Ausfall wurde durch Nutzerreport entdeckt — und es gab
 > keinen Alarm auf ein einziges sicherheitsrelevantes Ereignis.
 
@@ -447,20 +447,20 @@ DATABASE_URL=… node /opt/arctos/scripts/ops-metrics.mjs --check   # Exit 1 bei
 
 ### Alarme
 
-| Alarm | Auslöser | Schwelle (Env) |
-| --- | --- | --- |
-| `failed_logins_burst` | Anmeldefehler instanzweit in 5 min | `ALERT_FAILED_LOGINS_5M` (20) |
-| `failed_logins_single_account` | Anmeldefehler EINES Kontos in 5 min | `ALERT_FAILED_LOGINS_ACCOUNT_5M` (10) |
-| `mass_export_hourly` / `_daily` | Datensätze je Nutzer in 1 h / 24 h | `ALERT_EXPORT_ROWS_1H` (50 000) / `_24H` (200 000) |
-| `audit_chain_broken` | Fehler aus `audit_chain_verify()` | **0** — keine Toleranz |
-| `audit_chain_unverifiable` | Kettenprüfung nicht ausführbar | — |
-| `audit_write_attempt` | abgewiesene Schreibversuche auf `audit_log` | **0** |
-| `job_failures` | fehlgeschlagene Jobs in 1 h | `ALERT_JOB_FAILURES_1H` (3) |
-| `scheduler_silent` | **kein** Joblauf in 24 h | — |
-| `backup_stale` / `_failed` / `_unencrypted` / `_without_objects` | Backup-Stempel | 26 h |
-| `offsite_stale` / `_failed` | Off-Site-Stempel | 26 h |
-| `dr_drill_overdue` / `_failed` | Drill-Stempel | 40 Tage |
-| `migrations_failed` | Einträge im Ledger != `applied` | **0** |
+| Alarm                                                            | Auslöser                                    | Schwelle (Env)                                     |
+| ---------------------------------------------------------------- | ------------------------------------------- | -------------------------------------------------- |
+| `failed_logins_burst`                                            | Anmeldefehler instanzweit in 5 min          | `ALERT_FAILED_LOGINS_5M` (20)                      |
+| `failed_logins_single_account`                                   | Anmeldefehler EINES Kontos in 5 min         | `ALERT_FAILED_LOGINS_ACCOUNT_5M` (10)              |
+| `mass_export_hourly` / `_daily`                                  | Datensätze je Nutzer in 1 h / 24 h          | `ALERT_EXPORT_ROWS_1H` (50 000) / `_24H` (200 000) |
+| `audit_chain_broken`                                             | Fehler aus `audit_chain_verify()`           | **0** — keine Toleranz                             |
+| `audit_chain_unverifiable`                                       | Kettenprüfung nicht ausführbar              | —                                                  |
+| `audit_write_attempt`                                            | abgewiesene Schreibversuche auf `audit_log` | **0**                                              |
+| `job_failures`                                                   | fehlgeschlagene Jobs in 1 h                 | `ALERT_JOB_FAILURES_1H` (3)                        |
+| `scheduler_silent`                                               | **kein** Joblauf in 24 h                    | —                                                  |
+| `backup_stale` / `_failed` / `_unencrypted` / `_without_objects` | Backup-Stempel                              | 26 h                                               |
+| `offsite_stale` / `_failed`                                      | Off-Site-Stempel                            | 26 h                                               |
+| `dr_drill_overdue` / `_failed`                                   | Drill-Stempel                               | 40 Tage                                            |
+| `migrations_failed`                                              | Einträge im Ledger != `applied`             | **0**                                              |
 
 ### Zustellung — der Betreiberschritt
 

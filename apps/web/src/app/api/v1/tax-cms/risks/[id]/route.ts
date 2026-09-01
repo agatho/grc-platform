@@ -1,4 +1,4 @@
-import { db, taxRisk } from "@grc/db";
+import { db, taxRisk, toNumericInput } from "@grc/db";
 import { updateTaxRiskSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
@@ -45,7 +45,11 @@ export async function PATCH(
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(taxRisk)
-      .set({ ...body.data, updatedAt: new Date() })
+      .set({
+        ...body.data,
+        financialExposure: toNumericInput(body.data.financialExposure),
+        updatedAt: new Date(),
+      })
       .where(and(eq(taxRisk.id, id), eq(taxRisk.orgId, ctx.orgId)))
       .returning();
     return updated;

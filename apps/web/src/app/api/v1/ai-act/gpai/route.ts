@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { db, toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   withAuth,
@@ -46,8 +46,8 @@ export async function GET(req: Request) {
       tx.execute(query),
       tx.execute(countQuery),
     ]);
-    const rows = Array.isArray(r) ? r : (r?.rows ?? []);
-    const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
+    const rows = toRows(r);
+    const countArr = toRows(c);
     return { rows, count: Number((countArr[0] as any)?.count ?? 0) };
   });
   return Response.json({
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       VALUES (${ctx.orgId}, ${name}, ${provider}, ${model_type ?? "foundation"}, ${is_systemic_risk ?? false}, ${training_data_summary ?? null}, ${energy_consumption_kwh ?? null}, ${version ?? "1.0"}, 'draft', ${ctx.userId})
       RETURNING *
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
   return Response.json({ data: result }, { status: 201 });
 }
