@@ -3,6 +3,7 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import { parseQueryParams } from "@/lib/query-schema";
 
 const createNonconformitySchema = z.object({
   title: z.string().min(1).max(500),
@@ -20,8 +21,23 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
+  // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+  // against a schema instead of being read as `string | null` and cast
+  // with `as <enum>`. An unknown filter value used to reach Postgres and
+  // surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+  // and free-text search terms are length-bounded.
+  const nonconformityListQuerySchema = z.object({
+    status: z.string().trim().min(1).max(40).optional(),
+  });
+
   const { limit, offset, searchParams } = paginate(req);
-  const status = searchParams.get("status");
+  const q = parseQueryParams(nonconformityListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const status = q.data.status ?? null;
 
   let query = sql`SELECT nc.*,
     (SELECT count(*) FROM isms_corrective_action ca WHERE ca.nonconformity_id = nc.id) as action_count,

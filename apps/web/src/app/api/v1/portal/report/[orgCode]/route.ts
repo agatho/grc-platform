@@ -2,15 +2,14 @@
 // GET  /api/v1/portal/report/:orgCode — Load org info for report form
 
 import {
-  db,
-  organization,
   wbReport,
   wbCase,
   wbAnonymousMailbox,
+  withOrgReadContext,
 } from "@grc/db";
+import { resolveOrgByCode } from "@grc/auth/anonymous-token";
 import { submitReportSchema } from "@grc/shared";
 import { encrypt, hashIp, generateMailboxToken } from "@grc/shared";
-import { eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 interface RouteParams {
@@ -21,9 +20,12 @@ interface RouteParams {
 export async function GET(_req: Request, { params }: RouteParams) {
   const { orgCode } = await params;
 
-  const org = await db.query.organization.findFirst({
-    where: eq(organization.orgCode, orgCode),
-  });
+  // #WP3-S02-05 — `organization` is FORCE-RLS and this endpoint is anonymous by
+  // design (HinSchG §16: requiring a session would identify the reporter). A
+  // context-free read under `grc_app` returned 0 rows, so the legally mandated
+  // reporting channel answered "Organization not found" for every valid org
+  // code. Resolve through the narrow SECURITY DEFINER helper (migration 0412).
+  const org = await resolveOrgByCode(orgCode);
 
   if (!org) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
@@ -33,7 +35,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     data: {
       orgId: org.id,
       orgName: org.name,
-      orgCode: org.orgCode,
+      orgCode,
       categories: [
         "fraud",
         "corruption",
@@ -51,9 +53,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
 export async function POST(req: Request, { params }: RouteParams) {
   const { orgCode } = await params;
 
-  const org = await db.query.organization.findFirst({
-    where: eq(organization.orgCode, orgCode),
-  });
+  // #WP3-S02-05 — see GET above: the org must be resolved before any RLS
+  // context can exist.
+  const org = await resolveOrgByCode(orgCode);
 
   if (!org) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
@@ -91,52 +93,59 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   // Generate case number: WB-YYYY-NNN
   const year = now.getFullYear();
-  const countResult = await db.execute(
-    sql`SELECT COUNT(*) as cnt FROM wb_case WHERE org_id = ${org.id} AND EXTRACT(YEAR FROM created_at) = ${year}`,
-  );
-  const count = Number((countResult as any)[0]?.cnt ?? 0) + 1;
-  const caseNumber = `WB-${year}-${String(count).padStart(3, "0")}`;
 
-  // Create report, case, and mailbox in transaction
-  const result = await db.transaction(async (tx) => {
-    const [report] = await tx
-      .insert(wbReport)
-      .values({
-        orgId: org.id,
-        reportToken,
-        tokenExpiresAt: tokenExpires,
-        category: body.data.category,
-        description: encryptedDescription,
-        contactEmail: encryptedEmail,
-        language: body.data.language,
-        ipHash: ipHashed,
-        submittedAt: now,
-        createdAt: now,
-      })
-      .returning();
+  // #WP3-S02-05 — everything below writes FORCE-RLS tables (`wb_report`,
+  // `wb_case`, `wb_anonymous_mailbox`). The org is now known, so the whole
+  // block runs on a connection pinned to it; without that the insert was
+  // rejected by the tenant policy and the tip was silently lost.
+  const result = await withOrgReadContext(org.id, async (db) => {
+    const countResult = await db.execute(
+      sql`SELECT COUNT(*) as cnt FROM wb_case WHERE org_id = ${org.id} AND EXTRACT(YEAR FROM created_at) = ${year}`,
+    );
+    const count = Number((countResult as any)[0]?.cnt ?? 0) + 1;
+    const caseNumber = `WB-${year}-${String(count).padStart(3, "0")}`;
 
-    const [wbCaseRow] = await tx
-      .insert(wbCase)
-      .values({
-        orgId: org.id,
+    // Create report, case, and mailbox in transaction
+    return db.transaction(async (tx) => {
+      const [report] = await tx
+        .insert(wbReport)
+        .values({
+          orgId: org.id,
+          reportToken,
+          tokenExpiresAt: tokenExpires,
+          category: body.data.category,
+          description: encryptedDescription,
+          contactEmail: encryptedEmail,
+          language: body.data.language,
+          ipHash: ipHashed,
+          submittedAt: now,
+          createdAt: now,
+        })
+        .returning();
+
+      const [wbCaseRow] = await tx
+        .insert(wbCase)
+        .values({
+          orgId: org.id,
+          reportId: report!.id,
+          caseNumber,
+          status: "received",
+          priority: "medium",
+          acknowledgeDeadline,
+          responseDeadline,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
+
+      await tx.insert(wbAnonymousMailbox).values({
         reportId: report!.id,
-        caseNumber,
-        status: "received",
-        priority: "medium",
-        acknowledgeDeadline,
-        responseDeadline,
-        createdAt: now,
-        updatedAt: now,
-      })
-      .returning();
+        token: mailboxToken,
+        expiresAt: tokenExpires,
+      });
 
-    await tx.insert(wbAnonymousMailbox).values({
-      reportId: report!.id,
-      token: mailboxToken,
-      expiresAt: tokenExpires,
+      return { reportId: report!.id, caseId: wbCaseRow!.id, caseNumber };
     });
-
-    return { reportId: report!.id, caseId: wbCaseRow!.id, caseNumber };
   });
 
   return Response.json(

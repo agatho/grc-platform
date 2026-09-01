@@ -21,6 +21,7 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
 import { z } from "zod";
+import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
 
 const schema = z.object({
   processIds: z.array(z.string().uuid()).optional(),
@@ -183,8 +184,14 @@ export async function POST(req: Request) {
   });
 
   const metaById = new Map(batch.metaRows.map((r: any) => [r.id, r]));
-  const signOffsByProcess = groupBy(batch.signOffRows, (r: any) => r.process_id);
-  const mappingsByProcess = groupBy(batch.mappingRows, (r: any) => r.process_id);
+  const signOffsByProcess = groupBy(
+    batch.signOffRows,
+    (r: any) => r.process_id,
+  );
+  const mappingsByProcess = groupBy(
+    batch.mappingRows,
+    (r: any) => r.process_id,
+  );
   const racmByProcess = groupBy(batch.racmRows, (r: any) => r.process_id);
   const xmlByProcess = new Map(
     batch.xmlRows.map((r: any) => [r.process_id, r.bpmn_xml]),
@@ -236,16 +243,17 @@ export async function POST(req: Request) {
       folder.file("bpmn.xml", meta.xmlRow.bpmn_xml);
     }
 
-    // RACM CSV
+    // #S04-05: hand-rolled quoting only — a step name, risk or control
+    // title starting with `=`/`+`/`-`/`@` was exported as a live formula.
     const racmCsv = [
-      "Activity,LineOfDefense,Risks,Controls",
+      toCsvRow(["Activity", "LineOfDefense", "Risks", "Controls"]),
       ...meta.racmRows.map((r: any) =>
-        [
-          `"${(r.step_name ?? r.bpmn_element_id).replace(/"/g, '""')}"`,
+        toCsvRow([
+          r.step_name ?? r.bpmn_element_id,
           r.line_of_defense ?? "",
-          `"${(r.risks ?? []).join("; ")}"`,
-          `"${(r.controls ?? []).join("; ")}"`,
-        ].join(","),
+          r.risks ?? [],
+          r.controls ?? [],
+        ]),
       ),
     ].join("\n");
     folder.file("racm.csv", racmCsv);
@@ -254,14 +262,14 @@ export async function POST(req: Request) {
     folder.file(
       "framework-mappings.csv",
       [
-        "Framework,EntryCode,Title,Strength",
+        toCsvRow(["Framework", "EntryCode", "Title", "Strength"]),
         ...meta.mappings.map((m: any) =>
-          [
+          toCsvRow([
             m.framework_code ?? "",
             m.entry_code ?? "",
-            `"${(m.entry_title ?? "").replace(/"/g, '""')}"`,
+            m.entry_title ?? "",
             m.mapping_strength ?? "",
-          ].join(","),
+          ]),
         ),
       ].join("\n"),
     );

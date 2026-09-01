@@ -1,4 +1,4 @@
-import { db, orgBranding, organization } from "@grc/db";
+import { orgBranding, organization, withOrgReadContext } from "@grc/db";
 import { eq } from "drizzle-orm";
 import { computeContrastForeground, computeDarkModeColor } from "@grc/shared";
 
@@ -19,75 +19,82 @@ export async function GET(
 ) {
   const { orgId } = await params;
 
-  // Resolve branding (with inheritance)
-  let branding: typeof DEFAULT_COLORS | null = null;
+  // #WP3-S02-05 — `org_branding` and `organization` are FORCE-RLS. This route
+  // is loaded by the LOGIN page, i.e. before any session exists, so no request
+  // context is established and a context-free read under `grc_app` returned
+  // 0 rows — every tenant silently fell back to the default palette. The org
+  // is the path parameter here, so pin it for these reads.
+  return withOrgReadContext(orgId, async (db) => {
+    // Resolve branding (with inheritance)
+    let branding: typeof DEFAULT_COLORS | null = null;
 
-  const brandings = await db
-    .select()
-    .from(orgBranding)
-    .where(eq(orgBranding.orgId, orgId))
-    .limit(1);
+    const brandings = await db
+      .select()
+      .from(orgBranding)
+      .where(eq(orgBranding.orgId, orgId))
+      .limit(1);
 
-  if (brandings[0]) {
-    const b = brandings[0];
-    branding = {
-      primaryColor: b.primaryColor,
-      secondaryColor: b.secondaryColor,
-      accentColor: b.accentColor,
-      textColor: b.textColor,
-      backgroundColor: b.backgroundColor,
-      darkModePrimaryColor: b.darkModePrimaryColor,
-      darkModeAccentColor: b.darkModeAccentColor,
-    };
+    if (brandings[0]) {
+      const b = brandings[0];
+      branding = {
+        primaryColor: b.primaryColor,
+        secondaryColor: b.secondaryColor,
+        accentColor: b.accentColor,
+        textColor: b.textColor,
+        backgroundColor: b.backgroundColor,
+        darkModePrimaryColor: b.darkModePrimaryColor,
+        darkModeAccentColor: b.darkModeAccentColor,
+      };
 
-    // If inheriting, resolve parent
-    if (b.inheritFromParent) {
-      const orgs = await db
-        .select({ parentOrgId: organization.parentOrgId })
-        .from(organization)
-        .where(eq(organization.id, orgId))
-        .limit(1);
-
-      if (orgs[0]?.parentOrgId) {
-        const parentBrandings = await db
-          .select()
-          .from(orgBranding)
-          .where(eq(orgBranding.orgId, orgs[0].parentOrgId))
+      // If inheriting, resolve parent
+      if (b.inheritFromParent) {
+        const orgs = await db
+          .select({ parentOrgId: organization.parentOrgId })
+          .from(organization)
+          .where(eq(organization.id, orgId))
           .limit(1);
 
-        if (parentBrandings[0]) {
-          const pb = parentBrandings[0];
-          branding = {
-            primaryColor: pb.primaryColor,
-            secondaryColor: pb.secondaryColor,
-            accentColor: pb.accentColor,
-            textColor: pb.textColor,
-            backgroundColor: pb.backgroundColor,
-            darkModePrimaryColor: pb.darkModePrimaryColor,
-            darkModeAccentColor: pb.darkModeAccentColor,
-          };
+        if (orgs[0]?.parentOrgId) {
+          const parentBrandings = await db
+            .select()
+            .from(orgBranding)
+            .where(eq(orgBranding.orgId, orgs[0].parentOrgId))
+            .limit(1);
+
+          if (parentBrandings[0]) {
+            const pb = parentBrandings[0];
+            branding = {
+              primaryColor: pb.primaryColor,
+              secondaryColor: pb.secondaryColor,
+              accentColor: pb.accentColor,
+              textColor: pb.textColor,
+              backgroundColor: pb.backgroundColor,
+              darkModePrimaryColor: pb.darkModePrimaryColor,
+              darkModeAccentColor: pb.darkModeAccentColor,
+            };
+          }
         }
       }
     }
-  }
 
-  const colors = branding ?? DEFAULT_COLORS;
+    const colors = branding ?? DEFAULT_COLORS;
 
-  // Auto-compute foreground colors based on WCAG contrast
-  const primaryFg = computeContrastForeground(colors.primaryColor);
-  const secondaryFg = computeContrastForeground(colors.secondaryColor);
-  const accentFg = computeContrastForeground(colors.accentColor);
+    // Auto-compute foreground colors based on WCAG contrast
+    const primaryFg = computeContrastForeground(colors.primaryColor);
+    const secondaryFg = computeContrastForeground(colors.secondaryColor);
+    const accentFg = computeContrastForeground(colors.accentColor);
 
-  // Auto-compute dark mode colors if not explicitly set
-  const darkPrimary =
-    colors.darkModePrimaryColor ??
-    computeDarkModeColor(colors.primaryColor, 15);
-  const darkAccent =
-    colors.darkModeAccentColor ?? computeDarkModeColor(colors.accentColor, 10);
-  const darkPrimaryFg = computeContrastForeground(darkPrimary);
-  const darkAccentFg = computeContrastForeground(darkAccent);
+    // Auto-compute dark mode colors if not explicitly set
+    const darkPrimary =
+      colors.darkModePrimaryColor ??
+      computeDarkModeColor(colors.primaryColor, 15);
+    const darkAccent =
+      colors.darkModeAccentColor ??
+      computeDarkModeColor(colors.accentColor, 10);
+    const darkPrimaryFg = computeContrastForeground(darkPrimary);
+    const darkAccentFg = computeContrastForeground(darkAccent);
 
-  const css = `/* ARCTOS Brand CSS -- org ${orgId} -- generated ${new Date().toISOString()} */
+    const css = `/* ARCTOS Brand CSS -- org ${orgId} -- generated ${new Date().toISOString()} */
 :root {
   --brand-primary: ${colors.primaryColor};
   --brand-secondary: ${colors.secondaryColor};
@@ -120,10 +127,11 @@ export async function GET(
 }
 `;
 
-  return new Response(css, {
-    headers: {
-      "Content-Type": "text/css",
-      "Cache-Control": "public, max-age=3600",
-    },
+    return new Response(css, {
+      headers: {
+        "Content-Type": "text/css",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
   });
 }

@@ -1,7 +1,18 @@
 // Shared API helpers — auth, pagination, audit context
 import { auth } from "@/auth";
 import { getCurrentOrgId } from "@grc/auth/context";
-import { requireRole } from "@grc/auth";
+import {
+  requireRole,
+  requireModule,
+  isHinSchgIsolated,
+  isHinSchgAllowedPath,
+} from "@grc/auth";
+import {
+  moduleScopeForPath,
+  mutatingRolesForPath,
+  requiresPlatformAdmin,
+  DEFAULT_MUTATING_ROLES,
+} from "@/lib/module-guard";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -67,17 +78,37 @@ function authProblem(
  *  - `after()` unavailable (a unit test calling withAuth outside a request):
  *    release immediately, do NOT enterWith → the request falls back to the base
  *    pool (its pre-existing behaviour). Nothing leaks.
- *  - reserve() fails (pool exhausted / DB blip): log and continue without a
- *    context rather than turning a transient hiccup into a 500 on every
- *    authenticated request. The handler then sees RLS-filtered (empty) reads,
- *    which is the safe direction to fail.
+ *  - reserve() fails (pool exhausted / DB blip): the request is REFUSED with
+ *    503 — see the S01-21 note below.
+ *
+ * [ARCTOS-FULL-2026-08-31 / WP2 · S01-21]
+ * Hier stand: bei einem Fehlschlag von `reserve()` wird geloggt und ohne
+ * Kontext weitergemacht, weil der Handler dann RLS-gefilterte (leere) Reads
+ * sieht — "which is the safe direction to fail".
+ *
+ * Diese Zusage galt nur für die Tabellenklasse MIT org_id-Policy. Für die
+ * Objekte, in denen Stream S01 die Lecks nachgewiesen hat, galt sie nicht:
+ * `audit_log`, `access_log`, `user`, die Kindtabellen ohne `org_id` und die
+ * Views trugen gar keine Policy — dort entschied allein ein handgeschriebener
+ * Filter, der Fallback war für sie fail-OPEN.
+ *
+ * WP2 hat diese Objekte unter RLS gestellt, der Fallback wäre heute also
+ * tatsächlich fail-closed. Abgelehnt wird trotzdem hart, aus zwei Gründen:
+ * (a) ein stiller Fallback macht eine Sicherheitsvoraussetzung von der
+ * Pool-Auslastung abhängig, und (b) "leere Antwort statt Fehler" ist für den
+ * Aufrufer nicht von "es gibt keine Daten" zu unterscheiden — eine erschöpfte
+ * Verbindungsreserve sähe aus wie ein leerer Mandant. 503 mit `Retry-After`
+ * ist die ehrliche Antwort.
+ *
+ * Rückgabe: `undefined` = Kontext steht (oder fehlt im Unittest bewusst,
+ * weil `@grc/db` gemockt ist), `Response` = der Request wird abgelehnt.
  */
 async function establishRequestScopedContext(ctx: {
   orgId: string;
   userId: string;
   userEmail?: string | null;
   userName?: string | null;
-}): Promise<void> {
+}): Promise<Response | undefined> {
   // The context helpers are imported DYNAMICALLY (not as top-level named
   // imports) so the many unit tests that `vi.mock("@grc/db", …)` with just a
   // `db` stub don't fail the strict missing-named-export check. When the module
@@ -103,8 +134,20 @@ async function establishRequestScopedContext(ctx: {
         getStore: () => MutableStore | undefined;
       };
     };
-    const reserveRequestContext = dbmod.reserveRequestContext;
-    const requestDbStorage = dbmod.requestDbStorage;
+    // #WP3: vitest 4 THROWS on reading a named export that a `vi.mock` factory
+    // did not define, so the two reads below must not sit inside the outer
+    // try/catch that WP2 turned into a 503 (S01-21) — otherwise every existing
+    // unit test that mocks `@grc/db` with just a `db` stub gets 503 instead of
+    // the documented "skip context setup" behaviour. Read them defensively;
+    // a genuine reserve() failure still lands in the 503 path below.
+    let reserveRequestContext: typeof dbmod.reserveRequestContext;
+    let requestDbStorage: typeof dbmod.requestDbStorage;
+    try {
+      reserveRequestContext = dbmod.reserveRequestContext;
+      requestDbStorage = dbmod.requestDbStorage;
+    } catch {
+      return;
+    }
     if (typeof reserveRequestContext !== "function" || !requestDbStorage) {
       // @grc/db is mocked (unit test) — nothing to establish.
       return;
@@ -158,6 +201,54 @@ async function establishRequestScopedContext(ctx: {
       "[rls-context] failed to establish request-scoped context:",
       err instanceof Error ? err.message : err,
     );
+    // [WP2 · S01-21] Fail closed, laut und unterscheidbar — nicht still auf
+    // den kontextlosen Basis-Pool zurückfallen.
+    return new Response(
+      JSON.stringify({
+        type: `${PROBLEM_BASE}/tenant-context-unavailable`,
+        title: "Service Unavailable",
+        status: 503,
+        detail:
+          "The tenant-scoped database context could not be established. " +
+          "The request was refused rather than served without tenant isolation.",
+      }),
+      {
+        status: 503,
+        headers: {
+          "content-type": "application/problem+json",
+          "retry-after": "2",
+        },
+      },
+    );
+  }
+  return undefined;
+}
+
+const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+/**
+ * The request path + method as stamped by the edge middleware
+ * (`x-arctos-path` / `x-arctos-method`).
+ *
+ * #WP3: the middleware is the only layer that reliably knows the routed path,
+ * so it now forwards it as a request header. Everything that depends on it
+ * fails CLOSED when the header is absent (unit tests calling withAuth outside a
+ * request, or a future runtime that skips the middleware): no module can be
+ * resolved, so the custom-role fallback is denied and the strict default role
+ * floor applies.
+ */
+async function readRoutingInfo(): Promise<{
+  path: string | null;
+  method: string | null;
+}> {
+  try {
+    const h = await headers();
+    return {
+      path: h.get("x-arctos-path"),
+      method: h.get("x-arctos-method"),
+    };
+  } catch {
+    return { path: null, method: null };
   }
 }
 
@@ -178,6 +269,19 @@ export async function withAuth(
     );
   }
 
+  // #WP3-S12-17 — a deactivated or deleted user kept a fully functional session
+  // for the whole JWT lifetime because nothing re-checked `isActive`/`deletedAt`
+  // after login. The session callback now flags it; deny immediately.
+  if ((session.user as { disabled?: boolean }).disabled) {
+    return authProblem(
+      401,
+      `${PROBLEM_BASE}/unauthorized`,
+      "Unauthorized",
+      "This account is deactivated. Please sign in again.",
+      requestId,
+    );
+  }
+
   const orgId = await getCurrentOrgId(session);
   if (!orgId) {
     return authProblem(
@@ -193,46 +297,209 @@ export async function withAuth(
   // checks below, so even the permission-lookup queries run under this org's
   // RLS scope. From here on every query the handler makes through the global
   // `db` proxy is org/user-scoped, without any route change.
-  await establishRequestScopedContext({
+  const contextFailure = await establishRequestScopedContext({
     orgId,
     userId: session.user.id,
     userEmail: session.user.email,
     userName: session.user.name,
   });
+  // [WP2 · S01-21] Ohne Mandantenkontext wird nicht weitergearbeitet.
+  if (contextFailure) return contextFailure;
 
-  if (roles.length) {
-    const check = requireRole(...roles)(session, orgId, requestId);
-    if (check) {
-      // Standard role denied — check custom roles as fallback
-      const hasCustomAccess = await checkCustomRoleAccess(
-        session.user.id,
-        orgId,
+  const { path, method } = await readRoutingInfo();
+  const upperMethod = (method ?? "").toUpperCase();
+  const isMutating = MUTATING_METHODS.has(upperMethod);
+
+  // ── S12-17: HinSchG-Isolation auch im Node-Runtime ────────────────
+  // Das Gatter stand ausschließlich in der Edge-Middleware und bewertete die
+  // JWT-Kopie der Rollen. Wurde einem Nutzer die zweite Rolle entzogen, GERADE
+  // DAMIT die Isolation greift, blieb er bis zu 8 Stunden uneingeschränkt.
+  // Hier greift es auf den frisch aus der DB gelesenen Rollenstand.
+  const sessionRoles =
+    (session.user as { roles?: Array<{ orgId: string; role: string }> }).roles ??
+    [];
+  if (
+    path &&
+    isHinSchgIsolated(sessionRoles) &&
+    !isHinSchgAllowedPath(path)
+  ) {
+    return authProblem(
+      403,
+      `${PROBLEM_BASE}/forbidden`,
+      "Forbidden",
+      "HinSchG officers (whistleblowing_officer, ombudsperson) are confined to " +
+        "the whistleblowing module to preserve reporter confidentiality " +
+        "(§§16, 32 HinSchG).",
+      requestId,
+    );
+  }
+
+  // ── S02-03: plattformweite Konfiguration ──────────────────────────
+  // `feature_gate`, `subscription_plan`, `plugin`, `data_region` und
+  // `framework_mapping` haben kein `org_id` und keine RLS. Ein Schreibzugriff
+  // darauf wirkt auf ALLE Mandanten und darf deshalb nicht mit der
+  // mandantengebundenen Rolle `admin` möglich sein.
+  if (path && requiresPlatformAdmin(path, upperMethod)) {
+    if (!(await isPlatformAdmin(session.user.id))) {
+      return authProblem(
+        403,
+        `${PROBLEM_BASE}/platform-admin-required`,
+        "Platform administrator required",
+        "This endpoint changes platform-wide configuration that affects every " +
+          "tenant. The organization-scoped role 'admin' is not sufficient; a " +
+          "platform administrator (table platform_admin) is required.",
+        requestId,
       );
-      if (!hasCustomAccess) return check;
     }
   }
 
-  return { session, orgId, userId: session.user.id };
+  // ── S02-10: Rollenuntergrenze für mutierende Routen ───────────────
+  // `withAuth()` ohne Rollenargument übersprang den Rollenblock vollständig
+  // (`if (roles.length)`), sodass 91 mutierende Endpunkte auch für `viewer`
+  // offen standen. Ohne explizite Rollen greift jetzt die Registry.
+  let effectiveRoles: readonly UserRole[] = roles;
+  if (!effectiveRoles.length && isMutating) {
+    effectiveRoles = path
+      ? mutatingRolesForPath(path)
+      : // Kein Pfad ermittelbar → fail closed auf die engste sinnvolle Menge.
+        DEFAULT_MUTATING_ROLES;
+  }
+
+  if (effectiveRoles.length) {
+    const check = requireRole(...effectiveRoles)(session, orgId, requestId);
+    if (check) {
+      // ── S02-02 / S12-14 (Critical) ────────────────────────────────
+      // Der bisherige Fallback prüfte lediglich, ob der Nutzer IRGENDEINE
+      // Custom-Rolle mit IRGENDEINER Berechtigung ungleich 'none' in der Org
+      // besitzt — ohne Modul- und ohne Aktionsbezug. Damit bestand jeder
+      // Nutzer mit einer beliebigen Custom-Rolle JEDE Rollenprüfung der
+      // Plattform, inklusive `withAuth("admin")` auf
+      // `POST /users/:id/roles` → Selbstzuweisung der Admin-Rolle.
+      //
+      // Der Fallback ist jetzt modul- UND aktionsbewusst:
+      //   * er greift nur, wenn die Route einem Fachmodul zugeordnet ist
+      //     (`platform`-Routen wie /users, /organizations, /admin, /auth sind
+      //     ausgeschlossen — dort gibt es keine Custom-Rollen-Semantik);
+      //   * er verlangt genau die Aktion, die die Anfrage braucht
+      //     (GET → read, mutierend → write, admin-only Guard → admin);
+      //   * ohne ermittelbaren Pfad greift er gar nicht (fail closed).
+      const granted = await customRoleFallbackGrants({
+        userId: session.user.id,
+        orgId,
+        path,
+        method: upperMethod,
+        requiredRoles: effectiveRoles,
+      });
+      if (!granted) return check;
+    }
+  }
+
+  // ── S02-11: Modul-Freischaltung und Preview-Schreibschutz ─────────
+  // 368 von 985 mutierenden Handlern riefen `requireModule` nicht auf.
+  // Der zentrale Guard zieht das nach; Routen mit eigenem Aufruf behalten ihn
+  // (der Cache macht die Doppelprüfung praktisch kostenlos).
+  if (path && method) {
+    const scope = moduleScopeForPath(path);
+    if (scope && scope !== "platform") {
+      const blocked = await requireModule(scope, orgId, upperMethod);
+      if (blocked) return blocked;
+    }
+  }
+
+  return {
+    session,
+    orgId,
+    userId: session.user.id,
+    roles: (session.user as { roles?: Array<{ orgId: string; role: string }> })
+      .roles
+      ?.filter((r) => r.orgId === orgId)
+      .map((r) => r.role),
+  };
 }
 
 /**
- * Check if user has any custom role with at least 'read' permission in current org.
- * For module-specific checks, use checkCustomRoleModuleAccess().
+ * #WP3-S02-03 — is this user a platform administrator?
+ *
+ * Reads through the SECURITY DEFINER helper from migration 0412 so the check
+ * also works on paths without an org context. The `platform_admin` table has
+ * no INSERT/UPDATE/DELETE policy for `grc_app`: the application can ask the
+ * question but can never grant the answer.
  */
-async function checkCustomRoleAccess(
-  userId: string,
-  orgId: string,
-): Promise<boolean> {
-  const result = await db.execute(
-    sql`SELECT 1 FROM user_custom_role ucr
-        JOIN custom_role cr ON cr.id = ucr.custom_role_id
-        JOIN role_permission rp ON rp.role_id = cr.id
-        WHERE ucr.user_id = ${userId}
-          AND ucr.org_id = ${orgId}
-          AND rp.action != 'none'
-        LIMIT 1`,
+export async function isPlatformAdmin(userId: string): Promise<boolean> {
+  try {
+    const result = (await db.execute(
+      sql`SELECT public.auth_is_platform_admin(${userId}::uuid) AS is_admin`,
+    )) as unknown as Array<Record<string, unknown>>;
+    const rows = Array.isArray(result)
+      ? result
+      : ((result as { rows?: Array<Record<string, unknown>> }).rows ?? []);
+    return rows[0]?.is_admin === true;
+  } catch (err) {
+    // Fail closed. A missing function (migration not yet applied) must deny,
+    // never grant — otherwise the fix would be weaker than the finding.
+    console.error(
+      "[platform-admin] check failed, denying:",
+      err instanceof Error ? err.message : err,
+    );
+    return false;
+  }
+}
+
+/**
+ * Guard for routes that change platform-wide configuration. Returns a
+ * problem+json Response when the caller is not a platform administrator.
+ */
+export async function requirePlatformAdmin(
+  ctx: ApiContext,
+): Promise<Response | null> {
+  if (await isPlatformAdmin(ctx.userId)) return null;
+  return authProblem(
+    403,
+    `${PROBLEM_BASE}/platform-admin-required`,
+    "Platform administrator required",
+    "This endpoint changes platform-wide configuration that affects every " +
+      "tenant. The organization-scoped role 'admin' is not sufficient.",
+    await readRequestId(),
   );
-  return (result?.length ?? 0) > 0;
+}
+
+/**
+ * #WP3-S02-02 / S12-14 — module- and action-aware custom-role fallback.
+ *
+ * Replaces `checkCustomRoleAccess()`, which asked only "does this user hold ANY
+ * custom role with ANY permission in this org?" and therefore satisfied every
+ * role guard in the product.
+ */
+async function customRoleFallbackGrants(args: {
+  userId: string;
+  orgId: string;
+  path: string | null;
+  method: string;
+  requiredRoles: readonly UserRole[];
+}): Promise<boolean> {
+  const { userId, orgId, path, method, requiredRoles } = args;
+
+  // No routed path → no module → no fallback. Fail closed.
+  if (!path) return false;
+
+  const scope = moduleScopeForPath(path);
+  // `platform` covers user/org/auth/billing administration. Custom roles are
+  // module permissions; they must never substitute for those.
+  if (!scope || scope === "platform") return false;
+
+  // Which action does this request need?
+  //  - the guard asks for `admin` only          → module action `admin`
+  //  - a mutating method                        → module action `write`
+  //  - otherwise                                → module action `read`
+  const adminOnlyGuard =
+    requiredRoles.length > 0 && requiredRoles.every((r) => r === "admin");
+  const requiredAction: "read" | "write" | "admin" = adminOnlyGuard
+    ? "admin"
+    : MUTATING_METHODS.has(method)
+      ? "write"
+      : "read";
+
+  return checkCustomRoleModuleAccess(userId, orgId, scope, requiredAction);
 }
 
 /**

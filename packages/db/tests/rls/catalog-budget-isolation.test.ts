@@ -46,6 +46,21 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
     appDb = createAppDb();
@@ -233,12 +248,23 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access active catalogs", async () => {
-      // RLS policies cast app.current_org_id to UUID; an empty/unset value
-      // causes a cast error, which effectively denies access — correct behavior.
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`,
-      ).rejects.toThrow();
+    // [ARCTOS-FULL-2026-08-31 / WP2 · S01-18] Diese Erwartung hat sich
+    // geaendert. Sie lautete: "RLS policies cast app.current_org_id to UUID;
+    // an empty/unset value causes a cast error, which effectively denies
+    // access — correct behavior." Eine Exception ist aber KEINE
+    // Zugriffskontrolle, sondern ein Verfuegbarkeitsdefekt: 445 Tabellen
+    // trugen mindestens eine Policy, die den GUC ohne NULLIF-Guard nach
+    // ::uuid castet, und weil alle Policies PERMISSIVE sind und per OR
+    // ausgewertet werden, genuegte eine davon, um die ganze Abfrage mit
+    // HTTP 500 scheitern zu lassen. Die gesamte Zwei-Pool-Konstruktion in
+    // packages/db existierte nur, um das zu umschiffen.
+    // Migration 0397 bringt jede Policy auf die NULLIF-Form: der Ausdruck
+    // ist bei jedem GUC-Zustand definiert, ein fehlender Kontext liefert
+    // NULL und damit ZERO ROWS. Fail-closed bleibt es — jetzt ohne Fehler.
+    it("without RLS context, non-superuser sees zero active catalogs (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result = await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
+      expect(result[0].cnt).toBe(0);
     });
   });
 
@@ -275,10 +301,11 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access budgets", async () => {
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`,
-      ).rejects.toThrow();
+    // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
+    it("without RLS context, non-superuser sees zero budgets (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result = await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
+      expect(result[0].cnt).toBe(0);
     });
   });
 
@@ -316,10 +343,11 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access cost entries", async () => {
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`,
-      ).rejects.toThrow();
+    // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
+    it("without RLS context, non-superuser sees zero cost entries (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result = await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
+      expect(result[0].cnt).toBe(0);
     });
   });
 

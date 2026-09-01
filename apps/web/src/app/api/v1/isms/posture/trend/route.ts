@@ -3,6 +3,19 @@ import { requireModule } from "@grc/auth";
 import { eq, and, gte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { TrendPoint } from "@grc/shared";
+import { z } from "zod";
+import { parseQueryParams, intQueryParam } from "@/lib/query-schema";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const postureTrendQuerySchema = z.object({
+  // Was `Math.min(24, Math.max(1, Number(...) || 12))` — silently coerced
+  // garbage to 12. Now an explicit 422 for an out-of-range value.
+  months: intQueryParam(1, 24, 12),
+});
 
 // GET /api/v1/isms/posture/trend — 12-month trend
 export async function GET(req: Request) {
@@ -13,10 +26,13 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const months = Math.min(
-    24,
-    Math.max(1, Number(url.searchParams.get("months")) || 12),
-  );
+  const q = parseQueryParams(postureTrendQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const months = q.data.months;
 
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - months);

@@ -1,6 +1,7 @@
 import { db, vulnerability } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createVulnerabilitySchema } from "@grc/shared";
+import { parseQueryParams, searchQueryParam } from "@/lib/query-schema";
 import { eq, and, isNull, ilike } from "drizzle-orm";
 import {
   withAuth,
@@ -9,6 +10,19 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { z } from "zod";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const vulnerabilityListQuerySchema = z.object({
+  // severity/status are text columns here (not pg enums) — bound the shape.
+  severity: z.string().trim().min(1).max(40).optional(),
+  status: z.string().trim().min(1).max(40).optional(),
+  search: searchQueryParam,
+});
 
 // GET /api/v1/isms/vulnerabilities
 export const GET = withErrorHandler(async function GET(req: Request) {
@@ -19,9 +33,15 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const severityFilter = searchParams.get("severity");
-  const statusFilter = searchParams.get("status");
-  const search = searchParams.get("search");
+  const q = parseQueryParams(vulnerabilityListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const severityFilter = q.data.severity ?? null;
+  const statusFilter = q.data.status ?? null;
+  const search = q.data.search ?? null;
 
   const conditions = [
     eq(vulnerability.orgId, ctx.orgId),

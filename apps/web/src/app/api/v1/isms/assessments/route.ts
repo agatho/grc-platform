@@ -1,6 +1,7 @@
-import { db, assessmentRun } from "@grc/db";
+import { db, assessmentRun, assessmentStatusEnum } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createAssessmentRunSchema } from "@grc/shared";
+import { parseQueryParams, searchQueryParam } from "@/lib/query-schema";
 import { eq, and, ilike, sql, desc } from "drizzle-orm";
 import {
   withAuth,
@@ -8,6 +9,17 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { z } from "zod";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const assessmentListQuerySchema = z.object({
+  status: z.enum(assessmentStatusEnum.enumValues).optional(),
+  search: searchQueryParam,
+});
 
 // GET /api/v1/isms/assessments
 export async function GET(req: Request) {
@@ -18,8 +30,14 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const statusFilter = searchParams.get("status");
-  const search = searchParams.get("search");
+  const q = parseQueryParams(assessmentListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const statusFilter = q.data.status ?? null;
+  const search = q.data.search ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(assessmentRun.orgId, ctx.orgId),

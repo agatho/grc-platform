@@ -225,6 +225,28 @@ export async function POST(
         })),
       ];
 
+  // #WP3-S02-12 — Funktionstrennung bereits bei der Kettendefinition.
+  // Der Befund: `process_owner` darf die Prüfer- und Freigeberzuordnung SEINES
+  // EIGENEN Prozesses festlegen; eine Prüfung, dass er sich nicht selbst
+  // einträgt, existierte nicht. Die Entscheidungsroute lehnt Selbstfreigaben
+  // jetzt ab (siehe `canDecideApprovalStep`), aber eine Kette, die von
+  // vornherein nicht entscheidbar ist, ist eine Falle statt einer Kontrolle —
+  // deshalb wird sie hier abgelehnt, mit einer Begründung, die sagt warum.
+  const selfAssignedGate = stepsInput.find(
+    (st) =>
+      st.stepType !== "acknowledgment" && st.assigneeUserId === ctx.userId,
+  );
+  if (selfAssignedGate) {
+    return Response.json(
+      {
+        error:
+          "Separation of duties: the person defining the approval chain cannot " +
+          "be the reviewer or approver of it. Assign a second person (or a role).",
+      },
+      { status: 422 },
+    );
+  }
+
   const created = await withAuditContext(
     ctx,
     async (tx) => {

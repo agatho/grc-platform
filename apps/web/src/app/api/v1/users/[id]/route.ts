@@ -23,6 +23,35 @@ export async function GET(
     }
   }
 
+  // [ARCTOS-FULL-2026-08-31 / WP2 · S01-05] Mitgliedschaftsprüfung.
+  //
+  // Die Autorisierung oben prüft nur, ob der AUFRUFER in SEINER Org Admin
+  // ist — nicht, ob der angefragte Nutzer dieser Org überhaupt angehört. Ein
+  // Admin von Mandant A bekam damit für eine beliebige fremde Nutzer-UUID
+  // HTTP 200 mit email/name/avatarUrl/isActive/lastLoginAt (DSGVO Art. 32).
+  // Die Datenbank fing das nicht ab, weil `user` keine RLS trug (S01-04).
+  //
+  // Migration 0392 gibt `user` jetzt eine Policy, die aus einem etablierten
+  // Request-Kontext nur eigene Org-Mitglieder und die eigene Zeile zeigt —
+  // die Abfrage unten liefert also bereits nichts mehr. Der explizite Join
+  // bleibt trotzdem: er macht die Regel im Code sichtbar und trägt auch
+  // dann, wenn die Route (heute nicht) ausserhalb eines Request-Kontexts
+  // oder unter einer Superuser-Verbindung läuft.
+  if (!isSelf) {
+    const [member] = await db
+      .select({ id: userOrganizationRole.id })
+      .from(userOrganizationRole)
+      .where(
+        and(
+          eq(userOrganizationRole.userId, id),
+          eq(userOrganizationRole.orgId, ctx.orgId),
+          isNull(userOrganizationRole.deletedAt),
+        ),
+      )
+      .limit(1);
+    if (!member) return Response.json({ error: "Not found" }, { status: 404 });
+  }
+
   const [found] = await db
     .select({
       id: user.id,

@@ -1,8 +1,44 @@
-import { db, bowtieElement, bowtiePath } from "@grc/db";
+import { db, bowtieElement, bowtiePath, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { saveBowtieSchema } from "@grc/shared";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP2 · S01-01] Cross-Tenant-IDOR.
+ *
+ * `bowtie_path` trug weder `org_id` noch RLS, und diese Route filterte die
+ * Tabelle ausschliesslich über die aus dem Pfad übernommene `riskId`. Ein
+ * beliebiger authentifizierter Nutzer von Mandant A konnte damit
+ *   GET  /api/v1/erm/bowtie/<UUID eines Risikos von Mandant B>
+ * aufrufen und die Bowtie-Pfade des fremden Risikos lesen, und mit einem
+ * PUT auf dieselbe URL (Zeile "delete where riskId") ALLE Pfade des fremden
+ * Risikos löschen und durch eigene ersetzen. Die Geschwistertabelle
+ * `bowtieElement` war in derselben Datei korrekt org-gefiltert.
+ *
+ * Der Fix hat zwei Hälften, bewusst beide:
+ *  - DB: Migration 0391 gibt `bowtie_path` RLS+FORCE mit einer Policy, die
+ *    über `risk.org_id` auf den Elternsatz prüft.
+ *  - Route: die Existenz des Risikos IN DER EIGENEN ORG wird explizit
+ *    geprüft, bevor irgendetwas passiert — sonst liefert ein Zugriff auf ein
+ *    fremdes Risiko still `paths: []` und ein PUT legte (unter RLS erfolglos,
+ *    aber ohne Rückmeldung) los. 404 ist die richtige Antwort, nicht 200 mit
+ *    leerem Ergebnis.
+ */
+async function assertRiskInOrg(
+  riskId: string,
+  orgId: string,
+): Promise<Response | null> {
+  const [own] = await db
+    .select({ id: risk.id })
+    .from(risk)
+    .where(
+      and(eq(risk.id, riskId), eq(risk.orgId, orgId), isNull(risk.deletedAt)),
+    )
+    .limit(1);
+  if (!own) return Response.json({ error: "Not found" }, { status: 404 });
+  return null;
+}
 
 // GET /api/v1/erm/bowtie/:riskId — Get bow-tie data for risk
 export async function GET(
@@ -15,6 +51,9 @@ export async function GET(
   if (moduleCheck) return moduleCheck;
 
   const { riskId } = await params;
+
+  const notOurs = await assertRiskInOrg(riskId, ctx.orgId);
+  if (notOurs) return notOurs;
 
   const [elements, paths] = await Promise.all([
     db
@@ -48,6 +87,10 @@ export async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { riskId } = await params;
+
+  const notOurs = await assertRiskInOrg(riskId, ctx.orgId);
+  if (notOurs) return notOurs;
+
   const body = saveBowtieSchema.safeParse(await req.json());
   if (!body.success) {
     return Response.json(

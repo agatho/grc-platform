@@ -8,7 +8,8 @@
     "./context": "./src/context.ts",
     "./saml": "./src/saml/index.ts",
     "./oidc": "./src/oidc/index.ts",
-    "./scim": "./src/scim/index.ts"
+    "./scim": "./src/scim/index.ts",
+    "./anonymous-token": "./src/anonymous-token.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -18,8 +19,11 @@
     "@grc/db": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@types/bcryptjs": "^2.4.6",
+    "@xmldom/xmldom": "0.9.8",
     "bcryptjs": "^3.0.3",
-    "next-auth": "^5.0.0-beta.32"
+    "jose": "6.2.10",
+    "next-auth": "^5.0.0-beta.32",
+    "xml-crypto": "6.1.2"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",

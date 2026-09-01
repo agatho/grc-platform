@@ -18,7 +18,8 @@
     "db:migrate-all": "turbo db:migrate-all --filter=@grc/db",
     "db:seed": "turbo db:seed --filter=@grc/db",
     "db:seed:demo": "bash scripts/seed-demo.sh",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "db:create-admin": "turbo db:create-admin --filter=@grc/db"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",

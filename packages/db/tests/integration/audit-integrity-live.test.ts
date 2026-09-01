@@ -41,42 +41,23 @@ describe("Audit integrity endpoint logic (live DB)", () => {
     // chain_seq is strictly monotonic even within a single transaction,
     // so multiple audit_log rows from the same PUT chain correctly.
     const scope = `org:${orgId}`;
-    const rows = await client<{ row_ok: boolean; chain_ok: boolean }[]>`
-      WITH ordered AS (
-        SELECT
-          entry_hash AS stored_entry_hash,
-          previous_hash AS stored_previous_hash,
-          LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
-          CASE
-            WHEN hash_version = 0 THEN entry_hash  -- v0 rows pass-through
-            WHEN hash_version = 3 THEN compute_audit_hash_v3(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, action_detail, metadata, created_at,
-              previous_hash_scope
-            )
-            WHEN hash_version = 2 THEN compute_audit_hash_v2(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, action_detail, metadata, created_at,
-              previous_hash_scope
-            )
-            ELSE compute_audit_hash_v1(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, created_at, previous_hash_scope
-            )
-          END AS recomputed_entry_hash,
-          hash_version
-        FROM audit_log
-        WHERE previous_hash_scope = ${scope}
-      )
-      SELECT
-        (hash_version = 0 OR stored_entry_hash = recomputed_entry_hash) AS row_ok,
-        (hash_version = 0 OR COALESCE(stored_previous_hash, '') = COALESCE(prev_row_entry_hash, '')) AS chain_ok
-      FROM ordered
+    // [ARCTOS-FULL-2026-08-31 / WP4 · S03-04] This test used to carry its
+    // own copy of the verification CTE. Four such copies existed — this
+    // one, the /integrity endpoint, the anchor gate and the DR drill
+    // script — and they drifted: the anchor gate never got a
+    // `hash_version = 3` branch, so it compared every live row's stored
+    // hash with itself and reported "0 broken" for any input, including a
+    // chain the endpoint reported as broken. Copying the check was the
+    // defect. There is now one implementation, `audit_chain_check()`, and
+    // this test calls it like every other caller does.
+    const rows = await client<{ row_ok: boolean; chain_ok: boolean; status: string }[]>`
+      SELECT row_ok, chain_ok, status FROM audit_chain_check(${scope})
     `;
 
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => r.row_ok)).toBe(true);
     expect(rows.every((r) => r.chain_ok)).toBe(true);
+    expect(rows.every((r) => r.status === "ok")).toBe(true);
   });
 
   it("keeps the chain healthy across 5 mutations that share a created_at", async () => {
@@ -120,35 +101,7 @@ describe("Audit integrity endpoint logic (live DB)", () => {
         chain_ok: boolean;
       }[]
     >`
-      WITH ordered AS (
-        SELECT
-          hash_version,
-          entry_hash AS stored_entry_hash,
-          previous_hash AS stored_previous_hash,
-          LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
-          CASE
-            WHEN hash_version = 3 THEN compute_audit_hash_v3(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, action_detail, metadata, created_at,
-              previous_hash_scope
-            )
-            WHEN hash_version = 2 THEN compute_audit_hash_v2(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, action_detail, metadata, created_at,
-              previous_hash_scope
-            )
-            ELSE compute_audit_hash_v1(
-              previous_hash, org_id, user_id, entity_type, entity_id,
-              action::text, changes, created_at, previous_hash_scope
-            )
-          END AS recomputed_entry_hash
-        FROM audit_log
-        WHERE previous_hash_scope = ${scope}
-      )
-      SELECT
-        (hash_version = 0 OR stored_entry_hash = recomputed_entry_hash) AS row_ok,
-        (hash_version = 0 OR COALESCE(stored_previous_hash, '') = COALESCE(prev_row_entry_hash, '')) AS chain_ok
-      FROM ordered
+      SELECT row_ok, chain_ok FROM audit_chain_check(${scope})
     `;
 
     const rowBroken = mismatches.filter((r) => !r.row_ok).length;

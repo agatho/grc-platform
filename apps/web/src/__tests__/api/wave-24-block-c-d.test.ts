@@ -184,7 +184,25 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       .mockResolvedValueOnce([{ hash_version: 3, count: 100 }])
       // gatherMigrationAnchors → none (no entries yet)
       .mockResolvedValueOnce([])
-      // FreeTSA anchors query (the inner try)
+      // [WP4 · S03-08] gatherChainVerification — totalContinuityValid is
+      // no longer derived from the version histogram alone. A chain that
+      // had been rewritten end to end was previously "monolithic_v3 /
+      // valid: true", and scripts/pilot-readiness-gate.sh gates the
+      // production start on exactly that value.
+      .mockResolvedValueOnce([
+        {
+          report: {
+            healthy: true,
+            rowMismatches: 0,
+            chainMismatches: 0,
+            commitmentMismatches: 0,
+            unverifiableVersion: 0,
+            unchainedRows: 0,
+            anchorIssueCount: 0,
+          },
+        },
+      ])
+      // FreeTSA anchors query
       .mockResolvedValueOnce([]);
 
     const { GET } =
@@ -220,6 +238,24 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
         { hash_version: 3, count: 1000 },
       ])
       .mockResolvedValueOnce([]) // no migration anchors
+      // [WP4 · S03-08] gatherChainVerification — totalContinuityValid is
+      // no longer derived from the version histogram alone. A chain that
+      // had been rewritten end to end was previously "monolithic_v3 /
+      // valid: true", and scripts/pilot-readiness-gate.sh gates the
+      // production start on exactly that value.
+      .mockResolvedValueOnce([
+        {
+          report: {
+            healthy: true,
+            rowMismatches: 0,
+            chainMismatches: 0,
+            commitmentMismatches: 0,
+            unverifiableVersion: 0,
+            unchainedRows: 0,
+            anchorIssueCount: 0,
+          },
+        },
+      ])
       .mockResolvedValueOnce([]); // no freetsa anchors
 
     const { GET } =

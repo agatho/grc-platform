@@ -5,12 +5,18 @@ import { db, vendor } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
 
+// #S04-05 (ARCTOS-FULL-2026-08-31): the local implementation quoted
+// `" , \n ;` but did not neutralize the Excel formula triggers
+// `= + - @`, so free-text fields exported here executed as formulas when
+// the pack was opened. Delegates to the central sanitizer; the extra `;`
+// quoting is preserved so the output stays byte-compatible for German
+// Excel users.
 function csv(s: unknown): string {
-  if (s == null) return "";
-  const str = Array.isArray(s) ? s.join("; ") : String(s);
-  if (/[",\n;]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-  return str;
+  const cell = toCsvCell(s, ",");
+  if (cell.startsWith('"')) return cell;
+  return cell.includes(";") ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
 export async function POST(

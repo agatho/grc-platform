@@ -97,14 +97,20 @@ async function handleXliffImport(
     });
   }
 
-  // #CRIT-SEC-XLIFF-SQLI: entityId / orgId / field / tableName are all
-  // interpolated into raw SQL via sql.raw. entityId comes directly
-  // from the XLIFF <trans-unit id="..."> attribute (unescapeXml-decoded
-  // by parseXliff, which resurrects &apos; → ' and defeats the manual
-  // quote-escape used on the UPDATE value). UUID_RE (module-scoped
-  // above) guards every entityId before it touches sql.raw. tableName
-  // + field are allow-listed via ENTITY_TABLE_MAP / TRANSLATABLE_FIELDS.
-  // ctx.orgId is a UUID from the validated session.
+  // #CRIT-SEC-XLIFF-SQLI (historic): entityId comes directly from the
+  // XLIFF <trans-unit id="..."> attribute, which parseXliff unescapeXml-
+  // decodes — resurrecting &apos; → ' and defeating a manual quote-escape.
+  // UUID_RE (module-scoped above) guards every entityId; tableName + field
+  // are allow-listed via ENTITY_TABLE_MAP / TRANSLATABLE_FIELDS.
+  //
+  // #S04-07 (ARCTOS-FULL-2026-08-31, Low): those allowlists made the code
+  // safe, but the *mechanism* was `sql.raw` with hand-written `''`
+  // escaping and interpolated session UUIDs — a latent SQLi that only one
+  // careless future edit away from being real (the comment above documents
+  // exactly such a near-miss). The statements below now use parameterized
+  // `sql\`\`` templates with `sql.identifier()` for the allow-listed table
+  // and column names, so no user- or session-derived value is ever
+  // concatenated into SQL text. The allowlists remain as defence in depth.
 
   // Actual import
   await withAuditContext(ctx, async (tx) => {
@@ -131,16 +137,21 @@ async function handleXliffImport(
 
       try {
         // Fetch current field value
-        const orgFilter =
+        // #S04-07 (ARCTOS-FULL-2026-08-31): identifiers now go through
+        // `sql.identifier()` and every VALUE is a bound parameter, so the
+        // manual `''`-escaping and the interpolated org/user UUIDs are gone.
+        // The allowlists (ENTITY_TABLE_MAP / TRANSLATABLE_FIELDS) and the
+        // UUID_RE guard stay as the outer layer — this change removes the
+        // regression risk that the previous string concatenation carried.
+        const skipOrgFilter =
           tableName === "risk_catalog_entry" ||
-          tableName === "control_catalog_entry"
-            ? ""
-            : `AND org_id = '${ctx.orgId}'`;
+          tableName === "control_catalog_entry";
+        const orgCondition = skipOrgFilter
+          ? sql``
+          : sql` AND org_id = ${ctx.orgId}::uuid`;
 
         const existingResult = await tx.execute(
-          sql.raw(
-            `SELECT "${unit.field}" FROM "${tableName}" WHERE id = '${unit.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-          ),
+          sql`SELECT ${sql.identifier(unit.field)} FROM ${sql.identifier(tableName)} WHERE id = ${unit.entityId}::uuid${orgCondition} AND deleted_at IS NULL LIMIT 1`,
         );
 
         const existingRows = existingResult as unknown as Record<
@@ -165,9 +176,7 @@ async function handleXliffImport(
 
         // Update entity field
         await tx.execute(
-          sql.raw(
-            `UPDATE "${tableName}" SET "${unit.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${unit.entityId}' ${orgFilter}`,
-          ),
+          sql`UPDATE ${sql.identifier(tableName)} SET ${sql.identifier(unit.field)} = ${JSON.stringify(merged)}::jsonb, updated_at = now(), updated_by = ${ctx.userId}::uuid WHERE id = ${unit.entityId}::uuid${orgCondition}`,
         );
 
         // Upsert translation_status
@@ -295,16 +304,21 @@ async function handleCsvImport(
       }
 
       try {
-        const orgFilter =
+        // #S04-07 (ARCTOS-FULL-2026-08-31): identifiers now go through
+        // `sql.identifier()` and every VALUE is a bound parameter, so the
+        // manual `''`-escaping and the interpolated org/user UUIDs are gone.
+        // The allowlists (ENTITY_TABLE_MAP / TRANSLATABLE_FIELDS) and the
+        // UUID_RE guard stay as the outer layer — this change removes the
+        // regression risk that the previous string concatenation carried.
+        const skipOrgFilter =
           tableName === "risk_catalog_entry" ||
-          tableName === "control_catalog_entry"
-            ? ""
-            : `AND org_id = '${ctx.orgId}'`;
+          tableName === "control_catalog_entry";
+        const orgCondition = skipOrgFilter
+          ? sql``
+          : sql` AND org_id = ${ctx.orgId}::uuid`;
 
         const existingResult = await tx.execute(
-          sql.raw(
-            `SELECT "${row.field}" FROM "${tableName}" WHERE id = '${row.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-          ),
+          sql`SELECT ${sql.identifier(row.field)} FROM ${sql.identifier(tableName)} WHERE id = ${row.entityId}::uuid${orgCondition} AND deleted_at IS NULL LIMIT 1`,
         );
 
         const existingRows = existingResult as unknown as Record<
@@ -328,9 +342,7 @@ async function handleCsvImport(
         );
 
         await tx.execute(
-          sql.raw(
-            `UPDATE "${tableName}" SET "${row.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${row.entityId}' ${orgFilter}`,
-          ),
+          sql`UPDATE ${sql.identifier(tableName)} SET ${sql.identifier(row.field)} = ${JSON.stringify(merged)}::jsonb, updated_at = now(), updated_by = ${ctx.userId}::uuid WHERE id = ${row.entityId}::uuid${orgCondition}`,
         );
 
         const hash = computeSourceHash(sanitized);

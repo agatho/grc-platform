@@ -13,6 +13,7 @@ import {
   db,
   process,
   processApprovalStep,
+  processVersion,
   notification,
   userOrganizationRole,
 } from "@grc/db";
@@ -109,9 +110,43 @@ export async function POST(
       ),
     );
   const roles = roleRows.map((r) => String(r.role));
-  if (!canDecideApprovalStep(step, { userId: ctx.userId, roles })) {
+
+  // #WP3-S02-12 — Vier-Augen-Prinzip im BPMN-Freigabezyklus.
+  // Vorher prüfte `canDecideApprovalStep` ausschließlich Zuständigkeit: ein
+  // `process_owner` konnte über POST /approval-steps eine Kette mit sich selbst
+  // als Prüfer UND Freigeber definieren und beide Schritte entscheiden — der
+  // Prozess wurde "approved" und die Arbeitsversion befördert, ohne dass ein
+  // zweiter Mensch beteiligt war. Wir laden jetzt die Herkunftsfelder und
+  // übergeben sie an die Prüfung; sie schlägt auch für `admin` fehl.
+  const versionRows: Array<{ createdBy: string | null }> =
+    await withReadContext(ctx, (tx) =>
+      tx
+        .select({ createdBy: processVersion.createdBy })
+        .from(processVersion)
+        .where(
+          and(
+            eq(processVersion.processId, id),
+            eq(processVersion.orgId, ctx.orgId),
+            eq(processVersion.versionNumber, step.versionNumber),
+          ),
+        )
+        .limit(1),
+    );
+  const versionAuthor = versionRows[0];
+
+  const sod = {
+    chainCreatedBy: step.createdBy ?? null,
+    processOwnerId: proc.processOwnerId ?? null,
+    versionCreatedBy: versionAuthor?.createdBy ?? null,
+    submittedBy: null,
+  };
+
+  if (!canDecideApprovalStep(step, { userId: ctx.userId, roles }, sod)) {
     return Response.json(
-      { error: "You are not the assignee of this approval step" },
+      {
+        error:
+          "Separation of duties: you submitted or defined this approval and may not decide it. A second person must approve.",
+      },
       { status: 403 },
     );
   }

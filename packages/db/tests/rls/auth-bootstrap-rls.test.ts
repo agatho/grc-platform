@@ -93,6 +93,21 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
     const [orgA] = await adminDb.db

@@ -3,6 +3,7 @@ import { deriveRACIFromBPMN, applyRACIOverrides } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
 
 // GET /api/v1/processes/:id/raci/export — RACI as Excel/CSV download
 export async function GET(
@@ -71,10 +72,15 @@ export async function GET(
     matrix = applyRACIOverrides(matrix, overrides);
   }
 
-  // Generate CSV
-  const header = ["Activity", ...matrix.participants.map((p) => p.name)].join(
-    ",",
-  );
+  // #S04-05: this route had NO escaping at all — a raw `join(",")` over
+  // activity names and participant names. A comma in a name corrupted the
+  // file and a leading `=`/`+`/`-`/`@` produced a live formula. `toCsvRow`
+  // neutralizes and quotes every cell, including the header (participant
+  // names are user-supplied and appear there).
+  const header = toCsvRow([
+    "Activity",
+    ...matrix.participants.map((p) => p.name),
+  ]);
   const rows = matrix.activities.map((activity) => {
     const cells = matrix.participants.map((participant) => {
       const entry = matrix.entries.find(
@@ -83,7 +89,7 @@ export async function GET(
       );
       return entry ? entry.role : "";
     });
-    return [activity.name, ...cells].join(",");
+    return toCsvRow([activity.name, ...cells]);
   });
 
   const csv = [header, ...rows].join("\n");

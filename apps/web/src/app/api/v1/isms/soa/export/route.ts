@@ -2,6 +2,7 @@ import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
 
 // GET /api/v1/isms/soa/export — CSV export
 export async function GET(req: Request) {
@@ -39,19 +40,28 @@ export async function GET(req: Request) {
     "Last Reviewed",
   ];
 
+  // #S04-05: every cell goes through the central helper — the local
+  // `csvEscape` only quoted `; " \n` and left `=`/`+`/`-`/`@` untouched,
+  // so a control title or justification could carry a live Excel formula
+  // into an auditor's spreadsheet. Note that even the previously
+  // "harmless" columns (catalogCode, applicability, …) are neutralized
+  // now; they are DB-backed strings, not constants.
   const csvRows = [
-    headers.join(";"),
+    toCsvRow(headers, ";"),
     ...rows.map((r) =>
-      [
-        r.catalogCode ?? "",
-        csvEscape(r.catalogTitleDe ?? ""),
-        csvEscape(r.catalogTitleEn ?? ""),
-        r.applicability,
-        csvEscape(r.applicabilityJustification ?? ""),
-        r.implementation,
-        csvEscape(r.implementationNotes ?? ""),
-        r.lastReviewed ?? "",
-      ].join(";"),
+      toCsvRow(
+        [
+          r.catalogCode ?? "",
+          r.catalogTitleDe ?? "",
+          r.catalogTitleEn ?? "",
+          r.applicability,
+          r.applicabilityJustification ?? "",
+          r.implementation,
+          r.implementationNotes ?? "",
+          r.lastReviewed ?? "",
+        ],
+        ";",
+      ),
     ),
   ];
 
@@ -63,11 +73,4 @@ export async function GET(req: Request) {
       "Content-Disposition": `attachment; filename="soa_export_${new Date().toISOString().split("T")[0]}.csv"`,
     },
   });
-}
-
-function csvEscape(value: string): string {
-  if (value.includes(";") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
-  }
-  return value;
 }

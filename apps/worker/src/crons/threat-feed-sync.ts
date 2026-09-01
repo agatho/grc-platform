@@ -4,6 +4,10 @@
 
 import { db, threatFeedSource, threatFeedItem } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+// #S04-03: SSRF guard. The worker connects as the DB superuser `grc` and
+// sits inside the private network, so an unguarded outbound fetch on an
+// org-supplied URL is the strongest SSRF position in the product.
+import { safeFetch } from "@grc/shared/lib/url-safety-server";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ThreatFeedSyncResult {
@@ -126,18 +130,29 @@ export const processThreatFeedSync = withCronInstrumentation(
     for (const source of sources) {
       sourcesChecked++;
       try {
-        // Fetch feed
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-        const response = await fetch(source.feedUrl, {
-          signal: controller.signal,
+        // #S04-03 (ARCTOS-FULL-2026-08-31, High) — SSRF via feed URL.
+        // `source.feedUrl` is written by an org admin/risk_manager through
+        // POST /api/v1/isms/threats/feeds and previously only passed
+        // `z.string().url()`. The bare `fetch` below therefore let the
+        // worker — superuser, inside the private network — retrieve
+        // `http://169.254.169.254/latest/meta-data/`, internal dashboards
+        // and arbitrary TCP ports, with the response body persisted as
+        // feed items and thus readable through the feed-item list.
+        //
+        // The registration route now rejects such URLs, but rows that
+        // predate the fix (or arrive via seeds/migrations/imports) must be
+        // caught here too — defence in depth, same pattern the webhook
+        // delivery path uses. `safeFetch` re-validates every redirect hop,
+        // which a one-shot pre-flight check cannot do.
+        const response = await safeFetch(source.feedUrl, {
+          timeoutMs: 30000,
+          maxRedirects: 3,
+          purpose: "threat feed sync",
           headers: {
             "User-Agent": "ARCTOS-ThreatFeedSync/1.0",
             Accept: "application/xml, text/xml, application/atom+xml, */*",
           },
         });
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
           errors++;
@@ -200,7 +215,15 @@ export const processThreatFeedSync = withCronInstrumentation(
             lastItemCount: parsedItems.length,
           })
           .where(eq(threatFeedSource.id, source.id));
-      } catch {
+      } catch (err) {
+        // #S04-03: a URL refused by the SSRF guard must be visible to
+        // operators, not silently folded into an error counter.
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.startsWith("Blocked by SSRF guard")) {
+          console.warn(
+            `[threat-feed-sync] feed source ${source.id} (org ${source.orgId}) refused: ${message}`,
+          );
+        }
         errors++;
       }
     }

@@ -9,7 +9,11 @@ import {
   jitProvisionSsoUser,
 } from "@grc/auth/providers";
 import type { Provider } from "next-auth/providers";
-import { userOrganizationRole, withUserReadContext } from "@grc/db";
+import {
+  userOrganizationRole,
+  user as userTable,
+  withUserReadContext,
+} from "@grc/db";
 import { and, eq, isNull } from "drizzle-orm";
 import type { RoleAssignment } from "@grc/auth";
 import { log } from "@/lib/logger";
@@ -26,7 +30,19 @@ const ORG_COOKIE = "arctos-org-id";
  * connection + sets `app.current_user_id`) so a user always sees their OWN
  * roles. Under the dev/CI superuser this behaves like a plain read.
  */
-async function fetchFreshRoles(userId: string): Promise<RoleAssignment[]> {
+/**
+ * #WP3-S12-17 — `fetchFreshRoles` read ONLY `user_organization_role` and never
+ * checked `user.isActive` / `user.deletedAt`; `withAuth` did not either, and
+ * the credentials provider checks them only at login time. A deactivated or
+ * deleted user therefore kept a fully functional session for the whole JWT
+ * lifetime, and the JWT strategy has no denylist to revoke it with. The join
+ * below turns every session refresh into a liveness check: when the user row is
+ * gone or inactive, `disabled` is true and the session callback strips both the
+ * roles and the org context, so `withAuth` can no longer authorise anything.
+ */
+export type FreshRoleResult = { roles: RoleAssignment[]; disabled: boolean };
+
+async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
   const rows = await withUserReadContext(userId, (rdb) =>
     rdb
       .select({
@@ -35,14 +51,38 @@ async function fetchFreshRoles(userId: string): Promise<RoleAssignment[]> {
         lineOfDefense: userOrganizationRole.lineOfDefense,
       })
       .from(userOrganizationRole)
+      .innerJoin(userTable, eq(userTable.id, userOrganizationRole.userId))
       .where(
         and(
           eq(userOrganizationRole.userId, userId),
           isNull(userOrganizationRole.deletedAt),
+          eq(userTable.isActive, true),
+          isNull(userTable.deletedAt),
         ),
       ),
   );
-  return rows as RoleAssignment[];
+
+  if (rows.length > 0) {
+    return { roles: rows as RoleAssignment[], disabled: false };
+  }
+
+  // No rows means either "user has no role assignments" (legitimate) or
+  // "user is deactivated/deleted" (session must die). Distinguish explicitly —
+  // assuming the benign case is exactly what kept dead sessions alive.
+  const live = await withUserReadContext(userId, (rdb) =>
+    rdb
+      .select({ id: userTable.id })
+      .from(userTable)
+      .where(
+        and(
+          eq(userTable.id, userId),
+          eq(userTable.isActive, true),
+          isNull(userTable.deletedAt),
+        ),
+      )
+      .limit(1),
+  );
+  return { roles: [], disabled: live.length === 0 };
 }
 
 // Build the provider list — Azure AD is only included when env vars are set
@@ -94,9 +134,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // On explicit session.update(), refresh roles from DB so newly created
       // orgs (and any role changes) are reflected without re-login.
       if (trigger === "update" && token.userId) {
-        (token as Record<string, unknown>).roles = await fetchFreshRoles(
-          token.userId as string,
-        );
+        const fresh = await fetchFreshRoles(token.userId as string);
+        (token as Record<string, unknown>).roles = fresh.roles;
+        (token as Record<string, unknown>).disabled = fresh.disabled;
       }
       return token;
     },
@@ -111,9 +151,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // newly granted roles are visible even if the JWT cookie still has a
       // stale list. The JWT-embedded copy is kept for the edge middleware.
       let roles = ((token as any).roles as RoleAssignment[]) ?? [];
+      let disabled = false;
       if (token.userId) {
         try {
-          roles = await fetchFreshRoles(token.userId as string);
+          const fresh = await fetchFreshRoles(token.userId as string);
+          roles = fresh.roles;
+          disabled = fresh.disabled;
         } catch (err) {
           // #DEP-CONFIG: structured log so the operator can grep
           // for `route:"auth.session"` + correlate with the user/org
@@ -129,7 +172,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           });
         }
       }
-      (session.user as any).roles = roles;
+      // #WP3-S12-17: a deactivated/deleted user gets an EMPTY session — no
+      // roles, no org — so every `withAuth` call fails closed on the very next
+      // request instead of after up to 8 hours.
+      (session.user as any).roles = disabled ? [] : roles;
+      (session.user as any).disabled = disabled;
+      if (disabled) {
+        (session.user as any).currentOrgId = null;
+        return session;
+      }
 
       // Resolve active org from the cookie, validated against roles.
       let currentOrgId: string | null = roles[0]?.orgId ?? null;

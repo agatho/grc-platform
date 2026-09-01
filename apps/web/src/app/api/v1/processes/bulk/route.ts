@@ -146,7 +146,16 @@ export async function POST(req: Request) {
       }
     }
 
-    // Write audit log entry for bulk operation
+    // Write audit log entry for bulk operation.
+    //
+    // [ARCTOS-FULL-2026-08-31 / WP4 · S03-05] This INSERT used to land in
+    // audit_log with entry_hash NULL, previous_hash_scope NULL and
+    // hash_version 1 (the column default) — outside every integrity check
+    // and outside every external anchor, while /integrity reported such
+    // rows as historic "legacy" residue. Migration 0401 moved the chain
+    // assignment into a BEFORE INSERT trigger on audit_log itself, so this
+    // row is now scoped, scrubbed, committed and hashed like any other.
+    // No caller-side change is needed and none is possible to forget.
     await tx.insert(auditLog).values({
       orgId: ctx.orgId,
       userId: ctx.userId,

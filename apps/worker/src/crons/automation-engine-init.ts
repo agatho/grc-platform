@@ -22,6 +22,36 @@ import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
+// #S10-16 (ARCTOS-FULL-2026-08-31, Medium): tables the `change_status`
+// automation action may write to.
+//
+// `params.entityType` originates in an automation rule that an org user
+// authors in the UI. It was passed straight into `sql.identifier()`. That
+// is not SQL injection — the identifier is quoted correctly and the
+// `org_id` filter keeps the tenant boundary — but it let a rule set
+// `status` on ANY table carrying (id, org_id, status, updated_at),
+// including tables the rule's author has no route permission for.
+//
+// Documented escalation: a user with automation-edit rights but no DMS
+// rights writes `changeStatus(entityType: "document", newStatus:
+// "expired")`. `document-retention-purge.ts` selects
+// `status IN ('archived','expired')` and hard-deletes — turning an
+// automation rule into a deletion tool for documents the author could not
+// otherwise touch.
+//
+// Adding a new automation-managed entity is now a deliberate, reviewable
+// edit to this list. `document` is intentionally NOT on it.
+const AUTOMATION_STATUS_TABLES = new Set([
+  "risk",
+  "control",
+  "finding",
+  "incident",
+  "task",
+  "work_item",
+  "vendor",
+  "asset",
+]);
+
 /**
  * Resolve a user in the given org that holds one of the requested roles.
  * Used to pick a createdBy/recipient for system-triggered automation actions,
@@ -111,7 +141,15 @@ const automationActionServices: ActionServices = {
   },
 
   changeStatus: async (params) => {
-    // Generic status update via raw SQL (entity type varies)
+    // Generic status update via raw SQL (entity type varies).
+    // #S10-16: refuse any entity that is not automation-managed. See the
+    // AUTOMATION_STATUS_TABLES comment at the top of this file.
+    if (!AUTOMATION_STATUS_TABLES.has(params.entityType)) {
+      console.error(
+        `[AutomationServices] changeStatus refused: '${params.entityType}' is not an automation-managed entity (org ${params.orgId}, entity ${params.entityId})`,
+      );
+      return;
+    }
     try {
       await db.execute(
         sql`UPDATE ${sql.identifier(params.entityType)} SET status = ${params.newStatus}, updated_at = now() WHERE id = ${params.entityId}::uuid AND org_id = ${params.orgId}::uuid`,

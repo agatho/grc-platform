@@ -15,6 +15,18 @@ import {
   computeCertReadinessScore,
   type CertReadinessCheckResult,
 } from "@grc/shared";
+import { parseQueryParams } from "@/lib/query-schema";
+import { z } from "zod";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null`.
+const snapshotListQuerySchema = z.object({
+  framework: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_.-]{1,64}$/i, "Invalid framework identifier")
+    .optional(),
+});
 
 // GET /api/v1/isms/certification/snapshots — Trend data over time
 export async function GET(req: Request) {
@@ -25,7 +37,13 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const framework = searchParams.get("framework") ?? "iso27001";
+  const q = parseQueryParams(snapshotListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const framework = q.data.framework ?? "iso27001";
 
   const snapshots = await db
     .select({

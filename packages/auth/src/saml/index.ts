@@ -10,7 +10,17 @@ export {
 } from "./request-builder";
 export {
   decodeSamlResponse,
+  // #WP3-S02-23: `verifySamlResponse` is the ONLY entry point that binds the
+  // verified signature to the assertion consumed afterwards. New callers must
+  // use it; `validateSAMLSignature` remains a boolean-only legacy shim.
+  verifySamlResponse,
   validateSAMLSignature,
   validateSAMLAssertion,
   extractSAMLAttributes,
+  cleanupAssertionCache,
+  rejectXXE,
+} from "./response-validator";
+export type {
+  VerifiedSamlResponse,
+  SamlSignatureScope,
 } from "./response-validator";

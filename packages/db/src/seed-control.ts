@@ -12,8 +12,22 @@ const db = drizzle(client);
 async function seed() {
   console.log("Seeding Sprint 4 ICS + DMS demo data...");
 
-  // Bypass RLS for seeding
-  await db.execute(sql`SET app.bypass_rls = 'true'`);
+  // [ARCTOS-FULL-2026-08-31 / WP2 · S01-02, S01-23]
+  //
+  // Hier stand `SET app.bypass_rls = 'true'` — sitzungsweit (ohne LOCAL,
+  // anders als seed-risk.ts, das `set_config(..., true)` verwendet und damit
+  // transaktionslokal bleibt). Beides ist jetzt gegenstandslos: Migration
+  // 0390 hat den GUC aus allen 55 Policies entfernt, weil er von JEDER
+  // Datenbankrolle setzbar war — auch von der absichtlich unprivilegierten
+  // Runtime-Rolle `grc_app` — und damit ein globaler RLS-Escape-Hatch auf 33
+  // Kerntabellen war.
+  //
+  // Das Seed braucht ihn nicht: es öffnet oben einen EIGENEN Client auf
+  // DATABASE_URL, also die Superuser-Rolle `grc`. Superuser umgehen RLS
+  // ohnehin, unabhängig von FORCE. Läuft dieses Seed je gegen eine
+  // unprivilegierte Verbindung, ist der richtige Weg
+  // `set_config('app.current_org_id', <org>, true)` je Org — nicht ein
+  // globaler Schalter.
 
   // Get first org for seeding
   const orgs = await db.execute(

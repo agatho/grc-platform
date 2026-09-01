@@ -2,6 +2,7 @@
 // These are imported in apps/web/src/auth.ts, NOT in middleware.
 
 import Credentials from "next-auth/providers/credentials";
+import { timingSafeEqual } from "crypto";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { compare } from "bcryptjs";
 import { eq, and, isNull, sql, inArray } from "drizzle-orm";
@@ -20,6 +21,131 @@ export function pickAttributableOrgId(
 ): string | null {
   const distinct = [...new Set(orgIds.filter((o): o is string => !!o))];
   return distinct.length === 1 ? distinct[0] : null;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// #WP3-S02-09 (Medium) — Login-Lockout und Timing-Angleichung
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund: der reguläre Login über `/api/auth/callback/credentials` enthielt
+// KEINERLEI Drosselung — kein Zähler, keine Sperre, keine Verzögerung
+// (`grep -rn "lockout|failed_attempts|locked_until"` über packages/auth und
+// packages/db/src/schema → keine Treffer). Die Rate-Limit-Bibliothek war in 5
+// von 1.357 Routendateien verwendet, und ihre einzige auth-bezogene Nutzung
+// (`admin-login`) war wegen S02-04 gar nicht erreichbar. Zielkennung und
+// Passwort waren aus dem öffentlichen Repository bekannt (S02-01).
+//
+// Umsetzung hier: ein Konto-basierter Lockout — Zähler und Sperre in der
+// `user`-Tabelle (Migration 0411), gepflegt über SECURITY-DEFINER-Funktionen
+// (Migration 0412), weil der Login ohne Org-Kontext läuft und `user` FORCE-RLS
+// hat. Konto-basiert statt IP-basiert, weil die IP aus `X-Forwarded-For`
+// stammt und vom Client frei wählbar ist — genau die Umgehung, die der Befund
+// beschreibt.
+//
+// ABGRENZUNG: `apps/web/src/lib/rate-limit.ts` gehört WP9. Der dortige
+// `getClientIp()` nimmt weiterhin ungeprüft den ERSTEN X-Forwarded-For-Wert
+// und der Limiter ist fail-open und prozesslokal. Der Bedarf ist in
+// /work/audit/remediation/WP3.md an WP9 übergeben; dieser Fix ist bewusst
+// unabhängig davon wirksam.
+
+export const LOGIN_MAX_FAILED_ATTEMPTS = 10;
+export const LOGIN_LOCKOUT_MINUTES = 15;
+
+/** A bcrypt hash of a random value — used to equalise response timing. */
+const DUMMY_BCRYPT_HASH =
+  "$2b$12$C6UzMDM.H6dfI/f/IKcEeO3Y8Y0gWJ5x1r8YtQm8k9r0hI9Zr2wOa";
+
+export interface LoginLockState {
+  locked: boolean;
+  lockedUntil: Date | null;
+}
+
+/** Is this account currently locked out? */
+export async function checkLoginLock(email: string): Promise<LoginLockState> {
+  try {
+    const rows = (await db.execute(
+      sql`SELECT * FROM public.auth_check_login_lock(${email})`,
+    )) as unknown as Array<Record<string, unknown>>;
+    const list = Array.isArray(rows)
+      ? rows
+      : ((rows as { rows?: Array<Record<string, unknown>> }).rows ?? []);
+    const row = list[0];
+    if (!row) return { locked: false, lockedUntil: null };
+    return {
+      locked: row.out_locked === true,
+      lockedUntil: row.out_locked_until
+        ? new Date(row.out_locked_until as string)
+        : null,
+    };
+  } catch (err) {
+    // Fail CLOSED would lock everyone out on a transient DB error, fail OPEN
+    // would silently disable the control. Log loudly and allow — the password
+    // check itself still has to succeed, and the counter below records the
+    // attempt as soon as the DB is back.
+    console.error(
+      "[auth] login lock check failed:",
+      err instanceof Error ? err.message : err,
+    );
+    return { locked: false, lockedUntil: null };
+  }
+}
+
+/** Count a failed attempt; locks the account when the threshold is reached. */
+export async function registerLoginFailure(email: string): Promise<void> {
+  try {
+    await db.execute(
+      sql`SELECT * FROM public.auth_register_login_failure(${email}, ${LOGIN_MAX_FAILED_ATTEMPTS}, ${LOGIN_LOCKOUT_MINUTES})`,
+    );
+  } catch (err) {
+    console.error(
+      "[auth] failed-login counter update failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
+/** Reset the counter after a successful authentication. */
+export async function registerLoginSuccess(userId: string): Promise<void> {
+  try {
+    await db.execute(
+      sql`SELECT public.auth_register_login_success(${userId}::uuid)`,
+    );
+  } catch (err) {
+    console.error(
+      "[auth] login success bookkeeping failed:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+}
+
+/**
+ * #WP3-S02-17 — user enumeration through response time.
+ *
+ * On an unknown address the old code returned BEFORE any bcrypt work, while a
+ * known address paid for a 10–12 round comparison. The difference is tens of
+ * milliseconds — measurable over the network, and with no rate limit (S02-09)
+ * repeatable arbitrarily often. Burn the same work on the miss path.
+ */
+async function equaliseTiming(password: string): Promise<void> {
+  try {
+    await compare(password, DUMMY_BCRYPT_HASH);
+  } catch {
+    // Ignore — this call exists only for its cost.
+  }
+}
+
+/**
+ * #WP3-S02-17 — one normalisation rule for e-mail addresses.
+ *
+ * There were three login paths with two rules: the credentials provider
+ * compared case-SENSITIVELY, while the SSO JIT path and `admin-login`
+ * lower-cased. A user provisioned via SSO as `Max.Muster@firma.de` was stored
+ * lower-cased and could not log in with the spelling he knew; conversely an
+ * admin-console user with capitals could end up with a SECOND account through
+ * the SSO path.
+ */
+export function normaliseEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 /**
@@ -185,25 +311,47 @@ export const credentialsProvider = Credentials({
   },
   async authorize(credentials, request) {
     try {
-      const email = credentials?.email as string | undefined;
+      const rawEmail = credentials?.email as string | undefined;
       const password = credentials?.password as string | undefined;
-      if (!email || !password) return null;
+      if (!rawEmail || !password) return null;
+      // #WP3-S02-17: one normalisation rule across all three login paths.
+      const email = normaliseEmail(rawEmail);
 
       // Extract IP and UA from the request (Auth.js v5 passes it as second arg)
       const { ipAddress, userAgent } = extractRequestInfo(request);
+
+      // #WP3-S02-09: account lockout BEFORE any password work. Without this the
+      // primary login accepted password attempts at line rate, against a
+      // username that was published in the repository (S02-01).
+      const lock = await checkLoginLock(email);
+      if (lock.locked) {
+        await equaliseTiming(password);
+        await logAccessEvent({
+          emailAttempted: email,
+          eventType: "login_failed",
+          failureReason: "account_locked",
+          ipAddress,
+          userAgent,
+        });
+        return null;
+      }
 
       const [found] = await db
         .select()
         .from(user)
         .where(
           and(
-            eq(user.email, email),
+            sql`lower(${user.email}) = ${email}`,
             eq(user.isActive, true),
             isNull(user.deletedAt),
           ),
         );
 
       if (!found?.passwordHash) {
+        // #WP3-S02-17: spend the same bcrypt cost as the hit path so the
+        // response time no longer discloses whether the account exists.
+        await equaliseTiming(password);
+        await registerLoginFailure(email);
         await logAccessEvent({
           emailAttempted: email,
           eventType: "login_failed",
@@ -238,6 +386,8 @@ export const credentialsProvider = Credentials({
 
       const valid = await compare(password, found.passwordHash);
       if (!valid) {
+        // #WP3-S02-09: count it. Ten failures lock the account for 15 minutes.
+        await registerLoginFailure(email);
         await logAccessEvent({
           userId: found.id,
           emailAttempted: email,
@@ -249,10 +399,10 @@ export const credentialsProvider = Credentials({
         return null;
       }
 
-      // Update last login timestamp + log success
-      await db.execute(
-        sql`UPDATE "user" SET last_login_at = now() WHERE id = ${found.id}`,
-      );
+      // #WP3-S02-09: resets the counter AND sets last_login_at, through the
+      // SECURITY DEFINER helper — the previous bare UPDATE on `user` could not
+      // work under `grc_app` (FORCE RLS, no org context at login time).
+      await registerLoginSuccess(found.id);
       await logAccessEvent({
         userId: found.id,
         emailAttempted: email,
@@ -266,6 +416,9 @@ export const credentialsProvider = Credentials({
         email: found.email,
         name: found.name,
         language: found.language,
+        // #WP3-S02-01: a seeded or operator-provisioned account must change its
+        // password before it can be used. The UI reads this off the session.
+        mustChangePassword: found.mustChangePassword === true,
         roles,
       };
     } catch (err) {

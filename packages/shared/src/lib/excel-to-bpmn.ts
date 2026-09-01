@@ -2,6 +2,9 @@
 // Parses an Excel file (via ExcelJS) and generates valid BPMN 2.0 XML
 
 import type { ExcelImportResult } from "../schemas/bpm-derived";
+// #S04-04: decompression-bomb pre-flight, shared with the CSV/XLSX import
+// pipeline (apps/web/src/lib/import-export/file-parser.ts).
+import { assertZipWithinLimits } from "./zip-safety";
 
 interface ExcelRow {
   stepNumber: number;
@@ -32,6 +35,13 @@ const REQUIRED_COLUMNS = [
 export async function convertExcelToBPMN(
   buffer: ArrayBuffer,
 ): Promise<ExcelImportResult> {
+  // #S04-04 (ARCTOS-FULL-2026-08-31): `wb.xlsx.load()` below materializes
+  // the whole sheet in memory (measured: 9.3 MB upload -> 2.26 GB RSS).
+  // Refuse an archive that would expand beyond the spreadsheet limits
+  // before inflating a single byte. Throws ZipBombError, which the caller
+  // route surfaces as a 4xx.
+  assertZipWithinLimits(new Uint8Array(buffer));
+
   // Dynamic import of exceljs to keep bundling optional
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();

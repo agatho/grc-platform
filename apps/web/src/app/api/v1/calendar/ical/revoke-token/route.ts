@@ -11,6 +11,7 @@ export async function DELETE(req: Request) {
     .update(user)
     .set({
       icalToken: null,
+      icalTokenHash: null,
       icalTokenCreatedAt: null,
     })
     .where(eq(user.id, ctx.userId));

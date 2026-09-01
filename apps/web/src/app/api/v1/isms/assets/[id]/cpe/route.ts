@@ -3,7 +3,9 @@ import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { assignAssetCpeSchema } from "@grc/shared";
+import { parseQueryParams, uuidQueryParam } from "@/lib/query-schema";
 import { extractCpeVendorProduct } from "@grc/shared";
+import { z } from "zod";
 
 // GET /api/v1/isms/assets/:id/cpe — Get CPE identifiers for asset
 export async function GET(
@@ -92,6 +94,17 @@ export async function POST(
 }
 
 // DELETE /api/v1/isms/assets/:id/cpe — Remove CPE from asset
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const cpeDeleteQuerySchema = z.object({
+  // Was read raw and passed to eq(): a non-UUID reached Postgres as
+  // "invalid input syntax for type uuid" (500 instead of 400).
+  cpeId: uuidQueryParam,
+});
+
 export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -104,7 +117,13 @@ export async function DELETE(
 
   const { id } = await params;
   const url = new URL(req.url);
-  const cpeId = url.searchParams.get("cpeId");
+  const q = parseQueryParams(cpeDeleteQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const cpeId = q.data.cpeId;
 
   if (!cpeId) {
     return Response.json(

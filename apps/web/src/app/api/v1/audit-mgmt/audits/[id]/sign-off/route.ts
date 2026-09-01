@@ -20,6 +20,10 @@ const signOffSchema = z.object({
     "published",
     "closed",
   ]),
+  // #WP3-S02-06 — `signerRole` is still accepted from the client for the
+  // audit-specific nuance (lead_auditor vs. qa_reviewer vs. auditee), but it is
+  // no longer BELIEVED: every value must be backed by a platform role the
+  // signer actually holds in this org (see SIGNER_ROLE_REQUIREMENTS below).
   signerRole: z.enum([
     "admin",
     "lead_auditor",
@@ -32,11 +36,58 @@ const signOffSchema = z.object({
   comments: z.string().max(2000).optional().nullable(),
 });
 
+/**
+ * #WP3-S02-06 (High) — Audit-Sign-off ohne Rollenprüfung.
+ *
+ * Befund: `withAuth()` ohne Argumente prüfte nur, dass eine Session und ein
+ * Org-Kontext existieren; der beanspruchte `signerRole` wurde NIRGENDS gegen
+ * `ctx.session.user.roles` validiert und direkt in die hash-ketten-verankerte
+ * Sign-off-Zeile geschrieben. Ein `viewer` konnte damit eine kryptografisch
+ * verkettete Zeile erzeugen, die behauptet, das MANAGEMENT habe den Prüfbericht
+ * freigegeben. Die Hash-Kette macht den Eintrag unveränderlich, nicht wahr —
+ * sie zementiert die Falschaussage, und für einen externen Prüfer ist sie von
+ * einer echten Freigabe nicht unterscheidbar.
+ *
+ * Jede beanspruchte Signaturrolle braucht jetzt mindestens eine der hier
+ * hinterlegten Plattformrollen in DERSELBEN Organisation.
+ */
+const SIGNER_ROLE_REQUIREMENTS: Record<string, readonly string[]> = {
+  admin: ["admin"],
+  lead_auditor: ["admin", "auditor", "external_auditor"],
+  auditor: ["admin", "auditor", "external_auditor"],
+  qa_reviewer: ["admin", "auditor", "quality_manager", "compliance_officer"],
+  compliance_officer: ["admin", "compliance_officer"],
+  management: ["admin", "department_head"],
+  // The auditee is the party being audited — any operational role qualifies,
+  // but a pure `viewer` still does not sign anything.
+  auditee: [
+    "admin",
+    "process_owner",
+    "control_owner",
+    "risk_manager",
+    "ciso",
+    "department_head",
+    "compliance_officer",
+  ],
+};
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth();
+  // #WP3-S02-06: a sign-off is an assurance act, not ordinary CRUD.
+  const ctx = await withAuth(
+    "admin",
+    "auditor",
+    "external_auditor",
+    "compliance_officer",
+    "quality_manager",
+    "process_owner",
+    "control_owner",
+    "risk_manager",
+    "ciso",
+    "department_head",
+  );
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("audit", ctx.orgId, req.method);
   if (m) return m;
@@ -60,6 +111,26 @@ export async function POST(
     return Response.json(
       { error: "Validation failed", details: parsed.error.flatten() },
       { status: 422 },
+    );
+  }
+
+  // #WP3-S02-06 — bind the claimed signer role to roles actually held in THIS
+  // org. Without this the hash chain anchors an unverified assertion.
+  const heldRoles = new Set(
+    (
+      ctx.session.user as { roles?: Array<{ orgId: string; role: string }> }
+    ).roles
+      ?.filter((r) => r.orgId === ctx.orgId)
+      .map((r) => r.role) ?? [],
+  );
+  const allowed = SIGNER_ROLE_REQUIREMENTS[parsed.data.signerRole] ?? [];
+  if (!allowed.some((r) => heldRoles.has(r))) {
+    return Response.json(
+      {
+        error: `You do not hold a role that entitles you to sign off as '${parsed.data.signerRole}'.`,
+        requiredAnyOf: allowed,
+      },
+      { status: 403 },
     );
   }
 

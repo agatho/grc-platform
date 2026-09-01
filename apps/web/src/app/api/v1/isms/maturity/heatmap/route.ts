@@ -33,6 +33,23 @@ import {
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { eq, and, inArray, sql } from "drizzle-orm";
+import { z } from "zod";
+import {
+  parseQueryParams,
+  csvListQueryParam,
+  booleanQueryParam,
+} from "@/lib/query-schema";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const maturityHeatmapQuerySchema = z.object({
+  // Comma-separated framework sources, bounded in count and shape.
+  frameworks: csvListQueryParam(20),
+  includeTarget: booleanQueryParam,
+});
 
 export async function GET(req: Request) {
   const ctx = await withAuth();
@@ -42,16 +59,20 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const fwParam = url.searchParams.get("frameworks");
-  const includeTarget = url.searchParams.get("includeTarget") === "true";
+  const q = parseQueryParams(maturityHeatmapQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const fwParam = q.data.frameworks ?? null;
+  const includeTarget = q.data.includeTarget === true;
 
   // Resolve framework list. If unspecified, use active catalogs of type 'control'.
   let frameworkSources: string[];
-  if (fwParam) {
-    frameworkSources = fwParam
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+  if (fwParam && fwParam.length > 0) {
+    // Already split + validated by csvListQueryParam.
+    frameworkSources = fwParam;
   } else {
     const active = await db
       .select({ source: catalog.source })

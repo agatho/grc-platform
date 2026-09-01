@@ -112,6 +112,8 @@ export async function POST(
   if (scan.status === "infected") {
     // Compliance trail: rejected uploads are security events.
     await withAuditContext(ctx, async (tx) => {
+      // S03-05: chained by the BEFORE INSERT trigger on audit_log
+      // (migration 0401).
       await tx.insert(auditLog).values({
         orgId: ctx.orgId,
         userId: ctx.userId,

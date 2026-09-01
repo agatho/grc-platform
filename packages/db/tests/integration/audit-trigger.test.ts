@@ -216,31 +216,62 @@ describe("Audit Trigger & Hash Chain", () => {
     }
   });
 
-  it("append-only rules prevent DELETE on audit_log (non-superuser)", async () => {
-    // ADR-011 rev.2 replaced audit_log_no_update with the
-    // audit_log_tombstone_guard trigger (so PII tombstoning can update
-    // whitelisted columns). audit_log therefore has exactly one _no_ rule
-    // (audit_log_no_delete); access_log and data_export_log retain two.
-    const rules = await testDb.client`
-      SELECT count(*)::int AS cnt
-      FROM pg_rules
-      WHERE schemaname = 'public'
-        AND tablename = 'audit_log'
-        AND rulename LIKE '%_no_%'
-    `;
-    expect(rules[0].cnt).toBeGreaterThanOrEqual(1); // no_delete
-
-    // The tombstone guard trigger must be present — it's the replacement
-    // for the removed no_update rule.
-    const triggers = await testDb.client`
-      SELECT count(*)::int AS cnt
+  it("append-only guards on audit_log fire even in replica mode", async () => {
+    // [ARCTOS-FULL-2026-08-31 / WP4 · S03-16] This test used to assert
+    // that the RULE `audit_log_no_delete` exists. Migration 0401 replaced
+    // it with a trigger, for two reasons the audit named:
+    //
+    //   * the rule reported `DELETE 0` — success — so a deletion attempt
+    //     was invisible to the caller and to any monitoring;
+    //   * rules do not fire on TRUNCATE, and no ON TRUNCATE trigger
+    //     existed, so `TRUNCATE audit_log CASCADE` removed the entire
+    //     trail without an error.
+    //
+    // The replacements are ENABLE ALWAYS triggers, which — unlike an
+    // ordinary trigger — keep firing under
+    // `SET session_replication_role = 'replica'`, the bypass the audit
+    // used to rewrite the whole chain.
+    const triggers = await testDb.client<
+      { tgname: string; tgenabled: string }[]
+    >`
+      SELECT tgname, tgenabled
       FROM pg_trigger
-      WHERE tgname = 'audit_log_tombstone_guard' AND NOT tgisinternal
+      WHERE tgrelid = 'audit_log'::regclass AND NOT tgisinternal
     `;
-    expect(triggers[0].cnt).toBeGreaterThanOrEqual(1);
+    const byName = new Map(triggers.map((t) => [t.tgname, t.tgenabled]));
+    for (const name of [
+      "audit_log_chain_assign_trg",
+      "audit_log_tombstone_guard",
+      "audit_log_refuse_delete_trg",
+      "audit_log_no_truncate",
+    ]) {
+      expect(byName.has(name), `${name} is missing`).toBe(true);
+      // 'A' = ENABLE ALWAYS.
+      expect(byName.get(name), `${name} is not ENABLE ALWAYS`).toBe("A");
+    }
   });
 
-  it("append-only rules exist for all 3 log tables", async () => {
+  it("every append-only log table refuses TRUNCATE", async () => {
+    const triggers = await testDb.client<{ relname: string }[]>`
+      SELECT c.relname
+      FROM pg_trigger t
+      JOIN pg_class c ON c.oid = t.tgrelid
+      JOIN pg_proc  p ON p.oid = t.tgfoid
+      WHERE p.proname = 'log_table_refuse_truncate' AND NOT t.tgisinternal
+    `;
+    const tables = [...new Set(triggers.map((t) => t.relname))];
+    for (const t of [
+      "audit_log",
+      "audit_anchor",
+      "whistleblowing_audit_log",
+      "access_log",
+      "data_export_log",
+    ]) {
+      expect(tables).toContain(t);
+    }
+  });
+
+  it("append-only rules still exist for access_log and data_export_log", async () => {
     const rules = await testDb.client`
       SELECT tablename, rulename
       FROM pg_rules
@@ -250,7 +281,6 @@ describe("Audit Trigger & Hash Chain", () => {
     `;
 
     const tables = [...new Set(rules.map((r: any) => r.tablename))];
-    expect(tables).toContain("audit_log");
     expect(tables).toContain("access_log");
     expect(tables).toContain("data_export_log");
   });

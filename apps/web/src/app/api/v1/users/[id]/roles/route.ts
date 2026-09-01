@@ -1,5 +1,5 @@
 import { db, userOrganizationRole, organization } from "@grc/db";
-import { assignRoleSchema } from "@grc/shared";
+import { assignRoleSchema, isUserRole, USER_ROLES } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, isNull } from "drizzle-orm";
 
@@ -44,6 +44,19 @@ export async function GET(
     }
   }
 
+  // #WP3-S02-13 — the org filter was missing entirely. For the ADMIN path on a
+  // FOREIGN user this returned that user's roles, line of defense, department
+  // AND the plain name of every other organization they work in. Under a
+  // correctly configured production runtime (`grc_app`) RLS caught it; on an
+  // instance where `APP_DATABASE_URL` is unset — which `.env.example` and CI
+  // explicitly allow and nothing asserts at startup — the app runs as the
+  // superuser `grc` and RLS does not apply. A defence-in-depth gap that turns
+  // into a tenant breach exactly when the last remaining control is
+  // misconfigured, so it is closed in the query itself.
+  //
+  // Self-read keeps the cross-org view (the user's own memberships are their
+  // own data, and the `uor_self_read` policy already allows it).
+  const isSelfRead = userId === ctx.userId;
   const rows = await db
     .select({
       orgId: userOrganizationRole.orgId,
@@ -59,6 +72,7 @@ export async function GET(
       and(
         eq(userOrganizationRole.userId, userId),
         isNull(userOrganizationRole.deletedAt),
+        ...(isSelfRead ? [] : [eq(userOrganizationRole.orgId, ctx.orgId)]),
       ),
     );
 
@@ -83,6 +97,36 @@ export async function POST(
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
+  }
+
+  // #WP3-S02-02 — this is the endpoint the audit used to reproduce the
+  // privilege escalation: `withAuth("admin")` was satisfied by ANY custom role
+  // via the module- and action-blind fallback in `withAuth`, so a `viewer` with
+  // a "read Academy" custom role could POST `{"role":"admin"}` for their own
+  // user id. The fallback is fixed centrally (apps/web/src/lib/api.ts); the two
+  // checks below are the local defence in depth.
+  //
+  // 1. Nobody grants themselves a role. Role assignment is an administrative
+  //    act on someone else — an admin who needs a second role asks a second
+  //    admin, exactly like every other four-eyes control in this product.
+  if (userId === ctx.userId) {
+    return Response.json(
+      {
+        error:
+          "You cannot assign a role to yourself. A second administrator must do it.",
+      },
+      { status: 403 },
+    );
+  }
+
+  // 2. Only an admin of THIS org may assign here, and the role must be a known
+  //    platform role (the DB enum and the TS union are aligned by S02-14, so an
+  //    unknown value is a schema drift, not a user error).
+  if (!isUserRole(body.data.role)) {
+    return Response.json(
+      { error: `Unknown role '${body.data.role}'`, allowed: USER_ROLES },
       { status: 422 },
     );
   }

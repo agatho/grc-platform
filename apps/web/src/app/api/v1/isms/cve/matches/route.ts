@@ -2,6 +2,18 @@ import { db, cveAssetMatch, cveFeedItem, asset } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
+import { z } from "zod";
+import { parseQueryParams } from "@/lib/query-schema";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const cveMatchQuerySchema = z.object({
+  status: z.string().trim().min(1).max(40).optional(),
+  severity: z.string().trim().min(1).max(40).optional(),
+});
 
 // GET /api/v1/isms/cve/matches — CVE-Asset matches for org
 export async function GET(req: Request) {
@@ -12,8 +24,14 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const status = searchParams.get("status");
-  const severity = searchParams.get("severity");
+  const q = parseQueryParams(cveMatchQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const status = q.data.status ?? null;
+  const severity = q.data.severity ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(cveAssetMatch.orgId, ctx.orgId),

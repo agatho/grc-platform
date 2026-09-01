@@ -69,6 +69,12 @@ export async function DELETE(
     async (tx) => {
       // Audit-log entry BEFORE the hard delete so the erasure and its
       // justification are traceable even though the rows disappear.
+      // [WP4 · S03-05 — audit call only; this route belongs to WP7/WP8]
+      // The GDPR Art. 17 erasure event is one of the most
+      // forensically valuable entries the system writes, and it used to
+      // be written outside the hash chain and outside every anchor.
+      // Migration 0401 assigns the chain in a BEFORE INSERT trigger on
+      // audit_log, so this entry is now chained like any other.
       await tx.insert(auditLog).values({
         orgId: ctx.orgId,
         userId: ctx.userId,

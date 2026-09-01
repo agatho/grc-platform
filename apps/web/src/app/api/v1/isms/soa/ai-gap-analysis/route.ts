@@ -11,8 +11,10 @@ import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { triggerSoaGapAnalysisSchema } from "@grc/shared";
+import { parseQueryParams } from "@/lib/query-schema";
 import { aiComplete } from "@grc/ai";
 import { buildSoaGapPrompt, parseSoaGapResponse } from "@grc/ai";
+import { z } from "zod";
 
 // POST /api/v1/isms/soa/ai-gap-analysis — Trigger AI gap analysis
 export async function POST(req: Request) {
@@ -218,6 +220,20 @@ export async function POST(req: Request) {
   });
 }
 
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const aiGapAnalysisQuerySchema = z.object({
+  status: z.string().trim().min(1).max(40).optional(),
+  framework: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_.-]{1,64}$/i, "Invalid framework identifier")
+    .optional(),
+});
+
 // GET /api/v1/isms/soa/ai-gap-analysis — Get latest gap analysis results
 export async function GET(req: Request) {
   const ctx = await withAuth();
@@ -227,8 +243,14 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const status = url.searchParams.get("status");
-  const framework = url.searchParams.get("framework");
+  const q = parseQueryParams(aiGapAnalysisQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const status = q.data.status ?? null;
+  const framework = q.data.framework ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(soaAiSuggestion.orgId, ctx.orgId),

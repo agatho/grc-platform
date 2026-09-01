@@ -14,6 +14,7 @@ import {
   inet,
   integer,
   bigint,
+  smallint,
   numeric,
   date,
   index,
@@ -236,9 +237,24 @@ export const user = pgTable("user", {
   notificationPreferences: jsonb("notification_preferences").default({}),
   // Sprint 17: iCal token for calendar subscription
   icalToken: varchar("ical_token", { length: 128 }),
+  // #WP3-S02-20 (Migration 0411): the iCal token was stored in PLAINTEXT and
+  // compared directly. A read leak (backup, read replica) handed out every
+  // active calendar feed. The app now writes and matches the SHA-256 hash; the
+  // plaintext column stays for one rotation window and is dropped afterwards.
+  icalTokenHash: varchar("ical_token_hash", { length: 64 }),
   icalTokenCreatedAt: timestamp("ical_token_created_at", {
     withTimezone: true,
   }),
+  // #WP3-S02-09 (Migration 0411): login lockout. There was no counter and no
+  // lock at all — `grep lockout|failed_attempts|locked_until` over
+  // packages/auth and packages/db/src/schema returned nothing.
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  lastFailedLoginAt: timestamp("last_failed_login_at", { withTimezone: true }),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  // #WP3-S02-01 (Migration 0411): forced first-password change, so a seeded or
+  // operator-provisioned account cannot keep a known password.
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
   // Sprint 20: Identity provider fields (SSO/SCIM)
   externalId: varchar("external_id", { length: 200 }),
   identityProvider: varchar("identity_provider", { length: 50 }).default(
@@ -336,8 +352,17 @@ export const auditLog = pgTable(
     // (multiple audit rows from one PUT).
     hashVersion: integer("hash_version").notNull().default(1),
     chainSeq: bigint("chain_seq", { mode: "number" }).notNull(),
+    // ADR-011 rev.4 (ARCTOS-FULL-2026-08-31 / WP4 · S03-02, S03-03, S03-06):
+    // SHA-256 over the redactable payload — changes, user_email, user_name,
+    // ip_address, entity_title. v4 hashes THIS instead of the payload
+    // directly, which (a) binds the four actor columns that used to be
+    // outside the digest and freely editable, and (b) lets a GDPR redaction
+    // rewrite the payload while the row still recomputes. NULL for v1–v3
+    // rows, which keep verifying under their own formula.
+    contentCommitment: varchar("content_commitment", { length: 64 }),
     // GDPR Art. 17 tombstone (set by tombstone_audit_entry() function).
-    // entry_hash is preserved when tombstoned so the chain stays verifiable.
+    // entry_hash is preserved when tombstoned; for v4 rows the content
+    // commitment is preserved too, so the row stays verifiable.
     piiTombstonedAt: timestamp("pii_tombstoned_at", { withTimezone: true }),
     piiTombstoneReason: text("pii_tombstone_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -388,7 +413,23 @@ export const auditAnchor = pgTable(
       .notNull()
       .defaultNow(),
     upgradedAt: timestamp("upgraded_at", { withTimezone: true }),
+    // Set by the periodic re-verification job (S03-11). Before the
+    // ARCTOS-FULL-2026-08-31 remediation this column existed and no code
+    // path ever wrote it: the platform claimed "anchored" without ever
+    // having checked the timestamp it stored.
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    // S03-08: queried by /audit-log/integrity/continuity since Wave 24,
+    // did not exist until migration 0403; the resulting error was
+    // swallowed by a bare catch.
+    anchoredAt: timestamp("anchored_at", { withTimezone: true }),
+    hashVersion: smallint("hash_version"),
+    // S03-17: 1 = Bitcoin duplication convention, 2 = RFC-6962 domain
+    // separation with the leaf count bound into the root.
+    merkleVersion: smallint("merkle_version").notNull().default(1),
+    // S03-11: true only after nonce, messageImprint, CMS signature and
+    // certificate were all checked.
+    tsaVerified: boolean("tsa_verified").notNull().default(false),
+    tsaGenTime: timestamp("tsa_gen_time", { withTimezone: true }),
   },
   (table) => [
     index("audit_anchor_org_date_idx").on(table.orgId, table.anchorDate),
@@ -737,4 +778,55 @@ export const organizationContact = pgTable(
     index("oc_role_idx").on(table.orgId, table.roleType),
     index("oc_user_idx").on(table.internalUserId),
   ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// #WP3-S02-03 — platform_admin (Migration 0411)
+// ──────────────────────────────────────────────────────────────
+// `feature_gate`, `subscription_plan`, `plugin`, `data_region` und
+// `framework_mapping` haben kein `org_id`, keine RLS und keine Policy. Ihre
+// Schreib-Endpunkte waren nur mit `withAuth("admin")` geschützt — und `admin`
+// ist eine PRO-ORGANISATION vergebene Rolle. Ein Mandanten-Admin konnte damit
+// Feature-, Abrechnungs- und Data-Sovereignty-Konfiguration ALLER Mandanten
+// ändern; für `framework_mapping` genügte sogar `risk_manager`.
+//
+// Diese Tabelle trägt das fehlende Plattform-Admin-Konzept. Sie hat bewusst
+// KEINE INSERT/UPDATE/DELETE-Policy für die Laufzeitrolle `grc_app`: die
+// Anwendung darf die Frage stellen, aber die Antwort nie selbst erzeugen.
+export const platformAdmin = pgTable(
+  "platform_admin",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    grantedAt: timestamp("granted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    grantedBy: uuid("granted_by").references(() => user.id),
+    reason: varchar("reason", { length: 500 }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [index("platform_admin_active_idx").on(table.userId)],
+);
+
+// ──────────────────────────────────────────────────────────────
+// #WP3-S02-23 — saml_assertion_replay (Migration 0411)
+// ──────────────────────────────────────────────────────────────
+// Der SAML-Replay-Schutz war eine prozesslokale `Map` (der Code sagte selbst:
+// "In production, this should be backed by Redis") — bei mehr als einer
+// Web-Instanz wirkungslos. Verbraucht wird über die SECURITY-DEFINER-Funktion
+// `auth_consume_saml_assertion` (Migration 0412), weil der ACS anonym läuft.
+export const samlAssertionReplay = pgTable(
+  "saml_assertion_replay",
+  {
+    assertionId: varchar("assertion_id", { length: 256 }).primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("saml_assertion_replay_expiry_idx").on(table.expiresAt)],
 );

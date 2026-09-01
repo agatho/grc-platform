@@ -5,6 +5,7 @@
 // renderHtmlToPdfResponse from lib/pdf.
 
 import { escHtml } from "@/lib/pdf";
+import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
 
 export interface RopaRow {
   processId: string;
@@ -36,11 +37,18 @@ const LEGAL_BASIS_LABELS: Record<string, string> = {
   legitimate_interest: "Berechtigtes Interesse (Art. 6(1)(f) DSGVO)",
 };
 
+// #S04-05: the local implementation quoted `" , \n ;` but did not
+// neutralize the Excel formula triggers `= + - @`, so a process name,
+// purpose or TOM description could execute on the recipient's machine.
+// `toCsvCell` from the central sanitizer does both; the `;` in the old
+// quote-trigger set is preserved by passing it as the delimiter hint even
+// though the file itself is comma-separated (a `;` inside a cell is
+// harmless once quoted, and quoting it keeps the output byte-compatible
+// with what German Excel users have been importing).
 function csvCell(s: unknown): string {
-  if (s == null) return "";
-  const str = Array.isArray(s) ? s.join("; ") : String(s);
-  if (/[",\n;]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-  return str;
+  const cell = toCsvCell(s, ",");
+  if (cell.startsWith('"')) return cell;
+  return cell.includes(";") ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
 const CSV_COLUMNS = [

@@ -2,6 +2,7 @@ import { db, auditChecklist, auditChecklistItem, audit, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
 
 type RouteParams = {
   params: Promise<{ id: string; checklistId: string }>;
@@ -76,17 +77,13 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   // 3. CSV generieren
-  const csvEscape = (v: unknown): string => {
-    if (v === null || v === undefined) return "";
-    const s =
-      typeof v === "string"
-        ? v
-        : typeof v === "object"
-          ? JSON.stringify(v)
-          : String(v);
-    // Semicolon ist unser Separator — Excel-DE friendly. Quote + escape.
-    return '"' + s.replace(/"/g, '""') + '"';
-  };
+  // #S04-05 (ARCTOS-FULL-2026-08-31): the local escaper wrapped every value
+  // in quotes but never neutralized the Excel formula triggers `= + - @`.
+  // Auditor notes, criterion text and corrective-action proposals are free
+  // text and land in a file that is opened by exactly the people this
+  // attack targets. `toCsvCell` prefixes a dangerous leading character with
+  // `'` and then quotes for the `;` delimiter used here.
+  const csvEscape = (v: unknown): string => toCsvCell(v, ";");
 
   const headerCols = [
     "Nr",

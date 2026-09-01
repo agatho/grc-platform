@@ -25,9 +25,24 @@ import { runRlsAudit } from "../../src/rls-audit";
  *      tenant B must not appear. This proves the policies not only
  *      exist but work.
  *
- * The probe uses the three most load-bearing tenant tables (risk,
- * control, asset). Adding more doesn't improve coverage — if the
- * policy shape is wrong on one, it's wrong on hundreds.
+ * [ARCTOS-FULL-2026-08-31 / WP2 · S01-16] Korrektur der Annahme, die hier
+ * stand:
+ *
+ *   "The probe uses the three most load-bearing tenant tables (risk,
+ *    control, asset). Adding more doesn't improve coverage — if the
+ *    policy shape is wrong on one, it's wrong on hundreds."
+ *
+ * Das ist widerlegt. Stream S01 hat die Policy-Form auf 443 Tabellen als
+ * korrekt gemessen; die Cross-Tenant-Lecks lagen ausschliesslich dort, wo GAR
+ * KEINE Policy existierte (Views, 18 Kindtabellen ohne org_id, die drei
+ * Log-Tabellen, die Auth-Kerntabellen) oder wo die Form abwich
+ * (`app.bypass_rls`, `org_id IS NULL`). Eine Stichprobe aus drei Tabellen mit
+ * korrekter Policy kann davon nichts sehen.
+ *
+ * Die vollständige Abdeckung — jedes mandantenbezogene Objekt, Lesen UND
+ * Schreiben, als `grc_app` gegen zwei echte Orgs — leistet
+ * `tenant-isolation-systemtest.test.ts`. Diese Datei bleibt als schneller
+ * Rauchtest der drei Kerntabellen bestehen.
  */
 
 let adminDb: ReturnType<typeof createTestDb>;
@@ -50,6 +65,21 @@ describe("RLS Coverage System Test (ADR-001)", () => {
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
       GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO grc_app;
     `);
 

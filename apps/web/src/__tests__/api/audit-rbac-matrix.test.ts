@@ -28,7 +28,26 @@ const MATRIX: RouteSpec[] = [
     expectedRoles: [],
   },
   { path: "[id]/sign-off/route.ts", method: "GET", expectedRoles: [] },
-  { path: "[id]/sign-off/route.ts", method: "POST", expectedRoles: [] },
+  // #WP3-S02-06 (High): war `expectedRoles: []` — der hash-ketten-verankerte
+  // Sign-off lief mit `withAuth()` ohne Rollen, und `signerRole` wurde
+  // ungeprüft vom Client übernommen. Ein `viewer` konnte damit eine
+  // unveränderliche Zeile erzeugen, die eine Management-Freigabe behauptet.
+  {
+    path: "[id]/sign-off/route.ts",
+    method: "POST",
+    expectedRoles: [
+      "admin",
+      "auditor",
+      "external_auditor",
+      "compliance_officer",
+      "quality_manager",
+      "process_owner",
+      "control_owner",
+      "risk_manager",
+      "ciso",
+      "department_head",
+    ],
+  },
   { path: "[id]/racm/route.ts", method: "GET", expectedRoles: [] },
   { path: "[id]/scope-aggregation/route.ts", method: "GET", expectedRoles: [] },
   {

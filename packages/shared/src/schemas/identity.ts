@@ -88,6 +88,10 @@ export const testSsoLoginSchema = z.object({
 
 export const createScimTokenSchema = z.object({
   description: z.string().max(200).optional(),
+  // #WP3-S02-15: rotation support. Naming the token this one replaces lets an
+  // operator roll a SCIM credential without a provisioning outage; previously
+  // there was no second active hash per org, so rotation meant downtime.
+  rotatesTokenId: z.string().uuid().optional(),
 });
 
 // ─── SCIM Sync Log Filter ───────────────────────────────────

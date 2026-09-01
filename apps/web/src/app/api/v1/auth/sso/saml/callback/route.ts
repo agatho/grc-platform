@@ -1,11 +1,18 @@
-import { db, ssoConfig, user, userOrganizationRole } from "@grc/db";
+import {
+  db,
+  ssoConfig,
+  user,
+  userOrganizationRole,
+  withOrgReadContext,
+} from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import {
   decodeSamlResponse,
-  validateSAMLSignature,
+  verifySamlResponse,
   validateSAMLAssertion,
   extractSAMLAttributes,
 } from "@grc/auth/saml";
+import { consumeSamlAssertionId } from "@grc/auth/anonymous-token";
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import type { SamlAttributeMapping, GroupRoleMapping } from "@grc/shared";
@@ -34,18 +41,24 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid RelayState" }, { status: 400 });
   }
 
-  // Load SSO config for org
-  const [config] = await db
-    .select()
-    .from(ssoConfig)
-    .where(
-      and(
-        eq(ssoConfig.orgId, orgId),
-        eq(ssoConfig.provider, "saml"),
-        eq(ssoConfig.isActive, true),
-        isNull(ssoConfig.deletedAt),
+  // #WP3-S02-05 — `sso_config` has FORCE RLS. This handler is anonymous by
+  // design (the IdP POSTs without a session), so no request-scoped org context
+  // exists and a plain read under `grc_app` returned 0 rows: SSO looked
+  // "not configured" on every production instance. The org is known from the
+  // RelayState, so pin it on a dedicated connection for exactly this read.
+  const [config] = await withOrgReadContext(orgId, (sdb) =>
+    sdb
+      .select()
+      .from(ssoConfig)
+      .where(
+        and(
+          eq(ssoConfig.orgId, orgId),
+          eq(ssoConfig.provider, "saml"),
+          eq(ssoConfig.isActive, true),
+          isNull(ssoConfig.deletedAt),
+        ),
       ),
-    );
+  );
 
   if (!config?.samlCertificate) {
     return Response.json(
@@ -60,29 +73,46 @@ export async function POST(req: Request) {
     // Decode the SAML response
     const responseXml = decodeSamlResponse(samlResponse);
 
-    // Validate signature
-    const signatureValid = validateSAMLSignature(
-      responseXml,
-      config.samlCertificate,
+    // #WP3-S02-23 — Signaturprüfung MIT Reference-Digest und Bindung.
+    //
+    // Vorher: `validateSAMLSignature(responseXml, cert)` verifizierte nur
+    // `SignatureValue` über den per Regex gefundenen `SignedInfo`-Block und gab
+    // einen booleschen Wert zurück; anschließend wurden die Attribute aus
+    // DEMSELBEN, ungebundenen `responseXml` gezogen. Wer EINE gültige,
+    // IdP-signierte Response besaß, konnte NameID und Gruppen frei ersetzen und
+    // sich als beliebiger Nutzer der Organisation anmelden (XSW).
+    //
+    // Jetzt: `verifySamlResponse` prüft Reference-Digest UND Signatur gegen das
+    // KONFIGURIERTE IdP-Zertifikat (das in `<KeyInfo>` mitgelieferte wird
+    // ignoriert), lehnt SHA-1 ab, verlangt genau eine Assertion und gibt die
+    // kanonisierte, nachweislich signierte Assertion zurück. Alles Weitere
+    // arbeitet ausschließlich auf `verified.assertionXml`.
+    const verified = verifySamlResponse(responseXml, config.samlCertificate);
+
+    // Validate assertion (expiry, audience, replay) — on the SIGNED bytes.
+    const spEntityId = `${baseUrl}/auth/sso/saml`;
+    validateSAMLAssertion(verified.assertionXml, spEntityId);
+
+    // #WP3-S02-23 — durable replay protection. The in-process Map above only
+    // protects a single web instance ("In production, this should be backed by
+    // Redis" — the code said so itself). This consumes the assertion ID in the
+    // database, so a replay against a second pod is rejected too.
+    const assertionIdMatch = verified.assertionXml.match(
+      /\bID="([^"]+)"/,
     );
-    if (!signatureValid) {
-      await logAccessEvent({
-        emailAttempted: "unknown",
-        eventType: "login_failed",
-        authMethod: "sso_oidc",
-        failureReason: "saml_invalid_signature",
-      });
-      return Response.json(
-        { error: "Invalid SAML signature" },
-        { status: 401 },
-      );
+    if (!assertionIdMatch) {
+      throw new Error("Signed assertion carries no ID");
+    }
+    const fresh = await consumeSamlAssertionId(
+      assertionIdMatch[1],
+      orgId,
+      new Date(Date.now() + 10 * 60_000),
+    );
+    if (!fresh) {
+      throw new Error("Replay attack detected: assertion ID already consumed");
     }
 
-    // Validate assertion (expiry, audience, replay)
-    const spEntityId = `${baseUrl}/auth/sso/saml`;
-    validateSAMLAssertion(responseXml, spEntityId);
-
-    // Extract user attributes
+    // Extract user attributes — from the signed assertion, never the raw XML.
     const attrMapping =
       (config.samlAttributeMapping as SamlAttributeMapping) ?? {
         email: "email",
@@ -90,71 +120,82 @@ export async function POST(req: Request) {
         lastName: "sn",
         groups: "memberOf",
       };
-    const attrs = extractSAMLAttributes(responseXml, attrMapping);
+    const attrs = extractSAMLAttributes(verified.assertionXml, attrMapping);
 
-    // JIT Provisioning: create or update user
-    const email = attrs.email.toLowerCase();
-    const name =
-      [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
+    // #WP3-S02-05 — the JIT-provisioning block touches `user` and
+    // `user_organization_role`, both FORCE-RLS. Without an org context under
+    // `grc_app` the existence check returned 0 rows (so every SSO login tried
+    // to CREATE the user and hit the unique constraint) and the role insert
+    // was rejected by the policy. The org is known from the state/RelayState,
+    // so the whole block runs on a connection pinned to it.
+    const provisioned = await withOrgReadContext(orgId, async (sdb) => {
+      // JIT Provisioning: create or update user
+      const email = attrs.email.toLowerCase();
+      const name =
+        [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
 
-    const [existing] = await db
-      .select()
-      .from(user)
-      .where(and(eq(user.email, email), isNull(user.deletedAt)));
+      const [existing] = await sdb
+        .select()
+        .from(user)
+        .where(and(eq(user.email, email), isNull(user.deletedAt)));
 
-    let userId: string;
+      let userId: string;
 
-    if (existing) {
-      // Update existing user
-      await db.execute(sql`
-        UPDATE "user" SET
-          name = ${name},
-          last_login_at = now(),
-          identity_provider = 'saml',
-          last_synced_at = now(),
-          is_active = true
-        WHERE id = ${existing.id}
-      `);
-      userId = existing.id;
-    } else {
-      // Create new user via JIT
-      if (!config.autoProvision) {
-        return Response.json(
-          { error: "Auto-provisioning is disabled for this organization" },
-          { status: 403 },
+      if (existing) {
+        // Update existing user
+        await sdb.execute(sql`
+          UPDATE "user" SET
+            name = ${name},
+            last_login_at = now(),
+            identity_provider = 'saml',
+            last_synced_at = now(),
+            is_active = true
+          WHERE id = ${existing.id}
+        `);
+        userId = existing.id;
+      } else {
+        // Create new user via JIT
+        if (!config.autoProvision) {
+          return Response.json(
+            { error: "Auto-provisioning is disabled for this organization" },
+            { status: 403 },
+          );
+        }
+
+        const [created] = await sdb
+          .insert(user)
+          .values({
+            email,
+            name,
+            emailVerified: new Date(),
+            isActive: true,
+            language: "de",
+            identityProvider: "saml",
+            lastLoginAt: new Date(),
+            lastSyncedAt: new Date(),
+          })
+          .returning();
+        userId = created.id;
+
+        // Assign default role
+        const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
+        const mappingEntries = groupRoleMappingToEntries(groupMapping);
+        const role = resolveRole(
+          attrs.groups ?? [],
+          mappingEntries,
+          config.defaultRole ?? "viewer",
         );
+
+        await sdb.insert(userOrganizationRole).values({
+          userId,
+          orgId,
+          role: role as any,
+        });
       }
-
-      const [created] = await db
-        .insert(user)
-        .values({
-          email,
-          name,
-          emailVerified: new Date(),
-          isActive: true,
-          language: "de",
-          identityProvider: "saml",
-          lastLoginAt: new Date(),
-          lastSyncedAt: new Date(),
-        })
-        .returning();
-      userId = created.id;
-
-      // Assign default role
-      const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
-      const mappingEntries = groupRoleMappingToEntries(groupMapping);
-      const role = resolveRole(
-        attrs.groups ?? [],
-        mappingEntries,
-        config.defaultRole ?? "viewer",
-      );
-
-      await db.insert(userOrganizationRole).values({
-        userId,
-        orgId,
-        role: role as any,
-      });
-    }
+      return { userId, email };
+    });
+    if (provisioned instanceof Response) return provisioned;
+    const { userId, email } = provisioned;
 
     // Log successful SSO login
     await logAccessEvent({

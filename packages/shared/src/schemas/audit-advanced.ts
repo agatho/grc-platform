@@ -216,8 +216,158 @@ export function generateWpReference(
 }
 
 // ─── Custom SQL Validation ──────────────────────────────────
-const WRITE_KEYWORDS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE)\b/i;
+//
+// #S04-01 (audit ARCTOS-FULL-2026-08-31, Critical): the previous
+// implementation was a pure keyword BLOCKLIST
+//
+//   const WRITE_KEYWORDS = /\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE)\b/i;
+//   isReadOnlySql = (q) => !WRITE_KEYWORDS.test(q);
+//
+// applied ONLY at rule-creation time. It was empirically bypassed by
+// every one of the following (evidence/S04/isreadonlysql-bypass.txt):
+//
+//   SELECT * INTO evil FROM organization        -- DDL+DML, no keyword
+//   SELECT 1; DO $$ BEGIN EXECUTE 'CRE'||'ATE …' -- string-split DDL
+//   SELECT 1; COPY t FROM PROGRAM 'id'          -- RCE as superuser
+//   SELECT 1; GRANT ALL … TO PUBLIC             -- privilege escalation
+//   SELECT pg_sleep(3600)                       -- DoS
+//
+// and the worker executed the result as the DB SUPERUSER `grc`
+// (BYPASSRLS) via sql.raw(`SET LOCAL statement_timeout=…; ${query}`),
+// i.e. multi-statement.
+//
+// The blocklist is replaced by a strict ALLOWLIST that mirrors the
+// hardened sister endpoint `bi-reports/queries/execute`: a single
+// SELECT statement, no semicolons, no comments, no dollar-quoting, no
+// data-modifying CTEs, no server-side file/program/sleep functions.
+// This is only the FIRST of two layers — the worker re-validates with
+// the same function at execution time and additionally runs the query
+// inside a transaction with `SET LOCAL ROLE grc_app` +
+// `SET TRANSACTION READ ONLY` (see
+// apps/worker/src/crons/continuous-audit-runner.ts). Neither layer is
+// allowed to be the only one.
 
+/** Hard cap so a rule cannot smuggle a novel through the parser. */
+export const CUSTOM_SQL_MAX_LENGTH = 8000;
+
+/**
+ * Statement keywords that must never appear anywhere in a custom rule.
+ * Matched as whole words, case-insensitively, on the *whole* string —
+ * we do not attempt to tokenize SQL, so anything resembling one of
+ * these is refused outright. False positives (a column literally named
+ * "update") are acceptable for an admin-authored audit query.
+ */
+const FORBIDDEN_TOKENS =
+  /\b(INSERT|UPDATE|DELETE|MERGE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE|COPY|DO|CALL|VACUUM|ANALYZE|CLUSTER|REINDEX|REFRESH|LOCK|SET|RESET|BEGIN|START|COMMIT|ROLLBACK|SAVEPOINT|PREPARE|EXECUTE|DEALLOCATE|DECLARE|FETCH|MOVE|CLOSE|LISTEN|NOTIFY|UNLISTEN|IMPORT|SECURITY|COMMENT|EXPLAIN|SHOW|INTO|PROGRAM)\b/i;
+
+/**
+ * Functions that read/write the server's filesystem, spawn programs,
+ * open outbound connections or block the backend. None of these are
+ * legitimate in a continuous-audit rule.
+ */
+const FORBIDDEN_FUNCTIONS =
+  /\b(pg_sleep|pg_sleep_for|pg_sleep_until|pg_read_file|pg_read_binary_file|pg_ls_dir|pg_stat_file|pg_logdir_ls|lo_import|lo_export|dblink|dblink_connect|dblink_exec|postgres_fdw_handler|pg_terminate_backend|pg_cancel_backend|pg_reload_conf|pg_rotate_logfile|set_config|current_setting|pg_advisory_lock|pg_advisory_xact_lock)\s*\(/i;
+
+export interface CustomSqlValidation {
+  ok: boolean;
+  /** Normalized (trimmed) statement — only set when ok. */
+  sql?: string;
+  /** Operator-facing reason — only set when !ok. */
+  reason?: string;
+}
+
+/**
+ * Allowlist validator for continuous-audit `custom_sql` rules.
+ *
+ * Used at BOTH rule-creation time (API) and rule-execution time
+ * (worker). Returns a structured result so the worker can log *why* a
+ * stored rule was refused.
+ */
+export function validateCustomAuditSql(query: unknown): CustomSqlValidation {
+  if (typeof query !== "string") {
+    return { ok: false, reason: "Custom SQL must be a string." };
+  }
+
+  const trimmed = query.trim();
+
+  if (trimmed.length === 0) {
+    return { ok: false, reason: "Custom SQL must not be empty." };
+  }
+  if (trimmed.length > CUSTOM_SQL_MAX_LENGTH) {
+    return {
+      ok: false,
+      reason: `Custom SQL exceeds the maximum length of ${CUSTOM_SQL_MAX_LENGTH} characters.`,
+    };
+  }
+
+  // No NUL / control characters that could confuse the wire protocol or
+  // hide payload from a reviewer reading the rule in the UI.
+  if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(trimmed)) {
+    return { ok: false, reason: "Custom SQL contains control characters." };
+  }
+
+  // Single statement only. Any semicolon — including a trailing one —
+  // is refused; a trailing semicolon is indistinguishable from the
+  // start of a second statement once the string is concatenated.
+  if (trimmed.includes(";")) {
+    return {
+      ok: false,
+      reason: "Custom SQL must be a single statement (no ';' allowed).",
+    };
+  }
+
+  // Comments can hide payload from human review and from naive scanners.
+  if (
+    trimmed.includes("--") ||
+    trimmed.includes("/*") ||
+    trimmed.includes("*/")
+  ) {
+    return { ok: false, reason: "SQL comments are not allowed." };
+  }
+
+  // Dollar-quoting is the standard vehicle for DO/function bodies.
+  if (trimmed.includes("$$") || /\$[A-Za-z_][A-Za-z0-9_]*\$/.test(trimmed)) {
+    return { ok: false, reason: "Dollar-quoted strings are not allowed." };
+  }
+
+  // Must be a plain SELECT. `WITH` is deliberately NOT allowed because a
+  // data-modifying CTE (`WITH x AS (INSERT … RETURNING …) SELECT …`) is
+  // a write disguised as a SELECT.
+  if (!/^SELECT\b/i.test(trimmed)) {
+    return {
+      ok: false,
+      reason: "Custom SQL must be a single SELECT statement.",
+    };
+  }
+
+  const forbidden = trimmed.match(FORBIDDEN_TOKENS);
+  if (forbidden) {
+    return {
+      ok: false,
+      reason: `Keyword '${forbidden[1].toUpperCase()}' is not allowed in custom audit SQL.`,
+    };
+  }
+
+  const forbiddenFn = trimmed.match(FORBIDDEN_FUNCTIONS);
+  if (forbiddenFn) {
+    return {
+      ok: false,
+      reason: `Function '${forbiddenFn[1]}' is not allowed in custom audit SQL.`,
+    };
+  }
+
+  return { ok: true, sql: trimmed };
+}
+
+/**
+ * Backwards-compatible boolean wrapper.
+ *
+ * Kept so the creation route
+ * (`apps/web/src/app/api/v1/audit-mgmt/continuous-rules/route.ts`,
+ * owned by another work package) picks up the strict semantics without
+ * a signature change. New call sites should prefer
+ * {@link validateCustomAuditSql} so they can surface the reason.
+ */
 export function isReadOnlySql(query: string): boolean {
-  return !WRITE_KEYWORDS.test(query);
+  return validateCustomAuditSql(query).ok;
 }

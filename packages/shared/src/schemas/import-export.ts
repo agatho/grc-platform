@@ -2,7 +2,11 @@ import { z } from "zod";
 
 // Sprint 19: Bulk Import/Export Zod schemas
 
-const importEntityTypeValues = [
+// #S10-19 (ARCTOS-FULL-2026-08-31): exported so the worker can re-validate
+// `export_schedule.entity_types` at execution time instead of trusting that
+// every row went through the Zod layer. Rows can also arrive from seeds,
+// migrations or a future import path.
+export const importEntityTypeValues = [
   "risk",
   "control",
   "asset",

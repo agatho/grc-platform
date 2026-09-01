@@ -7,6 +7,7 @@ import postgres from "postgres";
 // module-eval time.
 import { requestDbStorage } from "./request-context";
 import * as platform from "./schema/platform";
+import * as auditChain from "./schema/audit-chain";
 import * as risk from "./schema/risk";
 import * as processSchema from "./schema/process";
 import * as taskSchema from "./schema/task";
@@ -153,13 +154,95 @@ import * as entityCommentSchema from "./schema/entity-comment";
 // every read/write the app performs. When APP_DATABASE_URL is unset we fall
 // back to DATABASE_URL so dev/CI (which only set DATABASE_URL = superuser
 // `grc`) keep working unchanged. Migrations, seeds and provisioning use a
-// SEPARATE client bound to DATABASE_URL (superuser) — see migrate-all.ts,
-// create-missing-tables.ts and the docker entrypoint — so schema changes and
-// GRANTs still run with the privileges they need. withReadContext /
-// withAuditContext run their set_config('app.current_org_id', …) on THIS
-// runtime pool, which is exactly where RLS now becomes effective.
+// SEPARATE client bound to DATABASE_URL (superuser) — see migrate-all.ts and
+// the docker entrypoint — so schema changes and GRANTs still run with the
+// privileges they need. withReadContext / withAuditContext run their
+// set_config('app.current_org_id', …) on THIS runtime pool, which is exactly
+// where RLS now becomes effective.
 const RUNTIME_DATABASE_URL =
   process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL!;
+
+// [ARCTOS-FULL-2026-08-31 / WP2 · S01-10, abgestimmt mit WP10 · S13-10]
+//
+// Der `??`-Fallback oben ist bequem und lautlos: fehlt APP_DATABASE_URL in
+// einer Umgebung (neuer Deploy-Pfad, Kubernetes-Manifest statt Compose,
+// lokales `.env` — im Repo ist die Zeile in `.env:19` auskommentiert),
+// verbindet die gesamte Web-App als SUPERUSER `grc`. Superuser umgehen RLS
+// UNABHÄNGIG von FORCE — sämtliche Policies dieses Schemas sind dann
+// wirkungslos, und jede Route, die sich auf RLS statt auf ein explizites
+// `WHERE org_id` verlässt, wird zum Cross-Tenant-IDOR. Nichts im Code prüfte
+// das bisher; die App startete ohne eine einzige Meldung.
+//
+// Zwei Dinge sind hier zu trennen:
+//  * Die WEB-APP darf in Produktion NIEMALS privilegiert verbinden. Für sie
+//    ist ein Superuser-/BYPASSRLS-Pool ein Sicherheitsdefekt, kein
+//    Betriebsdetail — sie startet dann nicht.
+//  * Der WORKER verbindet bewusst privilegiert (S01-09: org-übergreifende
+//    Systemjobs; docker-compose.production.yml setzt APP_DATABASE_URL dort
+//    absichtlich nicht). Diese Entscheidung bleibt zulässig, muss aber
+//    EXPLIZIT erklärt werden — `ARCTOS_ALLOW_PRIVILEGED_DB=true`. Damit ist
+//    sie im Deployment sichtbar, greppbar und einzeln widerrufbar, statt
+//    still aus einer fehlenden Variablen zu folgen.
+//
+// Die Prüfung läuft asynchron beim Modul-Load (der Pool ist zu diesem
+// Zeitpunkt gerade erst gebaut) und ist exportiert, damit Tests und ein
+// Health-Endpunkt sie direkt aufrufen können.
+export interface RuntimeRoleCheck {
+  role: string;
+  isSuperuser: boolean;
+  canBypassRls: boolean;
+  appDatabaseUrlSet: boolean;
+  privilegedAllowed: boolean;
+  ok: boolean;
+}
+
+export async function checkRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
+  const rows = await client<
+    { rolname: string; rolsuper: boolean; rolbypassrls: boolean }[]
+  >`SELECT rolname, rolsuper, rolbypassrls
+      FROM pg_roles WHERE rolname = current_user`;
+  const row = rows[0] ?? {
+    rolname: "unknown",
+    rolsuper: false,
+    rolbypassrls: false,
+  };
+  const privilegedAllowed =
+    process.env.ARCTOS_ALLOW_PRIVILEGED_DB === "true";
+  const privileged = row.rolsuper || row.rolbypassrls;
+  return {
+    role: row.rolname,
+    isSuperuser: row.rolsuper,
+    canBypassRls: row.rolbypassrls,
+    appDatabaseUrlSet: Boolean(process.env.APP_DATABASE_URL),
+    privilegedAllowed,
+    ok: !privileged || privilegedAllowed,
+  };
+}
+
+/**
+ * Startup assertion. Returns the check result; in production a violation is
+ * fatal (the process exits) so a misconfigured deploy fails loudly instead of
+ * serving every tenant's data to every tenant.
+ */
+export async function assertRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
+  const check = await checkRuntimeRoleIsolation();
+  if (check.ok) return check;
+  const detail =
+    `[db] FATAL: the runtime pool connects as "${check.role}" ` +
+    `(rolsuper=${check.isSuperuser}, rolbypassrls=${check.canBypassRls}). ` +
+    `Such a role BYPASSES Row Level Security, which disables tenant ` +
+    `isolation for every query this process makes. ` +
+    `APP_DATABASE_URL is ${check.appDatabaseUrlSet ? "set" : "NOT set"}. ` +
+    `Point APP_DATABASE_URL at the non-superuser role grc_app ` +
+    `(deploy/provision-grc-app.sh), or — for the worker, which needs ` +
+    `cross-org access on purpose — set ARCTOS_ALLOW_PRIVILEGED_DB=true.`;
+  if (process.env.NODE_ENV === "production") {
+    console.error(detail);
+    process.exit(1);
+  }
+  console.warn(detail.replace("FATAL", "WARNING"));
+  return check;
+}
 
 // Base pool — used by ALL non-request code paths: the worker's 128 cron files,
 // the event-bus / webhook-dispatch, seeds, and any web query that runs OUTSIDE
@@ -207,17 +290,22 @@ export const requestClient = postgres(RUNTIME_DATABASE_URL, {
 });
 
 if (process.env.NODE_ENV === "production" && RUNTIME_DATABASE_URL) {
-  void client`SELECT 1`.catch((err) => {
-    // Cold-start prewarm failed — log but don't block module import. The next
-    // real request will retry and surface the error through api-wrapper.
-    console.error("[db] connection prewarm failed:", err?.message ?? err);
-  });
+  void client`SELECT 1`
+    .then(() => assertRuntimeRoleIsolation())
+    .catch((err) => {
+      // Cold-start prewarm failed — log but don't block module import. The next
+      // real request will retry and surface the error through api-wrapper.
+      // NOTE: a FAILED role assertion does not land here — it calls
+      // process.exit(1) itself (S01-10). Only connection errors do.
+      console.error("[db] connection prewarm failed:", err?.message ?? err);
+    });
 }
 
 // The full Drizzle schema, exported so request-context.ts can build a drizzle
 // client over a reserved connection with the identical schema.
 export const schema = {
   ...platform,
+  ...auditChain,
   ...risk,
   ...processSchema,
   ...taskSchema,
@@ -366,6 +454,8 @@ export const db = new Proxy(baseDb, {
 
 export type Database = typeof baseDb;
 export * from "./schema/platform";
+// ADR-011 rev.4 audit-chain integrity tables (WP4 / S03-01, -12, -14, -16)
+export * from "./schema/audit-chain";
 export * from "./schema/risk";
 export * from "./schema/process";
 export * from "./schema/task";

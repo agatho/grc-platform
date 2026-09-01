@@ -7,9 +7,21 @@
 // code only (worker, Next.js Route Handlers, API endpoints).
 
 import { lookup } from "node:dns/promises";
-import { __privateIpHelpers, type WebhookUrlCheckResult } from "../url-safety";
+import {
+  __privateIpHelpers,
+  checkOutboundUrl,
+  type OutboundUrlCheckOptions,
+  type WebhookUrlCheckResult,
+} from "../url-safety";
 
 const { isPrivateIPv4, isPrivateIPv6Literal } = __privateIpHelpers;
+
+/** Wrap a bare IPv6 literal in brackets so `new URL()` accepts it. */
+function hostForUrl(hostname: string): string {
+  return hostname.includes(":") && !hostname.startsWith("[")
+    ? `[${hostname}]`
+    : hostname;
+}
 
 /**
  * Async DNS check that closes the DNS-rebinding hole left open by the
@@ -33,7 +45,7 @@ export async function checkResolvedHostIsPublic(
   hostname: string,
 ): Promise<WebhookUrlCheckResult> {
   if (process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS === "1") {
-    return { ok: true, url: new URL(`https://${hostname}`) };
+    return { ok: true, url: new URL(`https://${hostForUrl(hostname)}`) };
   }
 
   let resolved: Array<{ address: string; family: number }>;
@@ -69,5 +81,109 @@ export async function checkResolvedHostIsPublic(
     }
   }
 
-  return { ok: true, url: new URL(`https://${hostname}`) };
+  return { ok: true, url: new URL(`https://${hostForUrl(hostname)}`) };
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// #S04-02 / S04-03 — SSRF-safe outbound fetch
+//
+// The audit found two paths (SAML metadata / OIDC discovery, and the ISMS
+// threat feed in the worker) that called bare `fetch()` on a user-supplied
+// URL. It also flagged that the existing guard, even where it *was* used,
+// left one hole open that a pre-flight check can never close on its own:
+//
+//   REDIRECTS. `fetch()` follows up to 20 redirects by default and only
+//   the FIRST URL was ever validated. `https://attacker.test/x` →
+//   302 → `http://169.254.169.254/latest/meta-data/` reached the metadata
+//   service with a fully "validated" starting URL.
+//
+// `safeFetch` closes that by driving the redirect chain itself with
+// `redirect: "manual"` and re-running the full guard (literal check +
+// DNS resolution) on EVERY hop, including the first.
+//
+// Remaining, documented residual risk: the TOCTOU window between our
+// `lookup()` and the one `fetch()` performs internally. Pinning the
+// resolved IP needs a custom undici dispatcher; see WP5.md.
+
+export interface SafeFetchOptions extends OutboundUrlCheckOptions {
+  /** Maximum redirect hops to follow. 0 disables redirect following. */
+  maxRedirects?: number;
+  /** Per-request timeout in ms (applies to each hop). Default 10 000. */
+  timeoutMs?: number;
+  /** Headers sent with the request. */
+  headers?: Record<string, string>;
+  /** HTTP method. Default GET. */
+  method?: string;
+}
+
+export class SsrfBlockedError extends Error {
+  constructor(reason: string) {
+    super(`Blocked by SSRF guard: ${reason}`);
+    this.name = "SsrfBlockedError";
+  }
+}
+
+/**
+ * Validate one URL completely: scheme/host literal check plus DNS
+ * resolution of the hostname. Exported so callers that must fetch through
+ * another client can still reuse the exact same decision.
+ */
+export async function assertUrlIsSafe(
+  rawUrl: string,
+  options: OutboundUrlCheckOptions = {},
+): Promise<WebhookUrlCheckResult> {
+  const literal = checkOutboundUrl(rawUrl, options);
+  if (!literal.ok) return literal;
+  const resolved = await checkResolvedHostIsPublic(literal.url.hostname);
+  if (!resolved.ok) return resolved;
+  return literal;
+}
+
+/**
+ * Drop-in replacement for `fetch()` on any URL that is influenced by user
+ * input. Throws `SsrfBlockedError` when the target — or any redirect hop —
+ * is not a public host.
+ */
+export async function safeFetch(
+  rawUrl: string,
+  options: SafeFetchOptions = {},
+): Promise<Response> {
+  const maxRedirects = options.maxRedirects ?? 3;
+  const timeoutMs = options.timeoutMs ?? 10_000;
+
+  let current = rawUrl;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    const check = await assertUrlIsSafe(current, {
+      requireHttps: options.requireHttps,
+      purpose: options.purpose,
+    });
+    if (!check.ok) throw new SsrfBlockedError(check.reason);
+
+    const response = await fetch(check.url.toString(), {
+      method: options.method ?? "GET",
+      headers: options.headers,
+      // We follow redirects ourselves so every hop is validated.
+      redirect: "manual",
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    const isRedirect =
+      response.status >= 300 &&
+      response.status < 400 &&
+      response.headers.has("location");
+    if (!isRedirect) return response;
+
+    if (hop === maxRedirects) {
+      throw new SsrfBlockedError(
+        `too many redirects (limit ${maxRedirects}) starting at ${rawUrl}`,
+      );
+    }
+
+    const location = response.headers.get("location") as string;
+    // Resolve relative Locations against the hop we just fetched.
+    current = new URL(location, check.url).toString();
+  }
+
+  // Unreachable — the loop either returns or throws.
+  throw new SsrfBlockedError("redirect loop exhausted");
 }

@@ -3,6 +3,10 @@ export {
   validateScimToken,
   hashScimToken,
   generateScimToken,
+  // #WP3-S02-15: SCIM tokens now expire and support rotation.
+  scimTokenDefaultExpiry,
+  tokenHashesEqual,
+  SCIM_TOKEN_DEFAULT_TTL_DAYS,
 } from "./token-auth";
 export type { ScimAuthContext } from "./token-auth";
 export {

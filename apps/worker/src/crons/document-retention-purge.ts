@@ -76,8 +76,23 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
         if (doc.filePath) filePaths.add(doc.filePath);
 
         await db.transaction(async (tx) => {
-          // 1. Audit-log entry BEFORE deletion (raw SQL — chain_seq /
-          //    hash chain are assigned by DB defaults + triggers).
+          // 1. Audit-log entry BEFORE deletion.
+          //
+          // [ARCTOS-FULL-2026-08-31 / WP4 · S03-05 — audit call only;
+          //  this cron belongs to WP7/WP8]
+          // The comment that used to stand here said the chain was
+          // "assigned by DB defaults + triggers". It was not: audit_log
+          // carried exactly one trigger, a BEFORE UPDATE guard, and the
+          // column defaults left entry_hash NULL, previous_hash_scope
+          // NULL and hash_version 1. Every hard-deleted document's
+          // retention record therefore sat outside the hash chain and
+          // outside the external anchor — the record of what was deleted
+          // was the least protected record in the system.
+          //
+          // Migration 0401 makes the comment true: audit_log now carries
+          // a BEFORE INSERT trigger that assigns scope, previous_hash,
+          // the content commitment and entry_hash for every insert,
+          // whatever wrote it.
           await tx.execute(sql`
             INSERT INTO audit_log
               (org_id, user_id, user_email, user_name,

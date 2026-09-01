@@ -9,7 +9,29 @@ import type { RoleAssignment } from "./types";
 const ORG_COOKIE = "arctos-org-id";
 
 export const authConfig: NextAuthConfig = {
-  session: { strategy: "jwt", maxAge: 8 * 60 * 60 }, // 8h
+  // #WP3-S02-16 / S12-17 — session lifetime.
+  //
+  // Was: `{ strategy: "jwt", maxAge: 8 * 60 * 60 }` — a fixed 8-hour window
+  // with no idle timeout, no rotation and no server-side revocation. A stolen
+  // cookie stayed valid for up to 8 hours, and the edge middleware (which reads
+  // ONLY the JWT copy of the roles) evaluated the HinSchG isolation gate
+  // against a role list that could be 8 hours stale (S12-17).
+  //
+  // Now: a 2-hour ABSOLUTE lifetime, rolled forward whenever an active session
+  // is refreshed (`updateAge` = 15 min). An idle session dies after 2 hours; an
+  // active one keeps working. `updateAge` also re-issues the token regularly,
+  // which is what makes the freshly read roles in `apps/web/src/auth.ts`
+  // propagate into the JWT copy the middleware sees.
+  //
+  // JWT strategy still cannot revoke a token server-side; the compensating
+  // controls are the `isActive`/`deletedAt` check on every authenticated
+  // request (`fetchFreshRoles` in apps/web/src/auth.ts) and the Node-runtime
+  // mirror of the HinSchG gate in `withAuth`.
+  session: {
+    strategy: "jwt",
+    maxAge: 2 * 60 * 60, // 2h absolute
+    updateAge: 15 * 60, // rolling refresh while active
+  },
 
   pages: {
     signIn: "/login",

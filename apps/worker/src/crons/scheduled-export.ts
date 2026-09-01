@@ -4,7 +4,28 @@
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { importEntityTypeValues } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+
+// #S10-19 (ARCTOS-FULL-2026-08-31, Low) — latent SQL injection.
+//
+// The count query below interpolated `entityType` into a double-quoted
+// identifier with NO escaping:
+//
+//   sql.raw(`SELECT COUNT(*) as cnt FROM "${entityType}" WHERE org_id = '${schedule.org_id}'`)
+//
+// A single `"` in the value breaks out of the identifier, and this runs on
+// the worker's SUPERUSER pool. It was rated Low only because
+// `createExportScheduleSchema` / `updateExportScheduleSchema` restrict
+// `entityTypes` to eight fixed values and both routes validate — a
+// compensating control the worker itself never checked. Rows written by
+// seeds, migrations or a future import path bypass that layer entirely.
+//
+// The worker now (a) validates each value against the same allowlist and
+// (b) uses a parameterized statement with `sql.identifier()` for the table
+// name and a bound parameter for the org id, so neither value is ever
+// concatenated into SQL text.
+const ALLOWED_EXPORT_ENTITY_TYPES = new Set<string>(importEntityTypeValues);
 
 interface ScheduledExportResult {
   processed: number;
@@ -50,10 +71,16 @@ export const processScheduledExport = withCronInstrumentation(
 
           for (const entityType of schedule.entity_types) {
             try {
+              // #S10-19: allowlist first — a value that never passed the
+              // API's Zod layer must not reach the SQL builder at all.
+              if (!ALLOWED_EXPORT_ENTITY_TYPES.has(entityType)) {
+                errors.push(
+                  `${schedule.name}/${entityType}: unsupported entity type — schedule ${schedule.id} skipped for this entity`,
+                );
+                continue;
+              }
               await db.execute(
-                sql.raw(
-                  `SELECT COUNT(*) as cnt FROM "${entityType}" WHERE org_id = '${schedule.org_id}'`,
-                ),
+                sql`SELECT COUNT(*) as cnt FROM ${sql.identifier(entityType)} WHERE org_id = ${schedule.org_id}::uuid`,
               );
             } catch (entityErr) {
               const msg =

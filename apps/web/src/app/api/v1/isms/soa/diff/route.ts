@@ -16,6 +16,20 @@ import { db, soaEntry, catalogEntry, catalog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { z } from "zod";
+import { parseQueryParams, uuidQueryParam } from "@/lib/query-schema";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const soaDiffQuerySchema = z.object({
+  // Previously handed to `new Date(...)` unvalidated.
+  since: z.string().datetime({ offset: true }).optional(),
+  fromRunId: uuidQueryParam,
+  toRunId: uuidQueryParam,
+});
 
 export async function GET(req: Request) {
   const ctx = await withAuth();
@@ -25,9 +39,15 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const since = url.searchParams.get("since");
-  const fromRunId = url.searchParams.get("fromRunId");
-  const toRunId = url.searchParams.get("toRunId");
+  const q = parseQueryParams(soaDiffQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const since = q.data.since ?? null;
+  const fromRunId = q.data.fromRunId ?? null;
+  const toRunId = q.data.toRunId ?? null;
 
   if (fromRunId || toRunId) {
     return Response.json(

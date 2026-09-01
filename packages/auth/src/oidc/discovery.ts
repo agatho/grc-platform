@@ -1,5 +1,7 @@
 // Sprint 20: OIDC Discovery — Fetch .well-known/openid-configuration
 import type { OidcDiscoveryDocument } from "@grc/shared";
+// #S04-02: SSRF guard (literal + DNS + per-redirect-hop re-validation).
+import { safeFetch } from "@grc/shared/lib/url-safety-server";
 
 /**
  * Fetch the OIDC discovery document from the provider.
@@ -17,9 +19,20 @@ export async function discoverOIDCEndpoints(
     url = `${url}/.well-known/openid-configuration`;
   }
 
-  const response = await fetch(url, {
+  // #S04-02 (ARCTOS-FULL-2026-08-31, High) — SSRF. `discoveryUrl` comes
+  // from the org's SSO configuration and only passed `z.string().url()`;
+  // the bare `fetch` here reached cloud metadata endpoints and internal
+  // services from the app server.
+  //
+  // WP5 scope note: this file belongs to WP3 (OIDC signature work). Only
+  // the URL guard changes here — the discovery-document validation below
+  // is untouched.
+  const response = await safeFetch(url, {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(10000),
+    timeoutMs: 10000,
+    requireHttps: true,
+    purpose: "OIDC discovery",
+    maxRedirects: 3,
   });
 
   if (!response.ok) {

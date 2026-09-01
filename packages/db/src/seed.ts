@@ -5,7 +5,77 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 import { organization, user, userOrganizationRole } from "./schema/platform";
+
+// ════════════════════════════════════════════════════════════════════
+// #WP3-S02-01 (Critical) — Environment-Guard und Erstpasswortzwang
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund: dieser Seed legte `admin@arctos.dev` mit dem hartkodierten Passwort
+// `admin123` an — ohne jeden Environment-Guard
+// (`grep -n "NODE_ENV|production|ALLOW_SEED" packages/db/src/seed.ts` → keine
+// Treffer) — und `deploy/.env.production.example:48` setzte `RUN_SEEDS=true`,
+// während `deploy/setup.sh:88` und `deploy/create-tenant.sh:267` die
+// Zugangsdaten als dokumentierten Produktions-Login ausgaben. Zusammen mit dem
+// öffentlichen Repository (BASE-001) war das ein direkter
+// Authentifizierungs-Bypass auf jeder Instanz, deren Betreiber den manuellen
+// Rotationsschritt nicht ausgeführt hatte. `SECURITY.md:34` behauptete, die
+// Kennung werde "only seeded into demo tenants" — die Deploy-Skripte
+// widerlegten das.
+//
+// Drei Änderungen:
+//   1. Der Seed VERWEIGERT den Lauf in Produktion, sofern nicht ausdrücklich
+//      `ALLOW_PRODUCTION_SEED=true` gesetzt ist.
+//   2. Es gibt kein hartkodiertes Passwort mehr. Entweder der Betreiber setzt
+//      `SEED_ADMIN_PASSWORD`, oder es wird ein Zufallspasswort erzeugt und
+//      EINMALIG auf stdout ausgegeben.
+//   3. Jedes geseedete Konto bekommt `must_change_password = true`; der Login
+//      erzwingt die Änderung, bevor irgendetwas anderes möglich ist.
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const ALLOW_PRODUCTION_SEED = process.env.ALLOW_PRODUCTION_SEED === "true";
+
+function assertSeedAllowed(): void {
+  if (IS_PRODUCTION && !ALLOW_PRODUCTION_SEED) {
+    console.error(
+      [
+        "",
+        "REFUSING TO SEED: NODE_ENV=production.",
+        "",
+        "This seed creates demo organizations and demo accounts. Running it",
+        "against a production database was the root cause of finding S02-01",
+        "(default admin with a known password on every documented production",
+        "install).",
+        "",
+        "If you really want demo data in this environment, set",
+        "ALLOW_PRODUCTION_SEED=true explicitly — and set SEED_ADMIN_PASSWORD",
+        "to a value only you know.",
+        "",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Password for a seeded account: the operator-supplied one, or a fresh random
+ * one that is printed exactly once. Never a constant.
+ */
+function seedPassword(envVar: string, label: string): string {
+  const supplied = process.env[envVar];
+  if (supplied && supplied.length >= 12) return supplied;
+  if (supplied) {
+    console.error(`${envVar} is set but shorter than 12 characters — refusing.`);
+    process.exit(1);
+  }
+  const generated = randomBytes(18).toString("base64url");
+  console.log(
+    `  GENERATED PASSWORD for ${label}: ${generated}  ` +
+      "(shown once; the account must change it at first login)",
+  );
+  return generated;
+}
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -55,6 +125,7 @@ const subsidiaries = [
 ];
 
 async function seed() {
+  assertSeedAllowed();
   console.log("Seeding database...");
 
   await db.transaction(async (tx) => {
@@ -117,7 +188,13 @@ async function seed() {
     }
 
     // 3. Create admin user (idempotent)
-    const passwordHash = await hash("admin123", 12);
+    // #WP3-S02-01: no hardcoded password. Either SEED_ADMIN_PASSWORD, or a
+    // random one printed once. `mustChangePassword` forces rotation at first
+    // login, so an un-rotated seeded account cannot be used at all.
+    const passwordHash = await hash(
+      seedPassword("SEED_ADMIN_PASSWORD", "admin@arctos.dev"),
+      12,
+    );
     const [admin] = await tx
       .insert(user)
       .values({
@@ -127,6 +204,9 @@ async function seed() {
         emailVerified: new Date(),
         language: "de",
         isActive: true,
+        // #WP3-S02-01: the account is unusable until the password is changed.
+        mustChangePassword: true,
+        passwordChangedAt: null,
       })
       .onConflictDoNothing({ target: [user.email] })
       .returning();
@@ -327,7 +407,12 @@ async function seed() {
     console.log(
       "  Seeding demo users (risk_manager, auditor, control_owner)...",
     );
-    const demoPassword = await hash("arctos2026!", 12);
+    // #WP3-S02-01: the demo accounts shared the hardcoded password
+    // `arctos2026!`, which is in the public repository just like `admin123`.
+    const demoPassword = await hash(
+      seedPassword("SEED_DEMO_PASSWORD", "demo accounts (*@arctos.dev)"),
+      12,
+    );
 
     const demoUsers = [
       {
@@ -369,6 +454,7 @@ async function seed() {
           passwordHash: demoPassword,
           language: "de",
           isActive: true,
+          mustChangePassword: true,
         })
         .onConflictDoNothing()
         .returning({ id: user.id });

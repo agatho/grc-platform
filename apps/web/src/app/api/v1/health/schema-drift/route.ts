@@ -46,8 +46,8 @@ export async function GET(_req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const rows = async <T>(query: string): Promise<T[]> => {
-    const result = await db.execute<T>(sql.raw(query));
-    return Array.isArray(result) ? (result as T[]) : [];
+    const result = await db.execute<Record<string, unknown>>(sql.raw(query));
+    return Array.isArray(result) ? (result as unknown as T[]) : [];
   };
 
   const [tableRows, columnRows, flagRows] = await Promise.all([

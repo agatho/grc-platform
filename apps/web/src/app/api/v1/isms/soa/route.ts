@@ -1,8 +1,28 @@
-import { db, soaEntry, catalogEntry, controlCatalogEntry } from "@grc/db";
+import {
+  db,
+  soaEntry,
+  catalogEntry,
+  controlCatalogEntry,
+  soaApplicabilityEnum,
+  soaImplementationEnum,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { syncSoaEntryToProgramme } from "@grc/db";
+import { z } from "zod";
+import { parseQueryParams, searchQueryParam } from "@/lib/query-schema";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const soaListQuerySchema = z.object({
+  applicability: z.enum(soaApplicabilityEnum.enumValues).optional(),
+  implementation: z.enum(soaImplementationEnum.enumValues).optional(),
+  search: searchQueryParam,
+});
 
 // GET /api/v1/isms/soa
 export async function GET(req: Request) {
@@ -13,9 +33,15 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const applicabilityFilter = searchParams.get("applicability");
-  const implementationFilter = searchParams.get("implementation");
-  const search = searchParams.get("search");
+  const q = parseQueryParams(soaListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const applicabilityFilter = q.data.applicability ?? null;
+  const implementationFilter = q.data.implementation ?? null;
+  const search = q.data.search ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [eq(soaEntry.orgId, ctx.orgId)];
   if (applicabilityFilter) {
