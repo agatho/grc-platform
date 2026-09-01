@@ -134,35 +134,24 @@ jobs:
           PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
             CREATE EXTENSION IF NOT EXISTS pgcrypto;
             CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            -- [ARCTOS-FULL-2026-08-31 / WP1] pgvector wird von 0050, 0356,
+            -- 0368 und 0377 gebraucht. Solange CI das Schema ueber
+            -- create-missing-tables.ts zusammenstueckelte, fiel das nicht auf.
+            CREATE EXTENSION IF NOT EXISTS vector;
           "
 
-      - name: Run Drizzle migrations
+      # [ARCTOS-FULL-2026-08-31 / WP1 · S09-02, S09-03, S13-01]
+      # Vorher baute CI das Schema auf einem eigenen, dritten Weg:
+      # `drizzle-kit migrate` (nur 25 Journal-Dateien) + eine Shell-Schleife
+      # mit `|| true` (verschluckt jeden Fehler) + `create-missing-tables.ts`
+      # (legt fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an).
+      # Ergebnis: CI validierte ein Schema, das in keiner Umgebung existierte,
+      # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
+      # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
+      # aus. Ein Fehlschlag bricht den Job ab.
+      - name: Build schema from migrations
         working-directory: packages/db
-        run: npx drizzle-kit migrate
-
-      - name: Run custom SQL migrations
-        run: |
-          for f in $(ls packages/db/drizzle/0*.sql | sort); do
-            IDX=$(basename "$f" .sql | grep -oP '^\d+' | sed 's/^0*//')
-            if [ "$IDX" -gt 24 ]; then
-              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f" 2>&1 || true
-            fi
-          done
-
-      - name: Create missing schema tables
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/create-missing-tables.ts
-
-      - name: Re-apply RLS gap-closure migrations
-        # create-missing-tables.ts can introduce tables that the earlier
-        # RLS migrations skipped because the table didn't exist yet. Run
-        # them again so every tenant-scoped table ends up with RLS +
-        # policies regardless of creation order.
-        run: |
-          for f in packages/db/drizzle/0286_rls_gap_closure_v2.sql \
-                   packages/db/drizzle/0288_rls_gap_closure_v3.sql; do
-            PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f"
-          done
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
 
       - name: Create grc_app role for RLS tests
         run: |
@@ -259,29 +248,18 @@ jobs:
             CREATE EXTENSION IF NOT EXISTS timescaledb;
           "
 
-      - name: Run Drizzle migrations
+      # [ARCTOS-FULL-2026-08-31 / WP1 · S09-02, S09-03, S13-01]
+      # Vorher baute CI das Schema auf einem eigenen, dritten Weg:
+      # `drizzle-kit migrate` (nur 25 Journal-Dateien) + eine Shell-Schleife
+      # mit `|| true` (verschluckt jeden Fehler) + `create-missing-tables.ts`
+      # (legt fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an).
+      # Ergebnis: CI validierte ein Schema, das in keiner Umgebung existierte,
+      # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
+      # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
+      # aus. Ein Fehlschlag bricht den Job ab.
+      - name: Build schema from migrations
         working-directory: packages/db
-        run: npx drizzle-kit migrate
-
-      - name: Run custom SQL migrations
-        run: |
-          for f in $(ls packages/db/drizzle/0*.sql | sort); do
-            IDX=$(basename "$f" .sql | grep -oP '^\d+' | sed 's/^0*//')
-            if [ "$IDX" -gt 24 ]; then
-              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f" 2>&1 || true
-            fi
-          done
-
-      - name: Create missing schema tables
-        working-directory: packages/db
-        run: npx tsx src/create-missing-tables.ts
-
-      - name: Re-apply RLS gap-closure migrations
-        run: |
-          for f in packages/db/drizzle/0286_rls_gap_closure_v2.sql \
-                   packages/db/drizzle/0288_rls_gap_closure_v3.sql; do
-            PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f"
-          done
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
 
       - name: Run seed (admin user + demo data)
         working-directory: packages/db
@@ -410,27 +388,24 @@ jobs:
           PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -c "
             CREATE EXTENSION IF NOT EXISTS pgcrypto;
             CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            -- [ARCTOS-FULL-2026-08-31 / WP1] pgvector wird von 0050, 0356,
+            -- 0368 und 0377 gebraucht. Solange CI das Schema ueber
+            -- create-missing-tables.ts zusammenstueckelte, fiel das nicht auf.
+            CREATE EXTENSION IF NOT EXISTS vector;
           "
 
-      - name: Run Drizzle migrations
+      # [ARCTOS-FULL-2026-08-31 / WP1 · S09-02, S09-03, S13-01]
+      # Vorher baute CI das Schema auf einem eigenen, dritten Weg:
+      # `drizzle-kit migrate` (nur 25 Journal-Dateien) + eine Shell-Schleife
+      # mit `|| true` (verschluckt jeden Fehler) + `create-missing-tables.ts`
+      # (legt fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an).
+      # Ergebnis: CI validierte ein Schema, das in keiner Umgebung existierte,
+      # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
+      # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
+      # aus. Ein Fehlschlag bricht den Job ab.
+      - name: Build schema from migrations
         working-directory: packages/db
-        run: npx drizzle-kit migrate
-
-      - name: Run custom SQL migrations
-        run: |
-          for f in $(ls packages/db/drizzle/0*.sql | sort); do
-            TAG=$(basename "$f" .sql)
-            # Skip files already in drizzle journal (0000-0024)
-            IDX=$(echo "$TAG" | grep -oP '^\d+' | sed 's/^0*//')
-            if [ "$IDX" -gt 24 ]; then
-              echo "Running custom migration: $TAG"
-              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -f "$f" 2>&1 || true
-            fi
-          done
-
-      - name: Create missing schema tables
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/create-missing-tables.ts
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/migrate-all.ts
 
       - name: Run catalog and framework seeds
         run: |

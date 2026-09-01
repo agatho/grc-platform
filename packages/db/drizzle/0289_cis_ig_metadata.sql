@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Early-Return, wenn der CIS-Katalog-Seed nicht eingespielt ist; Migration ist dann ein No-Op statt eines FK-Abbruchs (S09-07).
 -- ============================================================================
 -- Migration 0289: CIS Controls v8 Implementation Groups (IG1/IG2/IG3) Metadata
 --
@@ -18,6 +23,15 @@ DO $$
 DECLARE
   cis_catalog_id UUID := 'c0000000-0000-0000-0000-c150c74201a8';
 BEGIN
+  -- [ARCTOS-FULL-2026-08-31 / S09-07] Der CIS-Katalog wird nicht von einer
+  -- Migration, sondern von packages/db/sql/seed_catalog_cis_controls_v8.sql
+  -- angelegt. Ohne diesen Early-Return bricht die Datei mit 23503 ab und
+  -- reisst alle folgenden Anweisungen mit.
+  IF NOT EXISTS (SELECT 1 FROM catalog WHERE id = cis_catalog_id) THEN
+    RAISE NOTICE '0289: CIS-Katalog (Seed seed_catalog_cis_controls_v8.sql) nicht vorhanden - uebersprungen';
+    RETURN;
+  END IF;
+
   -- ── A) Level-0-Controls (CIS-01 bis CIS-18): gelten für alle IGs ──
   UPDATE catalog_entry
   SET metadata = jsonb_build_object(

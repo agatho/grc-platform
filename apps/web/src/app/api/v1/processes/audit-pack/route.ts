@@ -1,6 +1,19 @@
 // BPM Overhaul Phase 6: Audit-Pack ZIP export — published processes for
 // an ISO 9001 / 27001 audit. Each process becomes a PDF in the ZIP plus
 // a RACM CSV and the audit-trail as plain text.
+//
+// [ARCTOS-FULL-2026-08-31 / WP1 · S09-11]
+// This route used to open ONE TRANSACTION PER PROCESS and issue five queries
+// inside it, over an unbounded process list: the default branch selects every
+// published process of the organisation without a LIMIT. At 500 processes
+// that was 500 transactions and well over 2500 round trips in a single
+// synchronous HTTP request, while the ZIP was assembled in memory — a
+// connection-pool exhaustion and request-timeout hazard.
+//
+// It now runs five SET-BASED queries for the whole batch inside ONE read
+// transaction and groups the rows in memory, and it refuses batches above
+// AUDIT_PACK_MAX_PROCESSES instead of trying to stream an unbounded export.
+// Round trips are constant (6) instead of linear in the number of processes.
 
 import JSZip from "jszip";
 import { db, process } from "@grc/db";
@@ -13,6 +26,31 @@ const schema = z.object({
   processIds: z.array(z.string().uuid()).optional(),
   frameworkCode: z.string().optional(),
 });
+
+// An audit pack is assembled synchronously and held in memory. Beyond this
+// many processes the caller has to narrow the selection (framework filter or
+// explicit processIds); an unbounded export is not a useful product feature,
+// it is an availability risk.
+const AUDIT_PACK_MAX_PROCESSES = 250;
+
+/** `IN (…)` list for a raw SQL fragment. */
+function idList(ids: string[]) {
+  return sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `,
+  );
+}
+
+function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const row of rows) {
+    const k = key(row);
+    const bucket = out.get(k);
+    if (bucket) bucket.push(row);
+    else out.set(k, [row]);
+  }
+  return out;
+}
 
 export async function POST(req: Request) {
   const ctx = await withAuth(
@@ -89,6 +127,68 @@ export async function POST(req: Request) {
   if (processes.length === 0) {
     return Response.json({ error: "No matching processes" }, { status: 404 });
   }
+  if (processes.length > AUDIT_PACK_MAX_PROCESSES) {
+    return Response.json(
+      {
+        error: "Selection too large",
+        detail: `The audit pack is limited to ${AUDIT_PACK_MAX_PROCESSES} processes per request; ${processes.length} matched. Narrow the selection with frameworkCode or an explicit processIds list.`,
+      },
+      { status: 413 },
+    );
+  }
+
+  // S09-11: one transaction, five set-based queries for the whole batch.
+  const processIds = processes.map((p) => p.id);
+  const batch = await withReadContext(ctx, async (tx) => {
+    const metaRows = (await tx.execute(sql`
+      SELECT p.id, p.name, p.description, p.department, p.status,
+             p.current_version, p.published_at,
+             (SELECT u.name FROM "user" u WHERE u.id = p.process_owner_id) AS owner,
+             (SELECT u.name FROM "user" u WHERE u.id = p.reviewer_id) AS reviewer
+      FROM process p WHERE p.id IN (${idList(processIds)})
+    `)) as any[];
+
+    const signOffRows = (await tx.execute(sql`
+      SELECT process_id, signer_role, signoff_type, signed_at, comments, chain_hash
+      FROM process_sign_off
+      WHERE process_id IN (${idList(processIds)})
+      ORDER BY process_id, signed_at
+    `)) as any[];
+
+    const mappingRows = (await tx.execute(sql`
+      SELECT process_id, framework_code, entry_code, entry_title, mapping_strength
+      FROM process_framework_mapping
+      WHERE process_id IN (${idList(processIds)})
+    `)) as any[];
+
+    const racmRows = (await tx.execute(sql`
+      SELECT ps.process_id, ps.bpmn_element_id, ps.name AS step_name, ps.line_of_defense,
+             (SELECT json_agg(r.title) FROM risk r
+                JOIN process_step_risk psr ON psr.risk_id = r.id
+                WHERE psr.process_step_id = ps.id) AS risks,
+             (SELECT json_agg(c.title) FROM control c
+                JOIN process_step_control psc ON psc.control_id = c.id
+                WHERE psc.process_step_id = ps.id) AS controls
+      FROM process_step ps
+      WHERE ps.process_id IN (${idList(processIds)}) AND ps.deleted_at IS NULL
+      ORDER BY ps.process_id, ps.sequence_order
+    `)) as any[];
+
+    const xmlRows = (await tx.execute(sql`
+      SELECT process_id, bpmn_xml FROM process_version
+      WHERE process_id IN (${idList(processIds)}) AND is_current = true
+    `)) as any[];
+
+    return { metaRows, signOffRows, mappingRows, racmRows, xmlRows };
+  });
+
+  const metaById = new Map(batch.metaRows.map((r: any) => [r.id, r]));
+  const signOffsByProcess = groupBy(batch.signOffRows, (r: any) => r.process_id);
+  const mappingsByProcess = groupBy(batch.mappingRows, (r: any) => r.process_id);
+  const racmByProcess = groupBy(batch.racmRows, (r: any) => r.process_id);
+  const xmlByProcess = new Map(
+    batch.xmlRows.map((r: any) => [r.process_id, r.bpmn_xml]),
+  );
 
   const zip = new JSZip();
   const manifest: string[] = [
@@ -107,50 +207,13 @@ export async function POST(req: Request) {
     const slug = p.name.replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 60);
     const folder = zip.folder(slug)!;
 
-    // 1. Process metadata + sign-off history
-    const meta = await withReadContext(ctx, async (tx) => {
-      const [meta] = (await tx.execute(sql`
-        SELECT p.id, p.name, p.description, p.department, p.status,
-               p.current_version, p.published_at,
-               (SELECT u.name FROM "user" u WHERE u.id = p.process_owner_id) AS owner,
-               (SELECT u.name FROM "user" u WHERE u.id = p.reviewer_id) AS reviewer
-        FROM process p WHERE p.id = ${p.id}
-      `)) as any[];
-
-      const signOffs = (await tx.execute(sql`
-        SELECT signer_role, signoff_type, signed_at, comments, chain_hash
-        FROM process_sign_off
-        WHERE process_id = ${p.id}
-        ORDER BY signed_at
-      `)) as any[];
-
-      const mappings = (await tx.execute(sql`
-        SELECT framework_code, entry_code, entry_title, mapping_strength
-        FROM process_framework_mapping
-        WHERE process_id = ${p.id}
-      `)) as any[];
-
-      const racmRows = (await tx.execute(sql`
-        SELECT ps.bpmn_element_id, ps.name AS step_name, ps.line_of_defense,
-               (SELECT json_agg(r.title) FROM risk r
-                  JOIN process_step_risk psr ON psr.risk_id = r.id
-                  WHERE psr.process_step_id = ps.id) AS risks,
-               (SELECT json_agg(c.title) FROM control c
-                  JOIN process_step_control psc ON psc.control_id = c.id
-                  WHERE psc.process_step_id = ps.id) AS controls
-        FROM process_step ps
-        WHERE ps.process_id = ${p.id} AND ps.deleted_at IS NULL
-        ORDER BY ps.sequence_order
-      `)) as any[];
-
-      const xmlRow = (await tx.execute(sql`
-        SELECT bpmn_xml FROM process_version
-        WHERE process_id = ${p.id} AND is_current = true
-        LIMIT 1
-      `)) as any[];
-
-      return { meta, signOffs, mappings, racmRows, xmlRow: xmlRow[0] };
-    });
+    const meta = {
+      meta: metaById.get(p.id),
+      signOffs: signOffsByProcess.get(p.id) ?? [],
+      mappings: mappingsByProcess.get(p.id) ?? [],
+      racmRows: racmByProcess.get(p.id) ?? [],
+      xmlRow: { bpmn_xml: xmlByProcess.get(p.id) },
+    };
 
     // README per process
     folder.file(

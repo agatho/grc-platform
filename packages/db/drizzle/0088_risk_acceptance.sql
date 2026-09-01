@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Demo-Seed (Autoritaetsmatrix + Beispielakzeptanz) auf Phantom-Org c2446a5c auf No-Op-Guard umgestellt (S09-07).
 -- Migration 0088: Formal Risk Acceptance (ISO 27005 Clause 10)
 -- Closes gaps 10.1, 10.2, 10.3
 
@@ -74,28 +79,37 @@ END $$;
 -- Default Authority Matrix
 -- ============================================================
 
-INSERT INTO risk_acceptance_authority (org_id, min_score, max_score, required_role, required_role_label, description) VALUES
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 1, 8, 'control_owner', 'Kontrollverantwortlicher', 'Niedrige und mittlere Risiken (Score 1-8) können vom Kontrollverantwortlichen akzeptiert werden'),
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 9, 14, 'risk_manager', 'Risikomanager', 'Hohe Risiken (Score 9-14) erfordern die Genehmigung des Risikomanagers'),
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 15, 25, 'admin', 'Geschäftsführung', 'Sehr hohe und kritische Risiken (Score 15-25) erfordern die Genehmigung der Geschäftsführung')
-ON CONFLICT DO NOTHING;
+DO $seed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM organization WHERE id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41') THEN
+    RAISE NOTICE '0088: Demo-Org c2446a5c nicht vorhanden - Akzeptanzmatrix uebersprungen';
+    RETURN;
+  END IF;
 
--- ============================================================
--- Demo: One accepted risk
--- ============================================================
+  INSERT INTO risk_acceptance_authority (org_id, min_score, max_score, required_role, required_role_label, description) VALUES
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 1, 8, 'control_owner', 'Kontrollverantwortlicher', 'Niedrige und mittlere Risiken (Score 1-8) können vom Kontrollverantwortlichen akzeptiert werden'),
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 9, 14, 'risk_manager', 'Risikomanager', 'Hohe Risiken (Score 9-14) erfordern die Genehmigung des Risikomanagers'),
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 15, 25, 'admin', 'Geschäftsführung', 'Sehr hohe und kritische Risiken (Score 15-25) erfordern die Genehmigung der Geschäftsführung')
+  ON CONFLICT DO NOTHING;
 
-INSERT INTO risk_acceptance (org_id, risk_id, accepted_by, risk_score_at_acceptance, risk_level_at_acceptance, justification, valid_until, status)
-SELECT
-  'c2446a5c-64f1-40a7-862a-8ab084f66f41',
-  r.id,
-  (SELECT id FROM "user" WHERE email = 'admin@arctos.dev'),
-  COALESCE(r.risk_score_residual, 6),
-  'medium',
-  'Restrisiko akzeptiert nach Implementierung der Verschlüsselungsrichtlinie und Zugangskontrollen. Kosten-Nutzen-Analyse zeigt keine wirtschaftlich vertretbaren weiteren Maßnahmen. Nächste Überprüfung in 6 Monaten.',
-  '2026-10-15',
-  'active'
-FROM risk r
-WHERE r.org_id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41'
-  AND r.treatment_strategy = 'accept'
-LIMIT 1
-ON CONFLICT DO NOTHING;
+  -- ============================================================
+  -- Demo: One accepted risk
+  -- ============================================================
+
+  INSERT INTO risk_acceptance (org_id, risk_id, accepted_by, risk_score_at_acceptance, risk_level_at_acceptance, justification, valid_until, status)
+  SELECT
+    'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+    r.id,
+    (SELECT id FROM "user" WHERE email = 'admin@arctos.dev'),
+    COALESCE(r.risk_score_residual, 6),
+    'medium',
+    'Restrisiko akzeptiert nach Implementierung der Verschlüsselungsrichtlinie und Zugangskontrollen. Kosten-Nutzen-Analyse zeigt keine wirtschaftlich vertretbaren weiteren Maßnahmen. Nächste Überprüfung in 6 Monaten.',
+    '2026-10-15',
+    'active'
+  FROM risk r
+  WHERE r.org_id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41'
+    AND r.treatment_strategy = 'accept'
+  LIMIT 1
+  ON CONFLICT DO NOTHING;
+END
+$seed$;

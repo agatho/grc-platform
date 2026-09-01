@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Die 1 Seed-INSERTs auf user_organization_role setzen harte FK-Werte auf Demo-Org/Demo-User, die keine Migration erzeugt. Sie sind auf INSERT ... SELECT ... WHERE EXISTS umgestellt und damit zeilenweise ein No-Op statt eines Abbruchs (S09-07).
 -- Migration 0326: seed login-capable RBAC test users for Arctis Textilservice GmbH.
 --
 -- #WAVE21-W22-B7: Wave-21 verification reported `ciso@arctistx.test → 401`
@@ -28,36 +33,51 @@ VALUES
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
-VALUES
+SELECT v.user_id::uuid, v.org_id::uuid, v.role::user_role, v.lod::line_of_defense
+FROM (VALUES
   ('a0000003-0000-0000-0000-000000000001', '7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'ciso',             'second'),
   ('a0000003-0000-0000-0000-000000000002', '7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'process_owner',    'first'),
   ('a0000003-0000-0000-0000-000000000003', '7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'contract_manager', 'first')
+) AS v(user_id, org_id, role, lod)
+WHERE EXISTS (SELECT 1 FROM "user" u WHERE u.id = v.user_id::uuid)
+  AND EXISTS (SELECT 1 FROM organization o WHERE o.id = v.org_id::uuid)
 ON CONFLICT DO NOTHING;
 
 -- ── Minimal data for cross-tenant probes ────────────────────────────────
 -- 3 risks + 1 control owned by Arctistx. Just enough so an Org-A-user's
 -- attempt to read these by ID returns 404 (proving the RLS isolation
 -- works against real rows, not just absence-of-rows).
-INSERT INTO risk (
-  id, org_id, title, description, risk_category, risk_source, status,
-  inherent_likelihood, inherent_impact, risk_score_inherent,
-  created_by, updated_by
-) VALUES
-  ('a0000003-1000-0000-0000-000000000001', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
-   'Arctistx — Lieferanten-Konzentration Asien',
-   'Hohes Konzentrationsrisiko bei zwei chinesischen Stoff-Zulieferern (>60% Volumen).',
-   'strategic', 'erm', 'identified', 4, 4, 16,
-   'a0000003-0000-0000-0000-000000000001', 'a0000003-0000-0000-0000-000000000001'),
-  ('a0000003-1000-0000-0000-000000000002', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
-   'Arctistx — Wäscherei-Maschinenausfall',
-   'Single-Point-of-Failure im Hauptbetrieb Wuppertal — keine Redundanz für die zentrale Industriewaschstraße.',
-   'operational', 'erm', 'assessed', 3, 5, 15,
-   'a0000003-0000-0000-0000-000000000002', 'a0000003-0000-0000-0000-000000000002'),
-  ('a0000003-1000-0000-0000-000000000003', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
-   'Arctistx — Fluktuation operatives Personal',
-   'Erhöhte Personalfluktuation in Schichtbetrieb — Auswirkungen auf SLA-Einhaltung.',
-   'operational', 'erm', 'identified', 3, 3, 9,
-   'a0000003-0000-0000-0000-000000000002', 'a0000003-0000-0000-0000-000000000002')
-ON CONFLICT (id) DO NOTHING;
+DO $seed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM organization WHERE id = '7cf7aa82-af08-48f5-80d0-eb46b6e37319')
+     OR NOT EXISTS (SELECT 1 FROM "user" WHERE id = 'a0000003-0000-0000-0000-000000000001')
+     OR NOT EXISTS (SELECT 1 FROM "user" WHERE id = 'a0000003-0000-0000-0000-000000000002') THEN
+    RAISE NOTICE '0326: Arctistx-Org/Users nicht vorhanden - Demo-Risiken uebersprungen';
+    RETURN;
+  END IF;
+
+  INSERT INTO risk (
+    id, org_id, title, description, risk_category, risk_source, status,
+    inherent_likelihood, inherent_impact, risk_score_inherent,
+    created_by, updated_by
+  ) VALUES
+    ('a0000003-1000-0000-0000-000000000001', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
+     'Arctistx — Lieferanten-Konzentration Asien',
+     'Hohes Konzentrationsrisiko bei zwei chinesischen Stoff-Zulieferern (>60% Volumen).',
+     'strategic', 'erm', 'identified', 4, 4, 16,
+     'a0000003-0000-0000-0000-000000000001', 'a0000003-0000-0000-0000-000000000001'),
+    ('a0000003-1000-0000-0000-000000000002', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
+     'Arctistx — Wäscherei-Maschinenausfall',
+     'Single-Point-of-Failure im Hauptbetrieb Wuppertal — keine Redundanz für die zentrale Industriewaschstraße.',
+     'operational', 'erm', 'assessed', 3, 5, 15,
+     'a0000003-0000-0000-0000-000000000002', 'a0000003-0000-0000-0000-000000000002'),
+    ('a0000003-1000-0000-0000-000000000003', '7cf7aa82-af08-48f5-80d0-eb46b6e37319',
+     'Arctistx — Fluktuation operatives Personal',
+     'Erhöhte Personalfluktuation in Schichtbetrieb — Auswirkungen auf SLA-Einhaltung.',
+     'operational', 'erm', 'identified', 3, 3, 9,
+     'a0000003-0000-0000-0000-000000000002', 'a0000003-0000-0000-0000-000000000002')
+  ON CONFLICT (id) DO NOTHING;
+END
+$seed$;
 
 COMMIT;

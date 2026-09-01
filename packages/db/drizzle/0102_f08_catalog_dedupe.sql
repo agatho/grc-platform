@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Existenz-Guard fuer catalog_entry_reference von Tabellen- auf Spaltenebene erweitert (42703 aus dem EXECUTE-Block).
 -- F-08 Fix: Katalog-Duplikate entfernen + UNIQUE-Constraint
 --
 -- Befund (Iter 3 E2E-Test): GET /api/v1/catalogs?type=control&limit=200
@@ -98,9 +103,21 @@ WHERE soa_entry.catalog_entry_id = m.old_id;
 -- Update per conditional DO-Block, falls die Tabelle vorhanden ist
 DO $$
 BEGIN
+  -- [ARCTOS-FULL-2026-08-31 / S09-01] Der Guard prueft die Tabelle, das
+  -- EXECUTE greift aber auf source_entry_id/target_entry_id zu — Spalten,
+  -- die catalog_entry_reference nicht besitzt (reale Spalten: id,
+  -- catalog_entry_id, entity_type, entity_id, org_id, created_at). Weil
+  -- EXECUTE erst zur Laufzeit parst, lief der Block ins 42703 und riss die
+  -- restliche Datei (inkl. des Unique-Constraints, den 0103/0104 brauchen)
+  -- mit. Der Guard prueft daher jetzt auf Spaltenebene.
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
+    SELECT 1 FROM information_schema.columns
     WHERE table_name = 'catalog_entry_reference'
+      AND column_name = 'source_entry_id'
+  ) AND EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'catalog_entry_reference'
+      AND column_name = 'target_entry_id'
   ) THEN
     EXECUTE $cmd$
       UPDATE catalog_entry_reference

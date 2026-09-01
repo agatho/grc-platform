@@ -1,67 +1,95 @@
 import * as schemas from "@grc/db";
 import { db } from "@grc/db";
-import { Table, getTableName, is, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import {
+  compareSchema,
+  duplicateTableDefinitions,
+  DRIFT_QUERIES,
+  type DbColumn,
+  type DbTableFlags,
+} from "@grc/db/tests/schema-drift";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/health/schema-drift
 //
-// Returns a reconciliation between the Drizzle ORM schema exported by
-// `@grc/db` and the tables that actually exist in the current database.
-// Backs F-18: the migration split (F-17) meant that the TypeScript build
-// kept compiling cleanly while server-side endpoints threw 500 at runtime
-// because tables simply weren't there. This endpoint surfaces the drift
-// deterministically so monitoring / staging smoke tests can gate a deploy.
+// Reconciles the Drizzle ORM schema exported by `@grc/db` against the schema
+// that actually exists in the connected database. ADR-014 ("Monitoring")
+// recommends this endpoint as a deploy gate.
 //
-// Admin-only. Performs one pg_class query + one in-memory iteration of the
-// Drizzle schema exports; O(N_tables). Runs synchronously — not a cron.
-export async function GET(req: Request) {
+// [ARCTOS-FULL-2026-08-31 / WP1 · S09-09]
+// The previous implementation compared TABLE NAMES and nothing else:
+//
+//     const missingInDb: string[] = [];
+//     for (const t of expected) if (!dbTables.has(t)) missingInDb.push(t);
+//
+// Columns, types, nullability, constraints and RLS stayed out of scope. The
+// endpoint therefore reported `healthy: true` for databases in which 23
+// declared columns were missing — exactly the `column … does not exist` class
+// its own header claimed to prevent. And the value only turned green *because*
+// `create-missing-tables.ts` had created empty shells beforehand: the gate
+// rewarded the very workaround it existed to catch.
+//
+// It now reports, through the shared comparator in
+// `@grc/db/tests/schema-drift` (the same code the CI rehearsal job runs):
+//   * tables declared but absent                       → missingInDb
+//   * tables present but undeclared (informational)    → extraInDb
+//   * columns absent, of the wrong type, or nullable
+//     against a NOT NULL declaration                   → columnDrift
+//   * org_id tables without RLS, or with RLS but no
+//     policy — a deny-all table                        → rlsDrift
+//   * one SQL table claimed by two `pgTable` definitions (S09-08)
+//
+// Admin-only. Three catalog queries plus one in-memory pass over the schema
+// exports. Runs synchronously — not a cron.
+export async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
-  // 1. Collect expected table names from all Drizzle schema exports.
-  const expected = new Set<string>();
-  for (const value of Object.values(schemas)) {
-    if (value && is(value as never, Table)) {
-      expected.add(getTableName(value as unknown as Table));
-    }
-  }
+  const rows = async <T>(query: string): Promise<T[]> => {
+    const result = await db.execute<T>(sql.raw(query));
+    return Array.isArray(result) ? (result as T[]) : [];
+  };
 
-  // 2. Enumerate actually-existing tables in the connected database
-  //    (user-space schemas only, no catalog / pg_* system tables).
-  type PgRow = { table_schema: string; table_name: string };
-  const result = await db.execute<PgRow>(sql`
-    SELECT table_schema, table_name
-    FROM information_schema.tables
-    WHERE table_type = 'BASE TABLE'
-      AND table_schema NOT IN ('pg_catalog', 'information_schema')
-  `);
-  const rows: PgRow[] = Array.isArray(result) ? (result as PgRow[]) : [];
-  const dbTables = new Set(rows.map((r) => r.table_name));
+  const [tableRows, columnRows, flagRows] = await Promise.all([
+    rows<{ table_name: string }>(DRIFT_QUERIES.tables),
+    rows<DbColumn>(DRIFT_QUERIES.columns),
+    rows<DbTableFlags>(DRIFT_QUERIES.flags),
+  ]);
 
-  // 3. Compute the diff.
-  const missingInDb: string[] = [];
-  for (const t of expected) {
-    if (!dbTables.has(t)) missingInDb.push(t);
-  }
-  const extraInDb: string[] = [];
-  for (const t of dbTables) {
-    if (!expected.has(t)) extraInDb.push(t);
-  }
+  const schemaExports = schemas as unknown as Record<string, unknown>;
+  const report = compareSchema(
+    schemaExports,
+    tableRows.map((r) => r.table_name),
+    columnRows,
+    flagRows,
+  );
+  const duplicateDefinitions = duplicateTableDefinitions(schemaExports);
 
-  missingInDb.sort();
-  extraInDb.sort();
-
-  const healthy = missingInDb.length === 0;
+  // `extraInDb` never affects health: some tables are managed by SQL alone and
+  // legitimately have no `pgTable`. Everything else does — a missing table, a
+  // missing or mistyped column, a tenant table without RLS and a table claimed
+  // by two definitions each produce runtime 500s or a tenancy hole.
+  const healthy = report.healthy && duplicateDefinitions.length === 0;
 
   return Response.json(
     {
       data: {
         healthy,
-        expectedCount: expected.size,
-        dbCount: dbTables.size,
-        missingInDb,
-        extraInDb,
-        generatedAt: new Date().toISOString(),
+        expectedCount: report.expectedTableCount,
+        dbCount: report.dbTableCount,
+        missingInDb: report.missingInDb,
+        extraInDb: report.extraInDb,
+        columnDrift: report.columnDrift,
+        rlsDrift: report.rlsDrift,
+        duplicateDefinitions,
+        counts: {
+          missingInDb: report.missingInDb.length,
+          extraInDb: report.extraInDb.length,
+          columnDrift: report.columnDrift.length,
+          rlsDrift: report.rlsDrift.length,
+          duplicateDefinitions: duplicateDefinitions.length,
+        },
+        generatedAt: report.generatedAt,
       },
     },
     { status: healthy ? 200 : 503 },

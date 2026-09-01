@@ -1,11 +1,15 @@
 name: Schema Drift Report (F-18)
 
-# Runs the static audit-rls-coverage tool + checks that every NEW table
-# added via drizzle migration has a matching Drizzle schema TS file.
-# Does NOT hit any live DB -- purely static, runs on every PR.
+# Runs the static audit-rls-coverage tool + a LIVE deep schema comparison.
 #
-# The deep cross-check of Drizzle-Schema vs. running DB happens in
-# production via GET /api/v1/health/schema-drift (admin-only endpoint).
+# [ARCTOS-FULL-2026-08-31 / WP1 · S09-09]
+# Vorher hielt dieser Workflow ausdruecklich fest, er treffe "purely static"
+# keine laufende Datenbank, und verwies fuer den Tiefenabgleich auf den
+# Produktions-Endpunkt. Der verglich damals aber nur Tabellennamen, sodass die
+# Spalten-, Typ- und RLS-Drift in keiner Umgebung geprueft wurde. Der Workflow
+# baut jetzt zusaetzlich das Schema aus den Migrationen auf und laesst
+# denselben Vergleicher laufen, den auch der Endpunkt benutzt
+# (packages/db/tests/schema-drift.ts).
 
 on:
   pull_request:
@@ -43,11 +47,64 @@ jobs:
         run: |
           MISSING=$(grep -c ",RLS_MISSING$" docs/security/rls-coverage-report.csv || echo 0)
           echo "RLS_MISSING count: $MISSING"
-          # Baseline: 131 tables without RLS (nach 0105_phase3_rls_audit_triggers).
-          # Anything above that means ein neuer Tenant-Table wurde ohne RLS
-          # hinzugefuegt. Bei legitim erweiterter Coverage: Baseline senken.
-          BASELINE=131
+          # [ARCTOS-FULL-2026-08-31 / WP1 · S09-04] Die Baseline stand auf 131
+          # und fror damit genau die Luecke ein, die S09-04 als Ursache
+          # benennt: 0315_rls_gap_closure_v4.sql brach auf der ERSTEN von 142
+          # Tabellen ab (`account` hat kein org_id), sodass KEINE der 570
+          # Policies entstand. Nach der Reparatur meldet das statische Werkzeug
+          # noch genau eine Tabelle: `account` selbst — die Auth.js-OAuth-
+          # Tabelle, die ueber user_id mandantengebunden ist und eine eigene
+          # Policy-Form braucht (offen, WP2/S01).
+          # Die Baseline ist damit ein echter Ratschenwert, kein Feigenblatt:
+          # sie darf nur sinken.
+          BASELINE=1
           if [ "$MISSING" -gt "$BASELINE" ]; then
             echo "::error::RLS_MISSING count $MISSING exceeds baseline $BASELINE -- a new table was added without RLS."
             exit 1
           fi
+
+  live-schema-drift:
+    name: Deep schema comparison against a migrated database
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_drift
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_drift -v ON_ERROR_STOP=1 -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            CREATE EXTENSION IF NOT EXISTS vector;
+            CREATE EXTENSION IF NOT EXISTS timescaledb;
+          "
+
+      - name: Build the schema from the migrations
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_drift" npx tsx src/migrate-all.ts
+
+      - name: Compare Drizzle schema against the database
+        working-directory: packages/db
+        run: |
+          DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_drift" \
+            npx tsx tests/schema-drift-report.ts --fail-on-drift

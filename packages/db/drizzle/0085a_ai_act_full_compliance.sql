@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-15] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Datei von 0085_ai_act_full_compliance.sql nach 0085a_ai_act_full_compliance.sql umbenannt. Die Nummer 0085 war doppelt vergeben (S09-15); in Byte-Sortierung laeuft 0085_ vor 0085a_, sodass ai_system vor ai_gpai_model entsteht. Inhaltlich unveraendert.
 -- Migration 0085: EU AI Act Full Compliance
 -- Closes all 9 gaps for complete Art. 5-99 coverage
 
