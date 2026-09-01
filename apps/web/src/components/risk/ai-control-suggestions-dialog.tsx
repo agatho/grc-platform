@@ -19,6 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AiDisclosureNotice,
+  readAiDisclosure,
+  type AiDisclosureData,
+} from "@/components/ai/ai-disclosure";
 
 type Suggestion =
   | {
@@ -48,6 +53,11 @@ export function AiControlSuggestionsDialog({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S05-12, handed over by WP6] The AI Act
+  // Art. 50 notice now travels WITH the response (`data.aiDisclosure`) and
+  // names the provider, the model and the processing country. The hardcoded
+  // `common.aiDisclaimer` string this dialog used to show named none of them.
+  const [disclosure, setDisclosure] = useState<AiDisclosureData | null>(null);
   const [appliedIdx, setAppliedIdx] = useState<Set<number>>(new Set());
   const [applyingIdx, setApplyingIdx] = useState<number | null>(null);
 
@@ -72,6 +82,7 @@ export function AiControlSuggestionsDialog({
         return;
       }
       setSuggestions(json.data?.suggestions ?? []);
+      setDisclosure(readAiDisclosure(json.data));
     } catch {
       setError(t("suggestControls.error"));
     } finally {
@@ -142,7 +153,11 @@ export function AiControlSuggestionsDialog({
               <Sparkles size={16} className="text-violet-600" />
               {t("suggestControls.title")}
             </DialogTitle>
-            <DialogDescription>{t("common.aiDisclaimer")}</DialogDescription>
+            {/* [WP12 · S05-12] See ai-disclosure.tsx — the notice is
+                rendered from the response below, not asserted up front. */}
+            <DialogDescription>
+              {t("suggestControls.subtitle")}
+            </DialogDescription>
           </DialogHeader>
 
           {loading && (
@@ -252,6 +267,11 @@ export function AiControlSuggestionsDialog({
               })}
             </div>
           )}
+          {/* [ARCTOS-FULL-2026-08-31 / WP12 · S05-12] AI Act Art. 50
+              transparency notice, rendered from the response rather than
+              hardcoded — it names the provider, the model and the processing
+              country, and marks a third-country transfer visibly. */}
+          <AiDisclosureNotice disclosure={disclosure} className="mt-4" />
         </DialogContent>
       </Dialog>
     </>

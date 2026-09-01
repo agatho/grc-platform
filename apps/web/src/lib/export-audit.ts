@@ -68,7 +68,9 @@ export const PERSONAL_EXPORT_ROLES: readonly string[] = [
   "department_head",
 ];
 
-export function mayExportPersonalData(roles: readonly string[] | undefined): boolean {
+export function mayExportPersonalData(
+  roles: readonly string[] | undefined,
+): boolean {
   return (roles ?? []).some((r) => PERSONAL_EXPORT_ROLES.includes(r));
 }
 

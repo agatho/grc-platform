@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { TestTube } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { ControlTestExecution } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {

@@ -1,9 +1,12 @@
 {
   "name": "@grc/ai",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "test": "vitest run",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "test": "node tests/require-db.mjs && vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
@@ -17,6 +20,7 @@
   },
   "devDependencies": {
     "typescript": "^5.7",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.10"
   }
 }

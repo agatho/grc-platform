@@ -17,7 +17,6 @@
 // 500-en wegen DB-Issues, was D1 verlässlich macht.
 
 import { getRequestId } from "@/lib/api-errors";
-
 // #WAVE23-D1: deliberately NOT wrapped in withErrorHandler. The
 // route does no DB call, no auth check, no schema parse — there's
 // no failure mode that needs the wrapper's RFC-7807 mapping. Pulling
@@ -42,19 +41,33 @@ const BUILT_AT =
   // hat der Build stattgefunden"). Reicht für Drift-Diagnose aus.
   new Date().toISOString();
 
-const PROCESS_START_MS = Date.now();
-
 export function GET(req: Request) {
   return Response.json({
     data: {
       commitSha: COMMIT_SHA,
       branch: GIT_BRANCH,
       builtAt: BUILT_AT,
-      nodeVersion: process.version,
-      // Uptime in Sekunden seit Prozess-Boot. Hilft zu unterscheiden
-      // zwischen "Container wurde gerade neu gestartet" (Sekunden) vs.
-      // "Container läuft seit Tagen, Deploy ist alt" (>86400).
-      runtimeUptimeSeconds: Math.floor((Date.now() - PROCESS_START_MS) / 1000),
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S12-19] `nodeVersion:
+      // process.version` and `runtimeUptimeSeconds` were removed from this
+      // response.
+      //
+      // The middleware justifies the endpoint being public with "only
+      // build-time / process-time strings that are also visible in any GitHub
+      // push event". That holds for commitSha / branch / builtAt. It does not
+      // hold for `process.version`: that is the exact patch level of the
+      // RUNNING runtime — not a build artefact, not derivable from the
+      // repository, and precisely what an attacker needs to decide whether a
+      // known Node CVE applies. `runtimeUptimeSeconds` compounded it by
+      // stating how long since the last restart, and therefore how long since
+      // the last possible patch. Unauthenticated, unrate-limited, one GET.
+      //
+      // They are not moved behind `withAuth` here: the whole point of this
+      // route (see the WAVE23-D1 note above) is that it has zero DB touches
+      // and zero auth dependencies, so it still answers when the auth layer
+      // is down. Importing `auth()` would undo that and break the route's
+      // unit test. An operator who needs the runtime version has it directly
+      // from the container (`docker exec … node -v`, `docker ps` uptime);
+      // an anonymous internet client has no reason to.
       requestId: getRequestId(req),
     },
   });

@@ -138,7 +138,7 @@ describe("BPM endpoint RBAC matrix", () => {
       let src = "";
       try {
         src = readFileSync(file, "utf8");
-      } catch (e) {
+      } catch (_e) {
         throw new Error(`Route file missing: ${file}`);
       }
       const roles = extractRolesForMethod(src, spec.method);

@@ -466,9 +466,10 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     const foreignAudit = seeded.find((s) => s.tbl === "audit_log");
     expect(foreignAudit).toBeDefined();
     await expect(
-      app.client.unsafe(`SELECT public.tombstone_audit_entry($1::uuid, 'wp2')`, [
-        foreignAudit!.b,
-      ]),
+      app.client.unsafe(
+        `SELECT public.tombstone_audit_entry($1::uuid, 'wp2')`,
+        [foreignAudit!.b],
+      ),
     ).rejects.toThrow(/different organization/i);
   });
 

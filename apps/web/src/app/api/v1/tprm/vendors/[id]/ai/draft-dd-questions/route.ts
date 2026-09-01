@@ -12,7 +12,11 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../../../ai/_shared/ai-route";
 
 const schema = z.object({ locale: z.enum(["de", "en"]).optional() });
 

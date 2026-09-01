@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, Plus, RefreshCcw, Bug, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -238,6 +238,11 @@ function CreateVulnForm({
   t: ReturnType<typeof useTranslations>;
   onSuccess: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cveReference, setCveReference] = useState("");
@@ -296,10 +301,14 @@ function CreateVulnForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor={`${a11yId}-cve-reference`}
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           CVE Reference
         </label>
         <input
+          id={`${a11yId}-cve-reference`}
           type="text"
           value={cveReference}
           onChange={(e) => setCveReference(e.target.value)}

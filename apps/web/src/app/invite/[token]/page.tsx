@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, CheckCircle, XCircle, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AcceptInvitationPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
   const [name, setName] = useState("");
@@ -88,10 +93,14 @@ export default function AcceptInvitationPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-ihr-name`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Ihr Name
             </label>
             <input
+              id={`${a11yId}-ihr-name`}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Max Mustermann"
@@ -100,10 +109,14 @@ export default function AcceptInvitationPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-passwort`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Passwort
             </label>
             <input
+              id={`${a11yId}-passwort`}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -113,10 +126,14 @@ export default function AcceptInvitationPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-passwort-bestaetigen`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Passwort bestaetigen
             </label>
             <input
+              id={`${a11yId}-passwort-bestaetigen`}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}

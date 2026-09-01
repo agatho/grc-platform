@@ -58,7 +58,7 @@ export default function TprmRiskDashboardPage() {
 }
 
 function TprmRiskDashboardInner() {
-  const t = useTranslations("tprm");
+  const _t = useTranslations("tprm");
   const [data, setData] = useState<VendorRiskAggregation | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -245,7 +245,7 @@ function TprmRiskDashboardInner() {
                             className="inline text-orange-500"
                           />
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span className="text-gray-500">-</span>
                         )}
                       </td>
                     </tr>

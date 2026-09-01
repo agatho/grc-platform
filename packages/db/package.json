@@ -1,8 +1,11 @@
 {
   "name": "@grc/db",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -e ../../.env -e ../../apps/web/.env.local -- drizzle-kit migrate",
     "db:migrate-all": "tsx src/migrate-all.ts",
@@ -10,7 +13,7 @@
     "db:seed-risk": "tsx src/seed-risk.ts",
     "db:seed-all": "tsx src/seed-all.ts",
     "db:studio": "drizzle-kit studio",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests && node tests/run-db-suites.mjs",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:rls": "vitest run --config vitest.rls.config.ts",
     "test:coverage": "vitest run --coverage --passWithNoTests",

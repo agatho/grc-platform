@@ -98,7 +98,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       permitted: isPermitted,
       placement: placements[p].kind,
       country: placements[p].country,
-      status: !isConfigured ? "unconfigured" : isPermitted ? "healthy" : "blocked",
+      status: !isConfigured
+        ? "unconfigured"
+        : isPermitted
+          ? "healthy"
+          : "blocked",
       model: DEFAULT_MODELS[p],
     };
   });

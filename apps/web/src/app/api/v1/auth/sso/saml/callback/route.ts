@@ -97,9 +97,7 @@ export async function POST(req: Request) {
     // protects a single web instance ("In production, this should be backed by
     // Redis" — the code said so itself). This consumes the assertion ID in the
     // database, so a replay against a second pod is rejected too.
-    const assertionIdMatch = verified.assertionXml.match(
-      /\bID="([^"]+)"/,
-    );
+    const assertionIdMatch = verified.assertionXml.match(/\bID="([^"]+)"/);
     if (!assertionIdMatch) {
       throw new Error("Signed assertion carries no ID");
     }
@@ -178,7 +176,8 @@ export async function POST(req: Request) {
         userId = created.id;
 
         // Assign default role
-        const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
+        const groupMapping =
+          (config.groupRoleMapping as GroupRoleMapping) ?? {};
         const mappingEntries = groupRoleMappingToEntries(groupMapping);
         const role = resolveRole(
           attrs.groups ?? [],

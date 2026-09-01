@@ -10,7 +10,6 @@ import {
   Siren,
   RefreshCcw,
   ArrowLeft,
-  ShieldAlert,
   FileText,
   FlaskConical,
 } from "lucide-react";
@@ -375,7 +374,7 @@ export default function BcmsReadinessMonitorPage() {
             </CardTitle>
             <CardDescription>
               Alle Crisis-Scenarios im Standby. DORA-Timer werden aktiv sobald
-              ein Szenario auf "activated" transitioniert.
+              ein Szenario auf &quot;activated&quot; transitioniert.
             </CardDescription>
           </CardHeader>
         </Card>

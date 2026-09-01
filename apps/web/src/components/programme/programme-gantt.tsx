@@ -114,7 +114,7 @@ export function ProgrammeGantt({
     const result: Array<{ pct: number; label: string }> = [];
     const start = new Date(rangeStart + "T00:00:00Z");
     const end = new Date(rangeEnd + "T00:00:00Z");
-    let cursor = new Date(start);
+    const cursor = new Date(start);
     cursor.setUTCDate(1);
     while (cursor <= end) {
       const iso = cursor.toISOString().slice(0, 10);

@@ -24,7 +24,7 @@ export const processAnomalyDetection = withCronInstrumentation(
         ),
       );
 
-    let anomaliesDetected = 0;
+    const anomaliesDetected = 0;
 
     for (const model of models) {
       try {

@@ -3,14 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {
-  Layers,
-  Loader2,
-  RefreshCcw,
-  BarChart3,
-  Search,
-  Map,
-} from "lucide-react";
+import { Layers, Loader2, RefreshCcw, Search, Map } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";

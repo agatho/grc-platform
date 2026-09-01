@@ -7,6 +7,7 @@ import {
   ZipBombError,
   verifyUploadSignature,
 } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export interface ParsedFileResult {
   headers: string[];
@@ -183,11 +184,11 @@ async function parseExcel(buffer: Buffer): Promise<ParsedFileResult> {
   let sawSheet = false;
   let cellCount = 0;
 
-  for await (const worksheet of reader as AsyncIterable<any>) {
+  for await (const worksheet of reader as AsyncIterable<UnvalidatedJson>) {
     sawSheet = true;
-    for await (const row of worksheet as AsyncIterable<any>) {
+    for await (const row of worksheet as AsyncIterable<UnvalidatedJson>) {
       if (row.number === 1) {
-        row.eachCell((cell: any, colNumber: number) => {
+        row.eachCell((cell: UnvalidatedJson, colNumber: number) => {
           headers[colNumber] = String(cell.value ?? "").trim();
         });
         continue;
@@ -206,7 +207,7 @@ async function parseExcel(buffer: Buffer): Promise<ParsedFileResult> {
       }
 
       const stringRow: Record<string, string> = {};
-      row.eachCell((cell: any, colNumber: number) => {
+      row.eachCell((cell: UnvalidatedJson, colNumber: number) => {
         cellCount++;
         const header = headers[colNumber];
         if (header) {

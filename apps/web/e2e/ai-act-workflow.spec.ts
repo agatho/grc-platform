@@ -3,9 +3,11 @@
  * Tests the complete AI governance lifecycle per EU AI Act 2024/1689
  */
 import { test, expect } from "@playwright/test";
+import { awaitAppReady } from "./fixtures/wait";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("EU AI Act Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   // ── Art. 49: AI System Registry ────────────────────────────
   test("AI systems page loads with demo data", async ({ page }) => {
@@ -16,14 +18,13 @@ test.describe("EU AI Act Workflow", () => {
 
   test("AI system detail page loads", async ({ page }) => {
     await page.goto("/ai-act/systems");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
     // Click first table row or card that links to a detail page
     const link = page
       .locator("table tbody tr, a[href*='/ai-act/systems/']")
       .first();
     await link.click();
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
     // Detail page should show system info
     await expect(
       page.getByText(/AIS-|risiko|risk|system/i).first(),
@@ -40,8 +41,7 @@ test.describe("EU AI Act Workflow", () => {
   // ── Art. 27: FRIA ──────────────────────────────────────────
   test("FRIA page loads", async ({ page }) => {
     await page.goto("/ai-act/frias");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
     await expect(
       page.getByText(/grundrecht|fundamental|fria|FRIA/i).first(),
     ).toBeVisible();
@@ -50,8 +50,7 @@ test.describe("EU AI Act Workflow", () => {
   // ── Art. 62-63: Incident Reporting ─────────────────────────
   test("AI incidents page loads with deadline tracking", async ({ page }) => {
     await page.goto("/ai-act/incidents");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
     await expect(
       page.getByText(/AII-001|vorfall|incident/i).first(),
     ).toBeVisible();

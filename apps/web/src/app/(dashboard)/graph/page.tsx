@@ -7,10 +7,8 @@ import {
   Network,
   Loader2,
   RefreshCcw,
-  Target,
   Unlink,
   BarChart3,
-  AlertTriangle,
   ArrowRight,
 } from "lucide-react";
 
@@ -74,7 +72,7 @@ export default function GraphOverviewPage() {
               <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer h-full">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <Network className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <Network className="h-6 w-6 text-blue-600 dark:text-blue-600" />
                   </div>
                   <h2 className="font-semibold">{t("explorer.title")}</h2>
                 </div>

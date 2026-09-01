@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Sparkles, Copy, Check, AlertTriangle, Languages } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

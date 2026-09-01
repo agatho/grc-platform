@@ -2,18 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  FileText,
-  FolderTree,
-  MessageSquare,
-  CheckCircle2,
-} from "lucide-react";
+import { Loader2, FileText } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface WorkingPaper {
   id: string;
@@ -119,7 +114,7 @@ function WorkingPapersInner() {
                     </div>
                   </div>
                 </div>
-                <Badge variant={statusColor(wp.status) as any}>
+                <Badge variant={statusColor(wp.status) as UnvalidatedJson}>
                   {t(`workingPapers.status.${wp.status}`)}
                 </Badge>
               </CardContent>

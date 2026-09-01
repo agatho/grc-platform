@@ -7,7 +7,6 @@ import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AggregatedCalendarEvent } from "@grc/shared";
-import { MODULE_COLORS } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 
 const MODULE_LABELS: Record<string, string> = {

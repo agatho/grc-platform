@@ -24,7 +24,10 @@ import {
 async function main() {
   const failOnDrift = process.argv.includes("--fail-on-drift");
   const asJson = process.argv.includes("--json");
-  const client = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+  const client = postgres(process.env.DATABASE_URL!, {
+    max: 1,
+    onnotice: () => {},
+  });
 
   try {
     const tables = (

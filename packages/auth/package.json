@@ -1,6 +1,8 @@
 {
   "name": "@grc/auth",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
@@ -12,6 +14,7 @@
     "./anonymous-token": "./src/anonymous-token.ts"
   },
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
@@ -19,7 +22,7 @@
     "@grc/db": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@types/bcryptjs": "^2.4.6",
-    "@xmldom/xmldom": "0.9.8",
+    "@xmldom/xmldom": "0.9.12",
     "bcryptjs": "^3.0.3",
     "jose": "6.2.10",
     "next-auth": "^5.0.0-beta.32",

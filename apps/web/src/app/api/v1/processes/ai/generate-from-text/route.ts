@@ -18,7 +18,11 @@ import {
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../ai/_shared/ai-route";
 
 const schema = z.object({
   description: z.string().min(5).max(4000),

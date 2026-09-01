@@ -1,24 +1,91 @@
 # ============================================================================
-# ARCTOS GRC Platform — Ready-to-Deploy Stack
+# ARCTOS GRC Platform — Single-Host-Stack
 #
-# Usage:
-#   1. Copy this file + .env.sample to your server
-#   2. Rename .env.sample to .env and fill in the values
+# [ARCTOS-FULL-2026-08-31 / WP10 · S13-09]
+#
+# Diese Datei hiess im README "Quick Deploy (5 minutes)" und erzeugte eine
+# Installation mit VIER eigenstaendigen Defekten. Sie ist repariert, nicht
+# entfernt — ein einfacher Einstieg hat seine Berechtigung, er darf nur nicht
+# still unsicher sein.
+#
+#  (a) KEIN APP_DATABASE_URL — DIE GESAMTE ANWENDUNG LIEF ALS SUPERUSER.
+#      `packages/db/src/index.ts` liest
+#      `process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL`; `grc` ist
+#      SUPERUSER mit BYPASSRLS. Saemtliche RLS-Policies waren in dieser
+#      Installation WIRKUNGSLOS — genau der Zustand, den Pentest-Finding F-01
+#      adressiert hatte. `.env.sample` kannte weder `APP_DATABASE_URL` noch
+#      `GRC_APP_PASSWORD`, es gab also ueber den dokumentierten Weg keine
+#      Moeglichkeit, das zu korrigieren. Die CI-Assertion griff nicht: sie
+#      prueft ausschliesslich `docker-compose.production.yml`.
+#      → `APP_DATABASE_URL` ist gesetzt und `:?`-erzwungen; der Service
+#        `provision-roles` legt die Rolle beim Start an.
+#
+#  (b) KEIN uploads-VOLUME — DMS-DATEIEN GINGEN BEI JEDEM UPDATE VERLOREN.
+#      Der `web`-Service hatte keinen `volumes:`-Block, `STORAGE_BACKEND` war
+#      nicht gesetzt (Default `local`). Die Dateien landeten im
+#      Container-Dateisystem. Der Update-Weg im selben README
+#      (`docker compose pull web && docker compose up -d web`) ERSETZT den
+#      Container — die Schicht mit den Uploads wurde verworfen. Jeder
+#      Update-Zyklus loeschte saemtliche hochgeladenen DMS-Dokumente,
+#      Vertragsanhaenge und Nachweise, waehrend ihre DB-Zeilen und
+#      Hash-Ketten bestehen blieben. Datenverlust im dokumentierten
+#      NORMALBETRIEB, nicht im Katastrophenfall.
+#      → `uploads`- und `branding`-Volume, `UPLOAD_DIR` gesetzt.
+#
+#  (c) KEIN worker-SERVICE. Definiert waren postgres, redis, web — mehr
+#      nicht. Saemtliche Cron-Handler existierten in dieser Installation
+#      nicht: Retention/Loeschung nach Art. 17 DSGVO, `daily-audit-anchor`
+#      (die Tamper-Evidence-Verankerung), `breach-72h-monitor` (Art. 33
+#      DSGVO), `wb-deadline-monitor` (HinSchG-Rueckmeldefristen).
+#      `CRON_SECRET` wurde gesetzt, aber es gab nichts, was es benutzt haette.
+#      → `worker` ist enthalten, mit Scheduler.
+#
+#  (d) KLARTEXT-HTTP. `ports: "${PORT:-3000}:3000"` band an ALLE Interfaces,
+#      anders als die Produktions-Compose (`127.0.0.1:3000:3000`), und das
+#      README wies ausdruecklich `http://your-server:3000` an. Kein Caddy,
+#      kein TLS: Session-Cookies und Anmeldedaten gingen im Klartext ueber
+#      das Netz.
+#      → Bindung an 127.0.0.1 und ein `caddy`-Service mit automatischem
+#        Let's-Encrypt-Zertifikat. Wer bewusst ohne TLS testen will, setzt
+#        `BIND_ADDRESS=0.0.0.0` — sichtbar und begruendungspflichtig.
+#
+#  (e) DOKU-DRIFT MIT FEHLBEDIENUNGSRISIKO. Das README nannte
+#      `admin@arctos.dev / admin123` als Login. Dieser Account entsteht nur
+#      aus `seed_demo_00_platform.sql`, das der Entrypoint bei
+#      NODE_ENV=production verweigert. Der Operator, der dem README folgte,
+#      konnte sich NICHT einloggen — und setzte plausibel
+#      `ALLOW_DEMO_SEED_IN_PROD=true`, womit ein Admin-Konto mit oeffentlich
+#      bekanntem Passwort in Produktion landete. `.env.sample:47` lieferte
+#      `RUN_SEEDS=true` bereits als Default aus.
+#      → Der Ersteinrichtungsweg ist `db:create-admin` (Service
+#        `create-admin`); das README ist entsprechend korrigiert.
+#
+# Verwendung:
+#   1. deploy/ auf den Server kopieren
+#   2. .env.sample nach .env kopieren und AUSFUELLEN — alle Pflichtwerte sind
+#      `:?`-erzwungen, `docker compose up` bricht sonst mit einer lesbaren
+#      Meldung ab statt still unsicher zu starten
 #   3. docker compose up -d
-#   4. Open http://your-server:3000
-#   5. Login: admin@arctos.dev / admin123
-#
-# First run: set RUN_SEEDS=true in .env to populate demo data
+#   4. ADMIN_EMAIL=chef@firma.de docker compose run --rm create-admin
+#   5. https://<ARCTOS_DOMAIN> oeffnen
 # ============================================================================
+
+x-logging: &default-logging   # #S13-16
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
 
 services:
   # ── Database ──────────────────────────────────────────────────
   postgres:
-    image: timescale/timescaledb:latest-pg16
+    # #S08-21: fester Minor statt des beweglichen `latest-pg16`.
+    image: timescale/timescaledb:2.17.2-pg16
+    logging: *default-logging
     restart: unless-stopped
     environment:
       POSTGRES_USER: grc
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env — openssl rand -hex 24}
       POSTGRES_DB: grc_platform
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
@@ -32,49 +99,93 @@ services:
     networks:
       - internal
 
-  # ── Cache ─────────────────────────────────────────────────────
+  # ── Cache / Rate-Limit-Backend ────────────────────────────────
   redis:
     image: redis:7-alpine
+    logging: *default-logging
     restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD:-arctos-redis}
+    command: redis-server --requirepass ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env — openssl rand -hex 24}
     volumes:
       - redisdata:/data
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-arctos-redis}", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - internal
 
+  # ── Laufzeitrollen anlegen (#S13-09a) ─────────────────────────
+  # Laeuft EINMAL vor web/worker und legt `grc_app` (kein BYPASSRLS) und
+  # `grc_worker` (BYPASSRLS, kein SUPERUSER) an. Ohne diesen Schritt
+  # verbindet die Anwendung als Superuser und RLS ist wirkungslos.
+  provision-roles:
+    image: postgres:16-alpine
+    logging: *default-logging
+    restart: "no"
+    environment:
+      PGHOST: postgres
+      PGUSER: grc
+      PGPASSWORD: ${DB_PASSWORD}
+      GRC_APP_PASSWORD: ${GRC_APP_PASSWORD:?Set GRC_APP_PASSWORD in .env — openssl rand -hex 24}
+      GRC_WORKER_PASSWORD: ${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — openssl rand -hex 24}
+    volumes:
+      - ./provision-grc-app.sh:/provision.sh:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        apk add --no-cache bash >/dev/null 2>&1 || true
+        DIRECT_PSQL=1 bash /provision.sh grc_platform
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
   # ── ARCTOS Web Application ────────────────────────────────────
   web:
     image: ghcr.io/agatho/grc-platform/grc-web:${IMAGE_TAG:-latest}
+    logging: *default-logging
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      # #S13-09d: Bindung an 127.0.0.1 statt an alle Interfaces. Der
+      # Klartext-Port ist NUR fuer den Reverse-Proxy unten erreichbar.
+      # BIND_ADDRESS=0.0.0.0 oeffnet ihn bewusst — dann gehen Login und
+      # Session-Cookie im Klartext ueber das Netz.
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"
     environment:
-      # Required
+      # Migrationen und Provisionierung: Superuser.
       DATABASE_URL: postgresql://grc:${DB_PASSWORD}@postgres:5432/grc_platform
-      AUTH_SECRET: ${AUTH_SECRET}
-      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      # #S13-09a: LAUFZEIT als Nicht-Superuser — nur so wirkt RLS.
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD}@postgres:5432/grc_platform
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env — openssl rand -hex 32}
+      AUTH_URL: ${AUTH_URL:?Set AUTH_URL in .env — z.B. https://grc.ihre-domain.de}
       AUTH_TRUST_HOST: "true"
-      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY}
-      # Required when connector module is active. Same shape as
-      # WB_ENCRYPTION_KEY (64-char hex). Different value.
-      # Generate: openssl rand -hex 32
-      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
-      # Required when SSO/OIDC or OAuth connectors are used. 32 bytes,
-      # base64 (openssl rand -base64 32) or 64-char hex. Encrypts
-      # single-column secrets (v1 envelope, secret-crypto.ts).
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env — openssl rand -hex 32}
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY:?Set CONNECTOR_ENCRYPTION_KEY in .env — openssl rand -hex 32}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY in .env — openssl rand -base64 32}
       SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
-      CRON_SECRET: ${CRON_SECRET}
+      CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env — openssl rand -hex 16}
+      # Remediation-Pflichtvariablen (WP4/S03-01, WP8/S07-03).
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — openssl rand -hex 32}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      PII_PSEUDONYM_KEY: ${PII_PSEUDONYM_KEY:?Set PII_PSEUDONYM_KEY in .env — openssl rand -hex 32}
+      PII_PSEUDONYM_KEY_ID: ${PII_PSEUDONYM_KEY_ID:-default}
       NODE_ENV: production
-      REDIS_URL: redis://:${REDIS_PASSWORD:-arctos-redis}@redis:6379
-      # First run — set to true, then change to false after first startup
-      RUN_SEEDS: ${RUN_SEEDS:-false}
-      # Optional — AI features
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      # Caddy sitzt davor und haengt genau einen X-Forwarded-For-Eintrag an.
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      # #S13-09b: persistente DMS-Ablage.
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      UPLOAD_DIR: /app/uploads/documents
+      # #S13-09e: KEIN Demo-Seed. Der Admin entsteht ueber den Service
+      # `create-admin`, nicht ueber ein oeffentlich bekanntes Standardpasswort.
+      RUN_SEEDS: ${RUN_SEEDS:-true}
+      SEED_DEMO_DATA: "false"
+      ALLOW_DEMO_SEED_IN_PROD: "false"
+      # Optional — AI
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
@@ -87,10 +198,126 @@ services:
       AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID:-}
       AZURE_AD_CLIENT_SECRET: ${AZURE_AD_CLIENT_SECRET:-}
       AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID:-}
+    volumes:
+      # #S13-09b: ohne diese beiden Volumes loescht jeder
+      # `docker compose up -d web` nach einem `pull` saemtliche
+      # hochgeladenen Dokumente.
+      - uploads:/app/uploads
+      - branding:/app/public/branding
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      provision-roles:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  # ── ARCTOS Worker (#S13-09c) ──────────────────────────────────
+  # Ohne diesen Service laeuft KEIN Cron-Job: keine Loeschfristen
+  # (Art. 17 DSGVO), keine 72-h-Meldefrist (Art. 33 DSGVO), keine
+  # HinSchG-Rueckmeldefristen, keine taegliche Verankerung der
+  # Audit-Hash-Kette.
+  worker:
+    image: ghcr.io/agatho/grc-platform/grc-worker:${IMAGE_TAG:-latest}
+    logging: *default-logging
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD}@postgres:5432/grc_platform
+      ARCTOS_ALLOW_PRIVILEGED_DB: "true"
+      CRON_SECRET: ${CRON_SECRET}
+      CRON_SCHEDULER_ENABLED: ${CRON_SCHEDULER_ENABLED:-true}
+      NODE_ENV: production
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      PII_PSEUDONYM_KEY: ${PII_PSEUDONYM_KEY}
+      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY}
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      UPLOAD_DIR: /app/uploads/documents
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      provision-roles:
+        condition: service_completed_successfully
+    networks:
+      - internal
+
+  # ── Erstadministrator anlegen (#S13-09e) ──────────────────────
+  # Ersetzt den frueheren Weg "Demo-Seed einspielen und sich mit
+  # admin@arctos.dev / admin123 anmelden". Einmalig aufrufen:
+  #   ADMIN_EMAIL=chef@firma.de docker compose run --rm create-admin
+  # Das Skript gibt ein zufaelliges Erstpasswort aus und erzwingt die
+  # Aenderung bei der ersten Anmeldung (WP3/S02-01).
+  create-admin:
+    image: ghcr.io/agatho/grc-platform/grc-worker:${IMAGE_TAG:-latest}
+    logging: *default-logging
+    profiles: ["setup"]
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD}@postgres:5432/grc_platform
+      ARCTOS_SKIP_CONFIG_ASSERT: "true"
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL setzen — z.B. ADMIN_EMAIL=chef@firma.de docker compose run --rm create-admin}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'cd /app && tsx packages/db/src/create-admin.ts --email "$$ADMIN_EMAIL"'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+
+  # ── Reverse-Proxy mit TLS (#S13-09d) ──────────────────────────
+  # Caddy holt und erneuert das Let's-Encrypt-Zertifikat selbst. Ohne
+  # diesen Service gingen Session-Cookies und Anmeldedaten im Klartext
+  # ueber das Netz — das README wies genau das an
+  # ("http://your-server:3000").
+  caddy:
+    image: caddy:2-alpine
+    logging: *default-logging
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ARCTOS_DOMAIN: ${ARCTOS_DOMAIN:?Set ARCTOS_DOMAIN in .env — die oeffentliche Domain, auf die das TLS-Zertifikat ausgestellt wird}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env — Kontaktadresse fuer Let's Encrypt}
+    volumes:
+      # #S13-09d: Container-Variante — `deploy/Caddyfile` proxyt nach
+      # localhost:3000 und gehoert dem Hetzner-Host-Pfad (WP12-Hoheit).
+      - ./Caddyfile.compose:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      web:
         condition: service_healthy
     networks:
       - internal
@@ -98,6 +325,12 @@ services:
 volumes:
   pgdata:
   redisdata:
+  # #S13-09b: DIE beiden Volumes, deren Fehlen bei jedem Update saemtliche
+  # DMS-Dokumente geloescht hat.
+  uploads:
+  branding:
+  caddydata:
+  caddyconfig:
 
 networks:
   internal:

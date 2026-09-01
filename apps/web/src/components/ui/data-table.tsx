@@ -22,7 +22,6 @@ import {
   TableHeader,
   TableRow,
 } from "./table";
-import { cn } from "@grc/ui";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];

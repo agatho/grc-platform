@@ -79,7 +79,7 @@ export default function EventsPage({
                       </span>
                       <span className="font-medium">{e.eventType}</span>
                     </div>
-                    <pre className="mt-2 whitespace-pre-wrap break-all text-xs text-slate-600 dark:text-slate-300">
+                    <pre className="mt-2 whitespace-pre-wrap break-all text-xs text-slate-600 dark:text-slate-500">
                       {JSON.stringify(e.payload, null, 2)}
                     </pre>
                   </li>

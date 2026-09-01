@@ -8,8 +8,6 @@ import {
   ArrowLeft,
   Bug,
   Loader2,
-  AlertTriangle,
-  Shield,
   Server,
   History,
   Activity,
@@ -54,7 +52,7 @@ function VulnerabilityDetailInner() {
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const t = useTranslations("isms");
+  const _t = useTranslations("isms");
 
   const [vuln, setVuln] = useState<Vulnerability | null>(null);
   const [asset, setAsset] = useState<Asset | null>(null);

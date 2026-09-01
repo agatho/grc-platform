@@ -106,7 +106,10 @@ export async function POST(req: Request) {
     false,
   );
   if (!preDecision.allowed && preDecision.reason !== "four_eyes_required") {
-    return forbidden(preDecision.reason ?? "forbidden", preDecision.detail ?? "");
+    return forbidden(
+      preDecision.reason ?? "forbidden",
+      preDecision.detail ?? "",
+    );
   }
 
   const decision = preDecision.allowed
@@ -122,7 +125,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const results: { entityType: string; data: string; rowCount: number }[] = [];
+    const results: { entityType: string; data: string; rowCount: number }[] =
+      [];
     let totalRecords = 0;
 
     for (const entityType of entityTypes) {

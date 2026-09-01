@@ -24,7 +24,12 @@ const { dbMock, tables } = vi.hoisted(() => {
     dbMock: {
       chainable,
       select: vi.fn(() => chainable([])),
-      insert: vi.fn(() => chainable([])),
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] The parameter is declared so
+      // the `mockImplementation((table) => …)` below type-checks. `vi.fn(() =>
+      // …)` infers a zero-argument signature, and passing a one-argument
+      // implementation to it is a compile error — invisible until CI actually
+      // type-checked this package.
+      insert: vi.fn((_table?: unknown) => chainable([])),
       update: vi.fn(() => chainable([])),
     },
     tables: {

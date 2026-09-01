@@ -1,6 +1,8 @@
 {
   "name": "@grc/shared",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
@@ -14,6 +16,7 @@
     "./lib/clamav": "./src/lib/clamav.ts"
   },
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

@@ -19,7 +19,11 @@ import {
 } from "@grc/ai";
 import { sanitizeTranslation } from "@grc/shared";
 import { loadEamAiConfig } from "../_shared/config";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../ai/_shared/ai-route";
 
 // POST /api/v1/eam/ai/translate — Translate field(s)
 export async function POST(req: Request) {
@@ -77,9 +81,7 @@ export async function POST(req: Request) {
       entityId: parsed.data.entityId,
       // EAM-Feldtexte enthalten regelmässig Namen von Verantwortlichen.
       containsPersonalData: true,
-      requestedProvider: isAiProvider(config.provider)
-        ? config.provider
-        : null,
+      requestedProvider: isAiProvider(config.provider) ? config.provider : null,
       messages: buildTranslatePrompt(
         parsed.data.sourceText,
         "de",

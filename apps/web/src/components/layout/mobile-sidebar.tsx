@@ -9,6 +9,8 @@ import { X, Search, Star, ChevronDown, ChevronRight } from "lucide-react";
 import { NAV_GROUPS_CONDENSED, getAllFlatNavItems } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import type { UserRole } from "@grc/shared";
+// [WP12 · S14-13] Dialog semantics for the hand-built drawer.
+import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
 
 interface MobileSidebarProps {
   open: boolean;
@@ -78,15 +80,28 @@ export function MobileSidebar({
     })).filter((group) => group.items.length > 0);
   }, [roles]);
 
+  const { dialogProps } = useModalDialog(open, onClose);
+
   if (!open) return null;
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
+      {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-13] The backdrop was a click-only
+          div and the panel had no dialog semantics: no role, no aria-modal, no
+          Escape, no focus return, and the page behind it stayed tabbable.
+          See components/ui/modal-shell.tsx. */}
+      <ModalBackdrop
+        onClose={onClose}
+        closeLabel={t("actions.close")}
+        className="fixed inset-0 z-40 cursor-default bg-black/30"
+      />
 
       {/* Panel */}
-      <div className="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl flex flex-col animate-in slide-in-from-left duration-200">
+      <div
+        {...dialogProps}
+        aria-label={t("nav.title")}
+        className="fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl flex flex-col animate-in slide-in-from-left duration-200 focus:outline-none"
+      >
         <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200">
           <span className="text-lg font-bold text-slate-900 tracking-tight">
             ARCTOS
@@ -162,7 +177,7 @@ export function MobileSidebar({
                         className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors opacity-0 group-hover:opacity-100 ${
                           isPinned(item.href)
                             ? "text-amber-500 opacity-100"
-                            : "text-gray-300 hover:text-gray-500"
+                            : "text-gray-500 hover:text-gray-500"
                         }`}
                       >
                         <Star
@@ -274,7 +289,7 @@ export function MobileSidebar({
                               className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors opacity-0 group-hover/item:opacity-100 ${
                                 isPinned(item.href)
                                   ? "text-amber-500 opacity-100"
-                                  : "text-gray-300 hover:text-gray-500"
+                                  : "text-gray-500 hover:text-gray-500"
                               }`}
                             >
                               <Star

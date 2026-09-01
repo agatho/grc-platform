@@ -1,8 +1,17 @@
 # ADR-021: Error-Handling-Contract (consistent JSON + Request-ID)
 
-**Status:** Proposed
-**Date:** 2026-04-18
-**Context-Author:** autonomous session
+**Status:** Accepted
+**Date:** 2026-04-18 · **rev.2:** 2026-09-01
+(ARCTOS-FULL-2026-08-31 / WP12 · S14-16)
+
+> **rev.2 — was diese Revision aendert.** Die ADR stand seit dem 2026-04-18
+> auf "Proposed", waehrend `docs/STATUS.md:226` "RFC-7807 Error-Envelopes"
+> unter den abgeschlossenen Wave-Themen fuehrte. Nachgezaehlt ueber alle
+> 1.355 Routen unter `/api/v1`: **9** sendeten `application/problem+json`,
+> 970 sendeten `{ error: "..." }`, 11 `{ message: "..." }`, 6 `{ errors: ... }`.
+> Der Contract war also in unter 1 % der Routen erfuellt und galt trotzdem als
+> erledigt (S14-16). Diese Revision beschreibt, wie er tatsaechlich
+> durchgesetzt wird, und was davon noch offen ist.
 
 ## Context
 
@@ -119,13 +128,61 @@ Default-Fehlerseite mehr.
 - i18n fuer `title`/`detail` — Entscheidung: Accept-Language-Header
   respektieren, Fallback DE
 
-## Implementation-Plan (phased)
+## Implementation-Plan (rev.2 — Stand 2026-09-01)
 
-- [ ] Phase 1: Helper-Lib + ErrorTypes-Enum
-- [ ] Phase 2: Globaler Error-Boundary (alle uncaught Exceptions)
-- [ ] Phase 3: Migration in Phasen — auth-Routen zuerst, dann nach Modul
-- [ ] Phase 4: Frontend-Error-Boundary auf neues Shape umstellen
-- [ ] Phase 5: API-Doku-Seite mit allen Error-Types
+- [x] **Phase 1: Helper-Lib + ErrorTypes-Enum.** `apps/web/src/lib/api-errors.ts`
+      existierte bereits, wurde aber von 8 Routen importiert. Bleibt der
+      kanonische Weg fuer neue Routen.
+- [x] **Phase 2: Globaler Error-Boundary.** `withErrorHandler`
+      (`apps/web/src/lib/api-wrapper.ts`) faengt uncaught Exceptions ab und
+      liefert korrektes problem+json.
+- [x] **Phase 3 (neu in rev.2): Durchsetzung statt Migration.**
+      Der urspruengliche Plan war "Migration in Phasen — auth-Routen zuerst,
+      dann nach Modul". Nach vier Monaten waren 9 Routen migriert. Ein Plan,
+      der 970 Route-Bodies von Hand anfasst, ist weder review- noch
+      abschliessbar, und die Erfahrung mit genau diesem Plan belegt das.
+      Stattdessen normalisiert `normaliseErrorResponse()` die Antwort **am
+      Ausgang** des Wrappers:
+
+      * eine Route darf `Response.json({ error: "Not found" }, { status: 404 })`
+        zurueckgeben und bleibt unveraendert;
+      * der Client bekommt `application/problem+json` mit `type`, `title`,
+        `status`, `instance` und `requestId`;
+      * **alle** urspruenglichen Felder bleiben als RFC-7807-Extension-Member
+        erhalten, damit kein Client bricht, der heute `json.error` liest;
+      * 2xx-Antworten, Nicht-JSON-Antworten (Datei-Downloads, CSV-Exporte) und
+        bereits problem-konforme Antworten werden nicht angefasst.
+
+      Damit gilt der Contract fuer jede Route, die durch `withErrorHandler`
+      laeuft, statt fuer neun. Der Ist-Stand je Route steht in der Spalte
+      "Errors" von `docs/API_REFERENCE.md`, generiert aus dem Code.
+- [ ] **Phase 3b (offen): die Routen ohne Wrapper.** Nicht jede Route ist in
+      `withErrorHandler` gewickelt. Fuer die uebrigen bleibt der Contract
+      unerfuellt, und das ist in `docs/API_REFERENCE.md` sichtbar
+      ausgewiesen (`legacy {error}`) statt behauptet. Der naechste Schritt ist,
+      den Wrapper zur Pflicht zu machen — sinnvollerweise mit demselben
+      CI-Lint, den `docs/STATUS.md:196` fuer `requireModule` fordert und der
+      dort ebenfalls noch fehlt.
+- [ ] **Phase 4 (offen): Frontend-Error-Handler auf das neue Shape.** Additiv
+      moeglich, weil die Legacy-Felder erhalten bleiben — daher nicht
+      dringend, aber noch nicht gemacht.
+- [x] **Phase 5: Error-Types-Uebersicht.** Die `ErrorTypes`-Konstanten in
+      `apps/web/src/lib/api-errors.ts` sind die Quelle; `docs/API_REFERENCE.md`
+      weist je Route aus, welches Shape sie sendet. Ein separates
+      `docs/api-errors.md` waere ein drittes handgepflegtes Dokument ueber
+      denselben Sachverhalt — genau das Muster, das S14-15 und S14-23
+      gemessen haben.
+
+## Warum kein Big-Bang-Refactor (rev.2)
+
+Die "Negativ"-Liste oben nannte "1034 Endpoints muessen migriert werden --
+grosser Refactor, in Phasen". Das ist der Grund, warum nichts passiert ist:
+ein Refactor dieser Groesse hat keinen Zeitpunkt, an dem er klein genug ist.
+Die Normalisierung am Wrapper-Ausgang kostet eine Funktion, ist rueckwaerts-
+kompatibel und wirkt sofort auf jede gewickelte Route. Der Preis ist, dass
+`type` aus dem Status-Code abgeleitet und nicht von der Route gewaehlt wird —
+eine Route, die einen spezifischeren `type` braucht, benutzt weiterhin
+`problemResponse()` direkt und wird nicht angefasst.
 
 ## Verwandte ADRs
 

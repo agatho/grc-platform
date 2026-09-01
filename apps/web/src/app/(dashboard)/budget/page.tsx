@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -21,7 +21,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -69,6 +68,11 @@ interface BudgetNode extends GrcBudget {
 }
 
 export default function BudgetOverviewPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("budget");
   const router = useRouter();
   const [budgets, setBudgets] = useState<GrcBudget[]>([]);
@@ -400,10 +404,14 @@ export default function BudgetOverviewPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor={`${a11yId}-currency`}
+                  className="text-sm font-medium text-gray-700"
+                >
                   Currency
                 </label>
                 <input
+                  id={`${a11yId}-currency`}
                   type="text"
                   maxLength={3}
                   value={formCurrency}
@@ -616,8 +624,18 @@ function BudgetRow({
       <div className="flex items-start gap-3">
         {/* Expand toggle */}
         {hasChildren !== undefined && (
-          <div
-            className="mt-1 flex-shrink-0 cursor-pointer rounded p-0.5 hover:bg-gray-100"
+          // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] A real <button>, not a
+          // <div role="button">: it gets Enter AND Space, the correct focus
+          // ring and the disabled semantics for free — a leaf node with no
+          // children is not a control, and announcing it as one would be a
+          // lie. `aria-expanded` is what a screen reader needs to know which
+          // state the row is in; the chevron alone is invisible to it.
+          <button
+            type="button"
+            className="mt-1 flex-shrink-0 cursor-pointer rounded p-0.5 hover:bg-gray-100 disabled:cursor-default disabled:hover:bg-transparent"
+            disabled={!hasChildren}
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-label={isExpanded ? t("collapseRow") : t("expandRow")}
             onClick={(e) => {
               e.stopPropagation();
               onToggle?.();
@@ -632,7 +650,7 @@ function BudgetRow({
             ) : (
               <div className="w-4" />
             )}
-          </div>
+          </button>
         )}
 
         {/* Main content */}

@@ -13,12 +13,13 @@
  *      (formal adds cover page + TOC; minimal drops logo/chrome)
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 const PDF_MAGIC = "%PDF";
 const XLSX_MAGIC = "PK";
 
 test.describe("Reporting — standard reports (PDF/XLSX contracts)", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("risk-register: PDF + XLSX magic bytes and content types", async ({
     request,

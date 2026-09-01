@@ -22,7 +22,32 @@ const createLinkSchema = z
     targetKind: z.enum(PROGRAMME_LINK_KIND_VALUES),
     targetId: z.string().uuid().optional(),
     targetLabel: z.string().min(1).max(300),
-    targetUrl: z.string().max(1000).optional(),
+    // [ARCTOS-FULL-2026-08-31 / WP12 · S12-06] Stored XSS. This was
+    // `z.string().max(1000)` — no scheme check — and the value is rendered
+    // straight into an `href` on the step detail page. `javascript:fetch(...)`
+    // passed validation, was persisted, and executed in the origin of whoever
+    // clicked the link, with their session and their roles.
+    //
+    // `z.string().url()` alone is NOT sufficient: it accepts any WHATWG-parsable
+    // absolute URL including `javascript:` and `data:`. The protocol allow-list
+    // is the actual control. `safeExternalHref` in `@grc/ui` applies the same
+    // allow-list on the rendering side, which is what covers rows that were
+    // written before this schema existed.
+    targetUrl: z
+      .string()
+      .max(1000)
+      .refine(
+        (u) => {
+          try {
+            const proto = new URL(u).protocol;
+            return proto === "http:" || proto === "https:";
+          } catch {
+            return false;
+          }
+        },
+        { message: "targetUrl must be an absolute http(s) URL" },
+      )
+      .optional(),
     linkType: z.enum(PROGRAMME_LINK_TYPE_VALUES).default("related"),
     notes: z.string().max(5000).optional(),
   })

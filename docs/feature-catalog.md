@@ -1,5 +1,13 @@
 # Feature-Catalog
 
+> **[ARCTOS-FULL-2026-08-31 / WP12 · S14-23] Korrekturlauf 2026-09-01.**
+> Dieses Dokument stand in mehreren Punkten im direkten Widerspruch zu
+> `CLAUDE.md` und zu `docs/STATUS.md` — 31 gegen 46 Frameworks, 401 gegen ~960
+> Mappings, 160 gegen 99 gegen 111 TypeScript-Fehler —, und es führte ein
+> vorhandenes Feature als fehlend (`docs/openapi.yaml` existiert seit Monaten).
+> Ein Häkchen in der Sprint-Tabelle heißt ab jetzt: der Code ist da **und** tut,
+> was der Name sagt. Wo das nicht zutrifft, steht es hier.
+
 _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 
 ## 10 Management-System-Gruppen (Sidebar)
@@ -52,8 +60,8 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 | 48–53 | EAM Dashboards, Visualizations, Data Architecture, AI, Catalog, Governance              | ✅                                              |
 | 54–56 | ERM Evaluation UX, GRC UX Enhancements, BPM Derived Views                               | ✅                                              |
 | 57–61 | API Platform, Plugin Architecture, Onboarding, Mobile, SaaS Metering                    | ✅                                              |
-| 62–66 | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ✅                                              |
-| 67–71 | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ✅ Code; DB-Tables in Prod seit ADR-014 Phase 2 |
+| 62–66 | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ⚠️ **Teilweise.** Schema, UI und API vorhanden; die Test-, Sync- und Health-Läufe erfanden bis 2026-09-01 ihre Ergebnisse und persistierten sie als Evidenz (S14-02, behoben durch WP9). Die Framework-Coverage-Heatmap zeigte Zufallszahlen (S14-01, behoben). |
+| 67–71 | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ⚠️ **Copilot seit WP6 echt.** Die GRC-Agents (MCP) aus der Sprint-34–37-Zeile sind **nicht** implementiert: MCP kommt im Code nicht vor, und `agents/[id]/run` liefert konstruktionsbedingt leere Empfehlungen (S05-17, S14-23/B8). |
 | 72–76 | DORA, EU AI Act, Tax CMS, Horizon Scanner, Cert Wizard                                  | ✅ Code; DB seit ADR-014 Phase 2                |
 | 77–81 | BI Report Builder, Benchmarking, Risk Quantification, Data Sovereignty, Role Dashboards | ✅                                              |
 | 82–86 | Marketplace, Stakeholder Portals, GRC Academy, Simulation Engine, Community Edition     | ✅                                              |
@@ -70,8 +78,8 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 | ISO 27005 Kataloge (31 Bedrohungen + 23 Schwachstellen)                                 | ✅                                |
 | SoA mit 93 Annex A Kontrollen                                                           | ✅                                |
 | Hierarchical Budget Model + Cost Fields                                                 | ✅                                |
-| 31 Catalog Frameworks (~2,100 entries)                                                  | ✅                                |
-| 401 Cross-Framework Mappings                                                            | ✅                                |
+| 46 Catalog Frameworks (`ls packages/db/sql/seed_catalog_*.sql`, 2026-09-01)             | ✅                                |
+| Cross-Framework Mappings (Zahl nur in der DB belastbar, s. u.)                          | ✅                                |
 | Normenbasierte Testpläne (ISO 27001/31000, COSO/IIA, ISO 22301, DSGVO, ISO 27036, CSRD) | ✅                                |
 | **Audit-ERM Feedback-Loop**                                                             | ✅ Iter 1-3 (2026-04-18)          |
 | **Schema-Drift-Health-Check**                                                           | ✅ F-18 (2026-04-17)              |
@@ -83,12 +91,12 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 
 | Gap                                                | Severity | Owner / ADR                                |
 | -------------------------------------------------- | -------- | ------------------------------------------ |
-| 132 Tables ohne RLS-Policy (static analysis)       | P1       | tbd                                        |
-| 52 Tables ohne audit_trigger                       | P1       | tbd                                        |
+| ~~132 Tables ohne RLS-Policy~~                    | —        | **Widersprach `docs/STATUS.md`** (dort seit 2026-07-20: 0 RLS_MISSING). Maßgeblich ist der RLS-Coverage-Report; diese Zeile war eine veraltete statische Analyse. |
+| ~~52 Tables ohne audit_trigger~~                  | —        | dito — `docs/STATUS.md`: AUDIT_MISSING 0, 4 dokumentierte Ausnahmen. |
 | 83 extra DB-Tabellen ohne Drizzle-Schema-Export    | P2       | ADR-014 Phase 3 (Schema-Export nachziehen) |
-| Copilot nicht vernetzt (Auth-Chain zum Claude-API) | P3       | User-decision pending                      |
-| 160 pre-existing TypeScript errors                 | P3       | Tech-Debt                                  |
-| OpenAPI 3.1 Spec nicht generiert                   | P2       | Backlog                                    |
+| ~~Copilot nicht vernetzt~~                        | —        | **Seit WP6 vernetzt**: echter, richtliniengebundener Aufruf mit RAG-Kontext statt eines Echos der Nutzereingabe. Diese Zeile stand im direkten Widerspruch zum Häkchen für Sprint 67–71 in `CLAUDE.md`, das seinerseits nicht stimmte (S14-23/B12). |
+| ~~160 pre-existing TypeScript errors~~            | —        | **0 in allen 12 Workspaces** (2026-09-01). Für dieselbe Größe waren drei Zahlen im Umlauf: 160 hier, 99 in `docs/STATUS.md`, 111 in `docs/perf/ts-errors-report.md` (S14-23/A21–A23). CI prüft jetzt jedes Paket; die bewusst abgeschalteten Strengeflags sind in `packages/*/tsconfig.json` mit Zahl dokumentiert. |
+| ~~OpenAPI 3.1 Spec nicht generiert~~               | —        | **Falsch — sie existiert.** `docs/openapi.yaml`, erzeugt von `scripts/generate-openapi.mjs`, 1,4 MB, über 1.300 Pfade. Seit 2026-09-01 zusätzlich `docs/API_REFERENCE.md`, ebenfalls generiert. (S14-23/B11 — inverse Drift: ein vorhandenes Feature als fehlend geführt.) |
 
 ## Integration-Status nach Framework
 
@@ -113,4 +121,10 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 | ISAE 3402 / SOC 2      | ✅ 51 Einträge  | ✅              | ✅  | ✅          |
 | OWASP ASVS 4.0.3       | ✅ 106 Einträge | ✅              | ✅  | ✅          |
 
-Cross-framework mappings (401): siehe `packages/db/sql/seed_cross_framework_mappings*.sql`.
+Cross-framework mappings: siehe `packages/db/sql/seed_cross_framework_mappings*.sql`.
+
+> **[WP12 · S14-23/A15]** Hier stand 401, in `CLAUDE.md` rund 960 — für dieselbe
+> Größe, Faktor 2,4 auseinander, und keine der beiden Zahlen war aus dem
+> Repository reproduzierbar. Eine dritte Schätzung wäre keine Verbesserung. Wer
+> die Zahl braucht, zählt sie in der Datenbank:
+> `SELECT count(*) FROM cross_framework_mapping;`

@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface RiskCatalog {
   id: string;
@@ -116,7 +117,7 @@ export default function RiskCatalogBrowserPage() {
     const res = await fetch(`${ep}?${params}`);
     if (res.ok) {
       const json = await res.json();
-      const items = (json.data ?? []).map((e: any) => ({
+      const items = (json.data ?? []).map((e: UnvalidatedJson) => ({
         id: e.id,
         title: e.title ?? e.name ?? e.elementId ?? e.id,
       }));
@@ -237,7 +238,7 @@ export default function RiskCatalogBrowserPage() {
           if (activeRes.ok) {
             const activeJson = await activeRes.json();
             const activeIds = new Set(
-              (activeJson.data ?? []).map((a: any) => a.catalogId),
+              (activeJson.data ?? []).map((a: UnvalidatedJson) => a.catalogId),
             );
             setActivatedCatalogs(activeIds as Set<string>);
           }
@@ -340,9 +341,9 @@ export default function RiskCatalogBrowserPage() {
             <span className="text-sm font-medium text-gray-900">
               {entry.name}
             </span>
-            {(entry as any).riskCategory && (
+            {(entry as UnvalidatedJson).riskCategory && (
               <Badge variant="outline" className="text-xs">
-                {(entry as any).riskCategory}
+                {(entry as UnvalidatedJson).riskCategory}
               </Badge>
             )}
           </button>
@@ -513,33 +514,34 @@ export default function RiskCatalogBrowserPage() {
                   </label>
                   <p className="text-sm">{selectedEntry.level}</p>
                 </div>
-                {(selectedEntry as any).riskCategory && (
+                {(selectedEntry as UnvalidatedJson).riskCategory && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.category")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).riskCategory}
+                      {(selectedEntry as UnvalidatedJson).riskCategory}
                     </p>
                   </div>
                 )}
-                {(selectedEntry as any).defaultLikelihood != null && (
+                {(selectedEntry as UnvalidatedJson).defaultLikelihood !=
+                  null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.likelihood")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).defaultLikelihood}
+                      {(selectedEntry as UnvalidatedJson).defaultLikelihood}
                     </p>
                   </div>
                 )}
-                {(selectedEntry as any).defaultImpact != null && (
+                {(selectedEntry as UnvalidatedJson).defaultImpact != null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.impact")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).defaultImpact}
+                      {(selectedEntry as UnvalidatedJson).defaultImpact}
                     </p>
                   </div>
                 )}

@@ -40,7 +40,7 @@ export const processEvidenceReviewJobs = withCronInstrumentation(
       .limit(5);
 
     const report = createRunReport("evidence-review-processor");
-    let completed = 0;
+    const completed = 0;
     let failed = 0;
 
     for (const job of pendingJobs) {

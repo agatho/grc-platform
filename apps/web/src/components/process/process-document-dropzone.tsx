@@ -6,7 +6,7 @@
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { Upload, FileText } from "lucide-react";
+import { Upload } from "lucide-react";
 
 export function ProcessDocumentDropzone({
   processId,

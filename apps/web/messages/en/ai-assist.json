@@ -32,7 +32,8 @@
     "back": "Back",
     "apply": "Adopt as draft",
     "created": "Document created as draft",
-    "error": "The draft could not be generated. Please try again."
+    "error": "The draft could not be generated. Please try again.",
+    "subtitle": "AI-assisted policy draft based on the selected requirements."
   },
   "suggestControls": {
     "trigger": "AI suggestions",
@@ -46,7 +47,8 @@
     "applied": "Suggestion applied",
     "appliedBadge": "Applied",
     "empty": "No suggestions received",
-    "error": "Suggestions could not be loaded or applied."
+    "error": "Suggestions could not be loaded or applied.",
+    "subtitle": "AI-assisted control suggestions for this risk."
   },
   "explainGap": {
     "trigger": "Explain",
@@ -55,6 +57,7 @@
     "explanation": "What does the requirement demand?",
     "steps": "Recommended implementation steps",
     "evidence": "Expected audit evidence",
-    "error": "The explanation could not be generated. Please try again."
+    "error": "The explanation could not be generated. Please try again.",
+    "subtitle": "AI-assisted explanation of the gap with implementation suggestions."
   }
 }

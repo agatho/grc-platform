@@ -86,7 +86,11 @@ export default function TemplateGalleryPage() {
     "esg",
   ];
 
-  const useTemplate = (templateId: string) => {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S12-21] Renamed from `useTemplate`.
+  // A plain callback whose name starts with `use` is treated as a hook by the
+  // React linter, so calling it from an onClick was reported as
+  // "React Hook cannot be called inside a callback". It was never a hook.
+  const applyTemplate = (templateId: string) => {
     router.push(`/automation/rules/new?templateId=${templateId}`);
   };
 
@@ -186,7 +190,7 @@ export default function TemplateGalleryPage() {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => useTemplate(tpl.id)}
+                    onClick={() => applyTemplate(tpl.id)}
                   >
                     {t("templates.useTemplate")}
                   </Button>

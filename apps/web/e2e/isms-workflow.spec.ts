@@ -4,9 +4,11 @@
  * Asset → Threat → Vulnerability → Risk Scenario → Treatment → SoA → Review
  */
 import { test, expect } from "@playwright/test";
+import { awaitAppReady } from "./fixtures/wait";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("ISMS ISO 27001 Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   // ── Phase 1: ISMS Dashboard ──────────────────────────────
   test("S1.1: ISMS dashboard shows KPIs", async ({ page }) => {
@@ -28,13 +30,11 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   test("S1.2: Asset detail page loads", async ({ page }) => {
     test.setTimeout(120000);
     await page.goto("/isms/assets");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
     // Click first asset row or link
     const link = page.locator("table tbody tr a, table tbody tr").first();
     await link.click();
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
     // Should show asset details
     await expect(
       page
@@ -61,8 +61,7 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   // ── Phase 4: Risk Scenarios ───────────────────────────────
   test("S2.4: IS Risk scenarios page loads with data", async ({ page }) => {
     await page.goto("/isms/risks");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
     await expect(
       page.getByText(/risikoszenar|risk scenario|risiken|IS-Risik/i).first(),
     ).toBeVisible();
@@ -114,8 +113,7 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   // ── Phase 8: CAP ──────────────────────────────────────────
   test("S6.1: CAP page loads with nonconformities", async ({ page }) => {
     await page.goto("/isms/cap");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
     await expect(
       page
         .getByText(/korrekturma|corrective|nichtkonform|nonconform|CAP/i)

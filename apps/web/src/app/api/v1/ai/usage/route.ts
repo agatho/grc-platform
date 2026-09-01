@@ -166,8 +166,7 @@ export async function GET(req: Request) {
       costCoverage: {
         promptsWithCost: Number(costRows?.with_cost ?? 0),
         promptsTotal: Number(costRows?.total ?? 0),
-        note:
-          "cost_usd wird nicht von allen Aufrufpfaden gesetzt; totalCostUsd ist eine Untergrenze.",
+        note: "cost_usd wird nicht von allen Aufrufpfaden gesetzt; totalCostUsd ist eine Untergrenze.",
       },
       egress: {
         thirdCountryCalls,

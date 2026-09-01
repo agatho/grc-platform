@@ -61,12 +61,11 @@ describe("Log-table RLS (S01-06)", () => {
 
     expect(rows.map((r) => r.table)).toEqual(LOG_TABLES.slice().sort());
 
-    const offenders = rows.filter(
-      (r) => !r.rls || !r.forced || r.npol === 0,
-    );
+    const offenders = rows.filter((r) => !r.rls || !r.forced || r.npol === 0);
     expect(
       offenders.map(
-        (o) => `${o.table} (rls=${o.rls}, forced=${o.forced}, policies=${o.npol})`,
+        (o) =>
+          `${o.table} (rls=${o.rls}, forced=${o.forced}, policies=${o.npol})`,
       ),
       "Log tables must enforce tenant isolation — see migration 0396. " +
         "If a route needs cross-org reads over the org hierarchy, use " +

@@ -55,7 +55,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function CorrectiveActionsInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<CorrectiveAction[]>([]);
   const [loading, setLoading] = useState(true);

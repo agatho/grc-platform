@@ -17,7 +17,10 @@
 import { readdir, readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const API_DIR = join(ROOT, "apps/web/src/app/api");
 const WORKER_DIR = join(ROOT, "apps/worker/src");
 const OUT_DIR = join(ROOT, "docs/perf");
@@ -83,7 +86,10 @@ function analyze(contents, file) {
       });
     }
 
-    while (depthStack.length > 0 && braceDepth <= depthStack[depthStack.length - 1].openBrace) {
+    while (
+      depthStack.length > 0 &&
+      braceDepth <= depthStack[depthStack.length - 1].openBrace
+    ) {
       depthStack.pop();
     }
   }
@@ -92,10 +98,7 @@ function analyze(contents, file) {
 }
 
 async function main() {
-  const files = [
-    ...(await walk(API_DIR)),
-    ...(await walk(WORKER_DIR)),
-  ];
+  const files = [...(await walk(API_DIR)), ...(await walk(WORKER_DIR))];
   const allFindings = [];
 
   for (const f of files) {
@@ -105,7 +108,9 @@ async function main() {
     allFindings.push(...hits);
   }
 
-  allFindings.sort((a, b) => a.file.localeCompare(b.file) || a.loopLine - b.loopLine);
+  allFindings.sort(
+    (a, b) => a.file.localeCompare(b.file) || a.loopLine - b.loopLine,
+  );
 
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -114,20 +119,34 @@ async function main() {
   md.push(``);
   md.push(`_Generated: ${new Date().toISOString()}_`);
   md.push(``);
-  md.push(`Static-Analyse findet Stellen, an denen ein Loop ueber ein Array iteriert und im Body einen DB-Call ausfuehrt. Das ist ein klassisches N+1-Muster.`);
+  md.push(
+    `Static-Analyse findet Stellen, an denen ein Loop ueber ein Array iteriert und im Body einen DB-Call ausfuehrt. Das ist ein klassisches N+1-Muster.`,
+  );
   md.push(``);
-  md.push(`**${allFindings.length} Kandidaten** in ${new Set(allFindings.map((h) => h.file)).size} Dateien.`);
+  md.push(
+    `**${allFindings.length} Kandidaten** in ${new Set(allFindings.map((h) => h.file)).size} Dateien.`,
+  );
   md.push(``);
-  md.push(`Nicht jeder Treffer ist ein echter Bug: es gibt legitime Faelle wie Transaktions-Loops mit 1-5 Items oder Seed-Scripts. Jeden Hit einzeln reviewen.`);
+  md.push(
+    `Nicht jeder Treffer ist ein echter Bug: es gibt legitime Faelle wie Transaktions-Loops mit 1-5 Items oder Seed-Scripts. Jeden Hit einzeln reviewen.`,
+  );
   md.push(``);
   md.push(`## Empfohlene Fixes (Pattern)`);
   md.push(``);
   md.push(`| Muster | Fix |`);
   md.push(`|---|---|`);
-  md.push(`| Loop + einzelne SELECTs per ID | \`inArray(table.id, ids)\` + Map<id, row> |`);
-  md.push(`| Loop + einzelne INSERTs | \`db.insert(table).values([...])\` (bulk) |`);
-  md.push(`| Loop mit await im Body | \`Promise.all(items.map(async ...))\` nur wenn DB-Pool >= N |`);
-  md.push(`| Rekursive Baum-Abfrage | Rekursive CTE (\`WITH RECURSIVE\`) statt JS-Loop |`);
+  md.push(
+    `| Loop + einzelne SELECTs per ID | \`inArray(table.id, ids)\` + Map<id, row> |`,
+  );
+  md.push(
+    `| Loop + einzelne INSERTs | \`db.insert(table).values([...])\` (bulk) |`,
+  );
+  md.push(
+    `| Loop mit await im Body | \`Promise.all(items.map(async ...))\` nur wenn DB-Pool >= N |`,
+  );
+  md.push(
+    `| Rekursive Baum-Abfrage | Rekursive CTE (\`WITH RECURSIVE\`) statt JS-Loop |`,
+  );
   md.push(``);
   md.push(`## Treffer`);
   md.push(``);
@@ -152,9 +171,14 @@ async function main() {
 
   console.log(`Files scanned: ${files.length}`);
   console.log(`N+1 candidates: ${allFindings.length}`);
-  console.log(`Files with hits: ${new Set(allFindings.map((h) => h.file)).size}`);
+  console.log(
+    `Files with hits: ${new Set(allFindings.map((h) => h.file)).size}`,
+  );
   console.log(`-> ${OUT_MD}`);
   console.log(`-> ${OUT_CSV}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

@@ -158,8 +158,7 @@ export const ACCEPTED_TYPE_DRIFT: Record<string, string> = {
   "audit_sign_off.ip_address": "DB inet is stricter than the declared varchar",
   "process_sign_off.ip_address":
     "DB inet is stricter than the declared varchar",
-  "vendor_sign_off.ip_address":
-    "DB inet is stricter than the declared varchar",
+  "vendor_sign_off.ip_address": "DB inet is stricter than the declared varchar",
   // The database carries real enum types here; the schema declares varchar,
   // so a value outside the enum compiles and then fails at runtime with 22P02.
   // The code should adopt the enum — owned by the catalog module.

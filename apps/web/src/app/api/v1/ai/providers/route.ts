@@ -191,8 +191,7 @@ export async function GET() {
     effectiveProviderBlockedReason: effectiveReason,
     egressMode: policy.egressMode,
     policySource: policy.modeSource,
-    localModelsConfigured:
-      available.has("ollama") || available.has("lmstudio"),
+    localModelsConfigured: available.has("ollama") || available.has("lmstudio"),
     providers,
   });
 }

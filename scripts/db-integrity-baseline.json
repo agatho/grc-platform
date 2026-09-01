@@ -1,0 +1,16 @@
+{
+  "_comment": "#S13-02 Untergrenzen der DB-Integritäts-Gates. Aus einem echten Migrationslauf von Null gemessen, nicht geschätzt. Neu setzen: DATABASE_URL=… node scripts/verify-db-integrity.mjs --update-baseline. Eine Absenkung ist im Diff sichtbar und begründungspflichtig.",
+  "_updatedAt": "2026-09-01",
+  "_tolerancePercent": 2,
+  "counts": {
+    "tables": 594,
+    "rlsPolicies": 2624,
+    "rlsEnabledTables": 547,
+    "rlsForcedTables": 547,
+    "auditTriggers": 283,
+    "appendOnlyRules": 9,
+    "tombstoneGuards": 1,
+    "tamperGuardsNotEnabledAlways": 0,
+    "securityDefinerFns": 45
+  }
+}

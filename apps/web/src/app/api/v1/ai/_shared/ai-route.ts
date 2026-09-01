@@ -37,7 +37,13 @@ function problem(
   headers: Record<string, string> = {},
 ): Response {
   return new Response(
-    JSON.stringify({ type: `${PROBLEM_BASE}/${type}`, title, status, detail, ...extra }),
+    JSON.stringify({
+      type: `${PROBLEM_BASE}/${type}`,
+      title,
+      status,
+      detail,
+      ...extra,
+    }),
     {
       status,
       headers: {

@@ -93,8 +93,7 @@ export async function anchorGate(orgId: string): Promise<Response | null> {
     SELECT audit_chain_verify(${scope}) AS report
   `);
   const report = (Array.isArray(result) ? result[0]?.report : undefined) as
-    | Record<string, number | boolean | string>
-    | undefined;
+    Record<string, number | boolean | string> | undefined;
 
   if (!report) {
     return Response.json(
@@ -305,7 +304,9 @@ export async function GET(req: Request) {
     provider: string;
     issue: string;
     detail: string;
-  }>(sql`SELECT anchor_date, provider, issue, detail FROM audit_anchor_verify(${ctx.orgId}::uuid)`);
+  }>(
+    sql`SELECT anchor_date, provider, issue, detail FROM audit_anchor_verify(${ctx.orgId}::uuid)`,
+  );
   const sealIssues = Array.isArray(sealResult) ? sealResult : [];
 
   const latestByProvider: Record<string, (typeof rows)[number] | undefined> =
@@ -322,7 +323,8 @@ export async function GET(req: Request) {
     },
     sealVerification: {
       issues: sealIssues,
-      healthy: sealIssues.filter((i) => i.issue !== "seal_unsigned").length === 0,
+      healthy:
+        sealIssues.filter((i) => i.issue !== "seal_unsigned").length === 0,
     },
   });
 }
@@ -351,7 +353,9 @@ export async function upsertAnchor(row: {
     // The seal functions read the key from a session GUC — it is never
     // stored in the database, which is the whole point of the HMAC.
     if (sealKey) {
-      await tx.execute(sql`SELECT set_config('app.audit_seal_key', ${sealKey}, true)`);
+      await tx.execute(
+        sql`SELECT set_config('app.audit_seal_key', ${sealKey}, true)`,
+      );
       await tx.execute(
         sql`SELECT set_config('app.audit_seal_key_id', ${sealKeyId}, true)`,
       );

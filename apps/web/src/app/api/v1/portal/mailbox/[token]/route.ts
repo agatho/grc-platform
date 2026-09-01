@@ -75,7 +75,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
   // Token darf den Betriebszustand des Kanals nicht offenlegen.
   const mailbox = await resolveMailbox(token);
   if (!mailbox) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
   if (!isWbCryptoConfigured()) return cryptoUnavailable();
 
@@ -187,11 +190,16 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const mailbox = await resolveMailbox(token);
   if (!mailbox) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
   if (!isWbCryptoConfigured()) return cryptoUnavailable();
 
-  const body = replyToMailboxSchema.safeParse(await req.json().catch(() => null));
+  const body = replyToMailboxSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },

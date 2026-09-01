@@ -1,8 +1,24 @@
 name: i18n Coverage
 
-# Vergleicht messages/de/*.json gegen messages/en/*.json auf Key-Parity.
-# Faellt rot aus wenn fehlende Keys oder Placeholder-Werte (TODO/FIXME/leer)
-# auftreten. Pure static, keine DB.
+# Zwei Tore, weil das eine nicht ausreichte.
+#
+# 1. DE/EN-Parity (unveraendert): messages/de/*.json gegen messages/en/*.json.
+#
+# 2. [ARCTOS-FULL-2026-08-31 / WP12 - S14-08] Code gegen Katalog.
+#    Das bisherige Gate hat ausschliesslich messages/de und messages/en
+#    miteinander verglichen und nie src/ geoeffnet. Deshalb blieben 21 im Code
+#    verwendete, im Katalog nicht existierende Schluessel unbemerkt (S14-05) --
+#    zwei davon auf dem Haupt-Dashboard, einer in einem aria-label. Ebenfalls
+#    unbemerkt: der Namespace `frameworks` mit 61 Keys, der in
+#    src/i18n/request.ts nie registriert war (S14-07), und jede Abweichung
+#    zwischen den Namespace-Verzeichnissen und dem Runtime-Bundle
+#    messages/{de,en}.json.
+#
+# Ebenfalls S14-08: der `paths:`-Filter liess das Gate nur laufen, wenn
+# messages/** geaendert wurde. Ein PR, der eine neue t("...")-Verwendung ohne
+# Katalogaenderung einfuehrt, startete es gar nicht erst -- genau der Weg, auf
+# dem die 21 fehlenden Schluessel entstanden sind. Der Filter deckt jetzt auch
+# apps/web/src ab.
 #
 # Konvention dokumentiert in docs/ADR-022-i18n-namespace-organization.md.
 
@@ -11,7 +27,11 @@ on:
     branches: [main, develop]
     paths:
       - "apps/web/messages/**"
+      - "apps/web/src/**"
+      - "apps/web/scripts/build-messages.ts"
       - "scripts/audit-i18n-coverage.mjs"
+      - "scripts/audit-i18n-usage.mjs"
+      - ".github/workflows/i18n-coverage.yml"
 
 permissions:
   contents: read
@@ -21,9 +41,9 @@ jobs:
     name: DE/EN namespace parity
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
 
@@ -32,26 +52,112 @@ jobs:
 
       - name: Upload report as artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: i18n-coverage-report
           path: docs/i18n-coverage-report.md
           retention-days: 30
 
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S08-26]
+      #
+      # Diese vier Zaehler waren FAIL-OPEN. `grep -oE ... || echo 0` liefert
+      # bei fehlender Datei einen sauberen "0", weil `grep` mit Status 2
+      # endet und `|| echo 0` einspringt — die Bedingung `0 -gt 0` ist
+      # falsch, der Schritt endet gruen. Die Kontrolle bestaetigte dann
+      # Konformitaet, obwohl sie NICHTS geprueft hatte. Bei vorhandener,
+      # aber trefferloser Datei entstand ausserdem der Wert "0\n0", woran
+      # `[ -gt ]` mit "integer expression expected" scheiterte — im `if`
+      # von `bash -e` ausgenommen, also ebenfalls gruen.
+      #
+      # Fix in drei Schritten: (1) Existenz des Reports erzwingen,
+      # (2) Auslesen so, dass genau EIN Wert entsteht, (3) pruefen, dass
+      # jeder Zaehler ueberhaupt gefunden wurde — ein umbenannter
+      # Report-Abschnitt darf nicht als "alles gut" durchgehen.
+      # ────────────────────────────────────────────────────────────────
       - name: Fail if missing keys or placeholders
         run: |
+          set -euo pipefail
           REPORT="docs/i18n-coverage-report.md"
-          MISSING_EN=$(grep -oE "Fehlende EN-Uebersetzungen: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
-          MISSING_DE=$(grep -oE "Fehlende DE-Uebersetzungen: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
-          PH_DE=$(grep -oE "Placeholder-Werte DE: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
-          PH_EN=$(grep -oE "Placeholder-Werte EN: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::$REPORT fehlt — der vorgelagerte Generator hat nichts"
+            echo "::error::geschrieben. Ein fehlender Report ist ein FEHLER, kein"
+            echo "::error::Freibrief (#S08-26)."
+            exit 1
+          fi
+
+          read_counter() {
+            local label="$1" value
+            value="$(grep -oE "${label}: [0-9]+" "$REPORT" | grep -oE '[0-9]+' | head -n1 || true)"
+            if [ -z "$value" ]; then
+              echo "::error::Kennzahl \"${label}\" steht nicht in $REPORT." >&2
+              echo "::error::Der Report-Aufbau hat sich geaendert — diese Pruefung" >&2
+              echo "::error::wuerde sonst stillschweigend nichts mehr messen." >&2
+              return 1
+            fi
+            printf '%s' "$value"
+          }
+
+          MISSING_EN="$(read_counter 'Fehlende EN-Uebersetzungen')"
+          MISSING_DE="$(read_counter 'Fehlende DE-Uebersetzungen')"
+          PH_DE="$(read_counter 'Placeholder-Werte DE')"
+          PH_EN="$(read_counter 'Placeholder-Werte EN')"
           echo "Missing EN: $MISSING_EN, Missing DE: $MISSING_DE, Placeholder DE: $PH_DE, Placeholder EN: $PH_EN"
+
           FAIL=0
-          [ "$MISSING_EN" -gt 0 ] && FAIL=1
-          [ "$MISSING_DE" -gt 0 ] && FAIL=1
-          [ "$PH_DE" -gt 0 ] && FAIL=1
-          [ "$PH_EN" -gt 0 ] && FAIL=1
+          for v in "$MISSING_EN" "$MISSING_DE" "$PH_DE" "$PH_EN"; do
+            if [ "$v" -gt 0 ]; then FAIL=1; fi
+          done
           if [ "$FAIL" -eq 1 ]; then
             echo "::error::i18n parity broken -- siehe i18n-coverage-report artifact."
+            exit 1
+          fi
+          echo "i18n-Paritaet OK (alle vier Kennzahlen gelesen und 0)."
+
+
+  i18n-code-vs-catalog:
+    name: Code vs. catalogue (S14-05, S14-07, S14-08)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Das Runtime-Bundle ist Build-Ausgabe. Es wird hier frisch erzeugt, damit
+      # der Drift-Check gegen den Stand des PR prueft und nicht gegen ein
+      # eingechecktes, moeglicherweise veraltetes Bundle -- und damit die
+      # Reproduzierbarkeit im letzten Schritt nachgewiesen werden kann.
+      - name: Rebuild message bundles
+        run: npx tsx apps/web/scripts/build-messages.ts
+
+      - name: Fail on keys used in code but missing from the catalogue
+        run: node scripts/audit-i18n-usage.mjs
+
+      # Ungenutzte Schluessel sind kein Fehler, sondern eine Ratsche: 6.794 ist
+      # der Stand nach dieser Remediation und eine Obergrenze -- 400
+      # Aufrufstellen bauen ihren Schluessel dynamisch (S14-21). Die Zahl darf
+      # sinken, nicht steigen; beim Absenken diesen Wert nachziehen.
+      - name: Unused-key ratchet
+        run: node scripts/audit-i18n-usage.mjs --max-unused 6800
+
+      # [WP12 - S14-14] Zweite Ratsche: Dateien ohne jeden i18n-Import.
+      # Stand 2026-09-01: 96 von 482 Pages und 73 von 130 Komponenten, darunter
+      # 10 der 14 EU-AI-Act-Seiten (hartcodiert deutsch). Das Uebersetzen ist
+      # Produktinhalt und laeuft ausserhalb dieser Remediation; die Zahl darf
+      # dabei sinken, nicht steigen. Beim Absenken hier nachziehen.
+      - name: i18n-Abdeckungs-Ratsche
+        run: node scripts/audit-i18n-usage.mjs --max-untranslated 169
+
+      - name: messages/{de,en}.json muessen reproduzierbar sein
+        run: |
+          if ! git diff --quiet -- apps/web/messages/de.json apps/web/messages/en.json; then
+            echo "::error::messages/{de,en}.json im Repo weichen vom Ergebnis von build-messages.ts ab. Bitte 'npx tsx apps/web/scripts/build-messages.ts' laufen lassen und das Ergebnis committen."
+            git --no-pager diff --stat -- apps/web/messages/de.json apps/web/messages/en.json
             exit 1
           fi

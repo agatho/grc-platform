@@ -25,6 +25,7 @@ import {
   type Browser,
   type BrowserContext,
 } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 const SIGNER_EMAIL = "risk.manager@arctos.dev";
 const SIGNER_PASSWORD = "arctos2026!";
@@ -64,7 +65,7 @@ async function loginAs(
 }
 
 test.describe("DMS — Multi-signer signature ceremony", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("sequential 2-signer flow: wrong turn 409 → both sign → verify + certificate + controlled copy", async ({
     request,

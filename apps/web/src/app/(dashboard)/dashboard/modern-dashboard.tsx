@@ -16,7 +16,6 @@ import {
   ListTodo,
   Loader2,
   Inbox,
-  Activity,
 } from "lucide-react";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 import { useDateFormat } from "@/lib/format-date";
@@ -407,7 +406,7 @@ export function ModernDashboard({
                 {/* Vertical line */}
                 <div className="absolute left-[9px] top-1 bottom-1 w-px bg-gray-200" />
                 <ul className="space-y-0">
-                  {auditEntries.slice(0, 8).map((entry, idx) => (
+                  {auditEntries.slice(0, 8).map((entry, _idx) => (
                     <li
                       key={entry.id}
                       className="relative flex items-start gap-3 py-2 group"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Plug, Loader2 } from "lucide-react";
@@ -83,6 +83,11 @@ const CONNECTOR_TYPES = [
 ];
 
 export default function NewConnectorPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("connectors");
   const router = useRouter();
   const [name, setName] = useState("");
@@ -139,10 +144,14 @@ export default function NewConnectorPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-name`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Name
             </label>
             <input
+              id={`${a11yId}-name`}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -152,10 +161,14 @@ export default function NewConnectorPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-description`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Description
             </label>
             <textarea
+              id={`${a11yId}-description`}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -164,10 +177,21 @@ export default function NewConnectorPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            {/* [WP12 · S14-09] The type picker is a grid of buttons acting as
+                a radio group; a <label> cannot name a group of buttons.
+                role="radiogroup" + aria-labelledby does, and the buttons below
+                carry aria-checked. */}
+            <span
+              id={`${a11yId}-connector-type`}
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Connector Type
-            </label>
-            <div className="grid grid-cols-3 gap-2">
+            </span>
+            <div
+              role="radiogroup"
+              aria-labelledby={`${a11yId}-connector-type`}
+              className="grid grid-cols-3 gap-2"
+            >
               {CONNECTOR_TYPES.map((ct) => (
                 <button
                   key={ct.key}
@@ -186,10 +210,14 @@ export default function NewConnectorPage() {
 
           {selectedConnector && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor={`${a11yId}-auth-method`}
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Auth Method
               </label>
               <select
+                id={`${a11yId}-auth-method`}
                 value={authMethod}
                 onChange={(e) => setAuthMethod(e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -204,10 +232,14 @@ export default function NewConnectorPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor={`${a11yId}-base-url-optional`}
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Base URL (optional)
             </label>
             <input
+              id={`${a11yId}-base-url-optional`}
               type="url"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}

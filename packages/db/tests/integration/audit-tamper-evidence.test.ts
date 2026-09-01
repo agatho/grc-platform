@@ -291,7 +291,9 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
     `;
     await sql`SELECT audit_anchor_seal_record(${anchor.id}::uuid)`;
 
-    expect((await sql`SELECT * FROM audit_anchor_verify(${orgId}::uuid)`).length).toBe(0);
+    expect(
+      (await sql`SELECT * FROM audit_anchor_verify(${orgId}::uuid)`).length,
+    ).toBe(0);
 
     await sql.unsafe(`SET session_replication_role = 'replica'`);
     try {
@@ -329,7 +331,9 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
         `ALTER TABLE audit_anchor ENABLE ALWAYS TRIGGER audit_anchor_append_only_trg`,
       );
     }
-    expect((await sql`SELECT * FROM audit_anchor_verify(${orgId}::uuid)`).length).toBe(0);
+    expect(
+      (await sql`SELECT * FROM audit_anchor_verify(${orgId}::uuid)`).length,
+    ).toBe(0);
   });
 
   it("detects a deleted anchor", async () => {
@@ -482,7 +486,11 @@ describe("S03-05 — writes that used to bypass the chain", () => {
 
   it("ignores caller-supplied chain values instead of trusting them", async () => {
     const [row] = await sql<
-      { entry_hash: string; previous_hash_scope: string; hash_version: number }[]
+      {
+        entry_hash: string;
+        previous_hash_scope: string;
+        hash_version: number;
+      }[]
     >`
       INSERT INTO audit_log
         (org_id, entity_type, entity_id, action,
@@ -678,7 +686,10 @@ describe("S03-07 — the offline verification path", () => {
     mkdirSync(join(dir, "anchors"));
     mkdirSync(join(dir, "verify"));
     writeFileSync(join(dir, "audit_log", "audit_log.jsonl"), jsonl);
-    writeFileSync(join(dir, "verify", "verify_archive.py"), shippedVerifierScript());
+    writeFileSync(
+      join(dir, "verify", "verify_archive.py"),
+      shippedVerifierScript(),
+    );
     try {
       const out = execFileSync(
         "python3",
@@ -688,7 +699,10 @@ describe("S03-07 — the offline verification path", () => {
       return { code: 0, out };
     } catch (e) {
       const err = e as { status?: number; stdout?: string; stderr?: string };
-      return { code: err.status ?? 1, out: (err.stdout ?? "") + (err.stderr ?? "") };
+      return {
+        code: err.status ?? 1,
+        out: (err.stdout ?? "") + (err.stderr ?? ""),
+      };
     }
   }
 
@@ -739,7 +753,9 @@ describe("S03-07 — the offline verification path", () => {
 
     const { code, out } = runVerifier(lines.join("\n") + "\n");
     expect(code).toBe(1);
-    expect(out).toMatch(/content commitment does not match|entry_hash mismatch/);
+    expect(out).toMatch(
+      /content commitment does not match|entry_hash mismatch/,
+    );
   });
 
   it("detects a row deleted from the export", async () => {
@@ -848,7 +864,8 @@ describe("S03-15 — the whistleblowing chain", () => {
     expect(names).toContain("wb_audit_log_append_only_trg");
     // 'A' = ENABLE ALWAYS: fires under session_replication_role='replica'.
     expect(
-      guards.find((g) => g.tgname === "wb_audit_log_append_only_trg")?.tgenabled,
+      guards.find((g) => g.tgname === "wb_audit_log_append_only_trg")
+        ?.tgenabled,
     ).toBe("A");
 
     // The formula must not depend on the session timezone — the exact

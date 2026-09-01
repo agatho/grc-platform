@@ -1,3 +1,18 @@
+# ============================================================================
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-20, S08-21]
+#
+# S08-20 hat belegt, dass fuer JEDES gemeldete Advisory bereits ein
+# unfusionierter Dependabot-Branch auf origin lag. Der Rueckstau war
+# prozessual, nicht technisch — das Security-Gate war deshalb rot (S08-03).
+# Konsequenz hier: Security-Updates werden NICHT mehr in die
+# Sammel-Gruppen einsortiert (sonst warten sie auf die Gruppe) und
+# Major-Versionen sind fuer Security-Fixes nicht mehr generell ignoriert.
+#
+# SLA (ADR-018 §Patch-Zyklus): high/critical innerhalb von 7 Tagen,
+# moderate innerhalb von 30 Tagen fusioniert. Wird sie gerissen, ist das
+# Security-Gate (scripts/audit-gate.mjs) rot und blockiert jeden Merge —
+# das ist die technische Durchsetzung der SLA.
+# ============================================================================
 version: 2
 
 updates:
@@ -25,7 +40,11 @@ updates:
           - minor
           - patch
     ignore:
-      # Don't auto-update major versions (breaking changes)
+      # Keine automatischen Major-Bumps fuer Routine-Updates (breaking
+      # changes). #S08-20: Sicherheits-PRs von Dependabot sind davon NICHT
+      # betroffen — sie werden unabhaengig von `ignore` und `groups`
+      # geoeffnet, damit ein Fix, der nur in einer neuen Major existiert
+      # (pdfjs-dist 5 -> 6, GHSA-hq66-cqwq-w95j), nicht liegen bleibt.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
 
@@ -41,3 +60,21 @@ updates:
     labels:
       - ci
       - dependencies
+
+  # ── Docker-Basisimages (#S08-21) ──────────────────────────────────────
+  # Beide Images sind per Digest gepinnt (`node:22.20-alpine@sha256:…`).
+  # Ohne diesen Eintrag friert ein Digest-Pin die Sicherheitslage ein —
+  # genau der Nachteil, den `apk upgrade --no-cache` im Dockerfile bisher
+  # kompensieren musste. Dependabot bumpt den Digest jetzt woechentlich.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 5
+    labels:
+      - ci
+      - dependencies
+      - security

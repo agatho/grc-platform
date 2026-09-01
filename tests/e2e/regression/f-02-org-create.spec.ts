@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login, getSession } from "../fixtures/auth";
+import { login, getSession, awaitSessionRoles } from "../fixtures/auth";
 
 // F-02: POST /api/v1/organizations grants admin role to the creator in the
 // same transaction, so the new org is immediately visible to them.
@@ -28,10 +28,13 @@ test("F-02: org create assigns admin role and shows in list after re-login", asy
 
   // Hard reload so the JWT picks up the new role.
   await page.goto("/dashboard");
-  await page.waitForTimeout(1500);
+  // [ARCTOS-FULL-2026-08-31 / WP11 · S11-15] Was `waitForTimeout(1500)`: a
+  // guess at how long the JWT needs to pick up the new role. Wait for the
+  // session to actually carry it.
+  await awaitSessionRoles(page, 1);
 
   const session = await getSession(page);
-  expect(session.roleCount).toBeGreaterThanOrEqual(1);
+  expect(session.roles.length).toBeGreaterThanOrEqual(1);
 
   // The new org should appear in the accessible-orgs API.
   const orgs = await page.evaluate(async () => {

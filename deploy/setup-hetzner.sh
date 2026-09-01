@@ -161,16 +161,23 @@ echo "  ARCTOS GRC Platform — Setup abgeschlossen"
 echo "============================================="
 echo ""
 echo "  URL:   https://$DOMAIN"
-echo "  Login: admin@arctos.dev / admin123"
 echo ""
-echo "  Test-Logins:"
-echo "    ciso@arctos.dev       (CISO)"
-echo "    compliance@arctos.dev (Compliance Officer)"
-echo "    bcm@arctos.dev        (BCM-Manager)"
-echo "    contracts@arctos.dev  (Vertragsmanager)"
-echo "    qm@arctos.dev         (Qualitaetsmanager)"
-echo "    security@arctos.dev   (Security Analyst)"
-echo "    (alle PW: admin123)"
+# [ARCTOS-FULL-2026-08-31 / WP10 · S13-09e, Uebergabe aus WP3/S02-01]
+# Hier stand "Login: admin@arctos.dev / admin123" und darunter sechs
+# Test-Konten mit demselben Passwort. Diese Konten entstehen nur aus dem
+# DEMO-Seed, den der Entrypoint in NODE_ENV=production verweigert — die
+# Ausgabe war also entweder falsch (kein Login moeglich) oder, wenn der
+# Operator sie zum Laufen brachte, ein Admin-Konto mit oeffentlich
+# bekanntem Passwort in Produktion.
+echo "  ERSTADMINISTRATOR ANLEGEN (einmalig):"
+echo ""
+echo "    cd /opt/arctos && docker compose -f docker-compose.production.yml \\"
+echo "      exec -T worker sh -c 'cd /app && ADMIN_EMAIL=<ihre-adresse> \\"
+echo "      tsx packages/db/src/create-admin.ts --email <ihre-adresse>'"
+echo ""
+echo "  Das Kommando gibt ein zufaelliges Erstpasswort aus und erzwingt die"
+echo "  Aenderung bei der ersten Anmeldung. Es gibt KEIN Standardpasswort"
+echo "  und keine vorangelegten Test-Konten (#S13-09e / #SEC-F04)."
 echo ""
 echo "  Logs:  docker compose -f docker-compose.production.yml logs -f web"
 echo "  Stop:  docker compose -f docker-compose.production.yml down"

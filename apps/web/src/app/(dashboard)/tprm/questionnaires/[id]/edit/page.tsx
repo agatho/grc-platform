@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -43,6 +43,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -160,6 +163,11 @@ export default function QuestionnaireEditPage() {
 }
 
 function QuestionnaireEditInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("questionnaire");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -592,6 +600,14 @@ function QuestionnaireEditInner() {
                       setSelectedSectionId(section.id);
                       setSelectedQuestionId(null);
                     }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      activateOnKey(e, () => {
+                        setSelectedSectionId(section.id);
+                        setSelectedQuestionId(null);
+                      })
+                    }
                   >
                     <GripVertical
                       size={12}
@@ -644,6 +660,14 @@ function QuestionnaireEditInner() {
                               setSelectedSectionId(section.id);
                               setSelectedQuestionId(q.id);
                             }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) =>
+                              activateOnKey(e, () => {
+                                setSelectedSectionId(section.id);
+                                setSelectedQuestionId(q.id);
+                              })
+                            }
                           >
                             <Icon
                               size={12}
@@ -1026,10 +1050,14 @@ function QuestionnaireEditInner() {
                 {selectedQuestion.questionType === "yes_no" && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-gray-600">
+                      <label
+                        htmlFor={`${a11yId}-field`}
+                        className="text-xs text-gray-600"
+                      >
                         Score for Yes
                       </label>
                       <input
+                        id={`${a11yId}-field`}
                         type="number"
                         min={0}
                         max={10}
@@ -1059,10 +1087,14 @@ function QuestionnaireEditInner() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">
+                      <label
+                        htmlFor={`${a11yId}-score-for-no`}
+                        className="text-xs text-gray-600"
+                      >
                         Score for No
                       </label>
                       <input
+                        id={`${a11yId}-score-for-no`}
                         type="number"
                         min={0}
                         max={10}

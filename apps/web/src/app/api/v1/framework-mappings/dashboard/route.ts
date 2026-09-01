@@ -33,6 +33,46 @@ export async function GET(req: Request) {
     }),
   );
 
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-01] Per-category coverage matrix.
+  //
+  // The heatmap UI showed a category x framework grid whose cells were
+  // `fw.coverage + Math.floor(Math.random() * 20 - 10)` — re-rolled on every
+  // render. The only place a real matrix could come from is
+  // `framework_coverage_snapshot.heatmap_data`, and the cron that writes those
+  // snapshots (`apps/worker/src/crons/framework-coverage-snapshot.ts:71`) sets
+  // it to `{}` unconditionally. So the data does not exist.
+  //
+  // The endpoint now reports that honestly: it returns whatever the latest
+  // snapshot actually holds and a `categoryCoverageMeasured` flag. The UI
+  // renders real cells when there are any and an explicit "not measured"
+  // notice otherwise — it no longer invents numbers that end up in management
+  // reviews and audit reports.
+  const [latestSnapshot] = await db
+    .select({
+      heatmapData: frameworkCoverageSnapshot.heatmapData,
+      snapshotDate: frameworkCoverageSnapshot.snapshotDate,
+    })
+    .from(frameworkCoverageSnapshot)
+    .where(eq(frameworkCoverageSnapshot.orgId, ctx.orgId))
+    .orderBy(desc(frameworkCoverageSnapshot.snapshotDate))
+    .limit(1);
+
+  const rawMatrix = (latestSnapshot?.heatmapData ?? {}) as Record<
+    string,
+    Record<string, number>
+  >;
+  const categoryCoverage: Record<string, Record<string, number>> = {};
+  for (const [framework, byCategory] of Object.entries(rawMatrix)) {
+    if (!byCategory || typeof byCategory !== "object") continue;
+    const clean: Record<string, number> = {};
+    for (const [category, value] of Object.entries(byCategory)) {
+      if (typeof value === "number" && Number.isFinite(value))
+        clean[category] = value;
+    }
+    if (Object.keys(clean).length > 0) categoryCoverage[framework] = clean;
+  }
+  const categoryCoverageMeasured = Object.keys(categoryCoverage).length > 0;
+
   const overallCoverage =
     frameworkScores.length > 0
       ? Math.round(
@@ -60,6 +100,13 @@ export async function GET(req: Request) {
       overallCoverage,
       frameworkCount: frameworkScores.length,
       frameworkScores,
+      // S14-01: empty object + false flag means "no measurement exists",
+      // which is a different statement from "coverage is 0".
+      categoryCoverage,
+      categoryCoverageMeasured,
+      categoryCoverageAsOf: categoryCoverageMeasured
+        ? String(latestSnapshot?.snapshotDate)
+        : null,
       topGaps,
       lastAnalysisDate:
         latestAnalyses.length > 0

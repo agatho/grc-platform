@@ -48,6 +48,19 @@ export interface ResolvedEntityMeta {
   _fallback?: string[];
   /** The language that was actually used for resolution */
   _resolvedLanguage?: string;
+  /**
+   * [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] `resolveEntity()` preserves the
+   * original JSONB translation map of every resolved field under
+   * `<field>_translations`. That was written through a
+   * `(resolved as Record<string, unknown>)[...]` cast and never declared, so
+   * a caller reading `resolved.title_translations` got a type error — which
+   * nobody saw, because packages/shared had no tsconfig.json and was never
+   * type-checked. Declaring the pattern makes the documented output part of
+   * the contract instead of an undocumented side effect.
+   */
+  [preservedTranslations: `${string}_translations`]:
+    | Record<string, string>
+    | undefined;
 }
 
 // ── Core resolver functions ────────────────────────────────────────

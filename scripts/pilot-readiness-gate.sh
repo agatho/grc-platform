@@ -15,23 +15,64 @@
 #   STAGING_ADMIN_EMAIL      (z. B. admin@arctos.dev)
 #   STAGING_ADMIN_PASSWORD   (Repo-Secret)
 #
-# Wenn STAGING_URL nicht gesetzt ist (z. B. PR aus Fork), exit 0 mit
-# "skipped" — der CI-Job markiert dann sich selbst als skipped, blockt
-# aber nicht den Merge. Forks/externe PRs müssen separat gegen den
-# Owner-Staging-Branch verifiziert werden.
+# ────────────────────────────────────────────────────────────────────────────
+# [ARCTOS-FULL-2026-08-31 / WP10 · S13-30]
+#
+# Bis zu diesem Audit beendete sich dieses Skript ohne STAGING_URL mit
+# `exit 0` und der Meldung "SKIPPED". Der Job war im Workflow-Kommentar als
+# "Required for merge to main" beschrieben — ein gruener Check war damit
+# nicht von einem uebersprungenen zu unterscheiden. Ein versehentlich
+# geloeschtes oder rotiertes Repo-Secret haette das Gate dauerhaft und
+# unbemerkt abgeschaltet.
+#
+# Neues Verhalten:
+#   * Fehlt STAGING_URL, ist das ein FEHLER (Exit 1) — es sei denn, der
+#     Lauf stammt aus einem FORK-PR, wo GitHub Secrets bauartbedingt nicht
+#     bereitstellt. Diesen Fall erkennt das Skript selbst an
+#     GITHUB_EVENT_NAME/GITHUB_REPOSITORY vs. dem Head-Repository und
+#     meldet ihn ausdruecklich als "nicht anwendbar", nicht als "bestanden".
+#   * Der Build-SHA-Abgleich (D1) ist nicht mehr rein informativ: laeuft auf
+#     Staging ein ANDERER Commit als der gepruefte, ist die Aussage des
+#     Gates wertlos und der Lauf failt. Genau das war der zweite Teil von
+#     S13-30 — der Job prueft sonst ein fremdes Artefakt.
+#     Not-Aus fuer den Uebergang: ALLOW_STAGING_SHA_MISMATCH=true.
+# ────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
 if [[ -z "${STAGING_URL:-}" ]]; then
-  echo "::warning::STAGING_URL not set — pilot-readiness-gate skipped"
-  echo "SKIPPED"
-  exit 0
+  # Fork-PR: GitHub stellt Secrets bauartbedingt nicht bereit. Das ist der
+  # EINZIGE zulaessige Grund, hier ohne Pruefung durchzukommen — und er wird
+  # als "nicht anwendbar" ausgewiesen, nicht als bestanden.
+  IS_FORK_PR="false"
+  if [[ "${GITHUB_EVENT_NAME:-}" == "pull_request" && -n "${GITHUB_HEAD_REPOSITORY:-}" \
+        && "${GITHUB_HEAD_REPOSITORY}" != "${GITHUB_REPOSITORY:-}" ]]; then
+    IS_FORK_PR="true"
+  fi
+  if [[ "$IS_FORK_PR" == "true" ]]; then
+    echo "::warning::Fork-PR (${GITHUB_HEAD_REPOSITORY} != ${GITHUB_REPOSITORY}) —" \
+         "GitHub stellt STAGING_URL hier nicht bereit. Gate NICHT ANWENDBAR."
+    echo "NOT_APPLICABLE (fork PR)"
+    exit 0
+  fi
+  echo "::error::STAGING_URL ist nicht gesetzt. Dieses Gate ist als Required Check"
+  echo "::error::gefuehrt; ein stiller Skip macht einen gruenen Check von einem"
+  echo "::error::uebersprungenen ununterscheidbar (#S13-30). Secret setzen oder den"
+  echo "::error::Job aus der Required-Liste entfernen — beides bewusst, nicht beilaeufig."
+  exit 1
 fi
 
 STAGING_URL="${STAGING_URL%/}"  # strip trailing slash
-STAGING_ADMIN_EMAIL="${STAGING_ADMIN_EMAIL:-admin@arctos.dev}"
+# #S13-27: kein Demo-Default mehr. `admin@arctos.dev` war zugleich der in
+# deploy/README.md dokumentierte Produktions-Login und das k6-CI-Konto —
+# ein Passwort, das an drei Stellen normalisiert war.
+STAGING_ADMIN_EMAIL="${STAGING_ADMIN_EMAIL:-}"
 STAGING_ADMIN_PASSWORD="${STAGING_ADMIN_PASSWORD:-}"
 
+if [[ -z "$STAGING_ADMIN_EMAIL" ]]; then
+  echo "::error::STAGING_ADMIN_EMAIL not set — kein Default mehr (#S13-27)"
+  exit 1
+fi
 if [[ -z "$STAGING_ADMIN_PASSWORD" ]]; then
   echo "::error::STAGING_ADMIN_PASSWORD not set — cannot authenticate"
   exit 1
@@ -40,13 +81,36 @@ fi
 echo "▶ Pilot-Readiness-Gate against ${STAGING_URL}"
 
 # ────────────────────────────────────────────────────────────
-# D1 — Build-SHA-Diagnose (informational, never blocks).
+# D1 — Build-SHA-Abgleich. #S13-30: NICHT mehr rein informativ.
+#
+# Der Job laeuft gegen die Staging-Instanz, deren Commit mit dem geprueften
+# PR nichts zu tun haben muss. Solange der Abgleich unverbindlich war,
+# konnte ein PR das Gate gruen passieren, weil auf Staging ein anderer,
+# funktionierender Stand deployt war. Ein Gate, das ein fremdes Artefakt
+# prueft, ist kein Gate.
 # ────────────────────────────────────────────────────────────
 BUILD_INFO=$(curl -fsS -m 10 "${STAGING_URL}/api/v1/meta/build" 2>/dev/null || echo '{}')
 PROD_SHA=$(echo "$BUILD_INFO" | jq -r '.data.commitSha // "unknown"')
 PROD_BRANCH=$(echo "$BUILD_INFO" | jq -r '.data.branch // "unknown"')
 PROD_BUILT=$(echo "$BUILD_INFO" | jq -r '.data.builtAt // "unknown"')
 echo "ℹ Staging build: sha=${PROD_SHA:0:8} branch=${PROD_BRANCH} built=${PROD_BUILT}"
+
+EXPECTED_SHA="${EXPECTED_STAGING_SHA:-${GITHUB_SHA:-}}"
+if [[ -n "$EXPECTED_SHA" && "${ALLOW_STAGING_SHA_MISMATCH:-false}" != "true" ]]; then
+  if [[ "$PROD_SHA" == "unknown" ]]; then
+    echo "::error::Staging liefert keinen Build-SHA (/api/v1/meta/build). Ohne ihn"
+    echo "::error::ist nicht feststellbar, WELCHEN Stand dieses Gate geprueft hat."
+    exit 1
+  fi
+  if [[ "${PROD_SHA}" != "${EXPECTED_SHA}" ]]; then
+    echo "::error::Staging laeuft auf ${PROD_SHA:0:8}, geprueft werden soll aber"
+    echo "::error::${EXPECTED_SHA:0:8}. Das Gate wuerde ein fremdes Artefakt"
+    echo "::error::bewerten (#S13-30). Erst deployen, dann pruefen — oder"
+    echo "::error::ALLOW_STAGING_SHA_MISMATCH=true bewusst setzen."
+    exit 1
+  fi
+  echo "✓ Staging laeuft auf dem geprueften Commit ${PROD_SHA:0:8}"
+fi
 
 # ────────────────────────────────────────────────────────────
 # Auth: NextAuth credentials provider POST.

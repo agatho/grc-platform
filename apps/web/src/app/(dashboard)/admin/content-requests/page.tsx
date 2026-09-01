@@ -222,7 +222,7 @@ export default function ContentRequestsPage() {
       {requests.length === 0 && !error ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <FileQuestion size={48} className="text-gray-300 mb-4" />
+            <FileQuestion size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
               Keine Anfragen vorhanden
             </p>

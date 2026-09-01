@@ -1,0 +1,74 @@
+# ============================================================================
+# ARCTOS — Caddy-Konfiguration für den Single-Host-Compose-Stack
+#
+# [ARCTOS-FULL-2026-08-31 / WP10 · S13-09d]
+#
+# WARUM ES DIESE ZWEITE DATEI GIBT
+#
+# `deploy/Caddyfile` ist die Vorlage für den Hetzner-Einzelserver-Pfad
+# (`setup-hetzner.sh` installiert sie auf dem HOST). Sie proxyt nach
+# `localhost:3000` und ersetzt `__DOMAIN__` per sed. Beides passt im
+# Container nicht: dort ist `localhost` der Caddy-Container selbst, und die
+# Ersetzung findet nie statt. Diese Datei ist die Container-Variante —
+# gleiche Sicherheitshaltung, anderer Upstream und Domain aus der Umgebung.
+#
+# `deploy/Caddyfile` selbst bleibt unangetastet (Dateihoheit WP12,
+# S12-04/S12-08 — dort steht die Begründung der Header-Auswahl).
+#
+# BEHOBEN WIRD DAMIT: bis zum Audit hatte der Compose-Stack ÜBERHAUPT
+# KEINEN Reverse-Proxy. `ports: "${PORT:-3000}:3000"` band an alle
+# Interfaces, und `deploy/README.md:23` wies ausdrücklich
+# `http://your-server:3000` an — Session-Cookies und Anmeldedaten gingen im
+# Klartext über das Netz.
+# ============================================================================
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$ARCTOS_DOMAIN} {
+	# TRACE/TRACK blockieren (Cross-Site Tracing).
+	@trace method TRACE TRACK
+	respond @trace 405
+
+	reverse_proxy web:3000 {
+		# RSC-Payloads ungepuffert durchreichen — sonst hält Caddy die
+		# React-Server-Component-Chunks bis zum Ende der Antwort zurück und
+		# grosse Bäume laufen in den Gateway-Timeout (HTTP 503 auf `?_rsc=…`).
+		flush_interval -1
+		transport http {
+			response_header_timeout 90s
+			read_timeout 90s
+			write_timeout 90s
+		}
+		# Genau EIN X-Forwarded-For-Hop. Muss zu TRUSTED_PROXY_HOPS=1 in der
+		# Anwendung passen (WP9/S10-05): stimmen die Zahlen nicht überein, ist
+		# das Login-Rate-Limit per Header umgehbar.
+		header_up X-Forwarded-For {remote_host}
+	}
+
+	# `defer`: die Anwendung setzt ihre eigenen Header
+	# (apps/web/src/lib/security-headers.ts, inkl. nonce-basierter CSP).
+	# Dieser Block füllt nur Lücken und überschreibt nichts.
+	header {
+		defer
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+		-Server
+		-X-Powered-By
+	}
+
+	# #S13-16: Caddy rotiert seinen eigenen Zugriffslog. Für die
+	# Container-Logs sorgt der `logging:`-Block der Compose-Datei.
+	log {
+		output file /data/access.log {
+			roll_size 10mb
+			roll_keep 5
+			roll_keep_for 720h
+		}
+		format json
+	}
+}

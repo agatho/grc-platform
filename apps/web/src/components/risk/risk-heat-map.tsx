@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@grc/ui";
 
@@ -72,14 +72,23 @@ export function RiskHeatMap({
     typeof window !== "undefined" ? window.innerWidth : 1024,
   );
 
-  // Listen for resize
-  if (typeof window !== "undefined") {
-    useMemo(() => {
-      const handleResize = () => setWindowWidth(window.innerWidth);
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }, []);
-  }
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S12-21] Two real defects, both hidden
+  // because `react-hooks/rules-of-hooks` was set to "warn" and CI does not
+  // fail on warnings:
+  //   (a) the hook sat inside `if (typeof window !== "undefined")`, so on the
+  //       server it was skipped and on the client it ran — a different hook
+  //       count between the two renders, which is exactly the condition React
+  //       reports as "Rendered more hooks than during the previous render".
+  //   (b) it was a `useMemo`, not a `useEffect`: the listener was registered
+  //       during render and the returned cleanup was treated as the memo's
+  //       VALUE, so it was never called. Every mount leaked one resize
+  //       listener.
+  // `useEffect` runs only on the client anyway, so the guard is unnecessary.
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Build lookup: `${likelihood}-${impact}` -> cell
   const cellMap = useMemo(() => {

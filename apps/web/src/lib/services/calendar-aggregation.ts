@@ -266,11 +266,12 @@ export async function getCalendarEvents(
   return (result as unknown as Array<Record<string, unknown>>).map((row) => {
     const startAt = String(row.start_at);
     const isOverdue = new Date(startAt) < now;
-    const module = String(row.module);
+    // [WP12 · S12-21] renamed from `module`, which shadows the CommonJS global
+    const moduleKey = String(row.module);
 
     return {
       id: String(row.id),
-      module,
+      module: moduleKey,
       title: String(row.title),
       startAt,
       endAt: row.end_at ? String(row.end_at) : null,
@@ -279,7 +280,7 @@ export async function getCalendarEvents(
       entityType: String(row.entity_type),
       entityId: String(row.entity_id),
       isOverdue,
-      color: MODULE_COLORS[module] ?? MODULE_COLORS.manual,
+      color: MODULE_COLORS[moduleKey] ?? MODULE_COLORS.manual,
     };
   });
 }

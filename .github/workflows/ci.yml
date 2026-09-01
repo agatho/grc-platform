@@ -21,7 +21,15 @@ env:
   # Dummy values so Next.js build doesn't fail on missing env
   AUTH_SECRET: ci-build-placeholder
   AUTH_TRUST_HOST: "true"
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  # [ARCTOS-FULL-2026-08-31 / WP10 · S08-09]
+  # TURBO_TOKEN stand hier workflow-weit und war damit jedem Schritt
+  # zugaenglich — auch `npm ci`, das per Design fremden Code ausfuehrt. Ein
+  # kompromittiertes Paket haette den Token im `postinstall` gelesen und
+  # exfiltriert; wer in den Turbo-Remote-Cache schreiben kann, vergiftet die
+  # Build-Artefakte aller nachfolgenden Laeufe und damit die produzierten
+  # Images. Der Token wird jetzt NUR noch auf den Schritten gesetzt, die
+  # turbo tatsaechlich aufrufen (`npx turbo test`). TURBO_TEAM ist keine
+  # Geheimnis-Variable und darf bleiben.
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 permissions:
@@ -36,18 +44,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
-      - name: ESLint
+      - name: ESLint (apps/web)
         working-directory: apps/web
         run: npx eslint . --no-error-on-unmatched-pattern
+
+      # [WP10 · S13-17] Bis zum Audit lief ESLint in genau EINEM von zwoelf
+      # Workspaces. `apps/worker` (132 Dateien) und alle zehn Packages waren
+      # ungelintet, weil sie kein `lint`-Skript hatten und `turbo lint`
+      # Workspaces ohne Task stillschweigend ueberspringt. Alle zwoelf haben
+      # jetzt ein `lint`-Skript; die elf Nicht-Web-Workspaces laufen gegen
+      # eslint.config.mjs im Repo-Root. Der Altbestand (253 ungenutzte
+      # Bindungen, 121 console.*, 33 any) ist in .eslint-ratchet.json
+      # eingefroren statt per `off` unsichtbar gemacht — die Zahlen duerfen
+      # nur sinken, jede NEUE Regelverletzung failt.
+      - name: ESLint ratchet (apps/worker, packages/*, scripts/*)
+        run: node scripts/lint-ratchet.mjs
 
       - name: Prettier (format check)
         run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
@@ -60,6 +86,53 @@ jobs:
       - name: TypeScript (type check — worker)
         run: npx tsc --noEmit -p apps/worker/tsconfig.json
 
+      # [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] The two steps above were the
+      # WHOLE type-check. Six of the twelve workspace packages had no
+      # tsconfig.json at all (`tsc -p tsconfig.json` → TS5058) and four more had
+      # one that CI never invoked — so `packages/shared` (all Zod schemas and
+      # state machines), `packages/db` (the data model) and `packages/auth`
+      # (RBAC, OIDC, SAML, SCIM) were verified only as far as apps/web and
+      # apps/worker happened to import them. The loop is discovery-driven: a
+      # new package is covered the day it gets a tsconfig.json, and one that
+      # loses it fails here rather than dropping out silently.
+      - name: TypeScript (type check — all workspace packages)
+        run: |
+          set -euo pipefail
+          failed=0
+          for cfg in packages/*/tsconfig.json; do
+            pkg="$(basename "$(dirname "$cfg")")"
+            echo "::group::tsc $pkg"
+            if npx tsc --noEmit -p "$cfg"; then
+              echo "$pkg OK"
+            else
+              echo "::error::TypeScript errors in packages/$pkg"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          # Every package must HAVE a config — S14-25 was the absence, not the
+          # errors. A new package without one is the regression to catch.
+          for dir in packages/*/; do
+            if [ ! -f "$dir/tsconfig.json" ]; then
+              echo "::error::$dir has no tsconfig.json and is therefore never type-checked (S14-25)."
+              failed=1
+            fi
+          done
+          exit "$failed"
+
+      # [WP10 · S08-05/S08-08] Die Zusage "pin all GitHub Actions by commit
+      # SHA" stand als Kommentar in coverage.yml, waehrend 42 von 50 Refs an
+      # beweglichen Tags hingen — darunter aquasecurity/trivy-action@master
+      # in einem Job mit `packages: write`. Sie ist jetzt geprueft.
+      - name: All GitHub Actions pinned by commit SHA
+        run: node scripts/check-action-pinning.mjs
+
+      # [WP10 · S13-28] `.env.example` deckte 49 tatsaechlich gelesene
+      # Variablen nicht ab, und die einzige, die RLS aktiviert
+      # (APP_DATABASE_URL), war auskommentiert ausgeliefert.
+      - name: .env.example covers every variable the code reads
+        run: node scripts/check-env-example.mjs
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────
@@ -69,21 +142,30 @@ jobs:
     timeout-minutes: 15
     needs: lint
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
       - name: Run tests
         run: npx turbo test -- --reporter=verbose --coverage
+        env:
+          # [WP10 · S08-09] Nur hier — turbo ist der einzige Verbraucher.
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
       - name: Upload coverage
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-report
           path: |
@@ -120,14 +202,20 @@ jobs:
       DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
       - name: Setup PostgreSQL extensions
         run: |
@@ -153,17 +241,56 @@ jobs:
         working-directory: packages/db
         run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
 
-      - name: Create grc_app role for RLS tests
+      # [WP10, uebernommen aus WP2/S01-09 und WP9] Beide Laufzeitrollen
+      # werden hier mit demselben Skript angelegt, das auch im Deploy laeuft
+      # (deploy/provision-grc-app.sh) — vorher legte CI `grc_app` mit einem
+      # handgeschriebenen GRANT-Block an und kannte `grc_worker` gar nicht.
+      # Damit testete CI eine Rechtelage, die es in Produktion nicht gibt.
+      - name: Provision grc_app + grc_worker roles (same script as deploy)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_dev_password
+          GRC_WORKER_PASSWORD: grc_worker_dev_password
+        run: bash deploy/provision-grc-app.sh grc_platform_test
+
+      # [WP10, uebernommen aus WP2/S01-15] Das RLS-Coverage-Werkzeug misst
+      # gegen die LAUFENDE Datenbank. Ohne diesen Schritt kann die
+      # Remediation ihre eigene Mandantentrennung nicht absichern.
+      #
+      # Bewusst NICHT `--check`: dieser Modus vergleicht den erzeugten Report
+      # zeichengenau mit der eingecheckten Fassung, und deren Kopfzeile
+      # enthaelt den DATENBANKNAMEN der Maschine, auf der sie erzeugt wurde
+      # (`wp2_verify`). In CI heisst die Datenbank `grc_platform_test`, der
+      # Vergleich kann also nie aufgehen. Das ist an WP2 gemeldet
+      # (scripts/audit-rls-coverage.mjs, Report-Kopf). Bis dahin wird hier
+      # das geprueft, worauf es ankommt: NULL Luecken gegen die frisch
+      # migrierte Datenbank — ein Ergebnis, das umgebungsunabhaengig gilt.
+      - name: RLS coverage — zero gaps against the freshly migrated DB
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
         run: |
-          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
-            DO \$\$ BEGIN
-              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grc_app') THEN
-                CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_dev_password';
-              END IF;
-            END \$\$;
-            GRANT USAGE ON SCHEMA public TO grc_app;
-            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
-          "
+          node scripts/audit-rls-coverage.mjs | tee /tmp/rls-coverage.txt
+          # Spalte 7 ist `status`; Spalte 8 (`defects`) ist der letzte Wert.
+          GAPS=$(awk -F, 'NR>1 && $7 != "OK" && $7 != "PLATFORM_EXEMPT" {n++} END{print n+0}' \
+            docs/security/rls-coverage-report.csv)
+          echo "RLS-Luecken: $GAPS"
+          if [ "$GAPS" -ne 0 ]; then
+            echo "::error::$GAPS Objekte ohne wirksame RLS — siehe docs/security/rls-coverage-report.md"
+            exit 1
+          fi
+
+      - name: Upload RLS coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: rls-coverage-report
+          path: |
+            docs/security/rls-coverage-report.md
+            docs/security/rls-coverage-report.csv
+          retention-days: 30
 
       - name: Integration tests
         working-directory: packages/db
@@ -181,6 +308,30 @@ jobs:
           # real route uses and proves RLS is enforced through the `db` proxy.
           # (The other RLS tests use their own helper clients and ignore this.)
           APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
+
+      # [WP10, uebernommen aus WP9] apps/worker/tests/lib/job-runtime.db.test.ts
+      # belegt Lock, Atomaritaet und Dedup der Job-Laufzeit und lief bisher
+      # in KEINEM Workflow: ohne DATABASE_URL meldet die Suite
+      # `describe.skip` — ein stiller Skip (S11-02). Der Worker verbindet
+      # hier als `grc_worker`, also mit derselben Rolle wie in Produktion.
+      # [WP11 · gemessen] APP_DATABASE_URL stand hier auf grc_worker. Diese
+      # Rolle hat BYPASSRLS — unter ihr laufen 13 RLS-Tests gruen durch, die
+      # fehlschlagen MUESSTEN, weil grc_worker genau das abschaltet, was sie
+      # pruefen. Die drei Rollen sind nicht austauschbar:
+      #   DATABASE_URL        = grc         (Migrationen, Seeds, Fixtures)
+      #   APP_DATABASE_URL    = grc_app     (alles, was RLS beweisen soll)
+      #   WORKER_DATABASE_URL = grc_worker  (Worker-Laufzeit, wie in Produktion)
+      # apps/worker/tests/require-db.mjs bildet WORKER_DATABASE_URL
+      # prozesslokal auf APP_DATABASE_URL ab, damit beides nebeneinander geht.
+      - name: Worker runtime integration tests (lock, atomicity, dedup)
+        working-directory: apps/worker
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+          WORKER_DATABASE_URL: postgresql://grc_worker:grc_worker_dev_password@localhost:5432/grc_platform_test
+          ARCTOS_ALLOW_PRIVILEGED_DB: "true"
+          CRON_SECRET: ci-cron-secret-not-a-real-value
+          AUTH_SECRET: ci-build-placeholder
 
       - name: Route-chain RLS test (real withErrorHandler→withAuth→db)
         # #SEC-F01b-RUN — drives the REAL Next route pipeline (withErrorHandler →
@@ -230,14 +381,20 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
       - name: Setup PostgreSQL extensions
         run: |
@@ -289,9 +446,34 @@ jobs:
           tail -200 /tmp/web-server.log
           exit 1
 
-      - name: Run Playwright smoke
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S13-18, abgestimmt mit WP11 · S11-06]
+      # Hier lief `npx playwright test e2e/ci-smoke.spec.ts` — EINE von
+      # inzwischen 68 Spec-Dateien. Der Job heisst "E2E Smoke Tests" und wird
+      # in ADR-016 als Release-Gate gefuehrt; er validierte ~1,5 % der
+      # vorhandenen Abdeckung, waehrend die uebrigen Specs in keinem Workflow
+      # liefen und beliebig verrotten konnten. Der aufwendigste CI-Job
+      # (voller Next-Build, Seed, Browser-Installation) lief also fast umsonst.
+      #
+      # Zuerst der schnelle Rauchtest — schlaegt er fehl, ist der Rest
+      # Zeitverschwendung. Danach die vollstaendige Suite ueber die
+      # WURZEL-Config: die deckt apps/web/e2e UND tests/e2e/regression ab
+      # (195 Tests in 68 Dateien, 3 Projekte). Die frueher hier benutzte
+      # apps/web-Config kannte nur deren 21 Specs.
+      - name: Run Playwright smoke (fast fail)
         working-directory: apps/web
         run: npx playwright test e2e/ci-smoke.spec.ts --reporter=list
+
+      # E2E_EMAIL/E2E_PASSWORD kommen aus Repository-Secrets. Der frueher
+      # hartkodierte Login `admin@arctos.dev / admin123` ist mit WP3/S02-01
+      # entfallen; `auth.setup.ts` bricht ohne diese Werte mit einer klaren
+      # Meldung ab, statt an einem Selektor zu scheitern. Sind die Secrets
+      # nicht gesetzt, faellt DIESER Schritt auf — genau so gewollt, denn ein
+      # stiller Skip waere wieder ein Gate, das nichts pruefet.
+      - name: Run full Playwright suite (root config — web + regression)
+        run: npm run test:e2e -- --reporter=list
+        env:
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       # ── Wave-21-C2: perf-baseline gated on percentile thresholds ──
       # P95<500 / P99<1000 for risks-list, P95<200 for health.
@@ -301,23 +483,48 @@ jobs:
         # Direct binary install — apt+gpg flow doesn't work in this
         # runner sandbox (dirmngr not available). The release tarball
         # is ~25 MB, single-binary, no deps. Pin version for repro.
+        #
+        # [WP10 · S13-27] Vorher wurde das Archiv direkt in `sudo tar -xz`
+        # gepipet — ohne jede Integritaetspruefung, mit Root-Rechten, nach
+        # /usr/local/bin. Ein kompromittiertes Release-Artefakt haette
+        # Codeausfuehrung als root im Runner ergeben. Jetzt: erst
+        # herunterladen, dann gegen die SHA-256 aus der offiziellen
+        # Checksums-Datei pruefen, erst danach entpacken.
         run: |
+          set -euo pipefail
           K6_VERSION=v0.55.2
-          curl -sSL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin --strip-components=1 "k6-${K6_VERSION}-linux-amd64/k6"
+          K6_SHA256=d9a91fcee7eb70193324a53c9cc142a359c63b63eeb6b8a050f13d9fa442c5ee
+          TARBALL="k6-${K6_VERSION}-linux-amd64.tar.gz"
+          curl -sSLf -o "/tmp/${TARBALL}" \
+            "https://github.com/grafana/k6/releases/download/${K6_VERSION}/${TARBALL}"
+          echo "${K6_SHA256}  /tmp/${TARBALL}" | sha256sum -c -
+          sudo tar -xz -C /usr/local/bin --strip-components=1 \
+            -f "/tmp/${TARBALL}" "k6-${K6_VERSION}-linux-amd64/k6"
           sudo chmod +x /usr/local/bin/k6
           k6 version
 
+      # [WP10 · S13-27] Die Zugangsdaten unten sind die des DEMO-SEEDS in
+      # der Wegwerf-Datenbank dieses Jobs (`grc_platform_test`, existiert
+      # nur fuer die Dauer des Runs). Das ist fuer sich folgenlos.
+      #
+      # Der eigentliche Befund war die NORMALISIERUNG desselben Paares an
+      # drei Stellen: `deploy/README.md:24` gab es als PRODUKTIONS-Login aus
+      # und `scripts/pilot-readiness-gate.sh:32` als Staging-Default. Beide
+      # sind in dieser Remediation entfernt (S13-09e bzw. S13-30); der Wert
+      # existiert nur noch hier und im Demo-Seed, der sich in
+      # NODE_ENV=production selbst verweigert (#SEC-F04).
       - name: Run k6 perf baseline (Wave-21-C2)
         env:
           ARCTOS_BASE: http://localhost:3000
+          # Demo-Seed-Identitaet der CI-Wegwerf-DB — NICHT in einer
+          # Umgebung verwenden, die den Lauf ueberlebt.
           ARCTOS_EMAIL: admin@arctos.dev
           ARCTOS_PASSWORD: admin123
         run: k6 run --summary-export=/tmp/k6-summary.json scripts/perf/ci-baseline.js
 
       - name: Upload k6 summary
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: k6-perf-baseline
           path: /tmp/k6-summary.json
@@ -325,7 +532,7 @@ jobs:
 
       - name: Upload server log on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: e2e-server-log
           path: /tmp/web-server.log
@@ -333,7 +540,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: e2e-playwright-report
           path: apps/web/playwright-report/
@@ -374,14 +581,20 @@ jobs:
       DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
       - name: Create PostgreSQL extensions
         run: |
@@ -414,68 +627,28 @@ jobs:
             PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -f "$f" 2>&1 | tail -1
           done
 
-      - name: Verify schema (all tables exist)
-        run: |
-          TABLES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
-            SELECT count(*) FROM information_schema.tables
-            WHERE table_schema = 'public'
-              AND table_type = 'BASE TABLE'
-              AND table_name NOT LIKE '__drizzle%';
-          " | tr -d ' ')
-          echo "Tables found: $TABLES"
-          if [ "$TABLES" -lt 10 ]; then
-            echo "::error::Expected at least 10 tables, found $TABLES"
-            exit 1
-          fi
-
-      - name: Verify RLS policies
-        run: |
-          POLICIES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
-            SELECT count(*) FROM pg_policies WHERE schemaname = 'public';
-          " | tr -d ' ')
-          echo "RLS policies: $POLICIES"
-          if [ "$POLICIES" -lt 6 ]; then
-            echo "::error::Expected at least 6 RLS policies, found $POLICIES"
-            exit 1
-          fi
-
-      - name: Verify audit triggers
-        run: |
-          TRIGGERS=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
-            SELECT count(*) FROM pg_trigger
-            WHERE tgname = 'audit_trigger' AND NOT tgisinternal;
-          " | tr -d ' ')
-          echo "Audit triggers: $TRIGGERS"
-          if [ "$TRIGGERS" -lt 4 ]; then
-            echo "::error::Expected at least 4 audit triggers, found $TRIGGERS"
-            exit 1
-          fi
-
-      - name: Verify append-only rules
-        run: |
-          # ADR-011 rev.2 replaced audit_log_no_update with the
-          # audit_log_tombstone_guard trigger (see migration 0284) so that
-          # PII tombstoning can update whitelisted columns while still
-          # rejecting all other writes. Remaining rules: audit_log_no_delete,
-          # access_log_no_{update,delete}, data_export_log_no_{update,delete}.
-          RULES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
-            SELECT count(*) FROM pg_rules
-            WHERE schemaname = 'public' AND rulename LIKE '%_no_%';
-          " | tr -d ' ')
-          echo "Append-only rules: $RULES"
-          if [ "$RULES" -lt 5 ]; then
-            echo "::error::Expected at least 5 append-only rules, found $RULES"
-            exit 1
-          fi
-          TOMBSTONE_GUARD=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
-            SELECT count(*) FROM pg_trigger
-            WHERE tgname = 'audit_log_tombstone_guard' AND NOT tgisinternal;
-          " | tr -d ' ')
-          echo "audit_log tombstone guard triggers: $TOMBSTONE_GUARD"
-          if [ "$TOMBSTONE_GUARD" -lt 1 ]; then
-            echo "::error::audit_log_tombstone_guard trigger missing (ADR-011 rev.2)"
-            exit 1
-          fi
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S13-02]
+      #
+      # Hier standen vier Assertions mit Schwellen bei ~2 % des
+      # Erwartungswerts: >=10 Tabellen (594 real), >=6 RLS-Policies
+      # (2.624 real), >=4 Audit-Trigger (283 real), >=5 Append-only-Rules
+      # (9 real). Ein Commit, der 500 Tabellen bricht oder RLS von 400
+      # Tabellen entfernt, passierte sie gruen — sie detektierten
+      # ausschliesslich den Totalausfall der Datenbank.
+      #
+      # scripts/verify-db-integrity.mjs misst dieselben Groessen gegen
+      # scripts/db-integrity-baseline.json. Die Werte dort stammen aus einem
+      # echten Migrationslauf von Null (402/402, 603 Objekte), nicht aus
+      # einer Schaetzung, und duerfen um hoechstens 2 % unterschritten
+      # werden. Zusaetzlich geprueft: FORCE-RLS je Tabelle (S01-20) und die
+      # Zahl der SECURITY-DEFINER-Funktionen, die auch nach OBEN auffaellt
+      # (S01-13 — jede neue umgeht RLS).
+      # ────────────────────────────────────────────────────────────────
+      - name: Verify DB integrity against measured baseline
+        run: node scripts/verify-db-integrity.mjs
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform
 
       - name: Run seed
         working-directory: packages/db
@@ -552,27 +725,47 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & Push Web Image
-        uses: docker/build-push-action@v7
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S08-07]
+      #
+      # Reihenfolge umgedreht. Vorher: beide Images wurden mit
+      # `push: true` nach `ghcr.io/...:latest` UND `:<sha>` gepusht und
+      # ERST DANACH von Trivy gescannt. Enthielt ein Image eine
+      # CRITICAL-Luecke, brach der Job zwar ab — aber `:latest` zeigte zu
+      # dem Zeitpunkt bereits auf das verwundbare Image, und
+      # deploy/update-all.sh zieht `:latest`. Ein rotes CI verhinderte das
+      # Deployment nicht; es meldete es nachtraeglich.
+      #
+      # Jetzt: `load: true` baut lokal in den Docker-Daemon des Runners,
+      # Trivy scannt das LOKALE Image, und der Push laeuft erst danach —
+      # er wird gar nicht erreicht, wenn der Scan failt.
+      #
+      # `sbom: true` / `provenance: mode=max` (#S08-12): jedes gepushte
+      # Image traegt seine Stueckliste und seine Herkunft als Attestation
+      # mit. Ohne sie war nach einem neuen Advisory nicht feststellbar,
+      # welches bereits ausgelieferte Image betroffen ist.
+      # ────────────────────────────────────────────────────────────────
+      - name: Build Web Image (local, not pushed yet)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          load: true
+          push: false
           tags: |
-            ghcr.io/${{ github.repository }}/grc-web:latest
-            ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
+            arctos-local/grc-web:${{ github.sha }}
           # #WAVE23.1: bake the commit SHA + branch + build time into
           # the image so /api/v1/_meta/build can serve them. Used by
           # the D1 deploy-verification step in pilot-readiness-gate.
@@ -583,15 +776,15 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
-      - name: Build & Push Worker Image
-        uses: docker/build-push-action@v7
+      - name: Build Worker Image (local, not pushed yet)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: ./Dockerfile.worker
-          push: true
+          load: true
+          push: false
           tags: |
-            ghcr.io/${{ github.repository }}/grc-worker:latest
-            ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
+            arctos-local/grc-worker:${{ github.sha }}
           cache-from: type=gha,scope=worker
           cache-to: type=gha,scope=worker,mode=max
 
@@ -613,7 +806,8 @@ jobs:
             -e NODE_ENV=production \
             -e DATABASE_URL=postgresql://placeholder:placeholder@127.0.0.1:65535/placeholder \
             -e AUTH_SECRET=smoke-secret-do-not-use \
-            ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
+            -e ARCTOS_SKIP_CONFIG_ASSERT=true \
+            arctos-local/grc-worker:${{ github.sha }}
           sleep 10
           LOG=$(docker logs worker-smoke 2>&1 || true)
           docker rm -f worker-smoke >/dev/null 2>&1 || true
@@ -631,10 +825,10 @@ jobs:
       # npm at runtime in the container (entrypoint runs node directly). The
       # npm-shipped deps there (picomatch 4.0.3 in node:22-alpine) bleed
       # into the scan without being an actual attack surface for the app.
-      - name: Trivy image scan — web
-        uses: aquasecurity/trivy-action@master
+      - name: Trivy image scan — web (BEFORE push, #S08-07)
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
+          image-ref: arctos-local/grc-web:${{ github.sha }}
           format: table
           severity: CRITICAL,HIGH
           exit-code: "1"
@@ -642,16 +836,68 @@ jobs:
           vuln-type: os,library
           skip-dirs: /usr/local/lib/node_modules/npm
 
-      - name: Trivy image scan — worker
-        uses: aquasecurity/trivy-action@master
+      - name: Trivy image scan — worker (BEFORE push, #S08-07)
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
+          image-ref: arctos-local/grc-worker:${{ github.sha }}
           format: table
           severity: CRITICAL,HIGH
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: os,library
           skip-dirs: /usr/local/lib/node_modules/npm
+
+      # ────────────────────────────────────────────────────────────────
+      # [WP10 · S08-07 / S08-12] Erst jetzt pushen — der Job kommt hier nur
+      # an, wenn Worker-Smoke UND beide Trivy-Scans gruen waren. Der
+      # zweite Build-Aufruf ist billig: der Layer-Cache aus dem
+      # `load: true`-Lauf ist warm, es wird nur noch hochgeladen.
+      #
+      # `sbom: true` und `provenance: mode=max` haengen jedem Image seine
+      # Stueckliste und seine Build-Herkunft als Attestation an.
+      # ────────────────────────────────────────────────────────────────
+      - name: Push Web Image (scan passed)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          sbom: true
+          provenance: mode=max
+          tags: |
+            ghcr.io/${{ github.repository }}/grc-web:latest
+            ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            GIT_BRANCH=${{ github.ref_name }}
+            BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pull_request.updated_at }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+      - name: Push Worker Image (scan passed)
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        with:
+          context: .
+          file: ./Dockerfile.worker
+          push: true
+          sbom: true
+          provenance: mode=max
+          tags: |
+            ghcr.io/${{ github.repository }}/grc-worker:latest
+            ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
+          cache-from: type=gha,scope=worker
+          cache-to: type=gha,scope=worker,mode=max
+
+      # [WP10 · S08-12] Die repo-eigene CycloneDX-SBOM als langlebiges
+      # Artefakt. Die Attestation am Image ist an die Registry gebunden;
+      # dieses Artefakt ueberlebt eine Image-Loeschung und ist die
+      # Grundlage der Betroffenheitsanalyse nach einem neuen Advisory.
+      - name: Upload CycloneDX SBOM for this release
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sbom-${{ github.sha }}
+          path: SBOM/
+          retention-days: 365
 
   # ────────────────────────────────────────────────
   # 6. Pilot-Readiness-Gate (Wave-23)
@@ -661,9 +907,11 @@ jobs:
   # A2 /admin/branding never-500, C3 contracts name-alias never-500,
   # plus hash-chain integrity. Required for merge to main.
   #
-  # Skips automatically when STAGING_URL secret is unavailable (e.g.
-  # PRs from forks). The skip is non-blocking — the matrix-required
-  # check passes with the script's "SKIPPED" exit-0.
+  # [ARCTOS-FULL-2026-08-31 / WP10 · S13-30] Der Skip ist nicht mehr
+  # bedingungslos. Ohne STAGING_URL failt das Gate — ausser bei einem
+  # Fork-PR, wo GitHub Secrets bauartbedingt nicht bereitstellt; das meldet
+  # das Skript als NOT_APPLICABLE, nicht als bestanden. Zusaetzlich failt
+  # es, wenn auf Staging ein anderer Commit laeuft als der gepruefte.
   # ────────────────────────────────────────────────
   pilot-readiness-gate:
     name: Pilot Readiness Gate
@@ -675,18 +923,20 @@ jobs:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Run pilot-readiness-gate against staging
         env:
           STAGING_URL: ${{ secrets.STAGING_URL }}
           STAGING_ADMIN_EMAIL: ${{ secrets.STAGING_ADMIN_EMAIL }}
           STAGING_ADMIN_PASSWORD: ${{ secrets.STAGING_ADMIN_PASSWORD }}
-        run: |
-          if [[ -z "${STAGING_URL}" ]]; then
-            echo "::warning::STAGING_URL secret not set — gate will skip (exit 0)"
-          fi
-          bash scripts/pilot-readiness-gate.sh
+          # #S13-30: das Skript unterscheidet Fork-PR (Secrets bauartbedingt
+          # nicht verfuegbar) von "Secret fehlt" nur, wenn es das
+          # Head-Repository kennt.
+          GITHUB_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          # #S13-30: gegen welchen Commit die Aussage gilt.
+          EXPECTED_STAGING_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash scripts/pilot-readiness-gate.sh
 
   # ────────────────────────────────────────────────
   # 7. Security audit
@@ -697,16 +947,22 @@ jobs:
     timeout-minutes: 10
     needs: lint
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
-      - run: npm ci
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
       - name: npm audit (production deps)
         # Gate mit dokumentierter, befristeter Allowlist — failt bei jedem
@@ -720,8 +976,17 @@ jobs:
         # siehe scripts/route-rls-context-baseline.txt.
         run: node scripts/check-route-rls-context.mjs
 
-      - name: Check for leaked secrets
-        uses: trufflesecurity/trufflehog@v3.95.9
+      # [WP10 · S08-15] `--only-verified` meldet ausschliesslich
+      # Credentials, die trufflehog per Live-Aufruf gegen den Anbieter
+      # bestaetigen kann. Strukturell unsichtbar bleiben damit
+      # DB-Connection-Strings, Redis-/AMQP-Passwoerter, private Schluessel
+      # und alle Secrets selbst gehosteter Dienste (Garage, MinIO, ClamAV,
+      # FreeTSA) — also genau die Klasse, die diese Architektur ueberwiegend
+      # nutzt. Fuer die PR-Rueckmeldung bleibt die rauscharme Variante; der
+      # vollstaendige Historien-Scan ohne `--only-verified` laeuft
+      # woechentlich in secret-scanning.yml und wird als Artefakt gesichert.
+      - name: Check for leaked secrets (verified only — PR feedback)
+        uses: trufflesecurity/trufflehog@27b0417c16317ca9a472a9a8092acce143b49c55 # v3.95.9
         with:
           extra_args: --only-verified --results=verified
 
@@ -740,10 +1005,67 @@ jobs:
             exit 1
           fi
 
-      - name: License compliance check
-        run: |
-          npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0" \
-            --excludePrivatePackages --summary
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S08-10 / S08-02]
+      #
+      # Ersetzt:
+      #   npx license-checker --production \
+      #     --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0" --excludePrivatePackages
+      #
+      # Vier belegte Defekte des alten Aufrufs:
+      #   1. `--failOn` verglich Zeichenketten — `GPL-3.0-only` und
+      #      `GPL-3.0-or-later` wurden nie getroffen.
+      #   2. SSPL, CC-BY-SA, EUPL, BUSL, OSL, CDDL, Elastic-2.0 fehlten in
+      #      der Sperrliste.
+      #   3. Custom-Lizenzen waren unsichtbar: `bpmn-js` deklariert
+      #      "SEE LICENSE IN LICENSE" und passierte das Gate gruen, waehrend
+      #      der Wasserzeichen-Verstoss aus S08-02 im Repo aktiv war. Das
+      #      Gate haette den einzigen echten Lizenzverstoss des Produkts nie
+      #      gefunden.
+      #   4. `npx license-checker` zog unversionierten Fremdcode zur
+      #      Laufzeit aus der Registry — in einem Sicherheitspruefschritt.
+      #      Das Paket ist zudem seit Jahren unwartet.
+      #
+      # Das neue Gate laeuft offline aus dem installierten Baum, wertet
+      # SPDX-Ausdruecke bestandteilweise aus, erzwingt fuer UNKNOWN- und
+      # Custom-Lizenzen eine namentliche Freigabe und prueft die
+      # bpmn.io-Wasserzeichen-Bedingung technisch nach.
+      # ────────────────────────────────────────────────────────────────
+      - name: License compliance gate
+        run: node scripts/license-gate.mjs
+
+      # [WP10 · S08-16] NOTICE und THIRD-PARTY-LICENSES.md muessen zum
+      # installierten Baum passen. 441 Pakete des Produktionsbaums tragen
+      # Namensnennungspflichten, die bei Weitergabe als Docker-Image gelten;
+      # bis 2026-08-31 lag dem Image nichts davon bei.
+      - name: NOTICE / THIRD-PARTY-LICENSES up to date
+        run: node scripts/generate-notice.mjs --check
+
+      # [WP10 · S08-12] CycloneDX-SBOM (voller Baum + Produktionsbaum). Ohne
+      # sie ist nach einem neuen Advisory nicht feststellbar, welche bereits
+      # ausgelieferten Images betroffen sind.
+      - name: SBOM up to date
+        run: node scripts/generate-sbom.mjs --check
+
+      # [WP10 · S08-06/S08-19] Beim Abschluss dieses Pakets lieferte
+      # react-grid-layout@1.5.3 — eine Produktionsabhaengigkeit von apps/web —
+      # ein ausfuehrbares Mach-O-arm64-Binary (`ip_fetcher`), dessen
+      # curl-Quelle und ein 374 KB grosses yarn-error.log des Maintainers mit.
+      # Wirkungslos in unserem Baum (kein bin, kein Install-Hook, falsche
+      # Architektur), aber von KEINER bestehenden Kontrolle bemerkt: npm audit
+      # kennt nur CVEs, Dependabot nur Versionen, die Lizenzpruefung nur SPDX.
+      # Behoben durch 1.5.4 (dort sind die Dateien entfernt); diese Pruefung
+      # sorgt dafuer, dass der naechste Fall auffaellt.
+      - name: Dependency hygiene (Binaries, Install-Hooks, Arbeitsdateien)
+        run: node scripts/check-dependency-hygiene.mjs
+
+      - name: Upload SBOM
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: sbom-cyclonedx
+          path: SBOM/
+          retention-days: 365
 
       # ── #SEC-F05: prevent regressing to a superuser prod runtime ──
       # The pentest HIGH F-01 was that the app connected as the superuser

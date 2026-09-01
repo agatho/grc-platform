@@ -73,7 +73,9 @@ async function extractPageTexts(pdf: Buffer): Promise<string[]> {
     }
     return out;
   } finally {
-    await doc.destroy();
+    // pdfjs-dist 6 moved teardown from the document proxy to the loading
+    // task (#S08-04 upgrade).
+    await task.destroy();
   }
 }
 
@@ -158,12 +160,13 @@ describe("stampControlledCopy", () => {
     const original = await makeTestPdf(1);
     const stamped = await stampControlledCopy(original, info);
     const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const doc = await pdfjs.getDocument({
+    const task = pdfjs.getDocument({
       data: new Uint8Array(stamped),
       useWorkerFetch: false,
       disableFontFace: true,
       verbosity: 0,
-    }).promise;
+    });
+    const doc = await task.promise;
     const page = await doc.getPage(1);
     const content = await page.getTextContent();
     const ys = content.items
@@ -171,7 +174,7 @@ describe("stampControlledCopy", () => {
       .map((i) => (i as { transform: number[] }).transform[5]);
     expect(ys.length).toBeGreaterThan(0);
     expect(Math.min(...ys)).toBeGreaterThanOrEqual(14);
-    await doc.destroy();
+    await task.destroy();
   });
 
   it("handles non-Latin-1 characters without throwing", async () => {

@@ -15,6 +15,7 @@
  * cleanup at the end.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 interface MapItem {
   id: string;
@@ -31,7 +32,7 @@ interface MapGroups {
 }
 
 test.describe("BPM — Process map (bands, reorder, inheritance)", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("band grouping → reorder → child inherits parent band on drill-in", async ({
     request,

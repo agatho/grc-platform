@@ -10,7 +10,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { ApplicationWithPortfolio } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const LIFECYCLE_COLORS: Record<string, string> = {
   planned: "bg-blue-100 text-blue-900",
@@ -38,7 +38,7 @@ export default function ApplicationsPage() {
 
 function ApplicationsInner() {
   const t = useTranslations("eam");
-  const [apps, setApps] = useState<any[]>([]);
+  const [apps, setApps] = useState<UnvalidatedJson[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "quadrant" | "timeline">("list");
 
@@ -135,7 +135,9 @@ function ApplicationsInner() {
                       }
                     >
                       {t(
-                        `portfolio.${app.portfolio.timeClassification}` as any,
+                        `portfolio.${app.portfolio.timeClassification}` as Parameters<
+                          typeof t
+                        >[0],
                       )}
                     </Badge>
                   )}

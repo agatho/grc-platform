@@ -91,95 +91,95 @@ vi.mock("@/lib/rate-limit", () => ({
 vi.mock("@grc/ai", async () => {
   const actual = await vi.importActual<typeof import("@grc/ai")>("@grc/ai");
   return {
-  ...actual,
-  get aiComplete() {
-    return aiCompleteMock;
-  },
-  aiCompleteGoverned: async (req: {
-    parse?: (raw: string) => unknown;
-    outputSchema?: {
-      safeParse: (v: unknown) => { success: boolean; data?: unknown };
-    };
-  }) => {
-    if ((getAvailableProvidersMock() ?? []).length === 0) {
-      throw new actual.AiPolicyViolationError({
-        code: "no_provider_configured",
-        message: "Es ist kein KI-Provider konfiguriert.",
-      });
-    }
-    const resp = await aiCompleteMock(req);
-    const raw = req.parse ? req.parse(resp.text) : resp.text;
-    let data: unknown = raw;
-    if (req.outputSchema) {
-      const parsed = req.outputSchema.safeParse(raw);
-      if (!parsed.success || parsed.data === undefined) {
-        throw new actual.AiOutputInvalidError(
-          "Die Modellausgabe entspricht nicht dem erwarteten Schema.",
-          String(resp.text ?? "").slice(0, 300),
-        );
+    ...actual,
+    get aiComplete() {
+      return aiCompleteMock;
+    },
+    aiCompleteGoverned: async (req: {
+      parse?: (raw: string) => unknown;
+      outputSchema?: {
+        safeParse: (v: unknown) => { success: boolean; data?: unknown };
+      };
+    }) => {
+      if ((getAvailableProvidersMock() ?? []).length === 0) {
+        throw new actual.AiPolicyViolationError({
+          code: "no_provider_configured",
+          message: "Es ist kein KI-Provider konfiguriert.",
+        });
       }
-      data = parsed.data;
-    }
-    return {
-      data,
-      text: resp.text,
-      provider: resp.provider ?? "ollama",
-      model: resp.model ?? "test-model",
-      usage: resp.usage,
-      latencyMs: 1,
-      egressLogId: null,
-      promptSha256: "0".repeat(64),
-      policy: actual.defaultPolicySnapshot("org-1"),
-      disclosure: {
-        feature: "test",
-        aiGenerated: true,
+      const resp = await aiCompleteMock(req);
+      const raw = req.parse ? req.parse(resp.text) : resp.text;
+      let data: unknown = raw;
+      if (req.outputSchema) {
+        const parsed = req.outputSchema.safeParse(raw);
+        if (!parsed.success || parsed.data === undefined) {
+          throw new actual.AiOutputInvalidError(
+            "Die Modellausgabe entspricht nicht dem erwarteten Schema.",
+            String(resp.text ?? "").slice(0, 300),
+          );
+        }
+        data = parsed.data;
+      }
+      return {
+        data,
+        text: resp.text,
         provider: resp.provider ?? "ollama",
         model: resp.model ?? "test-model",
-        processing: "local",
-        processingCountry: "DE",
-        processingController: "self-hosted",
-        thirdCountryTransfer: false,
-        egressMode: "any_configured",
-        policySource: "operator_default",
-        notice: "KI-generierter Vorschlag.",
-        humanReviewRequired: true,
-      },
-    };
-  },
-  loadOrgAiPolicy: async (orgId: string) => ({
-    ...actual.defaultPolicySnapshot(orgId),
-    requireTransparencyNotice: true,
-  }),
-  get getAvailableProviders() {
-    return getAvailableProvidersMock;
-  },
-  get getEmbeddingProvider() {
-    return getEmbeddingProviderMock;
-  },
-  get generateEmbedding() {
-    return generateEmbeddingMock;
-  },
-  // Prompt builders: minimal message arrays — the real builders are
-  // covered by packages/ai/tests/ai-assist-prompts.test.ts.
-  buildPolicyDraftPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  buildControlAdvisorPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  buildGapExplanationPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  safeJsonParse: (text: string) => {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return null;
-    }
-  },
+        usage: resp.usage,
+        latencyMs: 1,
+        egressLogId: null,
+        promptSha256: "0".repeat(64),
+        policy: actual.defaultPolicySnapshot("org-1"),
+        disclosure: {
+          feature: "test",
+          aiGenerated: true,
+          provider: resp.provider ?? "ollama",
+          model: resp.model ?? "test-model",
+          processing: "local",
+          processingCountry: "DE",
+          processingController: "self-hosted",
+          thirdCountryTransfer: false,
+          egressMode: "any_configured",
+          policySource: "operator_default",
+          notice: "KI-generierter Vorschlag.",
+          humanReviewRequired: true,
+        },
+      };
+    },
+    loadOrgAiPolicy: async (orgId: string) => ({
+      ...actual.defaultPolicySnapshot(orgId),
+      requireTransparencyNotice: true,
+    }),
+    get getAvailableProviders() {
+      return getAvailableProvidersMock;
+    },
+    get getEmbeddingProvider() {
+      return getEmbeddingProviderMock;
+    },
+    get generateEmbedding() {
+      return generateEmbeddingMock;
+    },
+    // Prompt builders: minimal message arrays — the real builders are
+    // covered by packages/ai/tests/ai-assist-prompts.test.ts.
+    buildPolicyDraftPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    buildControlAdvisorPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    buildGapExplanationPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    safeJsonParse: (text: string) => {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    },
   };
 });
 

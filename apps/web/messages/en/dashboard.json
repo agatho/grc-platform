@@ -10,11 +10,19 @@
     "recentChanges": "Recent Changes",
     "notifications": "Notifications",
     "myTasks": "My Tasks",
-    "upcomingAudits": "Upcoming Audits"
+    "upcomingAudits": "Upcoming Audits",
+    "complianceScoreEmpty": "No risks recorded yet",
+    "complianceScoreFormula": "Share of risks with status closed or accepted among all recorded risks"
   },
   "risk": {
     "appetite": {
       "exceeded": "exceeding appetite"
+    },
+    "detail": {
+      "statuses": {
+        "closed": "closed",
+        "accepted": "accepted"
+      }
     }
   },
   "subtitle": "Create and manage your custom GRC dashboards",
@@ -106,5 +114,6 @@
     "created": "Dashboard created",
     "updated": "Dashboard updated",
     "deleted": "Dashboard deleted"
-  }
+  },
+  "widgetsLabel": "widgets"
 }

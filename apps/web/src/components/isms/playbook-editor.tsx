@@ -17,7 +17,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -613,7 +613,7 @@ export function PlaybookEditor({
                             <div className="flex items-center gap-2 flex-1">
                               <GripVertical
                                 size={12}
-                                className="text-gray-300 cursor-grab shrink-0"
+                                className="text-gray-500 cursor-grab shrink-0"
                               />
                               <input
                                 type="text"

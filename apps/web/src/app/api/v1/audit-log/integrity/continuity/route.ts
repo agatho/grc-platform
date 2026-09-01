@@ -158,7 +158,9 @@ interface ChainVerification {
 async function gatherChainVerification(
   orgId: string,
 ): Promise<ChainVerification> {
-  const result = await db.execute<{ report: Record<string, number | boolean> }>(sql`
+  const result = await db.execute<{
+    report: Record<string, number | boolean>;
+  }>(sql`
     SELECT audit_chain_verify(${`org:${orgId}`})
            || jsonb_build_object(
                 'anchorIssueCount',
@@ -264,7 +266,6 @@ function deriveContinuityClaim(
     ),
   };
 }
-
 
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "auditor", "ciso", "compliance_officer");

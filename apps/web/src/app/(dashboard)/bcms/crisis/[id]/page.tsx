@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -46,6 +46,11 @@ export default function CrisisDetailPage() {
 }
 
 function CrisisDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("bcms");
   const { formatDateTime } = useDateFormat();
   const params = useParams();
@@ -384,10 +389,14 @@ function CrisisDetailInner() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Likelihood selector */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label
+              htmlFor={`${a11yId}-eintrittswahrscheinlichkeit`}
+              className="block text-xs font-medium text-gray-500 mb-1"
+            >
               Eintrittswahrscheinlichkeit
             </label>
             <select
+              id={`${a11yId}-eintrittswahrscheinlichkeit`}
               value={likelihood}
               onChange={(e) => setLikelihood(Number(e.target.value))}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -403,9 +412,11 @@ function CrisisDetailInner() {
 
           {/* Severity (read-only) */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            {/* [WP12 · S14-09] Read-only derived value, not a form control —
+                a <label> here names nothing. */}
+            <span className="block text-xs font-medium text-gray-500 mb-1">
               Schweregrad (aus Szenario)
-            </label>
+            </span>
             <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
               {severityLevel} - {crisis.severity.replace(/_/g, " ")}
             </div>
@@ -413,9 +424,11 @@ function CrisisDetailInner() {
 
           {/* Risk Score */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            {/* [WP12 · S14-09] Read-only derived value, not a form control —
+                a <label> here names nothing. */}
+            <span className="block text-xs font-medium text-gray-500 mb-1">
               Risikobewertung (L x S)
-            </label>
+            </span>
             {likelihood > 0 ? (
               <div
                 className={`rounded-md px-3 py-2 text-sm font-bold text-center ${riskColor(riskScore)}`}
@@ -431,10 +444,14 @@ function CrisisDetailInner() {
 
           {/* Treatment Strategy */}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
+            <label
+              htmlFor={`${a11yId}-behandlungsstrategie`}
+              className="block text-xs font-medium text-gray-500 mb-1"
+            >
               Behandlungsstrategie
             </label>
             <select
+              id={`${a11yId}-behandlungsstrategie`}
               value={treatmentStrategy}
               onChange={(e) => setTreatmentStrategy(e.target.value)}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"

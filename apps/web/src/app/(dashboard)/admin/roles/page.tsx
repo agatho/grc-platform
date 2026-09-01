@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import {
   Loader2,
   Plus,
@@ -8,8 +8,6 @@ import {
   Pencil,
   Trash2,
   Users,
-  X,
-  Check,
   Save,
 } from "lucide-react";
 
@@ -305,6 +303,11 @@ function RoleForm({
   }) => Promise<void>;
   onCancel: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [color, setColor] = useState(initial?.color ?? "#6B7280");
@@ -344,10 +347,14 @@ function RoleForm({
     <div className="rounded-lg border-2 border-blue-200 bg-blue-50/30 p-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label
+            htmlFor={`${a11yId}-rollenname`}
+            className="block text-xs font-medium text-gray-600 mb-1"
+          >
             Rollenname *
           </label>
           <input
+            id={`${a11yId}-rollenname`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="z.B. Compliance-Manager"
@@ -355,10 +362,14 @@ function RoleForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label
+            htmlFor={`${a11yId}-beschreibung`}
+            className="block text-xs font-medium text-gray-600 mb-1"
+          >
             Beschreibung
           </label>
           <input
+            id={`${a11yId}-beschreibung`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Kurzbeschreibung..."
@@ -366,10 +377,14 @@ function RoleForm({
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-600 mb-1">
+          <label
+            htmlFor={`${a11yId}-farbe`}
+            className="block text-xs font-medium text-gray-600 mb-1"
+          >
             Farbe
           </label>
           <input
+            id={`${a11yId}-farbe`}
             type="color"
             value={color}
             onChange={(e) => setColor(e.target.value)}
@@ -380,11 +395,21 @@ function RoleForm({
 
       {/* Permission Matrix */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 mb-2">
+        {/* [WP12 · S14-09] This was a <label> with no control: it heads a
+            permission matrix table, not a single field. A <label> that names
+            nothing is worse than no label — it is announced as a form label
+            and leads nowhere. It captions the table now. */}
+        <p
+          id={`${a11yId}-permissions-caption`}
+          className="block text-xs font-medium text-gray-600 mb-2"
+        >
           Berechtigungen pro Modul
-        </label>
+        </p>
         <div className="rounded-md border overflow-hidden">
-          <table className="w-full text-xs">
+          <table
+            className="w-full text-xs"
+            aria-labelledby={`${a11yId}-permissions-caption`}
+          >
             <thead>
               <tr className="bg-gray-50">
                 <th className="p-2 text-left font-medium">Modul</th>

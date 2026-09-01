@@ -46,7 +46,7 @@ const DEFAULT_PREFS: NavPreferences = {
 // Groups are collapsed by default — only the active group is expanded.
 // collapsedGroups tracks explicitly OPENED groups (inverted logic).
 // When no user prefs exist, we auto-expand only the group matching the current path.
-const ALL_GROUP_KEYS = [
+const _ALL_GROUP_KEYS = [
   "erm",
   "isms",
   "icsAudit",

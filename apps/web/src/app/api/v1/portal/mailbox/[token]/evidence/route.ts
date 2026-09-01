@@ -60,8 +60,18 @@ const ALLOWED_TYPES = [
 ];
 
 const ALLOWED_EXTENSIONS = new Set([
-  ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp",
-  ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv",
+  ".pdf",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".txt",
+  ".csv",
 ]);
 
 /**
@@ -69,7 +79,11 @@ const ALLOWED_EXTENSIONS = new Set([
  * ausser der Endung, und die stammt aus einer Allowlist. Damit ist der
  * Traversal-Pfad geschlossen, bevor er entsteht.
  */
-function buildStorageKey(orgId: string, caseId: string, fileName: string): string {
+function buildStorageKey(
+  orgId: string,
+  caseId: string,
+  fileName: string,
+): string {
   const ext = extname(fileName).toLowerCase();
   const safeExt = ALLOWED_EXTENSIONS.has(ext) ? ext : ".bin";
   return `wb/${orgId}/${caseId}/${Date.now()}-${randomUUID()}${safeExt}`;
@@ -86,7 +100,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   // SECURITY-DEFINER-Resolver; danach org-gebundener RLS-Kontext.
   const mailbox = await resolveWbMailboxToken(token);
   if (!mailbox || new Date() > new Date(mailbox.expiresAt)) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
 
   const formData = await req.formData().catch(() => null);

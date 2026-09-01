@@ -121,10 +121,10 @@ export default function PrivacyPage() {
           Ein Drittland-Transfer findet <strong>nur</strong> statt, wenn die
           betreibende Organisation optionale KI-Funktionen mit einem
           Cloud-Anbieter ausdrücklich freischaltet. Ohne diese Freischaltung
-          ruft die Anwendung keinen externen KI-Anbieter auf und
-          KI-Funktionen scheitern sichtbar, statt still auszuweichen. Welche
-          Anbieter für Ihre Organisation zulässig sind und ob überhaupt einer
-          konfiguriert ist, zeigt die Einstellung „KI-Richtlinie" (Abschnitt 6).
+          ruft die Anwendung keinen externen KI-Anbieter auf und KI-Funktionen
+          scheitern sichtbar, statt still auszuweichen. Welche Anbieter für Ihre
+          Organisation zulässig sind und ob überhaupt einer konfiguriert ist,
+          zeigt die Einstellung „KI-Richtlinie&quot; (Abschnitt 6).
         </p>
         <p>
           Mit dem Hoster wurde ein Auftragsverarbeitungsvertrag (AVV) nach Art.
@@ -171,14 +171,14 @@ export default function PrivacyPage() {
             Organisation KI-Funktionen mit einem Cloud-Anbieter freischaltet.
             Unterstützt werden Anthropic (Claude API und Claude CLI, USA),
             OpenAI (USA), Google Gemini (USA) sowie die lokal betriebenen
-            Modelle Ollama und LM Studio, bei denen die Inhalte die
-            Installation nicht verlassen.
+            Modelle Ollama und LM Studio, bei denen die Inhalte die Installation
+            nicht verlassen.
             <br />
-            Die Auswahl steuert die Organisation über die KI-Richtlinie
-            (<code>ai_org_policy</code>): Betriebsart „nur lokal", „nur
-            EU/EWR" oder „alle freigeschalteten Anbieter", zusätzlich eine
-            Anbieter-Positivliste. Ist für die Organisation eine
-            EU-Datenresidenz hinterlegt, gilt automatisch „nur EU/EWR", bis
+            Die Auswahl steuert die Organisation über die KI-Richtlinie (
+            <code>ai_org_policy</code>): Betriebsart „nur lokal&quot;, „nur
+            EU/EWR&quot; oder „alle freigeschalteten Anbieter&quot;, zusätzlich
+            eine Anbieter-Positivliste. Ist für die Organisation eine
+            EU-Datenresidenz hinterlegt, gilt automatisch „nur EU/EWR&quot;, bis
             ausdrücklich etwas anderes eingestellt wird. Anfragen mit
             personenbezogenen Daten werden ausschließlich an lokale Modelle
             gegeben; ist keines konfiguriert, wird die Anfrage abgebrochen und
@@ -206,7 +206,8 @@ export default function PrivacyPage() {
             <strong>Berichtigung</strong> unrichtiger Daten (Art. 16)
           </li>
           <li>
-            <strong>Löschung</strong> („Recht auf Vergessenwerden", Art. 17)
+            <strong>Löschung</strong> („Recht auf Vergessenwerden&quot;, Art.
+            17)
           </li>
           <li>
             <strong>Einschränkung</strong> der Verarbeitung (Art. 18)
@@ -284,13 +285,12 @@ export default function PrivacyPage() {
           Eine Ausnahme ist ausdrücklich benannt: die automatische
           Relevanzbewertung regulatorischer Meldungen läuft ohne menschliche
           Zwischenstufe. Ihre Ergebnisse sind als KI-erzeugt und
-          „unreviewed" gekennzeichnet.
+          „unreviewed&quot; gekennzeichnet.
         </p>
         <p>
-          Das vollständige Verzeichnis der KI-Funktionen mit Zweck,
-          Risikoklasse nach AI Act und Angabe, ob eine Person zwischengeschaltet
-          ist, ist in der Anwendung unter <code>/api/v1/ai/features</code>{" "}
-          abrufbar.
+          Das vollständige Verzeichnis der KI-Funktionen mit Zweck, Risikoklasse
+          nach AI Act und Angabe, ob eine Person zwischengeschaltet ist, ist in
+          der Anwendung unter <code>/api/v1/ai/features</code> abrufbar.
         </p>
       </section>
 

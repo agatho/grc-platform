@@ -1,12 +1,39 @@
 /**
- * Trust Center — Public compliance status page.
+ * Trust Center — public compliance status page for /trust/{orgCode}.
  *
- * Accessible without login at /trust/{orgCode}
- * Shows the organization's security certifications, active frameworks,
- * compliance status, and links to downloadable policies.
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S12-05] Two defects sat on top of each
+ * other here, and the second is the reason the first cannot simply be undone:
+ *
+ *  A) The page is NOT reachable. `/trust` is absent from the middleware
+ *     allowlist (`packages/auth/src/rbac.ts`, PUBLIC_EXACT_PATHS /
+ *     PUBLIC_PREFIXES), and the matcher covers `/trust/*` — an anonymous
+ *     GET is redirected to `/login?callbackUrl=/trust/ACME`. That file is
+ *     WP3's; the allowlist entry is handed over in
+ *     /work/audit/remediation/WP12.md.
+ *
+ *  B) As a React Server Component this page never runs through `withAuth()`
+ *     and therefore never through `establishRequestScopedContext()`. The `db`
+ *     proxy fell back to the base pool, which by construction never carries an
+ *     `app.current_org_id`. Under the production role `grc_app` the RLS
+ *     policies on `org_active_catalog` and `module_config` then matched
+ *     nothing, so the page rendered "0 aktive Frameworks · 0 Sicherheitsmodule"
+ *     under a green "Compliance-Status: Aktiv" tile. Under the DEV
+ *     configuration (`APP_DATABASE_URL` unset → superuser `grc`) the very same
+ *     code returned complete data for ANY orgCode — which is why no test would
+ *     ever have shown the defect, and which would have become an
+ *     unauthenticated cross-tenant read the moment (A) was fixed.
+ *
+ * (B) is fixed here: every query runs inside `withOrgReadContext(org.id, …)`,
+ * so the page behaves identically under `grc_app` and under the dev superuser,
+ * and reads exactly one organisation's rows by construction. This is the
+ * precondition for (A) — adding `/trust` to the allowlist before this would
+ * have exposed every organisation of the installation without a login.
+ *
+ * The status tile no longer claims "Aktiv" regardless of content (see below).
  */
 import {
   db,
+  withOrgReadContext,
   organization,
   orgActiveCatalog,
   catalog,
@@ -45,7 +72,7 @@ export default async function TrustCenterPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Shield className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <Shield className="h-12 w-12 text-gray-500 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900">
             Trust Center nicht gefunden
           </h1>
@@ -57,34 +84,43 @@ export default async function TrustCenterPage({ params }: Props) {
     );
   }
 
-  // Fetch active catalogs (frameworks)
-  const activeCatalogs = await db
-    .select({
-      catalogName: catalog.name,
-      catalogType: catalog.catalogType,
-      source: catalog.source,
-      enforcementLevel: orgActiveCatalog.enforcementLevel,
-      activatedAt: orgActiveCatalog.activatedAt,
-    })
-    .from(orgActiveCatalog)
-    .innerJoin(catalog, eq(orgActiveCatalog.catalogId, catalog.id))
-    .where(eq(orgActiveCatalog.orgId, org.id));
-
-  // Fetch enabled modules
-  const modules = await db
-    .select({
-      moduleKey: moduleConfig.moduleKey,
-      displayNameDe: moduleDefinition.displayNameDe,
-      displayNameEn: moduleDefinition.displayNameEn,
-    })
-    .from(moduleConfig)
-    .innerJoin(
-      moduleDefinition,
-      eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
-    )
-    .where(
-      and(eq(moduleConfig.orgId, org.id), eq(moduleConfig.uiStatus, "enabled")),
-    );
+  // [WP12 · S12-05 B] Both queries run under an explicit org context on a
+  // reserved connection. Without it the base pool carries no
+  // `app.current_org_id`, RLS matched no rows under `grc_app`, and the dev
+  // superuser matched ALL rows — the two environments disagreed silently.
+  const { activeCatalogs, modules } = await withOrgReadContext(
+    org.id,
+    async (scopedDb) => ({
+      activeCatalogs: await scopedDb
+        .select({
+          catalogName: catalog.name,
+          catalogType: catalog.catalogType,
+          source: catalog.source,
+          enforcementLevel: orgActiveCatalog.enforcementLevel,
+          activatedAt: orgActiveCatalog.activatedAt,
+        })
+        .from(orgActiveCatalog)
+        .innerJoin(catalog, eq(orgActiveCatalog.catalogId, catalog.id))
+        .where(eq(orgActiveCatalog.orgId, org.id)),
+      modules: await scopedDb
+        .select({
+          moduleKey: moduleConfig.moduleKey,
+          displayNameDe: moduleDefinition.displayNameDe,
+          displayNameEn: moduleDefinition.displayNameEn,
+        })
+        .from(moduleConfig)
+        .innerJoin(
+          moduleDefinition,
+          eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
+        )
+        .where(
+          and(
+            eq(moduleConfig.orgId, org.id),
+            eq(moduleConfig.uiStatus, "enabled"),
+          ),
+        ),
+    }),
+  );
 
   const certifications = activeCatalogs.filter(
     (c) => c.enforcementLevel === "mandatory",
@@ -92,6 +128,8 @@ export default async function TrustCenterPage({ params }: Props) {
   const recommendedFrameworks = activeCatalogs.filter(
     (c) => c.enforcementLevel !== "mandatory",
   );
+  // S12-05: "active" is a claim about data, not a constant.
+  const hasPublishedStatus = activeCatalogs.length > 0 || modules.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -113,21 +151,44 @@ export default async function TrustCenterPage({ params }: Props) {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-8 space-y-8">
-        {/* Overview Badge */}
-        <div className="rounded-xl bg-green-50 border border-green-200 p-6">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="h-6 w-6 text-green-600" />
-            <div>
-              <p className="text-lg font-semibold text-green-900">
-                Compliance-Status: Aktiv
-              </p>
-              <p className="text-sm text-green-700 mt-0.5">
-                {activeCatalogs.length} aktive Frameworks · {modules.length}{" "}
-                Sicherheitsmodule aktiviert
-              </p>
+        {/* Overview Badge — [WP12 · S12-05] the tile used to read
+            "Compliance-Status: Aktiv" on a green background even when both
+            counts were zero, which is the most misleading possible rendering
+            of "we have no data". The wording follows the numbers now. */}
+        {hasPublishedStatus ? (
+          <div className="rounded-xl bg-green-50 border border-green-200 p-6">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div>
+                <p className="text-lg font-semibold text-green-900">
+                  Compliance-Status: Aktiv
+                </p>
+                <p className="text-sm text-green-700 mt-0.5">
+                  {activeCatalogs.length} aktive Frameworks · {modules.length}{" "}
+                  Sicherheitsmodule aktiviert
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div
+            role="status"
+            className="rounded-xl bg-gray-50 border border-gray-200 p-6"
+          >
+            <div className="flex items-center gap-3">
+              <Clock className="h-6 w-6 text-gray-600" />
+              <div>
+                <p className="text-lg font-semibold text-gray-900">
+                  Noch keine Angaben veröffentlicht
+                </p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Für diese Organisation sind derzeit keine aktiven Frameworks
+                  und keine aktivierten Sicherheitsmodule hinterlegt.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Certifications / Mandatory Frameworks */}
         {certifications.length > 0 && (

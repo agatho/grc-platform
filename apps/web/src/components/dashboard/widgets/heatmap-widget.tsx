@@ -66,7 +66,12 @@ function getHeatmapColor(value: number, maxValue: number): string {
   return "#f3f4f6"; // gray
 }
 
-export function HeatmapWidget({ data, config, isLoading, error }: WidgetProps) {
+export function HeatmapWidget({
+  data,
+  config: _config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">

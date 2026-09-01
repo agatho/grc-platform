@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Loader2,
-  Sparkles,
-  FileText,
-  RotateCcw,
-  Check,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, RotateCcw, Check } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";

@@ -6,6 +6,7 @@
 
 import { escHtml } from "@/lib/pdf";
 import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export interface RopaRow {
   processId: string;
@@ -76,7 +77,7 @@ export function rowsToCsv(rows: RopaRow[]): string {
   const header = CSV_COLUMNS.map((c) => csvCell(c[1])).join(",");
   const dataLines = rows.map((r) =>
     CSV_COLUMNS.map(([key]) => {
-      const v: any = (r as any)[key];
+      const v: UnvalidatedJson = (r as UnvalidatedJson)[key];
       if (key === "legalBasis" && typeof v === "string") {
         return csvCell(LEGAL_BASIS_LABELS[v] ?? v);
       }

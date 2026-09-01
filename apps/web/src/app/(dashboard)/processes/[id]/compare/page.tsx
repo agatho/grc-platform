@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -23,9 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@grc/ui";
 import { useDateFormat } from "@/lib/format-date";
-import type { VersionComparison, ElementDiffDetail } from "@grc/shared";
+import type { VersionComparison } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +50,11 @@ export default function VersionComparePage() {
 }
 
 function CompareContent() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("processGovernance");
   const tProcess = useTranslations("process");
   const params = useParams();
@@ -148,11 +152,14 @@ function CompareContent() {
       {/* Version selectors */}
       <div className="flex items-center gap-4 flex-wrap">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 uppercase">
+          <label
+            htmlFor={`${a11yId}-from`}
+            className="text-xs font-medium text-gray-500 uppercase"
+          >
             From
           </label>
           <Select value={versionFrom} onValueChange={setVersionFrom}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger id={`${a11yId}-from`} className="w-[180px]">
               <SelectValue placeholder={t("compare.version")} />
             </SelectTrigger>
             <SelectContent>
@@ -171,11 +178,14 @@ function CompareContent() {
         <span className="text-gray-400 mt-5">vs</span>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 uppercase">
+          <label
+            htmlFor={`${a11yId}-to`}
+            className="text-xs font-medium text-gray-500 uppercase"
+          >
             To
           </label>
           <Select value={versionTo} onValueChange={setVersionTo}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger id={`${a11yId}-to`} className="w-[180px]">
               <SelectValue placeholder={t("compare.version")} />
             </SelectTrigger>
             <SelectContent>

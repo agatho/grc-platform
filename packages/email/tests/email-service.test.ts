@@ -48,10 +48,16 @@ describe("EmailService", () => {
     service = new EmailService("re_test_key");
     mockResendSend.mockReset();
 
-    // Always mock delay to avoid real setTimeout waits in tests
-    vi.spyOn(service as never, "delay" as never).mockResolvedValue(
-      undefined as never,
-    );
+    // Always mock delay to avoid real setTimeout waits in tests.
+    // [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] `service as never` collapses
+    // the spy's return type to `never`, so `.mockResolvedValue` did not exist
+    // on it — invisible until packages/email got a tsconfig.json. `delay` is a
+    // private method, so the cast has to say that specifically rather than
+    // erase the type completely.
+    vi.spyOn(
+      service as unknown as { delay: (ms: number) => Promise<void> },
+      "delay",
+    ).mockResolvedValue(undefined);
   });
 
   afterEach(() => {

@@ -130,7 +130,25 @@ export async function GET(
     return new Response(css, {
       headers: {
         "Content-Type": "text/css",
-        "Cache-Control": "public, max-age=3600",
+        // [ARCTOS-FULL-2026-08-31 / WP12 · S12-11] Was `public, max-age=3600`.
+        //
+        // `public` marks a response that sits behind the auth middleware
+        // (`/api/v1/branding/**` is not on the public allowlist) as storable by
+        // SHARED caches — a CDN, a corporate forward proxy. There is no
+        // cross-tenant leak here (the orgId is part of the path and therefore
+        // part of every RFC-compliant cache key, and the body even repeats it
+        // literally), which is why this is Low and not High. The semantics
+        // were nonetheless wrong, and "no leak because the cache key happens
+        // to contain the tenant" is not a control anyone should rely on.
+        //
+        // `private` keeps the browser-side caching that the endpoint exists
+        // for — the login page fetches it on every visit — while removing the
+        // shared-cache permission. `Vary: Cookie` is deliberate: the response
+        // does not depend on the cookie today, but stating it prevents a
+        // future personalised variant from being served from a stale entry.
+        "Cache-Control": "private, max-age=3600",
+        Vary: "Cookie",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   });

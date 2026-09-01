@@ -404,7 +404,7 @@ export default function OrganizationsPage() {
   };
 
   // ── Open create dialog ──
-  const openCreate = () => {
+  const _openCreate = () => {
     setEditingOrg(null);
     setFormOpen(true);
   };

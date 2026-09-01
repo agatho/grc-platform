@@ -32,13 +32,7 @@ import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDateFormat } from "@/lib/format-date";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -47,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@grc/ui";
 import type {
@@ -64,11 +57,8 @@ import {
   EMPTY_BPMN_XML,
 } from "@grc/shared";
 
-import type {
-  BpmnEditorRef,
-  RiskOverlayData,
-  CallActivityOverlayData,
-} from "@/components/bpmn/bpmn-editor";
+import type { CallActivityOverlayData } from "@/components/bpmn/bpmn-editor";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
@@ -214,7 +204,7 @@ function ProcessDetailContent() {
   const t = useTranslations("process");
   const tDrill = useTranslations("bpmOverhaul");
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const { data: session } = useSession();
   const processId = params.id as string;
 
@@ -463,7 +453,7 @@ function ProcessDetailContent() {
               <ProcessComplianceProfileSwitcher
                 processId={processId}
                 initialProfile={
-                  (process as any).complianceProfile ?? "standard"
+                  (process as UnvalidatedJson).complianceProfile ?? "standard"
                 }
                 onChange={() => fetchProcess()}
               />
@@ -751,7 +741,7 @@ function OverviewTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
-  const tGov = useTranslations("processGovernance");
+  const _tGov = useTranslations("processGovernance");
   const tDrill = useTranslations("bpmOverhaul");
   const tMap = useTranslations("processMap");
   const router = useRouter();
@@ -1213,9 +1203,9 @@ function EditorTab({
   const [showLodOverlay, setShowLodOverlay] = useState(false);
   const [showFindingsOverlay, setShowFindingsOverlay] = useState(false);
 
-  const [coverageOverlay, setCoverageOverlay] = useState<any[]>([]);
-  const [lodOverlay, setLodOverlay] = useState<any[]>([]);
-  const [findingsOverlay, setFindingsOverlay] = useState<any[]>([]);
+  const [coverageOverlay, setCoverageOverlay] = useState<UnvalidatedJson[]>([]);
+  const [lodOverlay, setLodOverlay] = useState<UnvalidatedJson[]>([]);
+  const [findingsOverlay, setFindingsOverlay] = useState<UnvalidatedJson[]>([]);
 
   useEffect(() => {
     if (!showCoverageOverlay) return;
@@ -1223,7 +1213,7 @@ function EditorTab({
       .then((r) => (r.ok ? r.json() : { data: { activities: [] } }))
       .then((j) =>
         setCoverageOverlay(
-          (j.data?.activities ?? []).map((a: any) => ({
+          (j.data?.activities ?? []).map((a: UnvalidatedJson) => ({
             bpmnElementId: a.bpmnElementId,
             controlCount: a.controlCount ?? 0,
             effectiveCount: a.effectiveCount ?? 0,
@@ -1237,7 +1227,7 @@ function EditorTab({
     if (!showLodOverlay) return;
     // process.steps already carries lineOfDefense per step
     setLodOverlay(
-      (process.steps ?? []).map((s: any) => ({
+      (process.steps ?? []).map((s: UnvalidatedJson) => ({
         bpmnElementId: s.bpmnElementId,
         lineOfDefense: s.lineOfDefense ?? null,
       })),
@@ -1253,7 +1243,9 @@ function EditorTab({
         for (const f of j.data ?? []) {
           const stepId = f.process_step_id;
           if (!stepId) continue;
-          const step = (process.steps ?? []).find((s: any) => s.id === stepId);
+          const step = (process.steps ?? []).find(
+            (s: UnvalidatedJson) => s.id === stepId,
+          );
           if (!step) continue;
           const k = step.bpmnElementId;
           const agg = byStep.get(k) ?? { open: 0, critical: 0 };
@@ -1318,7 +1310,7 @@ function EditorTab({
 
   // Handle save via BPMN XML
   const handleSave = useCallback(
-    async (xml: string) => {
+    async (_xml: string) => {
       // Save via the hook which posts to /versions
       await save();
     },
@@ -1966,7 +1958,9 @@ function RisksTab({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("risks.searchRisk")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              autoFocus
+              // [WP12 · S14-09] `autoFocus` removed: Radix Dialog already moves
+              // focus into the panel on open, and a second, competing focus
+              // jump is what WCAG 3.2.1 (On Focus) warns about.
             />
             {searching && (
               <div className="flex items-center justify-center py-4">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Loader2, Play, Plus, GitBranch, Zap, BarChart3 } from "lucide-react";
+import { Loader2, Plus, GitBranch, Zap, BarChart3 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,7 @@ function PropagationInner() {
     [],
   );
   const [loading, setLoading] = useState(true);
-  const [simulating, setSimulating] = useState(false);
+  const [_simulating, setSimulating] = useState(false);
   const [simulationResult, setSimulationResult] =
     useState<RiskPropagationResult | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,7 +101,7 @@ function PropagationInner() {
     }
   }, [targetOrgId, relType, strength, fetchRelationships]);
 
-  const runSimulation = useCallback(async (riskId: string) => {
+  const _runSimulation = useCallback(async (riskId: string) => {
     setSimulating(true);
     try {
       const res = await fetch("/api/v1/erm/propagation/simulate", {

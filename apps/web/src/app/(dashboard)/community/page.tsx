@@ -32,7 +32,7 @@ export default function CommunityPage() {
 
 function CommunityDashboard() {
   const t = useTranslations("community");
-  const router = useRouter();
+  const _router = useRouter();
   const [config, setConfig] = useState<EditionConfig | null>(null);
   const [loading, setLoading] = useState(true);
 

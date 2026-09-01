@@ -39,7 +39,7 @@ export default function SimulationsPage() {
 
 function SimulationsDashboard() {
   const t = useTranslations("simulations");
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate } = useDateFormat();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);

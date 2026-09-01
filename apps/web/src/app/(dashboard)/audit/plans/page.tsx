@@ -33,7 +33,7 @@ export default function PlansPage() {
 
 function PlansInner() {
   const t = useTranslations("auditMgmt");
-  const router = useRouter();
+  const _router = useRouter();
   const [plans, setPlans] = useState<AuditPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [yearFilter, setYearFilter] = useState(

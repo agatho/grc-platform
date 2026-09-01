@@ -50,7 +50,10 @@ function req(body: unknown): Request {
   });
 }
 
-const CTX = { orgId: "11111111-1111-1111-1111-111111111111", userId: "22222222-2222-2222-2222-222222222222" };
+const CTX = {
+  orgId: "11111111-1111-1111-1111-111111111111",
+  userId: "22222222-2222-2222-2222-222222222222",
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -79,7 +82,16 @@ describe("S07-14 — POST /api/v1/export/bulk", () => {
     withAuthMock.mockResolvedValue({ ...CTX, roles: ["admin"] });
     const { POST } = await import("@/app/api/v1/export/bulk/route");
     const res = await POST(
-      req({ entityTypes: ["risk", "control", "asset", "vendor", "contract", "process"] }),
+      req({
+        entityTypes: [
+          "risk",
+          "control",
+          "asset",
+          "vendor",
+          "contract",
+          "process",
+        ],
+      }),
     );
     expect(res.status).toBe(403);
     expect((await res.json()).type).toContain("too-many-entity-types");

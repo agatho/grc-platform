@@ -26,12 +26,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface FAIRParams {
   lefMin: number;
@@ -158,7 +152,7 @@ function FAIRParametersInner() {
         const resultsData = await resultsRes.json();
         setLatestResult(resultsData.data?.latest ?? null);
       }
-    } catch (err) {
+    } catch (_err) {
       setError(t("fetchError"));
     } finally {
       setLoading(false);

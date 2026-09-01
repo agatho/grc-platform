@@ -105,7 +105,7 @@ function serializeCodeOfPracticeNotes(data: CodeOfPracticeData): string {
 }
 
 function GpaiDetailInner() {
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<GpaiModel | null>(null);

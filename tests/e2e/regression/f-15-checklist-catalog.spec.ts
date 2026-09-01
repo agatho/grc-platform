@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "../fixtures/auth";
+import { login, awaitSessionRoles } from "../fixtures/auth";
 
 // F-15: /audits/[id]/checklists/generate falls back to catalog_entry when
 // no org-owned controls exist. Must produce exactly as many items as the
@@ -30,7 +30,10 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
 
   // Re-login to pick up the new admin role.
   await page.goto("/dashboard");
-  await page.waitForTimeout(1500);
+  // [ARCTOS-FULL-2026-08-31 / WP11 · S11-15] Was `waitForTimeout(1500)`: a
+  // guess at how long the JWT needs to pick up the new role. Wait for the
+  // session to actually carry it.
+  await awaitSessionRoles(page, 1);
 
   // Switch to the fresh org.
   await page.evaluate(async (id) => {

@@ -9,11 +9,7 @@
 //    der Datenbank geladenen Vorlage. Die Vorlage ist jetzt reine
 //    Instruktion, die Nutzerwerte stehen im Datenumschlag.
 
-import {
-  db,
-  eamAiPromptTemplate,
-  eamAiSuggestionLog,
-} from "@grc/db";
+import { db, eamAiPromptTemplate, eamAiSuggestionLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { generateSuggestionsSchema } from "@grc/shared";
 import { eq, and, or, isNull } from "drizzle-orm";
@@ -26,7 +22,11 @@ import {
   safeJsonParse,
 } from "@grc/ai";
 import { loadEamAiConfig } from "../_shared/config";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../ai/_shared/ai-route";
 
 // POST /api/v1/eam/ai/generate-suggestions — Generate object suggestions via LLM
 export async function POST(req: Request) {
@@ -84,9 +84,7 @@ export async function POST(req: Request) {
       feature: "eam.generate_suggestions",
       orgId: ctx.orgId,
       userId: ctx.userId,
-      requestedProvider: isAiProvider(config.provider)
-        ? config.provider
-        : null,
+      requestedProvider: isAiProvider(config.provider) ? config.provider : null,
       messages: buildEamSuggestionsPrompt({
         templateText: template.templateText,
         objectType: parsed.data.objectType,

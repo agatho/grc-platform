@@ -673,7 +673,9 @@ function buildReadme(
   lines.push(`    changes | userEmail | userName | ipAddress | entityTitle )`);
   lines.push(``);
   lines.push(`entryHash = SHA256(`);
-  lines.push(`    previousHash | id | orgId | userId | entityType | entityId |`);
+  lines.push(
+    `    previousHash | id | orgId | userId | entityType | entityId |`,
+  );
   lines.push(`    action | contentCommitment | actionDetail | metadata |`);
   lines.push(`    createdAt | previousHashScope )`);
   lines.push(`\`\`\``);

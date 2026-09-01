@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useId } from "react";
 import Link from "next/link";
 import {
   Loader2,
@@ -135,6 +135,11 @@ function SeverityPill({ severity }: { severity: Severity }) {
 }
 
 export default function GrcFindingsPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const { formatDate } = useDateFormat();
   const [data, setData] = useState<CrossFindingResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -324,12 +329,17 @@ export default function GrcFindingsPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Modul:</label>
+            <label
+              htmlFor={`${a11yId}-modul`}
+              className="text-xs text-muted-foreground"
+            >
+              Modul:
+            </label>
             <Select
               value={filterModule}
               onValueChange={(v) => setFilterModule(v as Module | "all")}
             >
-              <SelectTrigger className="w-40 h-8">
+              <SelectTrigger id={`${a11yId}-modul`} className="w-40 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -343,12 +353,17 @@ export default function GrcFindingsPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Schwere:</label>
+            <label
+              htmlFor={`${a11yId}-schwere`}
+              className="text-xs text-muted-foreground"
+            >
+              Schwere:
+            </label>
             <Select
               value={filterSeverity}
               onValueChange={(v) => setFilterSeverity(v as Severity | "all")}
             >
-              <SelectTrigger className="w-40 h-8">
+              <SelectTrigger id={`${a11yId}-schwere`} className="w-40 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

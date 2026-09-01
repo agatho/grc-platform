@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Download,
   FileSpreadsheet,
   Loader2,
@@ -32,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -167,7 +169,7 @@ export default function ImportWizardPage() {
       toast.success(
         `${data.totalRows} rows detected, ${Object.values(data.autoMapping).filter(Boolean).length} columns auto-mapped`,
       );
-    } catch (err) {
+    } catch (_err) {
       toast.error("Upload failed");
     } finally {
       setUploading(false);
@@ -207,7 +209,7 @@ export default function ImportWizardPage() {
 
       setStep(3);
       handleValidate();
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to confirm mapping");
     }
   }, [uploadResult, mapping, saveMappingName]);
@@ -233,7 +235,7 @@ export default function ImportWizardPage() {
 
       const data: ValidationResponse = await res.json();
       setValidationResult(data);
-    } catch (err) {
+    } catch (_err) {
       toast.error("Validation failed");
     } finally {
       setValidating(false);
@@ -269,7 +271,7 @@ export default function ImportWizardPage() {
       } else {
         toast.error("Import failed — transaction rolled back");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("Import failed");
     } finally {
       setExecuting(false);
@@ -368,6 +370,13 @@ export default function ImportWizardPage() {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => document.getElementById("file-input")?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () =>
+                  document.getElementById("file-input")?.click(),
+                )
+              }
             >
               <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium">

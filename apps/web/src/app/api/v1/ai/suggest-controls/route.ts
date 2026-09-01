@@ -274,7 +274,9 @@ export async function POST(req: Request) {
     // server offered — anything else (hallucinated or injected IDs) drops.
     const candidateById = new Map(candidates.map((c) => [c.id, c]));
     const suggestions = result.data.suggestions
-      .filter((s) => s.type !== "link_existing" || candidateById.has(s.controlId))
+      .filter(
+        (s) => s.type !== "link_existing" || candidateById.has(s.controlId),
+      )
       .slice(0, 5)
       .map((s) =>
         s.type === "link_existing"

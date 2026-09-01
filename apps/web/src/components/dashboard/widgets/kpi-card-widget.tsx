@@ -2,7 +2,6 @@
 
 import React from "react";
 import type { WidgetProps } from "../widget-registry";
-import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface KPIData {

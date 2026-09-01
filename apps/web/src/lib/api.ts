@@ -19,6 +19,7 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import type { Session } from "next-auth";
 import type { UserRole } from "@grc/shared";
+import type { DbTransaction } from "@/lib/db-types";
 
 export interface ApiContext {
   session: Session;
@@ -316,13 +317,9 @@ export async function withAuth(
   // DAMIT die Isolation greift, blieb er bis zu 8 Stunden uneingeschränkt.
   // Hier greift es auf den frisch aus der DB gelesenen Rollenstand.
   const sessionRoles =
-    (session.user as { roles?: Array<{ orgId: string; role: string }> }).roles ??
-    [];
-  if (
-    path &&
-    isHinSchgIsolated(sessionRoles) &&
-    !isHinSchgAllowedPath(path)
-  ) {
+    (session.user as { roles?: Array<{ orgId: string; role: string }> })
+      .roles ?? [];
+  if (path && isHinSchgIsolated(sessionRoles) && !isHinSchgAllowedPath(path)) {
     return authProblem(
       403,
       `${PROBLEM_BASE}/forbidden`,
@@ -410,8 +407,9 @@ export async function withAuth(
     session,
     orgId,
     userId: session.user.id,
-    roles: (session.user as { roles?: Array<{ orgId: string; role: string }> })
-      .roles
+    roles: (
+      session.user as { roles?: Array<{ orgId: string; role: string }> }
+    ).roles
       ?.filter((r) => r.orgId === orgId)
       .map((r) => r.role),
   };
@@ -553,7 +551,8 @@ export interface AuditAnnotation {
 /** Wrap a mutation in a transaction with audit session variables. */
 export async function withAuditContext<T>(
   ctx: ApiContext,
-  fn: (tx: any) => Promise<T>,
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  fn: (tx: DbTransaction) => Promise<T>,
   annotation?: AuditAnnotation,
 ): Promise<T> {
   return db.transaction(async (tx) => {
@@ -590,7 +589,8 @@ export async function withAuditContext<T>(
  */
 export async function withReadContext<T>(
   ctx: ApiContext,
-  fn: (tx: any) => Promise<T>,
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  fn: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(

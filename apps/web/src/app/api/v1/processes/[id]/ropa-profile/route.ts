@@ -126,8 +126,7 @@ export async function PUT(
     (parsed.data.specialCategories?.length ?? 0) > 0 ||
     parsed.data.thirdCountryTransfers === true;
 
-  const requestedOverride =
-    parsed.data.requiresDpia === false && highRisk;
+  const requestedOverride = parsed.data.requiresDpia === false && highRisk;
 
   const requiresDpia = highRisk || parsed.data.requiresDpia === true;
 

@@ -257,9 +257,7 @@ export function normalizeApiPath(pathname: string): string | null {
  * as "unknown route", which is a fail-closed condition for the custom-role
  * fallback and a test failure for mutating routes.
  */
-export function moduleScopeForPath(
-  pathname: string,
-): RouteModuleScope | null {
+export function moduleScopeForPath(pathname: string): RouteModuleScope | null {
   const path = normalizeApiPath(pathname);
   if (path === null) return null;
   for (const [prefix, scope] of SORTED) {
@@ -315,7 +313,16 @@ export const MUTATING_ROLE_REGISTRY: ReadonlyArray<
     "/audit-mgmt/audits/[id]/sign-off",
     ["admin", "auditor", "external_auditor", "compliance_officer"],
   ],
-  ["/audit-mgmt", ["admin", "auditor", "external_auditor", "risk_manager", "compliance_officer"]],
+  [
+    "/audit-mgmt",
+    [
+      "admin",
+      "auditor",
+      "external_auditor",
+      "risk_manager",
+      "compliance_officer",
+    ],
+  ],
   // S02-10 — ISMS-Bewertungen, Vorfälle, SoA
   [
     "/isms",

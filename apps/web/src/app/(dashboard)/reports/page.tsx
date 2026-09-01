@@ -15,7 +15,6 @@ import {
   Filter,
   CheckCircle,
   XCircle,
-  AlertCircle,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -266,7 +265,7 @@ function StandardReportsSection() {
 export default function ReportCenterPage() {
   const { formatDateTime } = useDateFormat();
   const t = useTranslations("reporting");
-  const router = useRouter();
+  const _router = useRouter();
 
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [history, setHistory] = useState<ReportGenerationLog[]>([]);

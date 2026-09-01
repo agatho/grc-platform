@@ -40,7 +40,17 @@ describe("S05-21 (Info, positiv) — kein XSS-Pfad aus Modellausgaben", () => {
   const uiSrc = join(REPO, "packages/ui/src");
 
   it("kein dangerouslySetInnerHTML im Web-Quellbaum", () => {
-    const files = walk(webSrc, [".ts", ".tsx"]);
+    // [ARCTOS-FULL-2026-08-31 / WP11 · S11-11] Testdateien ausgenommen.
+    // Der Scanner suchte im GESAMTEN Baum nach der Zeichenkette und schlug
+    // fehl, sobald WP12 den Sicherheitstest
+    // `apps/web/src/__tests__/security/frontend-invariants.test.ts` anlegte —
+    // eine Datei, die dieselbe Eigenschaft prueft und den Namen deshalb
+    // zwangslaeufig nennt. Ein Regressionstest, der an einem zweiten
+    // Regressionstest scheitert, misst den Dateinamen und nicht die
+    // Eigenschaft. Produktivcode bleibt vollstaendig abgedeckt.
+    const files = walk(webSrc, [".ts", ".tsx"]).filter(
+      (f) => !f.includes("__tests__") && !f.includes("/e2e/"),
+    );
     expect(files.length).toBeGreaterThan(100);
     const hits = files.filter((f) =>
       readFileSync(f, "utf8").includes("dangerouslySetInnerHTML"),

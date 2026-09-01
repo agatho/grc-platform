@@ -48,10 +48,10 @@ export default function CertificationDetailPage() {
 }
 
 function CertDetailInner() {
-  const { formatDate, formatDateTime } = useDateFormat();
+  const { formatDate: _formatDate, formatDateTime } = useDateFormat();
   const t = useTranslations("certifications");
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const frameworkId = params.id as string;
 
   const [gaps, setGaps] = useState<GapItem[]>([]);

@@ -263,7 +263,8 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     // NULL und damit ZERO ROWS. Fail-closed bleibt es — jetzt ohne Fehler.
     it("without RLS context, non-superuser sees zero active catalogs (no error)", async () => {
       await clearRlsContext(appDb.client);
-      const result = await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
       expect(result[0].cnt).toBe(0);
     });
   });
@@ -304,7 +305,8 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
     it("without RLS context, non-superuser sees zero budgets (no error)", async () => {
       await clearRlsContext(appDb.client);
-      const result = await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
       expect(result[0].cnt).toBe(0);
     });
   });
@@ -346,7 +348,8 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
     it("without RLS context, non-superuser sees zero cost entries (no error)", async () => {
       await clearRlsContext(appDb.client);
-      const result = await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
       expect(result[0].cnt).toBe(0);
     });
   });

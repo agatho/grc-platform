@@ -1,5 +1,9 @@
 "use client";
 
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-12] lucide-react exports an icon
+// literally called `Image`; jsx-a11y's alt-text rule treats every <Image> as
+// an <img> and demanded an alt prop on a decorative SVG icon. Aliased so the
+// rule stays on for real images.
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -14,9 +18,8 @@ import {
   FileText,
   Mail,
   AlertTriangle,
-  Image,
+  Image as ImageIcon,
   Globe,
-  X,
 } from "lucide-react";
 import type { BrandingResponse, BrandingReportTemplate } from "@grc/shared";
 import {
@@ -430,7 +433,7 @@ export default function BrandingSettingsPage() {
                   />
                 ) : (
                   <div className="flex items-center gap-2 text-sm text-gray-400">
-                    <Image className="h-5 w-5" />
+                    <ImageIcon className="h-5 w-5" />
                     {t("noLogo")}
                   </div>
                 )}

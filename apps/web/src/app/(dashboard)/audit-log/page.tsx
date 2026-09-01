@@ -37,6 +37,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -1202,17 +1205,31 @@ function AuditLogTable({
   // We render DataTable but wrap rows with click handlers via a wrapper
   // DataTable does not natively support row click, so we wrap it and
   // add a click listener at the table container level
+
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One resolver for both input
+  // modalities, so mouse and keyboard cannot drift apart.
+  const activateRowFrom = (target: EventTarget | null) => {
+    const row = (target as HTMLElement | null)?.closest?.(
+      "tbody tr[data-row-index]",
+    );
+    if (!row) return;
+    const idx = Number(row.getAttribute("data-row-index"));
+    const entry = data[idx];
+    if (!Number.isNaN(idx) && entry) onRowClick(entry);
+  };
+
   return (
+    // The container is deliberately NOT `role="button"` and NOT focusable: it
+    // wraps an entire table, so a tab stop here would announce "button" for
+    // the whole grid and hand the user one target with no predictable effect.
+    // The ROWS are focusable instead (`tabIndex={0}` in
+    // `DataTableWithRowIndex`); their key events bubble up here, where the
+    // same `closest()` lookup resolves the row that actually has focus. That
+    // is the keyboard equivalent of the click path — WCAG 2.1.1.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- keyboard activation is implemented on the focusable rows, see above
     <div
-      onClick={(e) => {
-        const target = e.target as HTMLElement;
-        const row = target.closest("tbody tr[data-row-index]");
-        if (!row) return;
-        const idx = Number(row.getAttribute("data-row-index"));
-        if (!Number.isNaN(idx) && data[idx]) {
-          onRowClick(data[idx]);
-        }
-      }}
+      onClick={(e) => activateRowFrom(e.target)}
+      onKeyDown={(e) => activateOnKey(e, () => activateRowFrom(e.target))}
     >
       <DataTableWithRowIndex
         data={data}
@@ -1326,7 +1343,13 @@ function DataTableWithRowIndex<TData>({
                 <TableRow
                   key={row.id}
                   data-row-index={row.index}
-                  className="cursor-pointer hover:bg-gray-50"
+                  // [WP12 · S14-09] The row is the activation target (the
+                  // container above delegates Enter/Space from here). Without
+                  // this the entry detail was reachable by mouse only.
+                  // `<tr>` keeps its row semantics — a `role="button"` here
+                  // would remove the row from the grid for a screen reader.
+                  tabIndex={0}
+                  className="cursor-pointer hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

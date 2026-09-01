@@ -26,7 +26,7 @@ const colorByStatus: Record<ProgrammeJourneyStatus, string> = {
   blocked: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
   completed:
     "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100",
-  archived: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+  archived: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-500",
 };
 
 export function ProgrammeStatusBadge({

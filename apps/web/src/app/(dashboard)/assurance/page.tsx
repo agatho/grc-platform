@@ -9,7 +9,6 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  ChevronRight,
   Lightbulb,
 } from "lucide-react";
 
@@ -42,13 +41,13 @@ interface TrendData {
 
 export default function AssuranceDashboardPage() {
   const t = useTranslations("boardKpi");
-  const router = useRouter();
+  const _router = useRouter();
   const [modules, setModules] = useState<ModuleScore[]>([]);
   const [overallScore, setOverallScore] = useState(0);
   const [selectedModule, setSelectedModule] = useState<ModuleScore | null>(
     null,
   );
-  const [trendData, setTrendData] = useState<TrendData[]>([]);
+  const [_trendData, setTrendData] = useState<TrendData[]>([]);
   const [hasEnoughTrendData, setHasEnoughTrendData] = useState(false);
   const [loading, setLoading] = useState(true);
 

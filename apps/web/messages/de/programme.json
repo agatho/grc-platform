@@ -53,12 +53,11 @@
   },
   "new": {
     "title": "Neues Programm anlegen",
-    "description": "Wähle eine Norm-Vorlage und passe Eckdaten an. Die Phasen + Schritte werden anschließend automatisch instanziiert.",
+    "description": "Beschreibung (optional)",
     "step1Title": "1. Vorlage wählen",
     "step2Title": "2. Eckdaten festlegen",
     "name": "Programm-Name",
     "namePlaceholder": "z. B. ISO 27001 Erst-Zertifizierung 2026",
-    "description": "Beschreibung (optional)",
     "startedAt": "Startdatum (optional)",
     "estimatedDuration": "Geschätzte Dauer: {days} Tage",
     "submit": "Programm starten",
@@ -261,5 +260,10 @@
       "skipped": "Übersprungen",
       "cancelled": "Abgebrochen"
     }
+  },
+  "progress": {
+    "label": "Fortschritt",
+    "percent": "{percent} Prozent abgeschlossen",
+    "unknown": "Fortschritt unbekannt"
   }
 }

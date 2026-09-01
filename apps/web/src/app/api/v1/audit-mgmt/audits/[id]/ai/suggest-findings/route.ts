@@ -18,7 +18,11 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
 import { z } from "zod";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../../../ai/_shared/ai-route";
 
 const schema = z.object({ locale: z.enum(["de", "en"]).optional() });
 
@@ -59,7 +63,11 @@ export async function POST(
     })
     .from(audit)
     .where(
-      and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)),
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
     );
   if (!existing)
     return Response.json({ error: "Audit not found" }, { status: 404 });

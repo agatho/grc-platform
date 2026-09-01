@@ -78,9 +78,8 @@ export async function GET() {
       egressMode: policy.egressMode,
       // Keine der Funktionen fällt unter Anhang III; die Begründung
       // steht je Zeile in `risk_class_rationale`.
-      highRiskFeatures: features.filter(
-        (f) => f.ai_act_risk_class === "high",
-      ).length,
+      highRiskFeatures: features.filter((f) => f.ai_act_risk_class === "high")
+        .length,
       unattendedFeatures: features
         .filter((f) => !f.human_in_the_loop)
         .map((f) => f.feature_key),

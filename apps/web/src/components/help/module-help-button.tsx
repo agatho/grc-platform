@@ -2,12 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { BookOpen, HelpCircle, X as XIcon } from "lucide-react";
 import {
   resolveHandbookForPath,
   type ModuleHandbook,
 } from "@/lib/module-handbook";
+// [WP12 · S14-13] Focus trap, Escape and focus restoration for a panel that
+// already declared role="dialog" but implemented none of the behaviour.
+import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
 
 /**
  * Help button mounted in the header. If the current path matches one of the
@@ -58,23 +61,26 @@ function HandbookSheet({
   locale: string;
   onClose: () => void;
 }) {
+  const tCommon = useTranslations("common");
   const title = locale === "de" ? handbook.titleDe : handbook.titleEn;
   const tagline = locale === "de" ? handbook.taglineDe : handbook.taglineEn;
+  const { dialogProps, titleId } = useModalDialog(true, onClose);
 
   return (
     <div className="fixed inset-0 z-50">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
+      {/* [WP12 · S14-13] The backdrop was `aria-hidden` AND the only way to
+          dismiss the panel with a pointer — so for a keyboard user there was
+          no dismiss affordance at all until the close button. */}
+      <ModalBackdrop
+        onClose={onClose}
+        closeLabel={tCommon("actions.close")}
+        className="absolute inset-0 cursor-default bg-black/40"
       />
 
       {/* Panel */}
-      <aside
-        className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl"
-        role="dialog"
-        aria-modal="true"
+      <div
+        {...dialogProps}
+        className="absolute right-0 top-0 flex h-full w-full max-w-xl flex-col bg-white shadow-2xl focus:outline-none"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4">
@@ -83,7 +89,12 @@ function HandbookSheet({
               <BookOpen size={18} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+              <h2
+                id={titleId}
+                className="text-base font-semibold text-gray-900"
+              >
+                {title}
+              </h2>
               <p className="mt-0.5 text-xs text-gray-500">{tagline}</p>
             </div>
           </div>
@@ -91,7 +102,7 @@ function HandbookSheet({
             type="button"
             onClick={onClose}
             className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-            aria-label={locale === "de" ? "Schließen" : "Close"}
+            aria-label={tCommon("actions.close")}
           >
             <XIcon size={18} />
           </button>
@@ -156,7 +167,7 @@ function HandbookSheet({
             ? "Tipp: Drücken Sie die Esc-Taste, um das Handbuch zu schließen."
             : "Tip: press Esc to close the handbook."}
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

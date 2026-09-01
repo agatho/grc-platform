@@ -290,7 +290,7 @@ describe("Academy enrollment + progress flow (Wave-19-N6)", () => {
           ),
           { params: Promise.resolve({ id: ENROLL_ID }) },
         );
-      } catch (e) {
+      } catch (_e) {
         // The route doesn't use withErrorHandler — Zod throws; that's
         // also acceptable as long as the update never landed.
         expect(updateCapture).toBeUndefined();

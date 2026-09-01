@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import {
   Loader2,
   Activity,
-  AlertTriangle,
   Clock,
   CheckCircle2,
   ShieldAlert,
@@ -25,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDateFormat } from "@/lib/format-date";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface CockpitData {
   stats: {
@@ -37,10 +37,10 @@ interface CockpitData {
     total: number;
   };
   quadrants: {
-    inReview: any[];
-    pendingApproval: any[];
-    overdueReview: any[];
-    criticalRisks: any[];
+    inReview: UnvalidatedJson[];
+    pendingApproval: UnvalidatedJson[];
+    overdueReview: UnvalidatedJson[];
+    criticalRisks: UnvalidatedJson[];
   };
 }
 
@@ -192,7 +192,7 @@ export default function CockpitPage() {
                     <ul className="max-h-96 space-y-1 overflow-auto">
                       {data.quadrants.pendingApproval
                         .slice(0, 25)
-                        .map((r: any) => (
+                        .map((r: UnvalidatedJson) => (
                           <li
                             key={r.id}
                             className="flex items-start gap-2 rounded p-2 hover:bg-muted"
@@ -288,8 +288,8 @@ function Quadrant({
 }: {
   title: string;
   icon: React.ReactNode;
-  rows: any[];
-  renderRow: (r: any) => React.ReactNode;
+  rows: UnvalidatedJson[];
+  renderRow: (r: UnvalidatedJson) => React.ReactNode;
 }) {
   return (
     <Card>

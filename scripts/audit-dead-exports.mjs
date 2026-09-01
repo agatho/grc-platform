@@ -15,7 +15,10 @@
 import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 import { join, relative } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const SRC_DIRS = [
   join(ROOT, "apps/web/src"),
   join(ROOT, "apps/worker/src"),
@@ -30,10 +33,23 @@ const OUT_MD = join(OUT_DIR, "dead-exports-report.md");
 
 const NEXT_ROUTE_EXPORTS = new Set([
   "default",
-  "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS",
-  "generateStaticParams", "generateMetadata", "metadata",
-  "dynamic", "revalidate", "fetchCache", "runtime", "preferredRegion",
-  "viewport", "generateViewport",
+  "GET",
+  "POST",
+  "PUT",
+  "PATCH",
+  "DELETE",
+  "HEAD",
+  "OPTIONS",
+  "generateStaticParams",
+  "generateMetadata",
+  "metadata",
+  "dynamic",
+  "revalidate",
+  "fetchCache",
+  "runtime",
+  "preferredRegion",
+  "viewport",
+  "generateViewport",
 ]);
 
 async function walk(dir, out = []) {
@@ -46,7 +62,12 @@ async function walk(dir, out = []) {
   for (const e of entries) {
     const full = join(dir, e.name);
     if (e.isDirectory()) {
-      if (e.name === "node_modules" || e.name === ".next" || e.name === "__generated__") continue;
+      if (
+        e.name === "node_modules" ||
+        e.name === ".next" ||
+        e.name === "__generated__"
+      )
+        continue;
       await walk(full, out);
     } else if (/\.(ts|tsx)$/.test(e.name) && !e.name.endsWith(".d.ts")) {
       out.push(full);
@@ -57,11 +78,15 @@ async function walk(dir, out = []) {
 
 function extractExports(content, file) {
   const exports = [];
-  const isRouteOrPage = /\\(api|app)\\.*\\(route|page|layout|template|loading|not-found|error|default)\.tsx?$|route\.ts$|page\.tsx$|layout\.tsx$/.test(file);
+  const isRouteOrPage =
+    /\\(api|app)\\.*\\(route|page|layout|template|loading|not-found|error|default)\.tsx?$|route\.ts$|page\.tsx$|layout\.tsx$/.test(
+      file,
+    );
   const isStub = /_generated_stubs|_stubs|\\generated\\/i.test(file);
   if (isStub) return [];
 
-  const re = /^export\s+(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\s+([A-Za-z_][A-Za-z0-9_]*)/gm;
+  const re =
+    /^export\s+(?:async\s+)?(?:function|const|let|var|class|interface|type|enum)\s+([A-Za-z_][A-Za-z0-9_]*)/gm;
   let m;
   while ((m = re.exec(content)) !== null) {
     const name = m[1];
@@ -72,7 +97,12 @@ function extractExports(content, file) {
   // export { a, b, c } from "..."
   const reBarrel = /^export\s*\{\s*([^}]+)\s*\}/gm;
   while ((m = reBarrel.exec(content)) !== null) {
-    for (const name of m[1].split(",").map((s) => s.trim().replace(/\s+as\s+\w+/, "").trim())) {
+    for (const name of m[1].split(",").map((s) =>
+      s
+        .trim()
+        .replace(/\s+as\s+\w+/, "")
+        .trim(),
+    )) {
       if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
         exports.push({ name, file });
       }
@@ -92,7 +122,11 @@ async function buildImportIndex(files) {
     let m;
     while ((m = re.exec(c)) !== null) {
       for (const part of m[1].split(",")) {
-        const name = part.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0].trim();
+        const name = part
+          .trim()
+          .replace(/^type\s+/, "")
+          .split(/\s+as\s+/)[0]
+          .trim();
         if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
           importCounts.set(name, (importCounts.get(name) ?? 0) + 1);
         }
@@ -150,7 +184,9 @@ async function main() {
   md.push(``);
   md.push(`_Generated: ${new Date().toISOString()}_`);
   md.push(``);
-  md.push(`Static-Analyse findet \`export\`-Statements ohne matching \`import\` im Code. Heuristik, nicht vollstaendig:`);
+  md.push(
+    `Static-Analyse findet \`export\`-Statements ohne matching \`import\` im Code. Heuristik, nicht vollstaendig:`,
+  );
   md.push(``);
   md.push(`**Nicht erkannt**:`);
   md.push(`- \`import * as X\` Namespace-Imports (Symbole dahinter)`);
@@ -159,15 +195,24 @@ async function main() {
   md.push(`- \`export default\` in Route/Page-Files (ignoriert)`);
   md.push(`- Vitest-Tests in tests/ (nicht im Scan)`);
   md.push(``);
-  md.push(`**${dead.length} potenziell tote Exports** in ${byFile.size} Dateien.`);
+  md.push(
+    `**${dead.length} potenziell tote Exports** in ${byFile.size} Dateien.`,
+  );
   md.push(``);
   md.push(`## Top-20 Hot-Spots (>=3 dead exports)`);
   md.push(``);
   md.push(`| Datei | Anzahl | Exports |`);
   md.push(`|---|---|---|`);
-  for (const [f, names] of [...byFile.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 40)) {
+  for (const [f, names] of [...byFile.entries()]
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, 40)) {
     if (names.length < 3) break;
-    md.push(`| \`${f}\` | ${names.length} | ${names.slice(0, 10).map((n) => "`" + n + "`").join(", ")}${names.length > 10 ? " ..." : ""} |`);
+    md.push(
+      `| \`${f}\` | ${names.length} | ${names
+        .slice(0, 10)
+        .map((n) => "`" + n + "`")
+        .join(", ")}${names.length > 10 ? " ..." : ""} |`,
+    );
   }
   md.push(``);
 
@@ -183,4 +228,7 @@ async function main() {
   console.log(`-> ${OUT_MD}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

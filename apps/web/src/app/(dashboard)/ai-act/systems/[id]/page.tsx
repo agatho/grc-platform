@@ -50,7 +50,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 function SystemDetailInner() {
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AiSystemDetail | null>(null);

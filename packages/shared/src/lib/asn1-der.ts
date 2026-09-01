@@ -145,7 +145,7 @@ export interface DerNode {
 /** Parse one TLV from `buf` starting at `offset`. Returns tag+value+endOffset. */
 export function readNode(buf: Buffer, offset = 0): DerNode {
   const tag = buf[offset];
-  let lenByte = buf[offset + 1];
+  const lenByte = buf[offset + 1];
   let lenBytes = 0;
   let length: number;
 

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -24,7 +23,6 @@ import type {
   RcsaCampaignWithStats,
   RcsaResult,
   RcsaDiscrepancy,
-  RcsaAssignmentWithEntity,
   RcsaCompletionEntry,
 } from "@grc/shared";
 

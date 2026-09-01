@@ -26,14 +26,7 @@ import {
   Link2,
   ShieldCheck,
 } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { LineChart, Line, Tooltip, ResponsiveContainer } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
@@ -59,6 +52,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 import type {
   Risk,
   RiskTreatment,
@@ -66,7 +60,6 @@ import type {
   KRIMeasurement,
   RiskCategory,
   RiskStatus,
-  TreatmentStrategy,
   TreatmentStatus,
   KriAlertStatus,
   KriTrend,
@@ -368,7 +361,7 @@ function KriSparkline({
 function RiskDetailContent() {
   const t = useTranslations("risk.detail");
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const riskId = params.id as string;
   const { formatDate, formatDateTime, formatNumber } = useDateFormat();
 
@@ -536,7 +529,7 @@ function RiskDetailContent() {
       }
       if (clRes?.ok) {
         const clJson = await clRes.json();
-        const controls = (clJson.data ?? []).map((c: any) => ({
+        const controls = (clJson.data ?? []).map((c: UnvalidatedJson) => ({
           id: c.id,
           linkId: c.linkId ?? c.id,
           title: c.title ?? "Kontrolle",

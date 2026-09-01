@@ -18,7 +18,6 @@ import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { RiskScoreBadge } from "@/components/risk/risk-score-badge";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,7 +127,7 @@ export default function NewRiskPage() {
 
 function NewRiskForm() {
   const t = useTranslations("risk");
-  const tActions = useTranslations("actions");
+  const _tActions = useTranslations("actions");
   const router = useRouter();
 
   // Pre-fill from catalog entry query params

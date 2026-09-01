@@ -32,7 +32,12 @@
 // status, treatments) can keep theirs — wrapping them too is harmless,
 // the inner catch wins.
 
-import { problem, getRequestId } from "@/lib/api-errors";
+import {
+  problem,
+  getRequestId,
+  // [WP12 · S14-16] legacy `{ error: … }` → RFC 7807 on the way out
+  normaliseErrorResponse,
+} from "@/lib/api-errors";
 import { log } from "@/lib/logger";
 import { PaginationError } from "@/lib/api";
 
@@ -43,6 +48,21 @@ type RouteHandler<TCtx = unknown> = (
   req: Request,
   ctx: TCtx,
 ) => Promise<Response> | Response;
+
+/**
+ * True for anything that carries an HTTP status. Deliberately structural
+ * rather than `instanceof Response`: `NextResponse`, the undici `Response` of
+ * the Node runtime and the `Response` a test constructs in jsdom are three
+ * different constructors, and an `instanceof` check that silently fails for
+ * one of them would send that whole realm down the error path.
+ */
+function isResponseLike(value: unknown): value is Response {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Response).status === "number"
+  );
+}
 
 interface PgError {
   code?: string;
@@ -147,7 +167,49 @@ export function withErrorHandler<TCtx = unknown>(
     const label = routeLabel ?? `${req.method} ${new URL(req.url).pathname}`;
 
     try {
-      return await handler(req, ctx);
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-16] Normalise the RETURNED
+      // error responses too, not just the throw path below.
+      //
+      // ADR-021 mandates RFC 7807 for "alle API-Errors" and `docs/STATUS.md`
+      // reported it as done; the measurement was 9 of 1.355 routes. The
+      // wrapper produced correct problem+json — but only for uncaught
+      // exceptions, so the regular 401/403/404/409/422 answers of the 143
+      // wrapped routes stayed `{ error: "…" }` in `application/json`.
+      //
+      // `normaliseErrorResponse` rewrites those on the way out and keeps every
+      // original field as an RFC 7807 extension member, so no route body has
+      // to change and no client that reads `json.error` breaks.
+      const res = await handler(req, ctx);
+
+      // Two guards, both learned the hard way (WP11 measured 41 red tests
+      // after the first version of this call):
+      //
+      //  1. The success path never enters the normaliser at all. Deciding
+      //     "is this an error?" belongs HERE, before the response is handed
+      //     to a formatter — `normaliseErrorResponse` also returns early on
+      //     `status < 400`, but that made a 201 depend on the correctness of
+      //     an error-formatting helper, and that dependency is the defect,
+      //     not the early return.
+      //  2. If normalisation fails for any reason, the ORIGINAL response is
+      //     returned. Changing the content type of an error body is
+      //     cosmetic; turning a route's deliberate 422 into a 500 because the
+      //     cosmetics threw is a functional regression. The failure is logged
+      //     so it cannot hide.
+      if (!isResponseLike(res) || res.status < 400) return res;
+      try {
+        return await normaliseErrorResponse(res, {
+          instance: new URL(req.url).pathname,
+          requestId,
+        });
+      } catch (normaliseErr) {
+        log.warn("problem+json normalisation failed; passing through", {
+          route: label,
+          requestId,
+          status: res.status,
+          error: (normaliseErr as Error)?.message,
+        });
+        return res;
+      }
     } catch (err) {
       const e = err as PgError;
       const logger = log.withContext({

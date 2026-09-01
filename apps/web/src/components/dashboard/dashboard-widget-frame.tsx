@@ -29,7 +29,7 @@ interface DashboardWidgetFrameProps {
 }
 
 export function DashboardWidgetFrame({
-  widgetId,
+  widgetId: _widgetId,
   definitionKey,
   widgetType,
   title,

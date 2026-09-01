@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   FileText,
-  Upload,
   Trash2,
   Download,
   Loader2,
@@ -20,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface LinkedDocument {
   link_id: string;
@@ -92,7 +92,7 @@ export function EntityDocumentsPanel({
     if (res.ok) {
       const json = await res.json();
       setAvailableDocs(
-        (json.data ?? []).map((d: any) => ({
+        (json.data ?? []).map((d: UnvalidatedJson) => ({
           id: d.id,
           title: d.title,
           category: d.category,

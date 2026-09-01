@@ -179,7 +179,9 @@ export async function computeIntegrity(
                 )
               ) AS report
   `);
-  const summaryRow = Array.isArray(summaryResult) ? summaryResult[0] : undefined;
+  const summaryRow = Array.isArray(summaryResult)
+    ? summaryResult[0]
+    : undefined;
   const s = summaryRow?.report as VerifySummary | undefined;
   if (!s) {
     throw new Error("audit_chain_verify returned no report");
@@ -237,8 +239,7 @@ export async function computeIntegrity(
     warnings.push({
       kind: "redacted_legacy_rows",
       count: s.redactedLegacy,
-      detail:
-        `${s.redactedLegacy} pre-v4 row(s) were redacted under GDPR Art. 17. Their payload was a direct hash input, so the entry hash cannot be recomputed; each one is backed by a redaction event in the chain, which is what distinguishes a lawful erasure from tampering. Rows written under v4 keep verifying after redaction.`,
+      detail: `${s.redactedLegacy} pre-v4 row(s) were redacted under GDPR Art. 17. Their payload was a direct hash input, so the entry hash cannot be recomputed; each one is backed by a redaction event in the chain, which is what distinguishes a lawful erasure from tampering. Rows written under v4 keep verifying after redaction.`,
     });
   }
   if (s.refusedWrites24h > 0) {
@@ -303,7 +304,8 @@ export async function computeIntegrity(
     // anchors were overwritten is not a healthy audit trail — that
     // combination is exactly the S03-01 attack.
     healthy:
-      s.healthy && anchorIssues.filter((a) => a.issue !== "seal_unsigned").length === 0,
+      s.healthy &&
+      anchorIssues.filter((a) => a.issue !== "seal_unsigned").length === 0,
   };
 }
 

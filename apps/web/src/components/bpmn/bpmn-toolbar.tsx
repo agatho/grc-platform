@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-12] lucide-react exports an icon
+// literally called `Image`; jsx-a11y's alt-text rule treats every <Image> as
+// an <img> and demanded an alt prop on a decorative SVG icon. Aliased so the
+// rule stays on for real images.
+import { useState, useEffect } from "react";
 import {
   Save,
   Download,
@@ -9,7 +13,7 @@ import {
   Check,
   Loader2,
   FileCode,
-  Image,
+  Image as ImageIcon,
   FileImage,
 } from "lucide-react";
 
@@ -122,7 +126,7 @@ export function BpmnToolbar({
               BPMN XML
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onExportSvg}>
-              <Image size={14} />
+              <ImageIcon size={14} />
               SVG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onExportPng}>

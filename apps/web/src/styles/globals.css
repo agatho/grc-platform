@@ -16,7 +16,16 @@
   --color-gray-100: oklch(0.968 0.003 75);
   --color-gray-200: oklch(0.930 0.005 75);
   --color-gray-300: oklch(0.870 0.007 75);
-  --color-gray-400: oklch(0.710 0.010 75);
+  /* [ARCTOS-FULL-2026-08-31 / WP12 · S14-11] WCAG 1.4.3 / EN 301 549 §9.1.4.3.
+     Was oklch(0.710 0.010 75) = 2.58:1 on --color-surface (#ffffff) and used
+     1.177x as `text-gray-400` for secondary text, timestamps and help text —
+     all body-size, so the 4.5:1 threshold applies. Darkened to 4.56:1 while
+     staying lighter than gray-500 (4.74:1) so the visual hierarchy holds.
+     The 16 `bg-gray-400` / 5 `border-gray-400` uses shift with it; contrast
+     of a fill or a hairline is not a WCAG 1.4.3 subject and the darker value
+     is the safer default there too. Verified by
+     apps/web/src/__tests__/a11y/theme-contrast.test.ts. */
+  --color-gray-400: oklch(0.565 0.012 75);
   --color-gray-500: oklch(0.556 0.012 75);
   --color-gray-600: oklch(0.446 0.012 75);
   --color-gray-700: oklch(0.373 0.010 75);
@@ -68,7 +77,9 @@
   --color-gray-100: oklch(0.205 0.007 260);
   --color-gray-200: oklch(0.250 0.009 260);
   --color-gray-300: oklch(0.340 0.011 260);
-  --color-gray-400: oklch(0.500 0.012 260);
+  /* [WP12 · S14-11] 3.15:1 on the dark surface — same defect as the light
+     theme. 4.78:1 now, still below gray-500 (5.18:1). */
+  --color-gray-400: oklch(0.600 0.012 260);
   --color-gray-500: oklch(0.620 0.010 260);
   --color-gray-600: oklch(0.720 0.008 260);
   --color-gray-700: oklch(0.810 0.006 260);

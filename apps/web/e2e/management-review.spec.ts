@@ -17,11 +17,12 @@
  * unique timestamped titles keep runs independent.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 const PDF_MAGIC = "%PDF";
 
 test.describe("ISMS — Management review cockpit", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("lifecycle: create → dashboard → item with action → complete → read-only → PDF", async ({
     request,

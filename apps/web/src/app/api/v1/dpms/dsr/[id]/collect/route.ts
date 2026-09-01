@@ -53,7 +53,12 @@ const collectBodySchema = z.object({
 
 interface CollectionResult {
   totalRows: number;
-  sources: { table: string; category: string; rowCount: number; rows: unknown[] }[];
+  sources: {
+    table: string;
+    category: string;
+    rowCount: number;
+    rows: unknown[];
+  }[];
   skipped: { table: string; error: string }[];
   excluded: unknown[];
   scope: string;

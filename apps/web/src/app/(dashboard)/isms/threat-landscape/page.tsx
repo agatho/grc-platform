@@ -11,7 +11,6 @@ import {
   Loader2,
   RefreshCcw,
   ExternalLink,
-  TrendingUp,
   TrendingDown,
   Rss,
 } from "lucide-react";

@@ -32,6 +32,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface Bottleneck {
   activity: string;
@@ -212,7 +213,7 @@ export default function ProcessMiningPage() {
                         tick={{ fontSize: 11 }}
                       />
                       <Tooltip
-                        formatter={(v: any) =>
+                        formatter={(v: UnvalidatedJson) =>
                           `${Math.round(Number(v) / 60)} min`
                         }
                       />

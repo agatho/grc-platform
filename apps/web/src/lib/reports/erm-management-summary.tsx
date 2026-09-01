@@ -2,14 +2,7 @@
 // Uses @react-pdf/renderer (installed via Sprint 4 DMS)
 
 import React from "react";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  Font,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 // ─── Styles ───────────────────────────────────────────────────
 

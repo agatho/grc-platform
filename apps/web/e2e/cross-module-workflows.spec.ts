@@ -4,9 +4,11 @@
  * ERM, ICS/Audit, BCMS, DPMS, TPRM, ESG
  */
 import { test, expect } from "@playwright/test";
+import { awaitAppReady } from "./fixtures/wait";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("ERM ISO 31000 Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("risk register loads with demo data", async ({ page }) => {
     await page.goto("/risks");
@@ -51,7 +53,7 @@ test.describe("ERM ISO 31000 Workflow", () => {
 });
 
 test.describe("ICS & Audit COSO/IIA Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("control register loads", async ({ page }) => {
     await page.goto("/controls");
@@ -81,7 +83,7 @@ test.describe("ICS & Audit COSO/IIA Workflow", () => {
 });
 
 test.describe("BCMS ISO 22301 Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("BCMS dashboard loads with KPIs", async ({ page }) => {
     await page.goto("/bcms");
@@ -104,7 +106,7 @@ test.describe("BCMS ISO 22301 Workflow", () => {
 });
 
 test.describe("DPMS DSGVO Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("DPMS dashboard loads with breach alert", async ({ page }) => {
     await page.goto("/dpms");
@@ -134,7 +136,7 @@ test.describe("DPMS DSGVO Workflow", () => {
 });
 
 test.describe("TPRM ISO 27036 Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("vendor register loads with demo data", async ({ page }) => {
     await page.goto("/tprm/vendors");
@@ -156,7 +158,7 @@ test.describe("TPRM ISO 27036 Workflow", () => {
 });
 
 test.describe("ESG CSRD Workflow", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("ESG dashboard loads", async ({ page }) => {
     await page.goto("/esg");
@@ -166,8 +168,7 @@ test.describe("ESG CSRD Workflow", () => {
 
   test("emissions page loads with scopes", async ({ page }) => {
     await page.goto("/esg/emissions");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
     await expect(page.getByText(/scope|emission/i).first()).toBeVisible();
   });
 
@@ -187,7 +188,7 @@ test.describe("ESG CSRD Workflow", () => {
 });
 
 test.describe("Navigation & Tab System", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("horizontal tab navigation renders on module pages", async ({
     page,

@@ -157,7 +157,7 @@ function TprmDashboardInner() {
           <button
             type="button"
             onClick={() => setSyncResult(null)}
-            className="text-blue-400 hover:text-blue-600 text-xs"
+            className="text-blue-600 hover:text-blue-600 text-xs"
           >
             &times;
           </button>

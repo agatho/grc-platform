@@ -2,7 +2,6 @@
   "title": "Evidence Connectors",
   "subtitle": "Automated evidence collection from cloud, identity, DevOps, and IT systems",
   "addConnector": "Add Connector",
-
   "dashboard": {
     "totalConnectors": "Total Connectors",
     "active": "active",
@@ -14,7 +13,6 @@
     "artifacts": "Artifacts",
     "stale": "stale"
   },
-
   "nav": {
     "cloud": "Cloud Infrastructure",
     "cloudDesc": "AWS, Azure, GCP security tests",
@@ -25,12 +23,10 @@
     "frameworks": "Framework Mappings",
     "frameworksDesc": "Cross-framework compliance coverage"
   },
-
   "connectorList": {
     "title": "All Connectors",
     "empty": "No connectors configured yet. Add a connector to start collecting evidence automatically."
   },
-
   "statuses": {
     "active": "Active",
     "inactive": "Inactive",
@@ -38,7 +34,6 @@
     "disabled": "Disabled",
     "pending_setup": "Pending Setup"
   },
-
   "cloud": {
     "title": "Cloud Infrastructure Connectors",
     "subtitle": "Automated security tests for AWS, Azure, and GCP",
@@ -48,7 +43,6 @@
     "totalTests": "Total Tests",
     "passRate": "Pass Rate"
   },
-
   "identity": {
     "title": "Identity & SaaS Connectors",
     "subtitle": "Monitor identity providers, SaaS platforms, and HR systems",
@@ -59,7 +53,6 @@
     "pendingReviews": "Pending Reviews",
     "saasCompliance": "SaaS Compliance"
   },
-
   "devops": {
     "title": "DevOps & IT Connectors",
     "subtitle": "Git security, issue tracking SLA, endpoint and network compliance",
@@ -70,7 +63,6 @@
     "endpointCompliance": "Endpoint Compliance",
     "firewallCompliance": "Firewall Compliance"
   },
-
   "frameworks": {
     "title": "Cross-Framework Mapping Engine",
     "subtitle": "Assess once, comply everywhere — coverage across 10+ frameworks",
@@ -86,16 +78,15 @@
     "gaps": "gaps",
     "topGaps": "Top Compliance Gaps"
   },
-
   "heatmap": {
     "title": "Coverage Heatmap",
     "subtitle": "Visual overview of compliance coverage across frameworks and categories",
     "framework": "Framework",
     "overall": "Overall",
     "noData": "No heatmap data available. Run gap analyses first.",
-    "legend": "Legend"
+    "legend": "Legend",
+    "categoryNotMeasured": "No measurement exists for the categories. Category coverage is populated once a framework coverage snapshot contains a category matrix; until then no values are shown here."
   },
-
   "gapAnalysis": {
     "title": "Gap Analysis",
     "subtitle": "Identify compliance gaps per framework and prioritize remediation actions",

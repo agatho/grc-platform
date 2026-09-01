@@ -332,7 +332,8 @@
       "platformData": "Import & Suche",
       "platformCatalogs": "Kataloge & Frameworks",
       "platformAdmin": "Administration"
-    }
+    },
+    "title": "Hauptnavigation"
   },
   "orgSwitcher": {
     "label": "Organisation",
@@ -1418,7 +1419,8 @@
       "risks": "Risiken",
       "history": "Historie",
       "comments": "Kommentare",
-      "approval": "Freigabe"
+      "approval": "Freigabe",
+      "documents": "Dokumente"
     },
     "status": {
       "draft": "Entwurf",
@@ -1790,7 +1792,8 @@
       "tests": "Tests",
       "findings": "Feststellungen",
       "rcm": "RKM",
-      "history": "Historie"
+      "history": "Historie",
+      "documents": "Dokumente"
     },
     "tests": {
       "empty": "Keine Tests erfasst",
@@ -2734,7 +2737,8 @@
     },
     "actions": {
       "cancel": "Abbrechen",
-      "save": "Speichern"
+      "save": "Speichern",
+      "dismiss": "Verwerfen"
     }
   },
   "bcms": {
@@ -4490,7 +4494,9 @@
       "sendEmail": "Per E-Mail senden",
       "noReportData": "Keine Berichtsdaten für dieses Jahr verfügbar"
     },
-    "currency": "EUR"
+    "currency": "EUR",
+    "expandRow": "Unterbudgets einblenden",
+    "collapseRow": "Unterbudgets ausblenden"
   },
   "branding": {
     "title": "Corporate Design & Branding",
@@ -4719,7 +4725,9 @@
       "daysLeft": "Tage verbleibend",
       "comment": "Kommentar",
       "confidence": "Konfidenzgrad"
-    }
+    },
+    "campaigns": "RCSA-Kampagnen",
+    "campaignsSubtitle": "Risk & Control Self-Assessments verwalten"
   },
   "policies": {
     "loading": "Laden...",
@@ -5111,5 +5119,11 @@
       "postureWeightsDesc": "Gewichtung der sieben Security-Posture-Faktoren (Summe muss 100% ergeben)"
     }
   },
-  "loading": "Laden..."
+  "loading": "Laden...",
+  "errorReference": "Fehlerkennung",
+  "ai": {
+    "disclosureLabel": "Transparenzhinweis zur KI-Nutzung",
+    "providerLine": "Anbieter: {provider} · Modell: {model} · Verarbeitung in: {country}",
+    "humanReviewRequired": "Das Ergebnis ist ein Vorschlag und muss vor der Übernahme geprüft werden."
+  }
 }

@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import {
   Loader2,
   ArrowLeft,
-  Clock,
   Shield,
   FileText,
   Activity,
@@ -29,7 +27,7 @@ import type {
 } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 
-const STATUS_ORDER: IncidentStatus[] = [
+const _STATUS_ORDER: IncidentStatus[] = [
   "detected",
   "triaged",
   "contained",

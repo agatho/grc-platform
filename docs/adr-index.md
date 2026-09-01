@@ -2,32 +2,42 @@
 
 All architecture decisions in chronological order. Each ADR links to full context + decision.
 
-| #   | Title                                                                             | Status   | Date       |
-| --- | --------------------------------------------------------------------------------- | -------- | ---------- |
-| 001 | Multi-entity isolation via PostgreSQL RLS                                         | Accepted | 2026-03-22 |
-| 002 | Next.js 15 + React 19 + Tailwind + shadcn/ui                                      | Accepted | 2026-03-22 |
-| 003 | Turborepo + npm workspaces monorepo                                               | Accepted | 2026-03-22 |
-| 004 | Claude API + Ollama for AI features                                               | Accepted | 2026-03-22 |
-| 005 | REST + OpenAPI 3.1 (API style)                                                    | Accepted | 2026-03-22 |
-| 006 | Drizzle ORM (type-safe, SQL-close)                                                | Accepted | 2026-03-22 |
-| 007 | Auth.js + Custom RBAC + Three Lines of Defense (rev. 1 replaces Clerk)            | Accepted | 2026-03-23 |
-| 008 | Resend SDK + React Email Templates                                                | Accepted | 2026-03-24 |
-| 009 | Hono.js for Worker (background jobs)                                              | Accepted | 2026-03-24 |
-| 010 | Docker-only deployment (Hetzner)                                                  | Accepted | 2026-03-25 |
-| 011 | Append-only audit trail with SHA-256 hash chain                                   | Accepted | 2026-03-25 |
-| 012 | Feature-flags via module_config (per-org)                                         | Accepted | 2026-03-27 |
-| 013 | Generic catalog + catalog_entry (replaces typed risk/control catalogs)            | Accepted | 2026-04-01 |
-| 014 | [DB Migration Policy: Drizzle-only](./ADR-014-migration-policy.md)                | Accepted | 2026-04-17 |
-| 015 | [Off-Site Backup via Backblaze B2](./ADR-015-offsite-backup.md)                   | Proposed | 2026-04-18 |
-| 016 | [CI/CD Pipeline Architecture](./ADR-016-cicd-pipeline.md)                         | Accepted | 2026-04-18 |
-| 017 | [Monitoring & Alerting Strategy](./ADR-017-monitoring.md)                         | Accepted | 2026-04-18 |
-| 018 | [Secret Management](./ADR-018-secret-management.md)                               | Accepted | 2026-04-18 |
-| 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md)                              | Proposed | 2026-04-18 |
-| 020 | [API Versioning Strategy](./ADR-020-api-versioning.md)                            | Proposed | 2026-04-18 |
-| 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md)                 | Proposed | 2026-04-18 |
-| 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md)           | Accepted | 2026-04-18 |
-| 023 | [Migration-Rollback-Strategy](./ADR-023-migration-rollback.md)                    | Proposed | 2026-04-18 |
-| 024 | [Search Architecture (Postgres-FTS + pgvector)](./ADR-024-search-architecture.md) | Proposed | 2026-04-18 |
+> **[ARCTOS-FULL-2026-08-31 / WP12 · S14-23/E1, E2, E3] Korrekturlauf 2026-09-01.**
+> Der Index wich in beide Richtungen vom Bestand ab: er listete 001–024, aber im
+> `docs/`-Verzeichnis liegen nur 15 ADR-Dateien (001–013 haben keine), er kannte
+> die existierende **ADR-026 zur Hash-Chain-v3-Migration nicht** und vergab ihre
+> Nummer unten ein zweites Mal an eine ungeschriebene ADR, und drei ADRs standen
+> auf "Proposed", während ihre Entscheidung produktiv umgesetzt war. Die Spalte
+> **Datei** unterscheidet jetzt zwischen "als Dokument vorhanden" und "nur als
+> Zeile in diesem Index".
+
+| #   | Title                                                                             | Status   | Date       | Datei |
+| --- | --------------------------------------------------------------------------------- | -------- | ---------- | ----- |
+| 001 | Multi-entity isolation via PostgreSQL RLS                                         | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 002 | Next.js 15 + React 19 + Tailwind + shadcn/ui — **im Einsatz ist Next.js 16.2.11** (S14-23/C13; ein rev.-Eintrag fehlt) | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 003 | Turborepo + npm workspaces monorepo                                               | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 004 | Claude API + Ollama for AI features                                               | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 005 | REST + OpenAPI 3.1 (API style)                                                    | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 006 | Drizzle ORM (type-safe, SQL-close)                                                | Accepted | 2026-03-22 | — (nur Index-Eintrag) |
+| 007 | [Auth.js + Custom RBAC + Three Lines of Defense](./ADR-007-rev1.md) (rev. 1 replaces Clerk) | Accepted | 2026-03-23 | vorhanden (`ADR-007-rev1.md`) |
+| 008 | Resend SDK + React Email Templates                                                | Accepted | 2026-03-24 | — (nur Index-Eintrag) |
+| 009 | Hono.js for Worker (background jobs)                                              | Accepted | 2026-03-24 | — (nur Index-Eintrag) |
+| 010 | Docker-only deployment (Hetzner)                                                  | Accepted | 2026-03-25 | — (nur Index-Eintrag) |
+| 011 | [Append-only audit trail with SHA-256 hash chain](./ADR-011-rev3.md)              | Accepted | 2026-03-25, rev.3 | vorhanden (`ADR-011-rev2.md`, `ADR-011-rev3.md`) |
+| 012 | Feature-flags via module_config (per-org)                                         | Accepted | 2026-03-27 | — (nur Index-Eintrag) |
+| 013 | Generic catalog + catalog_entry (replaces typed risk/control catalogs)            | Accepted | 2026-04-01 | — (nur Index-Eintrag) |
+| 014 | [DB Migration Policy: Drizzle-only](./ADR-014-migration-policy.md)                | Accepted | 2026-04-17 | vorhanden |
+| 015 | [Off-Site Backup via Backblaze B2](./ADR-015-offsite-backup.md)                   | Accepted | 2026-04-18, rev. 2026-09-01 | vorhanden |
+| 016 | [CI/CD Pipeline Architecture](./ADR-016-cicd-pipeline.md)                         | Accepted | 2026-04-18 | vorhanden |
+| 017 | [Monitoring & Alerting Strategy](./ADR-017-monitoring.md)                         | Accepted | 2026-04-18 | vorhanden |
+| 018 | [Secret Management](./ADR-018-secret-management.md)                               | Accepted | 2026-04-18 | vorhanden |
+| 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md)                              | Accepted | 2026-04-18 (rev. WP9) | vorhanden |
+| 020 | [API Versioning Strategy](./ADR-020-api-versioning.md)                            | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden |
+| 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md)                 | Accepted | 2026-04-18, rev.2 2026-09-01 | vorhanden |
+| 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md)           | Accepted | 2026-04-18 | vorhanden |
+| 023 | [Migration-Rollback-Strategy](./ADR-023-migration-rollback.md)                    | Accepted | 2026-04-18, rev. 2026-09-01 | vorhanden |
+| 024 | [Search Architecture (Postgres-FTS + pgvector)](./ADR-024-search-architecture.md) | Proposed | 2026-04-18 | vorhanden |
+| 026 | [Hash-Chain v3 Migration](./ADR-026-hash-chain-v3-migration.md)                   | Accepted | 2026-05 | vorhanden |
 
 ## Companion Documents
 
@@ -37,7 +47,11 @@ All architecture decisions in chronological order. Each ADR links to full contex
 - [dr-playbook.md](./dr-playbook.md) -- 5 DR-Szenarien + Uebungs-Kalender
 - [env-vars-reference.md](./env-vars-reference.md) -- 32 ARCTOS-Env-Vars
 - [onboarding.md](./onboarding.md) -- Developer-Onboarding
-- [openapi.yaml](./openapi.yaml) -- 1034 Paths, 1606 Methoden
+- [openapi.yaml](./openapi.yaml) -- generiert aus dem Routenbaum; die
+  aktuelle Pfad- und Operationszahl steht im Kopf von
+  [API_REFERENCE.md](./API_REFERENCE.md) und wird bei jedem PR neu erzeugt.
+  (Die frühere Angabe "1034 Paths, 1606 Methoden" war um 273 bzw. 338 zu
+  niedrig und stand an vier Stellen im Repository — S14-23/A16.)
 
 ## Compliance-Readiness-Checklisten
 
@@ -89,7 +103,8 @@ Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf
 ### Pending ADRs (not yet written)
 
 - ADR-025: File-Upload-Storage (Filesystem vs. S3-kompatibel vs. B2)
-- ADR-026: Performance-Testing-Strategy (k6 vs Artillery, target-RPS)
+- ADR-027a: Performance-Testing-Strategy (k6 vs Artillery, target-RPS)
+  <!-- [WP12 · S14-23/E1] Diese Zeile stand als "ADR-026" hier, während docs/ADR-026-hash-chain-v3-migration.md existiert, den Status Accepted trägt und in docs/STATUS.md als geltende Entscheidung zitiert wird. Die Nummer war also doppelt vergeben — an ein existierendes Dokument und an einen Wunsch. Umnummeriert, damit die nächste geschriebene ADR nicht dieselbe Kollision erzeugt. -->
 - ADR-027: Webhooks + Events-Delivery-Guarantees
 
 Contributions welcome -- each ADR should follow the established 7-section template (ID, Title, Status, Date, Context, Decision, Rationale, Consequences).

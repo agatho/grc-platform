@@ -8,7 +8,6 @@ import {
   Shield,
   AlertTriangle,
   Target,
-  TrendingDown,
   Bug,
   Server,
   Activity,

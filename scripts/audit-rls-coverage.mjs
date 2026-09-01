@@ -127,7 +127,8 @@ async function measure(sql) {
       slot.defects.push(`${p.policyname}: app.bypass_rls (S01-02)`);
     if (
       cmd !== "INSERT" &&
-      ((p.qual ?? "").trim() === "true" || (p.with_check ?? "").trim() === "true")
+      ((p.qual ?? "").trim() === "true" ||
+        (p.with_check ?? "").trim() === "true")
     )
       slot.defects.push(`${p.policyname}: USING/CHECK (true) on ${cmd}`);
     if (writeCmd && expr.includes("org_id IS NULL"))
@@ -306,7 +307,9 @@ function render(rows, dbName) {
   }
 
   md.push(`## Vollständige Objektliste`, ``);
-  md.push(`| Objekt | Scope | RLS | FORCE | Policies | audit_trigger | Status |`);
+  md.push(
+    `| Objekt | Scope | RLS | FORCE | Policies | audit_trigger | Status |`,
+  );
   md.push(`|---|---|---|---|---|---|---|`);
   for (const r of rows) {
     md.push(
@@ -359,10 +362,16 @@ async function main() {
     }
     // Drift zwischen Report und Ist — der eigentliche S01-14/-24-Fix.
     const stripGenerated = (s) =>
-      s.replace(/^Erzeugt mit .*$/gm, "").replace(/\s+/g, " ").trim();
+      s
+        .replace(/^Erzeugt mit .*$/gm, "")
+        .replace(/\s+/g, " ")
+        .trim();
     let committed = null;
     try {
-      committed = await readFile(join(OUT_DIR, "rls-coverage-report.md"), "utf8");
+      committed = await readFile(
+        join(OUT_DIR, "rls-coverage-report.md"),
+        "utf8",
+      );
     } catch {
       console.error("✗ docs/security/rls-coverage-report.md fehlt.");
       failed = true;

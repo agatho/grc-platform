@@ -12,7 +12,6 @@ import {
   Pencil,
   Loader2,
   Server,
-  User,
   Calendar,
   Clock,
   AlertTriangle,
@@ -20,8 +19,6 @@ import {
   Activity,
   History,
   FileText,
-  ExternalLink,
-  ChevronRight,
 } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ProtectionLevelBadge } from "@/components/isms/protection-level-badge";
@@ -97,8 +94,8 @@ function AssetDetailInner() {
   const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const t = useTranslations("assets");
-  const tc = useTranslations("common");
+  const _t = useTranslations("assets");
+  const _tc = useTranslations("common");
 
   const [asset, setAsset] = useState<AssetDetail | null>(null);
   const [classification, setClassification] = useState<Classification | null>(

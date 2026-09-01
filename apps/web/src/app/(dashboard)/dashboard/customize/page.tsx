@@ -8,7 +8,6 @@ import {
   Save,
   X,
   RotateCcw,
-  Eye,
   EyeOff,
   Building,
   Maximize,
@@ -171,12 +170,12 @@ export default function DashboardCustomizePage() {
   }, []);
 
   const visibleWidgets = layout.filter((w) => w.visible);
-  const hiddenWidgetIds = layout
+  const _hiddenWidgetIds = layout
     .filter((w) => !w.visible)
     .map((w) => w.widgetId);
 
   // Widgets not yet in layout at all
-  const unaddedWidgets = WIDGET_REGISTRY.filter(
+  const _unaddedWidgets = WIDGET_REGISTRY.filter(
     (wd) => !layout.some((l) => l.widgetId === wd.id),
   );
 

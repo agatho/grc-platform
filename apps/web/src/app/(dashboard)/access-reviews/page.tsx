@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
-  Shield,
   Users,
   CheckCircle2,
   AlertTriangle,
@@ -31,12 +30,12 @@ interface UserRole {
 }
 
 export default function AccessReviewsPage() {
-  const t = useTranslations("accessLog");
-  const { data: session } = useSession();
+  const _t = useTranslations("accessLog");
+  const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
   const [users, setUsers] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState<Set<string>>(new Set());
+  const [_reviewing, _setReviewing] = useState<Set<string>>(new Set());
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [revoked, setRevoked] = useState<Set<string>>(new Set());
 
@@ -46,7 +45,21 @@ export default function AccessReviewsPage() {
       const res = await fetch("/api/v1/users?limit=200");
       if (res.ok) {
         const json = await res.json();
-        const userData = (json.data ?? []).map((u: any) => ({
+        // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `(u: any)` — typed to the
+        // fields this mapper actually reads.
+        type UserRow = {
+          id: string;
+          name?: string | null;
+          email?: string | null;
+          roles?: Array<{
+            role?: string;
+            lineOfDefense?: string | null;
+            department?: string | null;
+          }>;
+          lastLoginAt?: string | null;
+          isActive?: boolean;
+        };
+        const userData = ((json.data ?? []) as UserRow[]).map((u) => ({
           userId: u.id,
           userName: u.name ?? "Unknown",
           userEmail: u.email ?? "",

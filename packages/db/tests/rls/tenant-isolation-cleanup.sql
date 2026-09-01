@@ -13,6 +13,16 @@
 SET session_replication_role = 'replica';
 SET client_min_messages = warning;
 
+-- [ARCTOS-FULL-2026-08-31 / WP11 · S11-11] Merker fuer den Trigger-Zustand,
+-- damit `ENABLE ALWAYS` nach dem Aufraeumen `ENABLE ALWAYS` bleibt.
+CREATE TABLE IF NOT EXISTS _wp2_trigger_state (
+  tbl          text  NOT NULL,
+  tgname       text  NOT NULL,
+  prev_enabled "char" NOT NULL,
+  PRIMARY KEY (tbl, tgname)
+);
+TRUNCATE _wp2_trigger_state;
+
 DO $cleanup$
 DECLARE
   r record;
@@ -54,6 +64,16 @@ BEGIN
             ''bb000000-0000-4000-8000-000000000002''::uuid)', r.tbl);
     EXCEPTION WHEN OTHERS THEN
       BEGIN
+        -- [WP11 · S11-11] Zustand JE TRIGGER merken, bevor er abgeschaltet
+        -- wird — sonst laesst er sich nachher nicht originalgetreu
+        -- wiederherstellen (s. der lange Kommentar weiter unten).
+        INSERT INTO _wp2_trigger_state (tbl, tgname, prev_enabled)
+        SELECT r.tbl, t.tgname, t.tgenabled
+          FROM pg_trigger t
+         WHERE t.tgrelid = ('public.' || quote_ident(r.tbl))::regclass
+           AND NOT t.tgisinternal
+        ON CONFLICT (tbl, tgname) DO NOTHING;
+
         EXECUTE format('ALTER TABLE public.%I DISABLE TRIGGER USER', r.tbl);
         DECLARE rl record;
         BEGIN
@@ -71,8 +91,49 @@ BEGIN
         RAISE WARNING '[wp2-cleanup] % konnte nicht bereinigt werden: %', r.tbl, SQLERRM;
       END;
       -- Guards in jedem Fall wiederherstellen.
+      --
+      -- [ARCTOS-FULL-2026-08-31 / WP11 · S11-11] `ENABLE TRIGGER USER` war
+      -- hier falsch und hat still Schaden angerichtet: es setzt tgenabled auf
+      -- 'O' (origin) — auch fuer Trigger, die vorher 'A' (ENABLE ALWAYS)
+      -- waren. Genau die Guards, die dieser Block wegen `ENABLE ALWAYS`
+      -- vorher abschalten musste, kamen als origin-only zurueck und feuerten
+      -- danach unter `session_replication_role = 'replica'` NICHT mehr.
+      --
+      -- Gemessen: nach einem RLS-Lauf standen
+      -- `audit_anchor_append_only_trg`, `audit_anchor_no_truncate` und
+      -- `wb_audit_log_append_only_trg` auf 'O'; die WP4-Abnahmetests
+      -- "refuses to rewrite the Merkle root … replica role included" (S03-01)
+      -- und S03-15 schlugen deshalb fehl — in einer anderen Suite, mit einer
+      -- Fehlermeldung, die auf den Audit-Trail zeigte statt auf dieses
+      -- Aufraeumskript. Ein Cleanup, das eine Sicherheitskontrolle dauerhaft
+      -- entschaerft, ist schlimmer als ein Cleanup, das nicht aufraeumt.
+      --
+      -- Jetzt wird der Zustand JE TRIGGER zurueckgesetzt: 'A' bleibt 'A',
+      -- 'O' bleibt 'O'. Der Zustand wird vor dem Abschalten gelesen — siehe
+      -- die Tabelle `_wp2_trigger_state` weiter oben.
       BEGIN
-        EXECUTE format('ALTER TABLE public.%I ENABLE TRIGGER USER', r.tbl);
+        DECLARE tg record;
+        BEGIN
+          FOR tg IN
+            SELECT t.tgname, s.prev_enabled
+              FROM pg_trigger t
+              JOIN _wp2_trigger_state s
+                ON s.tbl = r.tbl AND s.tgname = t.tgname
+             WHERE t.tgrelid = ('public.' || quote_ident(r.tbl))::regclass
+               AND NOT t.tgisinternal
+          LOOP
+            EXECUTE format(
+              'ALTER TABLE public.%I %s TRIGGER %I',
+              r.tbl,
+              CASE tg.prev_enabled
+                WHEN 'A' THEN 'ENABLE ALWAYS'
+                WHEN 'R' THEN 'ENABLE REPLICA'
+                WHEN 'D' THEN 'DISABLE'
+                ELSE 'ENABLE'
+              END,
+              tg.tgname);
+          END LOOP;
+        END;
         DECLARE rl record;
         BEGIN
           FOR rl IN SELECT rw.rulename FROM pg_rewrite rw
@@ -101,6 +162,8 @@ DELETE FROM organization
 
 DROP TABLE IF EXISTS _wp2_seed_ids;
 DROP TABLE IF EXISTS _wp2_seed_errors;
+-- [WP11 · S11-11] Merker nicht liegen lassen — er ist reiner Testzustand.
+DROP TABLE IF EXISTS _wp2_trigger_state;
 DROP FUNCTION IF EXISTS _wp2_seed_value(text, text, text, "char", "char", oid, int, text);
 DROP FUNCTION IF EXISTS _wp2_check_literal(text, text);
 

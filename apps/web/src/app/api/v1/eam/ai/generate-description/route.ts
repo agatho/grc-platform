@@ -23,7 +23,11 @@ import {
   safeJsonParse,
 } from "@grc/ai";
 import { loadEamAiConfig } from "../_shared/config";
-import { aiRateLimit, aiErrorResponse, aiJson } from "../../../ai/_shared/ai-route";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../ai/_shared/ai-route";
 
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
@@ -73,16 +77,14 @@ export async function POST(req: Request) {
       userId: ctx.userId,
       entityType: "architecture_element",
       entityId: element[0].id,
-      requestedProvider: isAiProvider(config.provider)
-        ? config.provider
-        : null,
+      requestedProvider: isAiProvider(config.provider) ? config.provider : null,
       messages: buildEamDescriptionPrompt({
         elementName: element[0].name,
         elementType: String(
           (element[0] as Record<string, unknown>).elementType ?? "unknown",
         ),
-        existingDescription:
-          (element[0] as Record<string, unknown>).description as string | null,
+        existingDescription: (element[0] as Record<string, unknown>)
+          .description as string | null,
       }),
       maxTokens: 800,
       temperature: 0.3,

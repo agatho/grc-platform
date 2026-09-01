@@ -67,7 +67,7 @@ function getDeadlineInfo(deadline: string | null) {
 }
 
 function AuthorityPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AuthorityCommunication[]>([]);
   const [loading, setLoading] = useState(true);

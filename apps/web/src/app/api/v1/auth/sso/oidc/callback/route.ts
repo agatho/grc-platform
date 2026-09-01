@@ -217,7 +217,8 @@ export async function GET(req: Request) {
           .returning();
         userId = created.id;
 
-        const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
+        const groupMapping =
+          (config.groupRoleMapping as GroupRoleMapping) ?? {};
         const mappingEntries = groupRoleMappingToEntries(groupMapping);
         const role = resolveRole(
           attrs.groups ?? [],

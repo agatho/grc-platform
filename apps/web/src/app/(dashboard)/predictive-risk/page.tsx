@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {
-  Brain,
-  AlertTriangle,
-  TrendingUp,
-  Radar,
-  Activity,
-} from "lucide-react";
+import { Brain, AlertTriangle, TrendingUp, Radar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -91,19 +85,19 @@ export default function PredictiveRiskDashboardPage() {
           <Link href="/predictive-risk/models">
             <Button variant="outline">
               <Brain className="h-4 w-4 mr-2" />
-              {t("models")}
+              {t("models.title")}
             </Button>
           </Link>
           <Link href="/predictive-risk/radar">
             <Button variant="outline">
               <Radar className="h-4 w-4 mr-2" />
-              {t("radar")}
+              {t("radar.title")}
             </Button>
           </Link>
           <Link href="/predictive-risk/anomalies">
             <Button variant="outline">
               <AlertTriangle className="h-4 w-4 mr-2" />
-              {t("anomalies")}
+              {t("anomalies.title")}
             </Button>
           </Link>
         </div>

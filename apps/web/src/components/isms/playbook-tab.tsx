@@ -252,7 +252,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
 
         {suggestions.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-8">
-            <Play size={24} className="text-gray-300 mb-2" />
+            <Play size={24} className="text-gray-500 mb-2" />
             <p className="text-sm text-gray-500">{t("noPlaybook")}</p>
           </div>
         )}
@@ -493,7 +493,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                       ) : tk.status === "cancelled" ? (
                         <XCircle size={14} className="text-gray-400 shrink-0" />
                       ) : (
-                        <Clock size={14} className="text-blue-400 shrink-0" />
+                        <Clock size={14} className="text-blue-600 shrink-0" />
                       )}
                       <span
                         className={`text-xs truncate ${

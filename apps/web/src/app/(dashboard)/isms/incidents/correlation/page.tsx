@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Loader2, Play, Link2, TrendingUp, Shield } from "lucide-react";
+import { Loader2, Play, Link2, TrendingUp } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { IncidentCorrelation, DetectedPattern } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 export default function CorrelationPage() {
   return (
@@ -139,6 +142,15 @@ function CorrelationInner() {
                         className="cursor-pointer rounded border p-4 hover:bg-muted/25"
                         onClick={() =>
                           router.push(`/isms/incidents/correlation/${corr.id}`)
+                        }
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) =>
+                          activateOnKey(e, () =>
+                            router.push(
+                              `/isms/incidents/correlation/${corr.id}`,
+                            ),
+                          )
                         }
                       >
                         <div className="flex items-center justify-between">

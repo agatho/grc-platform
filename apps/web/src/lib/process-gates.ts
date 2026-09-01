@@ -4,6 +4,19 @@
 // Each blocker has a stable machine-readable `code` so the UI can localize.
 
 import { sql } from "drizzle-orm";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
+// the `any` that stood on every `tx` parameter here.
+import type { DbTransaction } from "@/lib/db-types";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] Row shape for the raw-SQL reads
+ * below, which were cast `as any[]`. `any` meant a renamed column silently
+ * produced `undefined` and a gate that passed instead of blocking — in
+ * modules whose entire purpose is to refuse a release. `Record<string,
+ * unknown>` keeps the property access explicit while restoring the check that
+ * the value is used as something.
+ */
+type SqlRow = Record<string, unknown>;
 
 export interface GateBlocker {
   code: string;
@@ -16,7 +29,8 @@ export type ProcessStatus =
   "draft" | "in_review" | "approved" | "published" | "archived";
 
 interface CheckArgs {
-  tx: any;
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction;
   processId: string;
   orgId: string;
   target: ProcessStatus;
@@ -35,7 +49,7 @@ export async function evaluateTransitionGates({
            p.is_critical_process, p.description
     FROM process p
     WHERE p.id = ${processId} AND p.org_id = ${orgId} AND p.deleted_at IS NULL
-  `)) as any[];
+  `)) as SqlRow[];
 
   if (!proc) {
     return [
@@ -81,7 +95,7 @@ export async function evaluateTransitionGates({
            AND pso.signer_role = 'process_owner'
            AND pv.is_current = true
       )::int AS owner_sign_offs
-  `)) as any[];
+  `)) as SqlRow[];
 
   const activities = Number(stats?.activities ?? 0);
   const activitiesWithoutDesc = Number(stats?.activities_without_desc ?? 0);

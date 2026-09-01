@@ -355,9 +355,7 @@ describe("POST /signature-requests/[id]/sign", () => {
     selectQueue.push([requestRow()]);
     selectQueue.push([sigRow()]);
     selectQueue.push([{ versionSha: "b".repeat(64), docSha: null }]);
-    selectQueue.push([
-      { versionPath: "org-1/doc-1/file.pdf", docPath: null },
-    ]);
+    selectQueue.push([{ versionPath: "org-1/doc-1/file.pdf", docPath: null }]);
     const res = await call();
     expect(res.status).toBe(422);
     const body = await res.json();
@@ -399,9 +397,7 @@ describe("POST /signature-requests/[id]/sign", () => {
       sigRow({ id: "sig-me", signerUserId: ME, signOrder: 2 }),
     ]);
     selectQueue.push([{ versionSha: SHA, docSha: null }]);
-    selectQueue.push([
-      { versionPath: "org-1/doc-1/file.pdf", docPath: null },
-    ]);
+    selectQueue.push([{ versionPath: "org-1/doc-1/file.pdf", docPath: null }]);
     updateReturning.push([
       sigRow({ id: "sig-me", signerUserId: ME, status: "signed" }),
     ]);
@@ -428,9 +424,7 @@ describe("POST /signature-requests/[id]/sign", () => {
     expect(set.ipAddress).toBe("203.0.113.7");
     // #S06-03: without a declared proxy topology the address is a
     // client self-declaration and is stored as such.
-    expect(
-      (set as unknown as { ipTrusted: boolean }).ipTrusted,
-    ).toBe(false);
+    expect((set as unknown as { ipTrusted: boolean }).ipTrusted).toBe(false);
     // #S06-03: hash version 2 — the evidence fields are inside the hash.
     expect((set as unknown as { hashVersion: number }).hashVersion).toBe(2);
     // #S06-05: the timestamp outcome is recorded, never assumed.
@@ -445,9 +439,9 @@ describe("POST /signature-requests/[id]/sign", () => {
         u.table === documentSignatureRequest &&
         (u.set as { finalChainHash?: string }).finalChainHash !== undefined,
     );
-    expect((shapeUpdate!.set as { finalChainHash: string }).finalChainHash).toBe(
-      set.chainHash,
-    );
+    expect(
+      (shapeUpdate!.set as { finalChainHash: string }).finalChainHash,
+    ).toBe(set.chainHash);
 
     // Request completed
     const reqUpdate = updated.find(

@@ -19,7 +19,12 @@ import {
 import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
 
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);

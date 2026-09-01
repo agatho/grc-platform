@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { sharedCoverageConfig } from "../../vitest.coverage.shared";
+import { coverageFor } from "../../vitest.coverage.shared";
 
 // [ARCTOS-FULL-2026-08-31 / WP6]
 // `packages/ai` hatte fünf Testdateien, aber weder ein `test`-Skript noch
@@ -11,9 +11,8 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["tests/**/*.test.ts"],
-    coverage: {
-      ...sharedCoverageConfig,
+    coverage: coverageFor("packages/ai", {
       include: ["src/**/*.ts"],
-    },
+    }),
   },
 });

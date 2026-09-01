@@ -6,8 +6,6 @@ import {
   Loader2,
   CheckCircle2,
   Shield,
-  Upload,
-  X,
   Copy,
   ExternalLink,
   AlertTriangle,

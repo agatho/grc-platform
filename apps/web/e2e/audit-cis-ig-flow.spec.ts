@@ -15,9 +15,10 @@
  * rot. Läuft nur im platform-smoke-Projekt, nicht im minimalen CI-Smoke.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("Audit — CIS IG1 Flow (ISO 19011 Arbeitspapier)", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("create audit → generate CIS IG1 checklist → evaluate with method entries", async ({
     request,

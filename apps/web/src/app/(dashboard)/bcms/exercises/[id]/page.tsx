@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, CheckCircle } from "lucide-react";
@@ -36,6 +36,11 @@ export default function ExerciseDetailPage() {
 }
 
 function ExerciseDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("bcms");
   const params = useParams();
   const router = useRouter();
@@ -229,10 +234,14 @@ function ExerciseDetailInner() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-result`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Result
               </label>
               <select
+                id={`${a11yId}-result`}
                 value={completeResult}
                 onChange={(e) =>
                   setCompleteResult(e.target.value as ExerciseResult)

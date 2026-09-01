@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, TrendingUp, Shield, AlertTriangle } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   ScatterChart,
   Scatter,
@@ -12,7 +12,6 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   ZAxis,
-  ReferenceLine,
 } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";

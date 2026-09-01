@@ -16,7 +16,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { GrcArea, RoiMethod } from "@grc/shared";
+import type { RoiMethod } from "@grc/shared";
 
 interface ReportData {
   year: number;

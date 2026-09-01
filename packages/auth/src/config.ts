@@ -46,8 +46,10 @@ export const authConfig: NextAuthConfig = {
         token.userId = authUser.id!;
         token.email = authUser.email!;
         token.name = authUser.name!;
-        token.language = (authUser as any).language ?? "de";
-        token.roles = (authUser as any).roles ?? [];
+        // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `as any` removed — the
+        // token shape is declared in ./types.ts.
+        token.language = authUser.language ?? "de";
+        token.roles = authUser.roles ?? [];
       }
       return token;
     },
@@ -56,9 +58,11 @@ export const authConfig: NextAuthConfig = {
       session.user.id = token.userId as string;
       session.user.email = token.email as string;
       session.user.name = token.name as string;
-      (session.user as any).language = (token as any).language ?? "de";
-      const roles = ((token as any).roles as RoleAssignment[]) ?? [];
-      (session.user as any).roles = roles;
+      // [WP12 · S14-19] Typed via the augmentation in ./types.ts.
+      session.user.language = token.language ?? "de";
+      const roles: RoleAssignment[] = token.roles ?? [];
+      session.user.roles = roles;
+      session.user.disabled = token.disabled ?? false;
 
       // Resolve the active org from the cookie, validated against the user's
       // roles. Without this, client components (layout, switcher) would have
@@ -74,7 +78,7 @@ export const authConfig: NextAuthConfig = {
       } catch {
         // cookies() can throw in some edge contexts — fall back to first role
       }
-      (session.user as any).currentOrgId = currentOrgId;
+      session.user.currentOrgId = currentOrgId;
 
       return session;
     },

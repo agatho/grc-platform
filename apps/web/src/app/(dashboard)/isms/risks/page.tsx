@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -10,7 +9,6 @@ import {
   Shield,
   AlertTriangle,
   ArrowRight,
-  Target,
   TrendingDown,
 } from "lucide-react";
 

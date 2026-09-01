@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Shield, Calendar, FileText, AlertCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -58,7 +58,7 @@ export default function RegulatoryDashboardPage() {
           <Link href="/regulatory/calendar">
             <Button variant="outline">
               <Calendar className="h-4 w-4 mr-2" />
-              {t("calendar")}
+              {t("calendar.title")}
             </Button>
           </Link>
         </div>

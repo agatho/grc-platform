@@ -147,7 +147,7 @@ export default function ProgrammesListPage() {
                   </CardHeader>
                   <CardContent>
                     {j.description && (
-                      <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                      <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-500">
                         {j.description}
                       </p>
                     )}

@@ -56,10 +56,7 @@ import {
 } from "@grc/ai";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import {
-  aiRateLimit,
-  aiErrorResponse,
-} from "../../ai/_shared/ai-route";
+import { aiRateLimit, aiErrorResponse } from "../../ai/_shared/ai-route";
 
 export async function POST(req: Request) {
   const ctx = await withAuth(
@@ -117,7 +114,10 @@ export async function POST(req: Request) {
   // Physische Spaltennamen (S05-19: `title` vs. `title_de` in den
   // Katalogtabellen). Beide Seiten stammen aus Allowlists.
   const columnByField = new Map(
-    allTranslatableFields.map((f) => [f, translationSourceColumn(entityType, f)]),
+    allTranslatableFields.map((f) => [
+      f,
+      translationSourceColumn(entityType, f),
+    ]),
   );
   const fieldSelects = allTranslatableFields.map((f) =>
     sql.raw(`"${columnByField.get(f)}" AS "${f}"`),

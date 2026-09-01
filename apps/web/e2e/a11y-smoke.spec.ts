@@ -14,8 +14,9 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+import { STORAGE_STATE } from "./fixtures/storage";
 
-test.use({ storageState: "e2e/.auth/admin.json" });
+test.use({ storageState: STORAGE_STATE });
 
 const BLOCKING_IMPACTS = ["serious", "critical"] as const;
 type BlockingImpact = (typeof BLOCKING_IMPACTS)[number];

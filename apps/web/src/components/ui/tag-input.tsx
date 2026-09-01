@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { X, Plus, Tag } from "lucide-react";
 import { Badge } from "./badge";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface TagSuggestion {
   id: string;
@@ -60,7 +61,7 @@ export function TagInput({
       if (res.ok) {
         const json = await res.json();
         setSuggestions(
-          (json.data ?? []).map((t: any) => ({
+          (json.data ?? []).map((t: UnvalidatedJson) => ({
             id: t.id,
             name: t.name,
             color: t.color ?? "#6B7280",
@@ -139,13 +140,21 @@ export function TagInput({
   return (
     <div ref={containerRef} className="relative">
       {/* Tag display + input */}
-      <div
+      {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] This wrapper carried
+          `onClick={() => inputRef.current?.focus()}` on a plain <div> — a
+          click handler on a non-interactive element with no keyboard path.
+          It is not a control, so giving it `role="button"` would have been a
+          lie; the JS handler existed only to widen the hit area of the input
+          inside it. A <label> does exactly that natively: clicking anywhere in
+          it focuses the control it wraps, with no handler, no role and no
+          keyboard equivalent needed — and it gives the input a genuine
+          accessible name when the caller passes one (S14-09). */}
+      <label
         className={`flex flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1.5 min-h-[38px] ${
           disabled
             ? "opacity-50 cursor-not-allowed"
             : "cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
         }`}
-        onClick={() => !disabled && inputRef.current?.focus()}
       >
         {value.map((tag) => {
           const suggestion = suggestions.find(
@@ -191,7 +200,7 @@ export function TagInput({
             disabled={disabled}
           />
         )}
-      </div>
+      </label>
 
       {/* Suggestions dropdown */}
       {showSuggestions && !disabled && (
@@ -234,7 +243,7 @@ export function TagInput({
                       {s.category}
                     </span>
                   )}
-                  <span className="text-[10px] text-gray-300">
+                  <span className="text-[10px] text-gray-500">
                     {s.usageCount}×
                   </span>
                 </button>

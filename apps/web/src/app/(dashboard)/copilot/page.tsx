@@ -2,19 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Bot,
-  Send,
-  ThumbsUp,
-  ThumbsDown,
-  Pin,
-  Archive,
-  Plus,
-} from "lucide-react";
+import { Bot, Send, ThumbsUp, ThumbsDown, Pin, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CopilotConversation, CopilotMessage } from "@grc/shared";
 
 export default function CopilotChatPage() {
@@ -23,7 +13,7 @@ export default function CopilotChatPage() {
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [_loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

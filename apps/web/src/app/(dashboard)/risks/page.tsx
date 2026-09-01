@@ -14,7 +14,6 @@ import {
   Download,
   RefreshCcw,
   AlertTriangle,
-  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -118,7 +117,7 @@ const STATUSES: RiskStatus[] = [
   "closed",
 ];
 
-const STRATEGIES: TreatmentStrategy[] = [
+const _STRATEGIES: TreatmentStrategy[] = [
   "mitigate",
   "accept",
   "transfer",
@@ -179,9 +178,9 @@ export default function RisksPage() {
 
 function RisksPageInner() {
   const t = useTranslations("risk");
-  const tActions = useTranslations("actions");
+  const _tActions = useTranslations("actions");
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
 
   // Data state

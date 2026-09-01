@@ -20,7 +20,7 @@ export const processEamRuleEvaluator = withCronInstrumentation(
     resolvedViolations: number;
   }> => {
     let newViolations = 0;
-    let resolvedViolations = 0;
+    const resolvedViolations = 0;
 
     // Get all active rules across all orgs
     const rules = await db

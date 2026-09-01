@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Shield,
   AlertTriangle,
   Bug,
   Zap,

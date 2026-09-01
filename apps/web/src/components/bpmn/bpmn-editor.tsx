@@ -1,13 +1,26 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
+  useId,
   useRef,
   useState,
   useImperativeHandle,
   forwardRef,
 } from "react";
+import { useTranslations } from "next-intl";
 import "./bpmn-editor.css";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-10] keyboard + screen-reader support.
+import {
+  BpmnTextAlternative,
+  canvasA11yProps,
+  makeInteractiveOverlay,
+  readModelElements,
+  useBpmnKeyboardNavigation,
+  type BpmnA11yElement,
+  type BpmnCanvasService,
+} from "./bpmn-a11y";
 import arctosModdleExtension from "./arctos-moddle-extension.json";
 
 // ---------------------------------------------------------------------------
@@ -122,6 +135,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
     const modelerRef = useRef<BpmnInstance | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // [WP12 · S14-10] Backing data for the tabular alternative view.
+    const [modelElements, setModelElements] = useState<BpmnA11yElement[]>([]);
+    const t = useTranslations("bpmn");
+    const describedById = useId();
 
     // Store latest callbacks in refs to avoid re-init
     const onSaveRef = useRef(onSave);
@@ -176,6 +193,12 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
             zoom: (mode: string) => void;
           };
           canvas.zoom("fit-viewport");
+
+          // [WP12 · S14-10] Snapshot the model for the text alternative.
+          const elementRegistry = instance.get("elementRegistry") as Parameters<
+            typeof readModelElements
+          >[0];
+          if (!destroyed) setModelElements(readModelElements(elementRegistry));
 
           // Edit-mode event listeners
           if (!readOnly) {
@@ -294,9 +317,16 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
                 : "bg-green-100 text-green-800 border-green-300";
 
           const html = document.createElement("div");
-          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
+          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm ${color}`;
           html.textContent = `${item.riskCount} · ${item.highestScore}`;
           html.style.transform = "translate(50%, -50%)";
+          // [WP12 · S14-10] Informational badge: named, not falsely operable.
+          makeInteractiveOverlay(html, {
+            label: t("a11y.riskBadge", {
+              count: item.riskCount,
+              score: item.highestScore,
+            }),
+          });
 
           overlays.add(item.bpmnElementId, "risk-badge", {
             position: { top: -14, right: -14 },
@@ -336,9 +366,17 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
                   ? "bg-amber-100 text-amber-800 border-amber-300"
                   : "bg-red-100 text-red-800 border-red-300";
           const html = document.createElement("div");
-          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
+          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm ${color}`;
           html.textContent = `\u{1F6E1} ${item.effectiveCount}/${item.controlCount}`;
           html.style.transform = "translate(-50%, 0)";
+          // [WP12 · S14-10] The shield glyph alone announces as "shield"; the
+          // label carries what the badge actually means.
+          makeInteractiveOverlay(html, {
+            label: t("a11y.controlBadge", {
+              effective: item.effectiveCount,
+              total: item.controlCount,
+            }),
+          });
           overlays.add(item.bpmnElementId, "control-badge", {
             position: { top: -14, left: -14 },
             html,
@@ -379,7 +417,12 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           html.className = `${colorMap[item.lineOfDefense] ?? "bg-gray-400"} rounded-l`;
           html.style.width = "4px";
           html.style.height = "60px";
+          // [WP12 · S14-10] A 4px colour stripe conveys the line of defence by
+          // colour alone; `title` is not reliably announced. Named explicitly.
           html.title = `LoD: ${item.lineOfDefense}`;
+          makeInteractiveOverlay(html, {
+            label: t("a11y.lodStripe", { lod: item.lineOfDefense }),
+          });
           overlays.add(item.bpmnElementId, "lod-stripe", {
             position: { top: 0, left: -6 },
             html,
@@ -415,9 +458,16 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
               ? "bg-red-600 text-white border-red-700"
               : "bg-amber-200 text-amber-900 border-amber-300";
           const html = document.createElement("div");
-          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
+          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm ${color}`;
           html.textContent = `⚠ ${item.openCount}`;
           html.style.transform = "translate(50%, 50%)";
+          // [WP12 · S14-10] Informational badge.
+          makeInteractiveOverlay(html, {
+            label: t("a11y.findingBadge", {
+              open: item.openCount,
+              critical: item.criticalCount,
+            }),
+          });
           overlays.add(item.bpmnElementId, "finding-badge", {
             position: { bottom: -14, right: -14 },
             html,
@@ -456,7 +506,7 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
         for (const item of callActivityOverlayData ?? []) {
           const html = document.createElement("div");
           html.className =
-            "inline-flex items-center gap-1 rounded-full border border-indigo-300 bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-800 shadow-sm cursor-pointer";
+            "inline-flex items-center gap-1 rounded-full border border-indigo-300 bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-800 shadow-sm cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500";
           html.textContent = `↗${
             item.calledProcessName ? ` ${item.calledProcessName}` : ""
           }`;
@@ -466,9 +516,14 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           html.style.textOverflow = "ellipsis";
           html.style.transform = "translate(-50%, 50%)";
           html.title = item.calledProcessName ?? item.calledProcessId;
-          html.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            onNavigateToProcessRef.current?.(item.calledProcessId);
+          // [WP12 · S14-10] Was click-only: focusable, named and
+          // Enter/Space-operable now.
+          makeInteractiveOverlay(html, {
+            label: t("a11y.drillDown", {
+              name: item.calledProcessName ?? item.calledProcessId,
+            }),
+            onActivate: () =>
+              onNavigateToProcessRef.current?.(item.calledProcessId),
           });
           overlays.add(item.bpmnElementId, "call-activity-badge", {
             position: { bottom: -14, left: -14 },
@@ -546,9 +601,22 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       };
     }, [loading]);
 
+    // [WP12 · S14-10] Arrow keys pan, +/- zoom, 0 fits. bpmn-js already binds
+    // its own editor shortcuts via `keyboard: { bindTo: document }`; these are
+    // bound to the canvas element so they only fire while it has focus.
+    const getCanvas = useCallback((): BpmnCanvasService | null => {
+      const instance = modelerRef.current;
+      if (!instance) return null;
+      return instance.get("canvas") as BpmnCanvasService;
+    }, []);
+    useBpmnKeyboardNavigation(containerRef, getCanvas);
+
     if (error) {
       return (
-        <div className="flex items-center justify-center h-96 text-red-500 text-sm">
+        <div
+          role="alert"
+          className="flex items-center justify-center h-96 text-red-600 text-sm"
+        >
           {error}
         </div>
       );
@@ -557,11 +625,47 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
     return (
       <div className={`relative ${className ?? ""}`}>
         {loading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center bg-white/80"
+            role="status"
+            aria-live="polite"
+            aria-label={t("a11y.loading")}
+          >
             <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full" />
           </div>
         )}
-        <div ref={containerRef} className="h-full w-full min-h-[500px]" />
+        {/* [WP12 · S14-10] Was a bare `<div ref={containerRef}>`: unfocusable,
+            unnamed, and wrapping an SVG with no text alternative. */}
+        <div
+          ref={containerRef}
+          className="h-full w-full min-h-[500px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          {...canvasA11yProps({
+            label: readOnly ? t("a11y.canvasLabel") : t("a11y.editorLabel"),
+            describedById,
+            readOnly,
+          })}
+        />
+        <BpmnTextAlternative
+          id={describedById}
+          elements={modelElements}
+          diagramLabel={
+            readOnly ? t("a11y.canvasLabel") : t("a11y.editorLabel")
+          }
+          labels={{
+            heading: t("a11y.tableHeading"),
+            show: t("a11y.tableShow"),
+            hide: t("a11y.tableHide"),
+            empty: t("a11y.tableEmpty"),
+            colName: t("a11y.colName"),
+            colType: t("a11y.colType"),
+            colId: t("a11y.colId"),
+            hint: t("a11y.canvasHint"),
+          }}
+          onSelectElement={(elementId) => {
+            const el = modelElements.find((m) => m.id === elementId);
+            if (el) onElementClickRef.current?.(el.id, el.type, el.name);
+          }}
+        />
       </div>
     );
   },

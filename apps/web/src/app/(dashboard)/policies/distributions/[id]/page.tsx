@@ -14,9 +14,7 @@ import {
   Users,
   CheckCircle,
   AlertTriangle,
-  Clock,
 } from "lucide-react";
-import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";

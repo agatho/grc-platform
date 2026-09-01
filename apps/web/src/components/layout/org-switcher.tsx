@@ -50,7 +50,6 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
       .map((o) => ({ id: o.id, name: o.name }));
     setOrgs(list);
     // accessibleOrgIds is derived from `session` so listing `session` is enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgList, session]);
 
   // Close on outside click

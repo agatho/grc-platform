@@ -200,7 +200,7 @@ export function ProcessComments({
         </div>
       ) : threadedComments.length === 0 ? (
         <div className="text-center py-8">
-          <MessageSquare className="mx-auto h-8 w-8 text-gray-300" />
+          <MessageSquare className="mx-auto h-8 w-8 text-gray-500" />
           <p className="mt-2 text-sm text-gray-500">
             {t("comments.noComments")}
           </p>

@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface ControlCatalog {
   id: string;
@@ -114,7 +115,7 @@ export default function ControlCatalogBrowserPage() {
     if (res.ok) {
       const json = await res.json();
       setEntityOptions(
-        (json.data ?? []).map((e: any) => ({
+        (json.data ?? []).map((e: UnvalidatedJson) => ({
           id: e.id,
           title: e.title ?? e.name ?? e.id,
         })),
@@ -190,7 +191,7 @@ export default function ControlCatalogBrowserPage() {
           if (activeRes.ok) {
             const activeJson = await activeRes.json();
             const activeIds = new Set(
-              (activeJson.data ?? []).map((a: any) => a.catalogId),
+              (activeJson.data ?? []).map((a: UnvalidatedJson) => a.catalogId),
             );
             setActivatedCatalogs(activeIds as Set<string>);
           }

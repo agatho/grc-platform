@@ -1,8 +1,22 @@
 # ARCTOS — IST-Stand (Single Source of Truth)
 
+> **[ARCTOS-FULL-2026-08-31 / WP12 · S14-22, S14-23] Korrekturlauf 2026-09-01.**
+> Der Audit hat 60 überprüfbare Zusagen aus diesem Dokument, `CLAUDE.md`,
+> `docs/feature-catalog.md`, `docs/API_REFERENCE.md` und `docs/adr-index.md`
+> gegen den Code geprüft: **22 hielten, 17 waren als Zahl falsch, 21 waren
+> sachlich unwahr oder unbelegt.** Vier davon beschrieben eine Kontrolle als
+> vorhanden, die es nicht gab. In einem Produkt, dessen Verkaufsargument die
+> Nachweisbarkeit von Kontrollen ist, ist die Verlässlichkeit der eigenen
+> Systemdokumentation selbst ein Compliance-Merkmal (ISO 27001 A.5.37,
+> IDW PS 330).
+>
+> Jede Zahl unten ist am 2026-09-01 **nachgezählt**, nicht fortgeschrieben, und
+> steht mit dem Befehl da, der sie reproduziert. Wo eine Zahl nicht belastbar
+> zu ermitteln war, steht das statt einer neuen Schätzung.
+
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-07-10** (Realitäts-Audit, siehe nächster Abschnitt). Letzte Migration: `0361_audit_trigger_dedupe.sql` — **340 Migrations-Files** insgesamt (Nummerierung nicht lückenlos: `0358`/`0359` existieren nicht, dafür `0349a`/`0349b`). Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** + Nachrüstungen 2026-07-10 (BPM-Approval-Kette, DMS Effective Dating/Document Control, Audit-Trigger-Backfill/-Dedupe, Risk-Acceptance-API+UI).
+> Stand: **2026-09-01** (Remediation ARCTOS-FULL-2026-08-31, Wellen 1–4). Letzte Migration: `0437_grc_worker_grants.sql` — **402 Migrations-Files** insgesamt (Nummerierung nicht lückenlos: `0358`/`0359` existieren nicht, dafür `0349a`/`0349b`). Der vorherige Stand nannte `0361` als „letzte“ Migration, während 15 jüngere existierten, und war sieben Wochen alt (S14-23/A4). Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** + Nachrüstungen 2026-07-10 (BPM-Approval-Kette, DMS Effective Dating/Document Control, Audit-Trigger-Backfill/-Dedupe, Risk-Acceptance-API+UI).
 
 ## Änderungen 2026-07-24 (F-01-Folgefix: Log-Tabellen RLS-frei — Migration 0379)
 
@@ -23,6 +37,36 @@
 - **Deprecation (bewusst offen):** `src/middleware.ts` bleibt vorerst Middleware (v16 deprecatet die Convention zugunsten von `proxy.ts`; Build-Warnung). `proxy` erzwingt Node-Runtime — Umbenennung inkl. Auth.js-Edge-Config-Review als eigenes Arbeitspaket, bevor die Convention in einer künftigen Major entfernt wird.
 - **`scripts/audit-gate.mjs`: Allowlist ist leer** — Gate meldet „OK" ohne Ausnahmen; alle 9 Einträge (8× next, 1× sharp) entfernt.
 - Verifikation: `tsc --noEmit` grün, ESLint 0 Errors, Vitest `apps/web` 86 Files / 4.578 Tests grün, voller `next build` (Turbopack, 482 Pages, alle ƒ dynamic, ~96 s) grün, Standalone-Output inkl. pdfkit-`.afm` verifiziert, npm-10 + npm-11 `ci --dry-run` grün, `node scripts/audit-gate.mjs` → OK.
+
+> **[ARCTOS-FULL-2026-08-31 / WP12 · S12-16, S14-23] Gegenbefund 2026-09-01 zu
+> den beiden Build-Aussagen dieses Eintrags** („Turbopack läuft in ~2 min
+> innerhalb von 4 GB durch", „voller `next build` … ~96 s grün").
+>
+> Auf der Auditumgebung (2 vCPU, 8 GB) **läuft `next build` nicht durch** —
+> fünf Läufe, darunter einer mit unverändertem, eingechecktem Stand:
+>
+> | Konfiguration | Dauer | RSS | Ergebnis |
+> |---|---|---|---|
+> | `--max-old-space-size=4096` (Standardskript) | 3 min | — | `Killed`, Exit 137 |
+> | `6144` | 90 min | 5.520.232 kB, konstant | abgebrochen |
+> | `3072` + `--experimental-build-mode=compile` | 25 min | 2.302.444 kB | abgebrochen |
+> | `3072`, `NEXT_TURBOPACK_USE_WORKER=0` | 8 min | 2.106.740 kB | abgebrochen |
+> | `3072`, Config aus `HEAD` (Kontrolle) | 15 min | 5.287.380 kB | abgebrochen |
+>
+> Signatur in allen Fällen: keine Lese-Syscalls mehr, `.next` bleibt bei
+> 1,7 MB, zwei `tokio`-Threads rechnen dauerhaft, der Node-Hauptthread hat
+> unter 1 s CPU. Das ist eine **Verklemmung, kein Speichermangel**.
+>
+> Wichtig für den nächsten Versuch: **`--max-old-space-size` ist hier der
+> falsche Knopf.** Er begrenzt den V8-Heap; der volllaufende Speicher liegt
+> Rust-seitig im Turbopack-Graphen (Kontrolllauf: 3072 MB Limit bei 5,29 GB
+> RSS). Eine höhere Zahl behebt den OOM nicht, sie verwandelt ihn in eine
+> Verklemmung. Nächster Diagnoseschritt ist `NEXT_TURBOPACK_TRACING=1` plus
+> Auswertung von `.next/trace-turbopack`, nicht eine größere Zahl.
+>
+> Der Eintrag oben bleibt stehen: er kann auf der Maschine vom 2026-07-23
+> gestimmt haben. Als Zusage über den heutigen Build trägt er nicht.
+> Vollständige Messreihe: `/work/audit/remediation/WP12.md` §4.3.
 
 ## Realitäts-Audit 2026-07-10
 
@@ -236,12 +280,12 @@ Empfohlene Reihenfolge: nach Sequenz im Triage-Doc, ~6h Aufwand insgesamt.
 ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-07-10, nachgezählt im Realitäts-Audit):
 
 - **86+ Sprints + Programme Cockpit Sprint 13 + Wave 24 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18 und die Nachrüstungen 2026-07-10 (BPM-Approvals, DMS, Audit-Trigger, Risk-Acceptance).
-- **110 Drizzle-Schema-Files**, **340 SQL-Migrations-Files** bis `0361_audit_trigger_dedupe.sql` (vorher 319 / `0340`; Nummerierung nicht lückenlos).
-- **576 `pgTable()`-Definitionen** inkl. der 3 `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report regeneriert 2026-07-20: 555 OK / 0 RLS_MISSING / 0 AUDIT_MISSING / 4 AUDIT_EXEMPT / 15 PLATFORM_EXEMPT (574 Tabellen).
-- **1.332 `route.ts`-Files** unter `/api/v1/` (vorher 1.310; +22 u. a. durch DMS-Overhaul, BPM-Approval-Steps, Risk-Acceptance-API).
-- **479 Next.js `page.tsx`**.
-- **46 Compliance-Frameworks geseedet** (46 `seed_catalog_*.sql`-Files verifiziert; ~2.860 Catalog-Einträge und ~960 Cross-Framework-Mappings sind Seed-Angaben, nicht gegen die DB nachgezählt).
-- **314 Test-Files** in `apps/` + `packages/` (plus 47 Playwright-E2E-Specs, s. u.): gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `risk-acceptance-state-machine`, `risk-acceptances-rbac`, `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
+- **113 Drizzle-Schema-Files**, **402 SQL-Migrations-Files** bis `0437_grc_worker_grants.sql` (Nummerierung nicht lückenlos). Nachgezählt 2026-09-01.
+- **581 `pgTable()`-Definitionen** inkl. der 3 `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report regeneriert 2026-07-20: 555 OK / 0 RLS_MISSING / 0 AUDIT_MISSING / 4 AUDIT_EXEMPT / 15 PLATFORM_EXEMPT (574 Tabellen).
+- **1.360 `route.ts`-Files** unter `/api/v1/`, 1.362 unter `/api/**` insgesamt. Die vollständige, aus dem Routenbaum **generierte** Liste steht in [`API_REFERENCE.md`](./API_REFERENCE.md) — sie wird nicht mehr von Hand gepflegt (S14-15).
+- **482 Next.js `page.tsx`**.
+- **46 Compliance-Frameworks geseedet** (46 `seed_catalog_*.sql`-Files verifiziert). Die Angaben „~2.860 Catalog-Einträge“ und „~960 Cross-Framework-Mappings“ sind **entfernt**: `docs/feature-catalog.md` nannte für dieselben Größen 31 Frameworks und 401 Mappings, keine der vier Zahlen war aus dem Repository reproduzierbar, und eine fünfte Schätzung wäre keine Verbesserung. Wer die Zahl braucht, zählt sie in der Datenbank (S14-23/A14, A15).
+- **451 Test-Files** in `apps/` + `packages/` (plus **67** Playwright-E2E-Specs: 47 unter `tests/e2e/regression/`, 20 unter `apps/web/e2e/`). Die früheren Angaben widersprachen sich innerhalb dieses Dokuments (314 hier, 236 in der Detailtabelle unten) und waren beide zu niedrig (S14-23/A8, A9). `packages/shared/tests/repo-test-hygiene.test.ts` **misst** die Zahl jetzt, statt sie zu übernehmen. Schwerpunkte: gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `risk-acceptance-state-machine`, `risk-acceptances-rbac`, `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
 - **~410k LOC** Source-Code insgesamt (apps + packages, ohne node_modules).
 - **CI-Status (2026-05-18 nach PR #185)**: Lint / Type Check / Unit / E2E / DB Migration / Static schema + RLS / Aggregate coverage / Security Audit / CodeQL / gitleaks **grün**. Einzige verbleibende Rote: `budget-audit-integrity` Integration-Test (pre-existing, `bb6a3c49`, erwartete 6 Einträge / aktuell 11; nicht durch Overhauls verursacht). Zwischendrin hatten die ZIP-Overhauls + Windows-CRLF-Drift Prettier + tsc kurzzeitig rot — durch PR #185 (`fix/prettier-lf-cleanup`) komplett bereinigt.
 
@@ -255,10 +299,16 @@ ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-07-10, nachgezählt im
 
 | Pfad                              | Was es ist                                                                                                                                                      |
 | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `grcfiles/grc-platform/`          | **Echter Code.** Alle aktuellen Schemas, Migrationen, APIs, UI-Pages liegen hier.                                                                               |
-| `grcfiles/source/grc-platform/`   | **Veraltetes Bootstrap-Skelett.** Stub-Files mit TODO-Kommentaren, referenziert noch Clerk. **Nicht für Neuarbeit verwenden.**                                  |
-| `grcfiles/CLAUDE.md` (top-level)  | Nur Sprint-1-Stand — wird in Cowork-Sessions als project instructions geladen, ist aber **veraltet**. Ersetzt durch dieses Dokument + `grc-platform/CLAUDE.md`. |
-| `grcfiles/grc-platform/CLAUDE.md` | **Aktuelle Architektur-/Konventionen-Doku** (388 Zeilen).                                                                                                       |
+| `CLAUDE.md` (Repository-Wurzel)   | **Aktuelle Architektur- und Konventionen-Doku.**                                                                                                               |
+| dieses Dokument                   | **Status und Kennzahlen.** Alles Zahlenhafte steht hier, nicht in `CLAUDE.md`.                                                                                 |
+
+> **[WP12 · S14-23/B14] Der ganze `grcfiles/`-Block ist entfernt.** Er
+> beschrieb vier Pfade — darunter `grcfiles/grc-platform/CLAUDE.md` als
+> „aktuelle Architektur-Doku (388 Zeilen)“ — und **keiner davon existiert im
+> Repository** (`ls grcfiles` → No such file or directory). Ein Dokument, das
+> sich selbst als Single Source of Truth bezeichnet und Verzeichnisse
+> beschreibt, die es nicht gibt, schickt jeden neuen Mitarbeiter und jede
+> Folge-Session auf eine Suche nach etwas, das nicht da ist.
 
 ## Sprint-Stand
 
@@ -318,7 +368,7 @@ Aktuelle Stand-Daten aus `package.json`-Workspaces und CHANGELOG (0.1.0-alpha, 2
 | Layer      | Technologie                                                                        | Anmerkung                                                                        |
 | ---------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
 | Frontend   | Next.js 16 (16.2.11), React 19, Tailwind 4, shadcn/ui, recharts, bpmn-js           | App Router, Server Components default, Turbopack dev, Prod-Build via `--webpack` |
-| Backend    | Node.js 22 LTS, TypeScript 5, Hono.js (Worker)                                     | Worker hat 124 Cron-Job-Files (inkl. `risk-acceptance-expiry`), läuft via `tsx`  |
+| Backend    | Node.js 22 LTS, TypeScript 6 (Root-`package.json`: `^6.0.2`), Hono.js (Worker)      | Worker hat **132** Cron-Job-Files (nachgezählt 2026-09-01; die frühere Angabe 124 war zu niedrig, und der dort als fehlend geführte Signatur-Cron existiert — S14-23/A12) |
 | ORM        | Drizzle ORM                                                                        | 110 Schemas, 340 Migrations-Files (bis `0361`)                                   |
 | Datenbank  | PostgreSQL 16 + TimescaleDB + pgvector, RLS                                        | Hypertables für KRI/Sim-Results/CCM-Checkpoints                                  |
 | Auth       | Auth.js v5 self-hosted + Custom RBAC + Three Lines of Defense                      | Drizzle-Adapter, Azure AD optional, MFA TOTP+WebAuthn                            |
@@ -330,18 +380,34 @@ Aktuelle Stand-Daten aus `package.json`-Workspaces und CHANGELOG (0.1.0-alpha, 2
 
 ## Test-Coverage-Stand (IST)
 
-### Aggregierte Coverage (gemessen 2026-04-30)
+### Aggregierte Coverage (gemessen 2026-09-01, alle 12 Workspaces)
 
 Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). Workflow: `npm run test:coverage` → `npm run test:coverage:aggregate`.
 
-| Metrik     |             Aggregat | Status |
-| ---------- | -------------------: | :----: |
-| Lines      | 78,4 % (3.443/4.394) |   🟡   |
-| Statements | 76,6 % (3.646/4.758) |   🟡   |
-| Functions  |     66,5 % (420/632) |   🟡   |
-| Branches   | 66,4 % (1.722/2.593) |   🟡   |
+| Metrik     |                 Aggregat | Status |
+| ---------- | -----------------------: | :----: |
+| Lines      | **23,1 %** (16.853/73.013) |   🔴   |
+| Statements |                   24,3 % |   🔴   |
+| Functions  |                   26,0 % |   🔴   |
+| Branches   |  **16,7 %** (9.380/56.179) |   🔴   |
 
-> ⚠️ Diese Aggregation deckt nur die **2 Packages ab, die `coverage-summary.json` exportieren** (`packages/auth`, `packages/shared`). Die Hauptpakete `apps/web`, `apps/worker`, `packages/db` u. a. erscheinen nicht in dieser Aggregation. Reale Plattform-Coverage liegt **deutlich darunter**.
+Je Paket: `packages/ui` 100 %, `packages/email` 95,3 %, `packages/shared` 82,2 %,
+`packages/auth` 60,9 %, `packages/ai` 60,5 %, `packages/automation` 59,1 %,
+`packages/reporting` 55,5 %, `packages/events` 52,9 %, `apps/worker` 48,0 %,
+`packages/graph` 27,2 %, `apps/web` 15,2 %, `packages/db` 4,6 %.
+
+> **Was hier vorher stand und warum es falsch war (S14-22, S14-23/C9).**
+> „78,4 % Lines 🟡“ — die Aggregation lief über die **2 bestabgedeckten** von 12
+> Paketen. Der Hinweis darauf stand zwar im Kleingedruckten darunter, aber die
+> Zahl wurde in `CLAUDE.md` und im Verkaufsmaterial ohne ihn weitergereicht.
+> Die reale Plattform-Coverage lag zum Zeitpunkt des Audits bei 20,4 %.
+>
+> Der Aggregator bricht jetzt ab, wenn ein Paket kein `coverage-summary.json`
+> liefert — genau das Schrumpfen der Grundgesamtheit war der Mechanismus.
+> `packages/db` steht bei 4,6 % statt der früheren 31,4 %, weil die 113
+> generierten Drizzle-Schemadateien nicht mehr mitgezählt werden; das Verhalten
+> dieses Pakets liegt in SQL und wird von den Postgres-Suiten bewiesen, deren
+> Coverage hier nicht einfließt.
 
 ### Test-Files-Verteilung (gezählt 2026-05-10)
 
@@ -359,7 +425,7 @@ Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). W
 | **`packages/events`**     |          **1** (vorher 0, +1) |            5 |          474 | + Webhook-HMAC-Tampering (11 Cases verifiziert grün)                                                                                |
 | **`packages/reporting`**  |          **2** (vorher 0, +2) |            9 |        1.910 | + Variable-Resolver Injection-Tests (16 Cases verifiziert grün) + Section-Data-Fetcher-Smoke                                        |
 | **`packages/ui`**         |          **1** (vorher 0, +1) |           41 |        3.660 | + cn()-Utility (11 Cases verifiziert grün)                                                                                          |
-| **Total**                 | **236** (vorher 216, **+20**) |    **2.604** | **~410.000** |                                                                                                                                     |
+| **Total**                 | **451** (gezählt 2026-09-01)  |    **2.604** | **~410.000** | Die Tabelle darüber ist der Stand vom 2026-05-10 und **nicht** nachgeführt; ihre Total-Zeile nannte 236, während dasselbe Dokument weiter oben 314 sagte (S14-23/A9). Maßgeblich ist die gemessene Gesamtzahl. |
 
 ### E2E-Specs (Playwright)
 
@@ -427,15 +493,15 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | ----------------------------------------------------------------------------------------------------------------- | -------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Coverage in `apps/web`** — Domain-CRUD-Tests                                                                    |       P0 | ✅ 7 neue Tests + Domain-RBAC-Suite (8 Endpoints parametrisch). Bleibt: ~140 weitere mutating Endpoints                                                                                                                        |
 | **Coverage in `packages/reporting`, `packages/events`**                                                           |       P0 | ✅ Beide Packages haben jetzt Tests; PDF/Excel-Generator-Pipeline weiterhin nur partial (section-data-fetcher abgedeckt, generator.ts nicht)                                                                                   |
-| **OpenAPI-Spec-Validation** (`docs/openapi.yaml`, 1.034 Paths)                                                    |       P3 | ✅ Strukturelle Validation-Tests (8 Cases verifiziert grün, 1.034 Paths gezählt)                                                                                                                                               |
-| **Coverage-Threshold-Gating in CI**                                                                               |       P2 | ✅ `vitest.coverage.shared.ts`: 40 % lines / 30 % branches als Floor, ratchet-up-Strategie dokumentiert                                                                                                                        |
+| **OpenAPI-Spec-Validation** (`docs/openapi.yaml`)                                                                 |       P3 | ✅ Strukturelle Validation-Tests. Die Pfadzahl ist bewusst **nicht** mehr hier festgeschrieben: sie stand an vier Stellen als „1.034 Paths / 1.606 Methoden“ und war um 273 bzw. 338 zu niedrig (S14-23/A16). Sie steht generiert im Kopf von `docs/API_REFERENCE.md` und wird von `.github/workflows/openapi-breaking-change.yml` bei jedem PR neu erzeugt. |
+| **Coverage-Threshold-Gating in CI**                                                                               |       P2 | ✅ **seit 2026-09-01 tatsächlich vorhanden.** `COVERAGE_FLOORS` in `vitest.coverage.shared.ts` ist die einzige Quelle der Wahrheit und wird von jeder Paket-Config **und** von `scripts/coverage-aggregate.ts` gelesen; ein Paket ohne Summary lässt das Aggregat fehlschlagen. Die Werte sind die gemessenen Ist-Werte minus Marge. **Vorher stand hier ein ✅ für einen 40/30-Floor, den die Datei ausdrücklich nicht setzte** — sie erklärte im Kommentar, warum sie bewusst keinen Threshold hat (S14-22). |
 | **Bulk-Cap (Critical Rule #11)**                                                                                  |       P0 | ✅ 12 Cases verifiziert grün gegen 3 Schemas (bulkEnroll, createApiKey, updateApiKey)                                                                                                                                          |
 | **Webhook-HMAC-Tampering-Schutz**                                                                                 |       P0 | ✅ 11 Cases verifiziert grün — Tampering, Length-Attack, Unicode                                                                                                                                                               |
 | **Template-Injection in Reporting**                                                                               |       P0 | ✅ 16 Cases verifiziert grün — Whitelist-Namespaces, no nested re-rendering                                                                                                                                                    |
 | **Risk-Lifecycle-State-Validation (Schema-Layer)**                                                                |       P1 | ✅ 16+20 Cases — alle 5 Status-Werte, case-sensitivity, Financial-Impact-Refine. **Server-side State-Transition-Logik (z. B. closed → identified verbieten) fehlt weiterhin**                                                  |
 | ~~131 Tabellen ohne RLS-Policy~~ — geschlossen (Report 2026-05-13: RLS_MISSING = 0)                               |       P1 | ✅ erledigt via Gap-Closure-Wellen bis 0336; Zeile war veraltet (Realitäts-Audit 2026-07-10)                                                                                                                                   |
 | ~~52 Tabellen ohne `audit_trigger()`~~ — 180 lt. Report 2026-05-13, per `0357`/`0360`/`0361` explizit registriert |       P1 | ✅ Backfill gemergt 2026-07-10; Report-Re-Run 2026-07-20: **AUDIT_MISSING 0**, AUDIT_EXEMPT 4 (dokumentiert)                                                                                                                   |
-| 99 verbleibende TypeScript-Errors (Web 0, Worker 0, Rest in Tests/Tools)                                          |       P3 | offen                                                                                                                                                                                                                          |
+| TypeScript-Errors                                                                                                 |       P3 | ✅ **0 in allen 12 Workspaces** (2026-09-01). Die alte Zahl „99 … Rest in Tests/Tools“ war nicht belegbar: sechs Pakete hatten gar keine `tsconfig.json`, es gab also kein Projekt, gegen das dieser „Rest“ gemessen worden wäre — und `feature-catalog.md` nannte 160, `docs/perf/ts-errors-report.md` 111 für dieselbe Größe (S14-25, S14-23/A21). CI prüft jetzt jedes `packages/*/tsconfig.json` und schlägt auch fehl, wenn ein Paket keines hat. Bewusste Grenze: `noUncheckedIndexedAccess` und `noUnusedLocals` sind in diesen Konfigurationen aus; Einschalten legt rund 1.400 Altfunde offen (shared 502, db 641, auth 321, email 542). |
 | 137 N+1-Query-Kandidaten                                                                                          |       P3 | offen                                                                                                                                                                                                                          |
 | 1.738 fehlende Index-Vorschläge (53 davon RLS-High)                                                               |       P2 | offen                                                                                                                                                                                                                          |
 | ~30 verbleibende Schema-Drift-Migrationen (von urspr. 79)                                                         |       P2 | offen                                                                                                                                                                                                                          |

@@ -3,6 +3,32 @@
 //   draft → in_progress → pending_dpo_review → approved (or rejected) → completed
 
 import { sql } from "drizzle-orm";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
+// the `any` that stood on every `tx` parameter here.
+import type { DbTransaction } from "@/lib/db-types";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] Row shape for the raw-SQL reads
+ * below, which were cast `as any[]`. `any` meant a renamed column silently
+ * produced `undefined` and a gate that passed instead of blocking — in
+ * modules whose entire purpose is to refuse a release. `Record<string,
+ * unknown>` keeps the property access explicit while restoring the check that
+ * the value is used as something.
+ */
+type SqlRow = Record<string, unknown>;
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `count(*)` arrives from raw SQL as
+ * a string (Postgres returns bigint as text) or as a number, depending on the
+ * column. Under the previous `as any[]` the comparison `row.x > 0` silently
+ * relied on JavaScript coercion; with a typed row it has to say what it means.
+ * `null`/`undefined` become 0 — a gate must not pass because a count was
+ * missing.
+ */
+function count(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export interface DpiaGateBlocker {
   code: string;
@@ -20,7 +46,8 @@ export type DpiaStatus =
   | "completed";
 
 interface Args {
-  tx: any;
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction;
   dpiaId: string;
   orgId: string;
   target: DpiaStatus;
@@ -43,7 +70,7 @@ export async function evaluateDpiaGates({
            (SELECT COUNT(*) FROM dpia_risk WHERE dpia_id = d.id AND residual_risk_score >= 15)::int AS high_residual_count
     FROM dpia d
     WHERE d.id = ${dpiaId} AND d.org_id = ${orgId} AND d.deleted_at IS NULL
-  `)) as any[];
+  `)) as SqlRow[];
 
   if (!d) {
     return [
@@ -115,7 +142,7 @@ export async function evaluateDpiaGates({
         severity: "error",
       });
     }
-    if (d.high_residual_count > 0 && !d.consultation_result) {
+    if (count(d.high_residual_count) > 0 && !d.consultation_result) {
       blockers.push({
         code: "missing_authority_consultation",
         gate: "review_to_approved",

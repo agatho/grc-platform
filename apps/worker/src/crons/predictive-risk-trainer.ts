@@ -29,7 +29,7 @@ export const processPredictiveRiskTrainer = withCronInstrumentation(
         ),
       );
 
-    let modelsRetrained = 0;
+    const modelsRetrained = 0;
 
     for (const model of dueModels) {
       const config = model.trainingConfig as Record<string, number> | null;

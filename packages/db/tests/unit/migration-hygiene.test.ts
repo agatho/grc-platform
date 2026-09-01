@@ -71,9 +71,9 @@ describe("transaction classification (S09-05)", () => {
   });
 
   it("does not misread the words inside a comment", () => {
-    expect(classify("-- BEGIN; and ALTER TYPE t ADD VALUE 'x'\nSELECT 1;")).toBe(
-      "managed",
-    );
+    expect(
+      classify("-- BEGIN; and ALTER TYPE t ADD VALUE 'x'\nSELECT 1;"),
+    ).toBe("managed");
   });
 });
 

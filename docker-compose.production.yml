@@ -3,6 +3,33 @@
 # Usage: docker compose -f docker-compose.production.yml up -d
 # ============================================================================
 
+# ── Log-Rotation (#S13-16) ──────────────────────────────────────────────────
+# [ARCTOS-FULL-2026-08-31 / WP10]
+# Keine der beiden Compose-Dateien enthielt einen `logging:`-Block. Docker
+# verwendet dann den json-file-Treiber OHNE max-size/max-file: die Logdateien
+# wachsen unbegrenzt, bis die Partition voll ist. Betroffen waren alle
+# Dienste, allen voran `web` (Next.js-Request-Logs) und `worker`.
+#
+# Verschaerfend: Backups und Logs liegen auf derselben Partition, und die
+# Out-of-Disk-Prozedur in runbook.md empfahl
+# `docker system prune -af --volumes` — was bei gestoppten Containern
+# (im Incident wahrscheinlich) `uploads`, `branding` und `garagedata` mit
+# loescht, also genau die Daten, fuer die es damals kein Backup gab
+# (#S13-06). Diese Prozedur ist in docs/runbook.md ersetzt.
+#
+# 50 MB x 5 Dateien = hoechstens 250 MB je Container. Das ist die technische
+# LOG-RETENTION: rund 3-7 Tage bei ueblichem Verkehr. Wer laenger aufbewahren
+# will, verschifft die Logs (ADR-017) — dann gilt dort die dokumentierte
+# Frist. Logzeilen enthalten `userId`, `orgId` und `X-Request-ID` und sind
+# damit personenbeziehbar; die Frist gehoert ins Verarbeitungsverzeichnis.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+    # Erleichtert die spaetere Zuordnung beim Log-Shipping (ADR-017).
+    labels: "com.docker.compose.service"
+
 services:
   # ── PostgreSQL + TimescaleDB ──────────────────────────────────
   postgres:
@@ -21,6 +48,7 @@ services:
     # Operators who want bit-identical can replace with a digest:
     #   image: timescale/timescaledb@sha256:...
     image: timescale/timescaledb:2.26.3-pg16
+    logging: *default-logging   # #S13-16
     restart: unless-stopped
     # #SEC-F07: block privilege escalation via setuid binaries. Postgres
     # itself is otherwise unchanged (it still needs a writable data dir on
@@ -50,6 +78,7 @@ services:
   redis:
     # #DEP-CONFIG: pinned minor (was `redis:7-alpine`, moving tag).
     image: redis:7.4-alpine
+    logging: *default-logging   # #S13-16
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -146,6 +175,7 @@ services:
   # ── ARCTOS Web App ────────────────────────────────────────────
   web:
     image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-web:${IMAGE_TAG:-latest}
+    logging: *default-logging   # #S13-16
     build:
       context: .
       dockerfile: Dockerfile
@@ -181,19 +211,55 @@ services:
       # grc_app so Row-Level Security is actually enforced (grc has BYPASSRLS
       # and would silently disable every RLS policy). grc_app is provisioned
       # by deploy/provision-grc-app.sh, which update-all.sh + setup-hetzner.sh
-      # run before (re)starting these containers. If GRC_APP_PASSWORD is unset
-      # the app falls back to DATABASE_URL in code — do NOT rely on that in
-      # production; set GRC_APP_PASSWORD in .env.
-      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:-}@postgres:5432/grc_platform
+      # run before (re)starting these containers.
+      #
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S08-17, S13-10]
+      # Hier stand `${GRC_APP_PASSWORD:-}` und darueber der Kommentar
+      # "If GRC_APP_PASSWORD is unset the app falls back to DATABASE_URL in
+      # code". Das war FALSCH: `??` prueft auf undefined/null, und Compose
+      # setzt die Variable — nur eben leer. Es entstand also kein Fallback,
+      # sondern ein GESETZTER, UNGUELTIGER URL (`grc_app:` mit leerem
+      # Passwort) und damit ein Verbindungsfehler. Der Kommentar beschrieb
+      # ein Verhalten, das der Code nicht hatte — in einem GRC-Produkt der
+      # schwerere Mangel, weil ein Pruefer sich darauf verlaesst.
+      # `:?` macht daraus einen sofortigen, lesbaren Abbruch beim
+      # `docker compose up`.
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:?Set GRC_APP_PASSWORD in .env — ohne die Nicht-Superuser-Rolle grc_app ist RLS wirkungslos (S13-09/S13-10); anlegen mit deploy/provision-grc-app.sh}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env}
-      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
+      # #S08-17: stand ohne `:?` und ohne Default. Fehlte die Variable,
+      # setzte Compose einen leeren String (mit einer Warnung auf stderr,
+      # die im `update-all.sh`-Aufruf durch `| tail -5` unterging).
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY:?Set CONNECTOR_ENCRYPTION_KEY in .env — openssl rand -hex 32}
       # Encrypt-at-rest for single-column app secrets (SSO client secret,
       # connector OAuth refresh tokens). openssl rand -base64 32
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      # #S08-17: leerer Default entfernt. `secret-crypto.ts` verweigert zur
+      # Laufzeit korrekt (fail-hard), aber der Container startete und wirkte
+      # gesund — der Defekt zeigte sich erst, wenn Monate spaeter jemand SSO
+      # konfigurieren wollte.
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY in .env — openssl rand -base64 32}
       SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
+      # ── Neue Pflicht-Betriebsvariablen der Remediation ───────────────
+      # [WP4 · S03-01] HMAC-Siegel der Audit-Anker. Ohne ihn ist die Kette
+      # Integritaetspruefung, aber keine Tamper-Evidence gegen einen
+      # Datenbank-Superuser. Web braucht ihn fuer /api/v1/audit-log/integrity.
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — openssl rand -hex 32 (WP4/S03-01)}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      # [WP8 · S07-03] Pseudonymisierungsschluessel. Ohne ihn greift ein
+      # Installationsschluessel IN der Datenbank — das "zusaetzliche Wissen"
+      # nach Art. 4 Nr. 5 DSGVO laege dann im selben Dump wie die Daten.
+      # Vernichtungsverfahren: docs/runbook.md §7.
+      PII_PSEUDONYM_KEY: ${PII_PSEUDONYM_KEY:?Set PII_PSEUDONYM_KEY in .env — openssl rand -hex 32 (WP8/S07-03)}
+      PII_PSEUDONYM_KEY_ID: ${PII_PSEUDONYM_KEY_ID:-default}
+      WB_PSEUDONYM_KEY: ${WB_PSEUDONYM_KEY:-}
+      IP_PSEUDONYM_KEY: ${IP_PSEUDONYM_KEY:-}
+      # [WP9 · S10-05] Trusted-Proxy-Hops: bestimmt, welchem
+      # X-Forwarded-For-Eintrag geglaubt wird. Muss der tatsaechlichen Zahl
+      # eigener Reverse-Proxys entsprechen (Caddy = 1), sonst ist das
+      # Login-Rate-Limit per Header umgehbar.
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
@@ -284,6 +350,27 @@ services:
       PRIVACY_HOSTING_LOCATION: ${PRIVACY_HOSTING_LOCATION:-Hetzner Online GmbH, Deutschland}
       PRIVACY_SUPERVISORY_AUTHORITY: ${PRIVACY_SUPERVISORY_AUTHORITY:-}
       PRIVACY_ADDITIONAL_TEXT: ${PRIVACY_ADDITIONAL_TEXT:-}
+    # [ARCTOS-FULL-2026-08-31 / WP10 · S13-13b]
+    # `web` hatte KEINEN Healthcheck, obwohl postgres, redis, garage und
+    # clamav einen hatten und WP9 den Worker nachgeruestet hat. Wirkung:
+    # `restart: unless-stopped` reagiert nur auf einen BEENDETEN Prozess.
+    # Ein haengender Node-Prozess (Event-Loop blockiert, Pool erschoepft)
+    # wurde nie neu gestartet — waehrend runbook.md:118 zusagte
+    # "Docker-Restart-Policy greift automatisch". Das galt nur fuer den
+    # sauberen Crash, nicht fuer den haeufigeren Hang; und weil auch kein
+    # externes Monitoring existierte (#S13-11), gab es ueberhaupt keinen
+    # Mechanismus, der einen haengenden Container erkennt.
+    #
+    # `start_period` deckt den Migrationslauf des Entrypoints ab; er kann
+    # auf einer grossen Datenbank mehrere Minuten dauern.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://127.0.0.1:3000/api/v1/health').then(r=>r.json().then(j=>process.exit(r.ok&&j.status!=='unhealthy'?0:1))).catch(()=>process.exit(1))\""
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
     depends_on:
       postgres:
         condition: service_healthy
@@ -294,6 +381,7 @@ services:
 
   # ── ARCTOS Worker (Cron Jobs, Background Tasks) ───────────────
   worker:
+    logging: *default-logging   # #S13-16
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -406,6 +494,86 @@ services:
     networks:
       - arctos
     # Kein Port exposed — nur intern via Docker-Netzwerk erreichbar
+
+  # ── Betriebsmetriken und Sicherheitsalarme ────────────────────
+  # [ARCTOS-FULL-2026-08-31 / WP10 · S13-11, S13-12; ADR-017 Phase 1]
+  #
+  # Vor diesem Audit gab es KEIN Monitoring: eine vollstaendige Suche nach
+  # healthchecks.io / alertmanager / prometheus / promtail / loki / sentry /
+  # opentelemetry / statsd / datadog ueber apps, packages, deploy, scripts,
+  # .github und beide Compose-Dateien ergab null Treffer. ADR-017 stand seit
+  # 4,5 Monaten auf "Proposed" und terminierte Phase 1 auf "Woche 1". Ein
+  # Ausfall wurde durch Nutzerreport entdeckt; die im DR-Playbook zugesagte
+  # RTO von 5 min beginnt bei "Incident Confirmed" — es gab nichts, was
+  # einen Incident bestaetigt.
+  #
+  # Ebenso wenig gab es einen Alarm auf ein sicherheitsrelevantes Ereignis
+  # (#S13-12): nicht auf fehlgeschlagene Logins, nicht auf Massenexporte,
+  # nicht auf einen Bruch der Audit-Hash-Kette, nicht auf Job-Fehler. Die
+  # DATEN lagen vor — niemand las sie.
+  #
+  # Dieser Dienst wertet sie aus und alarmiert. Er verbindet als
+  # `grc_worker` (BYPASSRLS, kein SUPERUSER), weil die Auswertung
+  # org-uebergreifend liest; die Web-App darf das absichtlich nicht (S01-10).
+  # Er ist NICHT nach aussen exponiert — kein `ports:`-Block, erreichbar nur
+  # im Docker-Netz unter http://ops-metrics:9105/metrics.
+  #
+  # Ohne ALERT_WEBHOOK_URL / HEALTHCHECKS_URL schreibt er die Alarme
+  # strukturiert nach stderr. Das ist der ehrliche Mindestzustand: sichtbar
+  # statt abwesend. Beide Ziele gehoeren in die Inbetriebnahme-Checkliste
+  # (docs/runbook.md §8).
+  ops-metrics:
+    logging: *default-logging   # #S13-16
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    entrypoint: ["node", "/app/scripts/ops-metrics.mjs"]
+    environment:
+      NODE_ENV: production
+      # Lesend org-uebergreifend — dieselbe Rolle wie der Worker.
+      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}@postgres:5432/grc_platform
+      ARCTOS_ALLOW_PRIVILEGED_DB: "true"
+      OPS_METRICS_PORT: "9105"
+      OPS_INTERVAL_SECONDS: ${OPS_INTERVAL_SECONDS:-60}
+      BACKUP_DIR: /backups
+      # Alarmkanal. Slack-, Teams-, Mattermost- und Alertmanager-Webhooks
+      # nehmen alle einen JSON-POST entgegen.
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      # Dead-Man's-Switch (ADR-017 Phase 1). Bleibt der Ping aus, alarmiert
+      # der Dienst — das faengt auch den Fall "Host komplett tot" ab, den
+      # ein Exporter auf demselben Host per Definition nicht melden kann.
+      HEALTHCHECKS_URL: ${HEALTHCHECKS_URL:-}
+      ALERT_FAILED_LOGINS_5M: ${ALERT_FAILED_LOGINS_5M:-20}
+      ALERT_EXPORT_ROWS_1H: ${ALERT_EXPORT_ROWS_1H:-50000}
+      ALERT_JOB_FAILURES_1H: ${ALERT_JOB_FAILURES_1H:-3}
+      TMPDIR: /tmp
+      XDG_CACHE_HOME: /tmp/.cache
+      NPM_CONFIG_CACHE: /tmp/.npm
+    volumes:
+      # Nur lesend: die Stempel von db-backup.sh, offsite-sync.sh und
+      # dr-restore-drill.sh sind die Grundlage von
+      # arctos_backup_age_seconds, arctos_offsite_backup_age_seconds und
+      # arctos_dr_drill_age_seconds.
+      - /opt/arctos/backups:/backups:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "node -e \"fetch('http://127.0.0.1:9105/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - arctos
 
 volumes:
   pgdata:

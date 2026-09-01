@@ -332,7 +332,8 @@
       "platformData": "Import & Search",
       "platformCatalogs": "Catalogs & Frameworks",
       "platformAdmin": "Administration"
-    }
+    },
+    "title": "Main navigation"
   },
   "orgSwitcher": {
     "label": "Organization",
@@ -1418,7 +1419,8 @@
       "risks": "Risks",
       "history": "History",
       "comments": "Comments",
-      "approval": "Approval"
+      "approval": "Approval",
+      "documents": "Documents"
     },
     "status": {
       "draft": "Draft",
@@ -1790,7 +1792,8 @@
       "tests": "Tests",
       "findings": "Findings",
       "rcm": "RCM",
-      "history": "History"
+      "history": "History",
+      "documents": "Documents"
     },
     "tests": {
       "empty": "No tests recorded",
@@ -2734,7 +2737,8 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "dismiss": "Dismiss"
     }
   },
   "bcms": {
@@ -4490,7 +4494,9 @@
       "sendEmail": "Send via Email",
       "noReportData": "No report data available for this year"
     },
-    "currency": "EUR"
+    "currency": "EUR",
+    "expandRow": "Show sub-budgets",
+    "collapseRow": "Hide sub-budgets"
   },
   "branding": {
     "title": "Corporate Design & Branding",
@@ -4719,7 +4725,9 @@
       "daysLeft": "days left",
       "comment": "Comment",
       "confidence": "Confidence Level"
-    }
+    },
+    "campaigns": "RCSA campaigns",
+    "campaignsSubtitle": "Manage risk & control self-assessments"
   },
   "policies": {
     "loading": "Loading...",
@@ -5111,5 +5119,11 @@
       "postureWeightsDesc": "Weighting of the seven security posture factors (must sum to 100%)"
     }
   },
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "errorReference": "Error reference",
+  "ai": {
+    "disclosureLabel": "AI transparency notice",
+    "providerLine": "Provider: {provider} · Model: {model} · Processed in: {country}",
+    "humanReviewRequired": "The result is a suggestion and must be reviewed before it is accepted."
+  }
 }

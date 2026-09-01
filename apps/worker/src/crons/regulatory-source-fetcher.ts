@@ -23,7 +23,7 @@ export const processRegulatorySources = withCronInstrumentation(
         ),
       );
 
-    let changesDetected = 0;
+    const changesDetected = 0;
 
     for (const source of dueSources) {
       try {

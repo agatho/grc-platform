@@ -24,8 +24,6 @@ import {
   Minus,
   Settings,
   Download,
-  TrendingUp,
-  TrendingDown,
   Activity,
 } from "lucide-react";
 import Link from "next/link";

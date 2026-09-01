@@ -4,17 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Shield,
-  Loader2,
-  RefreshCcw,
-  ExternalLink,
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, Shield, Loader2, RefreshCcw, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -32,7 +22,7 @@ interface ThreatDetail {
   createdAt: string;
 }
 
-interface AffectedAsset {
+interface _AffectedAsset {
   assetId: string;
   assetName: string;
   tier: string;

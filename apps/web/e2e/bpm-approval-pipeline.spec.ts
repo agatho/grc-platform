@@ -20,9 +20,10 @@
  *      next released version
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("full pipeline: draft → published (sign-off gate) → working copy → re-approval", async ({
     request,

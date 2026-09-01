@@ -4,7 +4,6 @@ import { authConfig } from "@grc/auth";
 import {
   credentialsProvider,
   logAccessEvent,
-  extractRequestInfo,
   buildAzureAdProvider,
   jitProvisionSsoUser,
 } from "@grc/auth/providers";
@@ -145,12 +144,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = token.userId as string;
       session.user.email = token.email as string;
       session.user.name = token.name as string;
-      (session.user as any).language = (token as any).language ?? "de";
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] The whole block below used to
+      // write the authorisation payload through `as any`. The token and
+      // session shapes are declared in packages/auth/src/types.ts now, so a
+      // rename in `RoleAssignment` breaks the build instead of silently
+      // producing an empty role list at runtime.
+      session.user.language = token.language ?? "de";
 
       // Roles: prefer fresh DB reads for the server-side session object so
       // newly granted roles are visible even if the JWT cookie still has a
       // stale list. The JWT-embedded copy is kept for the edge middleware.
-      let roles = ((token as any).roles as RoleAssignment[]) ?? [];
+      let roles: RoleAssignment[] = token.roles ?? [];
       let disabled = false;
       if (token.userId) {
         try {
@@ -175,10 +179,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // #WP3-S12-17: a deactivated/deleted user gets an EMPTY session — no
       // roles, no org — so every `withAuth` call fails closed on the very next
       // request instead of after up to 8 hours.
-      (session.user as any).roles = disabled ? [] : roles;
-      (session.user as any).disabled = disabled;
+      session.user.roles = disabled ? [] : roles;
+      session.user.disabled = disabled;
       if (disabled) {
-        (session.user as any).currentOrgId = null;
+        session.user.currentOrgId = null;
         return session;
       }
 
@@ -193,7 +197,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       } catch {
         // cookies() can throw in some edge contexts — keep fallback
       }
-      (session.user as any).currentOrgId = currentOrgId;
+      session.user.currentOrgId = currentOrgId;
 
       return session;
     },
@@ -214,8 +218,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           authUser.id = provisioned.id;
           authUser.email = provisioned.email;
           authUser.name = provisioned.name;
-          (authUser as any).language = provisioned.language;
-          (authUser as any).roles = provisioned.roles;
+          authUser.language = provisioned.language;
+          authUser.roles = provisioned.roles;
         } catch (err) {
           // #DEP-CONFIG: structured log lets the operator see WHY
           // SSO provisioning fell over (DB schema drift, duplicate

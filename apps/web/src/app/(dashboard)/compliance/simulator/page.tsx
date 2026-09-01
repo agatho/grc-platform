@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +8,6 @@ import {
   Play,
   History,
   TrendingDown,
-  TrendingUp,
   AlertTriangle,
 } from "lucide-react";
 

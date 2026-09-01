@@ -77,7 +77,9 @@ afterAll(async () => {
     await sql`DELETE FROM retention_run_log    WHERE org_id = ${orgId}::uuid`;
     await sql`DELETE FROM dsr                  WHERE org_id = ${orgId}::uuid`;
     await sql`DELETE FROM stakeholder          WHERE org_id = ${orgId}::uuid`;
-    await sql.unsafe(`ALTER TABLE access_log DISABLE RULE access_log_no_delete`);
+    await sql.unsafe(
+      `ALTER TABLE access_log DISABLE RULE access_log_no_delete`,
+    );
     await sql`DELETE FROM access_log WHERE org_id = ${orgId}::uuid`;
     await sql.unsafe(`ALTER TABLE access_log ENABLE RULE access_log_no_delete`);
     await sql`DELETE FROM search_index WHERE org_id = ${orgId}::uuid`;
@@ -107,7 +109,7 @@ describe("S07-01 — HinSchG-Vertraulichkeit im org-weiten audit_log", () => {
     const [r] = await sql<{ id: string }[]>`
       INSERT INTO wb_report (org_id, report_token, token_expires_at, category,
                              description, contact_email, ip_hash)
-      VALUES (${orgId}, ${'REPORTTOKEN_' + SUFFIX + '_0123456789abcdefghij'},
+      VALUES (${orgId}, ${"REPORTTOKEN_" + SUFFIX + "_0123456789abcdefghij"},
               now() + interval '180 days', 'health_safety',
               'ENCRYPTED==', 'ENCRYPTED==',
               encode(digest('10.20.30.44','sha256'),'hex'))
@@ -121,7 +123,7 @@ describe("S07-01 — HinSchG-Vertraulichkeit im org-weiten audit_log", () => {
     const [c] = await sql<{ id: string }[]>`
       INSERT INTO wb_case (org_id, report_id, case_number,
                            acknowledge_deadline, response_deadline)
-      VALUES (${orgId}, ${reportId}, ${'WB-' + SUFFIX + '-0001'},
+      VALUES (${orgId}, ${reportId}, ${"WB-" + SUFFIX + "-0001"},
               now() + interval '7 days', now() + interval '90 days')
       RETURNING id`;
     caseId = c.id;
@@ -326,13 +328,15 @@ describe("S07-03/-04/-05 — Tombstone: Schlüssel, entity_title, Authentifikato
     // Reproduktionslauf des Auditors endete mit
     //   ERROR: audit_log is append-only — column entity_title cannot be updated
     await sql`SELECT tombstone_audit_entry(${auditId}::uuid, 'gdpr_art_17')`;
-    const [row] = await sql<{
-      entity_title: string;
-      user_agent: string | null;
-      session_id: string | null;
-      avatar: string | null;
-      nested: string | null;
-    }[]>`
+    const [row] = await sql<
+      {
+        entity_title: string;
+        user_agent: string | null;
+        session_id: string | null;
+        avatar: string | null;
+        nested: string | null;
+      }[]
+    >`
       SELECT entity_title, user_agent, session_id,
              changes->'new'->>'avatar_url' AS avatar,
              changes->'new'->'notification_preferences'->>'alt_email' AS nested
@@ -412,7 +416,9 @@ describe("S07-13 + S07-28 — Art. 17 über alle Schemas, Kette bleibt heil", ()
   });
 
   it("collects the subject's data across schemas (Art. 15)", async () => {
-    const [row] = await sql<{ report: { totalRows: number; sources: unknown[] } }[]>`
+    const [row] = await sql<
+      { report: { totalRows: number; sources: unknown[] } }[]
+    >`
       SELECT dsr_collect_subject_data(
         ${orgId}::uuid, ${userId}::uuid,
         ${`erase.me.${SUFFIX}@wp8-test.example`}, 'Erase Me WP8') AS report`;
@@ -431,9 +437,11 @@ describe("S07-13 + S07-28 — Art. 17 über alle Schemas, Kette bleibt heil", ()
   });
 
   it("erases the subject across all schemas and keeps the chain healthy", async () => {
-    const [row] = await sql<{
-      report: { businessRows: number; auditRows: number };
-    }[]>`
+    const [row] = await sql<
+      {
+        report: { businessRows: number; auditRows: number };
+      }[]
+    >`
       SELECT gdpr_erase_subject(
         ${orgId}::uuid, ${userId}::uuid,
         ${`erase.me.${SUFFIX}@wp8-test.example`}, 'Erase Me WP8', 'gdpr_art_17') AS report`;
@@ -529,7 +537,9 @@ describe("S07-07 / S07-24 — Retention löscht tatsächlich, und zwar fristbezo
   });
 
   it("evidences the run in retention_run_log", async () => {
-    const [row] = await sql<{ rows_affected: number; retention_days: number }[]>`
+    const [row] = await sql<
+      { rows_affected: number; retention_days: number }[]
+    >`
       SELECT rows_affected, retention_days FROM retention_run_log
        WHERE org_id = ${orgId}::uuid AND table_name = 'access_log' AND NOT dry_run
        ORDER BY ran_at DESC LIMIT 1`;
@@ -543,13 +553,13 @@ describe("S07-12 — HinSchG §11 Abs. 5: drei Jahre nach Verfahrensabschluss", 
   it("purges a case that was closed more than three years ago", async () => {
     const [r] = await sql<{ id: string }[]>`
       INSERT INTO wb_report (org_id, report_token, token_expires_at, category, description)
-      VALUES (${orgId}, ${'OLDTOKEN_' + SUFFIX + '_0123456789abcdefghij'},
+      VALUES (${orgId}, ${"OLDTOKEN_" + SUFFIX + "_0123456789abcdefghij"},
               now() - interval '1 day', 'fraud', 'ENC==')
       RETURNING id`;
     const [c] = await sql<{ id: string }[]>`
       INSERT INTO wb_case (org_id, report_id, case_number, status,
                            acknowledge_deadline, response_deadline, closed_at)
-      VALUES (${orgId}, ${r.id}, ${'WB-' + SUFFIX + '-OLD'}, 'closed',
+      VALUES (${orgId}, ${r.id}, ${"WB-" + SUFFIX + "-OLD"}, 'closed',
               now() - interval '4 years', now() - interval '4 years',
               now() - interval '4 years')
       RETURNING id`;

@@ -53,7 +53,7 @@ function scoreColor(score: number): string {
   return "bg-red-500 text-white";
 }
 
-function scoreBgStyle(score: number): string {
+function _scoreBgStyle(score: number): string {
   if (score >= 80) return "rgba(34, 197, 94, 0.8)";
   if (score >= 60) return "rgba(134, 239, 172, 0.7)";
   if (score >= 50) return "rgba(250, 204, 21, 0.7)";

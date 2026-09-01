@@ -4,12 +4,40 @@
 
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **110 Drizzle schemas, 576 pgTable() definitions, 340 SQL migration files (latest: `0361_audit_trigger_dedupe.sql`; numbering has gaps), 1.332 `route.ts` files, 479 Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings, 314 test files + 47 Playwright E2E specs.** (Counts re-verified 2026-07-10, doc-reality audit.) Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 24** (closed 2026-05-21). For current work see [`docs/STATUS.md`](./docs/STATUS.md).
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform.
+
+**Counts, re-measured 2026-09-01** (ARCTOS-FULL-2026-08-31 / WP12 · S14-23 — the
+previous set was measured 2026-07-10 and every figure below had drifted; four
+were wrong by more than 25 %):
+
+| Thing | Count | How to re-measure |
+|---|---:|---|
+| Drizzle schema files | 113 | `find packages/db/src/schema -name '*.ts' \| wc -l` |
+| `pgTable()` definitions | 581 | `grep -rho 'pgTable(' packages/db/src/schema \| wc -l` |
+| SQL migration files | 402 | `ls packages/db/drizzle/*.sql \| wc -l` |
+| latest migration | `0437_grc_worker_grants.sql` | `ls packages/db/drizzle/*.sql \| sort -V \| tail -1` |
+| `route.ts` files | 1 362 (1 360 under `/api/v1`) | `find apps/web/src/app/api -name route.ts \| wc -l` |
+| Next.js pages | 482 | `find apps/web/src/app -name page.tsx \| wc -l` |
+| catalog frameworks | 46 | `ls packages/db/sql/seed_catalog_*.sql \| wc -l` |
+| i18n namespace files per locale | 78 | `ls apps/web/messages/de/*.json \| wc -l` |
+| worker cron files | 132 | `find apps/worker/src/crons -name '*.ts' \| wc -l` |
+| unit/integration test files | 451 | `find . -path ./node_modules -prune -o \( -name '*.test.ts*' -o -name '*.spec.ts*' \) -print \| grep -v node_modules \| wc -l` |
+| Playwright E2E specs | 67 (47 `tests/e2e/regression/` + 20 `apps/web/e2e/`) | see the two paths |
+| ADR documents in `docs/` | 15 | `ls docs/ADR-*.md \| wc -l` |
+
+The "~960 cross-framework mappings" figure is **removed rather than corrected**:
+`docs/feature-catalog.md` said 401 and this file said ~960 for the same
+quantity, neither was reproducible from the repository, and a third guess would
+not be an improvement. Whoever needs the number should count it in the database.
+
+Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 24**
+(closed 2026-05-21). For current work see [`docs/STATUS.md`](./docs/STATUS.md).
 
 ## Tech Stack
 
 - **Frontend:** Next.js 16 + React 19 + Tailwind CSS 4 + shadcn/ui
-- **Backend:** Node.js 22 + TypeScript 5 + Hono.js (Worker)
+- **Backend:** Node.js 22 + TypeScript 6 + Hono.js (Worker)
+  <!-- [WP12 · S14-23/C11] Root package.json pins `typescript: ^6.0.2`; this line said 5. `apps/web/package.json` still declares `^5.7`, which is a genuine inconsistency in the workspace, not a documentation one — noted for the owning package. -->
 - **ORM:** Drizzle ORM (type-safe, SQL-close)
 - **Database:** PostgreSQL 16 + TimescaleDB + pgvector + RLS
 - **Auth:** Auth.js (self-hosted) + Custom RBAC with Three Lines of Defense Model (ADR-007 rev.1)
@@ -287,8 +315,16 @@ requireAuth() → requireModule('module_key') → orgContextMiddleware → requi
 
 ### i18n System
 
-- 72 namespace files per locale in `messages/{de,en}/` (recounted 2026-07-10)
-- All namespaces loaded in `src/i18n/request.ts` and merged at request time
+- 78 namespace files per locale in `messages/{de,en}/` (re-counted 2026-09-01;
+  three different figures were in circulation — 69 in ADR-022, 72 here, 77 in
+  the repository. `scripts/audit-i18n-usage.mjs` now fails CI if the directory
+  and `src/i18n/request.ts` diverge, so the number cannot drift silently again.)
+- All namespaces loaded in `src/i18n/request.ts` and merged at request time.
+  The list is hand-maintained **on purpose** (the bundler needs static
+  `import()` specifiers) and is verified against the directory by
+  `scripts/audit-i18n-usage.mjs` — `frameworks` had been missing from it since
+  its introduction, so 61 keys silently vanished in dev and in every fallback
+  path (S14-07).
 - Root-level keys from `common.json` accessible without namespace prefix
 - Other namespaces accessed via `useTranslations('identity')`, `useTranslations('fair')`, etc.
 - **No dotted keys** — use nested objects instead (next-intl interprets dots as nesting)
@@ -335,7 +371,13 @@ without granting write access to either domain.
 
 ### Code Style
 
-- TypeScript strict mode, no `any` types except in type guards
+- TypeScript strict mode. `any` is a lint **error**
+  (`@typescript-eslint/no-explicit-any` in `apps/web/eslint.config.mjs`).
+  Three scopes are exempt, each named and justified in that file: test code,
+  `apps/web/src/app/api/v1/**` (pending, 129 occurrences) and the single
+  deliberate alias `UnvalidatedJson` for unvalidated `fetch()` payloads. Until
+  2026-09-01 the rule was switched off and the convention was violated 267
+  times (S14-19).
 - Zod for all validation (API input + DB output)
 - Drizzle schemas in `packages/db/src/schema/` — one file per domain
 - API routes in `apps/web/src/app/api/v1/`
@@ -354,17 +396,37 @@ without granting write access to either domain.
 
 ### i18n
 
-- next-intl with 72 namespace files: `messages/{de,en}/*.json`
+- next-intl with 78 namespace files: `messages/{de,en}/*.json`
 - Date formats: DE = `dd.MM.yyyy`, EN = `MM/dd/yyyy`
 - Number formats: DE = `1.234,56`, EN = `1,234.56`
-- Fallback: German if translation is missing
+- Fallback: German if a translation is missing. Implemented in
+  `src/i18n/request.ts` by deep-merging the DE catalogue **under** the requested
+  locale. (This was documented from April 2026 onwards and did not exist — next-intl
+  v4 does not fall back between locales on its own, so a missing EN key rendered
+  its own key path as visible text. S14-06.)
 - **Never use dotted keys** in translation files — use nested objects
 
 ### Testing
 
-- Backend: Vitest, code coverage > 80%
-- Frontend: Vitest + Testing Library, coverage > 60%
-- E2E: Playwright
+- Vitest everywhere; Playwright for E2E.
+- **Coverage is gated, and the gate is the measured floor — not a target.**
+  `COVERAGE_FLOORS` in `vitest.coverage.shared.ts` is the single source of
+  truth; it is read both by each package's vitest config and by
+  `scripts/coverage-aggregate.ts`, so a package that is not run at all fails
+  the aggregate instead of quietly shrinking the denominator.
+- Measured 2026-09-01 across all 12 workspaces: **23,1 % lines / 16,7 % branches**
+  aggregate. Best: `packages/ui` 100 %, `packages/email` 95,3 %,
+  `packages/shared` 82,2 %. Weakest: `apps/web` 15,2 %, `packages/db` 4,6 %
+  (that package's behaviour is in SQL and is proven by the Postgres suites,
+  whose coverage does not appear in this figure).
+- The previous text — "Backend > 80 %, Frontend > 60 %" — was a wish, enforced
+  nowhere, while `docs/STATUS.md` reported 78,4 %. The real figure at the time
+  was 20,4 %, and it was reached by aggregating over the 7 best-covered
+  packages out of 12 (S11-01, S14-22, S14-23/C9).
+- Accessibility: `apps/web/src/__tests__/a11y/` runs axe-core over rendered
+  components and fails on any critical or serious violation, plus a
+  token-level WCAG contrast check. `eslint-plugin-jsx-a11y` is active.
+- E2E: Playwright, 67 specs.
 - RLS integration tests: verify user A cannot see org B's data
 - Audit trail tests: verify hash chain integrity after CRUD operations
 
@@ -406,13 +468,25 @@ Extensions: pgcrypto, uuid-ossp, vector, timescaledb
 
 ## Critical Implementation Rules
 
-1. **ALL API routes MUST use `requireModule(key)` middleware** — returns 404 (not 403) when module disabled
-2. **ALL page components MUST be wrapped in `<ModuleGate moduleKey="...">`**
+1. **API routes use `requireModule(key)` middleware** — returns 404 (not 403)
+   when the module is disabled. **Status 2026-09-01: 931 of 1 360 routes (68 %).**
+   The rule was written as "ALL" and was never true; `docs/STATUS.md` itself
+   asked for a CI lint that reddens any new `route.ts` without it, and that
+   lint still does not exist (S14-23/C1). Treat this as binding for new routes
+   and as a known gap for the other 429.
+2. **Page components are wrapped in `<ModuleGate moduleKey="...">`**
+   **Status 2026-09-01: 263 of 482 pages (55 %).** Same story as rule 1 — binding
+   for new pages, a measured gap for the rest (S14-23/C2).
 3. **No hardcoded sidebar entries** — nav groups defined in `nav-config.ts`, management-system based
 4. **RLS on all tables** — every table has `org_id` + RLS policy + dedicated migration
 5. **Audit triggers on all tables** — register `audit_trigger()` via migration
-6. **TypeScript strict mode** — zero `any` types except documented type guards
-7. **All UI text through i18n** — use `useTranslations('namespace')`, never hardcode strings
+6. **TypeScript strict mode** — `any` is a lint error. The three exempt scopes
+   are enumerated in `apps/web/eslint.config.mjs`; anything else fails CI.
+7. **All UI text through i18n** — use `useTranslations('namespace')`, never
+   hardcode strings. **Status 2026-09-01: 386 of 482 pages have an i18n import;
+   96 do not**, among them 10 of the 14 EU-AI-Act pages, which are hard-coded
+   German (S14-14). `scripts/audit-i18n-usage.mjs --max-untranslated N` is a
+   ratchet: the number may fall, not rise.
 8. **Zod validation on all inputs** — API body, query params, path params
 9. **Status transitions enforced server-side** — check valid transitions before updating
 10. **Finding entity is shared** — Sprint 4 finding used by ICS, Audit, BCMS exercises

@@ -1,3 +1,21 @@
+# ============================================================================
+# Build-Kontext beider Produktionsimages.
+#
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-11]
+# Das Worker-Image enthielt den kompletten Quellbaum: 412 getrackte
+# Testdateien, `deploy/` mit setup-hetzner.sh, harden-server.sh,
+# create-tenant.sh, db-backup.sh, offsite-sync.sh, Caddyfile und
+# provision-grc-app.sh, beide Compose-Dateien und 81 SQL-Dateien. Wer über
+# eine beliebige andere Schwachstelle Dateizugriff im Container erlangte, las
+# dort die vollständige Betriebsdokumentation der Zielumgebung — die
+# Landkarte für die laterale Bewegung lag im Image.
+#
+# Ausgeschlossen wird ab hier alles, was zur Laufzeit nachweislich nicht
+# gebraucht wird. Zusätzlich kopiert Dockerfile.worker den Quellbaum jetzt
+# gezielt statt per `COPY . .`.
+# ============================================================================
+
+# ── Build-Artefakte und VCS ────────────────────────────────────────────────
 node_modules
 .next
 dist
@@ -5,15 +23,66 @@ dist
 .git
 .github
 .claude
-docs
-docs-private
+.serena
+.vercel
 coverage
-*.env
-*.env.local
-*.env.production
-.DS_Store
-*.log
 apps/web/.next
 apps/worker/dist
 packages/*/dist
 packages/*/coverage
+*.tsbuildinfo
+
+# ── Secrets und Umgebungsdateien ───────────────────────────────────────────
+*.env
+*.env.local
+*.env.production
+.env.example
+deploy/.env.sample
+deploy/.env.production.example
+
+# ── Dokumentation ──────────────────────────────────────────────────────────
+docs
+docs-private
+CHANGELOG.md
+SECURITY.md
+CONTRIBUTING.md
+SETUP.md
+README.md
+CLAUDE.md
+CODEOWNERS
+# NOTICE und THIRD-PARTY-LICENSES.md werden von beiden Dockerfiles GEZIELT
+# hineinkopiert (#S08-16, Namensnennungspflicht von 441 Paketen bei
+# Weitergabe als Image); SBOM/ ebenso (#S08-12). Deshalb hier bewusst NICHT
+# ausgeschlossen.
+
+# ── Tests (#S08-11) ────────────────────────────────────────────────────────
+tests
+apps/web/e2e
+**/tests/
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+playwright.config.ts
+playwright-report
+.playwright-cache
+test-results
+vitest.coverage.shared.ts
+**/vitest.config.ts
+
+# ── Betriebstopologie (#S08-11) ────────────────────────────────────────────
+# Diese Dateien beschreiben Hoster, Reverse-Proxy, Backup-Ziel,
+# Mandanten-Namensschema und Provisionierungsablauf. Sie laufen auf dem
+# HOST, nie im Container.
+deploy/
+docker-compose.yml
+docker-compose.production.yml
+docker/
+
+# ── Sonstiges ──────────────────────────────────────────────────────────────
+.DS_Store
+*.log
+*.tmp.*
+uploads/
+backups/

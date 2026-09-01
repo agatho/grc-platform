@@ -1,8 +1,64 @@
 # ADR-023: Rollback-Strategy fuer fehlgeschlagene Migrations
 
-**Status:** Proposed
-**Date:** 2026-04-18
+**Status:** **Accepted** (2026-09-01)
+**Date:** 2026-04-18 · **Angenommen:** 2026-09-01
 **Context-Author:** autonomous session
+
+---
+
+## Umsetzungsstand (2026-09-01, ARCTOS-FULL-2026-08-31 / WP1 + WP10)
+
+> Dieses ADR stand seit dem 2026-04-18 auf **Proposed** und benannte die
+> Defekte des damaligen Migrationsflusses selbst zutreffend
+> („ON_ERROR_STOP=0 maskiert Fehler", „Kein Rollback-Skript je Migration",
+> „Keine Atomizitaet zwischen Migrations"). Genau diese Punkte hat das Audit
+> als S13-03 und S13-05(f) wiedergefunden — vier Monate spaeter, unveraendert.
+> §1, §3 und §4 sind inzwischen umgesetzt (WP1), §2 und der Deploy-Pfad in
+> dieser Runde (WP10). Der Status ist deshalb **Accepted**.
+
+| Punkt | Stand 2026-08-31 | Stand 2026-09-01 | Von |
+|---|---|---|---|
+| `ON_ERROR_STOP=1`, stderr erhalten | `ON_ERROR_STOP=0`, `>/dev/null 2>&1` — der Operator erfuhr eine Zahl, nie WELCHE Datei mit WELCHEM Fehler | je Datei `ON_ERROR_STOP=1`; jede Fehlermeldung wird gesammelt und vollstaendig ausgegeben | WP1 |
+| Abbruch statt Weiterstart | Container startete unbedingt; `/api/v1/health` lieferte 200, betroffene Routen 500 | `exit 1` vor `exec "$@"` — die App startet nicht, der alte Container laeuft weiter | WP1 |
+| Atomizitaet / Serialisierung | keine; mehrere Container fuhren dieselbe DDL nebenlaeufig | Session-Advisory-Lock; der zweite Container wartet | WP1 |
+| Applied-State | `__drizzle_migrations` kannte 25 von 360 Dateien | `_arctos_migrations` mit SHA-256 je Datei, alle Dateien | WP1 |
+| Rehearsal-Pipeline (§3) | keine | Job `migration-rehearsal` in `migration-policy.yml` | WP1 |
+| Metadaten-Header (§4) | keiner | `migration-policy.yml` erzwingt `-- Migration/-- Breaking/-- Estimated-Duration/-- Locking/-- Compensating-Required/-- Reviewer` | WP1 |
+| **Pre-Deploy-Backup im Deploy-Pfad** | `db-backup.sh --pre-migration` existierte und wurde von `update-all.sh` NIE aufgerufen (S13-04a) | Schritt [1d/6] in `update-all.sh`, **blockierend** | WP10 |
+| **Deploy bricht bei Migrationsfehler ab** | `psql … \|\| true` je Datei je Produktiv-DB (S13-04b) | Ledger-Runner im worker-Container, Fehler = `abort` | WP10 |
+| **Funktionierender Rollback-Pfad** | alle drei dokumentierten Kommandos falsch (S13-05) | `deploy/rollback.sh` (`--list`, `--image`, `--db`, `--full`) | WP10 |
+| **Vorgaenger-Image auf dem Host** | existierte nicht — `update-all.sh` baut lokal und ueberschreibt das Tag (S13-05b) | vor dem Build als `arctos-rollback/grc-<svc>:<old-sha>` getaggt | WP10 |
+| Rollback-SQL je Migration | keins (`find . -name "*down*.sql"` leer) | **bewusst weiterhin keins** — siehe unten | — |
+
+**Warum es weiterhin keine `down`-Skripte gibt.** §2 dieses ADR hatte
+Compensating-Migrations statt Rollback-Skripten beschlossen, und diese
+Entscheidung bleibt richtig: eine `down`-Migration, die
+`DROP COLUMN`/`DROP TABLE` faehrt, vernichtet die Daten, die die
+`up`-Migration eingefuehrt hat, und ist damit im Ernstfall genau das
+Gegenteil einer Rettung. Der praktikable Rueckweg ist zweistufig und
+genau so implementiert:
+
+1. **Image-Rollback** (`deploy/rollback.sh --image <sha>`) — der Normalfall.
+   Die Datenbank bleibt vorwaerts migriert; der alte Anwendungscode muss das
+   neue Schema lesen koennen. Daraus folgt die
+   **Expand/Contract-Disziplin**: eine Migration darf in einem Release nur
+   ADDITIV sein (`ADD COLUMN`, neue Tabelle, neuer Index); Entfernungen
+   folgen erst im uebernaechsten Release. `migration-policy.yml` markiert
+   Migrationen mit `-- Breaking: true`; fuer sie gilt der zweite Weg.
+2. **DB-Rollback** (`deploy/rollback.sh --db <backup>`) — die Ausnahme.
+   DROP + CREATE + `pg_restore` aus dem Pre-Deploy-Backup, mit getippter
+   Bestaetigung und Datenverlust ab dem Backup-Zeitpunkt. Die DATEIEN im
+   Objektspeicher werden dabei NICHT zurueckgerollt: ein Dokument, das nach
+   dem Backup hochgeladen wurde, bleibt als Datei liegen, ohne dass eine
+   Datenbankzeile darauf zeigt. Das ist im Skript und im DR-Playbook
+   ausdruecklich vermerkt.
+
+**Wartungsfenster fuer die Remediations-Migrationen.** `0383`, `0385` und
+`0386` tragen `-- Breaking: true`, `0387` legt 450 Indizes an. Auf einer
+befuellten Datenbank brauchen sie ein Wartungsfenster mit Pre-Deploy-Backup;
+`docs/runbook.md` §5 beschreibt den Ablauf.
+
+---
 
 ## Context
 

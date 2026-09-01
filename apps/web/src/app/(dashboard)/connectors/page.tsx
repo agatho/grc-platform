@@ -23,6 +23,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface DashboardStats {
   totalConnectors: number;
@@ -222,6 +225,13 @@ export default function ConnectorDashboardPage() {
                 key={connector.id}
                 className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => router.push(`/connectors/${connector.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  activateOnKey(e, () =>
+                    router.push(`/connectors/${connector.id}`),
+                  )
+                }
               >
                 <div className="flex items-center gap-3 min-w-0">
                   {healthIcon[connector.healthStatus] ?? healthIcon.unknown}
