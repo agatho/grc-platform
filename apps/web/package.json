@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "tsx scripts/build-messages.ts",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "build": "node scripts/next-build.mjs",
     "start": "next start",
     "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest run && node src/__tests__/run-db-suites.mjs",

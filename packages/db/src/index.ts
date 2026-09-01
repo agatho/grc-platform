@@ -237,7 +237,17 @@ export async function assertRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
     `cross-org access on purpose — set ARCTOS_ALLOW_PRIVILEGED_DB=true.`;
   if (process.env.NODE_ENV === "production") {
     console.error(detail);
-    process.exit(1);
+    // `process.exit` exists only in the Node.js runtime. This module is reached
+    // from the Edge middleware via @grc/auth, and Turbopack rejects the bare
+    // call at build time ("A Node.js API is used (process.exit) which is not
+    // supported in the Edge Runtime") — it fails the production build even
+    // though this branch never executes there. Resolve it dynamically and fall
+    // back to throwing, which is fatal at startup all the same.
+    const exit = (
+      globalThis as { process?: { exit?: (code: number) => never } }
+    ).process?.exit;
+    if (typeof exit === "function") exit(1);
+    throw new Error(detail);
   }
   console.warn(detail.replace("FATAL", "WARNING"));
   return check;
