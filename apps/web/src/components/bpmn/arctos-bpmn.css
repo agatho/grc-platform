@@ -89,3 +89,114 @@
   text-align: center;
   resize: none;
 }
+
+/* ---------------------------------------------------------------------------
+ * Suche (`/`) und Tastaturhilfe (`?`) — STUFE2-D
+ *
+ * Beide leben im Canvas-Container und müssen deshalb `position: absolute`
+ * tragen; der Container ist bereits `position: relative` (diagram-js setzt das
+ * auf `.djs-container`). `z-index` liegt über Palette und Kontextmenü: sie sind
+ * das, was gerade den Fokus hat.
+ * ------------------------------------------------------------------------- */
+
+.arctos-bpmn-find {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  font-size: 13px;
+  transform: translateX(-50%);
+}
+
+.arctos-bpmn-find-label {
+  color: #374151;
+  white-space: nowrap;
+}
+
+.arctos-bpmn-find-input {
+  width: 220px;
+  padding: 3px 6px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  font: inherit;
+}
+
+.arctos-bpmn-find-status {
+  min-width: 8ch;
+  color: #4b5563;
+  font-variant-numeric: tabular-nums;
+}
+
+.arctos-bpmn-keyboard-help {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 210;
+  max-width: 720px;
+  max-height: 80%;
+  padding: 16px 20px;
+  overflow: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 48px rgb(0 0 0 / 18%);
+  font-size: 13px;
+  transform: translate(-50%, -50%);
+}
+
+.arctos-bpmn-keyboard-help h2 {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.arctos-bpmn-keyboard-help h3 {
+  margin: 14px 0 6px;
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.arctos-bpmn-keyboard-help dl {
+  margin: 0;
+}
+
+.arctos-bpmn-keyboard-help-row {
+  display: grid;
+  grid-template-columns: 15em 1fr;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.arctos-bpmn-keyboard-help dt,
+.arctos-bpmn-keyboard-help dd {
+  margin: 0;
+}
+
+.arctos-bpmn-keyboard-help kbd {
+  padding: 1px 5px;
+  border: 1px solid #d1d5db;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #f9fafb;
+  font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+  font-size: 12px;
+}
+
+/* Kandidatenmarkierung des Containerwechsels — dieselbe Sprache wie beim
+ * Verbinden, damit die beiden Betriebsarten auch optisch eine Familie sind. */
+.djs-element.arctos-container-candidate .djs-visual > :first-child {
+  stroke: #7c3aed;
+  stroke-dasharray: 6 3;
+  stroke-width: 3px;
+}

@@ -37,6 +37,9 @@
  * | `Umschalt+Alt+Pfeil` | Auswahl fein verschieben |
  * | `Strg+Umschalt+Pfeil` | Auswahl größer/kleiner |
  * | `c` | Verbinden: Ziele durchblättern, `Enter` verbindet |
+ * | `m` | In einen anderen Container legen: Pools, Lanes, Subprozesse durchblättern |
+ * | `/` | Suche im Diagramm |
+ * | `?` | Tastaturhilfe |
  * | `r` | Typ wechseln (Form) bzw. Kantenanfang umhängen (Kante) |
  * | `Umschalt+R` | Kantenende umhängen |
  * | `b` | Stützpunkt-Betriebsart an einer Kante |
@@ -58,6 +61,9 @@ import type { AlignDistribute } from "./AlignDistribute";
 import type { BendpointEditing } from "./BendpointEditing";
 import type { EditorConfiguration } from "./config";
 import type { ConnectMode } from "./ConnectMode";
+import type { ContainerMode } from "./ContainerMode";
+import type { DiagramFind } from "./Find";
+import type { KeyboardHelp } from "./KeyboardHelp";
 import type { ArctosContextPadProvider } from "./ContextPadProvider";
 import type { BpmnCopyPaste } from "./CopyPaste";
 import type { LabelEditing } from "./LabelEditing";
@@ -213,6 +219,38 @@ export class EditorKeyboard {
         default:
           return false;
       }
+    }
+
+    // Der Containerwechsel benutzt **dieselben** Tasten wie das Verbinden.
+    // Das ist kein Zufall und keine Sparsamkeit: beide Betriebsarten stellen
+    // dieselbe Frage („welches von diesen hier?"), und wer eine kann, soll die
+    // andere nicht neu lernen müssen.
+    const containerMode = this.service<ContainerMode>("containerMode");
+    if (containerMode?.isActive()) {
+      switch (event.key) {
+        case "ArrowRight":
+        case "ArrowDown":
+          containerMode.step(1);
+          return true;
+        case "ArrowLeft":
+        case "ArrowUp":
+          containerMode.step(-1);
+          return true;
+        case "Enter":
+          containerMode.confirm();
+          return true;
+        case "Escape":
+          containerMode.cancel();
+          return true;
+        default:
+          return false;
+      }
+    }
+
+    const help = this.service<KeyboardHelp>("keyboardHelp");
+    if (help?.isOpen() && event.key === "Escape") {
+      help.close();
+      return true;
     }
 
     const menu = this.service<ReplaceMenu>("replaceMenu");
@@ -381,6 +419,15 @@ export class EditorKeyboard {
         return this.startReplaceOrReconnect(false);
       case "R":
         return this.startReplaceOrReconnect(true);
+      case "m":
+      case "M":
+        return this.startContainerMode();
+      case "/":
+        this.service<DiagramFind>("diagramFind")?.open();
+        return true;
+      case "?":
+        this.service<KeyboardHelp>("keyboardHelp")?.toggle();
+        return true;
       case "b":
       case "B":
         return this.startBendpointMode();
@@ -474,6 +521,25 @@ export class EditorKeyboard {
       return true;
     }
     this.service<ConnectMode>("connectMode")?.start(element);
+    return true;
+  }
+
+  /**
+   * Containerwechsel starten — die Lücke aus `STUFE2-B1-EDITOR.md` §7.
+   *
+   * Anders als beim Verbinden zählt hier die **ganze Auswahl**: mehrere
+   * Aktivitäten gemeinsam in eine Lane zu legen ist der Normalfall beim
+   * Aufräumen eines Pool-Diagramms, und sie einzeln zu verschieben ließe das
+   * Diagramm zwischendurch in einem Zustand stehen, den die Invarianten zu
+   * Recht bemängeln.
+   */
+  startContainerMode(): boolean {
+    const elements = this.selectionOrFocus();
+    if (elements.length === 0) {
+      this.announcer.reject("Es ist kein Element ausgewählt.");
+      return true;
+    }
+    this.service<ContainerMode>("containerMode")?.start(elements);
     return true;
   }
 

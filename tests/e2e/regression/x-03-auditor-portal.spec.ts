@@ -30,10 +30,26 @@ test("E2E-403: the auditor portal renders for an authenticated user", async ({
 test("E2E-403b: the auditor portal is not reachable without a session", async ({
   browser,
 }) => {
-  // Fresh context: no cookies, no storage state.
-  const context = await browser.newContext();
+  // [E2E-TRIAGE-3 · 2026-09-02] `storageState: undefined` is load-bearing.
+  //
+  // The comment here said "Fresh context: no cookies, no storage state" and
+  // `browser.newContext()` was assumed to give one. It does not: the context
+  // options from the project's `use` block apply, and since the regression
+  // project now carries the setup's storage state (playwright.config.ts), this
+  // "anonymous" visitor arrived holding an admin session — the portal rendered,
+  // correctly, and the test reported a leak that does not exist. Measured
+  // against the running instance while the test was red:
+  //   GET /audit/external-portal without cookies -> 307 /login?callbackUrl=…
+  // Say what the test means instead of relying on a default.
+  const context = await browser.newContext({ storageState: undefined });
   const anonPage = await context.newPage();
   try {
+    // The premise, asserted rather than assumed.
+    expect(
+      await context.cookies(),
+      "the 'anonymous' context carries cookies — this test cannot mean what " +
+        "it says",
+    ).toHaveLength(0);
     await anonPage.goto(AUDITOR_PORTAL);
     // The middleware redirects unauthenticated traffic to the login screen.
     // What must NOT happen is the page rendering its content.

@@ -62,19 +62,113 @@ export async function login(page: Page): Promise<Session> {
     );
   }
 
-  await page.goto("/login");
-  await page.waitForSelector('input[type="email"], input[name="email"]', {
-    timeout: 30_000,
-  });
+  return await loginAs(page, EMAIL, PASSWORD);
+}
 
-  await page
+/**
+ * [E2E-TRIAGE-3 · 2026-09-02] The same login, for a NAMED account.
+ *
+ * `login()` could only ever sign in `E2E_EMAIL`, which is why every spec that
+ * needed somebody else — `f-02b` asserts that an ORG admin (not a platform
+ * admin) is refused a top-level tenant — had to assert around the single
+ * account the suite had. The role accounts are provisioned by
+ * `npm run db:seed:e2e-users`; see `apps/web/e2e/fixtures/storage.ts`.
+ */
+export async function loginAs(
+  page: Page,
+  email: string,
+  password: string | undefined,
+): Promise<Session> {
+  if (!password) {
+    throw new Error(
+      `no password available for ${email}. Role accounts are provisioned by ` +
+        "`E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users`; the " +
+        "run needs the same E2E_ROLE_PASSWORD exported.",
+    );
+  }
+
+  // [E2E-TRIAGE-3] Reuse an existing session rather than signing in again.
+  //
+  // The regression project performed one FRESH login per spec — 46 of them
+  // from a single address — while the login surface is capped by
+  // RATE_LIMIT_AUTH (10/min per address, fail-closed, WP9/S10-05). The suite
+  // therefore could not pass unless the operator remembered to raise a
+  // SERVER-side limit first. The project now carries the storage state the
+  // setup project wrote (playwright.config.ts), so this finds a session and
+  // uses the form only when there is none, or when a spec asks for a
+  // different account than the one in the state. The limiter is untouched —
+  // the suite simply stopped hammering it.
+  await page.goto("/dashboard").catch(() => undefined);
+  // One retry: a single hiccup on /api/auth/session (it re-reads the roles
+  // from the database on every call, apps/web/src/auth.ts) would otherwise
+  // send a spec that HAS a valid session down the form path, and the form path
+  // is both slower and, under a loaded suite, racier.
+  let existing = await getSession(page);
+  if (!existing.userId) {
+    await page.waitForTimeout(500);
+    existing = await getSession(page);
+  }
+  if (
+    existing.userId &&
+    existing.email?.toLowerCase() === email.toLowerCase()
+  ) {
+    if (ORG_ID && existing.currentOrgId !== ORG_ID) {
+      const status = await switchOrg(page, ORG_ID);
+      if (status !== 200) {
+        throw new Error(
+          `E2E_ORG_ID=${ORG_ID} is set, but switching ${email} into that ` +
+            `organisation answered ${status} — refusing to run the suite ` +
+            "against an unknown tenant.",
+        );
+      }
+      return await getSession(page);
+    }
+    return existing;
+  }
+
+  // A session for SOMEBODY ELSE is in the way: /login would redirect straight
+  // back to the dashboard and the form would never appear. Drop it first.
+  if (existing.userId) {
+    await page.context().clearCookies();
+  }
+
+  await page.goto("/login");
+  const emailInput = page
     .locator('input[type="email"], input[name="email"]')
-    .first()
-    .fill(EMAIL);
-  await page
+    .first();
+  const passwordInput = page
     .locator('input[type="password"], input[name="password"]')
-    .first()
-    .fill(PASSWORD);
+    .first();
+  await emailInput.waitFor({ state: "visible", timeout: 30_000 });
+
+  // [E2E-TRIAGE-3 · 2026-09-02] Fill, then CHECK, then submit.
+  //
+  // `waitForSelector` resolves as soon as the input exists in the
+  // server-rendered markup. React then hydrates and resets its controlled
+  // inputs to their initial state, discarding whatever was typed in between.
+  // Two failures of the full run landed exactly there: the page snapshot shows
+  // the password filled and the e-mail field EMPTY, the form never submitted,
+  // and `access_log` holds no login attempt at all for that moment — so the
+  // run reported "Timeout on waitForURL" for something the server never saw.
+  // Verify the fields actually hold what we typed before clicking.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await emailInput.fill(email);
+    await passwordInput.fill(password);
+    if (
+      (await emailInput.inputValue()) === email &&
+      (await passwordInput.inputValue()) === password
+    ) {
+      break;
+    }
+    if (attempt === 3) {
+      throw new Error(
+        `the login form kept discarding its input for ${email} — the page ` +
+          "appears to re-hydrate after every fill. e-mail field held " +
+          `'${await emailInput.inputValue()}'.`,
+      );
+    }
+    await page.waitForTimeout(300);
+  }
 
   const submit = page.locator('button[type="submit"]').first();
   const [loginResponse] = await Promise.all([
@@ -101,13 +195,15 @@ export async function login(page: Page): Promise<Session> {
   // That is the limiter working; the run has to say so.
   if (loginResponse?.status() === 429) {
     throw new Error(
-      `login() for ${EMAIL} was refused with 429 (rate limited). The login ` +
+      `login() for ${email} was refused with 429 (rate limited). The login ` +
         `surface is capped by RATE_LIMIT_AUTH — default 10 per minute per ` +
         `client address, fail-closed — and this suite logs in once per ` +
-        `regression spec from one address. Raise it for the E2E environment ` +
-        `(e.g. RATE_LIMIT_AUTH=1000/60) or give the regression project a ` +
-        `shared storage state. This is the limiter doing its job, not a ` +
-        `product defect.`,
+        `regression spec from one address. Since E2E-TRIAGE-3 the project ` +
+        `carries the setup's storage state, so this path is only reached for ` +
+        `an account that is NOT in that state — check the role accounts ` +
+        `exist (npm run db:seed:e2e-users), or raise the limit for the E2E ` +
+        `environment (RATE_LIMIT_AUTH=1000/60, a SERVER-side variable). This ` +
+        `is the limiter doing its job, not a product defect.`,
     );
   }
 
@@ -125,7 +221,7 @@ export async function login(page: Page): Promise<Session> {
       .textContent()
       .catch(() => null);
     throw new Error(
-      `login() failed for ${EMAIL}: /api/auth/session returned no user. ` +
+      `login() failed for ${email}: /api/auth/session returned no user. ` +
         `Current URL: ${page.url()}. ` +
         `Page error text: ${visibleError ?? "(none)"}. ` +
         "This used to be swallowed and turned 15 specs into silent skips (S11-08).",
@@ -136,7 +232,7 @@ export async function login(page: Page): Promise<Session> {
     const status = await switchOrg(page, ORG_ID);
     if (status !== 200) {
       throw new Error(
-        `E2E_ORG_ID=${ORG_ID} is set, but switching ${EMAIL} into that ` +
+        `E2E_ORG_ID=${ORG_ID} is set, but switching ${email} into that ` +
           `organisation answered ${status}. Either the account has no role ` +
           `there or the id is wrong — refusing to run the suite against an ` +
           `unknown tenant.`,

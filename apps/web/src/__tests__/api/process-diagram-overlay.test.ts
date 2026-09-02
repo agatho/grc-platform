@@ -1,0 +1,166 @@
+/**
+ * `GET /api/v1/processes/:id/diagram-overlay` — der Overlay-Endpunkt aus
+ * Plan §3.3.6.
+ *
+ * Geprüft wird die **Route**, nicht die Abbildung (die steht in
+ * `__tests__/lib/grc-overlay.test.ts`): dass sie hinter `withErrorHandler` und
+ * `withAuth` liegt, dass sie einen fremden Prozess nicht ausliefert, dass sie
+ * eine unbekannte Layergruppe zurückweist statt sie still zu schlucken, und
+ * dass sie mit `?layers=` wirklich weniger abfragt statt nur weniger
+ * auszuliefern.
+ */
+
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { makeRequest, makeParams } from "./helpers/mock-context";
+
+const executeMock = vi.fn();
+const withAuthMock = vi.fn();
+const requireModuleMock = vi.fn();
+
+vi.mock("@grc/db", () => ({
+  db: {
+    get execute() {
+      return executeMock;
+    },
+  },
+  toRows: (result: unknown) => (Array.isArray(result) ? result : []),
+}));
+
+vi.mock("@grc/auth", () => ({
+  get requireModule() {
+    return requireModuleMock;
+  },
+}));
+
+vi.mock("@/lib/api", () => ({
+  get withAuth() {
+    return withAuthMock;
+  },
+}));
+
+vi.mock("drizzle-orm", () => ({
+  sql: Object.assign(
+    (strings: TemplateStringsArray, ...values: unknown[]) => ({
+      strings: [...strings],
+      values,
+    }),
+    { raw: (text: string) => ({ raw: text }) },
+  ),
+}));
+
+const AUTH_CTX = {
+  session: { user: { id: "user-1" } },
+  orgId: "org-1",
+  userId: "user-1",
+};
+
+const PROCESS_ID = "11111111-1111-4111-8111-111111111111";
+const URL_BASE = `http://localhost/api/v1/processes/${PROCESS_ID}/diagram-overlay`;
+
+/** Reihum die vorbereiteten Ergebnisse; alles Weitere ist leer. */
+function queue(results: unknown[][]): void {
+  let call = 0;
+  executeMock.mockImplementation(() => {
+    const value = results[call] ?? [];
+    call += 1;
+    return Promise.resolve(value);
+  });
+}
+
+async function callRoute(url = URL_BASE) {
+  const { GET } =
+    await import("@/app/api/v1/processes/[id]/diagram-overlay/route");
+  return (await GET(makeRequest(url), {
+    params: makeParams({ id: PROCESS_ID }),
+  })) as Response;
+}
+
+describe("GET /processes/:id/diagram-overlay", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    withAuthMock.mockResolvedValue(AUTH_CTX);
+    requireModuleMock.mockResolvedValue(null);
+    executeMock.mockResolvedValue([]);
+  });
+
+  it("reicht die Antwort von withAuth unverändert durch", async () => {
+    withAuthMock.mockResolvedValue(new Response(null, { status: 401 }));
+    const res = await callRoute();
+    expect(res.status).toBe(401);
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it("hält den Modulguard vor jede Abfrage", async () => {
+    requireModuleMock.mockResolvedValue(new Response(null, { status: 404 }));
+    const res = await callRoute();
+    expect(res.status).toBe(404);
+    expect(executeMock).not.toHaveBeenCalled();
+  });
+
+  it("antwortet 404, wenn der Prozess nicht zur Organisation gehört", async () => {
+    queue([[]]);
+    const res = await callRoute();
+    expect(res.status).toBe(404);
+    // Genau eine Abfrage: die Existenzprüfung. Kein Schritt, kein Risiko.
+    expect(executeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("weist eine unbekannte Layergruppe mit 422 zurück", async () => {
+    queue([[{ id: PROCESS_ID, name: "P" }]]);
+    const res = await callRoute(`${URL_BASE}?layers=ropa`);
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe("Validation failed");
+  });
+
+  it("weist eine Version zurück, die nicht zu diesem Prozess gehört", async () => {
+    queue([[{ id: PROCESS_ID, name: "P" }], []]);
+    const res = await callRoute(
+      `${URL_BASE}?version=22222222-2222-4222-8222-222222222222`,
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("liefert einen Datensatz mit computedAt, auch ohne einen einzigen Schritt", async () => {
+    queue([[{ id: PROCESS_ID, name: "Beschaffung" }], []]);
+    const res = await callRoute();
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      data: {
+        computedAt: string;
+        ttlSeconds: number;
+        elements: Record<string, unknown>;
+        diagram: { processId: string; processName: string };
+      };
+    };
+    expect(typeof body.data.computedAt).toBe("string");
+    expect(Number.isFinite(Date.parse(body.data.computedAt))).toBe(true);
+    expect(body.data.elements).toEqual({});
+    expect(body.data.diagram.processId).toBe(PROCESS_ID);
+    expect(body.data.diagram.processName).toBe("Beschaffung");
+    expect(body.data.ttlSeconds).toBe(60);
+    // Nutzerabhängig, weil RLS-gefiltert — nie in einen geteilten Cache.
+    expect(res.headers.get("Cache-Control")).toBe("private, max-age=60");
+  });
+
+  it("fragt mit ?layers= wirklich weniger ab, nicht nur weniger aus", async () => {
+    const step = {
+      id: "step-1",
+      bpmnElementId: "Task_1",
+      lineOfDefense: "first",
+      calledProcessId: null,
+      raciResponsibleRoleId: null,
+      raciAccountableRoleId: null,
+    };
+    queue([[{ id: PROCESS_ID, name: "P" }], [step]]);
+    const res = await callRoute(`${URL_BASE}?layers=line-of-defense`);
+    expect(res.status).toBe(200);
+    // Prozess + Schritte. Risiken, Kontrollen, Feststellungen, Assets,
+    // Kommentare, Simulation und DMN entfallen vollständig.
+    expect(executeMock).toHaveBeenCalledTimes(2);
+    const body = (await res.json()) as {
+      data: { elements: Record<string, { lineOfDefense?: string }> };
+    };
+    expect(body.data.elements["Task_1"]?.lineOfDefense).toBe("first");
+  });
+});

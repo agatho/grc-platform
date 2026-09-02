@@ -480,30 +480,50 @@ describe("§C.2 Knoten in einen anderen Container ziehen", () => {
     const session = await openSession(
       corpus("synth-collaboration-pools-lanes"),
     );
-    const start = session.shape("Start_Kunde");
+    // Bewegt wird eine **Aktivität**, nicht mehr das Start-Ereignis: seit der
+    // Richtungsprüfung des Nachrichtenflusses (STUFE2-D, Klasse
+    // `outcome/connect`) darf ein Start-Ereignis keine Nachricht *senden*, es
+    // fängt eine. Mit ihm als Quelle gäbe es gar keinen zulässigen Ersatztyp
+    // mehr, und der Test prüfte den Fall des Nachbartests statt seinen eigenen.
+    const moved = session.shape("Task_Kunde_Empfang");
     const target = session.shape("Participant_Bank");
 
     session.modeling.moveElements(
-      [start] as never,
-      { x: target.x + 200 - start.x, y: target.y + 100 - start.y },
+      [moved] as never,
+      { x: target.x + 200 - moved.x, y: target.y + 100 - moved.y },
       target as never,
     );
 
-    // Der Sequenzfluss Start_Kunde → Task_Kunde_Antrag lief innerhalb eines
+    // Flow_K2 (Task_Kunde_Antrag → Task_Kunde_Empfang) lief innerhalb eines
     // Pools; jetzt kreuzt er die Poolgrenze und darf keiner mehr sein.
-    expect(session.has("Flow_K1")).toBe(false);
+    expect(session.has("Flow_K2")).toBe(false);
     const replacement = session.elementRegistry
       .getAll()
       .find(
         (element) =>
           boOf(element as never)?.$type === "bpmn:MessageFlow" &&
           (element as { source?: { id?: string } }).source?.id ===
-            "Start_Kunde",
+            "Task_Kunde_Antrag",
       );
     expect(
       replacement,
       "ein Nachrichtenfluss muss entstanden sein",
     ).toBeDefined();
+
+    // Die Gegenrichtung im selben Zug: Flow_K3 endete auf `End_Kunde`. Ein
+    // End-Ereignis empfängt keine Nachricht, also gibt es für diese Kante
+    // keinen zulässigen Typ — sie wird entfernt statt ersetzt.
+    expect(session.has("Flow_K3")).toBe(false);
+    expect(
+      session.elementRegistry
+        .getAll()
+        .some(
+          (element) =>
+            boOf(element as never)?.$type === "bpmn:MessageFlow" &&
+            (element as { target?: { id?: string } }).target?.id ===
+              "End_Kunde",
+        ),
+    ).toBe(false);
     session.assertInvariants("nach dem Poolwechsel");
     session.destroy();
   });

@@ -819,6 +819,20 @@ export default function AuditLogPage() {
     try {
       // 503 means "chain broken" — the body is still valid JSON, we read it
       const res = await fetch("/api/v1/audit-log/integrity");
+      // [E2E-TRIAGE-3 · 2026-09-02] A throttled check is not a failed check.
+      //
+      // Every non-200/503 became `HTTP <status>` in the panel, and on THIS
+      // panel an error reads as "the audit trail could not be verified" —
+      // indistinguishable from a broken hash chain. A 429 is neither: the
+      // verification simply did not run. Say so, and say when to retry.
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("Retry-After") ?? "0");
+        throw new Error(
+          retryAfter > 0
+            ? `Integritätsprüfung ist aktuell begrenzt — erneut möglich in ${retryAfter}s. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).`
+            : "Integritätsprüfung ist aktuell begrenzt. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).",
+        );
+      }
       if (res.status !== 200 && res.status !== 503) {
         throw new Error(`HTTP ${res.status}`);
       }

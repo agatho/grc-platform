@@ -11,6 +11,14 @@ import { defineConfig, devices } from "@playwright/test";
  * right and said so ("Mutations in shared Demo-DB would race otherwise"); this
  * one raced. `workers: 1` also outside CI, for the same reason.
  */
+// [E2E-TRIAGE-3 · 2026-09-02] Same default as the repository-root config: the
+// demo tenant id is written literally by seed_demo_00_platform.sql, so it does
+// not belong in an operator's shell history. Export E2E_ORG_ID to override, or
+// export it empty to run without a tenant pin.
+if (process.env.E2E_ORG_ID === undefined) {
+  process.env.E2E_ORG_ID = "ccc4cc1c-4b09-499c-8420-ebd8da655cd7";
+}
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,

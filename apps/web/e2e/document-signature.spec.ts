@@ -52,7 +52,11 @@ async function loginAs(
   email: string,
   password: string,
 ): Promise<BrowserContext> {
-  const context = await browser.newContext();
+  // [E2E-TRIAGE-3] Explicit: this helper signs a SECOND user in, so it must
+  // not inherit the describe-level storage state of the first (see the note in
+  // tests/e2e/regression/x-03-auditor-portal.spec.ts — `newContext()` picks up
+  // the context options from `use`).
+  const context = await browser.newContext({ storageState: undefined });
   const page = await context.newPage();
   await page.goto("/login");
   await page.waitForSelector('input[type="email"]', { timeout: 15000 });

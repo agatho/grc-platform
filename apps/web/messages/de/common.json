@@ -2738,7 +2738,8 @@
     "actions": {
       "cancel": "Abbrechen",
       "save": "Speichern",
-      "dismiss": "Verwerfen"
+      "dismiss": "Verwerfen",
+      "retry": "Erneut versuchen"
     }
   },
   "bcms": {

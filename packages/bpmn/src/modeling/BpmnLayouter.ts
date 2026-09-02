@@ -98,6 +98,21 @@ export function preferredLayouts(connection: BpmnConnection): string[] {
   return ["straight", "h:h"];
 }
 
+/**
+ * Der Andockpunkt, den ein vorhandener Wegpunkt beschreibt.
+ *
+ * Ein Wegpunkt trägt nach dem Abschneiden an der Kontur sein Original mit
+ * (`original`) — der Punkt, den das Routing gemeint hat, bevor er auf den Rand
+ * gezogen wurde. Genau dieser ist beim Nachlegen wieder der richtige Eingang;
+ * der abgeschnittene Punkt würde die Kante bei jedem Lauf ein Stück weiter
+ * einwärts wandern lassen. Ohne Wegpunkt bleibt die Formmitte.
+ */
+function dockingOf(waypoint: Point | undefined, shape: BpmnShape): Point {
+  if (!waypoint) return getMid(shape) as Point;
+  const original = asPoint((waypoint as { original?: unknown }).original);
+  return original ?? waypoint;
+}
+
 /** Ein Hint-Wert, der wirklich ein Punkt ist — `false` und `undefined` nicht. */
 function asPoint(value: unknown): Point | undefined {
   if (typeof value !== "object" || value === null) return undefined;
@@ -131,11 +146,32 @@ export class BpmnLayouter extends BaseLayouter {
     // Mit `??` liefe dieses `false` als Startpunkt durch und die Kante bekäme
     // `NaN`-Wegpunkte. Das trifft genau den Fall „ein Pool wird umgebaut,
     // während ein Nachrichtenfluss in den anderen Pool zeigt".
-    const start = asPoint(hints.connectionStart) ?? (getMid(source) as Point);
-    const end = asPoint(hints.connectionEnd) ?? (getMid(target) as Point);
-    const waypoints = Array.isArray(hints.waypoints)
+    // `?? []`: eine **neue** Kante hat noch gar keine Wegpunkte —
+    // `CreateConnectionHandler` legt sie erst aus dem Ergebnis dieses Aufrufs
+    // an. Ohne den Ersatzwert griffe der Zugriff unten ins Leere und die
+    // Operation würfe, statt zu zeichnen.
+    const waypoints: readonly (Point | undefined)[] = Array.isArray(
+      hints.waypoints,
+    )
       ? hints.waypoints
-      : connection.waypoints;
+      : (connection.waypoints ?? []);
+
+    // **Ohne Hinweis gilt der bisherige Andockpunkt, nicht die Formmitte.**
+    //
+    // Hier stand `getMid(source)`. Das ist der richtige Ersatzwert für eine
+    // *neue* Kante, aber der falsche für eine bestehende: `repairConnection`
+    // entscheidet anhand der beiden Endpunkte, ob die vorhandene Route noch
+    // taugt. Bekommt es die Formmitte statt des bisherigen Andockpunkts, wirkt
+    // die Route jedes Mal reparaturbedürftig und wird neu gelegt — aus vier
+    // Wegpunkten wurden zwei. Im Vergleichslauf war das die Klasse
+    // `waypoints/bpmn:SequenceFlow/count` (gemessen `FF_1: 2 gegen 4`), und
+    // fachlich ist es Verlust: eine von Hand gelegte Kantenführung überlebt
+    // das Verschieben eines *anderen* Knotens nicht.
+    const start =
+      asPoint(hints.connectionStart) ?? dockingOf(waypoints[0], source);
+    const end =
+      asPoint(hints.connectionEnd) ??
+      dockingOf(waypoints[waypoints.length - 1], target);
 
     const repaired = repairConnection(
       source as never,

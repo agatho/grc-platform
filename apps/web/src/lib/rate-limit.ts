@@ -272,9 +272,30 @@ export const LIMITS = {
   UPLOAD: envLimit("RATE_LIMIT_UPLOAD", { capacity: 60, windowSeconds: 60 }),
   PORTAL: envLimit("RATE_LIMIT_PORTAL", { capacity: 30, windowSeconds: 60 }),
   INTAKE: envLimit("RATE_LIMIT_INTAKE", { capacity: 5, windowSeconds: 600 }),
+  // [E2E-TRIAGE-3 · 2026-09-02] Same sustained rate, an honest burst.
+  //
+  // ADR-019 §57 asks for "1 req/min per user" on the hash-chain verification,
+  // and that sustained rate is right: the endpoint re-hashes every audit row
+  // of the tenant and is the most expensive read in the product.
+  //
+  // `capacity: 1` is not that rule, though — it is that rule with a burst of
+  // ONE, which is a different and worse thing. A token bucket of size 1 is
+  // empty after the first call, so the SECOND call is refused however far
+  // apart the two are inside the window. Measured against the running
+  // instance: call 1 → 200, call 2 immediately after → 429, Retry-After 60.
+  //
+  // What that costs in the product, not just in the suite: `/audit-log` calls
+  // this endpoint on mount. Open the page, navigate away, come back within the
+  // minute — the integrity panel of the audit trail reports a failure. On that
+  // particular panel a failure reads as "the audit log could not be verified".
+  // A control that cries wolf on a page revisit is worse than no indicator.
+  //
+  // 5 per 300 s is ADR-019's average unchanged (5/300s = 1/60s) and lets a
+  // person look twice. Still per-user, still fail-open, still overridable via
+  // RATE_LIMIT_AUDIT_INTEGRITY.
   AUDIT_INTEGRITY: envLimit("RATE_LIMIT_AUDIT_INTEGRITY", {
-    capacity: 1,
-    windowSeconds: 60,
+    capacity: 5,
+    windowSeconds: 300,
   }),
 } as const;
 

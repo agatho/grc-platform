@@ -101,20 +101,38 @@ test.describe("ISMS — Management review cockpit", () => {
     const item = (await itemRes.json()).data;
     const itemId: string = item.id;
     expect(item.actionWorkItemId).toBeTruthy();
-    expect(item.actionElementId).toBeTruthy();
+    // [E2E-TRIAGE-3 · 2026-09-02] This assertion was right and the product was
+    // wrong. `0369_management_review_cockpit.sql` registers the work-item type
+    // `management_review_action` without an `element_id_prefix`, and the
+    // BEFORE-INSERT trigger `generate_work_item_element_id` returns early when
+    // the prefix is NULL — so every management-review action was created
+    // without the human-readable id that the review UI and the 9.3 PDF export
+    // both print. Measured: `actionElementId: null` with `actionWorkItemId`
+    // set. Migration 0442 assigns the prefix MRA and backfills.
+    expect(
+      item.actionElementId,
+      "the work item behind a review action has no element id — see " +
+        "migration 0442",
+    ).toBeTruthy();
 
-    // Item list resolves the linked work item
+    // Item list resolves the linked work item — INCLUDING the element id, the
+    // field the detail view and the PDF export read.
     const listRes = await request.get(`/api/v1/isms/reviews/${reviewId}/items`);
     expect(listRes.ok()).toBeTruthy();
     const listed = (
       (await listRes.json()).data as Array<{
         id: string;
         actionWorkItemId: string | null;
+        actionElementId: string | null;
         actionStatus: string | null;
       }>
     ).find((i) => i.id === itemId);
     expect(listed).toBeTruthy();
     expect(listed!.actionWorkItemId).toBe(item.actionWorkItemId);
+    expect(
+      listed!.actionElementId,
+      "the list resolves a different element id than the create response",
+    ).toBe(item.actionElementId);
 
     // 5. in_progress → completed
     const complete = await request.put(`/api/v1/isms/reviews/${reviewId}`, {

@@ -31,6 +31,10 @@ import { BoundaryEventBehavior } from "./behaviors/BoundaryEventBehavior";
 import { ConnectionBehavior } from "./behaviors/ConnectionBehavior";
 import { ParticipantBehavior } from "./behaviors/ParticipantBehavior";
 import { LabelBehavior } from "./behaviors/LabelBehavior";
+import {
+  AutoResizeRules,
+  BpmnAutoResize,
+} from "./behaviors/AutoResizeBehavior";
 
 /** Die Modellierungsschicht als `didi`-Moduldeklaration. */
 const modelingModule = {
@@ -50,6 +54,10 @@ const modelingModule = {
     "connectionBehavior",
     "participantBehavior",
     "modeling",
+    // Zuletzt: `autoResize` hört auf `postExecuted` und muss die
+    // Änderungen der übrigen Verhalten schon sehen.
+    "autoResize",
+    "autoResizeRules",
   ],
   moddle: ["value", arctosModdle],
   bpmnFactory: ["type", BpmnFactory],
@@ -64,6 +72,8 @@ const modelingModule = {
   boundaryEventBehavior: ["type", BoundaryEventBehavior],
   connectionBehavior: ["type", ConnectionBehavior],
   participantBehavior: ["type", ParticipantBehavior],
+  autoResize: ["type", BpmnAutoResize],
+  autoResizeRules: ["type", AutoResizeRules],
 } as const;
 
 export default modelingModule;

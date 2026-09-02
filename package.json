@@ -20,6 +20,7 @@
     "db:seed:demo": "bash scripts/seed-demo.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "db:create-admin": "turbo db:create-admin --filter=@grc/db",
+    "db:seed:e2e-users": "npm run --silent db:seed:e2e-users --workspace=@grc/db",
     "sbom": "node scripts/generate-sbom.mjs",
     "sbom:check": "node scripts/generate-sbom.mjs --check",
     "notice": "node scripts/generate-notice.mjs",

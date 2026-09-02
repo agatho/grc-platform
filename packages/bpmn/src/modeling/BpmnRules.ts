@@ -258,18 +258,52 @@ export function canConnectMessageFlow(
   if (!sourcePool || !targetPool) return false;
   if (sourcePool === targetPool) return false;
 
-  return isMessageEndpoint(sourceBo) && isMessageEndpoint(targetBo);
+  return isMessageFlowSource(sourceBo) && isMessageFlowTarget(targetBo);
 }
 
-function isMessageEndpoint(bo: ModdleElement): boolean {
-  return (
-    is(bo, "bpmn:Participant") ||
-    is(bo, "bpmn:Activity") ||
-    is(bo, "bpmn:EndEvent") ||
-    is(bo, "bpmn:IntermediateThrowEvent") ||
-    is(bo, "bpmn:IntermediateCatchEvent") ||
-    is(bo, "bpmn:StartEvent")
-  );
+/**
+ * Ein Nachrichtenfluss hat eine **Richtung**, und ein Ereignis hat sie auch.
+ *
+ * Hier stand bis zur Divergenzabarbeitung eine einzige Funktion
+ * `isMessageEndpoint`, die Start-, End-, Zwischen-Fang- und
+ * Zwischen-Wurf-Ereignis auf **beiden** Seiten zuließ. Damit ging
+ * `Task → EndEvent` über die Poolgrenze durch — im Vergleichslauf gemessen
+ * (`Task_Bank_Entscheiden → End_Kunde` in `synth-collaboration-pools-lanes`),
+ * von `bpmn-js` abgelehnt.
+ *
+ * **Das Urteil kommt nicht von der Referenz, sondern vom Metamodell.** BPMN
+ * 2.0 lässt einen Nachrichtenfluss nur zwischen Elementen laufen, die
+ * Nachrichten in der jeweiligen Richtung verarbeiten: senden darf ein
+ * *werfendes* Ereignis (End, Zwischen-Wurf), empfangen ein *fangendes*
+ * (Start, Zwischen-Fang). Ein Nachrichtenfluss **auf** ein End-Ereignis hieße
+ * „dieses Ereignis empfängt eine Nachricht" — ein End-Ereignis empfängt
+ * nichts, es beendet. Referenz und Spezifikation stimmen überein, ARCTOS war
+ * der Ausreißer.
+ *
+ * Ein Randereignis scheidet auf beiden Seiten aus: es hängt an einer
+ * Aktivität und wird von deren Verlauf ausgelöst, nicht von einer Nachricht
+ * über die Poolgrenze.
+ *
+ * **Nicht** übernommen wurde die zusätzliche Strenge von `bpmn-js`, eine
+ * `bpmn:MessageEventDefinition` zu verlangen: es lässt ein Ereignis **ohne**
+ * jede Ereignisdefinition ebenfalls zu (`hasEventDefinitionOrNone`), und ein
+ * frisch gezeichnetes Zwischenereignis hat noch keine. Wer die Nachricht
+ * anschließend anlegt, soll die Kante vorher ziehen dürfen.
+ */
+function isMessageFlowSource(bo: ModdleElement): boolean {
+  if (is(bo, "bpmn:Participant")) return true;
+  if (is(bo, "bpmn:BoundaryEvent")) return false;
+  // Werfend: EndEvent und IntermediateThrowEvent.
+  if (is(bo, "bpmn:Event")) return is(bo, "bpmn:ThrowEvent");
+  return is(bo, "bpmn:Activity");
+}
+
+function isMessageFlowTarget(bo: ModdleElement): boolean {
+  if (is(bo, "bpmn:Participant")) return true;
+  if (is(bo, "bpmn:BoundaryEvent")) return false;
+  // Fangend: StartEvent und IntermediateCatchEvent.
+  if (is(bo, "bpmn:Event")) return is(bo, "bpmn:CatchEvent");
+  return is(bo, "bpmn:Activity");
 }
 
 /** Assoziation zu/von einer Textannotation. */

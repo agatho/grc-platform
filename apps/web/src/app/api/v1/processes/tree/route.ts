@@ -32,9 +32,14 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       parentProcessId: process.parentProcessId,
       isEssential: process.isEssential,
       processOwnerName: user.name,
+      // [E2E-TRIAGE-3 · 2026-09-02] Qualified on purpose — see the note in
+      // `processes/map/route.ts`. `${process.id}` renders as a bare `"id"` in a
+      // select-list position, and inside this subquery that binds to `c.id`,
+      // not to the outer row: the condition became "a process whose parent is
+      // itself" and the tree reported `childCount: 0` for every node.
       childCount: sql<number>`(
         SELECT count(*)::int FROM process c
-        WHERE c.parent_process_id = ${process.id}
+        WHERE c.parent_process_id = "process"."id"
           AND c.deleted_at IS NULL
       )`,
     })

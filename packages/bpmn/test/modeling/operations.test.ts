@@ -374,9 +374,13 @@ describe("connection.create", () => {
       unknown
     >;
 
+    // Quelle ist eine **Aktivität**, nicht mehr `Start_A`: seit der
+    // Richtungsprüfung (STUFE2-D) darf ein Start-Ereignis keine Nachricht
+    // senden — es fängt eine. Der Fall, den dieser Test meint, ist der
+    // gewöhnliche Nachrichtenfluss zwischen zwei Pools.
     const connection = operate(session, "connection.create (MessageFlow)", () =>
       session.modeling.connect(
-        session.shape("Start_A"),
+        session.shape("Task_A1"),
         session.shape("Task_B1"),
       ),
     );

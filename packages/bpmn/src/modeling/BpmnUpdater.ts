@@ -59,7 +59,9 @@ import type {
   BpmnParent,
   BpmnShape,
   ModdleElement,
+  Point,
 } from "./types";
+
 import {
   addRef,
   addToContainer,
@@ -78,6 +80,11 @@ import {
   semanticContainerOf,
   setProperty,
 } from "./util";
+
+/** `diagram-js/lib/layout/CroppingConnectionDocking`, so viel wie gebraucht. */
+interface ConnectionDockingLike {
+  getCroppedWaypoints(connection: unknown): Point[];
+}
 
 type Revert = () => void;
 
@@ -106,14 +113,43 @@ function undoAll(context: CommandContext): void {
 }
 
 export class BpmnUpdater extends CommandInterceptor {
-  static $inject = ["eventBus", "bpmnFactory"];
+  static $inject = ["eventBus", "bpmnFactory", "connectionDocking"];
 
   constructor(
     eventBus: EventBus,
     private readonly bpmnFactory: BpmnFactory,
+    private readonly connectionDocking: ConnectionDockingLike,
   ) {
     super(eventBus);
     this.register();
+  }
+
+  /**
+   * Schneidet die Wegpunkte einer Kante an den Konturen von Quelle und Ziel ab.
+   *
+   * Fehlschläge werden geschluckt: `getCroppedWaypoints` rechnet über die
+   * SVG-Pfade der Endpunkte, und in jsdom ist ein Pfad gelegentlich leer.
+   * Ungeschnittene Wegpunkte sind hässlich, eine geworfene Ausnahme mitten in
+   * einem Kommando ist ein Datenverlust — die Reihenfolge der Übel ist klar.
+   */
+  private cropConnection(context: CommandContext): void {
+    if (context["cropped"] === true) return;
+    const connection = context["connection"] as
+      (BpmnConnection & { waypoints?: Point[] }) | undefined;
+    if (!connection?.source || !connection.target) return;
+    try {
+      const cropped = this.connectionDocking.getCroppedWaypoints(connection);
+      if (
+        Array.isArray(cropped) &&
+        cropped.length >= 2 &&
+        cropped.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y))
+      ) {
+        connection.waypoints = cropped;
+      }
+    } catch {
+      // siehe Kommentar oben
+    }
+    context["cropped"] = true;
   }
 
   // -------------------------------------------------------------------------
@@ -121,6 +157,41 @@ export class BpmnUpdater extends CommandInterceptor {
   // -------------------------------------------------------------------------
 
   private register(): void {
+    // **Zuerst** abschneiden, dann DI schreiben.
+    //
+    // `layoutConnection` liefert Wegpunkte, die in den Mittelpunkten von
+    // Quelle und Ziel beginnen und enden — so verlangt es `ManhattanLayout`,
+    // das die Mitten braucht, um die Richtung zu bestimmen. Sichtbar werden
+    // darf das nicht: eine Kante, die im Mittelpunkt einer Aktivität beginnt,
+    // liegt quer über deren Beschriftung. `diagram-js` bringt dafür
+    // `CroppingConnectionDocking` mit, und der Dienst war hier auch schon
+    // registriert — **aufgerufen** hat ihn niemand.
+    //
+    // Gefunden hat das der Vergleichslauf, nicht das Auge: die Klasse
+    // `waypoints/bpmn:SequenceFlow/position` meldete durchgängig Differenzen
+    // von genau einer halben Formbreite (gemessen 170 gegen 188 an einem
+    // 36 px breiten Ereignis — 170 ist die Mitte, 188 der rechte Rand). Am
+    // Bild fiel es nicht auf, weil die Referenzbilder nur importierte
+    // Diagramme zeigen und importierte DI gelesen und nicht gerechnet wird.
+    //
+    // Die Hakenpunkte sind dieselben wie in der Referenz (`connection.layout`
+    // und `connection.create`); `context.cropped` verhindert das zweimalige
+    // Abschneiden, wenn beide Kommandos ineinander laufen.
+    this.executed(
+      ["connection.layout", "connection.create"],
+      (event: { context?: CommandContext }) => {
+        const context = event.context;
+        if (!context) return;
+        this.cropConnection(context);
+      },
+    );
+    this.reverted(
+      ["connection.layout", "connection.create"],
+      (event: { context?: CommandContext }) => {
+        if (event.context) delete event.context["cropped"];
+      },
+    );
+
     const pair = (
       events: string | string[],
       apply: (context: CommandContext) => void,

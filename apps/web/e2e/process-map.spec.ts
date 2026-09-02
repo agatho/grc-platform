@@ -22,6 +22,7 @@ interface MapItem {
   name: string;
   mapCategory: string | null;
   childCount: number;
+  hasDiagram: boolean;
 }
 
 interface MapGroups {
@@ -142,12 +143,35 @@ test.describe("BPM — Process map (bands, reorder, inheritance)", () => {
         false,
       );
 
-      // Parent tile now reports the child on the root map
+      // Parent tile now reports the child on the root map.
+      //
+      // [E2E-TRIAGE-3 · 2026-09-02] This is where the map's two correlated
+      // subqueries were caught: both referenced the outer row through a bare
+      // `"id"`, which binds to the INNER relation, so `childCount` was always
+      // 0 and `hasDiagram` always false — for every tenant, not just here.
+      // `hasDiagram` is asserted alongside it because it was the same defect
+      // in the same statement and nothing else in the suite looked at it.
       const rootAfterChild = await getMap();
       const parentTile = rootAfterChild.groups.core.find(
         (p) => p.id === coreAId,
       );
+      expect(
+        parentTile,
+        "the parent tile vanished from the core band",
+      ).toBeTruthy();
       expect(parentTile?.childCount).toBeGreaterThanOrEqual(1);
+      // Every process is created with an initial BPMN version, so the tile
+      // must report a diagram.
+      expect(
+        parentTile?.hasDiagram,
+        "the tile of a process that has a stored BPMN version reports no " +
+          "diagram",
+      ).toBe(true);
+      // A leaf still reports 0 — the count is per row, not a constant.
+      const childTile = (await getMap(coreAId)).groups.core.find(
+        (p) => p.id === childId,
+      );
+      expect(childTile?.childCount).toBe(0);
     } finally {
       // Best-effort cleanup — children first (soft delete).
       for (const id of [...createdIds].reverse()) {

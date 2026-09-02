@@ -63,6 +63,9 @@ import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
+import { useGrcOverlay } from "@/hooks/use-grc-overlay";
+import { GrcViewSelect } from "@/components/bpmn/grc-view-select";
+import type { GrcViewId } from "@grc/bpmn/grc";
 import { ProcessComments } from "@/components/process/process-comments";
 import { ProcessReviewConfig } from "@/components/process/process-review-config";
 import { ProcessControlsTab } from "@/components/process/process-controls-tab";
@@ -760,6 +763,17 @@ function OverviewTab({
     calledBy: CallLinkCaller[];
   } | null>(null);
 
+  // GRC-Sicht der Vorschau. Eigener Zustand statt eines geteilten mit dem
+  // Editor-Reiter: die beiden Reiter werden nie gleichzeitig gerendert, ein
+  // gemeinsamer Zustand hätte also nur die Elternkomponente vergrößert.
+  // `null` = aus; dann läuft der Overlay-Endpunkt gar nicht erst an.
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(process.id, { enabled: grcView !== null });
+
   useEffect(() => {
     fetch(`/api/v1/processes/${process.id}/call-links`)
       .then((r) => (r.ok ? r.json() : null))
@@ -919,6 +933,21 @@ function OverviewTab({
           {process.versions?.some((v) => v.bpmnXml) ||
           Boolean(process.currentVersionData?.bpmnXml) ? (
             <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
+              {/*
+                Dieselbe Sichtwahl wie über der Bearbeitungsfläche — sie teilt
+                sich den Zustand mit ihr, weil beide dasselbe Diagramm zeigen
+                und ein Leser, der die Sicht einmal gewählt hat, sie nicht in
+                jedem Reiter erneut wählen will.
+              */}
+              <div className="flex justify-end border-b border-gray-100 px-2 py-1">
+                <GrcViewSelect
+                  value={grcView}
+                  onChange={setGrcView}
+                  computedAt={grcOverlayData?.computedAt}
+                  loading={grcLoading}
+                  error={grcError}
+                />
+              </div>
               <BpmnViewerDynamic
                 xml={
                   process.versions?.find((v) => v.isCurrent)?.bpmnXml ??
@@ -932,6 +961,9 @@ function OverviewTab({
                 }
                 className="h-full"
                 minHeight={400}
+                {...(grcView !== null && grcOverlayData !== undefined
+                  ? { grcOverlayData, grcView }
+                  : {})}
               />
             </div>
           ) : (
@@ -1207,6 +1239,19 @@ function EditorTab({
   const [lodOverlay, setLodOverlay] = useState<UnvalidatedJson[]>([]);
   const [findingsOverlay, setFindingsOverlay] = useState<UnvalidatedJson[]>([]);
 
+  // Die GRC-Diagrammschicht (23 Layer, 9 Sichten aus Plan §3.3.3). `null` =
+  // aus; dann wird der Overlay-Endpunkt gar nicht erst befragt und die vier
+  // Badge-Kanäle darüber arbeiten wie bisher. Ist eine Sicht gewählt, lassen
+  // die Kanäle die Fläche in Ruhe — dieselbe Aussage zweimal am selben Element
+  // wäre kein Mehrwert, sondern ein Widerspruch in spe
+  // (STUFE2-C-ABSCHLUSS.md §1.3).
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(processId, { enabled: grcView !== null });
+
   useEffect(() => {
     if (!showCoverageOverlay) return;
     fetch(`/api/v1/processes/${processId}/control-coverage`)
@@ -1437,6 +1482,13 @@ function EditorTab({
             >
               Findings
             </button>
+            <GrcViewSelect
+              value={grcView}
+              onChange={setGrcView}
+              computedAt={grcOverlayData?.computedAt}
+              loading={grcLoading}
+              error={grcError}
+            />
           </div>
 
           <BpmnEditorDynamic
@@ -1455,6 +1507,9 @@ function EditorTab({
             callActivityOverlayData={callActivityOverlay}
             onNavigateToProcess={navigateToChildProcess}
             className="h-full"
+            {...(grcView !== null && grcOverlayData !== undefined
+              ? { grcOverlayData, grcView }
+              : {})}
           />
         </div>
 

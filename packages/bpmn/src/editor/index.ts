@@ -52,6 +52,22 @@ export { ContextPadChrome } from "./ContextPadChrome";
 export { ReplaceMenu } from "./ReplaceMenu";
 export { LabelEditing } from "./LabelEditing";
 export { ConnectMode, CANDIDATE_MARKER, midOf } from "./ConnectMode";
+export { ContainerMode, CONTAINER_MARKER, placeInside } from "./ContainerMode";
+export {
+  DiagramFind,
+  FIND_CLASS,
+  countText,
+  haystack,
+  matchesFor,
+  searchKey,
+} from "./Find";
+export {
+  KeyboardHelp,
+  HELP_CLASS,
+  KEY_BINDINGS,
+  buildHelp,
+  type KeyBinding,
+} from "./KeyboardHelp";
 export { BendpointEditing } from "./BendpointEditing";
 export {
   ResizeBehavior,

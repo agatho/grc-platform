@@ -143,6 +143,14 @@ export const processFrameworkMapping = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
+    // Optionaler Schrittbezug (Migration 0443). NULL = die Zuordnung gilt
+    // fuer den ganzen Prozess — der bisherige und weiterhin gueltige Fall.
+    // Gesetzt = sie gilt fuer diesen Schritt; erst damit kann die
+    // Framework-Abdeckungssicht der Diagrammschicht (F8) je Element etwas
+    // zeigen. Drizzle-FK ausgelassen wie bei `finding.processStepId`, um den
+    // Zyklus process-grc.ts -> process.ts zu vermeiden; die DB-seitige
+    // Fremdschluesselbedingung steht in der Migration.
+    processStepId: uuid("process_step_id"),
     catalogEntryId: uuid("catalog_entry_id"),
     catalogId: uuid("catalog_id"),
     frameworkCode: varchar("framework_code", { length: 40 }),
@@ -165,6 +173,7 @@ export const processFrameworkMapping = pgTable(
     // pfm_process_resolved_uniq is a functional unique index, created in migration 0335.
     index("pfm_org_idx").on(t.orgId),
     index("pfm_process_idx").on(t.processId),
+    index("pfm_process_step_idx").on(t.processStepId),
     index("pfm_entry_idx").on(t.catalogEntryId),
     index("pfm_framework_idx").on(t.orgId, t.frameworkCode),
   ],

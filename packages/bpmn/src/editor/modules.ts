@@ -53,6 +53,9 @@ import { ArctosPaletteProvider } from "./PaletteProvider";
 import { BendpointEditing } from "./BendpointEditing";
 import { BpmnCopyPaste } from "./CopyPaste";
 import { ConnectMode } from "./ConnectMode";
+import { ContainerMode } from "./ContainerMode";
+import { DiagramFind } from "./Find";
+import { KeyboardHelp } from "./KeyboardHelp";
 import { ContextPadChrome } from "./ContextPadChrome";
 import { EditorAnnouncer } from "./announce";
 import { EditorConfiguration } from "./config";
@@ -110,6 +113,9 @@ export const editorModule = {
   replaceMenu: ["type", ReplaceMenu],
   labelEditing: ["type", LabelEditing],
   connectMode: ["type", ConnectMode],
+  containerMode: ["type", ContainerMode],
+  diagramFind: ["type", DiagramFind],
+  keyboardHelp: ["type", KeyboardHelp],
   bendpointEditing: ["type", BendpointEditing],
   resizeBehavior: ["type", ResizeBehavior],
   bpmnCopyPaste: ["type", BpmnCopyPaste],

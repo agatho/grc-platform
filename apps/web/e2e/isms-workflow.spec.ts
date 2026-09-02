@@ -93,14 +93,44 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   });
 
   // ── Phase 5: SoA ──────────────────────────────────────────
+  //
+  // [E2E-TRIAGE-3 · 2026-09-02] This was NOT a locator problem.
+  //
+  // Round 2 recorded "the text is in the HTML, the locator does not find it"
+  // and left it unclassified. Measured: the only occurrence of "Kontrollen" in
+  // the document was a `title=` attribute on a sidebar link — an attribute is
+  // not text, so `getByText` correctly matched nothing. The page itself was
+  // showing "Keine SoA-Einträge gefunden" over a tenant whose SoA the API
+  // returns without complaint, because `fetchData` asked for `limit=200`,
+  // `paginate()` rejects anything above 100 with 422 (#NIGHT-059), and the
+  // page discarded that status with a bare `if (res.ok)`. The stats bar — the
+  // element that carries the word this test looks for — renders only when
+  // `stats` is set, so the assertion was reporting the empty page accurately.
+  //
+  // The page is fixed (it pages at the size the API allows and shows a failed
+  // load as a failure). The assertion is sharpened at the same time: a test
+  // named "loads with Annex A controls" should fail when the SoA is empty, not
+  // pass on the word "Kontrollen" appearing anywhere.
   test("S3.1: SoA page loads with Annex A controls", async ({ page }) => {
     await page.goto("/isms/soa");
     await awaitAppReady(page);
     await expect(
       page.getByText(/anwendbarkeit|applicability/i).first(),
     ).toBeVisible();
-    // Should show at least 90 controls (93 Annex A)
+    // The stats bar only exists when the list actually loaded.
     await expect(page.getByText(/kontrollen|controls/i).first()).toBeVisible();
+    // A failed load must not be mistaken for an empty SoA, and an empty SoA
+    // must not be mistaken for a loaded one.
+    await expect(
+      page.getByText(/keine soa-einträge|no soa entries/i),
+      "the SoA page shows its empty state for a tenant that has SoA entries",
+    ).toHaveCount(0);
+    await expect(
+      page.locator('[role="alert"]').filter({ hasText: /nicht geladen/i }),
+      "the SoA list could not be loaded",
+    ).toHaveCount(0);
+    // Entries, not just chrome.
+    await expect(page.locator("table tbody tr").first()).toBeVisible();
   });
 
   // ── Phase 6: Assessments & Maturity ───────────────────────

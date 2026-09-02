@@ -130,12 +130,31 @@ export interface DivergenceRule {
  */
 export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
   {
-    match: /^outcome\/.*\/threw$/,
+    match: /^outcome\/.*\/threw-both$/,
     verdict: "intentional",
     reason:
-      "One engine refuses an operation by throwing where the other returns a rule verdict. The " +
-      "harness records both as an outcome and does not treat the *style* of refusal as a model " +
-      "difference; what matters is that the resulting documents agree, which is compared separately.",
+      "Both engines refuse the operation by throwing. The harness records that as an outcome and " +
+      "does not treat the *style* of refusal as a model difference; what matters is that the " +
+      "resulting documents agree, which is compared separately.",
+  },
+  {
+    match: /^outcome\/.*\/threw-reference$/,
+    verdict: "reference-wrong",
+    reason:
+      "bpmn-js threw where ARCTOS carried the operation out or refused it by rule. Measured cause: " +
+      "bpmn-js' LabelLink calls path-intersection on an element whose SVG path jsdom reports as " +
+      "empty (`Cannot read properties of null (reading 'length')`), which happens when an external " +
+      "label moves with its boundary event. That is a limitation of the reference *in this " +
+      "harness*, not a statement about ARCTOS — and it is exactly why the throwing side belongs in " +
+      "the signature: the previous rule spelled `…/threw` without a side and classified the " +
+      "reference's crash as a deliberate difference.",
+  },
+  {
+    match: /^outcome\/.*\/threw-ours$/,
+    verdict: "ours-wrong",
+    reason:
+      "OPEN DEFECT. ARCTOS threw where the reference gave a verdict. A throw out of the modeling " +
+      "layer is always a finding — the property runner treats `driver/threw` the same way.",
   },
   {
     match: /^element-name\/.*\/label$/,
@@ -154,27 +173,71 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
       "had. Neither is wrong, and the corpus documents already carry the attribute.",
   },
   {
-    match: /^candidate-set\//,
+    match: /^candidate-set\/container\/more-reference$/,
+    verdict: "intentional",
+    reason:
+      "bpmn-js knows more containers than ARCTOS because it materialises **every** BPMNPlane: an " +
+      "expanded sub-process in its own plane becomes a second (and third) root element, and its " +
+      "children join the registry. ARCTOS' modeling importer reads one plane " +
+      "(src/modeling/importer.ts, resolvePlane) and warns when the document has more. Measured on " +
+      "synth-nested-subprocesses: bpmn-js offers [Process_Nested, Sub_L1, Sub_L2], ARCTOS the " +
+      "first two. Deliberate for now and bounded: the first level is complete and round-trips " +
+      "byte-identically, the deeper planes are preserved verbatim in the document because nothing " +
+      "in this layer touches them. What is missing is the *editing* of the deeper level — the " +
+      "drill-down work package (plan §3.4/A5, STUFE2-A2-GRC.md §6). It is listed as an open " +
+      "feature, not as a defect of the engine, and the harness says so instead of reporting the " +
+      "same gap once per generated sequence.",
+  },
+  {
+    match: /^candidate-set\/(flowNode|removable|activity)\/more-reference$/,
+    verdict: "intentional",
+    reason:
+      "Same cause as candidate-set/container/more-reference, seen through the other candidate " +
+      "kinds: the flow nodes and connections of a deeper BPMNPlane are in bpmn-js' registry and " +
+      "not in ARCTOS'. No element is lost — they stay in the document — they are only not " +
+      "editable in this stage.",
+  },
+  {
+    match: /^candidate-set\/.*\/more-ours$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. The two engines stopped holding the same set of elements part-way through the " +
-      "sequence, so the replay was cut short. Every observed instance so far follows an earlier " +
-      "rules disagreement (see outcome/*), but the guard fires on its own signature because a " +
-      "silent element-count difference is exactly the failure mode a comparison must not paper " +
-      "over. Blocks plan §5.6 criterion 2.",
+      "OPEN DEFECT. ARCTOS holds elements the reference does not after the same sequence. Two " +
+      "causes are separated in the corpus but not yet in the signature: (a) deliberate — ARCTOS " +
+      "repairs missing DI on import and therefore knows flow elements that bpmn-js drops for want " +
+      "of a BPMNShape (same decision as bounds|waypoints/*/presence/only-ours), and (b) a genuine " +
+      "difference after editing, measured as one extra bpmn:SequenceFlow following connect+undo. " +
+      "(b) is what keeps the verdict at ours-wrong: an element too many after an undo is the " +
+      "beginning of the same family as the DI leaks the property runner found. Blocks plan §5.6 " +
+      "criterion 2.",
   },
   {
     match:
       /^outcome\/(createShape|connect|reparent|remove|changeLane)\/(applied-vs-rejected|rejected-vs-applied)$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT: BpmnRules parity. The two rule sets answer the same question differently — " +
-      "measured cases: creating a Task or an EventBasedGateway in the root of " +
-      "synth-nested-subprocesses (ARCTOS allows, bpmn-js refuses) and connecting inside Sub_L1 " +
-      "(ARCTOS refuses, bpmn-js allows). The verdict is `ours-wrong` by burden of proof, not by " +
-      "authority: bpmn-js' rules have a decade of production behind them, so the new engine owes " +
-      "the argument for each difference. Plan §5.6 criterion 4 requires this list to be worked " +
-      "through case by case before bpmn-js may be removed.",
+      "OPEN DEFECT: BpmnRules parity. The two rule sets answer the same question differently. " +
+      "The verdict is `ours-wrong` by burden of proof, not by authority: bpmn-js' rules have a " +
+      "decade of production behind them, so the new engine owes the argument for each difference. " +
+      "Plan §5.6 criterion 4 requires this list to be worked through case by case before bpmn-js " +
+      "may be removed.\n\n" +
+      "Worked through in STUFE2-D:\n" +
+      "  * connect (4 occurrences, now 0) — FIXED and not by imitation. ARCTOS let a message flow " +
+      "    end on any event; measured case Task_Bank_Entscheiden -> End_Kunde across the pool " +
+      "    boundary. BPMN 2.0 gives a message flow a direction: a *throwing* event may send " +
+      "    (End, IntermediateThrow), a *catching* one may receive (Start, IntermediateCatch). A " +
+      "    message flow onto an end event says 'this event receives a message', and an end " +
+      "    event receives nothing. Reference and specification agree; ARCTOS was the outlier. " +
+      "    See BpmnRules.isMessageFlowSource/isMessageFlowTarget.\n" +
+      "  * reparent (1 occurrence, open) — ARCTOS allows `elements.move` for a boundary event " +
+      "    when the named target is the parent it already has, i.e. a null reparent; bpmn-js " +
+      "    refuses any move of a boundary event that names a target, because it routes boundary " +
+      "    events through attach. Both are internally consistent and the resulting documents are " +
+      "    identical. NOT aligned on purpose: the `element.parent === target` branch is what lets " +
+      "    diagram-js' attach-support move a host together with its attachers, and removing it " +
+      "    would make every activity with a boundary event undraggable — a regression far worse " +
+      "    than one divergence in a hundred sequences.\n" +
+      "  * createShape (2 occurrences, open) — creating a Task or an EventBasedGateway in the " +
+      "    root of synth-nested-subprocesses (ARCTOS allows, bpmn-js refuses).",
   },
   {
     match: /^element-(set|type)\//,
@@ -190,8 +253,17 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
     verdict: "ours-wrong",
     reason:
       "OPEN DEFECT. Different number of waypoints for the same connection after the same " +
-      "operations — the layouter produces a different route. Cosmetic in the picture, but it " +
-      "makes every save a diff and it is the same code path as the missing-coordinate defect.",
+      "operations. Cosmetic in the picture, but it makes every save a diff. " +
+      "Two causes were separated in STUFE2-D and one of them is fixed. Fixed: the layouter " +
+      "defaulted a missing connectionStart/connectionEnd hint to getMid(shape) instead of the " +
+      "*existing* docking point, so repairConnection considered every route reparable and " +
+      "replaced a hand-laid four-point route with a straight line. BpmnLayouter now reads the " +
+      "docking from the current waypoints (dockingOf), the same rule the reference uses. " +
+      "Verified in isolation: one move of a flow node in synth-foreign-camunda-extensions now " +
+      "gives byte-identical waypoints in both engines for FF_1..FF_3. What remains is the same " +
+      "signature *inside a longer sequence*, and always after an undo/redo pair — the suspicion " +
+      "is that one engine relayouts on the redo and the other restores the stored route. Not " +
+      "chased further in this stage; it is the largest single open class.",
   },
   {
     match: /^outcome\/attachBoundary\/applied-vs-rejected$/,
@@ -220,11 +292,17 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
     match: /^waypoints\/bpmn:(Sequence|Message)Flow\/position$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. After a move or a connect, ARCTOS puts an intermediate waypoint where bpmn-js " +
-      "does not, and in the worst case emits x=0 — the same missing-coordinate defect the property " +
-      "runner reports as driver/threw (test/verify/known-findings.ts). Blocks plan §5.6 criterion 2. " +
-      "Classified, not accepted: the entry exists so that a *new* kind of waypoint difference still " +
-      "fails the suite.",
+      "OPEN DEFECT, halved in STUFE2-D. The dominant cause is fixed: the endpoints of every " +
+      "computed route sat in the *centre* of source and target instead of on their outline, " +
+      "because BpmnUpdater registered diagram-js' CroppingConnectionDocking as a service and " +
+      "never called it (the reference crops in exactly the same two commands, connection.layout " +
+      "and connection.create). The signature reported the difference as half a shape width — " +
+      "measured 170 against 188 at a 36px event, which is centre against right edge. A line " +
+      "beginning in the middle of an activity lies across its label; no test saw it because the " +
+      "raster baselines only show *imported* diagrams, whose DI is read rather than computed. " +
+      "The class fell from 42+8 to 20+2 in the 100-sequence run. The rest is intermediate " +
+      "waypoints after a move or connect; classified, not accepted, so that a *new* kind of " +
+      "waypoint difference still fails the suite. Blocks plan §5.6 criterion 2.",
   },
   {
     match: /^bounds\/.*\/created$/,
@@ -241,10 +319,39 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
     match: /^bounds\/bpmn:(SubProcess|Transaction|Participant|Lane)$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. After editing inside an expanded sub-process the two engines resize the " +
-      "container differently (measured: 300px vs 390px width on E_EventSub). DI is read, not " +
-      "computed, so this is a modeling-side difference in the resize behaviour, not an import " +
-      "difference. Blocks plan §5.6 criterion 2.",
+      "OPEN DEFECT, much reduced. Until STUFE2-D this class was the missing auto-resize: a " +
+      "container simply did not grow, and the two engines ended up 90px apart (300 vs 390 on " +
+      "E_EventSub). src/modeling/behaviors/AutoResizeBehavior.ts now uses diagram-js' own " +
+      "features/auto-resize, so the offsets, the trigger threshold and the recursion are the same " +
+      "code on both sides; the class fell from 15 occurrences to 1 in the 100-sequence run. What " +
+      "is left is a 5px difference (515 vs 520) that comes from the *position of the newly " +
+      "created shape*, not from the resize: the harness clamps a create position into the parent " +
+      "(`inside()`), both drivers clamp with the same margin, and the remaining pixels follow the " +
+      "container the clamp was measured against. Small, understood, and cheaper to fix once the " +
+      "waypoint classes below are closed.",
+  },
+  {
+    match: /^bounds\/bpmn:/,
+    verdict: "ours-wrong",
+    reason:
+      "OPEN DEFECT. An *existing* element sits somewhere else after the same sequence. Measured " +
+      "cause: when a pool grows, bpmn-js' resizeLane makes room by moving the lane's contents " +
+      "(its SpaceTool path), while ARCTOS' auto-resize redistributes the lane *bounds* and leaves " +
+      "the nodes where they are (End_Bank y=255 against y=275). Neither loses data and both " +
+      "documents are valid; the verdict stays ours-wrong by burden of proof, because bpmn-js' " +
+      "behaviour is the one users of the old editor know. Distinct from `bounds/…/created`, which " +
+      "is about elements the run itself made.",
+  },
+  {
+    match: /^element-name\/bpmn:(Sequence|Message)Flow\/name$/,
+    verdict: "ours-wrong",
+    reason:
+      "OPEN DEFECT, low severity. A generated connection carries a name in one model and not in " +
+      "the other. ARCTOS' ConnectionBehavior carries the name over when it replaces a sequence " +
+      "flow with a message flow at a pool boundary (STUFE2-C §4.2, finding 4); bpmn-js' " +
+      "replacement path does not always do so. The name is user text and never appears in a " +
+      "signature, so the class is named by element type only. No data is lost on our side — we " +
+      "keep more — but the two documents differ, so it is counted.",
   },
   {
     match: /^element-set\/bpmn:(Sequence|Message)Flow\/only-reference$/,
@@ -541,14 +648,33 @@ export async function shadowCompare(
         ours.candidates(kind).length !== reference.candidates(kind).length,
     );
     if (mismatched !== undefined) {
+      const mine = ours.candidates(mismatched);
+      const theirs = reference.candidates(mismatched);
+      // Die Richtung gehört in die Signatur, nicht nur in den Text. Ohne sie
+      // fielen zwei gegensätzliche Sachverhalte in **eine** Klasse: ARCTOS
+      // kennt mehr Elemente (weil es fehlende DI ergänzt — dieselbe Absicht
+      // wie `bounds|waypoints/*/presence/only-ours`) oder ARCTOS kennt
+      // weniger (weil sein Importer nur die erste BPMNPlane liest). Das erste
+      // ist eine Entscheidung, das zweite eine Lücke; eine gemeinsame
+      // Klassifikation müsste eines von beiden falsch benennen.
+      const direction =
+        mine.length > theirs.length ? "more-ours" : "more-reference";
+      const onlyOurs = mine.filter((id) => !theirs.includes(id));
+      const onlyTheirs = theirs.filter((id) => !mine.includes(id));
       divergences.push({
         kind: "element-set",
-        signature: `candidate-set/${mismatched}`,
+        signature: `candidate-set/${mismatched}/${direction}`,
         detail:
           `before operation ${index} (${formatOperation(op)}) the two engines no longer agree on ` +
-          `which elements exist: ARCTOS has ${ours.candidates(mismatched).length} "${mismatched}" ` +
-          `candidates, bpmn-js ${reference.candidates(mismatched).length}. ` +
-          "The replay stops here; everything after this point would compare different models.",
+          `which elements exist: ARCTOS has ${mine.length} "${mismatched}" ` +
+          `candidates, bpmn-js ${theirs.length}` +
+          (onlyOurs.length > 0
+            ? `; only ARCTOS: [${onlyOurs.join(", ")}]`
+            : "") +
+          (onlyTheirs.length > 0
+            ? `; only bpmn-js: [${onlyTheirs.join(", ")}]`
+            : "") +
+          ". The replay stops here; everything after this point would compare different models.",
       });
       break;
     }
@@ -558,9 +684,27 @@ export async function shadowCompare(
     ourOutcomes.push(a.outcome);
     referenceOutcomes.push(b.outcome);
     if (a.outcome !== b.outcome) {
+      // **Wer** geworfen hat, gehört in die Signatur. Vorher hieß jede
+      // Ausnahme `…/threw` und war als `intentional` eingestuft mit der
+      // Begründung, der *Stil* der Ablehnung sei keine Modelldifferenz. Das
+      // stimmt, solange geworfen wird **statt** abzulehnen — aber nicht, wenn
+      // eine Engine tatsächlich abstürzt. Genau das trat auf, als der
+      // Auto-Resize die Geometrie veränderte: `bpmn-js` warf in `LabelLink`
+      // (`path-intersection` über einen leeren Pfad, eine jsdom-Grenze), und
+      // die alte Signatur hätte den Absturz der Referenz als gewollte
+      // Abweichung durchgewinkt. Ein Wurf **unserer** Engine ist immer ein
+      // Befund, ein Wurf der Referenz nie einer über uns.
+      const outcomeKey =
+        a.outcome === "threw" && b.outcome === "threw"
+          ? "threw-both"
+          : a.outcome === "threw"
+            ? "threw-ours"
+            : b.outcome === "threw"
+              ? "threw-reference"
+              : `${a.outcome}-vs-${b.outcome}`;
       divergences.push({
         kind: "outcome",
-        signature: `outcome/${op.kind}/${a.outcome === "threw" || b.outcome === "threw" ? "threw" : `${a.outcome}-vs-${b.outcome}`}`,
+        signature: `outcome/${op.kind}/${outcomeKey}`,
         detail:
           `operation ${index} (${formatOperation(op)}): ` +
           `ARCTOS ${a.outcome} on [${a.resolved.join(", ")}]${a.error ? ` (${a.error})` : ""}, ` +

@@ -54,11 +54,21 @@ Mehrstufiges Rate-Limit mit:
    - `/api/auth/**` → 10 req/min pro IP
    - `/api/v1/copilot/**` → 30 req/min pro User
    - `/api/v1/import-jobs` → 5 req/hour pro Org
-   - `/api/v1/audit-log/integrity` → 1 req/min pro User
+   - `/api/v1/audit-log/integrity` → 1 req/min pro User im Mittel,
+     **Burst 5** (Token-Bucket 5/300 s)
 
 Storage-Backend: **Redis** mit `rate_limit:{bucket}:{key}`-Keys,
 SETEX + Atomic Decrement.
 
+> **Stand 2026-09-02 (E2E-TRIAGE-3):** Der Integritaets-Endpunkt stand als
+> `capacity: 1, windowSeconds: 60` in `LIMITS`. Das ist die obige Rate mit
+> Burst 1 — der zweite Aufruf innerhalb der Minute wird abgewiesen, egal wie
+> weit die beiden auseinanderliegen. Gemessen: Aufruf 1 → 200, Aufruf 2
+> unmittelbar danach → 429 (Retry-After 60). `/audit-log` ruft den Endpunkt
+> beim Mounten auf, ein Seitenwechsel hin und zurueck meldete dem Nutzer also
+> eine fehlgeschlagene Integritaetspruefung des Audit-Trails. Der Eimer ist
+> jetzt `5/300 s` — dieselbe mittlere Rate, Burst 5.
+>
 > **Stand 2026-09-01:** Der Limiter ist implementiert (WP9), das
 > Redis-Backend ist **an WP10 uebergeben und noch nicht angeschlossen** —
 > der Store ist prozesslokal. Bei N Web-Containern ist das effektive Limit

@@ -244,8 +244,17 @@ export class BpmnJsDriver implements ModelingDriver {
         break;
       }
       case "activity":
-        list = this.elements().filter((element) =>
-          isActivityType(element.type),
+        // `!isRoot` for the same reason the `container` case above gives, and
+        // it was missing here: bpmn-js keeps one root element per BPMNPlane,
+        // and the root of an expanded sub-process' plane is itself typed
+        // `bpmn:SubProcess`. Without the filter, `synth-boundary-events`
+        // offered bpmn-js three "activity" candidates (Sub_Pruefung,
+        // Sub_Pruefung_plane, Task_Freigabe) against ARCTOS' two — a
+        // candidate-set divergence *before the first operation*, reported
+        // against the engine although no engine had done anything. Found by
+        // comparing the candidate lists at import; see STUFE2-D.
+        list = this.elements().filter(
+          (element) => !isRoot(element) && isActivityType(element.type),
         );
         break;
       case "flowNode":

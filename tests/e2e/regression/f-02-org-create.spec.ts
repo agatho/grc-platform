@@ -1,5 +1,11 @@
 import { test, expect } from "@playwright/test";
-import { login, getSession, awaitSessionRoles } from "../fixtures/auth";
+import {
+  login,
+  loginAs,
+  getSession,
+  awaitSessionRoles,
+} from "../fixtures/auth";
+import { roleAccount } from "../../../apps/web/e2e/fixtures/storage";
 
 // F-02: POST /api/v1/organizations grants admin role to the creator in the
 // same transaction, so the new org is immediately visible to them.
@@ -91,7 +97,25 @@ test("F-02: org create assigns admin role and shows in list after re-login", asy
 test("F-02b: an org admin cannot create a top-level tenant", async ({
   page,
 }) => {
-  await login(page);
+  // [E2E-TRIAGE-3 · 2026-09-02] Run this as an account that IS what the test
+  // name says.
+  //
+  // Two rounds recorded this as "environment": `E2E_EMAIL` was provisioned
+  // with `db:create-admin --platform-admin`, and for a platform administrator
+  // 201 is the CORRECT answer — so the assertion could not mean what it said,
+  // no matter how the product behaved. It was never a product defect and the
+  // 403 was never relaxed; the test simply had nobody else to be run as.
+  //
+  // `e2e-approver@arctos.local` is an ORGANIZATION admin with no
+  // `platform_admin` row (packages/db/src/seed-e2e-users.ts revokes one if it
+  // finds it), which is precisely the principal this assertion is about.
+  const approver = roleAccount("approver");
+  const session = await loginAs(page, approver.email, approver.password);
+  expect(
+    session.roles,
+    `${approver.email} must hold 'admin' in its organisation for this test ` +
+      "to mean anything — run `npm run db:seed:e2e-users`",
+  ).toContain("admin");
 
   const name = `E2E-F02b-${Date.now().toString().slice(-6)}`;
   const res = await page.evaluate(async (n) => {
@@ -119,11 +143,12 @@ test("F-02b: an org admin cannot create a top-level tenant", async ({
   expect(
     res.status,
     res.status === 201
-      ? "the account this suite runs as (E2E_EMAIL) is a PLATFORM admin, so " +
-          "creating a top-level tenant is allowed and this test cannot mean " +
-          "what it says. Provision the E2E account with `db:create-admin` " +
-          "WITHOUT `--platform-admin`, or revoke the `platform_admin` row " +
-          `for it. Response: ${res.body}`
+      ? `${approver.email} was allowed to create a TOP-LEVEL tenant. That is ` +
+          "a platform-administrator action (migration 0438 + the handler " +
+          "check); this account is an organization admin and must be refused " +
+          "with 403. Either the guard regressed, or the account acquired a " +
+          "`platform_admin` row — `npm run db:seed:e2e-users` revokes one. " +
+          `Response: ${res.body}`
       : res.body,
   ).toBe(403);
 });

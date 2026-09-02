@@ -220,8 +220,12 @@ export class ArctosDriver implements ModelingDriver {
         break;
       }
       case "activity":
-        list = this.elements().filter((element) =>
-          isActivityType(element.type),
+        // Symmetrisch zum Referenztreiber: Wurzeln zählen nicht als
+        // Kandidaten. Heute hat ARCTOS nur eine Wurzel, der Filter ändert die
+        // Liste also nicht — er steht hier, damit die beiden Treiber dieselbe
+        // Frage stellen und nicht nur zufällig dieselbe Antwort geben.
+        list = this.elements().filter(
+          (element) => !isRoot(element) && isActivityType(element.type),
         );
         break;
       case "flowNode":

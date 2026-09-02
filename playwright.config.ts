@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { STORAGE_STATE } from "./apps/web/e2e/fixtures/storage";
 
 /**
  * [ARCTOS-FULL-2026-08-31 / WP11 · S11-06, S11-15]
@@ -38,6 +39,33 @@ import { defineConfig, devices } from "@playwright/test";
 const BASE_URL =
   process.env.E2E_BASE_URL ?? process.env.TARGET_URL ?? "http://localhost:3000";
 
+/**
+ * [E2E-TRIAGE-3 · 2026-09-02] Defaults that used to live in a shell history.
+ *
+ * The last two rounds could only be reproduced by remembering to export
+ * `E2E_ORG_ID=ccc4cc1c…` first; unset, the suite ran against whichever tenant
+ * the account's oldest membership happened to be and a third of it failed
+ * looking for demo data. That id is not an environment secret — it is written
+ * literally by `packages/db/sql/seed_demo_00_platform.sql`, so it is the same
+ * on every database `db:seed:demo` has touched. It belongs here.
+ *
+ * Still an explicit opt-out: exporting E2E_ORG_ID overrides this, and
+ * exporting it EMPTY disables the tenant pin entirely.
+ */
+const DEMO_TENANT_ORG_ID = "ccc4cc1c-4b09-499c-8420-ebd8da655cd7";
+if (process.env.E2E_ORG_ID === undefined) {
+  process.env.E2E_ORG_ID = DEMO_TENANT_ORG_ID;
+}
+
+/**
+ * `RATE_LIMIT_AUTH` is deliberately NOT defaulted here — it is read by the
+ * SERVER (apps/web/src/lib/rate-limit.ts), not by this process, so a value set
+ * in the test runner would be a comforting no-op. The reason the suite needed
+ * it is gone instead: the regression project below carries the setup's storage
+ * state and `tests/e2e/fixtures/auth.ts` reuses that session, so the run no
+ * longer performs 46 logins from one address against a 10/min cap.
+ */
+
 export default defineConfig({
   // Serial across the whole suite: both projects share one demo database.
   fullyParallel: false,
@@ -73,7 +101,13 @@ export default defineConfig({
       // 46 specs — API/regression matrix (B, D, F, I, N, P, R, X series).
       name: "regression",
       testDir: "./tests/e2e/regression",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        // [E2E-TRIAGE-3] Share the session the setup project established.
+        // `login()` reuses it instead of signing in again; a spec that wants
+        // a different principal (f-02b) drops it and signs in explicitly.
+        storageState: STORAGE_STATE,
+      },
       dependencies: ["setup"],
     },
   ],
