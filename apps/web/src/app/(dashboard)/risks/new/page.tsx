@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@grc/ui";
 import type { RiskCategory, RiskSource, TreatmentStrategy } from "@grc/shared";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -154,20 +155,23 @@ function NewRiskForm() {
 
   // Fetch users for owner picker
   useEffect(() => {
-    fetch("/api/v1/users?limit=200")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
+    // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ die Auswahl des
+    // Risikoeigentümers war leer, und `catch(() => {})` hat den 422 restlos
+    // verschluckt. Ein Pflichtfeld ohne Optionen blockiert das Anlegen eines
+    // Risikos, ohne zu sagen warum.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
+        setOrgUsers(
+          rows.map((u) => ({
+            id: u.id as string,
+            name: (u.name as string) || (u.email as string),
+            email: u.email as string,
+          })),
+        );
       })
-      .then((json) => {
-        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
-          id: u.id as string,
-          name: (u.name as string) || (u.email as string),
-          email: u.email as string,
-        }));
-        setOrgUsers(users);
-      })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("risks/new: Nutzerliste nicht geladen", err);
+      });
   }, []);
 
   // Computed scores.

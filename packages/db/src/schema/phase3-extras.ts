@@ -26,6 +26,7 @@ import {
   jsonb,
   AnyPgColumn,
   numeric,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
@@ -36,6 +37,28 @@ import { audit } from "./audit-mgmt";
 
 // ─────────── Cross-Framework Catalog-Mapping ───────────
 
+// [ARCTOS-FULL-2026-08-31 · OP-137] Die beiden Enum-Typen, die `catalog_entry_mapping`
+// in der Datenbank benutzt. Angelegt wurden sie von Hand geschriebenen
+// Migrationen; hier stehen sie, damit der Code dieselbe Menge kennt.
+export const mappingRelationshipEnum = pgEnum("mapping_relationship", [
+  "equivalent",
+  "partial",
+  "related",
+  "superset",
+  "subset",
+  "partial_overlap",
+  "contains",
+  "contained_by",
+]);
+
+export const mappingSourceEnum = pgEnum("mapping_source", [
+  "official",
+  "nist_olir",
+  "manual",
+  "ai_suggested",
+  "community",
+]);
+
 export const catalogEntryMapping = pgTable("catalog_entry_mapping", {
   id: uuid("id").primaryKey().defaultRandom(),
   sourceEntryId: uuid("source_entry_id")
@@ -44,14 +67,20 @@ export const catalogEntryMapping = pgTable("catalog_entry_mapping", {
   targetEntryId: uuid("target_entry_id")
     .notNull()
     .references(() => catalogEntry.id, { onDelete: "cascade" }),
-  // equivalent | subset | superset | related
-  relationship: varchar("relationship", { length: 50 })
+  // [ARCTOS-FULL-2026-08-31 · OP-137] Beide Spalten tragen in der Datenbank
+  // echte Enum-Typen; deklariert war `varchar`. Die Kommentare darüber waren
+  // ausserdem falsch: `related` gibt es, `inferred` NICHT — der Wert heisst
+  // `ai_suggested`, und drei Seed-Dateien übersetzen ihn beim Import extra um
+  // (`WHEN 'inferred' THEN 'ai_suggested'`). Ein `varchar` mit einem falschen
+  // Kommentar ist die schlechteste der drei möglichen Angaben: er lädt zum
+  // Schreiben eines Wertes ein, den die Datenbank mit 22P02 zurückweist.
+  // Die Werte sind aus dem laufenden Schema gelesen, nicht geraten.
+  relationship: mappingRelationshipEnum("relationship")
     .default("equivalent")
     .notNull(),
   // 0-100
   confidence: integer("confidence").default(85).notNull(),
-  // official | community | inferred | manual
-  mappingSource: varchar("mapping_source", { length: 50 })
+  mappingSource: mappingSourceEnum("mapping_source")
     .default("official")
     .notNull(),
   sourceReference: text("source_reference"),

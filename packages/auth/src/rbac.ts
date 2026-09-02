@@ -277,6 +277,31 @@ const PUBLIC_PREFIXES: ReadonlyArray<readonly [string, string]> = [
     "/api/v1/scim/v2",
     "SCIM 2.0 provisioning; validates its own Bearer token (packages/auth/src/scim/token-auth.ts)",
   ],
+
+  // [ARCTOS-FULL-2026-08-31 · OP-082] Die Liste wurde entlang der API-Befunde
+  // (S02-04/S12-09) gepflegt; die SEITENBÄUME hat niemand danebengelegt.
+  // Deshalb fielen genau die Seiten durch, deren URL jemand von aussen
+  // bekommt — per E-Mail, per Aushang, per Gesetz —, während der zugehörige
+  // API-Kanal darunter längst offen war. Der Wächter dagegen steht jetzt über
+  // der Dateiliste `apps/web/src/app/**/page.tsx` statt über einer Handvoll
+  // Literale: eine neue Portalseite ohne Eintrag wird rot, statt still hinter
+  // dem Login zu verschwinden.
+  [
+    "/trust",
+    "Trust Center — public per-org compliance status page; reads only publicly classified fields, scoped through withOrgReadContext (S12-05 defect B)",
+  ],
+  [
+    "/dd",
+    "vendor due-diligence portal UI. The invitation mail sends exactly this URL (api/v1/vendors/[id]/dd/invite: `${portalBaseUrl}/dd/${accessToken}`); the opaque token is the credential and is checked by /api/v1/portal/dd, which is already public.",
+  ],
+  [
+    "/invite",
+    "invitation acceptance UI; it calls the already-public /api/v1/invitations/{token}/accept. The invitee by definition has no account yet to log in with.",
+  ],
+  [
+    "/legal",
+    "imprint (§ 5 DDG) and privacy notice (Art. 13 GDPR) must be reachable without a login; the footer link sits on EVERY page including the login page (components/layout/legal-footer.tsx).",
+  ],
 ];
 
 /**

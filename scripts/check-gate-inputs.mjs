@@ -40,6 +40,12 @@ const GATE_INPUTS = [
     "scripts/route-rls-context-baseline.txt",
     "scripts/check-route-rls-context.mjs",
   ],
+  // [ARCTOS-FULL-2026-08-31 · OP-090] Beide Compose-Dateien sind Eingabe eines
+  // Tors, nicht nur Deployment-Artefakt. Verschwindet eine (Umbenennung,
+  // .gitignore), meldete `check-compose-db-roles.mjs` bisher „Datei nicht
+  // gefunden" — laut, aber erst im CI. Hier faellt es eine Stufe frueher auf.
+  ["docker-compose.production.yml", "scripts/check-compose-db-roles.mjs"],
+  ["deploy/docker-compose.yml", "scripts/check-compose-db-roles.mjs"],
 ];
 
 function git(args) {

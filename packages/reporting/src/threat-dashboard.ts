@@ -230,7 +230,26 @@ export async function getThreatTrends(
 }
 
 /**
- * Get control coverage per threat category.
+ * Kontrollabdeckung je Bedrohungskategorie.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-140] Hier stand
+ * `LEFT JOIN process_control pc ON pc.process_id IS NOT NULL` — eine Bedingung
+ * ohne einen einzigen Bezug zu `t`, `rs` oder `v`. Das ist kein Verbund,
+ * sondern ein Kreuzprodukt mit der gesamten Tabelle, und der abgeleitete
+ * Zähler `CASE WHEN pc.control_id IS NOT NULL` beantwortet deshalb nicht
+ * „ist diese Schwachstelle abgedeckt", sondern „gibt es irgendwo in der
+ * Datenbank eine Prozess-Kontroll-Verknüpfung". Die Kennzahl konnte damit nur
+ * zwei Werte annehmen — 100 % für jede Kategorie oder 0 % für jede — und
+ * kostete dabei ein Kreuzprodukt aus Schwachstellen × `process_control`.
+ *
+ * Abgedeckt heisst jetzt, was die Spalten sagen:
+ *   * `vulnerability.mitigation_control_id` ist gesetzt — die Schwachstelle
+ *     hat eine benannte mindernde Kontrolle, oder
+ *   * das Risiko des Szenarios trägt mindestens eine Kontrolle
+ *     (`risk_control`) — dieselbe Aussage eine Ebene höher.
+ *
+ * `process_control` bleibt aussen vor: es verknüpft Kontrollen mit
+ * PROZESSEN und sagt über eine Schwachstelle nichts aus.
  */
 export async function getControlCoverage(
   orgId: string,
@@ -238,12 +257,18 @@ export async function getControlCoverage(
   const rows = await db.execute(sql`
     SELECT
       t.threat_category,
-      count(DISTINCT v.id)::int as total_vulnerabilities,
-      count(DISTINCT CASE WHEN pc.control_id IS NOT NULL THEN v.id END)::int as covered_vulnerabilities
+      count(DISTINCT v.id)::int AS total_vulnerabilities,
+      count(DISTINCT v.id) FILTER (
+        WHERE v.mitigation_control_id IS NOT NULL
+           OR EXISTS (
+                SELECT 1 FROM risk_control rc
+                 WHERE rc.risk_id = rs.risk_id
+                   AND rc.org_id = ${orgId}
+              )
+      )::int AS covered_vulnerabilities
     FROM threat t
     JOIN risk_scenario rs ON rs.threat_id = t.id AND rs.org_id = ${orgId}
     JOIN vulnerability v ON rs.vulnerability_id = v.id
-    LEFT JOIN process_control pc ON pc.process_id IS NOT NULL
     WHERE t.org_id = ${orgId}
       AND t.threat_category IS NOT NULL
     GROUP BY t.threat_category

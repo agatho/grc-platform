@@ -13,6 +13,7 @@ import {
   pgEnum,
   index,
   jsonb,
+  inet,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
@@ -430,7 +431,13 @@ export const auditSignOff = pgTable(
     signedAt: timestamp("signed_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
-    ipAddress: varchar("ip_address", { length: 64 }),
+    // [ARCTOS-FULL-2026-08-31 · OP-137] `inet`, nicht `varchar(64)`. Die
+    // Datenbank prüft hier seit jeher eine echte IP-Adresse; die Deklaration
+    // versprach eine beliebige Zeichenkette bis 64 Zeichen. Die Richtung des
+    // Unterschieds ist die gefährliche: der Compiler lässt jeden String durch,
+    // und die Datenbank weist ihn zur Laufzeit mit 22P02 ab — in einer
+    // Signaturkette, deren Zweck es ist, den Vorgang nicht zu verlieren.
+    ipAddress: inet("ip_address"),
     userAgent: text("user_agent"),
   },
   (table) => [

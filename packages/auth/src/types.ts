@@ -70,5 +70,13 @@ declare module "next-auth/jwt" {
     language?: string;
     roles?: RoleAssignment[];
     disabled?: boolean;
+    /**
+     * [ARCTOS-FULL-2026-08-31 · OP-085] Wann die JWT-Kopie der Rollen zuletzt
+     * aus der Datenbank aufgefrischt wurde (ms seit Epoch). Der `jwt`-Callback
+     * laedt nach, sobald der Wert aelter als `ROLE_REFRESH_INTERVAL_MS` ist —
+     * vorher geschah das NUR bei einem ausdruecklichen `session.update()`, und
+     * die Edge-Middleware entschied auf einer bis zu zwei Stunden alten Liste.
+     */
+    rolesRefreshedAt?: number;
   }
 }

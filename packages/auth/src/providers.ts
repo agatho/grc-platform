@@ -7,7 +7,7 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { compare } from "bcryptjs";
 import { eq, and, asc, isNull, sql, inArray } from "drizzle-orm";
 import { db, withUserReadContext } from "@grc/db";
-import { user, userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
+import { userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
 import type { RoleAssignment } from "./types";
 import type { Provider } from "next-auth/providers";
 
@@ -132,6 +132,60 @@ async function equaliseTiming(password: string): Promise<void> {
   } catch {
     // Ignore — this call exists only for its cost.
   }
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-083] Anmeldeabfrage auf `user` per E-Mail.
+ *
+ * Diese Abfrage lief als `db.select().from(user)` ueber den Basis-Pool, also
+ * OHNE Request-Kontext — sie muss das, weil die Identitaet erst aus ihr folgt.
+ * Damit sie unter `grc_app` ueberhaupt etwas zurueckgab, trug die `user`-Policy
+ * aus 0392 eine dritte Disjunktion: "oder die Verbindung traegt gar keinen
+ * Kontext". Der Preis war das gesamte Nutzerverzeichnis ALLER Mandanten auf
+ * jeder kontextlosen Verbindung — gemessen 36 Zeilen mit Passwort-Hashes
+ * gegenueber 1 Zeile mit gesetztem Org-Kontext.
+ *
+ * Jetzt ueber `auth_lookup_user_by_email` (Migration 0455, SECURITY DEFINER,
+ * fixierter search_path, EXECUTE nur fuer grc_app): eine Adresse rein,
+ * hoechstens eine Zeile raus, nur die Anmeldefelder. Migration 0456 entfernt
+ * danach die Disjunktion — dieselbe Bauform, die WP2 mit
+ * `app_current_org_scope()` und WP3 mit den Token-Aufloesern schon benutzt.
+ *
+ * Bewusst dieselbe Filterung wie die abgeloeste Abfrage: `deleted_at IS NULL`
+ * steht in der Funktion, `is_active` wertet der Aufrufer aus, damit ein
+ * deaktiviertes Konto weiterhin wie ein unbekanntes aussieht (S02-17,
+ * Enumerationsschutz).
+ */
+export interface LoginUserRow {
+  id: string;
+  email: string;
+  name: string;
+  language: string;
+  passwordHash: string | null;
+  isActive: boolean;
+  mustChangePassword: boolean;
+}
+
+export async function lookupUserByEmail(
+  email: string,
+): Promise<LoginUserRow | null> {
+  const result = (await db.execute(
+    sql`SELECT * FROM public.auth_lookup_user_by_email(${email})`,
+  )) as unknown as Array<Record<string, unknown>>;
+  const rows = Array.isArray(result)
+    ? result
+    : ((result as { rows?: Array<Record<string, unknown>> }).rows ?? []);
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    email: String(row.email),
+    name: String(row.name ?? ""),
+    language: String(row.language ?? "de"),
+    passwordHash: (row.password_hash as string | null) ?? null,
+    isActive: row.is_active === true,
+    mustChangePassword: row.must_change_password === true,
+  };
 }
 
 /**
@@ -363,16 +417,9 @@ export const credentialsProvider = Credentials({
         return null;
       }
 
-      const [found] = await db
-        .select()
-        .from(user)
-        .where(
-          and(
-            sql`lower(${user.email}) = ${email}`,
-            eq(user.isActive, true),
-            isNull(user.deletedAt),
-          ),
-        );
+      // [ARCTOS-FULL-2026-08-31 · OP-083] siehe `lookupUserByEmail`.
+      const candidate = await lookupUserByEmail(email);
+      const found = candidate?.isActive ? candidate : null;
 
       if (!found?.passwordHash) {
         // #WP3-S02-17: spend the same bcrypt cost as the hit path so the
@@ -513,22 +560,18 @@ export async function jitProvisionSsoUser(profile: {
   language: string;
   roles: RoleAssignment[];
 }> {
-  const email = profile.email.toLowerCase();
+  const email = normaliseEmail(profile.email);
 
-  // Check for existing user
-  const [existing] = await db
-    .select()
-    .from(user)
-    .where(and(eq(user.email, email), isNull(user.deletedAt)));
+  // [ARCTOS-FULL-2026-08-31 · OP-083] Dieser Pfad laeuft aus dem
+  // Auth.js-`signIn`-Callback, also ebenfalls ohne Request-Kontext. Lesen,
+  // Buchen und Anlegen gehen jetzt ueber die drei Kapseln aus Migration 0455
+  // statt ueber die kontextlose Disjunktion der `user`-Policy.
+  const existing = await lookupUserByEmail(email);
 
   if (existing) {
     // Update last login + SSO provider link if not yet set
     await db.execute(
-      sql`UPDATE "user"
-          SET last_login_at = now(),
-              sso_provider_id = COALESCE(sso_provider_id, ${profile.ssoProviderId ?? null}),
-              is_active = true
-          WHERE id = ${existing.id}`,
+      sql`SELECT public.auth_sso_touch_login(${existing.id}::uuid, ${profile.ssoProviderId ?? null})`,
     );
 
     await logAccessEvent({
@@ -550,19 +593,30 @@ export async function jitProvisionSsoUser(profile: {
     };
   }
 
-  // JIT: Create new user record for first-time SSO login
-  const [created] = await db
-    .insert(user)
-    .values({
-      email,
-      name: profile.name || email,
-      ssoProviderId: profile.ssoProviderId,
-      emailVerified: new Date(),
-      isActive: true,
-      language: "de", // Default language per i18n fallback convention
-      lastLoginAt: new Date(),
-    })
-    .returning();
+  // JIT: Create new user record for first-time SSO login.
+  // [ARCTOS-FULL-2026-08-31 · OP-083] Der INSERT selbst duerfte auch nach 0456
+  // durchgehen (die INSERT-Policy bleibt permissiv), sein `RETURNING` aber
+  // nicht: es wird gegen die SELECT-Policy ausgewertet, und die trifft ohne
+  // Kontext nicht mehr. Deshalb die Kapsel — sie legt genau eine Zeile OHNE
+  // Rollen an; die Mitgliedschaft vergibt weiterhin ein Administrator.
+  const createdRows = (await db.execute(
+    sql`SELECT * FROM public.auth_sso_provision_user(
+          ${email}, ${profile.name || email},
+          ${profile.ssoProviderId ?? null}, ${"de"})`,
+  )) as unknown as Array<Record<string, unknown>>;
+  const createdList = Array.isArray(createdRows)
+    ? createdRows
+    : ((createdRows as { rows?: Array<Record<string, unknown>> }).rows ?? []);
+  const createdRow = createdList[0];
+  if (!createdRow) {
+    throw new Error("SSO JIT provisioning did not return a user row");
+  }
+  const created = {
+    id: String(createdRow.id),
+    email: String(createdRow.email),
+    name: String(createdRow.name ?? ""),
+    language: String(createdRow.language ?? "de"),
+  };
 
   await logAccessEvent({
     userId: created.id,

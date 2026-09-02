@@ -44,6 +44,7 @@ import type {
   RulesLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 export const CONTAINER_MARKER = "arctos-container-candidate";
 
@@ -118,7 +119,10 @@ export class ContainerMode {
     const moved = new Set<BpmnElement>(shapes);
 
     const candidates = this.sortForReading(
-      [this.root(), ...this.elementRegistry.getAll()].filter(
+      // [ARCTOS-FULL-2026-08-31 · OP-033] Ein eingeklappter Subprozess ist
+      // als Ziel weiterhin zulässig — er ist ja sichtbar. Seine KINDER sind
+      // es nicht, und sie standen bisher als Container zur Auswahl.
+      [this.root(), ...visibleElements(this.elementRegistry)].filter(
         (target): target is BpmnElement =>
           target !== undefined &&
           target !== current &&

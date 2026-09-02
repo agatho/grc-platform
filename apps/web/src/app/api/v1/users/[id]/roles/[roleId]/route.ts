@@ -5,6 +5,9 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-085] Rollenaenderung beendet die Sitzung —
+// Begruendung und Ausfallrichtung stehen im Modulkopf.
+import { invalidateUserSessions } from "@/lib/session-invalidation";
 
 // DELETE /api/v1/users/:id/roles/:roleId — Revoke role (admin)
 export const DELETE = withErrorHandler(async function DELETE(
@@ -55,6 +58,8 @@ export const DELETE = withErrorHandler(async function DELETE(
       WHERE id = ${roleId}
     `);
   });
+
+  await invalidateUserSessions(userId, ctx.userId);
 
   return Response.json({ data: { roleId, revoked: true } });
 });

@@ -15,6 +15,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface SlaWithMeasurement {
   slaId: string;
@@ -47,12 +48,12 @@ function SlaMonitoringInner() {
     setLoading(true);
     try {
       // Fetch active contracts
-      const cRes = await fetch(
-        "/api/v1/contracts?limit=200&status=active,renewal",
+      // [ARCTOS-FULL-2026-08-31 · OP-050] siehe obligations/page.tsx —
+      // dasselbe Muster, dieselbe Route.
+      const contracts = await fetchAllPages<{ id: string; title: string }>(
+        "/api/v1/contracts",
+        { params: { status: "active,renewal" } },
       );
-      if (!cRes.ok) return;
-      const cJson = await cRes.json();
-      const contracts = cJson.data ?? [];
 
       const allSlas: SlaWithMeasurement[] = [];
       for (const c of contracts) {

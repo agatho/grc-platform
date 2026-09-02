@@ -1,4 +1,4 @@
-import { db, auditLog, organization } from "@grc/db";
+import { db, auditLog } from "@grc/db";
 import { eq, and, desc, sql, count, inArray, or } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
@@ -45,16 +45,29 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       );
     }
 
-    // Recursive CTE: walk parent_org_id down to find all descendants.
-    const descendants = await db.execute<{ id: string }>(sql`
-      WITH RECURSIVE descendants AS (
-        SELECT id FROM organization WHERE id = ${ctx.orgId}
-        UNION
-        SELECT o.id FROM organization o
-        JOIN descendants d ON o.parent_org_id = d.id
-      )
-      SELECT id FROM descendants
-    `);
+    // [ARCTOS-FULL-2026-08-31 · OP-086] Hier stand eine rekursive CTE ueber
+    // `organization`. Sie kann seit Migration 0392/0397 nicht mehr
+    // funktionieren: `organization` traegt RLS mit FORCE und einer Policy, die
+    // bewusst nur die EIGENE Zeile zeigt. Der Rekursionsschritt
+    // `JOIN descendants d ON o.parent_org_id = d.id` findet unter `grc_app`
+    // deshalb nie eine Kindzeile — die CTE liefert exakt eine ID, und zwar die,
+    // die auch ohne `includeDescendants` benutzt wuerde. Der Parameter war
+    // damit wirkungslos: er nahm 403 vor (DPO/viewer), verlangte eine
+    // Rollenprüfung und aenderte danach nichts am Ergebnis. ADR-011 rev.2
+    // sagt etwas anderes zu, als der Code tat.
+    //
+    // `app_current_org_scope()` (Migration 0396) ist genau fuer diesen Fall
+    // gebaut: SECURITY DEFINER mit fixiertem search_path, laeuft an der
+    // `organization`-RLS vorbei, gibt aber ausschliesslich Orgs zurueck, die
+    // per `parent_org_id` UNTER der eigenen haengen (Tiefe <= 32). Fremde Orgs
+    // sind nicht unterschiebbar, weil `org_isolation_modify` das Setzen von
+    // `parent_org_id` an einer fremden Zeile verbietet. Dieselben Werte
+    // benutzen die SELECT-Policies von `audit_log`/`access_log` — die Route
+    // sieht damit genau die Menge, die ihr die Datenbank ohnehin freigibt,
+    // statt eine zweite, engere Wahrheit zu berechnen.
+    const descendants = await db.execute<{ id: string }>(
+      sql`SELECT id FROM public.app_current_org_scope() AS id`,
+    );
     const descendantRows: { id: string }[] = Array.isArray(descendants)
       ? (descendants as { id: string }[])
       : [];

@@ -34,8 +34,9 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
   detected: "bg-blue-100 text-blue-700",
   reported: "bg-blue-100 text-blue-700",
   escalated: "bg-orange-100 text-orange-700",
-  contained: "bg-green-100 text-green-700",
-  mitigated: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — beide Zeilen.
+  contained: "bg-green-100 text-green-800",
+  mitigated: "bg-green-100 text-green-800",
   resolved: "bg-teal-100 text-teal-700",
   post_mortem: "bg-purple-100 text-purple-700",
   other: "bg-gray-100 text-gray-700",
@@ -138,7 +139,8 @@ export function IncidentTimelineTab({
                 type="button"
                 onClick={handleSubmit}
                 disabled={!description.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:opacity-50"
+                // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf teal-600 = 3,66:1.
+                className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-md hover:bg-teal-800 disabled:opacity-50"
               >
                 {labels?.save ?? "Save"}
               </button>

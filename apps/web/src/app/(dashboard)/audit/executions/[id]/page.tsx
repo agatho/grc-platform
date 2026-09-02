@@ -43,6 +43,7 @@ import type {
 import { checklistResultToFindingSeverity } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface AuditDetail extends Audit {
   leadAuditorName?: string | null;
@@ -1620,27 +1621,27 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          if (!cancelled) {
-            setRisks(
-              (j.data ?? []).map(
-                (x: {
-                  id: string;
-                  title: string;
-                  riskCategory?: string | null;
-                }) => ({
-                  id: x.id,
-                  title: x.title,
-                  riskCategory: x.riskCategory,
-                }),
-              ),
-            );
-          }
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422; der `catch`
+        // daneben nennt den Ausgang selbst beim Namen ("UI falls back to
+        // empty lists"). Damit war die Risiko-Auswahl im Befund-Dialog
+        // dauerhaft leer, und ein Befund liess sich nicht mit dem Risiko
+        // verknüpfen, das ihn ausgelöst hat.
+        const rows = await fetchAllPages<{
+          id: string;
+          title: string;
+          riskCategory?: string | null;
+        }>("/api/v1/risks");
+        if (!cancelled) {
+          setRisks(
+            rows.map((x) => ({
+              id: x.id,
+              title: x.title,
+              riskCategory: x.riskCategory,
+            })),
+          );
         }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
       }
       // Active control catalogs of the current org
       try {
@@ -1654,8 +1655,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             (x: { catalogId: string }) => x.catalogId,
           );
           if (ids.length > 0) {
+            // [ARCTOS-FULL-2026-08-31 · OP-050] war `limit=200` ⇒ 422 ⇒
+            // die Katalognamen fehlten, und die Framework-Auswahl blieb leer.
             const catRes = await fetch(
-              "/api/v1/catalogs?type=control&limit=200",
+              "/api/v1/catalogs?type=control&limit=100",
             );
             if (catRes.ok) {
               const catJ = await catRes.json();
@@ -3203,13 +3206,17 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=200`,
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ das
+      // Prüfungsprogramm war leer. Für eine Prüfungsakte ist das die
+      // schlimmste Anzeige: „keine Prüfungshandlungen durchgeführt".
+      setActivities(
+        await fetchAllPages<ActivityWithUser>(
+          `/api/v1/audit-mgmt/audits/${auditId}/activities`,
+        ),
       );
-      if (res.ok) {
-        const json = await res.json();
-        setActivities(json.data ?? []);
-      }
+    } catch (err) {
+      console.error("audit/executions: Aktivitäten nicht geladen", err);
+      setActivities([]);
     } finally {
       setLoading(false);
     }
@@ -3595,18 +3602,14 @@ function FindingsTab({ auditId }: { auditId: string }) {
     // Load risks for the optional risk-link picker
     (async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          setRisks(
-            (j.data ?? []).map((x: { id: string; title: string }) => ({
-              id: x.id,
-              title: x.title,
-            })),
-          );
-        }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+        // [ARCTOS-FULL-2026-08-31 · OP-050] siehe oben — zweite Aufrufstelle
+        // desselben Musters in derselben Datei.
+        const rows = await fetchAllPages<{ id: string; title: string }>(
+          "/api/v1/risks",
+        );
+        setRisks(rows.map((x) => ({ id: x.id, title: x.title })));
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
       }
     })();
   }, [auditId]);

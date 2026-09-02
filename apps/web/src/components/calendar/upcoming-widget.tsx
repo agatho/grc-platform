@@ -68,7 +68,11 @@ export function CalendarUpcomingWidget() {
   }, [fetchUpcoming]);
 
   const urgencyColors: Record<string, string> = {
-    green: "bg-green-100 text-green-700",
+    // [ARCTOS-FULL-2026-08-31 · OP-049] green-700 statt -800 ist die
+    // Familienschreibweise (rot, gelb, blau … alle -100/-700) — nur bei
+    // GRÜN verfehlt genau dieses Paar die 4,5:1 (4,497). Deshalb hier eine
+    // Stufe dunkler, sonst nirgends.
+    green: "bg-green-100 text-green-800",
     yellow: "bg-yellow-100 text-yellow-700",
     red: "bg-red-100 text-red-700",
   };

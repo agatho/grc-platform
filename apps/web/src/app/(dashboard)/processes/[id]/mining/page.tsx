@@ -33,15 +33,18 @@ import {
 } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
 import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+// [ARCTOS-FULL-2026-08-31 · OP-014] Hier stand weiter unten eine zweite,
+// abweichende `FitnessGap`-Schnittstelle (`{activity, count}`) neben der
+// kanonischen in `@grc/shared` (`{activity, type, frequency, percentage}`).
+// Sie war nicht falsch — sie beschrieb, was der Cron TATSÄCHLICH schrieb, und
+// hat den Widerspruch damit am Compiler vorbeigetragen. Der Cron schreibt
+// jetzt die deklarierte Form; die lokale Kopie ist entfallen.
+import type { FitnessGap } from "@grc/shared";
 
 interface Bottleneck {
   activity: string;
   occurrences: number;
   median_wait_seconds: number;
-}
-interface FitnessGap {
-  activity: string;
-  count: number;
 }
 interface ReworkLoop {
   activity: string;
@@ -248,7 +251,7 @@ export default function ProcessMiningPage() {
                         >
                           <span>{g.activity}</span>
                           <span className="font-mono text-muted-foreground">
-                            {g.count}×
+                            {g.frequency}×
                           </span>
                         </li>
                       ))}

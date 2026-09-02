@@ -83,6 +83,7 @@ import type {
   ModelingLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 /** Bereiche des DOM, deren Tasten dem jeweiligen Bauteil gehören. */
 const OWNED_BY_OTHERS =
@@ -626,13 +627,16 @@ export class EditorKeyboard {
   }
 
   private selectAll(): void {
-    const all = this.elementRegistry
-      .getAll()
-      .filter(
-        (element) =>
-          element.parent !== undefined &&
-          (element as BpmnShape).labelTarget === undefined,
-      );
+    // [ARCTOS-FULL-2026-08-31 · OP-033] `visibleElements` statt `getAll()`:
+    // die Kinder eines eingeklappten Subprozesses stehen weiter in der
+    // Registry. Sie mitzuwählen hiess, dass `Entf` mehr traf, als markiert
+    // aussah — und dass die Ansage eine Zahl nannte, die zu nichts auf dem
+    // Bildschirm passte.
+    const all = visibleElements(this.elementRegistry).filter(
+      (element) =>
+        element.parent !== undefined &&
+        (element as BpmnShape).labelTarget === undefined,
+    );
     this.selection.select(all);
     this.announcer.announce(`${String(all.length)} Elemente ausgewählt.`);
   }

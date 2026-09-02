@@ -258,6 +258,15 @@ export const user = pgTable("user", {
   failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
   lastFailedLoginAt: timestamp("last_failed_login_at", { withTimezone: true }),
   lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  // [ARCTOS-FULL-2026-08-31 · OP-085] (Migration 0457) Sitzungs-Epoche.
+  // Ein JWT, dessen `iat` VOR diesem Zeitpunkt liegt, wird im
+  // `session`-Callback abgelehnt. Die JWT-Strategie hat keinen
+  // serverseitigen Sitzungsspeicher, also auch keine Denylist, in die man
+  // eine einzelne ausgestellte Kennung eintragen koennte; ein Zeitstempel je
+  // Nutzer invalidiert stattdessen alles Aeltere auf einen Schlag — genau die
+  // Semantik von "Rechte entzogen, bitte neu anmelden" — und ist nach Ablauf
+  // der maximalen Sitzungsdauer (2 h) von selbst wirkungslos.
+  sessionsValidFrom: timestamp("sessions_valid_from", { withTimezone: true }),
   // #WP3-S02-01 (Migration 0411): forced first-password change, so a seeded or
   // operator-provisioned account cannot keep a known password.
   mustChangePassword: boolean("must_change_password").notNull().default(false),
@@ -681,6 +690,43 @@ export const invitation = pgTable(
 // ──────────────────────────────────────────────────────────────
 // Auth.js tables (ADR-007 rev.1) — session/account storage
 // ──────────────────────────────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · OP-139] BEWUSST TOT — Entscheidung, kein Versehen.
+//
+// Diese drei Tabellen sind die Adaptertabellen von Auth.js. Das Projekt faehrt
+// die JWT-Strategie und hat KEINEN DrizzleAdapter konfiguriert; keine Zeile
+// Anwendungscode importiert `account`, `session` oder `verificationToken`, und
+// keine SQL-Anweisung ausserhalb dieser Definition nennt sie. Sie sind leer.
+//
+// Migration 0392 hat ihnen deshalb RLS + FORCE OHNE jede Policy gegeben und
+// `grc_app` alle Rechte entzogen: unter der Laufzeitrolle sind sie vollstaendig
+// gesperrt. Sie tragen die sensibelsten Spalten des Schemas
+// (`session_token`, `refresh_token`, `access_token`, `id_token`).
+//
+// WARUM NICHT ENTFERNT — die Alternative wurde geprueft:
+//
+//  * Ein DROP TABLE waere nach ADR-023 `Breaking: yes` und verlangte einen
+//    Vorab-Backup-Schritt (`deploy/db-backup.sh --pre-breaking`) — fuer drei
+//    leere Tabellen, deren Sperre nichts kostet.
+//  * Die Deklaration IST der Vertrag mit Auth.js. Wird spaeter auf den
+//    DB-Adapter umgestellt, laesst der Adapter die Tabellen sonst neu
+//    entstehen — ohne RLS, ohne Policy, ohne dass jemand hinsieht. Genau das
+//    verhindert der heutige Zustand: der Adapter schlaegt sofort und laut fehl
+//    (`permission denied`), und wer ihn einschaltet, MUSS zuerst echte, an
+//    `app.current_user_id` gebundene Policies schreiben.
+//  * Der Grund, aus dem OP-139 aufgeschrieben wurde, war nicht das Vorhandensein
+//    der Tabellen, sondern dass ihr Zustand nur in einem Migrationskommentar
+//    behauptet war. Zwei Restdefekt-Berichte mussten sie als Sonderfall von Hand
+//    ausnehmen. Das ist jetzt geprueft statt behauptet:
+//    `packages/db/tests/rls/authjs-adapter-tables.test.ts` misst RLS, FORCE,
+//    Policy-Anzahl, Rechte und Zeilenzahl UND durchsucht den Quellbaum nach
+//    Referenzen. Wer den Adapter einschaltet, bekommt einen roten Test mit
+//    einer Anleitung.
+//
+// OP-052 (Schema-Drift meldet vier fehlende Tabellen) haengt NICHT hieran:
+// gegen eine frisch migrierte Datenbank meldet der Drift-Report 0 fehlende
+// Tabellen. Die vier Meldungen stammten aus einer Container-Datenbank, die
+// 65 Tabellen hinter dem Branch-Stand lag (VERIFIKATION.md, O-10).
 
 export const account = pgTable(
   "account",

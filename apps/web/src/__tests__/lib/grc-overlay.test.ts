@@ -1167,6 +1167,69 @@ describe("buildDiagramOverlay", () => {
       expect(out.diagram?.conformance?.conformantTraces).toBe(1);
     });
 
+    // [ARCTOS-FULL-2026-08-31 · OP-014] Die Abweichungen als Kantenpaar —
+    // vorher blieb `deviations` unter jeder Eingabe leer, weil die einzige
+    // Quelle (`fitness_gaps`) Knoten führt.
+    it("Conformance: abweichende Übergänge kommen als Kantenpaar durch", () => {
+      const out = build({
+        steps: [STEP],
+        conformanceSummary: {
+          coverageRatio: 0.9,
+          unmappedActivities: [],
+          totalTraces: 10,
+          conformantTraces: 6,
+        },
+        conformanceDeviations: [
+          {
+            fromElementId: "Task_1",
+            toElementId: "Task_3",
+            frequency: 4,
+            share: 0.4,
+          },
+          {
+            fromElementId: "Task_3",
+            toElementId: "Task_1",
+            frequency: 9,
+            share: 0.9,
+          },
+          // Ein Ende ohne Kennung: nicht zeichenbar, fliegt raus.
+          {
+            fromElementId: "Task_1",
+            toElementId: null,
+            frequency: 7,
+            share: 0.7,
+          },
+        ],
+      });
+      expect(out.diagram?.conformance?.deviations).toEqual([
+        {
+          fromElementId: "Task_3",
+          toElementId: "Task_1",
+          frequency: 9,
+          share: 0.9,
+        },
+        {
+          fromElementId: "Task_1",
+          toElementId: "Task_3",
+          frequency: 4,
+          share: 0.4,
+        },
+      ]);
+    });
+
+    it("Conformance: ohne Abfrage der Route bleibt deviations weg, nicht leer", () => {
+      const out = build({
+        steps: [STEP],
+        conformanceSummary: {
+          coverageRatio: 0.9,
+          unmappedActivities: [],
+          totalTraces: 10,
+          conformantTraces: 6,
+        },
+      });
+      expect(out.diagram?.conformance).not.toHaveProperty("deviations");
+    });
+
     it("Conformance: ohne Ereignisse keine Quote und damit keine Heatmap", () => {
       const out = build({
         steps: [STEP],

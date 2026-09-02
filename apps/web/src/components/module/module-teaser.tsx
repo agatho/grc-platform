@@ -59,7 +59,9 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-gray-400">
+      <div // [ARCTOS-FULL-2026-08-31 · OP-049] 4,46:1 — knapp unter 4,5.
+        className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-gray-500"
+      >
         <Icon size={32} />
       </div>
 

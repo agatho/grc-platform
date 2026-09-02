@@ -19,8 +19,16 @@ export {
   extractSAMLAttributes,
   cleanupAssertionCache,
   rejectXXE,
+  // [ARCTOS-FULL-2026-08-31 · OP-096] Die Betriebsansicht (GET
+  // /api/v1/auth/sso/config) zeigt den Zertifikatsstatus an, damit die
+  // Rotation ein geplanter Vorgang ist und nicht der Tag, an dem sich
+  // niemand mehr anmelden kann.
+  inspectIdpCertificate,
+  assertIdpCertificateUsable,
+  IDP_CERT_EXPIRY_WARNING_DAYS,
 } from "./response-validator";
 export type {
   VerifiedSamlResponse,
   SamlSignatureScope,
+  IdpCertificateInfo,
 } from "./response-validator";

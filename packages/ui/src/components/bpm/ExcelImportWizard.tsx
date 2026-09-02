@@ -98,11 +98,18 @@ export function ExcelImportWizard({
             <div
               className={cn(
                 "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf `teal-600`
+                // sind 3,66:1 — der Akzent des GRC-Pakets trug an jeder
+                // Stelle, an der er FLÄCHE ist, zu wenig Kontrast. Eine
+                // Stufe tiefer (teal-700) sind es 5,39:1; als reine
+                // Rahmen- und Punktfarbe (`border-teal-600`,
+                // `bg-teal-600` ohne Text) bleibt teal-600 unverändert,
+                // dort gilt die 3:1-Schwelle für Nicht-Text (1.4.11).
                 s === step
-                  ? "bg-teal-600 text-white"
+                  ? "bg-teal-700 text-white"
                   : s < step
                     ? "bg-teal-100 text-teal-700"
-                    : "bg-gray-100 text-gray-400",
+                    : "bg-gray-100 text-gray-500",
               )}
             >
               {s}
@@ -156,7 +163,8 @@ export function ExcelImportWizard({
           </a>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+            // [ARCTOS-FULL-2026-08-31 · OP-049] red-600 auf red-50 = 4,36:1.
+            <div className="text-sm text-red-700 bg-red-50 rounded-md px-3 py-2">
               {error}
             </div>
           )}
@@ -173,7 +181,7 @@ export function ExcelImportWizard({
               type="button"
               onClick={handlePreview}
               disabled={!file || !title.trim() || isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-md hover:bg-teal-800 disabled:opacity-50"
             >
               {isLoading ? "Processing..." : (labels?.preview ?? "Preview")}
             </button>
@@ -214,7 +222,7 @@ export function ExcelImportWizard({
             <button
               type="button"
               onClick={handleConfirm}
-              className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-md hover:bg-teal-800"
             >
               {labels?.confirm ?? "Confirm Import"}
             </button>

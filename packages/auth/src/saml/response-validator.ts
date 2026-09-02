@@ -80,6 +80,141 @@ export function rejectXXE(xml: string): void {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════
+// [ARCTOS-FULL-2026-08-31 · OP-096] Gueltigkeit des IdP-Zertifikats
+// ════════════════════════════════════════════════════════════════════
+//
+// `verifySamlResponse` hat das konfigurierte Zertifikat bisher nur GEPARST
+// (`new X509Certificate(pem)` und den Fehler abgefangen). Ein Zertifikat, das
+// vor drei Jahren abgelaufen ist, parst einwandfrei — die Anmeldung lief also
+// unbegrenzt weiter, obwohl der Betreiber das Gegenteil annehmen durfte.
+// Das ist in einem GRC-Produkt der teure Fall: die Rotationsfrist steht in
+// jeder Kundenrichtlinie, und niemand haette bemerkt, dass sie folgenlos ist.
+//
+// ZUR KETTE — bewusst NICHT geprueft, und das ist keine Restluecke:
+// `sso_config.saml_certificate` ist ein GEPINNTER Vertrauensanker, kein Blatt
+// einer Kette. Der Betreiber traegt genau das eine Zertifikat ein, mit dem
+// dieser IdP signieren darf; deshalb ignoriert der Verifizierer auch das in
+// `<KeyInfo>` mitgelieferte (S02-23). Eine Kettenpruefung braucht einen
+// Wurzelspeicher, und mit ihm wuerde JEDES von einer oeffentlichen CA
+// signierte Zertifikat akzeptabel — das waere schwaecher als das Pinning,
+// nicht staerker. IdP-Zertifikate sind ueberdies in der Praxis selbstsigniert
+// (Entra ID, Okta, Keycloak liefern alle selbstsignierte Signierzertifikate
+// aus), eine Kette existiert dort gar nicht. Geprueft wird stattdessen das,
+// was beim Pinning tatsaechlich schiefgehen kann: Ablauf, Vorlauf und eine zu
+// schwache Schluessellaenge.
+
+/** Vorwarnfenster: ab hier meldet die Pruefung `expiresSoon`. */
+export const IDP_CERT_EXPIRY_WARNING_DAYS = 30;
+
+/** Kleinste akzeptierte RSA-Schluessellaenge. */
+const MIN_RSA_MODULUS_BITS = 2048;
+
+export interface IdpCertificateInfo {
+  subject: string;
+  issuer: string;
+  validFrom: Date;
+  validTo: Date;
+  /** Ganze Tage bis `validTo`; negativ, wenn bereits abgelaufen. */
+  daysUntilExpiry: number;
+  expired: boolean;
+  notYetValid: boolean;
+  expiresSoon: boolean;
+  selfSigned: boolean;
+  /** Wieviele Zertifikate im konfigurierten Feld stehen. Genutzt wird das erste. */
+  certificateCount: number;
+}
+
+/**
+ * Liest das konfigurierte IdP-Zertifikat aus und bewertet seine Gueltigkeit.
+ * Wirft nur, wenn das Feld gar kein X.509-Zertifikat enthaelt — Ablauf und
+ * Vorlauf stehen im Ergebnis, damit die Betriebsansicht sie ANZEIGEN kann,
+ * ohne sich an einer Ausnahme entlangzuhangeln.
+ */
+export function inspectIdpCertificate(
+  certPem: string,
+  now: Date = new Date(),
+): IdpCertificateInfo {
+  const pem = toPem(certPem);
+  let x509: X509Certificate;
+  try {
+    x509 = new X509Certificate(pem);
+  } catch {
+    throw new Error(
+      "Configured IdP certificate is not a valid X.509 certificate",
+    );
+  }
+  const validFrom = new Date(x509.validFrom);
+  const validTo = new Date(x509.validTo);
+  if (Number.isNaN(validFrom.getTime()) || Number.isNaN(validTo.getTime())) {
+    throw new Error(
+      "Configured IdP certificate carries no readable validity period",
+    );
+  }
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const daysUntilExpiry = Math.floor(
+    (validTo.getTime() - now.getTime()) / msPerDay,
+  );
+  return {
+    subject: x509.subject,
+    issuer: x509.issuer,
+    validFrom,
+    validTo,
+    daysUntilExpiry,
+    expired: now.getTime() > validTo.getTime(),
+    notYetValid: now.getTime() < validFrom.getTime(),
+    expiresSoon:
+      now.getTime() <= validTo.getTime() &&
+      daysUntilExpiry <= IDP_CERT_EXPIRY_WARNING_DAYS,
+    selfSigned: x509.subject === x509.issuer,
+    certificateCount: (certPem.match(/-----BEGIN CERTIFICATE-----/g) ?? [])
+      .length,
+  };
+}
+
+/**
+ * Fail-closed-Variante fuer den Anmeldepfad: wirft, sobald das Zertifikat
+ * nicht (mehr) benutzbar ist. Die Meldung nennt das Datum, damit der Betreiber
+ * im Log sieht, was zu tun ist — eine Anmeldung, die ohne Grund scheitert, ist
+ * in einem Ticketverlauf teurer als der Ausfall selbst.
+ */
+export function assertIdpCertificateUsable(
+  certPem: string,
+  now: Date = new Date(),
+): IdpCertificateInfo {
+  const info = inspectIdpCertificate(certPem, now);
+  if (info.expired) {
+    throw new Error(
+      `Configured IdP certificate expired on ${info.validTo.toISOString()} — ` +
+        `rotate it in the SSO configuration (sso_config.saml_certificate).`,
+    );
+  }
+  if (info.notYetValid) {
+    throw new Error(
+      `Configured IdP certificate is not valid before ${info.validFrom.toISOString()}.`,
+    );
+  }
+  // Schluessellaenge: `X509Certificate.publicKey.asymmetricKeyDetails` liefert
+  // fuer RSA die Modulusgroesse. Ein 1024-Bit-RSA-Signierzertifikat ist heute
+  // kein Vertrauensanker mehr, wuerde aber sonst klaglos verifizieren.
+  try {
+    const details = new X509Certificate(toPem(certPem)).publicKey
+      .asymmetricKeyDetails;
+    const bits = details?.modulusLength;
+    if (typeof bits === "number" && bits < MIN_RSA_MODULUS_BITS) {
+      throw new Error(
+        `Configured IdP certificate uses a ${bits}-bit RSA key; ` +
+          `at least ${MIN_RSA_MODULUS_BITS} bits are required.`,
+      );
+    }
+  } catch (err) {
+    // Nur die eigene Ablehnung weiterreichen; ein Kurventyp ohne
+    // `modulusLength` (ECDSA) ist kein Fehler.
+    if (err instanceof Error && err.message.includes("-bit RSA key")) throw err;
+  }
+  return info;
+}
+
 function toPem(cert: string): string {
   const trimmed = cert.trim();
   if (trimmed.includes("BEGIN CERTIFICATE")) return trimmed;
@@ -189,7 +324,12 @@ export interface VerifiedSamlResponse {
 export function verifySamlResponse(
   responseXml: string,
   idpCertPem: string,
-  opts?: { requireStatusSuccess?: boolean },
+  // [ARCTOS-FULL-2026-08-31 · OP-096] `now` ist injizierbar, damit die
+  // Gueltigkeitspruefung des Zertifikats pruefbar ist, ohne die Systemuhr zu
+  // stellen oder ein abgelaufenes Fixture einzuchecken (das seinerseits
+  // altert und den Test irgendwann aus dem falschen Grund kippen laesst).
+  // Produktionsaufrufer lassen den Wert weg.
+  opts?: { requireStatusSuccess?: boolean; now?: Date },
 ): VerifiedSamlResponse {
   rejectXXE(responseXml);
 
@@ -197,15 +337,12 @@ export function verifySamlResponse(
     throw new Error("No IdP certificate configured for this organization");
   }
   const pem = toPem(idpCertPem);
-  try {
-    // Throws on a structurally invalid certificate — fail closed rather than
-    // handing garbage to the verifier and reading its `false` as "tampered".
-    new X509Certificate(pem);
-  } catch {
-    throw new Error(
-      "Configured IdP certificate is not a valid X.509 certificate",
-    );
-  }
+  // [ARCTOS-FULL-2026-08-31 · OP-096] Hier stand nur ein `new X509Certificate(pem)`
+  // in einem try/catch — eine reine STRUKTURpruefung. Ein abgelaufenes
+  // Zertifikat parst und verifizierte damit weiter. `assertIdpCertificateUsable`
+  // prueft zusaetzlich Ablauf, Vorlauf und Schluessellaenge und wirft mit einer
+  // Meldung, die das Datum nennt.
+  assertIdpCertificateUsable(pem, opts?.now);
 
   const doc = parseXmlStrict(responseXml);
   const root = doc.documentElement;

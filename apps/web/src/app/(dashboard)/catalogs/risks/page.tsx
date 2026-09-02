@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface RiskCatalog {
   id: string;
@@ -260,16 +261,21 @@ export default function RiskCatalogBrowserPage() {
     setSelectedEntry(null);
 
     (async () => {
-      const params = new URLSearchParams({
-        parentEntryId: "root",
-        limit: "200",
-      });
-      if (search) params.set("search", search);
-      const res = await fetch(
-        `/api/v1/catalogs/risks/${selectedCatalog.id}/entries?${params}`,
-      );
-      const json = await res.json();
-      setEntries(json.data ?? []);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] siehe catalogs/controls —
+      // dasselbe Muster, derselbe Ausgang.
+      const params: Record<string, string> = { parentEntryId: "root" };
+      if (search) params.search = search;
+      try {
+        setEntries(
+          await fetchAllPages<RiskCatalogEntry>(
+            `/api/v1/catalogs/risks/${selectedCatalog.id}/entries`,
+            { params },
+          ),
+        );
+      } catch (err) {
+        console.error("catalogs/risks: Einträge nicht geladen", err);
+        setEntries([]);
+      }
       setLoadingEntries(false);
     })();
   }, [selectedCatalog, search]);
@@ -278,11 +284,16 @@ export default function RiskCatalogBrowserPage() {
   const loadChildren = useCallback(
     async (entryId: string) => {
       if (!selectedCatalog || childrenMap[entryId]) return;
-      const res = await fetch(
-        `/api/v1/catalogs/risks/${selectedCatalog.id}/entries?parentEntryId=${entryId}&limit=200`,
-      );
-      const json = await res.json();
-      setChildrenMap((prev) => ({ ...prev, [entryId]: json.data ?? [] }));
+      // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Unterebene.
+      try {
+        const children = await fetchAllPages<RiskCatalogEntry>(
+          `/api/v1/catalogs/risks/${selectedCatalog.id}/entries`,
+          { params: { parentEntryId: entryId } },
+        );
+        setChildrenMap((prev) => ({ ...prev, [entryId]: children }));
+      } catch (err) {
+        console.error("catalogs/risks: Unterebene nicht geladen", err);
+      }
     },
     [selectedCatalog, childrenMap],
   );

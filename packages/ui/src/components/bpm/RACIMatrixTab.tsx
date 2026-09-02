@@ -85,7 +85,8 @@ export function RACIMatrixTab({
             <button
               type="button"
               onClick={onExport}
-              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-teal-600 bg-teal-50 rounded-md hover:bg-teal-100"
+              // [ARCTOS-FULL-2026-08-31 · OP-049] teal-600 auf teal-50 = 3,51:1.
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-teal-700 bg-teal-50 rounded-md hover:bg-teal-100"
             >
               {labels?.export ?? "Export Excel"}
             </button>

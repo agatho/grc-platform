@@ -162,19 +162,17 @@ export function duplicateTableDefinitions(
  * still fails on anything not listed here.
  */
 export const ACCEPTED_TYPE_DRIFT: Record<string, string> = {
-  // ARCTOS-FULL-2026-08-31 / WP1 → handed to WP7 (S06-03: the signature IP is
-  // client-controllable and unhashed). `inet` validates; varchar(45) does not.
-  "audit_sign_off.ip_address": "DB inet is stricter than the declared varchar",
-  "process_sign_off.ip_address":
-    "DB inet is stricter than the declared varchar",
-  "vendor_sign_off.ip_address": "DB inet is stricter than the declared varchar",
-  // The database carries real enum types here; the schema declares varchar,
-  // so a value outside the enum compiles and then fails at runtime with 22P02.
-  // The code should adopt the enum — owned by the catalog module.
-  "catalog_entry_mapping.relationship":
-    "DB enum mapping_relationship is stricter than the declared varchar",
-  "catalog_entry_mapping.mapping_source":
-    "DB enum mapping_source is stricter than the declared varchar",
+  // [ARCTOS-FULL-2026-08-31 · OP-137] Die fuenf Eintraege, die hier standen,
+  // sind erledigt: `*_sign_off.ip_address` ist im Schema jetzt `inet`, und
+  // `catalog_entry_mapping.relationship`/`.mapping_source` benutzen die
+  // pgEnum-Deklarationen aus `schema/phase3-extras.ts`. Damit ist diese Liste
+  // leer — und das ist der Zustand, den sie anstreben soll: eine akzeptierte
+  // Abweichung ist eine unbeantwortete Frage, keine Antwort.
+  //
+  // Eine neue Zeile hier braucht denselben Nachweis wie damals: WARUM die
+  // Datenbank strenger sein DARF als der Code, und wer die Code-Seite
+  // nachzieht. „Faellt schon nicht auf" ist keine Begruendung — der Grund,
+  // aus dem diese fuenf ueberhaupt entstanden sind, war genau der.
 };
 
 export function compareSchema(

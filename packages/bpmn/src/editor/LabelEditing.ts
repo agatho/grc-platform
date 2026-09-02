@@ -44,6 +44,7 @@ import type {
   ModelingLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 /** Mindestmaße des Eingabefelds, damit auch ein Ereignis beschriftbar bleibt. */
 const MIN_WIDTH = 90;
@@ -255,8 +256,10 @@ export class LabelEditing {
     current: BpmnElement | undefined,
     direction: 1 | -1,
   ): BpmnElement | undefined {
-    const candidates = this.elementRegistry
-      .getAll()
+    // [ARCTOS-FULL-2026-08-31 · OP-033] `Tab` darf nicht in einem
+    // eingeklappten Subprozess landen: das Eingabefeld erschiene an der
+    // Stelle, an der das Element gezeichnet WÜRDE, und die ist leer.
+    const candidates = visibleElements(this.elementRegistry)
       .filter(
         (element) =>
           (element as BpmnShape).labelTarget === undefined &&

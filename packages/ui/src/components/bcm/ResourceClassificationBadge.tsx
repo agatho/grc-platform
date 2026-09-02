@@ -11,7 +11,8 @@ interface ResourceClassificationBadgeProps {
 const CLASSIFICATION_STYLES: Record<string, string> = {
   critical: "bg-red-100 text-red-700",
   significant: "bg-orange-100 text-orange-700",
-  non_critical: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — siehe DrillResultsTab.
+  non_critical: "bg-green-100 text-green-800",
 };
 
 export function ResourceClassificationBadge({

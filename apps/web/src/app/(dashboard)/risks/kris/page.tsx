@@ -38,6 +38,7 @@ import type {
 import { useDateFormat } from "@/lib/format-date";
 // [WP12 · S14-13] Dialog semantics for the hand-built drawer below.
 import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,16 +46,6 @@ import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
 
 interface KriListItem extends KRI {
   linkedRiskName?: string;
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -375,21 +366,23 @@ function KriDashboardContent() {
   const fetchKris = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (statusFilter !== "all") params.set("alertStatus", statusFilter);
-      if (riskFilter) params.set("riskId", riskFilter);
-      if (frequencyFilter) params.set("measurementFrequency", frequencyFilter);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422. Der Fehler
+      // wurde immerhin gesetzt — die KRI-Seite war also nicht leer, sondern
+      // dauerhaft im Fehlerzustand. Die Route erlaubt selbst höchstens 200
+      // KRIs pro Mandant, zwei Seiten à 100 reichen also immer.
+      const params: Record<string, string> = {};
+      if (statusFilter !== "all") params.alertStatus = statusFilter;
+      if (riskFilter) params.riskId = riskFilter;
+      if (frequencyFilter) params.measurementFrequency = frequencyFilter;
 
-      const res = await fetch(`/api/v1/kris?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed");
-      const json: PaginatedResponse<KriListItem> = await res.json();
-      setKris(json.data);
+      const rows = await fetchAllPages<KriListItem>("/api/v1/kris", { params });
+      setKris(rows);
       setError(false);
 
       // Fetch measurements for each KRI (last 12)
       const cache: Record<string, KRIMeasurement[]> = {};
       await Promise.all(
-        json.data.map(async (k) => {
+        rows.map(async (k) => {
           try {
             const mRes = await fetch(
               `/api/v1/kris/${k.id}/measurements?limit=12`,

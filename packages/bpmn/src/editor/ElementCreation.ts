@@ -33,6 +33,7 @@ import type {
   RulesLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 /** Abstand, den ein frei platziertes Element zu vorhandenen hält. */
 const FREE_SPOT_STEP = 140;
@@ -248,7 +249,11 @@ export class ElementCreation {
   /** Alle Container unter dem Punkt, innerste zuerst. */
   private containersAt(position: Point): BpmnParent[] {
     const hits: Array<{ element: BpmnShape; area: number }> = [];
-    for (const element of this.elementRegistry.getAll()) {
+    // [ARCTOS-FULL-2026-08-31 · OP-033] Die Kinder eines eingeklappten
+    // Subprozesses behalten ihre alte Geometrie. Sie als Container unter dem
+    // Zeigepunkt zu melden, legte ein neues Element in einen Behälter, den
+    // niemand sieht.
+    for (const element of visibleElements(this.elementRegistry)) {
       const shape = element as BpmnShape;
       if (typeof shape.width !== "number" || typeof shape.height !== "number") {
         continue;
@@ -302,7 +307,10 @@ export class ElementCreation {
       width: shape.width,
       height: shape.height,
     };
-    return this.elementRegistry.getAll().some((element) => {
+    // [ARCTOS-FULL-2026-08-31 · OP-033] Ein unsichtbares Element belegt
+    // keinen Platz: sonst weicht die Suche nach einer freien Stelle einem
+    // Kasten aus, der gar nicht da ist.
+    return visibleElements(this.elementRegistry).some((element) => {
       const other = element as BpmnShape;
       if (typeof other.width !== "number") return false;
       if (other.parent === undefined) return false;

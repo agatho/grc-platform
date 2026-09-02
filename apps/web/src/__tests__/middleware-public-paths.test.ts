@@ -120,3 +120,116 @@ describe("allowlist hygiene", () => {
     expect(PUBLIC_PREFIXES.some(([p]) => p === "/api")).toBe(false);
   });
 });
+
+// ────────────────────────────────────────────────────────────────────
+// [ARCTOS-FULL-2026-08-31 · OP-082] Wächter über die Klasse, nicht über
+// den Einzelfall.
+//
+// OP-082 meldete eine Zeile: `/trust` fehlt. Die Ursache war aber nicht
+// eine vergessene Zeile, sondern ein blinder Fleck der Pflege — die
+// Allowlist wurde entlang der API-Befunde (S02-04/S12-09) geführt, und die
+// Seitenbäume hat niemand danebengelegt. Sieben der elf Seiten ausserhalb
+// von `(dashboard)` waren betroffen, darunter das Impressum (§ 5 DDG) und
+// die Lieferantenseite, deren URL per E-Mail verschickt wird.
+//
+// Deshalb steht dieser Block über der DATEILISTE und nicht über Literalen:
+// Wer eine neue Seite ausserhalb von `(dashboard)` anlegt, muss sie hier
+// eintragen und dabei entscheiden, ob sie anonym erreichbar ist. Vergisst
+// er es, wird der Test rot — statt dass die Seite still hinter dem Login
+// verschwindet, wo niemand sie sucht.
+//
+// `(dashboard)` ist ausgenommen und bleibt es: dort ist "angemeldet" die
+// Voreinstellung, und eine Aufzählung von 200 Seiten wäre ein Wächter, den
+// man beim ersten roten Lauf abschaltet.
+// ────────────────────────────────────────────────────────────────────
+
+import { readdirSync } from "node:fs";
+import { join, relative, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const APP_DIR = join(fileURLToPath(new URL(".", import.meta.url)), "..", "app");
+
+/** Alle `page.tsx` unterhalb von `src/app`, ohne den `(dashboard)`-Baum. */
+function discoverPageFiles(dir: string, acc: string[] = []): string[] {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name === "(dashboard)" || entry.name === "api") continue;
+      discoverPageFiles(full, acc);
+    } else if (entry.name === "page.tsx") {
+      acc.push(relative(APP_DIR, full));
+    }
+  }
+  return acc;
+}
+
+/**
+ * Dateipfad → Routenmuster. Routengruppen `(x)` erscheinen nicht in der URL;
+ * dynamische Segmente werden zu `:name`, damit die Tabelle unabhängig vom
+ * Beispielwert lesbar bleibt.
+ */
+function routeOf(pageFile: string): string {
+  const segments = pageFile
+    .split(sep)
+    .slice(0, -1)
+    .filter((s) => !(s.startsWith("(") && s.endsWith(")")))
+    .map((s) => (s.startsWith("[") ? ":" + s.replace(/[[\].]/g, "") : s));
+  return "/" + segments.join("/");
+}
+
+/**
+ * Die Entscheidung je Seite. `anonymous: true` heisst: ein Besucher ohne
+ * Sitzung muss die Seite bekommen. `false` heisst: die Weiterleitung auf
+ * `/login` ist gewollt. Jede Zeile trägt ihren Grund — dieselbe Regel, die
+ * die Allowlist selbst befolgt.
+ */
+const PAGE_VERDICTS: ReadonlyArray<
+  readonly [route: string, anonymous: boolean, reason: string]
+> = [
+  ["/login", true, "Anmeldeseite — per Definition vorauthentifiziert"],
+  ["/admin-login", true, "Break-Glass-Anmeldung (S12-09)"],
+  ["/report/:orgCode", true, "HinSchG § 16 Meldeportal"],
+  ["/report/mailbox/:token", true, "HinSchG anonymer Briefkasten"],
+  [
+    "/trust/:orgCode",
+    true,
+    "OP-082 — öffentliches Trust Center, Voraussetzung S12-05 B ist erfüllt",
+  ],
+  [
+    "/dd/:token",
+    true,
+    "OP-082 — Lieferantenportal; die Einladungsmail verschickt genau diese URL",
+  ],
+  ["/dd/:token/complete", true, "OP-082 — Abschluss desselben Vorgangs"],
+  [
+    "/dd/expired",
+    true,
+    "OP-082 — Ziel der Weiterleitung bei abgelaufenem Token",
+  ],
+  [
+    "/invite/:token",
+    true,
+    "OP-082 — der Eingeladene hat noch kein Konto zum Anmelden",
+  ],
+  ["/legal/imprint", true, "OP-082 — § 5 DDG, muss ohne Anmeldung erreichbar"],
+  ["/legal/privacy", true, "OP-082 — Art. 13 DSGVO, dito"],
+];
+
+describe("OP-082 — jede Seite ausserhalb von (dashboard) hat eine Entscheidung", () => {
+  const discovered = discoverPageFiles(APP_DIR).map(routeOf).sort();
+  const declared = PAGE_VERDICTS.map(([r]) => r).sort();
+
+  it("die Tabelle deckt genau die vorhandenen Seiten ab", () => {
+    // Beide Richtungen: eine neue Seite ohne Eintrag ist der Fall, den
+    // OP-082 gezeigt hat; ein Eintrag ohne Seite ist eine Allowlist, die
+    // auf einen gelöschten Pfad zeigt (`/portal` war so einer).
+    expect(discovered).toEqual(declared);
+  });
+
+  for (const [route, anonymous, reason] of PAGE_VERDICTS) {
+    const sample = route.replace(/:[^/]+/g, "SAMPLE-TOKEN");
+    it(`${route} ist ${anonymous ? "anonym erreichbar" : "angemeldet"} — ${reason}`, () => {
+      expect(isPublicPath(sample)).toBe(anonymous);
+    });
+  }
+});

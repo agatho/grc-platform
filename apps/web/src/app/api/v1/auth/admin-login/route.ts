@@ -1,4 +1,4 @@
-import { db, user, userOrganizationRole, ssoConfig } from "@grc/db";
+import { db, userOrganizationRole, ssoConfig } from "@grc/db";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { compare } from "bcryptjs";
 import { breakGlassLoginSchema } from "@grc/shared";
@@ -8,6 +8,7 @@ import {
   registerLoginFailure,
   registerLoginSuccess,
   normaliseEmail,
+  lookupUserByEmail,
 } from "@grc/auth/providers";
 import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
@@ -78,17 +79,14 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid credentials" }, { status: 401 });
   }
 
-  // Find user
-  const [found] = await db
-    .select()
-    .from(user)
-    .where(
-      and(
-        sql`lower(${user.email}) = ${email}`,
-        eq(user.isActive, true),
-        isNull(user.deletedAt),
-      ),
-    );
+  // Find user.
+  // [ARCTOS-FULL-2026-08-31 · OP-083] Der Break-Glass-Login ist der zweite
+  // kontextlose Leser der `user`-Tabelle. Er lief ueber den Basis-Pool und sah
+  // damit — wie der regulaere Login — das Nutzerverzeichnis ALLER Mandanten.
+  // Jetzt ueber dieselbe SECURITY-DEFINER-Kapsel (Migration 0455): eine
+  // Adresse rein, hoechstens eine Zeile raus.
+  const candidate = await lookupUserByEmail(email);
+  const found = candidate?.isActive ? candidate : null;
 
   if (!found?.passwordHash) {
     await registerLoginFailure(email);

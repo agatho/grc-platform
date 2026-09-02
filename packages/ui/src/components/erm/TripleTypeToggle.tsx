@@ -42,7 +42,8 @@ export function TripleTypeToggle({
           className={cn(
             "px-4 py-2 text-sm font-medium transition-colors border-r last:border-r-0",
             value === option.key
-              ? "bg-teal-600 text-white border-teal-600"
+              ? // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf teal-600 = 3,66:1.
+                "bg-teal-700 text-white border-teal-700"
               : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50",
             disabled && "opacity-50 cursor-not-allowed",
           )}

@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface ControlCatalog {
   id: string;
@@ -212,16 +213,25 @@ export default function ControlCatalogBrowserPage() {
     setSelectedEntry(null);
 
     (async () => {
-      const params = new URLSearchParams({
-        parentEntryId: "root",
-        limit: "200",
-      });
-      if (search) params.set("search", search);
-      const res = await fetch(
-        `/api/v1/catalogs/controls/${selectedCatalog.id}/entries?${params}`,
-      );
-      const json = await res.json();
-      setEntries(json.data ?? []);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] Hier fehlte jede Statusprüfung:
+      // `json.data ?? []` macht aus dem 422-problem+json (das kein `data` hat)
+      // eine leere Liste. Ein Kontrollkatalog ohne Einträge sieht aus wie ein
+      // leerer Katalog, nicht wie eine abgelehnte Anfrage — und die
+      // Wurzelebene eines ISO-27002-Katalogs hat mehr als 100 Einträge, also
+      // wird geblättert statt gekappt.
+      const params: Record<string, string> = { parentEntryId: "root" };
+      if (search) params.search = search;
+      try {
+        setEntries(
+          await fetchAllPages<ControlCatalogEntry>(
+            `/api/v1/catalogs/controls/${selectedCatalog.id}/entries`,
+            { params },
+          ),
+        );
+      } catch (err) {
+        console.error("catalogs/controls: Einträge nicht geladen", err);
+        setEntries([]);
+      }
       setLoadingEntries(false);
     })();
   }, [selectedCatalog, search]);
@@ -229,11 +239,17 @@ export default function ControlCatalogBrowserPage() {
   const loadChildren = useCallback(
     async (entryId: string) => {
       if (!selectedCatalog || childrenMap[entryId]) return;
-      const res = await fetch(
-        `/api/v1/catalogs/controls/${selectedCatalog.id}/entries?parentEntryId=${entryId}&limit=200`,
-      );
-      const json = await res.json();
-      setChildrenMap((prev) => ({ ...prev, [entryId]: json.data ?? [] }));
+      // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Unterebene: ein
+      // aufgeklappter Knoten ohne Kinder ist eine Aussage über den Katalog.
+      try {
+        const children = await fetchAllPages<ControlCatalogEntry>(
+          `/api/v1/catalogs/controls/${selectedCatalog.id}/entries`,
+          { params: { parentEntryId: entryId } },
+        );
+        setChildrenMap((prev) => ({ ...prev, [entryId]: children }));
+      } catch (err) {
+        console.error("catalogs/controls: Unterebene nicht geladen", err);
+      }
     },
     [selectedCatalog, childrenMap],
   );

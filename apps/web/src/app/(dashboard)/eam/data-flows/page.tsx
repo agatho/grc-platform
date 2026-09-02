@@ -31,6 +31,9 @@ function DataFlowsInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] wie eam/applications: die Route
+      // klemmt selbst auf 500 und kennt kein `page`, also kein 422 — aber
+      // auch kein Vertrag. Umstellung der Route: Strang 1a.
       let url = "/api/v1/eam/data-flows?limit=200";
       if (filter === "personal") url += "&personalData=true";
       if (filter === "crossBorder") url += "&crossBorder=true";
@@ -38,6 +41,8 @@ function DataFlowsInner() {
       if (res.ok) {
         const json = await res.json();
         setFlows(json.data ?? []);
+      } else {
+        console.error("eam/data-flows: Datenflüsse nicht geladen", res.status);
       }
     } finally {
       setLoading(false);

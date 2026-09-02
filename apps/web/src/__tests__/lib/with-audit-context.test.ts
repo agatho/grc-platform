@@ -56,7 +56,7 @@ vi.mock("@/auth", () => ({
 }));
 
 // Import after mocks so withAuditContext picks up the mocked modules.
-import { withAuditContext } from "../../lib/api";
+import { withAuditContext, MAX_AUDIT_REASON_LENGTH } from "../../lib/api";
 
 const baseCtx = {
   orgId: "org-1",
@@ -173,6 +173,49 @@ describe("withAuditContext — bleed guard (critical)", () => {
     expect(actionDetailCalls[0]).toMatch(/«»/);
     expect(reasonCalls[0]).toMatch(/«»/);
     void callsAfter1;
+  });
+});
+
+// [ARCTOS-FULL-2026-08-31 · OP-124] `audit_log.metadata` ist unter Hash-v4
+// direkte Hash-Eingabe und deshalb von `tombstone_audit_entry()` nicht
+// erreichbar. Was hier durchkommt, überlebt jede DSGVO-Art.-17-Löschung.
+describe("withAuditContext — Begründung ist nicht redigierbar (OP-124)", () => {
+  async function reasonSql(reason: string): Promise<string> {
+    txExecutions.length = 0;
+    await withAuditContext(baseCtx, async () => null, { reason });
+    return txExecutions.filter((sql) => sql.includes("app.audit_reason"))[0];
+  }
+
+  it("entfernt E-Mail-Adressen", async () => {
+    const sql = await reasonSql(
+      "Abgestimmt mit anna.meier@kunde.example am Freitag",
+    );
+    expect(sql).not.toContain("anna.meier@kunde.example");
+    expect(sql).toContain("[E-Mail]");
+    // Der Grund selbst bleibt lesbar — genau das ist der Zweck des Feldes.
+    expect(sql).toContain("Abgestimmt mit");
+  });
+
+  it("entfernt lange Ziffernfolgen, behält kurze Aktenzeichen", async () => {
+    const sql = await reasonSql(
+      "Telefonisch bestätigt: 0151 23456789, AZ 4711",
+    );
+    expect(sql).not.toContain("23456789");
+    expect(sql).toContain("[Nummer]");
+    expect(sql).toContain("AZ 4711");
+  });
+
+  it("deckelt die Länge — vorher stand hier ausdrücklich 'no length cap'", async () => {
+    const sql = await reasonSql("A".repeat(5000));
+    const wert = sql.slice(sql.indexOf("«") + 1, sql.lastIndexOf("»"));
+    expect(wert.length).toBeLessThanOrEqual(MAX_AUDIT_REASON_LENGTH);
+  });
+
+  it("lässt eine unverfängliche Begründung unverändert", async () => {
+    const sql = await reasonSql(
+      "Quarterly review found remediation sufficient",
+    );
+    expect(sql).toContain("Quarterly review found remediation sufficient");
   });
 });
 

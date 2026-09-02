@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -246,13 +247,12 @@ export default function OrganizationDetailPage() {
 
   // Fetch DPO users (users with dpo role in this org)
   useEffect(() => {
-    fetch(`/api/v1/users?limit=200`)
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
-      })
-      .then((json) => {
-        const users = (json.data ?? [])
+    // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ die DSB-Auswahl
+    // blieb für jeden Mandanten leer. Ein leeres Auswahlfeld liest sich hier
+    // wie „es gibt keinen Datenschutzbeauftragten", nicht wie ein Fehler.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
+        const users = rows
           .filter((u: Record<string, unknown>) => {
             const roles = (u.roles ?? []) as Array<{
               role: string;
@@ -267,8 +267,8 @@ export default function OrganizationDetailPage() {
           }));
         setDpoUsers(users);
       })
-      .catch(() => {
-        // Non-critical
+      .catch((err) => {
+        console.error("organizations: DSB-Auswahl nicht geladen", err);
       });
   }, [orgId]);
 

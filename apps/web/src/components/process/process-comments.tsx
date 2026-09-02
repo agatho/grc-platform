@@ -326,7 +326,8 @@ function CommentItem({
           {comment.isResolved && (
             <Badge
               variant="secondary"
-              className="text-[10px] bg-green-100 text-green-700"
+              // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+              className="text-[10px] bg-green-100 text-green-800"
             >
               {t("comments.resolved")}
             </Badge>

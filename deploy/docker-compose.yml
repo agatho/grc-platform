@@ -157,9 +157,18 @@ services:
       - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3000}:3000"
     environment:
       # Migrationen und Provisionierung: Superuser.
-      DATABASE_URL: postgresql://grc:${DB_PASSWORD}@postgres:5432/grc_platform
+      #
+      # [ARCTOS-FULL-2026-08-31 · OP-091] Beide URLs standen mit nacktem
+      # `${VAR}`. Die Pflichtpruefung stand nur an den Deklarationen weiter
+      # oben (postgres.POSTGRES_PASSWORD, provision-roles.GRC_*_PASSWORD).
+      # Das traegt, solange BEIDE Dienste in der Datei stehen — faellt einer
+      # weg oder wandert in ein Profil, entsteht hier lautlos ein
+      # syntaktisch gueltiger URL mit LEEREM Passwort. Ein Dienst, dessen
+      # Sicherheitszusage von der Anwesenheit eines anderen Dienstes
+      # abhaengt, sagt sie nicht selbst zu. `:?` an der Verwendungsstelle.
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env — openssl rand -hex 24}@postgres:5432/grc_platform
       # #S13-09a: LAUFZEIT als Nicht-Superuser — nur so wirkt RLS.
-      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD}@postgres:5432/grc_platform
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:?Set GRC_APP_PASSWORD in .env — ohne die Nicht-Superuser-Rolle grc_app ist RLS wirkungslos; anlegen mit deploy/provision-grc-app.sh}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env — openssl rand -hex 32}
       AUTH_URL: ${AUTH_URL:?Set AUTH_URL in .env — z.B. https://grc.ihre-domain.de}
       AUTH_TRUST_HOST: "true"
@@ -232,7 +241,8 @@ services:
     logging: *default-logging
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD}@postgres:5432/grc_platform
+      # [ARCTOS-FULL-2026-08-31 · OP-091] `:?` wie bei web — siehe dort.
+      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}@postgres:5432/grc_platform
       ARCTOS_ALLOW_PRIVILEGED_DB: "true"
       CRON_SECRET: ${CRON_SECRET}
       CRON_SCHEDULER_ENABLED: ${CRON_SCHEDULER_ENABLED:-true}
@@ -282,7 +292,8 @@ services:
     profiles: ["setup"]
     restart: "no"
     environment:
-      DATABASE_URL: postgresql://grc:${DB_PASSWORD}@postgres:5432/grc_platform
+      # [ARCTOS-FULL-2026-08-31 · OP-091] `:?` wie bei web — siehe dort.
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env — openssl rand -hex 24}@postgres:5432/grc_platform
       ARCTOS_SKIP_CONFIG_ASSERT: "true"
       ADMIN_EMAIL: ${ADMIN_EMAIL:?ADMIN_EMAIL setzen — z.B. ADMIN_EMAIL=chef@firma.de docker compose run --rm create-admin}
     entrypoint: ["/bin/sh", "-c"]

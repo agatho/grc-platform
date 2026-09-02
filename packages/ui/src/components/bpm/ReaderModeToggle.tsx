@@ -25,7 +25,9 @@ export function ReaderModeToggle({
         className={cn(
           "px-3 py-1.5 text-xs font-medium transition-colors",
           !isReaderMode
-            ? "bg-teal-600 text-white"
+            ? // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf teal-600 = 3,66:1
+              // bei 12 px; teal-700 sind 5,39:1.
+              "bg-teal-700 text-white"
             : "bg-white text-gray-600 hover:bg-gray-50",
         )}
       >
@@ -37,7 +39,8 @@ export function ReaderModeToggle({
         className={cn(
           "px-3 py-1.5 text-xs font-medium transition-colors border-l",
           isReaderMode
-            ? "bg-teal-600 text-white"
+            ? // [ARCTOS-FULL-2026-08-31 · OP-049] wie oben.
+              "bg-teal-700 text-white"
             : "bg-white text-gray-600 hover:bg-gray-50",
         )}
       >

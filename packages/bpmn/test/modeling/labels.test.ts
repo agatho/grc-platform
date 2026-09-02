@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { openSession, operate } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
@@ -14,6 +16,7 @@ import {
 import {
   externalLabelBounds,
   hasExternalLabel,
+  labelText,
 } from "../../src/modeling/labels";
 import { boOf } from "../../src/modeling/util";
 import type { BpmnShape } from "../../src/modeling/types";
@@ -228,6 +231,129 @@ describe("Kantenführung", () => {
     // seinem Mittelpunkt — das leistet CroppingConnectionDocking.
     expect(first.x).toBeGreaterThanOrEqual(start.x);
     expect(first.x).toBeLessThanOrEqual(start.x + start.width + 1);
+    session.destroy();
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────
+// [ARCTOS-FULL-2026-08-31 · OP-030] `bpmn:Group` — der dritte Beschriftungsfall
+//
+// Eine Gruppe trägt keinen Namen. Ihr Text steht in einer
+// `bpmn:CategoryValue` unter `bpmn:Definitions`, auf die `categoryValueRef`
+// zeigt. `UpdateLabelHandler` schrieb ihn nach `name` — ein Attribut, das
+// `bpmn:Group` im Schema nicht hat. Der Effekt war nicht „geht beim Austausch
+// verloren", sondern schärfer: `moddle` behielt die Eigenschaft im Speicher
+// und liess sie beim Schreiben weg, `labelText()` las weiter aus der
+// Kategorie — der Editor zeigte den alten Text, und die Eingabe war nach dem
+// Speichern spurlos weg.
+//
+// Die drei Tests unten prüfen genau die drei Wege, auf denen der Text im
+// Dokument landen kann; der vierte hält den Round-Trip fest.
+// ────────────────────────────────────────────────────────────────────
+
+describe("OP-030 — eine Gruppe wird über bpmn:CategoryValue beschriftet", () => {
+  const GROUP_XML = readFileSync(
+    join(__dirname, "../corpus/synth-data-objects-and-artifacts.bpmn"),
+    "utf8",
+  );
+
+  it("ändert den Wert der vorhandenen CategoryValue statt bo.name zu setzen", async () => {
+    const session = await openSession(GROUP_XML);
+    const group = session.shape("Group_1");
+    const bo = boOf(group)!;
+    expect(labelText(bo)).toBe("Kernprozess");
+
+    operate(session, "Gruppe umbenennen", () => {
+      session.modeling.updateLabel(group, "Kreditvergabe");
+    });
+
+    expect(labelText(bo)).toBe("Kreditvergabe");
+    // Der eigentliche Befund: `name` darf gar nicht erst entstehen. Ein
+    // `bo.name`, das nur im Speicher existiert, ist genau die Form von
+    // Datenverlust, die niemandem auffällt.
+    expect(Object.hasOwn(bo, "name")).toBe(false);
+    session.destroy();
+  });
+
+  it("legt für eine neue Gruppe Category und CategoryValue an", async () => {
+    const session = await openSession(GROUP_XML);
+    const group = operate(session, "Gruppe anlegen", () =>
+      session.modeling.createShape(
+        { type: "bpmn:Group" },
+        { x: 700, y: 500 },
+        session.root() as never,
+      ),
+    ) as unknown as BpmnShape;
+
+    expect(labelText(boOf(group))).toBe("");
+
+    operate(session, "neue Gruppe beschriften", () => {
+      session.modeling.updateLabel(group, "Nebenprozess");
+    });
+
+    const bo = boOf(group)!;
+    const value = bo["categoryValueRef"] as Record<string, unknown>;
+    expect(value?.["value"]).toBe("Nebenprozess");
+    // Die Kategorie muss ein rootElement sein, sonst schreibt `moddle` sie
+    // nicht mit und der Verweis zeigt beim nächsten Öffnen ins Leere.
+    const category = value["$parent"] as Record<string, unknown>;
+    expect(category["$type"]).toBe("bpmn:Category");
+    expect(
+      (session.definitions()["rootElements"] as unknown[]).includes(category),
+    ).toBe(true);
+    session.destroy();
+  });
+
+  it("legt für einen leeren Text KEINE Kategorie an", async () => {
+    const session = await openSession(GROUP_XML);
+    const rootsBefore = (session.definitions()["rootElements"] as unknown[])
+      .length;
+    const group = operate(session, "Gruppe anlegen", () =>
+      session.modeling.createShape(
+        { type: "bpmn:Group" },
+        { x: 700, y: 500 },
+        session.root() as never,
+      ),
+    ) as unknown as BpmnShape;
+
+    operate(session, "leer bestätigen", () => {
+      session.modeling.updateLabel(group, "   ");
+    });
+
+    expect(boOf(group)!["categoryValueRef"]).toBeUndefined();
+    expect((session.definitions()["rootElements"] as unknown[]).length).toBe(
+      rootsBefore,
+    );
+    session.destroy();
+  });
+
+  it("behält die Beschriftung über Schreiben und Wiedereinlesen", async () => {
+    const session = await openSession(GROUP_XML);
+    operate(session, "vorhandene Gruppe umbenennen", () => {
+      session.modeling.updateLabel(session.shape("Group_1"), "Kreditvergabe");
+    });
+    const neu = operate(session, "zweite Gruppe anlegen", () =>
+      session.modeling.createShape(
+        { type: "bpmn:Group" },
+        { x: 700, y: 500 },
+        session.root() as never,
+      ),
+    ) as unknown as BpmnShape;
+    operate(session, "zweite Gruppe beschriften", () => {
+      session.modeling.updateLabel(neu, "Nebenprozess");
+    });
+
+    const xml = await session.exportXml();
+    // Der Beweis am Dokument, nicht am Speicherbild: beide Texte müssen als
+    // `bpmn:categoryValue` im XML stehen.
+    expect(xml).toContain('value="Kreditvergabe"');
+    expect(xml).toContain('value="Nebenprozess"');
+    expect(xml).not.toContain('bpmn:group id="Group_1" name=');
+
+    const wieder = await openSession(xml);
+    expect(labelText(boOf(wieder.shape("Group_1")))).toBe("Kreditvergabe");
+    expect(labelText(boOf(wieder.shape(neu.id)))).toBe("Nebenprozess");
+    wieder.destroy();
     session.destroy();
   });
 });

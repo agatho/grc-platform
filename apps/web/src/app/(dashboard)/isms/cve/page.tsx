@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import type { CveDashboardKpis } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
 
@@ -90,23 +91,27 @@ function CveDashboardInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (statusFilter !== "__all__") params.set("status", statusFilter);
-      if (severityFilter !== "__all__") params.set("severity", severityFilter);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422 ⇒ die
+      // CVE-Trefferliste war leer, während die KPI-Kacheln darüber Zahlen
+      // zeigten. Eine leere Schwachstellenliste neben „14 offene CVEs" ist
+      // ein Widerspruch, den niemand als Ladefehler liest.
+      const params: Record<string, string> = {};
+      if (statusFilter !== "__all__") params.status = statusFilter;
+      if (severityFilter !== "__all__") params.severity = severityFilter;
 
-      const [kpiRes, matchRes] = await Promise.all([
+      const [kpiRes, matchRows] = await Promise.all([
         fetch("/api/v1/isms/cve/dashboard"),
-        fetch(`/api/v1/isms/cve/matches?${params.toString()}`),
+        fetchAllPages<CveMatch>("/api/v1/isms/cve/matches", { params }),
       ]);
 
       if (kpiRes.ok) {
         const kpiJson = await kpiRes.json();
         setKpis(kpiJson.data);
       }
-      if (matchRes.ok) {
-        const matchJson = await matchRes.json();
-        setMatches(matchJson.data ?? []);
-      }
+      setMatches(matchRows);
+    } catch (err) {
+      console.error("isms/cve: Treffer nicht geladen", err);
+      setMatches([]);
     } finally {
       setLoading(false);
     }

@@ -303,6 +303,21 @@ export interface ConformanceSummaryRow {
   readonly conformantTraces: number | null;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-014] Eine Zeile aus
+ * `process_conformance_result.deviation_edges` (Migration 0465).
+ *
+ * Optional in `OverlayQueryResult`, damit die Route sie nachreichen kann, ohne
+ * dass diese Abbildung sich ändert: fehlt die Abfrage, fehlt das Feld — und
+ * `deviations` bleibt weg, statt leer dazustehen.
+ */
+export interface ConformanceDeviationRow {
+  readonly fromElementId: string | null;
+  readonly toElementId: string | null;
+  readonly frequency: number | null;
+  readonly share: number | null;
+}
+
 export interface OverlayQueryResult {
   readonly steps: readonly StepRow[];
   readonly risks: readonly RiskRow[];
@@ -329,6 +344,11 @@ export interface OverlayQueryResult {
   readonly documents?: readonly DocumentRow[];
   readonly conformanceElements?: readonly ConformanceElementRow[];
   readonly conformanceSummary?: ConformanceSummaryRow | undefined;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-014] Abweichende Übergänge des jüngsten
+   * Analyselaufs. Optional — siehe `ConformanceDeviationRow`.
+   */
+  readonly conformanceDeviations?: readonly ConformanceDeviationRow[];
 }
 
 export interface BuildOverlayOptions {
@@ -377,7 +397,7 @@ export const MISSING_TODAY: ReadonlyArray<{
   {
     field: "diagram.conformance.deviations",
     reason:
-      "fitness_gaps (process_conformance_result) führt {activity, type, frequency, percentage} — einen Aktivitätsnamen mit Häufigkeit. Der Vertrag verlangt ein KANTENPAAR (fromElementId/toElementId). Aus einem Knoten ein Paar zu machen wäre geraten.",
+      "[ARCTOS-FULL-2026-08-31 · OP-014] Die Größe existiert seit Migration 0465 (process_conformance_result.deviation_edges) und wird vom Cron process-mining-conformance erhoben; buildDiagramOverlay gibt sie aus, sobald rows.conformanceDeviations gefüllt ist. Bis die Abfrage in der Route steht (Übergabe an Strang 1a, siehe docs/UMSETZUNG-WELLE-1B.md), bleibt das Feld weg — weg heißt hier: nicht erhoben, nicht leer behauptet. Der frühere Grund — fitness_gaps führt Knoten, der Vertrag verlangt ein Kantenpaar — ist damit erledigt.",
   },
   {
     field: "elements[].incidents, .workItems",
@@ -1320,6 +1340,34 @@ export function buildDiagramOverlay(
     if (typeof summaryRow.conformantTraces === "number") {
       summary.conformantTraces = summaryRow.conformantTraces;
     }
+    // [ARCTOS-FULL-2026-08-31 · OP-014] Die Abweichungen, die der Vertrag als
+    // Kantenpaar verlangt. Nur Zeilen mit BEIDEN Elementkennungen kommen
+    // durch: eine Kante mit einem unbekannten Ende liesse sich nicht
+    // zeichnen, und ein halber Pfeil wäre schlimmer als keiner.
+    const deviations = (rows.conformanceDeviations ?? [])
+      .map((row) => {
+        const from = nonEmpty(row.fromElementId);
+        const to = nonEmpty(row.toElementId);
+        if (!from || !to || typeof row.frequency !== "number") return undefined;
+        const edge: Mutable<
+          NonNullable<GrcConformanceSummary["deviations"]>[number]
+        > = {
+          fromElementId: from,
+          toElementId: to,
+          frequency: row.frequency,
+        };
+        if (typeof row.share === "number") edge.share = row.share;
+        return edge;
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== undefined)
+      // Deterministische Reihenfolge — siehe der Kopfkommentar von
+      // buildDiagramOverlay: gleiche Zeilen, gleiche Antwort.
+      .sort(
+        (a, b) =>
+          b.frequency - a.frequency ||
+          (a.fromElementId < b.fromElementId ? -1 : 1),
+      );
+    if (deviations.length > 0) summary.deviations = deviations;
     if (Object.keys(summary).length > 0) diagram.conformance = summary;
   }
 

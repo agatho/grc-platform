@@ -4,7 +4,6 @@ import {
   processVersion,
   processApprovalStep,
   notification,
-  userOrganizationRole,
 } from "@grc/db";
 import { transitionProcessStatusSchema } from "@grc/shared";
 import {
@@ -70,28 +69,34 @@ export const PUT = withErrorHandler(async function PUT(
   const currentStatus = existing.status as ProcessStatus;
   const targetStatus = body.data.status;
 
-  // Get user role for this org
-  const [userRole] = await db
-    .select({ role: userOrganizationRole.role })
-    .from(userOrganizationRole)
-    .where(
-      and(
-        eq(userOrganizationRole.userId, ctx.userId),
-        eq(userOrganizationRole.orgId, ctx.orgId),
-        isNull(userOrganizationRole.deletedAt),
-      ),
-    );
-
-  const role = userRole?.role ?? "viewer";
+  // [ARCTOS-FULL-2026-08-31 · OP-099] Dieselbe Einzelabfrage wie in der
+  // resolve-Route: die ERSTE Rollenzeile ohne ORDER BY entschied ueber den
+  // Statuswechsel. Der Index `uor_user_org_role_active_uniq` sortiert nach der
+  // Enum-Deklarationsreihenfolge von `user_role`, nicht nach Rechtestaerke —
+  // ein Nutzer mit `process_owner` und `auditor` wurde als `auditor` bewertet
+  // und bekam 403 auf einen Uebergang, den `process_owner` erlaubt.
+  //
+  // Eine Mitgliedschaft ist keine Rangfolge: der Nutzer HAT alle seine Rollen
+  // gleichzeitig. Der Uebergang ist deshalb erlaubt, sobald IRGENDEINE davon
+  // ihn erlaubt. `ctx.roles` liefert genau die Rollen dieser Org, frisch aus
+  // der Datenbank gelesen (apps/web/src/auth.ts, fetchFreshRoles) — dieselbe
+  // Quelle, gegen die `withAuth` oben schon geprueft hat.
+  const rolesInOrg = ctx.roles?.length ? ctx.roles : ["viewer"];
   const isReviewer = existing.reviewerId === ctx.userId;
 
-  // Validate transition
-  const validation = validateStatusTransition(
-    currentStatus,
-    targetStatus,
-    role,
-    isReviewer,
-  );
+  // Validate transition — erlaubt, wenn eine der gehaltenen Rollen es erlaubt.
+  // Bei Ablehnung wird die Meldung der ERSTEN Rolle zurueckgegeben; sie nennt
+  // den Uebergang, und der ist der eigentliche Grund.
+  let validation: { valid: boolean; error?: string } = { valid: false };
+  for (const candidate of rolesInOrg) {
+    validation = validateStatusTransition(
+      currentStatus,
+      targetStatus,
+      candidate,
+      isReviewer,
+    );
+    if (validation.valid) break;
+  }
 
   if (!validation.valid) {
     return Response.json({ error: validation.error }, { status: 403 });

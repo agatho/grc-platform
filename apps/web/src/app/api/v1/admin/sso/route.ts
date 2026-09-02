@@ -6,6 +6,7 @@ import {
   updateSsoConfigSchema,
   sealSecret,
 } from "@grc/shared";
+import { inspectIdpCertificate } from "@grc/auth/saml";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
@@ -27,6 +28,33 @@ function maskSsoSecret<T extends { oidcClientSecret: string | null }>(
   };
 }
 
+/**
+ * Zertifikatsstatus fuer die Betriebsansicht. Gibt `null` zurueck, wenn gar
+ * kein Zertifikat konfiguriert ist (OIDC-Betrieb), und einen `error`-Eintrag,
+ * wenn das Feld kein X.509-Zertifikat enthaelt — beides ist eine Aussage, ein
+ * fehlender Schluessel im JSON waere keine.
+ */
+function describeSamlCertificate(pem: string | null) {
+  if (!pem?.trim()) return null;
+  try {
+    const info = inspectIdpCertificate(pem);
+    return {
+      subject: info.subject,
+      issuer: info.issuer,
+      selfSigned: info.selfSigned,
+      validFrom: info.validFrom.toISOString(),
+      validTo: info.validTo.toISOString(),
+      daysUntilExpiry: info.daysUntilExpiry,
+      expired: info.expired,
+      notYetValid: info.notYetValid,
+      expiresSoon: info.expiresSoon,
+      certificateCount: info.certificateCount,
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
 // GET /api/v1/admin/sso — Get SSO configuration for current org
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
@@ -42,7 +70,17 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   }
 
   // Never return the OIDC client secret in full
-  return Response.json({ data: maskSsoSecret(config) });
+  return Response.json({
+    data: maskSsoSecret(config),
+    // [ARCTOS-FULL-2026-08-31 · OP-096] Der Ablauf des IdP-Zertifikats war bis
+    // hierher nirgends sichtbar: die Signaturpruefung akzeptierte ein
+    // abgelaufenes Zertifikat, und diese Ansicht zeigte nur den PEM-Block.
+    // Jetzt lehnt der Anmeldepfad ab (response-validator.ts) — damit das kein
+    // Ausfall ohne Vorwarnung wird, gehoert der Status DAHIN, wo der Betreiber
+    // das Zertifikat pflegt. `expiresSoon` ist die Zeile, die aus der Rotation
+    // einen geplanten Vorgang macht.
+    certificate: describeSamlCertificate(config.samlCertificate),
+  });
 });
 // POST /api/v1/admin/sso — Create SSO configuration
 export const POST = withErrorHandler(async function POST(req: Request) {

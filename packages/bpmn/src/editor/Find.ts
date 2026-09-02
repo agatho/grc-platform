@@ -35,6 +35,7 @@ import type {
   EventBusLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 export const FIND_CLASS = "arctos-bpmn-find";
 
@@ -243,7 +244,11 @@ export class DiagramFind {
     const open = this.open_;
     if (!open) return;
     const query = open.input.value;
-    open.matches = matchesFor(this.elementRegistry.getAll(), query);
+    // [ARCTOS-FULL-2026-08-31 · OP-033] Kein Treffer, den man nicht sehen
+    // kann. Sobald es einen Drill-down in Subprozesse gibt (OP-018), gehört
+    // die Suche zurückgedreht — dann soll sie finden UND die Ebene öffnen;
+    // die Begründung steht im Kopf von `visibility.ts`.
+    open.matches = matchesFor(visibleElements(this.elementRegistry), query);
     open.index = 0;
     const count = open.matches.length;
     open.status.textContent =

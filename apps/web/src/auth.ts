@@ -20,6 +20,15 @@ import { log } from "@/lib/logger";
 const ORG_COOKIE = "arctos-org-id";
 
 /**
+ * [ARCTOS-FULL-2026-08-31 · OP-085] Wie alt die JWT-Kopie der Rollen hoechstens
+ * werden darf. Sie ist das, was die Edge-Middleware sieht; der Node-Pfad
+ * (`withAuth`) liest ohnehin bei jedem Request frisch. Eine Minute ist der
+ * Kompromiss zwischen „die Middleware entscheidet auf altem Stand" und „jeder
+ * Request erzeugt eine zusaetzliche Abfrage".
+ */
+const ROLE_REFRESH_INTERVAL_MS = 60_000;
+
+/**
  * #SEC-AUTH-BOOTSTRAP — the `session` callback runs on every `/api/auth/session`
  * read (served by NextAuth's own handler, NOT wrapped by `withAuth`), so NO
  * request-scoped RLS context exists. Under the non-superuser runtime role
@@ -39,7 +48,18 @@ const ORG_COOKIE = "arctos-org-id";
  * gone or inactive, `disabled` is true and the session callback strips both the
  * roles and the org context, so `withAuth` can no longer authorise anything.
  */
-export type FreshRoleResult = { roles: RoleAssignment[]; disabled: boolean };
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-085] `sessionsValidFrom` kommt aus derselben
+ * Abfrage. Es ist die Sitzungs-Epoche aus Migration 0457: jedes JWT, dessen
+ * `iat` davor liegt, gilt als beendet. Sie mitzulesen kostet keinen zweiten
+ * Rundlauf — die `user`-Zeile wird fuer den Liveness-Check (S12-17) ohnehin
+ * gejoint.
+ */
+export type FreshRoleResult = {
+  roles: RoleAssignment[];
+  disabled: boolean;
+  sessionsValidFrom: Date | null;
+};
 
 async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
   const rows = await withUserReadContext(userId, (rdb) =>
@@ -48,6 +68,7 @@ async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
         orgId: userOrganizationRole.orgId,
         role: userOrganizationRole.role,
         lineOfDefense: userOrganizationRole.lineOfDefense,
+        sessionsValidFrom: userTable.sessionsValidFrom,
       })
       .from(userOrganizationRole)
       .innerJoin(userTable, eq(userTable.id, userOrganizationRole.userId))
@@ -83,7 +104,15 @@ async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
   );
 
   if (rows.length > 0) {
-    return { roles: rows as RoleAssignment[], disabled: false };
+    return {
+      roles: rows.map(({ orgId, role, lineOfDefense }) => ({
+        orgId,
+        role,
+        lineOfDefense,
+      })) as RoleAssignment[],
+      disabled: false,
+      sessionsValidFrom: rows[0].sessionsValidFrom ?? null,
+    };
   }
 
   // No rows means either "user has no role assignments" (legitimate) or
@@ -91,7 +120,10 @@ async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
   // assuming the benign case is exactly what kept dead sessions alive.
   const live = await withUserReadContext(userId, (rdb) =>
     rdb
-      .select({ id: userTable.id })
+      .select({
+        id: userTable.id,
+        sessionsValidFrom: userTable.sessionsValidFrom,
+      })
       .from(userTable)
       .where(
         and(
@@ -102,7 +134,11 @@ async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
       )
       .limit(1),
   );
-  return { roles: [], disabled: live.length === 0 };
+  return {
+    roles: [],
+    disabled: live.length === 0,
+    sessionsValidFrom: live[0]?.sessionsValidFrom ?? null,
+  };
 }
 
 // Build the provider list — Azure AD is only included when env vars are set
@@ -153,10 +189,34 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       // On explicit session.update(), refresh roles from DB so newly created
       // orgs (and any role changes) are reflected without re-login.
-      if (trigger === "update" && token.userId) {
+      //
+      // [ARCTOS-FULL-2026-08-31 · OP-085] Bis hierher war `trigger === "update"`
+      // die EINZIGE Auffrischung der JWT-Kopie, also nur nach einem
+      // ausdruecklichen `session.update()` im Client. Der Kommentar in
+      // `packages/auth/src/config.ts` behauptete, der rollierende Refresh
+      // (`updateAge`, 15 min) sorge dafuer, dass „die frisch gelesenen Rollen in
+      // die JWT-Kopie wandern, die die Middleware sieht" — das stimmte nicht:
+      // der rollierende Aufruf kommt OHNE Trigger hier an und lief in `return
+      // token` hinein. Die Edge-Middleware (HinSchG-Gatter, Modulsicht)
+      // entschied damit auf einer bis zu zwei Stunden alten Rollenliste.
+      //
+      // Jetzt wird bei JEDEM Durchlauf ohne frischen Anmeldevorgang
+      // nachgeladen, aber hoechstens einmal pro `ROLE_REFRESH_INTERVAL_MS`.
+      // Das Fenster begrenzt die Datenbanklast (der Callback laeuft pro
+      // Request) und macht die JWT-Kopie hoechstens eine Minute alt statt zwei
+      // Stunden. Der API-Verkehr war davon nie betroffen — `withAuth` liest
+      // ueber den `session`-Callback ohnehin frisch (S12-17).
+      const needsRefresh =
+        !!token.userId &&
+        (trigger === "update" ||
+          Date.now() - ((token.rolesRefreshedAt as number) ?? 0) >
+            ROLE_REFRESH_INTERVAL_MS);
+
+      if (needsRefresh) {
         const fresh = await fetchFreshRoles(token.userId as string);
         (token as Record<string, unknown>).roles = fresh.roles;
         (token as Record<string, unknown>).disabled = fresh.disabled;
+        (token as Record<string, unknown>).rolesRefreshedAt = Date.now();
       }
       return token;
     },
@@ -182,6 +242,29 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const fresh = await fetchFreshRoles(token.userId as string);
           roles = fresh.roles;
           disabled = fresh.disabled;
+
+          // [ARCTOS-FULL-2026-08-31 · OP-085] Sitzungs-Invalidierung.
+          //
+          // Frische Rollen zu lesen genuegt fuer den Entzug EINER Rolle, aber
+          // nicht fuer „dieser Zugang ist beendet": ein JWT bleibt bis zu zwei
+          // Stunden eine gueltige Anmeldung, und die JWT-Strategie hat keinen
+          // serverseitigen Sitzungsspeicher, in dem man eine einzelne Kennung
+          // sperren koennte. Migration 0457 fuehrt deshalb eine Epoche je
+          // Nutzer: wird eine Rolle vergeben oder entzogen, setzt die Route
+          // `user.sessions_valid_from = now()`, und jedes AELTERE Token faellt
+          // hier. `iat` steht im signierten Token, ist also nicht faelschbar.
+          //
+          // Die Wirkung ist bewusst dieselbe wie bei einem deaktivierten Konto
+          // (S12-17): leere Rollen, kein Org-Kontext, `withAuth` verweigert ab
+          // dem naechsten Request. Der Nutzer meldet sich neu an und bekommt
+          // ein Token mit neuem `iat` und dem aktuellen Rechtestand.
+          const issuedAt = typeof token.iat === "number" ? token.iat * 1000 : 0;
+          if (
+            fresh.sessionsValidFrom &&
+            issuedAt < fresh.sessionsValidFrom.getTime()
+          ) {
+            disabled = true;
+          }
         } catch (err) {
           // #DEP-CONFIG: structured log so the operator can grep
           // for `route:"auth.session"` + correlate with the user/org

@@ -95,10 +95,31 @@ export function deriveDedupeKey(
   now: Date = new Date(),
 ): string | null {
   if (window === "none") return null;
-  const subject = createHash("sha256")
-    .update(values.title ?? "")
-    .digest("hex")
-    .slice(0, 16);
+  // [ARCTOS-FULL-2026-08-31 · OP-105] Hier stand `sha256(title)`. Der Titel ist
+  // die gerenderte Fassung einer Meldung, nicht ihre Identität — und in 45 der
+  // 55 Aufrufstellen enthält er genau das, was sich zwischen zwei Läufen
+  // ändert: `DD reminder: … — ${daysUntilDeadline} days remaining`,
+  // `ESG Report 2026: Completeness at ${pct}%`, `[${urgencyLevel}] ISMS NC …`.
+  // Ein Titel, der herunterzählt, erzeugt jeden Tag einen neuen Schlüssel; der
+  // Wochenfensterschutz aus S10-10 lief für diese Meldungen ins Leere — genau
+  // die Alarmmüdigkeit, gegen die er gebaut wurde.
+  //
+  // `templateKey` benennt dieselbe Meldung stabil: er entscheidet, welcher
+  // Renderer sie ausgibt, also welche ART Meldung es ist. Zwei verschieden
+  // gemeinte Meldungen haben verschiedene templateKeys — gemessen über alle 55
+  // Aufrufstellen ist die einzige Doppelung `isms_cap_overdue`, und die beiden
+  // Stellen unterscheiden sich in `entityType`, der ohnehin im Schlüssel steht.
+  //
+  // Warum der Titel-Hash nicht ersatzlos verschwindet: 18 Aufrufstellen setzen
+  // keinen templateKey. Dort bleibt der Titel die einzige verfügbare
+  // Unterscheidung, und dort gilt weiter — lieber eine Zustellung zu viel als
+  // eine unterdrückte Fristmeldung.
+  const subject =
+    values.templateKey ??
+    createHash("sha256")
+      .update(values.title ?? "")
+      .digest("hex")
+      .slice(0, 16);
   return [
     values.type,
     values.entityType ?? "-",

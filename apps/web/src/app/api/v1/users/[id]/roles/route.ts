@@ -6,6 +6,9 @@ import { eq, and, isNull } from "drizzle-orm";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-085] Rollenaenderung beendet die Sitzung —
+// Begruendung und Ausfallrichtung stehen im Modulkopf.
+import { invalidateUserSessions } from "@/lib/session-invalidation";
 
 // GET /api/v1/users/:id/roles — list the roles assigned to a user
 // across organizations.
@@ -87,6 +90,7 @@ export const GET = withErrorHandler(async function GET(
     }),
   });
 });
+
 // POST /api/v1/users/:id/roles — Assign role (admin)
 export const POST = withErrorHandler(async function POST(
   req: Request,
@@ -148,6 +152,12 @@ export const POST = withErrorHandler(async function POST(
       .returning();
     return row;
   });
+
+  // Auch die VERGABE beendet die Sitzung: die neue Rolle wirkt sonst zwar im
+  // API-Pfad sofort, aber die Edge-Middleware und die Oberflaeche arbeiten bis
+  // zur naechsten Auffrischung auf der alten Liste — der Nutzer sieht das neue
+  // Modul nicht und meldet einen Fehler, den es nicht gibt.
+  await invalidateUserSessions(userId, ctx.userId);
 
   return Response.json({ data: created }, { status: 201 });
 });

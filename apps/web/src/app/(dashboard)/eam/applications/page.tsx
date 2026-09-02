@@ -45,10 +45,24 @@ function ApplicationsInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` steht hier bewusst
+      // stehen und ist trotzdem ein Befund: `GET /api/v1/eam/applications`
+      // benutzt `paginate()` NICHT, sondern klemmt selbst
+      // (`Math.min(parseInt(limit ?? "100"), 500)`) und kennt kein `page`.
+      // Diese Aufrufstelle läuft heute also — sie bricht in dem Moment, in dem
+      // die Route auf den Vertrag umgestellt wird. Der Wächter in
+      // `src/__tests__/lib/client-pagination-contract.test.ts` prüft genau
+      // diese Paarung und wird rot, sobald die Route `paginate()` benutzt.
+      // Die Umstellung der Route gehört Strang 1a (siehe UMSETZUNG-WELLE-1B.md).
       const res = await fetch("/api/v1/eam/applications?limit=200");
       if (res.ok) {
         const json = await res.json();
         setApps(json.data ?? []);
+      } else {
+        console.error(
+          "eam/applications: Anwendungsliste nicht geladen",
+          res.status,
+        );
       }
     } finally {
       setLoading(false);

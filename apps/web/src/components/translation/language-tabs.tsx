@@ -59,7 +59,9 @@ function getStatusBadge(status?: string): React.ReactNode {
   switch (status) {
     case "verified":
       return (
-        <Badge className="bg-green-100 text-green-700 border-green-200 ml-1 text-[10px] px-1 py-0">
+        <Badge // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+          className="bg-green-100 text-green-800 border-green-200 ml-1 text-[10px] px-1 py-0"
+        >
           <Check className="h-2.5 w-2.5" />
         </Badge>
       );

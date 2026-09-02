@@ -1,4 +1,4 @@
-import { db, process, processComment, userOrganizationRole } from "@grc/db";
+import { db, process, processComment } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -12,33 +12,31 @@ export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; commentId: string }> },
 ) {
-  const ctx = await withAuth();
+  // [ARCTOS-FULL-2026-08-31 · OP-099] Die Rollenpruefung stand hier als
+  // handgeschriebene Einzelabfrage: `const [role] = await db.select(...)` ohne
+  // ORDER BY und ohne Filter auf den gesuchten Rollenwert. Sie nahm damit
+  // IRGENDEINE der Mitgliedschaften des Nutzers in dieser Org und verwarf die
+  // uebrigen. Welche das ist, entscheidet der Ausfuehrungsplan: heute ein
+  // Index-Only-Scan ueber `uor_user_org_role_active_uniq (user_id, org_id,
+  // role)`, also die DEKLARATIONSREIHENFOLGE des Enums `user_role` — nicht die
+  // Rechtestaerke. Ein Nutzer mit `process_owner` UND `auditor` bekam so
+  // `auditor` zurueck (auditor steht an Position 4, process_owner an 6) und
+  // damit eine 403 auf eine Aktion, zu der er berechtigt ist. Bei einer
+  // anderen Statistik waere es ein Seq Scan und damit die Heap-Reihenfolge.
+  //
+  // `withAuth(...)` prueft gegen ALLE Rollen des Nutzers in der aktuellen Org
+  // (requireRole -> roles.some), liest sie frisch aus der Datenbank und ist
+  // die Stelle, an der jede andere Route dieselbe Frage stellt. Damit
+  // verschwindet zugleich der zweite Mangel der Einzelabfrage: sie lief VOR
+  // dem zentralen Rollenboden und konnte nicht von den Custom-Rollen (S02-02)
+  // profitieren.
+  const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
   const { id, commentId } = await params;
-
-  // Check user has process_owner or admin role
-  const [role] = await db
-    .select({ role: userOrganizationRole.role })
-    .from(userOrganizationRole)
-    .where(
-      and(
-        eq(userOrganizationRole.userId, ctx.userId),
-        eq(userOrganizationRole.orgId, ctx.orgId),
-        isNull(userOrganizationRole.deletedAt),
-      ),
-    );
-
-  const userRole = role?.role ?? "viewer";
-  if (userRole !== "admin" && userRole !== "process_owner") {
-    return Response.json(
-      { error: "Only admin or process_owner can resolve comments" },
-      { status: 403 },
-    );
-  }
 
   // Verify process exists
   const [proc] = await db

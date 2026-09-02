@@ -510,7 +510,9 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                       ) && (
                         <Badge
                           variant="outline"
-                          className="text-[8px] bg-red-50 text-red-600 border-red-200 shrink-0"
+                          // [ARCTOS-FULL-2026-08-31 · OP-049] red-600 auf red-50 = 4,36:1, und
+                          // bei 8 px greift keine Grosstext-Ausnahme.
+                          className="text-[8px] bg-red-50 text-red-700 border-red-200 shrink-0"
                         >
                           Critical
                         </Badge>
@@ -538,9 +540,11 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                         variant="outline"
                         className={`text-[8px] ${
                           tk.status === "done"
-                            ? "bg-green-50 text-green-600"
+                            ? // [ARCTOS-FULL-2026-08-31 · OP-049] 3,07:1 bzw. 4,36:1 auf den
+                              // sehr hellen -50-Flächen, bei 8 px Schriftgrösse.
+                              "bg-green-50 text-green-700"
                             : tk.status === "overdue"
-                              ? "bg-red-50 text-red-600"
+                              ? "bg-red-50 text-red-700"
                               : "bg-gray-50 text-gray-600"
                         }`}
                       >

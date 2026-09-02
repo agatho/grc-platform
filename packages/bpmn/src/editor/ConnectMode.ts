@@ -39,6 +39,7 @@ import type {
   RulesLike,
   SelectionLike,
 } from "./types";
+import { visibleElements } from "./visibility";
 
 export const CANDIDATE_MARKER = "arctos-connect-candidate";
 
@@ -99,16 +100,17 @@ export class ConnectMode {
   start(source: BpmnElement): boolean {
     const candidates = this.sortByDistance(
       source,
-      this.elementRegistry
-        .getAll()
-        .filter(
-          (target) =>
-            target !== source &&
-            isConnectable(target) &&
-            isAllowed(
-              this.rules.allowed("connection.create", { source, target }),
-            ),
-        ),
+      // [ARCTOS-FULL-2026-08-31 · OP-033] Ein Ziel, das der Benutzer nicht
+      // sieht, kann er nicht wählen wollen — und die Kante liefe quer in
+      // einen zugeklappten Subprozess hinein.
+      visibleElements(this.elementRegistry).filter(
+        (target) =>
+          target !== source &&
+          isConnectable(target) &&
+          isAllowed(
+            this.rules.allowed("connection.create", { source, target }),
+          ),
+      ),
     );
     return this.begin(
       { kind: "connect", source },
@@ -126,7 +128,8 @@ export class ConnectMode {
     const other = end === "source" ? connection.target : connection.source;
     const candidates = this.sortByDistance(
       connection,
-      this.elementRegistry.getAll().filter((element) => {
+      visibleElements(this.elementRegistry).filter((element) => {
+        // [ARCTOS-FULL-2026-08-31 · OP-033] wie in `start()`.
         if (!isConnectable(element)) return false;
         if (element === other) return false;
         const source = end === "source" ? element : connection.source;

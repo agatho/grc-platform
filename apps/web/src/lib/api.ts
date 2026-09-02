@@ -13,6 +13,7 @@ import {
   requiresPlatformAdmin,
   DEFAULT_MUTATING_ROLES,
 } from "@/lib/module-guard";
+import { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE } from "@/lib/pagination-contract";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -547,12 +548,72 @@ export async function checkCustomRoleModuleAccess(
 // do meaningful state transitions. Both fields land in the audit_log
 // row written by the trigger:
 //   actionDetail → audit_log.action_detail (varchar 500, summary)
-//   reason       → audit_log.metadata.reason (full text, no length cap)
+//   reason       → audit_log.metadata.reason
 // Callers omit them for trivial CRUD; state-machine transitions
 // should set both for compliance traceability.
 export interface AuditAnnotation {
   actionDetail?: string;
   reason?: string;
+}
+
+/**
+ * Grösste Länge einer Begründung in `audit_log.metadata`.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-124] Vorher: „full text, no length cap".
+ */
+export const MAX_AUDIT_REASON_LENGTH = 500;
+
+/**
+ * Entfernt aus einer Audit-Begründung, was ein Löschantrag später nicht mehr
+ * herausbekommt.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-124]
+ *
+ * Warum das nötig ist, und zwar genau hier: `audit_log.metadata` ist unter
+ * Hash-Formel v4 **direkte** Hash-Eingabe (Migration 0400,
+ * `entry_hash = SHA256(… | metadata | …)`). Alles andere Personenbezogene im
+ * Audit-Eintrag steckt hinter dem `content_commitment` — `changes`,
+ * `user_email`, `user_name`, `entity_title` — und genau deshalb kann
+ * `tombstone_audit_entry()` es überschreiben, ohne die Kette zu brechen.
+ * `metadata` kann es nicht: jede Änderung dort ändert `entry_hash`, und der
+ * Guard `audit_log_tombstone_only_guard()` lässt sie folgerichtig gar nicht
+ * erst zu.
+ *
+ * Gemessen: `POST /api/v1/isms/incidents/{id}/notify-authority` nimmt
+ * `reason` als `z.string().min(1).max(5000)` vom Aufrufer entgegen und reicht
+ * es unverändert hierher. Steht darin eine E-Mail-Adresse, überlebt sie eine
+ * DSGVO-Art.-17-Löschung — dauerhaft, in einer Tabelle, aus der per
+ * Konstruktion nichts gelöscht werden kann.
+ *
+ * Warum bereinigen und nicht ablehnen: Die vollständige Begründung geht
+ * dadurch nicht verloren. Sie steht in der Fachzeile selbst
+ * (`security_incident.notification_reason`) und im `changes`-Diff desselben
+ * Audit-Eintrags — beides redigierbar. Was hier steht, ist eine **Kopie**;
+ * eine unlöschbare Kopie eines löschbaren Feldes ist der ganze Defekt. Eine
+ * Ablehnung würde dagegen einen rechtmässigen Vorgang (die Meldung an die
+ * Aufsichtsbehörde) an der Formulierung seiner Begründung scheitern lassen.
+ *
+ * Was entfernt wird, ist bewusst eng: zwei Muster, die sich mit hoher
+ * Trefferschärfe erkennen lassen und die den Grossteil der Art.-17-Fälle
+ * ausmachen. Was NICHT erkannt wird — ein Klarname etwa —, bleibt eine
+ * benannte Lücke; die vollständige Lösung ist Hash-v5, die `metadata` unter
+ * das `content_commitment` zieht (Übergabe, siehe docs/UMSETZUNG-WELLE-1B.md).
+ */
+export function sanitiseAuditReason(reason: unknown): string {
+  if (typeof reason !== "string") return "";
+  return (
+    reason
+      // E-Mail-Adressen.
+      .replace(/[^\s<>()[\],;:"]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g, "[E-Mail]")
+      // Ziffernfolgen ab sieben Stellen: Telefon-, Versicherungs-,
+      // Personal-, Steuer- und Kontonummern. Kürzere Zahlen sind
+      // Aktenzeichen, Beträge und Fristen — die trägt eine Begründung zu
+      // Recht.
+      .replace(/\d[\d\s/.-]{5,}\d/g, "[Nummer]")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, MAX_AUDIT_REASON_LENGTH)
+  );
 }
 
 /** Wrap a mutation in a transaction with audit session variables. */
@@ -582,8 +643,12 @@ export async function withAuditContext<T>(
     await tx.execute(
       sql`SELECT set_config('app.audit_action_detail', ${annotation?.actionDetail ?? ""}, true)`,
     );
+    // [ARCTOS-FULL-2026-08-31 · OP-124] Der einzige Schreibpfad nach
+    // `audit_log.metadata.reason` — und damit die einzige Stelle, an der sich
+    // verhindern lässt, dass Klartext in eine nicht redigierbare Hash-Eingabe
+    // gerät. Begründung siehe `sanitiseAuditReason`.
     await tx.execute(
-      sql`SELECT set_config('app.audit_reason', ${annotation?.reason ?? ""}, true)`,
+      sql`SELECT set_config('app.audit_reason', ${sanitiseAuditReason(annotation?.reason)}, true)`,
     );
     return fn(tx);
   });
@@ -613,8 +678,12 @@ export async function withReadContext<T>(
 // Pagination contract — surfaces structured errors instead of silent
 // coercion (over-night QA #NIGHT-057..060):
 //   - limit=0 / -1 / "abc" → throw PaginationError (was: silently → 1)
-//   - limit > MAX_PAGE_SIZE → silently capped (well-behaved clients
-//     should respect the limit, but we don't refuse the request)
+//   - limit > MAX_PAGE_SIZE → throw PaginationError (→ 422)
+//     [ARCTOS-FULL-2026-08-31 · OP-050] Hier stand bis heute das Gegenteil
+//     dessen, was der Code tut ("silently capped … we don't refuse the
+//     request"). Die Zeile ist die plausibelste Quelle der 30 Aufrufstellen
+//     mit `limit=200`: sie sagt dem Leser zu, eine zu grosse Zahl sei
+//     harmlos. Sie war seit #NIGHT-059 falsch.
 //   - page=0 / -1 / "abc"  → throw PaginationError (was: silently → 1)
 //   - offset=N (no page)   → derive page = floor(N/limit)+1; throw if
 //                            offset isn't a clean page boundary so the
@@ -639,8 +708,11 @@ export function searchParamsToObject(
   return out;
 }
 
-export const MAX_PAGE_SIZE = 100;
-export const DEFAULT_PAGE_SIZE = 20;
+// [ARCTOS-FULL-2026-08-31 · OP-050] Die Zahlen stehen jetzt in
+// `lib/pagination-contract.ts` — einem Blattmodul ohne Importe, damit auch
+// Client-Code sie lesen kann, ohne `@/auth` und `@grc/db` ins Browser-Bundle
+// zu ziehen. Re-Export, damit die Routen ihren Importpfad behalten.
+export { MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE };
 
 export class PaginationError extends Error {
   readonly field: string;

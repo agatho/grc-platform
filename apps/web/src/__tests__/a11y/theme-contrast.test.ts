@@ -173,6 +173,13 @@ function walk(dir: string, out: string[] = []): string[] {
  *
  * This is usage-driven, not a fixed list: a newly added `text-gray-400` on the
  * default surface is caught the moment it is written.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-049] Der übersprungene Eimer ist nicht mehr
+ * ungeprüft: `contrast-pairs.test.ts` nimmt genau die Klassenzeichenketten,
+ * die hier wegen ihres eigenen `bg-*` ausgelassen werden, und misst
+ * Vordergrund gegen Hintergrund statt gegen die Fläche. Dort lag
+ * `bg-red-500 text-white` — die Kombination aus E2E-TRIAGE-4 §6.2.2, von der
+ * nur der Zähler an der Glocke behoben war.
  */
 function textColourTokensUsed(): {
   light: Set<string>;

@@ -62,8 +62,17 @@ const DEMO_SEEDS = [
   "seed_demo_04_tprm_contracts.sql", // vendors, contracts, SLA
   "seed_demo_05_bcms.sql", // BIA, crisis, strategies, exercises
   "seed_demo_06_kris.sql", // KRIs + measurements
-  "seed_demo_07_tasks_findings.sql", // tasks, findings
+  // [ARCTOS-FULL-2026-08-31 · OP-111] _10 steht vor _07, weil _07 im eigenen
+  // Kopf "Depends on: seed_demo_10_control_tests.sql" schreibt und
+  // `finding.control_test_id` auf dessen Zeilen zeigt. Die falsche Reihenfolge
+  // fiel nie auf, weil `DISABLE TRIGGER ALL` auch die RI-Trigger abgeschaltet
+  // hat: der Fremdschlüssel wurde beim INSERT nicht geprüft und stimmte erst
+  // hinterher wieder, als _10 die fehlenden Zeilen nachlieferte. Mit
+  // `DISABLE TRIGGER USER` prüft die Datenbank wieder, und die Reihenfolge
+  // muss stimmen — gemessen: sonst bricht _07 mit
+  // `finding_control_test_id_control_test_id_fk` ab.
   "seed_demo_10_control_tests.sql", // control test runs
+  "seed_demo_07_tasks_findings.sql", // tasks, findings
   "seed_demo_11_extended.sql", // 15 additional risks, 10 controls, 5 findings
   "seed_tag_definitions.sql", // predefined tag definitions per org
   "seed_emission_factors_eu.sql", // EU emission factors (DE/AT/CH/EU/UK/FR/NL/PL/IT/ES)
@@ -146,9 +155,46 @@ async function main() {
     "audit",
     "audit_plan",
   ];
+  // [ARCTOS-FULL-2026-08-31 · OP-111] Warum hier gemerkt und nicht pauschal
+  // wieder eingeschaltet wird:
+  //
+  // `ENABLE TRIGGER ALL` kennt nur einen Zielzustand — 'O' (origin). Ein
+  // Trigger, der vorher `ENABLE ALWAYS` ('A') war, kommt als origin-only
+  // zurück und feuert danach unter `session_replication_role = 'replica'`
+  // NICHT mehr. Genau so sind die Guards gebaut, die den Audit-Trail und die
+  // Hash-Kette schützen (`audit_log_refuse_delete_trg`,
+  // `audit_anchor_append_only_trg`, `document_version_file_immutable_trg`, …):
+  // sie sind `ENABLE ALWAYS`, weil ein Replikationspfad sie sonst umgeht.
+  //
+  // Auf den 13 Tabellen unten liegt heute kein solcher Guard — die Falle ist
+  // gestellt, aber noch nicht zugeschnappt. Dieselbe Falle hat in WP11
+  // (S11-11) bereits zugeschnappt, in `tests/rls/tenant-isolation-cleanup.sql`,
+  // und der Fehler tauchte damals in einer ganz anderen Suite auf. Ein Seed,
+  // der eine Sicherheitskontrolle dauerhaft entschärft, ist schlimmer als ein
+  // Seed, der nicht durchläuft.
+  //
+  // Zweite Änderung: `DISABLE TRIGGER USER` statt `… ALL`. `ALL` schaltet auch
+  // die internen RI-Constraint-Trigger ab — auf `document` allein 36 Stück,
+  // gemessen auf einer von Null migrierten Datenbank —,
+  // also läuft der komplette Demo-Seed ohne Fremdschlüsselprüfung und legt
+  // Zeilen an, die das Schema verbietet. Gewollt war laut Kommentar oben nur
+  // der Audit-Trigger; `USER` trifft genau die.
+  const triggerState = new Map<string, string>(); // "tabelle\ttrigger" → tgenabled
   for (const table of triggerTables) {
     try {
-      await client.unsafe(`ALTER TABLE "${table}" DISABLE TRIGGER ALL`);
+      const rows = await client.unsafe(
+        `SELECT t.tgname, t.tgenabled::text AS tgenabled
+           FROM pg_trigger t
+          WHERE t.tgrelid = $1::regclass AND NOT t.tgisinternal`,
+        [`public.${table}`],
+      );
+      for (const r of rows as unknown as Array<{
+        tgname: string;
+        tgenabled: string;
+      }>) {
+        triggerState.set(`${table}\t${r.tgname}`, r.tgenabled);
+      }
+      await client.unsafe(`ALTER TABLE "${table}" DISABLE TRIGGER USER`);
     } catch {
       /* table may not exist */
     }
@@ -173,12 +219,29 @@ async function main() {
     }
   }
 
-  // Re-enable triggers
-  for (const table of triggerTables) {
+  // [ARCTOS-FULL-2026-08-31 · OP-111] Zustand je Trigger zurücksetzen:
+  // 'A' bleibt 'A', 'R' bleibt 'R', 'D' bleibt 'D'. Trigger, die beim
+  // Abschalten noch nicht existierten, bleiben unberührt — ein Seed soll
+  // nichts einschalten, was er nicht ausgeschaltet hat.
+  const RESTORE: Record<string, string> = {
+    A: "ENABLE ALWAYS",
+    R: "ENABLE REPLICA",
+    D: "DISABLE",
+    O: "ENABLE",
+  };
+  for (const [key, prev] of triggerState) {
+    const [table, tgname] = key.split("\t");
     try {
-      await client.unsafe(`ALTER TABLE "${table}" ENABLE TRIGGER ALL`);
-    } catch {
-      /* table may not exist */
+      await client.unsafe(
+        `ALTER TABLE "${table}" ${RESTORE[prev] ?? "ENABLE"} TRIGGER "${tgname}"`,
+      );
+    } catch (err) {
+      // Sichtbar machen: ein nicht wiederhergestellter Guard ist genau der
+      // Zustand, den dieser Block verhindern soll.
+      console.error(
+        `  ✗ Trigger ${table}.${tgname} nicht wiederhergestellt:`,
+        (err as Error).message,
+      );
     }
   }
 

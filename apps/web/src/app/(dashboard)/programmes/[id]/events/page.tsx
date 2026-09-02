@@ -30,12 +30,17 @@ export default function EventsPage({
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] wie eam/*: die Route klemmt selbst
+      // (`Math.min(500, …)`) und benutzt `paginate()` nicht. Kein 422 heute,
+      // kein Vertrag morgen. Umstellung der Route: Strang 1a.
       const r = await fetch(
         `/api/v1/programmes/journeys/${id}/events?limit=200`,
       );
       if (r.ok) {
         const json = await r.json();
         if (!cancelled) setEvents(json.data ?? []);
+      } else {
+        console.error("programmes/events: Ereignisse nicht geladen", r.status);
       }
     })();
     return () => {

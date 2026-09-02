@@ -19,14 +19,29 @@ export const authConfig: NextAuthConfig = {
   //
   // Now: a 2-hour ABSOLUTE lifetime, rolled forward whenever an active session
   // is refreshed (`updateAge` = 15 min). An idle session dies after 2 hours; an
-  // active one keeps working. `updateAge` also re-issues the token regularly,
-  // which is what makes the freshly read roles in `apps/web/src/auth.ts`
-  // propagate into the JWT copy the middleware sees.
+  // active one keeps working.
   //
-  // JWT strategy still cannot revoke a token server-side; the compensating
-  // controls are the `isActive`/`deletedAt` check on every authenticated
-  // request (`fetchFreshRoles` in apps/web/src/auth.ts) and the Node-runtime
-  // mirror of the HinSchG gate in `withAuth`.
+  // [ARCTOS-FULL-2026-08-31 · OP-085] Hier stand weiter: "`updateAge` also
+  // re-issues the token regularly, which is what makes the freshly read roles
+  // in `apps/web/src/auth.ts` propagate into the JWT copy the middleware sees."
+  // Das war falsch. Der rollierende Refresh ruft den `jwt`-Callback OHNE
+  // `trigger` auf, und der Callback lud die Rollen ausschliesslich bei
+  // `trigger === "update"` nach — also nur nach einem ausdruecklichen
+  // `session.update()` im Client. Die JWT-Kopie blieb bis zum Ablauf der
+  // Sitzung auf dem Stand der Anmeldung, und die Edge-Middleware entschied ihr
+  // HinSchG-Gatter darauf. Der Kommentar beschrieb ein Verhalten, das der Code
+  // nicht hatte — in einem GRC-Produkt der schwerere Mangel, weil ein Pruefer
+  // sich darauf verlaesst.
+  //
+  // Behoben in `apps/web/src/auth.ts`: der `jwt`-Callback frischt jetzt
+  // zeitgesteuert nach (`ROLE_REFRESH_INTERVAL_MS`, 60 s).
+  //
+  // Und die JWT-Strategie kann eine ausgestellte Sitzung jetzt DOCH beenden:
+  // `user.sessions_valid_from` (Migration 0457) ist eine Epoche je Nutzer;
+  // jedes Token mit aelterem `iat` wird im `session`-Callback abgelehnt. Die
+  // uebrigen Kontrollen bleiben: der `isActive`/`deletedAt`-Check bei jedem
+  // authentifizierten Request und die Node-Spiegelung des HinSchG-Gatters in
+  // `withAuth`.
   session: {
     strategy: "jwt",
     maxAge: 2 * 60 * 60, // 2h absolute
