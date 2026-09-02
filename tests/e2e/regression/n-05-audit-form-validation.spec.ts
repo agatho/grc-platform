@@ -57,10 +57,23 @@ test("W22-C1-05: Audit-Create UI form — required validation + happy path + per
   expect(badEnum.status).toBe(422);
 
   // Step 5: persistence
-  await page.goto(`/audit-mgmt/audits/${auditId}`);
+  //
+  // [E2E-TRIAGE-2026-09-02] Was `/audit-mgmt/audits/${auditId}`. There is no
+  // such route — `app/(dashboard)/audit-mgmt/` contains a single `page.tsx` and
+  // no `audits/` segment at all — so this navigated to the 404 page and the
+  // assertion below reported `expected "E2E-N5-…", received "404·"`: a wrong
+  // URL in the spec, reported as a persistence failure. The audit detail view
+  // is `app/(dashboard)/audit/executions/[id]/page.tsx`, which renders exactly
+  // the `audit` row this test creates via `/api/v1/audit-mgmt/audits`. The
+  // assertion is unchanged.
+  await page.goto(`/audit/executions/${auditId}`);
   await page
     .waitForLoadState("networkidle", { timeout: 15_000 })
     .catch(() => {});
+  expect(
+    new URL(page.url()).pathname,
+    "navigation did not land on the audit detail route",
+  ).toBe(`/audit/executions/${auditId}`);
   const pageText = await page.locator("body").innerText();
   expect(pageText).toContain(title);
 });

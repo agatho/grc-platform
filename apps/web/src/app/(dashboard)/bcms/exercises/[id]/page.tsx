@@ -373,7 +373,7 @@ function ExerciseDetailInner() {
                 className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4"
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}
                 >
                   {obj.met ? (
                     <CheckCircle size={14} />

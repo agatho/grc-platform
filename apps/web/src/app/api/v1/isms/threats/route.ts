@@ -67,7 +67,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 });
 
 // POST /api/v1/isms/threats
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -99,4 +99,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

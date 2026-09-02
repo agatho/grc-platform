@@ -178,7 +178,7 @@ export default function RisksPage() {
 
 function RisksPageInner() {
   const t = useTranslations("risk");
-  const _tActions = useTranslations("actions");
+  const tActions = useTranslations("actions");
   const router = useRouter();
   const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
@@ -642,13 +642,22 @@ function RisksPageInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] Icon-only: with no text child its
+              accessible name is empty, which axe reports as `button-name`,
+              impact CRITICAL, on /risks. */}
           <Button
             variant="outline"
             size="sm"
+            aria-label={tActions("refresh")}
+            title={tActions("refresh")}
             onClick={() => fetchRisks()}
             disabled={loading}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              aria-hidden="true"
+              className={loading ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/risks/new")}>
             <Plus size={16} />
@@ -696,7 +705,10 @@ function RisksPageInner() {
 
             {/* Status */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectTrigger
+                className="w-[140px] h-8 text-xs"
+                aria-label={t("form.status")}
+              >
                 <SelectValue placeholder={t("form.status")} />
               </SelectTrigger>
               <SelectContent>
@@ -713,7 +725,10 @@ function RisksPageInner() {
 
             {/* Category */}
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectTrigger
+                className="w-[140px] h-8 text-xs"
+                aria-label={t("form.category")}
+              >
                 <SelectValue placeholder={t("form.category")} />
               </SelectTrigger>
               <SelectContent>
@@ -731,7 +746,10 @@ function RisksPageInner() {
             {/* Owner — wider trigger so "Alle Verantwortlichen" doesn't truncate (QA-007) */}
             {owners.length > 0 && (
               <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-                <SelectTrigger className="w-[200px] h-8 text-xs">
+                <SelectTrigger
+                  className="w-[200px] h-8 text-xs"
+                  aria-label={t("form.owner")}
+                >
                   <SelectValue placeholder={t("form.owner")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -782,7 +800,10 @@ function RisksPageInner() {
               <Select
                 onValueChange={(v) => handleBulkStatusChange(v as RiskStatus)}
               >
-                <SelectTrigger className="w-[160px] h-7 text-xs">
+                <SelectTrigger
+                  className="w-[160px] h-7 text-xs"
+                  aria-label={t("bulk.statusChange")}
+                >
                   <SelectValue placeholder={t("bulk.statusChange")} />
                 </SelectTrigger>
                 <SelectContent>

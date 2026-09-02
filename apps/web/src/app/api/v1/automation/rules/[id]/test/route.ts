@@ -3,6 +3,13 @@ import { automationDryRunSchema } from "@grc/shared";
 import { AutomationEngine } from "@grc/automation";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02 · C-10] `withErrorHandler` is what opens the
+// `requestDbStorage.run(...)` frame that `withAuth` mutates with the
+// org-pinned connection (apps/web/src/lib/api-wrapper.ts). Without it the
+// handler's queries run on the context-less base pool and RLS filters every
+// row — the C-01 shape of the first triage round, which this file and 14 other
+// route files were missed by.
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // Stub services for dry-run — no real actions executed
 const dryRunServices = {
@@ -15,7 +22,7 @@ const dryRunServices = {
 };
 
 // POST /api/v1/automation/rules/:id/test — Dry-run test (admin only)
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -78,4 +85,4 @@ export async function POST(
     console.error("[automation/rules/[id]/test] dry-run failed", err);
     return Response.json({ error: "Dry-run failed" }, { status: 500 });
   }
-}
+});

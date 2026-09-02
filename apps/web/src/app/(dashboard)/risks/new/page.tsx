@@ -391,7 +391,18 @@ function NewRiskForm() {
                   "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                   isActive && "bg-slate-900 text-white",
                   isComplete && "bg-emerald-100 text-emerald-800",
-                  !isActive && !isComplete && "bg-gray-100 text-gray-400",
+                  // [E2E-TRIAGE-2026-09-02 · C-05b] Was `text-gray-400`. That
+                  // token is 4.47:1 on `bg-gray-100` — axe measures exactly
+                  // that on this page ("insufficient color contrast of 4.47,
+                  // foreground #757069, background #f6f4f2, 14px"), which is a
+                  // WCAG 1.4.3 AA failure on a 14px label. `gray-400` cannot be
+                  // darkened far enough to fix this at the token level without
+                  // passing `gray-500` (4.61:1 there) and collapsing the
+                  // hierarchy — it is simply not a body-text colour on a
+                  // gray-100 fill. `gray-600` is 6.94:1 and still reads as the
+                  // muted, not-yet-reached step next to the active
+                  // (`slate-900`) and completed (`emerald-800`) ones.
+                  !isActive && !isComplete && "bg-gray-100 text-gray-600",
                 )}
               >
                 {isComplete ? (

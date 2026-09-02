@@ -296,6 +296,35 @@ export interface RateLimitPolicy {
  *   * WP8 — bulk export, DSR/whistleblower intake and the portals.
  */
 const POLICIES: RateLimitPolicy[] = [
+  // ── Session-bound, credential-free: NOT an authentication attempt ───
+  //
+  // [E2E-TRIAGE-2026-09-02 · C-12] `/api/v1/auth/switch-org` matched the
+  // `/api/v1/auth/` prefix below and therefore shared the 10-per-minute,
+  // ADDRESS-keyed, fail-closed login bucket. It is not a login: it requires an
+  // established session, presents no credential, and only rewrites the active
+  // org cookie after checking the target against the session's own role list
+  // (`apps/web/src/app/api/v1/auth/switch-org/route.ts`).
+  //
+  // The consequence was measured on the running instance: `E2E-401` received
+  // `429` switching into the organisation its own session was already in, and
+  // three later specs timed out on the login form because the shared address
+  // budget was already spent. In production the same shape is worse — eleven
+  // org switches a minute from one office address locked EVERYONE behind that
+  // address out of logging in, and it is fail-closed, so there is no degraded
+  // mode to fall back to.
+  //
+  // Own policy, subject-keyed (the middleware passes the verified session id),
+  // and deliberately still capped: an authenticated user can rewrite their own
+  // org cookie as often as they like without being able to spend anyone else's
+  // budget. Must stay ABOVE `/api/v1/auth/` — `policyForPath` takes the first
+  // prefix match.
+  {
+    prefix: "/api/v1/auth/switch-org",
+    name: "session-switch",
+    limit: LIMITS.DEFAULT,
+    failClosed: false,
+  },
+
   // ── Authentication: fail-closed, address-keyed ─────────────────────
   {
     prefix: "/api/auth/callback",
@@ -428,7 +457,9 @@ export interface RequestLimitVerdict {
  * `subjectId` — when the caller knows the authenticated principal, the
  * bucket is keyed on it rather than the address, so one user behind a shared
  * NAT cannot exhaust everyone else's budget. Anonymous paths (login, portal,
- * intake) stay address-keyed; that is the whole point of them.
+ * intake) stay address-keyed; that is the whole point of them, and a request
+ * that PRESENTS a credential must not be able to leave that bucket by also
+ * carrying a session (see the `session-switch` policy for the converse case).
  */
 export async function checkRequestRateLimit(
   req: Request,

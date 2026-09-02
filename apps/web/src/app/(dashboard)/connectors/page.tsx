@@ -86,7 +86,7 @@ export default function ConnectorDashboardPage() {
     active: "bg-green-100 text-green-900",
     inactive: "bg-gray-100 text-gray-600",
     error: "bg-red-100 text-red-900",
-    disabled: "bg-gray-100 text-gray-400",
+    disabled: "bg-gray-100 text-gray-600",
     pending_setup: "bg-yellow-100 text-yellow-900",
   };
 

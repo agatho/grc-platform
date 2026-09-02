@@ -1382,19 +1382,29 @@ function DataTableWithRowIndex<TData>({
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] Icon-only buttons need an
+              accessible name (axe `button-name`, impact critical). This page
+              carries a private copy of the pagination block from
+              components/ui/data-table.tsx, which is fixed the same way. */}
           <button
+            type="button"
+            aria-label="Previous page"
+            title="Previous page"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button
+            type="button"
+            aria-label="Next page"
+            title="Next page"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -84,7 +84,7 @@ export default function ThreatLandscapePage() {
       case "yellow":
         return "bg-yellow-300 text-black";
       default:
-        return "bg-gray-100 text-gray-400";
+        return "bg-gray-100 text-gray-600";
     }
   };
 

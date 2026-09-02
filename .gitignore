@@ -80,3 +80,25 @@ coverage/
 playwright-report/
 test-results/
 .turbo/
+
+# [E2E-TRIAGE-2026-09-02 · C-15] Diese Ausnahme MUSS nach `**/coverage/`
+# stehen. In .gitignore gewinnt die ZULETZT passende Regel, und `**/coverage/`
+# (Zeile 79, aus der Audit-Remediation) hat die weiter oben stehende Ausnahme
+# `!apps/web/src/app/api/v1/**/coverage/` (Zeile 17, #WAVE14-CROSS-05) wieder
+# aufgehoben. Folge: DREI API-Routen sind aus dem Repository verschwunden —
+#
+#   apps/web/src/app/api/v1/compliance/coverage/route.ts
+#   apps/web/src/app/api/v1/audit-mgmt/universe/coverage/route.ts
+#   apps/web/src/app/api/v1/processes/[id]/coverage/route.ts
+#
+# Sie liegen auf den Entwicklerrechnern, in denen sie entstanden sind, aber in
+# keinem frischen Klon. Gemessen am Produktionsbau des Eigentuemers: keine der
+# drei steht in `app-paths-manifest.json`, und
+# `POST /api/v1/processes/<id>/coverage` antwortet dort mit der HTML-404-Seite.
+# `bpm-approval-pipeline` scheitert genau daran (Framework-Mapping ist das
+# harte Gatter fuer approved -> published).
+#
+# Das Verzeichnis selbst muss ausgenommen werden, nicht die Datei darin: eine
+# Datei laesst sich nicht wieder einschliessen, wenn ihr Verzeichnis
+# ausgeschlossen ist.
+!apps/web/src/app/api/v1/**/coverage/

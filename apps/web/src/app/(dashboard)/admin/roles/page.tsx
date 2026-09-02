@@ -39,7 +39,7 @@ const ACTION_COLORS: Record<Action, string> = {
   admin: "bg-purple-100 text-purple-800",
   write: "bg-blue-100 text-blue-800",
   read: "bg-green-100 text-green-800",
-  none: "bg-gray-100 text-gray-400",
+  none: "bg-gray-100 text-gray-600",
 };
 
 const ACTION_LABELS: Record<Action, string> = {

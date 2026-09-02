@@ -77,7 +77,7 @@ export async function login(page: Page): Promise<Session> {
     .fill(PASSWORD);
 
   const submit = page.locator('button[type="submit"]').first();
-  await Promise.all([
+  const [loginResponse] = await Promise.all([
     // Deterministic wait on the login POST instead of a fixed sleep.
     page
       .waitForResponse(
@@ -88,6 +88,28 @@ export async function login(page: Page): Promise<Session> {
       .catch(() => undefined),
     submit.click(),
   ]);
+
+  // [E2E-TRIAGE-2026-09-02] Name a rate-limited login instead of timing out on
+  // it. When the login POST is answered with 429 the form never navigates, so
+  // the `waitForURL` below can only expire — and the failure then reads
+  // "page.waitForURL: Timeout 60000ms exceeded", which points at the product
+  // rather than at the limiter. Three specs of the second full run failed in
+  // exactly that shape. The login surface is deliberately capped by
+  // `RATE_LIMIT_AUTH` (default 10/min, address-keyed, fail-closed —
+  // WP9/S10-05) and this suite performs one fresh login per regression spec
+  // from a single address, so the cap is reached partway through the run.
+  // That is the limiter working; the run has to say so.
+  if (loginResponse?.status() === 429) {
+    throw new Error(
+      `login() for ${EMAIL} was refused with 429 (rate limited). The login ` +
+        `surface is capped by RATE_LIMIT_AUTH — default 10 per minute per ` +
+        `client address, fail-closed — and this suite logs in once per ` +
+        `regression spec from one address. Raise it for the E2E environment ` +
+        `(e.g. RATE_LIMIT_AUTH=1000/60) or give the regression project a ` +
+        `shared storage state. This is the limiter doing its job, not a ` +
+        `product defect.`,
+    );
+  }
 
   // The redirect target differs per role; wait for *any* page that is not the
   // login screen and then verify the session itself.

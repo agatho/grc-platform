@@ -117,6 +117,12 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
 // Explicit 405 for POST — acceptances are created on the risk itself:
 // POST /api/v1/risks/:id/acceptance (the risk context is mandatory).
+//
+// [E2E-TRIAGE-2026-09-02 · C-10] Deliberately NOT wrapped in
+// `withErrorHandler`, unlike the 14 other create handlers the sweep found:
+// this one takes no request, calls no `withAuth` and touches no database — it
+// is a constant 405. Wrapping it would add a required `req` parameter to the
+// call signature for no behavioural gain.
 export async function POST() {
   return Response.json(
     {

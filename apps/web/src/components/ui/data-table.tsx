@@ -30,6 +30,14 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string;
   pageSize?: number;
   toolbar?: React.ReactNode;
+  /**
+   * [E2E-TRIAGE-2026-09-02 · C-13] Accessible names for the icon-only
+   * pagination buttons. Defaults match the rest of this component, whose
+   * chrome ("Page x of y", "row(s)", "No results.") is untranslated English;
+   * callers with a translation context can pass localised labels.
+   */
+  previousPageLabel?: string;
+  nextPageLabel?: string;
 }
 
 export function DataTable<TData, TValue>({
@@ -39,6 +47,8 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Filter...",
   pageSize = 10,
   toolbar,
+  previousPageLabel = "Previous page",
+  nextPageLabel = "Next page",
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -132,19 +142,32 @@ export function DataTable<TData, TValue>({
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] These two carry an icon and
+              nothing else, so their accessible name was empty and axe reports
+              `button-name` with impact CRITICAL — a screen-reader user hears
+              "button, button" and has no way to page a table. Every list view
+              in the product uses this component, so the finding is one line
+              here rather than N in the pages. `aria-hidden` on the glyph stops
+              the icon font from being announced alongside the label. */}
           <button
+            type="button"
+            aria-label={previousPageLabel}
+            title={previousPageLabel}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button
+            type="button"
+            aria-label={nextPageLabel}
+            title={nextPageLabel}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

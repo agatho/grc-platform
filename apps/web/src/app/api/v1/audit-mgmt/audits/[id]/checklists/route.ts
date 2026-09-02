@@ -43,10 +43,38 @@ export const POST = withErrorHandler(async function POST(
     return Response.json({ error: "Audit not found" }, { status: 404 });
   }
 
-  const body = createAuditChecklistSchema.safeParse(await req.json());
+  // [E2E-TRIAGE-2026-09-02 · C-11] `createAuditChecklistSchema` declares
+  // `auditId` REQUIRED, but this is the nested route — the audit is already in
+  // the path, and the INSERT below uses `auditId: id` from the path and ignores
+  // the body field entirely. So a caller posting the documented body
+  // (`{ name, sourceType }`) got a 422 naming a field the endpoint does not
+  // use, and the only way to create a checklist was to repeat the id inside the
+  // body. Measured: `POST /api/v1/audit-mgmt/audits/<id>/checklists` with
+  // `{"name":"…","sourceType":"custom"}` → 422 `auditId: Required`.
+  //
+  // The id in the path is authoritative here. A body that carries `auditId`
+  // anyway must still agree with it — silently writing the checklist onto the
+  // path's audit while the caller named a different one would be worse than the
+  // 422 this replaces.
+  const body = createAuditChecklistSchema
+    .partial({ auditId: true })
+    .safeParse(await req.json());
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
+  }
+  if (body.data.auditId && body.data.auditId !== id) {
+    return Response.json(
+      {
+        error: "auditId mismatch",
+        detail:
+          "The `auditId` in the body does not match the audit in the request " +
+          "path. Omit it — the path is authoritative for this endpoint.",
+        pathAuditId: id,
+        bodyAuditId: body.data.auditId,
+      },
       { status: 422 },
     );
   }

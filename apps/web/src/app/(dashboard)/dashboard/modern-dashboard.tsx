@@ -427,12 +427,22 @@ export function ModernDashboard({
                           <span className="font-medium text-gray-800">
                             {entry.userName ?? entry.userEmail ?? "System"}
                           </span>{" "}
+                          {/* [E2E-TRIAGE-2026-09-02 · C-05b] Audit-trail action
+                              chip. `text-emerald-600` on `bg-emerald-50`
+                              measures 3.47:1 and `text-red-500` on `bg-red-50`
+                              3.48:1; axe reports both as SERIOUS WCAG 1.4.3
+                              failures on /dashboard, and at 10px the 3:1
+                              large-text exception does not apply. One shade
+                              darker each clears AA with margin (emerald-700
+                              5.09:1, red-700 5.87:1) and keeps the semantics.
+                              `blue-600` is theme-overridden and already
+                              passes — measured, not assumed. */}
                           <span
                             className={`inline-block rounded px-1 py-0.5 text-[10px] font-medium ${
                               entry.action === "create"
-                                ? "bg-emerald-50 text-emerald-600"
+                                ? "bg-emerald-50 text-emerald-700"
                                 : entry.action === "delete"
-                                  ? "bg-red-50 text-red-500"
+                                  ? "bg-red-50 text-red-700"
                                   : "bg-blue-50 text-blue-600"
                             }`}
                           >

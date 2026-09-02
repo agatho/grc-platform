@@ -13,7 +13,7 @@ import {
   user as userTable,
   withUserReadContext,
 } from "@grc/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import type { RoleAssignment } from "@grc/auth";
 import { log } from "@/lib/logger";
 
@@ -58,6 +58,27 @@ async function fetchFreshRoles(userId: string): Promise<FreshRoleResult> {
           eq(userTable.isActive, true),
           isNull(userTable.deletedAt),
         ),
+      )
+      // [E2E-TRIAGE-2026-09-02 · C-03b] The first triage added this ORDER BY to
+      // `loadRoles()` (packages/auth/src/providers.ts:278) — but that query only
+      // runs inside `authorize()` at sign-in. THIS one runs in the `session`
+      // callback on every `/api/auth/session` read and REPLACES `token.roles`,
+      // so it is the query that actually decides `roles[0].orgId`, i.e. the
+      // ACTIVE ORGANISATION whenever no org cookie is set. Without an ORDER BY
+      // it returned whatever order the heap happened to have.
+      //
+      // Measured against the running instance before this fix: the session of
+      // the seeded admin (nine memberships) came back sorted by `org_id` and
+      // landed in `E2E-F02b-…` — a throwaway organisation an earlier E2E run
+      // had created. Every "loads with demo data" spec then asserted against an
+      // empty tenant, and a real user with several memberships lands in a
+      // different one depending on physical row order.
+      //
+      // Deliberately the same ordering as `loadRoles()`: sign-in and session
+      // refresh must not disagree about which organisation is "home".
+      .orderBy(
+        asc(userOrganizationRole.createdAt),
+        asc(userOrganizationRole.orgId),
       ),
   );
 

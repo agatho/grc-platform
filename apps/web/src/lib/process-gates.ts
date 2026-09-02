@@ -68,16 +68,34 @@ export async function evaluateTransitionGates({
       (SELECT COUNT(*) FROM process_step WHERE process_id = ${processId} AND deleted_at IS NULL AND (description IS NULL OR description = ''))::int AS activities_without_desc,
       (SELECT COUNT(*) FROM process_version WHERE process_id = ${processId})::int AS versions,
       (SELECT COUNT(*) FROM process_framework_mapping WHERE process_id = ${processId})::int AS framework_mappings,
+      -- [E2E-TRIAGE-2026-09-02 · C-14] The two NOT IN lists below each named a
+      -- label its enum does not have, and PostgreSQL rejects the whole
+      -- statement with SQLSTATE 22P02 (invalid input value for enum) rather
+      -- than ignoring the unknown value. Because this query runs on EVERY
+      -- process status transition, PUT /api/v1/processes/:id/status answered
+      -- 500 for every draft -> in_review -> approved -> published step: the
+      -- whole BPMN approval and publication workflow was unreachable. It was
+      -- invisible until now only because C-09 stopped the callers before they
+      -- ever reached this route.
+      --
+      -- Measured against the database:
+      --   finding_status = identified, in_remediation, remediated, verified,
+      --                    accepted, closed          -> no 'cancelled'
+      --   risk_status    = identified, assessed, treated, accepted, closed,
+      --                    reopened                  -> no 'mitigated'
+      -- Only the two impossible labels are dropped; which of the REAL labels
+      -- count as "closed out" is unchanged, so the gate keeps exactly the
+      -- meaning it was written with.
       (SELECT COUNT(*) FROM finding f
          WHERE f.org_id = ${orgId}
            AND f.deleted_at IS NULL
-           AND f.status NOT IN ('verified', 'closed', 'cancelled', 'remediated')
+           AND f.status NOT IN ('verified', 'closed', 'remediated')
            AND (f.process_id = ${processId} OR f.process_step_id IN (SELECT id FROM process_step WHERE process_id = ${processId}))
       )::int AS open_findings,
       (SELECT COUNT(*) FROM risk r
          WHERE r.org_id = ${orgId}
            AND r.deleted_at IS NULL
-           AND r.status NOT IN ('treated', 'accepted', 'mitigated', 'closed')
+           AND r.status NOT IN ('treated', 'accepted', 'closed')
            AND r.id IN (
              SELECT risk_id FROM process_risk WHERE process_id = ${processId}
              UNION

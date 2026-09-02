@@ -51,10 +51,16 @@ test.describe("Audit — CIS IG1 Flow (ISO 19011 Arbeitspapier)", () => {
 
     // Aktivierung des CIS-Katalogs auf dieser Org sicherstellen (wenn der
     // Seed-Zustand das noch nicht getan hat — idempotent):
+    // [E2E-TRIAGE-2026-09-02] Was `?limit=200`, which `paginate()` refuses
+    // with 422 ("must be <= 100 — use page+limit to traverse larger result
+    // sets"). `allCatsRes.ok()` was therefore false and the failure read
+    // `expect(received).toBeTruthy() / Received: false` — a pagination error
+    // reported as "CIS flow broken". Same defect as the one fixed in
+    // `f-02-org-create` in the first triage round.
     const allCatsRes = await request.get(
-      "/api/v1/catalogs?type=control&limit=200",
+      "/api/v1/catalogs?type=control&limit=100",
     );
-    expect(allCatsRes.ok()).toBeTruthy();
+    expect(allCatsRes.ok(), await allCatsRes.text()).toBeTruthy();
     const allCats = await allCatsRes.json();
     const cis = (allCats.data ?? []).find(
       (c: { source: string | null }) => c.source === "cis_controls_v8",

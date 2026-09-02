@@ -24,7 +24,29 @@ test("E2E-302b: NIS2 status returns 10 art21 requirements", async ({
     return { status: r.status, body: await r.json().catch(() => null) };
   });
   expect(status.status).toBe(200);
-  if (status.body?.data) {
-    expect(Array.isArray(status.body.data)).toBe(true);
+
+  // [E2E-TRIAGE-2026-09-02] Was `if (status.body?.data)
+  // expect(Array.isArray(status.body.data)).toBe(true)` — two problems in one
+  // line. It skipped itself silently when `data` was absent (S11-07), and the
+  // endpoint has never answered with a bare array: `data` is the readiness
+  // object `{ requirements, overallScore, compliantCount,
+  // partiallyCompliantCount, nonCompliantCount, totalRequirements }`, measured
+  // against the running instance. The test's own title says what it should be
+  // checking — TEN Art. 21(2) requirements — so it checks that instead of the
+  // container's JavaScript type. NIS2 Art. 21(2) enumerates exactly ten
+  // measures, a–j, which is why the number is pinned rather than ">= 1".
+  const data = status.body?.data as
+    | { requirements?: Array<{ article?: string }>; totalRequirements?: number }
+    | undefined;
+  expect(data, "GET /api/v1/isms/nis2/status returned no `data`").toBeTruthy();
+  expect(Array.isArray(data!.requirements)).toBe(true);
+  expect(
+    data!.requirements!.length,
+    "NIS2 Art. 21(2) lists ten measures (a–j); the readiness endpoint must " +
+      "report all of them",
+  ).toBe(10);
+  expect(data!.totalRequirements).toBe(10);
+  for (const req of data!.requirements!) {
+    expect(req.article).toMatch(/Art\.\s*21/);
   }
 });

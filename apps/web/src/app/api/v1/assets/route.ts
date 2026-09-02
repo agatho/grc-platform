@@ -19,7 +19,7 @@ const VALID_PARENT_TIERS: Record<AssetTier, AssetTier[]> = {
 };
 
 // POST /api/v1/assets — Create asset (admin only)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/assets — List assets (paginated, filterable)
 export const GET = withErrorHandler(async function GET(req: Request) {

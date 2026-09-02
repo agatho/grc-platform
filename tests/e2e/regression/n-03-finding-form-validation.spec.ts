@@ -75,10 +75,23 @@ test("W22-C1-03: Finding-Create UI form — required validation + happy path + p
   expect(statusReject.body.rejectedFields).toContain("status");
 
   // Step 5: persistence
-  await page.goto(`/findings/${findingId}`);
+  //
+  // [E2E-TRIAGE-2026-09-02] Was `/findings/${findingId}`. There is no
+  // `findings/[id]` route — `app/(dashboard)/findings/` holds the list page and
+  // nothing else — so this navigated to the 404 page and the assertion below
+  // reported `expected "E2E-N3-…", received "404·"`, i.e. a wrong URL in the
+  // spec reported as a persistence failure. The finding detail view lives at
+  // `app/(dashboard)/controls/findings/[id]/page.tsx`, which is where the list
+  // links to. The assertion itself is unchanged and is still the real check:
+  // the title the form just created has to be readable on the detail page.
+  await page.goto(`/controls/findings/${findingId}`);
   await page
     .waitForLoadState("networkidle", { timeout: 15_000 })
     .catch(() => {});
+  expect(
+    new URL(page.url()).pathname,
+    "navigation did not land on the finding detail route",
+  ).toBe(`/controls/findings/${findingId}`);
   const pageText = await page.locator("body").innerText();
   expect(pageText).toContain(title);
 });

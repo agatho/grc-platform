@@ -23,7 +23,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/vendors — Create vendor
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   // #WAVE19-MAR-P0-02: vendor_manager (new in 0324) + contract_manager
   // are the operator roles that own the TPRM relationship. Without
   // them the marathon QA hit 403 on every vendor mutation.
@@ -88,7 +88,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/vendors — List vendors with filters
 export const GET = withErrorHandler(async function GET(req: Request) {
