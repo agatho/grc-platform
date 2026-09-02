@@ -1,0 +1,41 @@
+# [ARCTOS-FULL-2026-08-31 · OP-141]
+#
+# Ein Formatier-Tor, das dauerhaft rot ist, wird ignoriert — und ein Tor, das
+# ignoriert wird, ist keins. Der Grund, aus dem es rot stand, waren zum
+# groessten Teil erzeugte Dateien: prettier wollte sie umformatieren, der
+# naechste Generatorlauf hat es zurueckgedreht. Diese Datei loest das, indem
+# sie sagt, was erzeugt ist. Alles, was hier steht, braucht eine Begruendung.
+
+# ── Bauausgabe und Fremdcode ──────────────────────────────────────────
+node_modules/
+.next/
+.turbo/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+SBOM/
+
+# ── Erzeugt und in CI gegen den Generator geprueft ────────────────────
+# `openapi-breaking-change.yml` laesst `scripts/generate-openapi.mjs` laufen
+# und schlaegt fehl, wenn das Ergebnis vom eingecheckten Stand abweicht. Eine
+# prettier-Formatierung wuerde genau diesen Vergleich reissen: der Generator
+# schreibt YAML nach seinen Regeln, nicht nach prettiers. Wer das aendern
+# will, aendert den Generator, nicht die Datei.
+docs/openapi.yaml
+docs/API_REFERENCE.md
+
+# ── Testausgabe, die als Beleg eingecheckt ist ────────────────────────
+# Die Kontaktboegen und SVGs der BPMN-Renderpruefung werden bei jedem
+# Testlauf neu geschrieben (`test/draw/corpus.test.ts`,
+# `test/grc/render.test.ts`). Sie sind eingecheckt, damit eine Aenderung am
+# Renderer als Diff sichtbar wird — formatiert werden sie nicht, sonst
+# entstuende die Differenz aus der Formatierung statt aus dem Renderer.
+packages/bpmn/test/*/rendered/
+
+# ── Von Skripten geschriebene Ratschen ────────────────────────────────
+# `scripts/lint-ratchet.mjs --update` schreibt mit `JSON.stringify(_, null, 2)`.
+# Dessen Umbruch fuer kurze Arrays weicht von prettiers ab; die Datei von Hand
+# nachzuformatieren macht sie beim naechsten `--update` wieder rot.
+.eslint-ratchet.json

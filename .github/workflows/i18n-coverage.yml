@@ -114,7 +114,6 @@ jobs:
           fi
           echo "i18n-Paritaet OK (alle vier Kennzahlen gelesen und 0)."
 
-
   i18n-code-vs-catalog:
     name: Code vs. catalogue (S14-05, S14-07, S14-08)
     runs-on: ubuntu-latest
@@ -146,18 +145,34 @@ jobs:
       - name: Unused-key ratchet
         run: node scripts/audit-i18n-usage.mjs --max-unused 6800
 
-      # [WP12 - S14-14] Zweite Ratsche: Dateien ohne jeden i18n-Import.
-      # Stand 2026-09-01: 96 von 482 Pages und 73 von 130 Komponenten, darunter
-      # 10 der 14 EU-AI-Act-Seiten (hartcodiert deutsch). Das Uebersetzen ist
-      # Produktinhalt und laeuft ausserhalb dieser Remediation; die Zahl darf
-      # dabei sinken, nicht steigen. Beim Absenken hier nachziehen.
+      # [WP12 - S14-14] Zweite Ratsche: Dateien, die Text zeigen, ihn aber nicht
+      # uebersetzen. Stand 2026-09-02: 78 von 482 Pages und 73 von 134
+      # Komponenten, darunter 10 der 14 EU-AI-Act-Seiten (hartcodiert deutsch).
+      # Das Uebersetzen ist Produktinhalt und laeuft ausserhalb dieser
+      # Remediation; die Zahl darf dabei sinken, nicht steigen. Beim Absenken
+      # hier nachziehen.
+      #
+      # [OP-071] Von 169 auf 151, und das ist keine Absenkung durch Arbeit,
+      # sondern eine Praezisierung des Massstabs: 19 der gezaehlten Dateien
+      # waren Weiterleitungen und Re-Exporte von unter 16 Zeilen ohne einen
+      # einzigen Textknoten -- sie konnten nichts hartcodieren. Der Zaehler
+      # verlangt jetzt zusaetzlich einen sichtbaren Text (JSX-Textknoten oder
+      # satzfoermiges Literal); siehe `showsLiteralText` in
+      # scripts/audit-i18n-usage.mjs. Real uebersetzt wurde in diesem Schritt
+      # `components/bpmn/grc-view-select.tsx`.
       - name: i18n-Abdeckungs-Ratsche
-        run: node scripts/audit-i18n-usage.mjs --max-untranslated 169
+        run: node scripts/audit-i18n-usage.mjs --max-untranslated 151
 
-      - name: messages/{de,en}.json muessen reproduzierbar sein
-        run: |
-          if ! git diff --quiet -- apps/web/messages/de.json apps/web/messages/en.json; then
-            echo "::error::messages/{de,en}.json im Repo weichen vom Ergebnis von build-messages.ts ab. Bitte 'npx tsx apps/web/scripts/build-messages.ts' laufen lassen und das Ergebnis committen."
-            git --no-pager diff --stat -- apps/web/messages/de.json apps/web/messages/en.json
-            exit 1
-          fi
+      # [OP-072] Hier stand ein Schritt "messages/{de,en}.json muessen
+      # reproduzierbar sein", der `git diff` auf genau diese zwei Dateien rief.
+      # Sie stehen seit jeher in .gitignore (Zeile 35/36) und sind damit
+      # untracked -- `git diff` auf einen untracked Pfad ist immer leer, der
+      # Schritt konnte nie fehlschlagen. Ein Tor, das nicht fehlschlagen kann,
+      # ist schlimmer als keins: es steht gruen im Protokoll.
+      #
+      # Ersatzlos entfernt, weil der eigentliche Nachweis eine Zeile hoeher
+      # bereits gefuehrt wird: die Buendel werden oben frisch gebaut, und
+      # `audit-i18n-usage.mjs` vergleicht sie gegen einen **eigenen**, von
+      # build-messages.ts unabhaengigen Nachbau der Merge-Regel aus
+      # src/i18n/request.ts (`buildCatalogue`). Genau das ist die Frage, die
+      # zaehlt -- ob Bau- und Laufzeitpfad dasselbe Buendel ergeben.

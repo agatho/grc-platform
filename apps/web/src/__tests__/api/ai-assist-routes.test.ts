@@ -11,8 +11,22 @@
 //
 // Pattern follows risks-create-rbac.test.ts (getter-based mocks so each
 // test drives its own branch).
+//
+// [ARCTOS-FULL-2026-08-31 · OP-109] Jede der drei `describe`-Bloecke hatte
+// einen `beforeAll`, der die Route mit 90 s Zeitlimit einmal vorwaermte —
+// noetig, weil ein kalter Routen-Import unter Coverage-Instrumentierung das
+// 15-s-Zeitlimit eines einzelnen Tests reisst. Unter Last hat dieser Hook
+// einmal nicht gereicht, und ein fehlgeschlagener `beforeAll` **ueberspringt**
+// in vitest die Tests seines Blocks: zehn Tests standen als Skip in der
+// Zusammenfassung und sahen aus wie eine bewusste Auslassung. Genau die
+// Verwechslung, die S11-02 beschreibt.
+//
+// Der Vorwaermer ist deshalb kein Hook mehr, sondern ein geteiltes Promise pro
+// Route (`routeModule`), auf das jeder Test selbst wartet, mit dem Zeitlimit am
+// `describe`. Ein langsamer Import macht den Test jetzt langsam; ein
+// fehlgeschlagener macht ihn rot. Beides ist sichtbar, ein Skip war es nicht.
 
-import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeMockDb, chainable, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
@@ -252,7 +266,7 @@ beforeEach(() => {
 // POST /api/v1/ai/draft-policy
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/draft-policy", () => {
+describe("POST /api/v1/ai/draft-policy", { timeout: 90_000 }, () => {
   const validBody = {
     catalogEntryIds: [UUID_A],
     documentCategory: "policy",
@@ -260,12 +274,13 @@ describe("POST /api/v1/ai/draft-policy", () => {
     context: "Test org",
   };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/draft-policy/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/draft-policy/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/draft-policy/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/draft-policy", body));
   }
 
@@ -427,15 +442,16 @@ describe("POST /api/v1/ai/draft-policy", () => {
 // POST /api/v1/ai/suggest-controls
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/suggest-controls", () => {
+describe("POST /api/v1/ai/suggest-controls", { timeout: 90_000 }, () => {
   const validBody = { riskId: UUID_A };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/suggest-controls/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/suggest-controls/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/suggest-controls/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/suggest-controls", body));
   }
 
@@ -685,15 +701,16 @@ describe("POST /api/v1/ai/suggest-controls", () => {
 // POST /api/v1/ai/explain-gap
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/explain-gap", () => {
+describe("POST /api/v1/ai/explain-gap", { timeout: 90_000 }, () => {
   const validBody = { soaEntryId: UUID_A };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/explain-gap/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/explain-gap/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/explain-gap/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/explain-gap", body));
   }
 

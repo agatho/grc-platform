@@ -106,13 +106,17 @@ export const COVERAGE_FLOORS: Record<string, CoverageFloor> = {
   // (tests/integration, tests/rls), which run as separate vitest projects
   // whose v8 coverage is NOT merged into this number.
   "packages/db": { lines: 28, branches: 26 },
-  // @grc/bpmn: new package (own BPMN engine on diagram-js + bpmn-moddle).
-  // Provisional floor — the package is being written by two workstreams in
-  // parallel (model/round-trip and draw/viewer), so this is a starting ratchet,
-  // not a measured post-remediation baseline. Re-measure and raise it once both
-  // halves have landed. Without an entry here `coverageFor` throws and the
-  // package's vitest config cannot even be loaded.
-  "packages/bpmn": { lines: 40, branches: 30 },
+  // @grc/bpmn: eigene BPMN-Engine auf diagram-js + bpmn-moddle.
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-068] Der Boden stand auf 40/30 mit dem
+  // Vermerk "provisorisch, nachmessen sobald beide Stränge gelandet sind".
+  // Beide sind gelandet; gemessen am 2026-09-02 über 727 Tests: **89,0 %
+  // Lines, 72,7 % Branches**. Ein Boden, der 49 Punkte unter dem Ist liegt,
+  // schützt nichts — die halbe Testsuite dürfte verschwinden, ohne dass er
+  // anschlägt. Nachgezogen auf 85/68: knapp unter dem gemessenen Wert, mit
+  // Luft für die Schwankung zwischen Läufen, aber eng genug, um einen echten
+  // Rückschritt zu fangen.
+  "packages/bpmn": { lines: 85, branches: 68 },
 };
 
 /**

@@ -77,13 +77,28 @@ const ACCENT: Record<
   critical: { bg: "#fef2f2", border: "#fca5a5", fg: "#991b1b" },
 };
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-066] `data` kommt aus `notification.template_data`
+ * — einer JSONB-Spalte. Dort steht, was die Cron-Jobs hineingeschrieben haben,
+ * und das ist nicht zwingend eine Zeichenkette. `(data.x as string)` war eine
+ * Behauptung, keine Prüfung: bei einer Zahl wanderte sie unverändert in die
+ * Betreffzeile, bei einem Objekt "[object Object]", und eine Zeichenkette mit
+ * CR/LF haette die Betreffzeile verlassen und eigene Kopfzeilen aufgemacht.
+ * Der Fund stammt aus dem Test, der zu dieser Datei fehlte.
+ */
+function asSubjectText(value: unknown): string {
+  if (typeof value !== "string") return "";
+  // Kopfzeilen sind einzeilig. Alles, was umbricht, wird zu einem Leerzeichen.
+  return value.replace(/[\r\n]+/g, " ").trim();
+}
+
 export function getSubject(
   data: Record<string, unknown>,
   lang: "de" | "en",
 ): string {
-  const headline = (data.__headline as string) || "";
+  const headline = asSubjectText(data.__headline);
   const title =
-    (data.notificationTitle as string) || (data.title as string) || "";
+    asSubjectText(data.notificationTitle) || asSubjectText(data.title);
   if (headline && title) return `${headline}: ${title}`;
   return (
     headline ||

@@ -16,5 +16,23 @@
     "findingBadge": "{open, plural, one {1 open finding} other {# open findings}}, {critical} of them critical",
     "lodStripe": "Line of defence: {lod}",
     "drillDown": "Go to linked sub-process {name}"
+  },
+  "grcView": {
+    "label": "GRC view",
+    "off": "GRC view: off",
+    "loading": "Loading GRC data …",
+    "error": "GRC data not loaded ({reason})",
+    "computedAt": "As of: {timestamp}",
+    "views": {
+      "modeling": "Modelling",
+      "risk-control": "Risk & control",
+      "compliance": "Compliance & evidence",
+      "privacy": "Data protection",
+      "continuity": "Continuity (BCM)",
+      "operations": "Operations & efficiency",
+      "organization": "Organisation & SoD",
+      "architecture": "Architecture (EAM)",
+      "responsibility": "Responsibility"
+    }
   }
 }

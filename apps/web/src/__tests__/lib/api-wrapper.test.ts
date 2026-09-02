@@ -27,33 +27,21 @@ vi.mock("@/lib/logger", () => {
   };
 });
 
-vi.mock("@/lib/api-errors", () => ({
+// [ARCTOS-FULL-2026-08-31 · OP-110] Diese Factory ersetzte `@/lib/api-errors`
+// vollstaendig und exportierte `normaliseErrorResponse` **nicht**. Der Wrapper
+// faengt einen Fehlschlag der Normalisierung seit WP12 ab und gibt die
+// Originalantwort zurueck — der Test lief damit gruen, pruefte den
+// RFC-7807-Ausgang aber gar nicht. Ein Test, der wegen eines Rettungspfads
+// gruen ist, misst den Rettungspfad, nicht den Vertrag.
+//
+// `importOriginal` holt das echte Modul; ueberschrieben wird nur, was
+// deterministisch sein muss.
+//
+// Die handgebaute `problem.validation` ist damit weg: sie hat den Vertrag
+// nachgebaut, den zu pruefen der Zweck dieser Datei ist.
+vi.mock("@/lib/api-errors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api-errors")>()),
   getRequestId: () => "test-req-id",
-  problem: {
-    validation: (opts: {
-      requestId: string;
-      instance: string;
-      detail: string;
-      errors: Array<{ path: string; message: string }>;
-    }) =>
-      new Response(
-        JSON.stringify({
-          type: "https://arctos.charliehund.de/errors/validation",
-          title: "Validation failed",
-          status: 422,
-          detail: opts.detail,
-          errors: opts.errors,
-          requestId: opts.requestId,
-          instance: opts.instance,
-        }),
-        {
-          status: 422,
-          headers: {
-            "content-type": "application/problem+json; charset=utf-8",
-          },
-        },
-      ),
-  },
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -257,5 +245,95 @@ describe("withErrorHandler — observability", () => {
     // Can't easily assert on log() in this mock setup, but verifying no
     // crash + correct status is enough to pin the public behaviour.
     expect(res.status).toBe(500);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// [ARCTOS-FULL-2026-08-31 · OP-110] Der Ausgang, den die Datei bis hierher
+// nicht geprüft hat.
+//
+// Bis WP12 wickelte `withErrorHandler` **auch den Erfolgspfad** in
+// `normaliseErrorResponse` — und weil die Mock-Factory dieser Datei die
+// Funktion nicht exportierte, lief der Aufruf gegen `undefined`, warf, und
+// aus einer 201 wurde eine 500. Die Reparatur war zweiteilig: die Frage „ist
+// das überhaupt ein Fehler?" fällt jetzt **vor** dem Aufruf, und ein
+// Fehlschlag der Normalisierung gibt die Originalantwort zurück statt zu
+// eskalieren.
+//
+// Genau diese zweite Hälfte hat den Test danach grün gehalten, ohne dass er
+// die Normalisierung prüfte. Seit die Factory das echte Modul spreizt, prüft
+// er sie — und diese vier Fälle pinnen den Vertrag, damit ein künftiger
+// unvollständiger Mock wieder auffällt.
+// ─────────────────────────────────────────────────────────────────
+
+describe("withErrorHandler — Normalisierung der Antwort des Handlers", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("schreibt eine Alt-Fehlerantwort nach RFC 7807 um und behält jedes Feld", async () => {
+    const wrapped = withErrorHandler(async () =>
+      Response.json(
+        { error: "Not found", hint: "check the id" },
+        { status: 404 },
+      ),
+    );
+    const res = await wrapped(req(), undefined);
+
+    expect(res.status).toBe(404);
+    expect(res.headers.get("content-type")).toContain("problem+json");
+    const body = await res.json();
+    expect(body.title).toBeTypeOf("string");
+    expect(body.type).toBeTypeOf("string");
+    expect(body.status).toBe(404);
+    // `error` wird zu `detail` — und bleibt zugleich als Erweiterungsfeld
+    // stehen, weil ein Client, der heute `json.error` liest, weiterlaufen soll.
+    expect(body.detail).toBe("Not found");
+    expect(body.error).toBe("Not found");
+    expect(body.hint).toBe("check the id");
+    expect(body.requestId).toBe("test-req-id");
+  });
+
+  it("lässt eine Erfolgsantwort unangetastet — auch mit einem `error`-Feld", async () => {
+    const wrapped = withErrorHandler(async () =>
+      Response.json({ data: [1, 2], error: null }, { status: 200 }),
+    );
+    const res = await wrapped(req(), undefined);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).not.toContain("problem+json");
+    expect(await res.json()).toEqual({ data: [1, 2], error: null });
+  });
+
+  it("wickelt eine bereits problem-förmige Antwort nicht doppelt", async () => {
+    const original = {
+      type: "https://arctos.charliehund.de/errors/validation",
+      title: "Validation failed",
+      status: 422,
+      detail: "nope",
+    };
+    const wrapped = withErrorHandler(
+      async () =>
+        new Response(JSON.stringify(original), {
+          status: 422,
+          headers: {
+            "content-type": "application/problem+json; charset=utf-8",
+          },
+        }),
+    );
+    const res = await wrapped(req(), undefined);
+    expect(await res.json()).toEqual(original);
+  });
+
+  it("liest den Körper einer Nicht-JSON-Antwort nicht — ein Download bleibt ein Download", async () => {
+    const wrapped = withErrorHandler(
+      async () =>
+        new Response("id;name\n1;a\n", {
+          status: 502,
+          headers: { "content-type": "text/csv; charset=utf-8" },
+        }),
+    );
+    const res = await wrapped(req(), undefined);
+    expect(res.status).toBe(502);
+    expect(res.headers.get("content-type")).toContain("text/csv");
+    expect(await res.text()).toBe("id;name\n1;a\n");
   });
 });

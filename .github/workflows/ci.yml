@@ -133,6 +133,14 @@ jobs:
       - name: .env.example covers every variable the code reads
         run: node scripts/check-env-example.mjs
 
+      # [OP-066] Zweimal ist eine Tor-Eingabe durch .gitignore aus dem
+      # Repository gefallen (C-15: drei API-Routen; OP-066: die
+      # Coverage-Ratsche, wodurch der Coverage-Workflow dauerhaft rot war).
+      # Dieser Schritt prueft, dass jede Datei, die ein Tor als eingecheckten
+      # Stand liest, auch wirklich eingecheckt ist.
+      - name: Jede Tor-Eingabe steht im Repository
+        run: node scripts/check-gate-inputs.mjs
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────

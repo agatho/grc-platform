@@ -24,7 +24,11 @@
 //
 // Aufruf:
 //   node scripts/lint-ratchet.mjs            # prüfen (CI)
-//   node scripts/lint-ratchet.mjs --update   # Baseline neu setzen
+//   node scripts/lint-ratchet.mjs --update   # Baseline senken
+//   node scripts/lint-ratchet.mjs --update --reason "…"   # Baseline anheben
+//
+// Eine Anhebung ohne `--reason` wird abgelehnt; die Begründung wird mit den
+// Deltas in `_history` festgehalten (OP-064).
 // ============================================================================
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -84,6 +88,62 @@ if (fatal) {
 }
 
 if (UPDATE) {
+  // [ARCTOS-FULL-2026-08-31 · OP-064] Eine Ratsche, die man beim Reissen
+  // höher stellt, ist keine Ratsche. Vor diesem Nachtrag konnte `--update`
+  // jede Zahl kommentarlos anheben und die einzige Spur davon war ein
+  // geändertes Datum. Jetzt gilt:
+  //
+  //   - Sinken darf jede Zahl ohne Begründung.
+  //   - **Steigt** eine Zahl oder kommt eine Regel neu hinzu, verlangt
+  //     `--update` ein `--reason "..."`, und die Begründung landet mitsamt
+  //     den Deltas in `_history` — in der Datei, im Diff, im Review.
+  //
+  // `_history` wird beim Schreiben übernommen, damit die Kette hält.
+  const previous = existsSync(BASELINE)
+    ? JSON.parse(readFileSync(BASELINE, "utf8"))
+    : { counts: {}, _history: [] };
+  const prevCounts = previous.counts ?? {};
+
+  const deltas = [];
+  let raises = 0;
+  for (const rule of new Set([
+    ...Object.keys(prevCounts),
+    ...Object.keys(counts),
+  ])) {
+    const before = prevCounts[rule] ?? 0;
+    const after = counts[rule] ?? 0;
+    if (before === after) continue;
+    if (after > before) raises += 1;
+    deltas.push(`${rule}: ${before} → ${after}`);
+  }
+
+  const reasonIdx = process.argv.indexOf("--reason");
+  const reason =
+    reasonIdx !== -1 ? (process.argv[reasonIdx + 1] ?? "").trim() : "";
+
+  if (raises > 0 && !reason) {
+    console.error(
+      `✗ ${raises} Zahl(en) steigen gegenüber der bisherigen Baseline:`,
+    );
+    for (const d of deltas) console.error(`    ${d}`);
+    console.error(
+      "\n  Eine Anhebung braucht eine Begründung in der Datei:\n" +
+        '    node scripts/lint-ratchet.mjs --update --reason "warum das jetzt so ist"\n' +
+        "  Der übliche Weg ist nicht die Anhebung, sondern der Befund.",
+    );
+    process.exit(1);
+  }
+
+  const history = Array.isArray(previous._history) ? previous._history : [];
+  if (deltas.length > 0) {
+    history.push({
+      date: new Date().toISOString().slice(0, 10),
+      total: Object.values(counts).reduce((a, b) => a + b, 0),
+      changed: deltas.sort(),
+      ...(reason ? { reason } : {}),
+    });
+  }
+
   writeFileSync(
     BASELINE,
     JSON.stringify(
@@ -91,12 +151,14 @@ if (UPDATE) {
         _comment:
           "#S13-17 ESLint-Ratsche für apps/worker, packages/* und scripts/*. " +
           "Zahlen dürfen nur SINKEN. Neu setzen: node scripts/lint-ratchet.mjs --update. " +
+          "Eine Anhebung verlangt zusätzlich --reason und wird in _history festgehalten. " +
           "apps/web hat eine eigene, strengere Konfiguration (WP12) und wird hier nicht gezählt.",
         _updatedAt: new Date().toISOString().slice(0, 10),
         _targets: TARGETS,
         counts: Object.fromEntries(
           Object.entries(counts).sort(([a], [b]) => a.localeCompare(b)),
         ),
+        _history: history,
       },
       null,
       2,
@@ -105,6 +167,10 @@ if (UPDATE) {
   console.log(`Baseline geschrieben: ${BASELINE}`);
   for (const [r, n] of Object.entries(counts).sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(n).padStart(5)}  ${r}`);
+  }
+  if (deltas.length > 0) {
+    console.log("  Änderungen gegenüber der bisherigen Baseline:");
+    for (const d of deltas.sort()) console.log(`    ${d}`);
   }
   process.exit(0);
 }

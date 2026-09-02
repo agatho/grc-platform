@@ -132,6 +132,18 @@ function redactEmail(address: string): string {
 const RETRY_DELAYS = [1_000, 5_000, 30_000];
 const MAX_ATTEMPTS = 3;
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-066] Ein Betreff ist eine SMTP-Kopfzeile und
+ * damit einzeilig. Alles, was umbricht, wird zu einem Leerzeichen; ein
+ * Nicht-Zeichenketten-Wert (`template_data` ist JSONB) wird zu einem leeren
+ * Betreff statt zu "[object Object]". Exportiert, damit der Test die Zusage
+ * direkt prüfen kann und nicht über einen gemockten Anbieter raten muss.
+ */
+export function sanitiseSubject(subject: unknown): string {
+  if (typeof subject !== "string") return "";
+  return subject.replace(/[\r\n]+/g, " ").trim();
+}
+
 export class EmailService {
   private _resend: Resend | null = null;
 
@@ -201,7 +213,14 @@ export class EmailService {
         const result = await this.resend.emails.send({
           from,
           to: params.to,
-          subject: template.subject,
+          // [ARCTOS-FULL-2026-08-31 · OP-066] Jede der 26 `getSubject`-Funktionen
+          // baut ihren Betreff aus `template_data`, einer JSONB-Spalte, und die
+          // meisten tun das über `(data.x as string) || ""` — ein Cast, der
+          // nichts prüft. Die Vorlagen einzeln zu haerten waere 26 Stellen mit
+          // 26 Gelegenheiten, eine zu vergessen; hier ist die Stelle, durch die
+          // jeder Betreff muss. Eine Kopfzeile ist einzeilig: was umbricht,
+          // koennte sonst eigene Kopfzeilen aufmachen.
+          subject: sanitiseSubject(template.subject),
           react: template.component,
         });
 

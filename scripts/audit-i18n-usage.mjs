@@ -224,11 +224,50 @@ const unused = [...leaves].filter((k) => {
 // Translating them is product-content work, not remediation work — but the
 // number must not GROW while that is pending, and nothing was measuring it.
 // `--max-untranslated` turns this into a ratchet.
+//
+// [ARCTOS-FULL-2026-08-31 · OP-071] Ein Nachtrag, weil die Ratsche sonst das
+// Falsche misst. „Kein i18n-Import" ist ein Stellvertreter für „zeigt fest
+// verdrahteten Text". Bei einer Datei, die überhaupt keinen Text zeigt, geht
+// der Stellvertreter daneben: `bpmn-editor.tsx` und `bpmn-viewer.tsx` wurden
+// zu reinen Weichen (die Beschriftungen zogen mit in die `-legacy`-Dateien,
+// die den Import behalten haben) — und stiegen dadurch in einer Ratsche auf,
+// die Übersetzungsschulden zählen soll. Die Ratsche höher zu stellen wäre die
+// falsche Antwort gewesen; sie zu präzisieren ist die richtige.
+//
+// `showsLiteralText` ist bewusst **konservativ in Richtung Zählen**: sobald
+// eine Datei einen JSX-Textknoten mit einem Buchstaben oder ein satzförmiges
+// Zeichenkettenliteral (mindestens zwei durch ein Leerzeichen getrennte
+// Wörter) enthält, gilt sie als textzeigend und wird gezählt. Nur wer beides
+// nicht hat, kann keinen Text fest verdrahtet haben. Falsch-negative
+// Ausnahmen sind damit auf Dateien beschränkt, die ausschliesslich
+// einwortige Literale führen — und ein einzelnes Wort als Beschriftung wäre
+// im Zweifel ohnehin ein Bezeichner, kein Satz.
+const BLOCK_COMMENT = /\/\*[\s\S]*?\*\//g;
+const LINE_COMMENT = /(^|[^:])\/\/[^\n]*/g;
+
+/** Zeigt die Datei überhaupt Text, der übersetzt werden müsste? */
+function showsLiteralText(source) {
+  const code = source.replace(BLOCK_COMMENT, "").replace(LINE_COMMENT, "$1");
+  // JSX-Textknoten: zwischen `>` und `<` steht etwas mit einem Buchstaben,
+  // das keine Auszeichnung und kein reiner Ausdruck ist.
+  const jsxText = />\s*([^<>{}\n][^<>{}]*)</g;
+  let m;
+  while ((m = jsxText.exec(code)) !== null) {
+    if (/\p{L}/u.test(m[1])) return true;
+  }
+  // Satzförmige Literale: "Zwei Wörter" oder mehr.
+  if (/["'`][^"'`\n]*\p{L}[^"'`\n]* [^"'`\n]*\p{L}[^"'`\n]*["'`]/u.test(code))
+    return true;
+  return false;
+}
+
 function countWithoutI18n(dir, filter) {
   const files = walk(dir, filter);
-  const without = files.filter(
-    (f) => !/useTranslations|getTranslations/.test(fs.readFileSync(f, "utf8")),
-  );
+  const without = files.filter((f) => {
+    const source = fs.readFileSync(f, "utf8");
+    if (/useTranslations|getTranslations/.test(source)) return false;
+    return showsLiteralText(source);
+  });
   return { total: files.length, without };
 }
 

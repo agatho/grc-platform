@@ -186,30 +186,23 @@ describe("processScheduledNotifications", () => {
     expect(r.sent).toBe(0);
   });
 
-  // [ARCTOS-FULL-2026-08-31 / WP11 → WP9] KNOWN PRODUCT DEFECT.
-  // `scheduled-notifications.ts` keeps a local `failed` counter AND a
-  // `createRunReport()`. `report.toResult()` overwrites `failed`/`ok` with the
-  // report's own numbers, and the "recipient user not found" branch increments
-  // only the local counter — it never calls `report.fail(...)`. A notification
-  // that can never be delivered therefore comes back as
-  // `{ failed: 0, ok: true }`: the same "a partial failure reported as
-  // success" pattern S10-12 describes, one branch further in.
+  // [ARCTOS-FULL-2026-08-31 · OP-108] Hier stand ein `it.fails` mit der
+  // Begruendung "KNOWN PRODUCT DEFECT → WP9": `scheduled-notifications.ts`
+  // fuehrt einen lokalen `failed`-Zaehler UND einen `createRunReport()`;
+  // `report.toResult()` ueberschreibt `failed`/`ok` mit den Zahlen des
+  // Reports, und der Zweig "recipient user not found" hat nur den lokalen
+  // Zaehler erhoeht. Eine Benachrichtigung, die nie zugestellt werden kann,
+  // kam damit als `{ failed: 0, ok: true }` zurueck.
   //
-  // Fix (WP9, one line): call
-  //   report.fail(`notification ${notif.id}`, new Error("recipient user not found"))
-  // in that branch, as the unknown-template-key branch already does.
-  //
-  // `it.fails` keeps this visible and green while the defect exists and turns
-  // RED the moment WP9 fixes it — at which point this becomes a plain `it`.
-  it.fails(
-    "reports an undeliverable notification as a failure [KNOWN DEFECT → WP9]",
-    async () => {
-      queue([NOTIF], [[]]);
-      const r = (await run()) as Result;
-      expect(r.failed).toBe(1);
-      expect(r.ok).toBe(false);
-    },
-  );
+  // Der Defekt ist behoben (`report.fail(...)` in jenem Zweig), also ist das
+  // hier ein gewoehnliches `it`. Ein `it.fails`, das eine Iteration ueberlebt,
+  // ist eine Erwartung, dass etwas kaputt bleibt.
+  it("reports an undeliverable notification as a failure", async () => {
+    queue([NOTIF], [[]]);
+    const r = (await run()) as Result;
+    expect(r.failed).toBe(1);
+    expect(r.ok).toBe(false);
+  });
 
   it("increments the retry counter and reports a partial failure on a provider error", async () => {
     queue([NOTIF], [[RECIPIENT]]);

@@ -15,12 +15,19 @@ coverage/
 # /compliance/coverage path; we generalize to any /api/v1/**/coverage/
 # so future routes (e.g. processes/[id]/coverage) are tracked too.
 !apps/web/src/app/api/v1/**/coverage/
-# #S13-25 (WP10): die Coverage-Ratsche muss versioniert sein, sonst kann das
-# Gate nicht gegen einen eingecheckten Stand prüfen. Alles andere unter
-# coverage/ bleibt ignoriert.
-!coverage/
-coverage/*
-!coverage/coverage-baseline.json
+# [ARCTOS-FULL-2026-08-31 · OP-066] Hier standen vier Zeilen, die
+# `coverage/coverage-baseline.json` wieder einschliessen sollten:
+#
+#   !coverage/
+#   coverage/*
+#   !coverage/coverage-baseline.json
+#
+# Sie haben nie gewirkt. Weiter unten (Zeile 78/79) schliessen `coverage/` und
+# `**/coverage/` das Verzeichnis erneut aus, die zuletzt passende Regel
+# gewinnt, und eine Datei laesst sich nicht einschliessen, wenn ihr
+# Verzeichnis ausgeschlossen ist — dieselbe Mechanik wie bei C-15. Die
+# Coverage-Ratsche liegt deshalb jetzt als `.coverage-ratchet.json` in der
+# Wurzel, neben `.eslint-ratchet.json`, und braucht diese Ausnahme nicht mehr.
 *.tsbuildinfo
 .vercel/
 

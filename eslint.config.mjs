@@ -138,6 +138,12 @@ export default tseslint.config(
     // setzen `process.env.X` bewusst um einen `await` herum.
     files: [
       "**/tests/**/*.{ts,tsx,mjs,js}",
+      // `packages/bpmn` legt seine Tests unter `test/` ab, nicht `tests/`.
+      // Ohne dieses Muster fielen 3.400 Zeilen Prüfstand unter den
+      // Produktivregelsatz — aufgefallen an `no-console` in
+      // `test/model/measure-roundtrip.ts`, einem Messwerkzeug, dessen
+      // Ausgabe der Bericht ist.
+      "**/test/**/*.{ts,tsx,mjs,js}",
       "**/__tests__/**/*.{ts,tsx}",
       "**/*.test.{ts,tsx}",
     ],
@@ -153,7 +159,33 @@ export default tseslint.config(
     },
   },
   {
-    files: ["scripts/**/*.{mjs,js}", "**/*.mjs"],
+    // Einmalläufer auf der Kommandozeile: ihre Ausgabe **ist** die
+    // Schnittstelle.
+    //
+    // [ARCTOS-FULL-2026-08-31 · OP-064] Die Begründung der Regel oben nennt
+    // ausdrücklich den Worker: dort geht `console.log` am Log-Shipper vorbei
+    // (S13-15). Ein Seed, den ein Betreiber mit `npm run db:seed` startet und
+    // dessen letzte Zeilen die zu exportierenden Variablen nennen, hat keinen
+    // Log-Shipper, an dem er vorbeigehen könnte. Ihn auf den strukturierten
+    // Logger umzustellen hiesse, die Ausgabe an ein Ziel zu schicken, an dem
+    // der Mensch vor dem Terminal sie nicht sieht.
+    //
+    // Der Geltungsbereich ist deshalb genau auf diese Dateien beschränkt und
+    // nicht auf `packages/db/**`: alles andere in dem Paket läuft im
+    // Serverprozess und bleibt unter der Regel. `scripts/**` ist hier auf
+    // `.ts` erweitert — dass `coverage-aggregate.ts` bisher unter die Regel
+    // fiel und `coverage-aggregate.mjs` nicht, war eine Lücke der Endung,
+    // keine Aussage.
+    files: [
+      "scripts/**/*.{mjs,js,ts}",
+      "**/*.mjs",
+      "packages/db/src/seed.ts",
+      "packages/db/src/seed-*.ts",
+      "packages/db/src/seeds/**/*.ts",
+      "packages/db/src/migrate-all.ts",
+      "packages/db/src/migrate-all-report.ts",
+      "packages/db/src/create-admin.ts",
+    ],
     rules: {
       "no-console": "off",
     },

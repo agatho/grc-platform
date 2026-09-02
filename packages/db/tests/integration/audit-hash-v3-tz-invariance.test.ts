@@ -17,6 +17,13 @@ const DB_URL = process.env.INTEGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
 
 describe("audit-hash v3 TZ-invariance (Wave-23.2)", () => {
   if (!DB_URL) {
+    // [ARCTOS-FULL-2026-08-31 · OP-141] Grund: ohne INTEGRATION_DATABASE_URL /
+    // DATABASE_URL gibt es keine Datenbank, gegen die `compute_audit_hash_v3`
+    // zweimal in zwei Zeitzonen laufen könnte. In CI ist die URL gesetzt, dort
+    // läuft der Test. Der Grund steht hier und nicht im Testnamen: seit
+    // OP-141 akzeptiert `repo-test-hygiene` einen Titel nicht mehr als
+    // Begründung — sonst wäre jeder Skip dokumentiert, dessen Name acht
+    // Zeichen hat.
     it.skip("no DATABASE_URL set, skipping", () => {});
     return;
   }

@@ -48,7 +48,7 @@ services:
     # Operators who want bit-identical can replace with a digest:
     #   image: timescale/timescaledb@sha256:...
     image: timescale/timescaledb:2.26.3-pg16
-    logging: *default-logging   # #S13-16
+    logging: *default-logging # #S13-16
     restart: unless-stopped
     # #SEC-F07: block privilege escalation via setuid binaries. Postgres
     # itself is otherwise unchanged (it still needs a writable data dir on
@@ -78,7 +78,7 @@ services:
   redis:
     # #DEP-CONFIG: pinned minor (was `redis:7-alpine`, moving tag).
     image: redis:7.4-alpine
-    logging: *default-logging   # #S13-16
+    logging: *default-logging # #S13-16
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -175,7 +175,7 @@ services:
   # ── ARCTOS Web App ────────────────────────────────────────────
   web:
     image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-web:${IMAGE_TAG:-latest}
-    logging: *default-logging   # #S13-16
+    logging: *default-logging # #S13-16
     build:
       context: .
       dockerfile: Dockerfile
@@ -366,7 +366,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "node -e \"fetch('http://127.0.0.1:3000/api/v1/health').then(r=>r.json().then(j=>process.exit(r.ok&&j.status!=='unhealthy'?0:1))).catch(()=>process.exit(1))\""
+        - 'node -e "fetch(''http://127.0.0.1:3000/api/v1/health'').then(r=>r.json().then(j=>process.exit(r.ok&&j.status!==''unhealthy''?0:1))).catch(()=>process.exit(1))"'
       interval: 30s
       timeout: 10s
       retries: 3
@@ -381,7 +381,7 @@ services:
 
   # ── ARCTOS Worker (Cron Jobs, Background Tasks) ───────────────
   worker:
-    logging: *default-logging   # #S13-16
+    logging: *default-logging # #S13-16
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -481,7 +481,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        - 'node -e "fetch(''http://127.0.0.1:3001/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
       interval: 30s
       timeout: 10s
       retries: 3
@@ -523,7 +523,7 @@ services:
   # statt abwesend. Beide Ziele gehoeren in die Inbetriebnahme-Checkliste
   # (docs/runbook.md §8).
   ops-metrics:
-    logging: *default-logging   # #S13-16
+    logging: *default-logging # #S13-16
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -564,7 +564,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "node -e \"fetch('http://127.0.0.1:9105/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        - 'node -e "fetch(''http://127.0.0.1:9105/readyz'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
       interval: 60s
       timeout: 10s
       retries: 3

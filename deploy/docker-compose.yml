@@ -70,7 +70,7 @@
 #   5. https://<ARCTOS_DOMAIN> oeffnen
 # ============================================================================
 
-x-logging: &default-logging   # #S13-16
+x-logging: &default-logging # #S13-16
   driver: json-file
   options:
     max-size: "50m"
@@ -110,7 +110,7 @@ services:
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" ping | grep -q PONG"]
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep -q PONG']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -207,7 +207,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "node -e \"fetch('http://127.0.0.1:3000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        - 'node -e "fetch(''http://127.0.0.1:3000/api/v1/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
       interval: 30s
       timeout: 10s
       retries: 3
@@ -255,7 +255,7 @@ services:
     healthcheck:
       test:
         - CMD-SHELL
-        - "node -e \"fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
+        - 'node -e "fetch(''http://127.0.0.1:3001/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
       interval: 30s
       timeout: 10s
       retries: 3

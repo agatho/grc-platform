@@ -1,15 +1,28 @@
 {
-  "_comment": "#S13-17 ESLint-Ratsche für apps/worker, packages/* und scripts/*. Zahlen dürfen nur SINKEN. Neu setzen: node scripts/lint-ratchet.mjs --update. apps/web hat eine eigene, strengere Konfiguration (WP12) und wird hier nicht gezählt.",
-  "_updatedAt": "2026-09-01",
-  "_targets": ["apps/worker", "packages", "scripts"],
+  "_comment": "#S13-17 ESLint-Ratsche für apps/worker, packages/* und scripts/*. Zahlen dürfen nur SINKEN. Neu setzen: node scripts/lint-ratchet.mjs --update. Eine Anhebung verlangt zusätzlich --reason und wird in _history festgehalten. apps/web hat eine eigene, strengere Konfiguration (WP12) und wird hier nicht gezählt.",
+  "_updatedAt": "2026-09-02",
+  "_targets": [
+    "apps/worker",
+    "packages",
+    "scripts"
+  ],
   "counts": {
     "(fatal-or-directive)": 1,
     "@typescript-eslint/no-explicit-any": 26,
     "@typescript-eslint/no-require-imports": 1,
     "@typescript-eslint/no-unused-vars": 249,
-    "no-console": 121,
+    "no-console": 23,
     "no-control-regex": 3,
     "no-empty": 2,
     "no-useless-escape": 1
-  }
+  },
+  "_history": [
+    {
+      "date": "2026-09-02",
+      "total": 306,
+      "changed": [
+        "no-console: 121 → 23"
+      ]
+    }
+  ]
 }

@@ -81,6 +81,17 @@ export const processScheduledNotifications = withCronInstrumentation(
               updatedAt: now,
             })
             .where(eq(notification.id, notif.id));
+          // [ARCTOS-FULL-2026-08-31 · OP-108] Dieser Zweig zaehlte nur den
+          // lokalen `failed`-Zaehler hoch. `report.toResult()` ueberschreibt
+          // `failed`/`ok` mit den Zahlen des Reports — eine Benachrichtigung,
+          // die nie zugestellt werden kann, kam damit als
+          // `{ failed: 0, ok: true }` zurueck: dieselbe Klasse wie S10-12
+          // ("Teilfehlschlag als Erfolg gemeldet"), einen Zweig weiter. Der
+          // Zweig darunter (unbekannter Template-Key) hat es richtig gemacht.
+          report.fail(
+            `notification ${notif.id}`,
+            new Error("recipient user not found"),
+          );
           failed++;
           continue;
         }

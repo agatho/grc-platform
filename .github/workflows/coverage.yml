@@ -76,7 +76,7 @@ jobs:
         if: always()
         run: npx tsx scripts/coverage-aggregate.ts
 
-      # [WP10 · S13-25] Ratsche gegen coverage/coverage-baseline.json: die
+      # [WP10 · S13-25] Ratsche gegen .coverage-ratchet.json: die
       # Gesamt- und Paketabdeckung darf nicht unter den eingecheckten Stand
       # fallen, und ein Paket darf nicht stillschweigend aus der Messung
       # verschwinden (sonst passiert `--passWithNoTests` das Gate durch

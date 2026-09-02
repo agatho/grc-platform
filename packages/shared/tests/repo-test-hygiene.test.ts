@@ -127,13 +127,27 @@ describe("repository test hygiene", () => {
     // comment, or when it is the ALLOW_SKIP_DB_TESTS / env-gated pattern whose
     // reason is printed at runtime by the package's require-db guard.
     const undocumented: Hit[] = [];
+    /** Ersetzt jedes Zeichenkettenliteral durch leere Anführungszeichen. */
+    const stripStringLiterals = (line: string): string =>
+      line
+        .replace(/`(?:\\.|[^`\\])*`/g, "``")
+        .replace(/"(?:\\.|[^"\\])*"/g, '""')
+        .replace(/'(?:\\.|[^'\\])*'/g, "''");
     const skipPattern =
       /\b(?:describe|it|test)\s*\.\s*(?:skip|todo|fixme)\b|(?:^|[^.\w])(?:ctx|this)\.skip\s*\(/;
 
     for (const file of testFiles) {
       const lines = readFileSync(file, "utf8").split("\n");
       lines.forEach((text, i) => {
-        if (!skipPattern.test(text)) return;
+        // [ARCTOS-FULL-2026-08-31 · OP-141] Gesucht wird Code, nicht Prosa.
+        // Vier E2E-Dateien tragen in einer Zusicherungsmeldung den Satz
+        // "This used to be a silent `test.skip`." — die Erklärung dafür, dass
+        // dort **kein** Skip mehr steht. Der Wächter hat sie als Skip gezählt
+        // und dieselbe Datei angezeigt, deren Verbesserung sie belegen. Für
+        // die Erkennung werden Zeichenkettenliterale deshalb ausgeblendet;
+        // für die anschliessende Begründungsprüfung bleibt die Zeile im
+        // Original stehen, denn dort **ist** die Zeichenkette die Begründung.
+        if (!skipPattern.test(stripStringLiterals(text))) return;
         const hasInlineComment = /\/\/|\/\*/.test(text);
         const prev = (lines[i - 1] ?? "").trim();
         const hasCommentAbove = prev.startsWith("//") || prev.startsWith("*");
@@ -147,9 +161,21 @@ describe("repository test hygiene", () => {
         // Playwright's `test.skip(condition, "reason")` carries its reason as
         // the second argument — often wrapped onto one of the next lines by
         // prettier, so look at a small window rather than a single line.
+        //
+        // [ARCTOS-FULL-2026-08-31 · OP-141] Das Muster hiess vorher
+        // `\.skip\s*\([^;]*["'`]…{8,}["'`]` und liess damit auch
+        // `it.skip("ein hinreichend langer Testname", fn)` durch — der
+        // **Titel** wurde als Begründung akzeptiert. Damit war jeder
+        // gewöhnliche Skip dokumentiert, sobald sein Name acht Zeichen hatte,
+        // und die Regel bestand nur noch auf dem Papier. Jetzt gilt die
+        // Ausnahme nur für die Playwright-Form: erstes Argument **kein**
+        // Zeichenkettenliteral (die Bedingung), danach ein Komma, danach die
+        // Begründung.
         const window = [text, lines[i + 1] ?? "", lines[i + 2] ?? ""].join(" ");
         const hasReasonArgument =
-          /\.\s*(?:skip|fixme)\s*\([^;]*["'`][^"'`]{8,}["'`]/.test(window);
+          /\.\s*(?:skip|fixme)\s*\(\s*[^"'`,;)][^;)]*,\s*["'`][^"'`]{8,}["'`]/.test(
+            window,
+          );
 
         if (
           !hasInlineComment &&

@@ -16,5 +16,23 @@
     "findingBadge": "{open, plural, one {1 offene Feststellung} other {# offene Feststellungen}}, davon {critical} kritisch",
     "lodStripe": "Verteidigungslinie: {lod}",
     "drillDown": "Zum verknüpften Teilprozess {name} wechseln"
+  },
+  "grcView": {
+    "label": "GRC-Sicht",
+    "off": "GRC-Sicht: aus",
+    "loading": "GRC-Daten werden geladen …",
+    "error": "GRC-Daten nicht geladen ({reason})",
+    "computedAt": "Stand: {timestamp}",
+    "views": {
+      "modeling": "Modellierung",
+      "risk-control": "Risiko & Kontrolle",
+      "compliance": "Compliance & Nachweis",
+      "privacy": "Datenschutz",
+      "continuity": "Kontinuität (BCM)",
+      "operations": "Betrieb & Effizienz",
+      "organization": "Organisation & SoD",
+      "architecture": "Architektur (EAM)",
+      "responsibility": "Verantwortung"
+    }
   }
 }

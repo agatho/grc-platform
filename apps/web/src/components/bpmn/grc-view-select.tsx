@@ -16,23 +16,33 @@
  * wird deshalb nur als **Typ** importiert (zur Bauzeit gelöscht); ein Test
  * hält die Liste gegen `GRC_VIEWS` und schlägt fehl, sobald eine Sicht
  * dazukommt oder wegfällt.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-071] Die Beschriftungen standen bis hierher
+ * fest verdrahtet auf Deutsch im Code — die Liste trug neben der Kennung auch
+ * den Titel. Sie kommen jetzt aus `messages/<locale>/bpmn.json` unter
+ * `grcView.views.<id>`. Der Schlüssel wird zur Laufzeit zusammengesetzt und
+ * ist damit für `scripts/audit-i18n-usage.mjs` eine dynamische Aufrufstelle;
+ * den Nachweis, dass zu jeder Sicht in **beiden** Sprachen eine Beschriftung
+ * existiert, führt deshalb der Test, nicht das Tor.
  */
 
+import { useTranslations } from "next-intl";
 import type { GrcViewId } from "@grc/bpmn/grc";
 
-export const GRC_VIEW_OPTIONS: ReadonlyArray<{
-  readonly id: GrcViewId;
-  readonly title: string;
-}> = [
-  { id: "modeling", title: "Modellierung" },
-  { id: "risk-control", title: "Risiko & Kontrolle" },
-  { id: "compliance", title: "Compliance & Nachweis" },
-  { id: "privacy", title: "Datenschutz" },
-  { id: "continuity", title: "Kontinuität (BCM)" },
-  { id: "operations", title: "Betrieb & Effizienz" },
-  { id: "organization", title: "Organisation & SoD" },
-  { id: "architecture", title: "Architektur (EAM)" },
-  { id: "responsibility", title: "Verantwortung" },
+/**
+ * Die neun Sichten in Anzeigereihenfolge. Bewusst nur die Kennungen: der Titel
+ * ist Übersetzungsgut und hat im Code nichts verloren.
+ */
+export const GRC_VIEW_OPTIONS: readonly GrcViewId[] = [
+  "modeling",
+  "risk-control",
+  "compliance",
+  "privacy",
+  "continuity",
+  "operations",
+  "organization",
+  "architecture",
+  "responsibility",
 ];
 
 export interface GrcViewSelectProps {
@@ -53,12 +63,15 @@ export function GrcViewSelect({
   error = null,
   className,
 }: GrcViewSelectProps) {
+  const t = useTranslations("bpmn");
+  const label = t("grcView.label");
+
   return (
     <div className={className}>
       <label className="flex items-center gap-1">
-        <span className="sr-only">GRC-Sicht</span>
+        <span className="sr-only">{label}</span>
         <select
-          aria-label="GRC-Sicht"
+          aria-label={label}
           className="rounded border-0 bg-transparent px-1 py-0.5 text-xs text-muted-foreground focus:outline-none"
           value={value ?? ""}
           onChange={(event) => {
@@ -66,10 +79,10 @@ export function GrcViewSelect({
             onChange(next === "" ? null : (next as GrcViewId));
           }}
         >
-          <option value="">GRC-Sicht: aus</option>
-          {GRC_VIEW_OPTIONS.map((view) => (
-            <option key={view.id} value={view.id}>
-              {view.title}
+          <option value="">{t("grcView.off")}</option>
+          {GRC_VIEW_OPTIONS.map((id) => (
+            <option key={id} value={id}>
+              {t(`grcView.views.${id}`)}
             </option>
           ))}
         </select>
@@ -82,11 +95,13 @@ export function GrcViewSelect({
       {value !== null && (
         <p className="px-1 text-[10px] leading-tight text-muted-foreground">
           {error !== null
-            ? `GRC-Daten nicht geladen (${error})`
+            ? t("grcView.error", { reason: error })
             : loading
-              ? "GRC-Daten werden geladen …"
+              ? t("grcView.loading")
               : computedAt !== undefined
-                ? `Stand: ${formatStand(computedAt)}`
+                ? t("grcView.computedAt", {
+                    timestamp: formatStand(computedAt),
+                  })
                 : ""}
         </p>
       )}
