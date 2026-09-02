@@ -2,9 +2,13 @@ import { db, importJob } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { executeImport } from "@/lib/import-export/import-executor";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/import/:jobId/execute — Run import in single transaction
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ jobId: string }> },
 ) {
@@ -113,4 +117,4 @@ export async function POST(
     console.error("[import/execute] failed", err);
     return Response.json({ error: "Import execution failed" }, { status: 500 });
   }
-}
+});

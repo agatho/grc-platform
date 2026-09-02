@@ -13,9 +13,13 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/policies/distributions/:id/overdue — Overdue users list
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -78,14 +82,13 @@ export async function GET(
     page,
     limit,
   );
-}
-
+});
 // POST /api/v1/policies/distributions/:id/overdue — Send reminders to overdue users
 const sendReminderSchema = z.object({
   userIds: z.array(z.string().uuid()).min(1).max(100),
 });
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -163,4 +166,4 @@ export async function POST(
   });
 
   return Response.json({ data: { remindersSent } });
-}
+});

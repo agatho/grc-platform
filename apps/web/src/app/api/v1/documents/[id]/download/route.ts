@@ -16,6 +16,10 @@ import {
   watermarkRequiredForStatus,
   verifyStoredBytes,
 } from "@/lib/documents/download-policy";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/documents/:id/download — Download file attachment.
 //
@@ -44,7 +48,7 @@ import {
 // compared against document.file_sha256 before anything is served. A
 // mismatch means the stored object was changed behind the database's
 // back and is refused with 409.
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -252,4 +256,4 @@ export async function GET(
   }
 
   return new Response(new Uint8Array(buffer), { headers });
-}
+});

@@ -121,6 +121,28 @@ const hcTokens = tokensIn(
 );
 
 const LIGHT_SURFACE = hexToSrgb("#ffffff");
+
+/**
+ * [E2E-TRIAGE-2026-09-02] The surface the product ACTUALLY paints on.
+ *
+ * `--color-surface` is `#ffffff`, and S14-11 measured every token against it.
+ * No dashboard page is white: the application chrome paints on `bg-gray-50`
+ * = `oklch(0.985 0.002 75)` = `#fbfaf9`, and a token loses roughly 0.2 of its
+ * ratio there. That is the whole distance between pass and fail for the
+ * secondary-text greys, and axe caught it on /dashboard in the first full E2E
+ * run: "insufficient color contrast of 4.38 (foreground color: #7a756e,
+ * background color: #fbfaf9)" — while this gate reported 4.56:1 for the same
+ * token, because it was asking about a background the user never sees.
+ *
+ * A contrast gate has to measure the DARKEST default surface, not the
+ * lightest. Both are checked below.
+ */
+const LIGHT_SURFACE_ALT = oklchToSrgb(0.985, 0.002, 75); // bg-gray-50, #fbfaf9
+
+/** Both light-theme surfaces, worst case wins. */
+function lightContrast(fg: [number, number, number]): number {
+  return Math.min(contrast(fg, LIGHT_SURFACE), contrast(fg, LIGHT_SURFACE_ALT));
+}
 // `.dark { --color-surface: oklch(0.178 0.006 260); }`
 const DARK_SURFACE = oklchToSrgb(0.178, 0.006, 260);
 
@@ -240,9 +262,11 @@ describe("theme contrast (S14-11 / EN 301 549 §9.1.4.3)", () => {
       if (!SURFACE_TEXT_SHADES_LIGHT.includes(shadeOf(token))) continue;
       const rgb = lightTokens.get(token);
       if (!rgb) continue; // not overridden by the design system
-      const ratio = contrast(rgb, LIGHT_SURFACE);
+      const ratio = lightContrast(rgb);
       if (ratio < AA_NORMAL)
-        failures.push(`text-${token}: ${ratio.toFixed(2)}:1`);
+        failures.push(
+          `text-${token}: ${ratio.toFixed(2)}:1 (worst of #ffffff and #fbfaf9)`,
+        );
     }
     expect(failures).toEqual([]);
   });
@@ -266,7 +290,7 @@ describe("theme contrast (S14-11 / EN 301 549 §9.1.4.3)", () => {
       if (!SURFACE_TEXT_SHADES_LIGHT.includes(shadeOf(token))) continue;
       const hc = hcTokens.get(token);
       if (!hc) continue;
-      const ratio = contrast(hc, LIGHT_SURFACE);
+      const ratio = lightContrast(hc);
       if (ratio < AA_NORMAL)
         failures.push(`.high-contrast text-${token}: ${ratio.toFixed(2)}:1`);
     }
@@ -276,15 +300,23 @@ describe("theme contrast (S14-11 / EN 301 549 §9.1.4.3)", () => {
   it("`gray-400` specifically — the token behind 1.177 of the 1.201 failing usages", () => {
     // The direct regression guard for S14-11. Named explicitly so that a
     // future change to the shade range above cannot quietly stop covering it.
+    expect(lightContrast(lightTokens.get("gray-400")!)).toBeGreaterThanOrEqual(
+      AA_NORMAL,
+    );
+    // The exact value axe reported as failing on /dashboard, pinned so the
+    // regression cannot come back through a "harmless" lightening.
     expect(
-      contrast(lightTokens.get("gray-400")!, LIGHT_SURFACE),
-    ).toBeGreaterThanOrEqual(AA_NORMAL);
+      contrast(lightTokens.get("gray-400")!, LIGHT_SURFACE_ALT),
+    ).toBeGreaterThan(4.5);
+    expect(
+      contrast(lightTokens.get("gray-500")!, LIGHT_SURFACE_ALT),
+    ).toBeGreaterThan(4.5);
     expect(
       contrast(darkTokens.get("gray-400")!, DARK_SURFACE),
     ).toBeGreaterThanOrEqual(AA_NORMAL);
-    expect(
-      contrast(hcTokens.get("gray-400")!, LIGHT_SURFACE),
-    ).toBeGreaterThanOrEqual(AA_NORMAL);
+    expect(lightContrast(hcTokens.get("gray-400")!)).toBeGreaterThanOrEqual(
+      AA_NORMAL,
+    );
   });
 
   it("`text-gray-300` and `text-blue-400` are no longer used as surface text", () => {

@@ -1,9 +1,13 @@
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/scim/stats — SCIM dashboard statistics
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -28,4 +32,4 @@ export async function GET(req: Request) {
       activeTokens: (stats as any)?.active_tokens ?? 0,
     },
   });
-}
+});

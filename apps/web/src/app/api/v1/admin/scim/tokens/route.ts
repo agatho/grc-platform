@@ -8,9 +8,13 @@ import {
   scimTokenDefaultExpiry,
   SCIM_TOKEN_DEFAULT_TTL_DAYS,
 } from "@grc/auth/scim";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/scim/tokens — List SCIM tokens for current org
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -33,10 +37,9 @@ export async function GET(req: Request) {
     .orderBy(scimToken.createdAt);
 
   return Response.json({ data: tokens });
-}
-
+});
 // POST /api/v1/admin/scim/tokens — Generate new SCIM token
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -93,4 +96,4 @@ export async function POST(req: Request) {
     },
     { status: 201 },
   );
-}
+});

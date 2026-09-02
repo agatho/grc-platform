@@ -10,6 +10,7 @@
     "db:migrate": "dotenv -e ../../.env -e ../../apps/web/.env.local -- drizzle-kit migrate",
     "db:migrate-all": "tsx src/migrate-all.ts",
     "db:seed": "tsx src/seed.ts",
+    "db:seed:demo": "dotenv -e ../../.env -e ../../apps/web/.env.local -- tsx src/seed-demo.ts",
     "db:seed-risk": "tsx src/seed-risk.ts",
     "db:seed-all": "tsx src/seed-all.ts",
     "db:studio": "drizzle-kit studio",

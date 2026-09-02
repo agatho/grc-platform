@@ -174,9 +174,16 @@ async function establishRequestScopedContext(ctx: {
         after(reserved.release);
       } catch {
         // Not inside a Next request scope (e.g. an integration test invoking the
-        // handler directly). The reserved connection is released when the pool
-        // closes; production always has after() inside a request, so there is no
-        // per-request leak. The store stays mutated so the chain still works.
+        // handler directly).
+        //
+        // [E2E-TRIAGE-2026-09-02] This used to return WITHOUT releasing, on the
+        // reasoning "the reserved connection is released when the pool closes;
+        // production always has after() inside a request". A long-running
+        // server's pool never closes, so that is a leak for the lifetime of the
+        // process — and the FALLBACK branch below already releases in exactly
+        // this situation. Do the same here. `releaseRequestContext` is
+        // idempotent, so an `after()` that fires later is harmless.
+        void reserved.release().catch(() => {});
       }
       return;
     }

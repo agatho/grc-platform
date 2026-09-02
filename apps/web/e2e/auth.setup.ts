@@ -56,6 +56,37 @@ setup("authenticate as admin", async ({ page }) => {
       "storage state.",
   ).toBeTruthy();
 
+  // [E2E-TRIAGE-2026-09-02] Pin the tenant into the stored state.
+  //
+  // The active organisation of a session is `roles[0].orgId`
+  // (packages/auth/src/config.ts) — the first membership row the database
+  // happens to return. An account with several memberships therefore lands
+  // somewhere unpredictable, and `f-02-org-create` adds a THROWAWAY
+  // organisation to that set on every run, permanently. On the first full run
+  // the whole suite ended up pointed at an empty `E2E-F02b-…` tenant and every
+  // "loads with demo data" spec failed for that reason alone.
+  //
+  // `E2E_ORG_ID` names the tenant the suite asserts against (normally the one
+  // `db:seed:demo` populates); the switch is written into the storage state so
+  // all 21 specs that reuse it inherit it. Opt-in: unset, nothing changes.
+  const orgId = process.env.E2E_ORG_ID;
+  if (orgId && session?.user?.currentOrgId !== orgId) {
+    const status = await page.evaluate(async (id: string) => {
+      const r = await fetch("/api/v1/auth/switch-org", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId: id }),
+      });
+      return r.status;
+    }, orgId);
+    expect(
+      status,
+      `E2E_ORG_ID=${orgId} is set, but switching ${EMAIL} into that ` +
+        `organisation answered ${status}. Refusing to write a storage state ` +
+        "for an unknown tenant.",
+    ).toBe(200);
+  }
+
   // Save auth state
   await page.context().storageState({ path: STORAGE_STATE });
 });

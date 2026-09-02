@@ -16,6 +16,10 @@ import {
   watermarkRequiredForStatus,
   verifyStoredBytes,
 } from "@/lib/documents/download-policy";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/documents/:id/files/:fileId/download — Download a single
 // file attachment (D4). Same SVG-XSS hardening as [id]/download, and
@@ -30,7 +34,7 @@ import {
 //   - every issuance is audit-logged, raw and refusal included (#S06-08)
 //   - the stored bytes are re-hashed against document_file.sha256 before
 //     anything is served (#S06-09)
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> },
 ) {
@@ -235,4 +239,4 @@ export async function GET(
   }
 
   return new Response(new Uint8Array(buffer), { headers });
-}
+});

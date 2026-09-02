@@ -22,6 +22,10 @@ import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
 import { z } from "zod";
 import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const schema = z.object({
   processIds: z.array(z.string().uuid()).optional(),
@@ -53,7 +57,7 @@ function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
   return out;
 }
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "auditor",
@@ -306,4 +310,4 @@ export async function POST(req: Request) {
       },
     },
   );
-}
+});

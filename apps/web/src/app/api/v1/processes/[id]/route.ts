@@ -13,9 +13,13 @@ import { eq, and, isNull, count, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { alias } from "drizzle-orm/pg-core";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/processes/:id — Full detail
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -109,10 +113,9 @@ export async function GET(
       riskCount,
     },
   });
-}
-
+});
 // PUT /api/v1/processes/:id — Update metadata
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -201,10 +204,9 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // DELETE /api/v1/processes/:id — Soft delete (admin only)
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -253,4 +255,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { id, deleted: true } });
-}
+});

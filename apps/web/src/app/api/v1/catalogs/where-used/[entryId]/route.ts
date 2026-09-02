@@ -1,6 +1,10 @@
 import { db, catalogEntryReference } from "@grc/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/catalogs/where-used/[entryId] — Where-used references for a catalog entry
 //
@@ -8,7 +12,7 @@ import { withAuth } from "@/lib/api";
 // LIMIT. A popular catalog entry (e.g. an ISO 27002 control referenced by
 // hundreds of risk-mappings) could return tens of thousands of rows in
 // a single response. Now paginated; default 50, cap 500.
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ entryId: string }> },
 ) {
@@ -51,4 +55,4 @@ export async function GET(
       hasMore: (totalRow[0]?.count ?? 0) > offset + references.length,
     },
   });
-}
+});

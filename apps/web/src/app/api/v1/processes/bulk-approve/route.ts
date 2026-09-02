@@ -25,6 +25,10 @@ import {
 } from "@/lib/process-gates";
 import { computePayloadHash, computeChainHash } from "@/lib/sign-off-chain";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const bulkSchema = z.object({
   processIds: z.array(z.string().uuid()).min(1).max(100),
@@ -44,7 +48,7 @@ interface PerProcessResult {
   newStatus?: string;
 }
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "quality_manager", "compliance_officer");
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
@@ -240,4 +244,4 @@ export async function POST(req: Request) {
       results,
     },
   });
-}
+});

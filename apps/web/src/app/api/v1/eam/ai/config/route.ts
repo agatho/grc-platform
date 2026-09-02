@@ -11,9 +11,13 @@ import {
   maskApiKey,
   sealEamAiConfig,
 } from "../_shared/config";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/eam/ai/config — Current AI provider config (without API key)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -45,10 +49,9 @@ export async function GET(req: Request) {
         : {}),
     },
   });
-}
-
+});
 // PUT /api/v1/eam/ai/config — Set/update AI provider
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -112,4 +115,4 @@ export async function PUT(req: Request) {
       maskedApiKey: maskApiKey(parsed.data.apiKey),
     },
   });
-}
+});

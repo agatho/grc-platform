@@ -8,6 +8,10 @@ import {
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc, ne, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // DELETE /api/v1/documents/:id/files/:fileId — Soft-delete a file
 // attachment (D4). The physical file is kept for the version history
@@ -23,7 +27,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // if any signature request froze such a version, the deletion is
 // refused; otherwise the affected versions are cleared explicitly so
 // the dangling reference is visible instead of silent.
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string; fileId: string }> },
 ) {
@@ -179,4 +183,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { id: result.id, deleted: true } });
-}
+});

@@ -3,6 +3,10 @@ import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { getRequestId } from "@/lib/api-errors";
 import { log } from "@/lib/logger";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/audit-log/integrity
 //
@@ -309,7 +313,7 @@ export async function computeIntegrity(
   };
 }
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   // #WAVE24-B1: CISO + compliance_officer added back. Wave-23 tightened
   // this to admin+auditor and broke the CISO's quarterly hash-chain
   // health check (ISO 27001 A.12.4.2 requires the IS-responsible role
@@ -388,4 +392,4 @@ export async function GET(req: Request) {
       },
     );
   }
-}
+});

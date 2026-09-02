@@ -9,6 +9,10 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createDocumentVersion } from "@/lib/document-versioning";
 import { emitEntityStatusChanged } from "@/lib/entity-events";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // Map document status to work item status
 const DOCUMENT_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -21,7 +25,7 @@ const DOCUMENT_TO_WORK_ITEM_STATUS: Record<string, string> = {
 };
 
 // PUT /api/v1/documents/:id/status — Lifecycle transition
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -263,4 +267,4 @@ export async function PUT(
   });
 
   return Response.json({ data: updated });
-}
+});

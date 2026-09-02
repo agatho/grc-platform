@@ -11,9 +11,13 @@ import { eq, and, isNull, asc, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { findWorkingVersion } from "@/lib/process-working-version";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/processes/:id/approval-steps?versionNumber=N
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -100,13 +104,12 @@ export async function GET(
     data: steps,
     meta: { currentVersion: existing.currentVersion },
   });
-}
-
+});
 // POST /api/v1/processes/:id/approval-steps — define the approval chain.
 // Without an explicit `steps` array the default chain is created:
 // 1 reviewer (process.reviewerId or role 'auditor') → 1 approver
 // (role 'admin') → acknowledgment step per acknowledgmentUserIds entry.
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -312,4 +315,4 @@ export async function POST(
   );
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

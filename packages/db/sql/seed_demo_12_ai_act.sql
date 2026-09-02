@@ -1,8 +1,13 @@
 -- Seed: EU AI Act Demo Data
 -- 5 AI Systems, 1 GPAI Model, 2 Incidents, Screenings, QMS, Corrective Actions
 
--- Use the existing org ID
--- org: c2446a5c-64f1-40a7-862a-8ab084f66f41 (Meridian Holdings)
+-- [E2E-TRIAGE-2026-09-02] This file wrote into `c2446a5c…` while every other
+-- seed_demo_*.sql writes into `ccc4cc1c…` — the tenant `seed_demo_00_platform`
+-- documents as "demo data org (all seed_demo_01-12 reference this)". The result
+-- was a demo set split across two organisations: whichever tenant you opened,
+-- part of it was missing, and the EU-AI-Act register in particular was
+-- invisible from the tenant holding the risks, controls, assets and audits.
+-- org: ccc4cc1c-4b09-499c-8420-ebd8da655cd7 (Meridian Holdings — Demo Tenant)
 -- admin user: from seed
 
 -- ============================================================
@@ -11,7 +16,7 @@
 
 INSERT INTO ai_system (id, org_id, system_code, name, description, purpose, ai_technique, risk_classification, risk_justification, annex_category, provider_or_deployer, provider_name, provider_jurisdiction, deployment_date, human_oversight_required, status, eu_database_registered, documentation_retention_years) VALUES
 -- 1. High-risk: HR Recruiting AI
-('a1000000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'AIS-001', 'KI-gestütztes Bewerbermanagement',
  'Automatisierte Vorauswahl von Bewerbungen basierend auf Qualifikationsprofilen und Erfahrungsdaten. Einsatz im gesamten Konzern für Positionen ab Teamleiter-Ebene.',
  'Effizienzsteigerung im Recruiting-Prozess durch automatisierte Vorqualifizierung',
@@ -19,7 +24,7 @@ INSERT INTO ai_system (id, org_id, system_code, name, description, purpose, ai_t
  'deployer', 'TalentAI GmbH', 'Deutschland', '2025-03-15', true, 'compliant', true, 10),
 
 -- 2. High-risk: Credit Scoring
-('a1000000-0000-0000-0000-000000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-000000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'AIS-002', 'Kreditwürdigkeitsbewertung',
  'ML-basierte Bewertung der Kreditwürdigkeit von Geschäftskunden für interne Kreditlinien. Berücksichtigt Finanzkennzahlen, Zahlungshistorie und Branchenrisiken.',
  'Risikobewertung für interne Kreditvergabe',
@@ -27,7 +32,7 @@ INSERT INTO ai_system (id, org_id, system_code, name, description, purpose, ai_t
  'both', 'Meridian FinTech Lab', 'Deutschland', '2025-06-01', true, 'registered', false, 10),
 
 -- 3. Limited risk: Chatbot
-('a1000000-0000-0000-0000-000000000003', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-000000000003', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'AIS-003', 'Kundenservice-Chatbot',
  'Generativer KI-Chatbot für First-Level-Support. Beantwortet Standardanfragen zu Produkten, Lieferzeiten und Rechnungen. Eskalation an menschliche Agenten bei komplexen Fällen.',
  'Automatisierung des Erstkundenservice',
@@ -35,7 +40,7 @@ INSERT INTO ai_system (id, org_id, system_code, name, description, purpose, ai_t
  'deployer', 'OpenAI Inc.', 'USA', '2025-01-10', false, 'compliant', false, 10),
 
 -- 4. Minimal risk: Predictive Maintenance
-('a1000000-0000-0000-0000-000000000004', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-000000000004', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'AIS-004', 'Predictive Maintenance Produktionsanlagen',
  'IoT-Sensordaten-Analyse zur Vorhersage von Wartungsbedarf an Industriemaschinen. Reduziert ungeplante Ausfallzeiten um durchschnittlich 40%.',
  'Vorausschauende Wartungsplanung',
@@ -43,7 +48,7 @@ INSERT INTO ai_system (id, org_id, system_code, name, description, purpose, ai_t
  'deployer', 'Siemens MindSphere', 'Deutschland', '2024-09-01', false, 'compliant', false, 10),
 
 -- 5. Under review: Emotion Recognition (potential prohibition)
-('a1000000-0000-0000-0000-000000000005', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-000000000005', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'AIS-005', 'Emotionserkennung Arbeitsplatz',
  'Pilotprojekt zur Analyse von Mitarbeiterzufriedenheit durch Gesichtserkennung in Videokonferenzen. ACHTUNG: Möglicherweise unter Art. 5 Abs. 1 lit. f verboten.',
  'Stimmungsanalyse für HR',
@@ -56,7 +61,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 INSERT INTO ai_gpai_model (id, org_id, name, provider, model_type, is_systemic_risk, systemic_risk_justification, training_data_summary, energy_consumption_kwh, version, release_date, status, capabilities_summary, limitations_summary, intended_use) VALUES
-('a1000000-0000-0000-0000-a00000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-a00000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'Meridian-LLM-7B', 'Meridian AI Research', 'general_purpose', false,
  'Unter 10^25 FLOPS Trainingsschwelle, kein systemisches Risiko nach Art. 51 Abs. 2',
  'Trainiert auf öffentlich verfügbaren deutschen Rechtstexten, Compliance-Dokumenten und internen Richtlinien. Keine personenbezogenen Daten im Training.',
@@ -72,7 +77,7 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO ai_incident (id, org_id, ai_system_id, incident_code, title, description, severity, is_serious, detected_at, authority_deadline, status, root_cause, remediation_actions, affected_persons_count, harm_type) VALUES
 -- Serious incident: discriminatory hiring
-('a1000000-0000-0000-0000-b00000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-b00000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001', 'AII-001',
  'Diskriminierung bei KI-gestützter Bewerberauswahl',
  'Das Bewerbermanagement-System hat systematisch Bewerberinnen über 50 Jahre benachteiligt. Die Ursache war ein Bias in den Trainingsdaten, die überwiegend jüngere erfolgreiche Kandidaten enthielten. Betroffen waren ca. 120 Bewerbungen im Zeitraum Q3/2025.',
@@ -84,7 +89,7 @@ INSERT INTO ai_incident (id, org_id, ai_system_id, incident_code, title, descrip
  120, 'discrimination'),
 
 -- Non-serious incident: chatbot hallucination
-('a1000000-0000-0000-0000-b00000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-b00000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000003', 'AII-002',
  'Chatbot gibt falsche Gewährleistungsinformationen',
  'Der Kundenservice-Chatbot hat bei 3 Kunden falsche Informationen zur Gewährleistungsfrist gegeben (24 statt 12 Monate für B2B-Kunden). Keine finanziellen Schäden entstanden.',
@@ -102,19 +107,19 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO ai_prohibited_screening (id, org_id, ai_system_id, screening_date, subliminal_manipulation, exploitation_vulnerable, social_scoring, predictive_policing_individual, facial_recognition_scraping, emotion_inference_workplace, biometric_categorization, real_time_biometric_public, justification, exception_applied, status) VALUES
 -- Clean screening for HR AI
-('a1000000-0000-0000-0000-c00000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-c00000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001', '2025-12-01',
  false, false, false, false, false, false, false, false,
  'Alle 8 Verbotstatbestände geprüft und verneint. System bewertet Qualifikationen, keine verbotenen Praktiken.', false, 'completed'),
 
 -- PROHIBITED: Emotion recognition at workplace
-('a1000000-0000-0000-0000-c00000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-c00000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000005', '2026-01-10',
  false, false, false, false, false, true, false, false,
  'VERBOTEN: Art. 5(1)(f) — Emotionsableitung am Arbeitsplatz mittels biometrischer Daten. System darf nicht eingesetzt werden.', false, 'completed'),
 
 -- Clean for chatbot
-('a1000000-0000-0000-0000-c00000000003', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-c00000000003', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000003', '2025-11-15',
  false, false, false, false, false, false, false, false,
  'Textbasierter Chatbot ohne biometrische Verarbeitung. Keine verbotenen Praktiken.', false, 'completed')
@@ -125,11 +130,11 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 INSERT INTO ai_provider_qms (id, org_id, ai_system_id, risk_management_procedure, data_governance_procedure, technical_documentation_procedure, record_keeping_procedure, transparency_procedure, human_oversight_procedure, accuracy_robustness_procedure, cybersecurity_procedure, incident_reporting_procedure, third_party_management_procedure, overall_maturity, last_audit_date, next_audit_date, status) VALUES
-('a1000000-0000-0000-0000-d00000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-d00000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001',
  true, true, true, true, true, true, false, true, true, false,
  3, '2025-12-15', '2026-06-15', 'completed'),
-('a1000000-0000-0000-0000-d00000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1000000-0000-0000-0000-d00000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000002',
  true, false, true, false, false, true, false, false, false, false,
  1, NULL, '2026-03-01', 'draft')
@@ -140,13 +145,13 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 INSERT INTO ai_corrective_action (id, org_id, ai_system_id, source_type, title, description, non_conformity_description, action_type, is_recall, priority, due_date, status, authority_notified) VALUES
-('a1e00000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1e00000-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001', 'incident',
  'Retraining HR-KI nach Altersdiskriminierung',
  'Vollständiges Retraining des Bewerberbewertungsmodells mit ausbalancierten Trainingsdaten. Validierung durch unabhängigen Bias-Audit.',
  'Systematische Benachteiligung von Bewerbern über 50 Jahre durch unbalancierte Trainingsdaten (Incident AII-001)',
  'corrective', false, 'critical', '2026-03-31', 'in_progress', true),
-('a1e00000-0000-0000-0000-000000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1e00000-0000-0000-0000-000000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000005', 'screening',
  'Einstellung Emotionserkennungsprojekt',
  'Sofortige Einstellung des Pilotprojekts zur Emotionserkennung am Arbeitsplatz gemäß Art. 5(1)(f) AI Act.',
@@ -159,7 +164,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 INSERT INTO ai_authority_communication (id, org_id, ai_system_id, authority_name, authority_country, communication_type, direction, subject, content, reference_number, related_incident_id, sent_at, status) VALUES
-('a1f00000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1f00000-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001',
  'Bundesnetzagentur (KI-Aufsicht)', 'DE', 'incident_report', 'outgoing',
  'Meldung schwerwiegender Vorfall AII-001 — Diskriminierung bei KI-Bewerberauswahl',
@@ -173,11 +178,30 @@ ON CONFLICT (id) DO NOTHING;
 -- FRIA entries (Art. 27)
 -- ============================================================
 
+-- [E2E-TRIAGE-2026-09-02] `discrimination_risk`, `data_protection_impact` and
+-- `access_to_justice` are `jsonb` (schema/ai-act.ts:302-304), documented as
+-- `{identifiedBiases, mitigationMeasures, monitoringPlan}`. This statement
+-- passed the bare words 'high' / 'medium' / 'low' into them, which Postgres
+-- rejects with `invalid input syntax for type json`. The whole file is applied
+-- as ONE implicit transaction, so that single error rolled back the AI systems,
+-- the GPAI model, the incidents, the screenings, the QMS records, the
+-- corrective actions and the authority communications with it — the entire
+-- EU-AI-Act demo set, AIS-001 included, which is exactly what the
+-- `ai-act-workflow` specs look for. `overall_impact` is a varchar and stays a
+-- plain word; only the three jsonb columns are corrected.
 INSERT INTO ai_fria (id, org_id, ai_system_id, assessment_code, discrimination_risk, data_protection_impact, access_to_justice, overall_impact, next_review_date, status) VALUES
-('a1b00000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'a1000000-0000-0000-0000-000000000001', 'FRIA-001', 'high', 'medium', 'low', 'high', '2026-06-15', 'completed'),
-('a1b00000-0000-0000-0000-000000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'a1000000-0000-0000-0000-000000000002', 'FRIA-002', 'medium', 'high', 'medium', 'medium', '2026-09-01', 'in_progress')
+('a1b00000-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+ 'a1000000-0000-0000-0000-000000000001', 'FRIA-001',
+ '{"level":"high","identifiedBiases":["Unterrepraesentation weiblicher Bewerber in den Trainingsdaten","Altersproxy ueber Berufserfahrung"],"mitigationMeasures":["Reweighting der Trainingsdaten","Vier-Augen-Prinzip bei Ablehnungen"],"monitoringPlan":"Quartalsweise Fairness-Metriken (demographic parity, equal opportunity)"}'::jsonb,
+ '{"level":"medium","lawfulBasis":"Art. 6 Abs. 1 lit. b DSGVO","dpiaReference":"DPIA-2025-014","retentionMonths":6}'::jsonb,
+ '{"level":"low","humanReviewAvailable":true,"objectionChannel":"recruiting-review@meridian.example.com","responseTimeDays":14}'::jsonb,
+ 'high', '2026-06-15', 'completed'),
+('a1b00000-0000-0000-0000-000000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+ 'a1000000-0000-0000-0000-000000000002', 'FRIA-002',
+ '{"level":"medium","identifiedBiases":["Branchenrisiko-Score korreliert mit dem Unternehmenssitz"],"mitigationMeasures":["Regionalfaktor aus dem Modell entfernt"],"monitoringPlan":"Halbjaehrliche Ueberpruefung der Ablehnungsquoten je Region"}'::jsonb,
+ '{"level":"high","lawfulBasis":"Art. 6 Abs. 1 lit. f DSGVO","dpiaReference":"DPIA-2025-021","retentionMonths":24}'::jsonb,
+ '{"level":"medium","humanReviewAvailable":true,"objectionChannel":"kredit-review@meridian.example.com","responseTimeDays":30}'::jsonb,
+ 'medium', '2026-09-01', 'in_progress')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
@@ -185,6 +209,6 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================================
 
 INSERT INTO ai_conformity_assessment (id, org_id, ai_system_id, assessment_code, assessment_type, assessor_name, assessor_organization, overall_result, valid_from, valid_until, status) VALUES
-('a1a00000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+('a1a00000-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
  'a1000000-0000-0000-0000-000000000001', 'CA-001', 'third_party', 'Dr. Schmidt', 'TÜV Rheinland AI Audit', 'conditional', '2025-12-01', '2026-12-01', 'completed')
 ON CONFLICT (id) DO NOTHING;

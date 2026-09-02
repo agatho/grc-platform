@@ -17,6 +17,10 @@ import { requireModule } from "@grc/auth";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { renderStructuredPdfResponse, type PdfSection } from "@/lib/pdf";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const CATEGORY_LABELS: Record<string, string> = {
   previous_actions: "Maßnahmen aus dem letzten Review",
@@ -39,7 +43,7 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Abgebrochen",
 };
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -207,4 +211,4 @@ export async function GET(
     },
     `management_review_${review.reviewDate}`,
   );
-}
+});

@@ -8,6 +8,10 @@ import {
   searchQueryParam,
   dateQueryParam,
 } from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -24,7 +28,7 @@ const cveFeedQuerySchema = z.object({
 });
 
 // GET /api/v1/isms/cve/feed — Latest CVE feed items (paginated)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -82,4 +86,4 @@ export async function GET(req: Request) {
     data: rows,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
-}
+});

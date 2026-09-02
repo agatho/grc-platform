@@ -3,6 +3,10 @@ import { requireModule } from "@grc/auth";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // Shared aggregation used by GET (default period) and POST (custom period).
 // No mutations, no side-effects — pure read aggregation across risk +
@@ -121,7 +125,7 @@ async function buildSummary(
 // #WAVE24-B3: was 405 because only POST was wired. CISO/compliance
 // officers need a read-only snapshot for quarterly governance reviews
 // without triggering the POST PDF-generation path.
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -157,10 +161,9 @@ export async function GET(req: Request) {
     ctx.session.user.name ?? ctx.userId,
   );
   return Response.json({ data });
-}
-
+});
 // POST /api/v1/erm/management-summary — Generate Management Summary PDF data
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -185,4 +188,4 @@ export async function POST(req: Request) {
     ctx.session.user.name ?? ctx.userId,
   );
   return Response.json({ data });
-}
+});

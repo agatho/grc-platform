@@ -9,13 +9,20 @@ import {
 import { requireModule } from "@grc/auth";
 import { eq, and, asc, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
 // GET /api/v1/dd-sessions/:id/results — Get responses, scores, gap analysis
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -144,4 +151,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       evidence,
     },
   });
-}
+});

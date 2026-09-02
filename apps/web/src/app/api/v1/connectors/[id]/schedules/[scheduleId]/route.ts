@@ -3,9 +3,13 @@ import { updateConnectorScheduleSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PATCH /api/v1/connectors/:id/schedules/:scheduleId
-export async function PATCH(
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; scheduleId: string }> },
 ) {
@@ -43,10 +47,9 @@ export async function PATCH(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // DELETE /api/v1/connectors/:id/schedules/:scheduleId
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string; scheduleId: string }> },
 ) {
@@ -76,4 +79,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id: deleted.id, deleted: true } });
-}
+});

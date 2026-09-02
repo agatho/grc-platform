@@ -2,9 +2,13 @@ import { db, controlEffectivenessScore, control } from "@grc/db";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { sql, count } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/ics/ces/overview — All CES scores for org (paginated)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -77,4 +81,4 @@ export async function GET(req: Request) {
     .offset(offset);
 
   return paginatedResponse(rows, totalRow?.total ?? 0, page, limit);
-}
+});

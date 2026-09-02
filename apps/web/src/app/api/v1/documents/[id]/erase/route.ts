@@ -4,13 +4,17 @@ import { eraseDocumentSchema } from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { getFileStorage, orgScopedStorage } from "@grc/shared/lib/file-storage";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // DELETE /api/v1/documents/:id/erase — GDPR Art. 17 hard erasure (D3).
 // Admin only, mandatory justification. Removes the document, ALL
 // versions, approval steps, acknowledgments, file rows (FK cascade)
 // and the physical files. Refused while a legal hold is active.
 // The audit-log entry (incl. reason) is written BEFORE deletion.
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -141,4 +145,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id, erased: true } });
-}
+});

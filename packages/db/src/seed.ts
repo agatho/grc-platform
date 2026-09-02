@@ -380,18 +380,86 @@ async function seed() {
       }
     }
 
-    // ── Seed missing module_definitions (Sprint 1-3 modules) ──────────
-    // These are not covered by sql/seed_module_definitions_sprint4_9.sql
-    console.log("  Seeding core module definitions...");
+    // ── Seed module_definitions for EVERY key in MODULE_KEYS ──────────
+    //
+    // [E2E-TRIAGE-2026-09-02] This block used to insert FOUR keys (erm, bpm,
+    // esg, whistleblowing) and left the remaining eight of Sprint 4-9 to
+    // `sql/seed_module_definitions_sprint4_9.sql`, which only `scripts/
+    // setup.sh` applies — via `psql`, best-effort, output discarded. On any
+    // environment where that step did not run (no psql on PATH, a different
+    // port, a plain `npm run db:seed`), `module_definition` ended up with
+    // 11 of the 20 keys in `MODULE_KEYS`, and NOTHING said so.
+    //
+    // The consequence is not cosmetic. `requireModule(key, orgId)`
+    // (packages/auth/src/middleware/module-guard.ts) answers 404 for a key
+    // that has no definition row — "don't reveal the module exists" — so the
+    // ENTIRE ics / dms / isms / bcms / dpms / audit / tprm / contract API
+    // surface answered 404 for every organisation, and `ModuleGate` rendered
+    // the "Modul aktivieren" teaser on every page of those modules. Roughly
+    // half of the failing E2E suite traces back to exactly this.
+    //
+    // `db:seed` is `tsx`, runs everywhere, and is the one step every
+    // environment performs — so the platform baseline belongs HERE, not in a
+    // psql script that may or may not have been applied. The SQL file stays
+    // (it also seeds `module_nav_item`); both are ON CONFLICT DO NOTHING, so
+    // running either or both is idempotent.
+    //
+    // Keep this list in sync with MODULE_KEYS in packages/shared/src/modules.ts.
+    console.log("  Seeding module definitions (all MODULE_KEYS)...");
     await tx.execute(sql`
       INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, nav_order, license_tier)
       VALUES
         ('erm', 'Enterprise Risk Management', 'Enterprise Risk Management', 'shield-alert', 20, 'included'),
         ('bpm', 'Prozessmanagement', 'Process Management', 'workflow', 30, 'included'),
+        ('ics', 'Internes Kontrollsystem', 'Internal Control System', 'shield-check', 40, 'included'),
+        ('dms', 'Dokumentenmanagement', 'Document Management', 'file-text', 45, 'included'),
+        ('isms', 'Informationssicherheit', 'Information Security', 'lock', 50, 'included'),
+        ('bcms', 'Business Continuity', 'Business Continuity', 'activity', 60, 'included'),
+        ('dpms', 'Datenschutz', 'Data Protection', 'eye-off', 70, 'included'),
+        ('audit', 'Audit Management', 'Audit Management', 'clipboard-check', 80, 'included'),
+        ('tprm', 'Drittparteien-Risiko', 'Third-Party Risk', 'users', 90, 'included'),
+        ('contract', 'Vertragsmanagement', 'Contract Management', 'file-signature', 95, 'included'),
         ('esg', 'ESG & Nachhaltigkeit', 'ESG & Sustainability', 'leaf', 100, 'included'),
-        ('whistleblowing', 'Hinweisgebersystem', 'Whistleblowing', 'megaphone', 110, 'included')
+        ('whistleblowing', 'Hinweisgebersystem', 'Whistleblowing', 'megaphone', 110, 'included'),
+        ('reporting', 'Berichtswesen', 'Reporting', 'bar-chart-3', 120, 'included'),
+        ('eam', 'Enterprise Architecture', 'Enterprise Architecture', 'network', 130, 'included'),
+        ('academy', 'Academy', 'Academy', 'graduation-cap', 140, 'included'),
+        ('community', 'Community', 'Community', 'users-round', 150, 'included'),
+        ('marketplace', 'Marktplatz', 'Marketplace', 'store', 160, 'included'),
+        ('simulations', 'Simulationen', 'Simulations', 'flask-conical', 170, 'included'),
+        ('portals', 'Portale', 'Portals', 'door-open', 180, 'included'),
+        ('programme', 'Programme', 'Programmes', 'route', 190, 'included')
       ON CONFLICT (module_key) DO NOTHING
     `);
+
+    // A definition row that exists but is not active in the platform is
+    // invisible to `requireModule` in exactly the same way. The seed's job is
+    // a usable baseline, so make sure the keys it just declared are active.
+    await tx.execute(sql`
+      UPDATE module_definition SET is_active_in_platform = true
+      WHERE is_active_in_platform = false
+    `);
+
+    // Fail loudly instead of leaving the same hole open one layer down: if a
+    // key from MODULE_KEYS still has no definition after this insert, the
+    // guard will 404 that module for every tenant and nobody will notice.
+    const missingDefs = await tx.execute<{ module_key: string }>(sql`
+      SELECT k AS module_key
+      FROM unnest(ARRAY[
+        'erm','bpm','ics','dms','isms','bcms','dpms','audit','tprm','contract',
+        'esg','whistleblowing','reporting','eam','academy','community',
+        'marketplace','simulations','portals','programme'
+      ]) AS k
+      WHERE NOT EXISTS (SELECT 1 FROM module_definition md WHERE md.module_key = k)
+    `);
+    if (missingDefs.length > 0) {
+      throw new Error(
+        "module_definition is incomplete after seeding — missing: " +
+          missingDefs.map((r) => r.module_key).join(", ") +
+          ". requireModule() answers 404 for every one of these, for every " +
+          "organisation.",
+      );
+    }
 
     // ── Auto-enable ALL modules for ALL organizations ─────────────────
     console.log("  Enabling all modules for all organizations...");

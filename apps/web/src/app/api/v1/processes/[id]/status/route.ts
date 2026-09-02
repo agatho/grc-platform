@@ -18,10 +18,14 @@ import { emitEntityStatusChanged } from "@/lib/entity-events";
 import type { ProcessStatus } from "@grc/shared";
 import { evaluateTransitionGates } from "@/lib/process-gates";
 import { promoteWorkingVersion } from "@/lib/process-working-version";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/processes/:id/status — Status transition
 // (also exported as PATCH below for client robustness — B1.3)
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -352,8 +356,7 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // B1.3: PATCH alias — the UI historically called PATCH while only PUT was
 // exported; accept both so older clients keep working.
 export { PUT as PATCH };

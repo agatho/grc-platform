@@ -15,6 +15,22 @@
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { STORAGE_STATE } from "./fixtures/storage";
+import { awaitAppReady } from "./fixtures/wait";
+
+// [E2E-TRIAGE-2026-09-02] `await page.waitForLoadState("networkidle")` replaced
+// by `awaitAppReady(page)` throughout this file.
+//
+// The bare call has no timeout of its own, so it waits until the TEST times out
+// — 90 s. Measured on the re-run after the demo data was seeded: /esg, /audit,
+// /dpms and /contracts never reach "networkidle" (a widget polls), and four
+// specs that had passed turned into 90-second hangs whose message names
+// `waitForLoadState`, not the assertion that matters. Playwright deprecates
+// `networkidle` for exactly this reason.
+//
+// `awaitAppReady` (e2e/fixtures/wait.ts) is the helper the audit introduced for
+// this: it waits for `domcontentloaded`, then gives the network 15 s to go
+// quiet and CONTINUES either way. Nothing is weakened — the assertion after it
+// is the real check and retries on its own for `expect.timeout`.
 
 test.use({ storageState: STORAGE_STATE });
 
@@ -54,7 +70,7 @@ async function runAxe(page: Page, label: string) {
 test.describe("a11y smoke — QA-015 follow-up", () => {
   test("dashboard has no serious/critical axe violations", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     const { blocking } = await runAxe(page, "dashboard");
     expect(
       blocking,
@@ -66,7 +82,7 @@ test.describe("a11y smoke — QA-015 follow-up", () => {
     page,
   }) => {
     await page.goto("/risks");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     const { blocking } = await runAxe(page, "risks-list");
     expect(blocking).toEqual([]);
   });
@@ -75,7 +91,7 @@ test.describe("a11y smoke — QA-015 follow-up", () => {
     page,
   }) => {
     await page.goto("/risks/new");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     const { blocking } = await runAxe(page, "risks-new");
     expect(blocking).toEqual([]);
   });
@@ -92,7 +108,7 @@ test.describe("a11y smoke — QA-015 follow-up", () => {
     // for everyone who matters; the click()-doesn't-open finding was
     // about test-tooling, not real a11y.
     await page.goto("/risks/new");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
 
     // The risk-category Select is the first Radix combobox on the wizard.
     const trigger = page.locator('[role="combobox"]').first();

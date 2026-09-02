@@ -24,9 +24,28 @@
      The 16 `bg-gray-400` / 5 `border-gray-400` uses shift with it; contrast
      of a fill or a hairline is not a WCAG 1.4.3 subject and the darker value
      is the safer default there too. Verified by
-     apps/web/src/__tests__/a11y/theme-contrast.test.ts. */
-  --color-gray-400: oklch(0.565 0.012 75);
-  --color-gray-500: oklch(0.556 0.012 75);
+     apps/web/src/__tests__/a11y/theme-contrast.test.ts.
+
+     [E2E-TRIAGE-2026-09-02] That remediation measured against
+     `--color-surface`, which is `#ffffff` — but no dashboard page is painted
+     on `#ffffff`. The application chrome paints on `bg-gray-50` = `#fbfaf9`,
+     and the same tokens land LOWER there:
+         gray-400  4.563:1 on #ffffff  ->  4.370:1 on #fbfaf9  (fails AA)
+         gray-500  4.738:1 on #ffffff  ->  4.537:1 on #fbfaf9  (0.037 margin)
+     axe measured exactly that on /dashboard: "insufficient color contrast of
+     4.38 (foreground color: #7a756e, background color: #fbfaf9, 14px)" —
+     `#7a756e` IS oklch(0.565 0.012 75). The finding was closed against a
+     background the product does not use.
+
+     Both tokens are darkened until they clear 4.5:1 on the DARKEST default
+     surface rather than the lightest, with margin instead of a rounding error:
+         gray-400  L 0.565 -> 0.548   4.692:1 on #fbfaf9, 4.899:1 on #ffffff
+         gray-500  L 0.556 -> 0.540   4.853:1 on #fbfaf9, 5.067:1 on #ffffff
+     gray-400 stays lighter than gray-500 and gray-500 lighter than gray-600,
+     so the visual hierarchy is unchanged. theme-contrast.test.ts now measures
+     both surfaces, so a future token edit cannot reopen this silently. */
+  --color-gray-400: oklch(0.548 0.012 75);
+  --color-gray-500: oklch(0.540 0.012 75);
   --color-gray-600: oklch(0.446 0.012 75);
   --color-gray-700: oklch(0.373 0.010 75);
   --color-gray-800: oklch(0.268 0.008 75);

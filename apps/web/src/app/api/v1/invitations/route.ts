@@ -7,9 +7,13 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { eq, and, count, desc, isNull } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/invitations — Create invitation (admin only)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -65,10 +69,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/invitations — List invitations for current org (admin only)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -121,10 +124,9 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(rows, total, page, limit);
-}
-
+});
 // PATCH /api/v1/invitations — Revoke invitation (admin only)
-export async function PATCH(req: Request) {
+export const PATCH = withErrorHandler(async function PATCH(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -162,4 +164,4 @@ export async function PATCH(req: Request) {
   }
 
   return Response.json({ data: updated });
-}
+});

@@ -51,6 +51,10 @@ import { withAuth } from "@/lib/api";
 import { resolveReviewPeriod } from "@/lib/isms/review-period";
 import { z } from "zod";
 import { parseQueryParams, dateQueryParam } from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -67,7 +71,7 @@ function toDateString(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -534,4 +538,4 @@ export async function GET(
       },
     },
   });
-}
+});

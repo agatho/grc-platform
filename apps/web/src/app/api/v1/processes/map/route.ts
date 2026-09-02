@@ -8,6 +8,10 @@ import {
   resolveInheritedCategory,
 } from "@/lib/process-map";
 import type { ProcessMapCategory } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const mapQuerySchema = z.object({
   parentId: z.string().uuid().optional(),
@@ -24,7 +28,7 @@ interface AncestorRow {
 // level grouped into value-chain bands (management / core / support /
 // unassigned) with child counts and diagram flags. Single aggregated
 // query per level — no N+1.
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -132,4 +136,4 @@ export async function GET(req: Request) {
   const groups = groupProcessesForMap(nodes, parentCategory);
 
   return Response.json({ data: { parent, groups } });
-}
+});

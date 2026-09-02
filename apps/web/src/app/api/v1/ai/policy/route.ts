@@ -31,6 +31,10 @@ import {
   type AiProvider,
 } from "@grc/ai";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const policySchema = z.object({
   egressMode: z.enum(AI_EGRESS_MODES as [AiEgressMode, ...AiEgressMode[]]),
@@ -47,7 +51,7 @@ const policySchema = z.object({
   notes: z.string().max(4000).nullable().optional(),
 });
 
-export async function GET() {
+export const GET = withErrorHandler(async function GET() {
   const ctx = await withAuth("admin", "dpo", "ciso", "compliance_officer");
   if (ctx instanceof Response) return ctx;
 
@@ -114,9 +118,8 @@ export async function GET() {
       },
     },
   });
-}
-
-export async function PUT(req: Request) {
+});
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -159,4 +162,4 @@ export async function PUT(req: Request) {
 
   const policy = await loadOrgAiPolicy(ctx.orgId);
   return Response.json({ data: policy });
-}
+});

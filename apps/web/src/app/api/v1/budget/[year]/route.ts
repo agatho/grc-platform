@@ -2,6 +2,10 @@ import { db, grcBudget, grcBudgetLine } from "@grc/db";
 import { updateBudgetSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function parseYear(params: { year: string }): number | null {
   const year = Number(params.year);
@@ -10,7 +14,7 @@ function parseYear(params: { year: string }): number | null {
 }
 
 // GET /api/v1/budget/:year — Budget detail with lines
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ year: string }> },
 ) {
@@ -38,10 +42,9 @@ export async function GET(
     .where(eq(grcBudgetLine.budgetId, budget.id));
 
   return Response.json({ data: { ...budget, lines } });
-}
-
+});
 // PUT /api/v1/budget/:year — Update budget
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ year: string }> },
 ) {
@@ -96,4 +99,4 @@ export async function PUT(
   });
 
   return Response.json({ data: updated });
-}
+});

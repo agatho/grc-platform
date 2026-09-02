@@ -59,7 +59,12 @@ const MATRIX: RouteSpec[] = [
 
 function extractRoles(src: string, method: string): string[] | null {
   const re = new RegExp(
-    `export\\s+async\\s+function\\s+${method}\\s*\\(([\\s\\S]*?)withAuth\\s*\\(([^)]*)\\)`,
+    // [E2E-TRIAGE-2026-09-02] Also match the wrapped export form
+    // `export const GET = withErrorHandler(async function GET(` — the route
+    // handlers adopted `withErrorHandler` so `withAuth` can bind the org-pinned
+    // connection at all (see api.ts:184). The RBAC assertion below is unchanged;
+    // only the shape of the declaration this extractor has to recognise is.
+    `export\\s+(?:async\\s+function|const)\\s+${method}\\s*(?:=\\s*withErrorHandler\\s*\\(\\s*async\\s+function\\s+${method}\\s*)?\\(([\\s\\S]*?)withAuth\\s*\\(([^)]*)\\)`,
     "m",
   );
   const m = src.match(re);

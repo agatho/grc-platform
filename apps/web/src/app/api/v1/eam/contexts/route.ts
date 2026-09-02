@@ -3,9 +3,13 @@ import { requireModule } from "@grc/auth";
 import { createContextSchema, updateContextSchema } from "@grc/shared";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/eam/contexts — List contexts
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -19,10 +23,9 @@ export async function GET(req: Request) {
     .orderBy(desc(eamContext.updatedAt));
 
   return Response.json({ data: contexts });
-}
-
+});
 // POST /api/v1/eam/contexts — Create context
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -45,10 +48,9 @@ export async function POST(req: Request) {
     .returning();
 
   return Response.json({ data: created[0] }, { status: 201 });
-}
-
+});
 // PUT /api/v1/eam/contexts — Update context
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -74,10 +76,9 @@ export async function PUT(req: Request) {
   if (!updated.length)
     return Response.json({ error: "Context not found" }, { status: 404 });
   return Response.json({ data: updated[0] });
-}
-
+});
 // DELETE /api/v1/eam/contexts — Delete context
-export async function DELETE(req: Request) {
+export const DELETE = withErrorHandler(async function DELETE(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -97,4 +98,4 @@ export async function DELETE(req: Request) {
   if (!deleted.length)
     return Response.json({ error: "Context not found" }, { status: 404 });
   return Response.json({ data: { deleted: true } });
-}
+});

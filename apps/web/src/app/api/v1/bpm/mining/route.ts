@@ -8,9 +8,13 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/bpm/mining — List imported event logs
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "process_owner", "risk_manager");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
@@ -25,10 +29,9 @@ export async function GET(req: Request) {
     .limit(limit)
     .offset(offset);
   return paginatedResponse(rows, rows.length, limit, offset);
-}
-
+});
 // POST /api/v1/bpm/mining — Upload event log (returns immediately, async processing)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
@@ -60,4 +63,4 @@ export async function POST(req: Request) {
   // await miningQueue.add('import-event-log', { eventLogId: created.id, columnMapping: body.data.columnMapping });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

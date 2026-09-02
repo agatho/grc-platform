@@ -10,6 +10,10 @@ import {
   FileNotFoundInStorageError,
 } from "@grc/shared/lib/file-storage";
 import { randomUUID } from "node:crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/documents/:id/versions/:versionId/restore — Restore an
 // old version by creating a NEW version with the old content/file
@@ -21,7 +25,7 @@ import { randomUUID } from "node:crypto";
 // keys per document and removes them — dropping the bytes out from
 // under the other version. The object is now COPIED to a fresh key so
 // each version owns its own bytes.
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string; versionId: string }> },
 ) {
@@ -175,4 +179,4 @@ export async function POST(
     },
     { status: 201 },
   );
-}
+});

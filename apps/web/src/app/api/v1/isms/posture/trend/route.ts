@@ -5,6 +5,10 @@ import { withAuth } from "@/lib/api";
 import type { TrendPoint } from "@grc/shared";
 import { z } from "zod";
 import { parseQueryParams, intQueryParam } from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -18,7 +22,7 @@ const postureTrendQuerySchema = z.object({
 });
 
 // GET /api/v1/isms/posture/trend — 12-month trend
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -86,4 +90,4 @@ export async function GET(req: Request) {
     months,
     quarterlyDelta,
   });
-}
+});

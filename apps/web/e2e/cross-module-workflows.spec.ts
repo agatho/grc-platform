@@ -7,12 +7,27 @@ import { test, expect } from "@playwright/test";
 import { awaitAppReady } from "./fixtures/wait";
 import { STORAGE_STATE } from "./fixtures/storage";
 
+// [E2E-TRIAGE-2026-09-02] `await page.waitForLoadState("networkidle")` replaced
+// by `awaitAppReady(page)` throughout this file.
+//
+// The bare call has no timeout of its own, so it waits until the TEST times out
+// — 90 s. Measured on the re-run after the demo data was seeded: /esg, /audit,
+// /dpms and /contracts never reach "networkidle" (a widget polls), and four
+// specs that had passed turned into 90-second hangs whose message names
+// `waitForLoadState`, not the assertion that matters. Playwright deprecates
+// `networkidle` for exactly this reason.
+//
+// `awaitAppReady` (e2e/fixtures/wait.ts) is the helper the audit introduced for
+// this: it waits for `domcontentloaded`, then gives the network 15 s to go
+// quiet and CONTINUES either way. Nothing is weakened — the assertion after it
+// is the real check and retries on its own for `expect.timeout`.
+
 test.describe("ERM ISO 31000 Workflow", () => {
   test.use({ storageState: STORAGE_STATE });
 
   test("risk register loads with demo data", async ({ page }) => {
     await page.goto("/risks");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(
       page.getByText(/risikoregister|risk register/i).first(),
     ).toBeVisible();
@@ -21,7 +36,7 @@ test.describe("ERM ISO 31000 Workflow", () => {
 
   test("risk creation form has all required fields", async ({ page }) => {
     await page.goto("/risks/new");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     // Step 1: Basic info
     await expect(page.getByText(/titel|title/i).first()).toBeVisible();
     await expect(page.getByText(/kategorie|category/i).first()).toBeVisible();
@@ -29,25 +44,25 @@ test.describe("ERM ISO 31000 Workflow", () => {
 
   test("risk appetite dashboard loads", async ({ page }) => {
     await page.goto("/erm/risk-appetite");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/appetit|appetite/i).first()).toBeVisible();
   });
 
   test("KRI monitoring loads with data", async ({ page }) => {
     await page.goto("/risks/kris");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/indikator|kri/i).first()).toBeVisible();
   });
 
   test("FAIR analysis hub loads", async ({ page }) => {
     await page.goto("/erm/fair");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/fair/i).first()).toBeVisible();
   });
 
   test("heatmap visualization loads", async ({ page }) => {
     await page.goto("/controls/heatmap");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/heatmap/i).first()).toBeVisible();
   });
 });
@@ -57,7 +72,7 @@ test.describe("ICS & Audit COSO/IIA Workflow", () => {
 
   test("control register loads", async ({ page }) => {
     await page.goto("/controls");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(
       page.getByText(/kontrollregister|control register/i).first(),
     ).toBeVisible();
@@ -65,19 +80,19 @@ test.describe("ICS & Audit COSO/IIA Workflow", () => {
 
   test("control creation form has COSO fields", async ({ page }) => {
     await page.goto("/controls/new");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/typ|type/i).first()).toBeVisible();
   });
 
   test("audit management dashboard loads", async ({ page }) => {
     await page.goto("/audit");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/audit/i).first()).toBeVisible();
   });
 
   test("audit universe loads", async ({ page }) => {
     await page.goto("/audit/universe");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/universum|universe/i).first()).toBeVisible();
   });
 });
@@ -87,20 +102,20 @@ test.describe("BCMS ISO 22301 Workflow", () => {
 
   test("BCMS dashboard loads with KPIs", async ({ page }) => {
     await page.goto("/bcms");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/business continuity/i).first()).toBeVisible();
     await expect(page.getByText(/RTO|BIA/i).first()).toBeVisible();
   });
 
   test("BIA page loads with assessments", async ({ page }) => {
     await page.goto("/bcms/bia");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/impact.*analyse|bia/i).first()).toBeVisible();
   });
 
   test("crisis scenarios page loads", async ({ page }) => {
     await page.goto("/bcms/crisis");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/krise|crisis/i).first()).toBeVisible();
   });
 });
@@ -110,13 +125,13 @@ test.describe("DPMS DSGVO Workflow", () => {
 
   test("DPMS dashboard loads with breach alert", async ({ page }) => {
     await page.goto("/dpms");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/datenschutz|privacy/i).first()).toBeVisible();
   });
 
   test("RoPA page loads", async ({ page }) => {
     await page.goto("/dpms/ropa");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(
       page.getByText(/verarbeitungsverzeichnis|ropa/i).first(),
     ).toBeVisible();
@@ -124,13 +139,13 @@ test.describe("DPMS DSGVO Workflow", () => {
 
   test("breach management with 72h tracking", async ({ page }) => {
     await page.goto("/dpms/breaches");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/datenpann|breach/i).first()).toBeVisible();
   });
 
   test("DPIA page loads", async ({ page }) => {
     await page.goto("/dpms/dpia");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/folgenabsch|dpia/i).first()).toBeVisible();
   });
 });
@@ -140,19 +155,19 @@ test.describe("TPRM ISO 27036 Workflow", () => {
 
   test("vendor register loads with demo data", async ({ page }) => {
     await page.goto("/tprm/vendors");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/lieferant|vendor/i).first()).toBeVisible();
   });
 
   test("LkSG assessment page loads", async ({ page }) => {
     await page.goto("/tprm/lksg");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/lksg/i).first()).toBeVisible();
   });
 
   test("contract management loads", async ({ page }) => {
     await page.goto("/contracts");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/vertrag|contract/i).first()).toBeVisible();
   });
 });
@@ -162,7 +177,7 @@ test.describe("ESG CSRD Workflow", () => {
 
   test("ESG dashboard loads", async ({ page }) => {
     await page.goto("/esg");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/esg/i).first()).toBeVisible();
   });
 
@@ -174,13 +189,13 @@ test.describe("ESG CSRD Workflow", () => {
 
   test("EU taxonomy page loads", async ({ page }) => {
     await page.goto("/esg/taxonomy");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(page.getByText(/taxonomie|taxonomy/i).first()).toBeVisible();
   });
 
   test("materiality analysis page loads", async ({ page }) => {
     await page.goto("/esg/materiality");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     await expect(
       page.getByText(/wesentlichkeit|materiality/i).first(),
     ).toBeVisible();
@@ -194,7 +209,7 @@ test.describe("Navigation & Tab System", () => {
     page,
   }) => {
     await page.goto("/risks");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     const tabNav = page.locator('[aria-label="Modul-Navigation"]');
     await expect(tabNav).toBeVisible();
     await expect(tabNav.getByText(/register/i)).toBeVisible();
@@ -203,7 +218,7 @@ test.describe("Navigation & Tab System", () => {
 
   test("sidebar shows condensed navigation", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("networkidle");
+    await awaitAppReady(page);
     const sidebar = page.locator("aside");
     await expect(sidebar).toBeVisible();
   });

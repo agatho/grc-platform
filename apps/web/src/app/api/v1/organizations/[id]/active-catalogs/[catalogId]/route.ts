@@ -1,9 +1,13 @@
 import { db, orgActiveCatalog } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // DELETE /api/v1/organizations/[id]/active-catalogs/[catalogId] — Deactivate catalog
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; catalogId: string }> },
 ) {
@@ -37,4 +41,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id: deleted.id, deactivated: true } });
-}
+});

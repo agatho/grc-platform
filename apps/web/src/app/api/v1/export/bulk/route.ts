@@ -31,6 +31,10 @@ import {
   logExportOrThrow,
   ExportNotLoggedError,
 } from "@/lib/export-audit";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const PROBLEM_BASE = "https://arctos.charliehund.de/errors";
 
@@ -80,7 +84,7 @@ async function approvalIsValid(
   }
 }
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -204,4 +208,4 @@ export async function POST(req: Request) {
     console.error("[export/bulk] failed", err);
     return Response.json({ error: "Bulk export failed" }, { status: 500 });
   }
-}
+});

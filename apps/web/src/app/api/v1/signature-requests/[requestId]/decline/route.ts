@@ -12,12 +12,16 @@ import {
   signatureErrorResponse,
 } from "@/lib/documents/signature-provider";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const declineSchema = z.object({
   reason: z.string().min(3).max(2000),
 });
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ requestId: string }> },
 ) {
@@ -61,4 +65,4 @@ export async function POST(
     if (mapped) return mapped;
     throw err;
   }
-}
+});

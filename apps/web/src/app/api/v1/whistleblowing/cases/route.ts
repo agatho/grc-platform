@@ -19,8 +19,12 @@ import { eq, and, desc, count, isNull } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { problem, getRequestId } from "@/lib/api-errors";
 import type { SQL } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   // HinSchG isolation — admin deliberately excluded; see file header.
   const ctx = await withAuth("whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
@@ -91,8 +95,7 @@ export async function GET(req: Request) {
   }));
 
   return paginatedResponse(data, total, page, limit);
-}
-
+});
 // #NIGHT-037: case creation runs through the anonymized intake pipeline
 // (POST /whistleblowing/intake/submit) — never the authenticated cases
 // list. Make the 405 explicit and point callers at the right endpoint.

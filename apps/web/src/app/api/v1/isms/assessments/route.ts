@@ -10,6 +10,10 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -22,7 +26,7 @@ const assessmentListQuerySchema = z.object({
 });
 
 // GET /api/v1/isms/assessments
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -69,10 +73,9 @@ export async function GET(req: Request) {
     .where(and(...conditions));
 
   return paginatedResponse(rows, total, page, limit);
-}
-
+});
 // POST /api/v1/isms/assessments
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -107,4 +110,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

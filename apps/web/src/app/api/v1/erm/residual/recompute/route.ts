@@ -2,6 +2,10 @@ import { db, risk, riskControl, controlEffectivenessScore } from "@grc/db";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { computeResidualScore } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/erm/residual/recompute — Force recompute all auto-residual scores
 //
@@ -20,7 +24,7 @@ import { computeResidualScore } from "@grc/shared";
 // round-trips → 1 + 1 + 500-parallel = ~3 sequential round-trips
 // (the parallel UPDATEs are bounded by node-postgres' default pool
 // size of 10, so still ~50 RTTs total; ~30× speedup on hot path).
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -104,4 +108,4 @@ export async function POST(req: Request) {
     updated,
     total: risks.length,
   });
-}
+});

@@ -2,13 +2,20 @@ import { db, complianceCalendarEvent } from "@grc/db";
 import { updateCalendarEventSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, isNull } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
 // PUT /api/v1/calendar/events/:id — Update manual calendar event
-export async function PUT(req: Request, { params }: RouteParams) {
+export const PUT = withErrorHandler(async function PUT(
+  req: Request,
+  { params }: RouteParams,
+) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -74,10 +81,12 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // DELETE /api/v1/calendar/events/:id — Soft-delete manual calendar event
-export async function DELETE(req: Request, { params }: RouteParams) {
+export const DELETE = withErrorHandler(async function DELETE(
+  req: Request,
+  { params }: RouteParams,
+) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -113,10 +122,12 @@ export async function DELETE(req: Request, { params }: RouteParams) {
   }
 
   return Response.json({ data: { deleted: true } });
-}
-
+});
 // GET /api/v1/calendar/events/:id — Get a single manual event
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -138,4 +149,4 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   return Response.json({ data: event });
-}
+});

@@ -50,6 +50,26 @@ type RouteHandler<TCtx = unknown> = (
 ) => Promise<Response> | Response;
 
 /**
+ * The shape of what `withErrorHandler` HANDS BACK.
+ *
+ * [E2E-TRIAGE-2026-09-02] Deliberately different from `RouteHandler` in one
+ * respect: `ctx` is optional at the CALL site. Next always passes it — the
+ * comment above says as much, `(req, undefined)` for a flat route — but the
+ * ~90 unit tests under `src/__tests__/api/` invoke flat handlers directly as
+ * `GET(req)`, which is exactly how Next invokes them minus an argument
+ * TypeScript can see. Requiring it here would have turned every one of those
+ * call sites into a TS2554 the moment a route adopted the wrapper, which is a
+ * tax on the fix and not a property worth enforcing.
+ *
+ * The handler side keeps `ctx: TCtx` REQUIRED, so a dynamic route that
+ * destructures `{ params }` is still type-checked against what it declares.
+ */
+type WrappedRouteHandler<TCtx = unknown> = (
+  req: Request,
+  ctx?: TCtx,
+) => Promise<Response>;
+
+/**
  * True for anything that carries an HTTP status. Deliberately structural
  * rather than `instanceof Response`: `NextResponse`, the undici `Response` of
  * the Node runtime and the `Response` a test constructs in jsdom are three
@@ -103,7 +123,7 @@ const TIMEOUT_CODES = new Set([
 export function withErrorHandler<TCtx = unknown>(
   handler: RouteHandler<TCtx>,
   routeLabel?: string,
-): RouteHandler<TCtx> {
+): WrappedRouteHandler<TCtx> {
   return async (req, ctx) => {
     // #SEC-F01b-RUN — Establish the request-scoped RLS context frame HERE, once,
     // around every wrapped handler. We seed the AsyncLocalStorage with a MUTABLE
@@ -162,7 +182,7 @@ export function withErrorHandler<TCtx = unknown>(
     return requestDbStorage.run(initialStore, () => runHandler(req, ctx));
   };
 
-  async function runHandler(req: Request, ctx: TCtx): Promise<Response> {
+  async function runHandler(req: Request, ctx?: TCtx): Promise<Response> {
     const requestId = getRequestId(req);
     const label = routeLabel ?? `${req.method} ${new URL(req.url).pathname}`;
 
@@ -179,7 +199,7 @@ export function withErrorHandler<TCtx = unknown>(
       // `normaliseErrorResponse` rewrites those on the way out and keeps every
       // original field as an RFC 7807 extension member, so no route body has
       // to change and no client that reads `json.error` breaks.
-      const res = await handler(req, ctx);
+      const res = await handler(req, ctx as TCtx);
 
       // Two guards, both learned the hard way (WP11 measured 41 red tests
       // after the first version of this call):

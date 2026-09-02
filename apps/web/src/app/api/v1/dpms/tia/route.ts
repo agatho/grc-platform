@@ -9,9 +9,13 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/dpms/tia — Create TIA
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo");
   if (ctx instanceof Response) return ctx;
 
@@ -66,10 +70,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/dpms/tia — List TIAs
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -152,4 +155,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

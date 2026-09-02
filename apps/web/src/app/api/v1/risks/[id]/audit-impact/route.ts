@@ -2,6 +2,10 @@ import { db, finding, riskTreatment, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -18,7 +22,10 @@ type RouteParams = { params: Promise<{ id: string }> };
 // (identified / in_remediation). This signals that the risk's residual
 // score is no longer trustworthy and should be re-scored in the next
 // assessment cycle per ISO 27005 Ch. 10 (Risk Acceptance Review).
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { id } = await params;
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -112,4 +119,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       needsReassessment,
     },
   });
-}
+});

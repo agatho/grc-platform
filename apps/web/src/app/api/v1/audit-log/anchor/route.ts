@@ -7,6 +7,10 @@ import {
 import * as freetsa from "@grc/shared/lib/freetsa";
 import * as opentimestamps from "@grc/shared/lib/opentimestamps";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/audit-log/anchor
 //
@@ -130,7 +134,7 @@ export async function anchorGate(orgId: string): Promise<Response | null> {
   );
 }
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -265,10 +269,9 @@ export async function POST(req: Request) {
   }
 
   return Response.json(response);
-}
-
+});
 // GET /api/v1/audit-log/anchor — status of recent anchors for this tenant
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -327,8 +330,7 @@ export async function GET(req: Request) {
         sealIssues.filter((i) => i.issue !== "seal_unsigned").length === 0,
     },
   });
-}
-
+});
 /**
  * Insert (or replace a previously failed) anchor and seal it in the same
  * transaction. Returns the seal id, or null for a failed attempt, which

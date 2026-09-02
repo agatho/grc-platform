@@ -23,12 +23,27 @@ test.describe("Sidebar Navigation", () => {
     await page.goto("/dashboard");
     await awaitAppReady(page);
 
-    // Find and click a risk-related link
-    const riskLink = page.getByRole("link", { name: /risiko|risk/i }).first();
-    await riskLink.click();
+    // [E2E-TRIAGE-2026-09-02] Was: `getByRole("link", { name: /risiko|risk/i })
+    // .first()` followed by `expect(page).toHaveURL(/risks/)`. The sidebar
+    // carries SIX links whose accessible name matches that pattern
+    // (Risikoregister, Risiko-KRIs, Risikogruppen, Risikoakzeptanzen,
+    // Risikoappetit, Predictive Risk — nav-config.ts:109-183). "The first one
+    // in DOM order" is not a property of the product, and the run picked
+    // `/erm/risk-appetite`, which does not match `/risks/`. The spec was
+    // asserting a coincidence about nav ordering, not navigation.
+    //
+    // Target the register itself, by the href the nav entry declares. The test
+    // still proves what it is named for — the sidebar link reaches the risk
+    // register — and now fails only if that is actually untrue.
+    const registerLink = page.locator('a[href="/risks"]').first();
+    await expect(
+      registerLink,
+      "the sidebar has no link to the risk register (/risks)",
+    ).toBeVisible();
+    await registerLink.click();
     await awaitAppReady(page);
 
-    await expect(page).toHaveURL(/risks/);
+    await expect(page).toHaveURL(/\/risks(\?|$)/);
   });
 
   test("navigates to catalog browser", async ({ page }) => {

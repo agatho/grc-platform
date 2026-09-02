@@ -26,6 +26,10 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, isNull, asc } from "drizzle-orm";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const reverseSchema = z.object({
   findingId: z.string().uuid().optional(),
@@ -36,7 +40,7 @@ const reverseSchema = z.object({
   description: z.string().max(5000).optional(),
 });
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("programme", ctx.orgId, req.method);
@@ -368,4 +372,4 @@ export async function POST(req: Request) {
     { data: { ...result, findingUpdated } },
     { status: 201 },
   );
-}
+});

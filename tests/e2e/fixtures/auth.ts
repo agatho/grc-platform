@@ -19,6 +19,27 @@ import { expect, type Page } from "@playwright/test";
 const EMAIL = process.env.E2E_EMAIL ?? "admin@arctos.dev";
 const PASSWORD = process.env.E2E_PASSWORD;
 
+/**
+ * [E2E-TRIAGE-2026-09-02] Optional tenant pin.
+ *
+ * Which organisation a session lands in is `roles[0].orgId`
+ * (packages/auth/src/config.ts) — the first membership row the database
+ * returns. Two things follow for this suite:
+ *
+ *   * an account with several memberships lands somewhere unpredictable, and
+ *   * `f-02-org-create` CREATES an organisation and takes an admin role on it,
+ *     so from that spec onwards (and on every later run, because the
+ *     membership persists) the suite could be pointed at an empty throwaway
+ *     tenant and every "loads with demo data" spec fails for that reason
+ *     alone. This is what happened on the first full run.
+ *
+ * `E2E_ORG_ID` pins the tenant the suite asserts against — normally the one
+ * `db:seed:demo` populates. It is opt-in: unset, behaviour is exactly as
+ * before. When it IS set, a failed switch is a hard error rather than a
+ * silently wrong tenant.
+ */
+const ORG_ID = process.env.E2E_ORG_ID;
+
 export interface Session {
   userId?: string;
   email?: string;
@@ -87,6 +108,19 @@ export async function login(page: Page): Promise<Session> {
         `Page error text: ${visibleError ?? "(none)"}. ` +
         "This used to be swallowed and turned 15 specs into silent skips (S11-08).",
     );
+  }
+
+  if (ORG_ID && session.currentOrgId !== ORG_ID) {
+    const status = await switchOrg(page, ORG_ID);
+    if (status !== 200) {
+      throw new Error(
+        `E2E_ORG_ID=${ORG_ID} is set, but switching ${EMAIL} into that ` +
+          `organisation answered ${status}. Either the account has no role ` +
+          `there or the id is wrong — refusing to run the suite against an ` +
+          `unknown tenant.`,
+      );
+    }
+    return await getSession(page);
   }
   return session;
 }

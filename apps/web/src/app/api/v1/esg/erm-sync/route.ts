@@ -3,6 +3,10 @@ import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { problem, getRequestId } from "@/lib/api-errors";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 /**
  * POST /api/v1/esg/erm-sync
@@ -12,7 +16,7 @@ import { problem, getRequestId } from "@/lib/api-errors";
  *   iro_type = 'risk', financial_materiality_score >= threshold, erm_risk_id IS NULL
  * - Updates materiality_iro.erm_risk_id and erm_synced_at
  */
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -101,8 +105,7 @@ export async function POST(req: Request) {
       items: synced,
     },
   });
-}
-
+});
 // #NIGHT-018: this is a sync trigger — POST-only. Make the Allow header
 // explicit so callers don't have to read source.
 export function GET(req: Request) {

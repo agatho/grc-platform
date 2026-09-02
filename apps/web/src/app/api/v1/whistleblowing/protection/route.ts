@@ -11,12 +11,16 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #WAVE13-RBAC-03: see /whistleblowing/investigations/route.ts — same HinSchG
 // confidentiality rationale; risk_manager swapped for the officer set.
 
 // GET /api/v1/whistleblowing/protection
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   const ctx = await withAuth(
     "whistleblowing_officer",
@@ -40,10 +44,9 @@ export async function GET(req: Request) {
     .limit(limit)
     .offset(offset);
   return paginatedResponse(rows, rows.length, limit, offset);
-}
-
+});
 // POST /api/v1/whistleblowing/protection
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   const ctx = await withAuth(
     "whistleblowing_officer",
@@ -82,4 +85,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

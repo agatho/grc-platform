@@ -2,6 +2,10 @@ import { db, auditAnchor } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 import { upgradeOtsProof } from "@grc/shared/lib/opentimestamps-upgrade";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/audit-log/anchor/upgrade
 //
@@ -26,7 +30,7 @@ interface UpgradeRowResult {
   error?: string;
 }
 
-export async function POST(_req: Request) {
+export const POST = withErrorHandler(async function POST(_req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -97,4 +101,4 @@ export async function POST(_req: Request) {
     failed: results.filter((r) => r.status === "failed").length,
     results,
   });
-}
+});

@@ -35,6 +35,10 @@ import {
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RequirementInfo {
   code: string;
@@ -106,7 +110,7 @@ async function resolveRequirement(
   };
 }
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "ciso",
@@ -287,4 +291,4 @@ export async function POST(req: Request) {
   } catch (err) {
     return aiErrorResponse(err);
   }
-}
+});

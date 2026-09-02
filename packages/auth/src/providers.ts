@@ -5,7 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 import { timingSafeEqual } from "crypto";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { compare } from "bcryptjs";
-import { eq, and, isNull, sql, inArray } from "drizzle-orm";
+import { eq, and, asc, isNull, sql, inArray } from "drizzle-orm";
 import { db, withUserReadContext } from "@grc/db";
 import { user, userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
 import type { RoleAssignment } from "./types";
@@ -237,6 +237,29 @@ export async function logAccessEvent(params: {
 // SSO JIT, outside any request context) and the NextAuth session callback's
 // fresh-role fetch all route through it.
 
+// [E2E-TRIAGE-2026-09-02] The ORDER BY below is not cosmetic.
+//
+// `config.ts` resolves the ACTIVE ORGANISATION as `roles[0]?.orgId ?? null`
+// whenever no org cookie is set — i.e. on every fresh login, every new
+// browser, every API client. This query had no ORDER BY at all, so `roles[0]`
+// was whatever order Postgres happened to return the heap in; that order
+// changes when a membership row is inserted or updated, or the table is
+// vacuumed.
+//
+// Two consequences, both observed on the triage environment:
+//   * A user with several memberships lands in a DIFFERENT tenant on different
+//     logins, with nothing to predict which. For a multi-tenant GRC product
+//     that is a correctness problem in its own right.
+//   * It is the mechanism by which one E2E spec poisons the whole run:
+//     `f-02-org-create` creates a throwaway organisation and its creator gets
+//     an admin role on it. That row can become `roles[0]`, after which every
+//     later spec runs against an EMPTY organisation — and stays there for the
+//     next run as well, because the membership persists.
+//
+// Oldest membership first: the organisation a user was provisioned into is a
+// stable and meaningful "home". `orgId` breaks ties between rows created in
+// the same transaction (the seed grants several memberships at once, so the
+// timestamp alone is not unique).
 export async function loadRoles(userId: string): Promise<RoleAssignment[]> {
   const rows = await withUserReadContext(userId, (tx) =>
     tx
@@ -251,6 +274,10 @@ export async function loadRoles(userId: string): Promise<RoleAssignment[]> {
           eq(userOrganizationRole.userId, userId),
           isNull(userOrganizationRole.deletedAt),
         ),
+      )
+      .orderBy(
+        asc(userOrganizationRole.createdAt),
+        asc(userOrganizationRole.orgId),
       ),
   );
   return rows as RoleAssignment[];

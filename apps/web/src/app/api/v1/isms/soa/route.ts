@@ -12,6 +12,10 @@ import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { syncSoaEntryToProgramme } from "@grc/db";
 import { z } from "zod";
 import { parseQueryParams, searchQueryParam } from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -25,7 +29,7 @@ const soaListQuerySchema = z.object({
 });
 
 // GET /api/v1/isms/soa
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -138,10 +142,9 @@ export async function GET(req: Request) {
     stats: { ...stats, implementationPercentage: implementationPct },
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
-}
-
+});
 // POST /api/v1/isms/soa — generate SoA from ISO 27002 catalog (idempotent)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -224,4 +227,4 @@ export async function POST(req: Request) {
     },
     { status: 201 },
   );
-}
+});

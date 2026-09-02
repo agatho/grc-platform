@@ -6,6 +6,10 @@ import {
   updateSsoConfigSchema,
   sealSecret,
 } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // oidc_client_secret is encrypted at rest (Wave-24 F#1 follow-up):
 // sealSecret() wraps the plaintext in the v1 AES-256-GCM envelope keyed
@@ -24,7 +28,7 @@ function maskSsoSecret<T extends { oidcClientSecret: string | null }>(
 }
 
 // GET /api/v1/admin/sso — Get SSO configuration for current org
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -39,10 +43,9 @@ export async function GET(req: Request) {
 
   // Never return the OIDC client secret in full
   return Response.json({ data: maskSsoSecret(config) });
-}
-
+});
 // POST /api/v1/admin/sso — Create SSO configuration
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -97,10 +100,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: maskSsoSecret(result) }, { status: 201 });
-}
-
+});
 // PUT /api/v1/admin/sso — Update SSO configuration
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -149,10 +151,9 @@ export async function PUT(req: Request) {
   });
 
   return Response.json({ data: maskSsoSecret(result) });
-}
-
+});
 // DELETE /api/v1/admin/sso — Delete (soft) SSO configuration
-export async function DELETE(req: Request) {
+export const DELETE = withErrorHandler(async function DELETE(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -169,4 +170,4 @@ export async function DELETE(req: Request) {
   });
 
   return Response.json({ success: true });
-}
+});

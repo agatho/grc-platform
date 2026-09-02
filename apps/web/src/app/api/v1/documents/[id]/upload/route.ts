@@ -15,6 +15,10 @@ import { createDocumentVersion } from "@/lib/document-versioning";
 import { checkPdfStampable } from "@/lib/documents/pdf-watermark";
 import { contentMutableForStatus } from "@/lib/documents/download-policy";
 import { randomUUID, createHash } from "crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -86,7 +90,7 @@ const OLE2_DECLARED_MIMES = new Set([
 // scan errors follow CLAMAV_FAIL_CLOSED; in production a scanner that
 // was never configured is refused rather than silently skipped.
 // Best-effort text extraction feeds document.file_text → search_vector.
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -471,4 +475,4 @@ export async function POST(
     },
     { status: 201 },
   );
-}
+});

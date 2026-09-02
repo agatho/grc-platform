@@ -6,6 +6,10 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
 import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #S04-05 (ARCTOS-FULL-2026-08-31): the local implementation quoted
 // `" , \n ;` but did not neutralize the Excel formula triggers
@@ -19,7 +23,7 @@ function csv(s: unknown): string {
   return cell.includes(";") ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -217,4 +221,4 @@ export async function POST(
       },
     },
   );
-}
+});
