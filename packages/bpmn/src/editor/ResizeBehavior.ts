@@ -14,16 +14,16 @@
  * Modellierungsschicht und einer Konvention von `diagram-js`, mehr nicht.
  */
 
-import { minDimensionsFor, type Dimensions } from "../modeling/BpmnRules.js";
-import type { EditorAnnouncer } from "./announce.js";
-import { describe } from "./ElementCreation.js";
+import { minDimensionsFor, type Dimensions } from "../modeling/BpmnRules";
+import type { EditorAnnouncer } from "./announce";
+import { describe } from "./ElementCreation";
 import type {
   Bounds,
   BpmnShape,
   EventBusLike,
   ModelingLike,
   RulesLike,
-} from "./types.js";
+} from "./types";
 
 const HIGH_PRIORITY = 1500;
 

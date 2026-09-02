@@ -20,23 +20,23 @@
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
-import { installBpmnJsSupport } from "../verify/jsdom-svg.js";
-import { editableBases } from "../verify/bases.js";
-import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs.js";
+import { installBpmnJsSupport } from "../verify/jsdom-svg";
+import { editableBases } from "../verify/bases";
+import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs";
 import {
   arctosDriverStatus,
   createArctosDriver,
-} from "../../src/verify/drivers/arctos.js";
-import type { ModelingDriver } from "../../src/verify/driver.js";
+} from "../../src/verify/drivers/arctos";
+import type { ModelingDriver } from "../../src/verify/driver";
 import {
   failureIds,
   formatFailure,
   runCampaign,
   type CampaignFailure,
   type CampaignResult,
-} from "../../src/verify/property.js";
-import { allKnown, lookupFinding } from "../verify/known-findings.js";
-import { hasModelingInvariants } from "../../src/verify/invariants.js";
+} from "../../src/verify/property";
+import { allKnown, lookupFinding } from "../verify/known-findings";
+import { hasModelingInvariants } from "../../src/verify/invariants";
 
 installBpmnJsSupport();
 

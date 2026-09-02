@@ -25,8 +25,8 @@
  * ein zweites Mal formuliert — dieselbe Funktion, ein Name.
  */
 
-import { canAlign } from "../modeling/BpmnRules.js";
-import type { EditorAnnouncer } from "./announce.js";
+import { canAlign } from "../modeling/BpmnRules";
+import type { EditorAnnouncer } from "./announce";
 import type {
   Alignment,
   AlignElementsLike,
@@ -34,7 +34,7 @@ import type {
   DistributeElementsLike,
   GridSnappingLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 /**
  * Was sich ausrichten und verteilen lässt — die Antwort der

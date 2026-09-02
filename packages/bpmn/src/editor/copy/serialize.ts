@@ -31,7 +31,7 @@
  * wären eine unlesbare Datei.
  */
 
-import type { ModdleElement } from "../types.js";
+import type { ModdleElement } from "../types";
 
 /** Abschrift eines semantischen Objekts. */
 export interface SemanticSnapshot {

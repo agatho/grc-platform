@@ -25,7 +25,7 @@
  */
 
 import type { BpmnModdleInstance } from "bpmn-moddle";
-import type { BpmnShape } from "./types.js";
+import type { BpmnShape } from "./types";
 
 export class ProbeFactory {
   static $inject = ["moddle"];

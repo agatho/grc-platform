@@ -1,15 +1,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { openSession, operate } from "./helpers/harness.js";
+import { openSession, operate } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import { boundsOf } from "../../src/modeling/di.js";
-import { asArray, boOf, isModdleElement } from "../../src/modeling/util.js";
-import type { BpmnShape, ModdleElement } from "../../src/modeling/types.js";
+} from "./helpers/fixtures";
+import { boundsOf } from "../../src/modeling/di";
+import { asArray, boOf, isModdleElement } from "../../src/modeling/util";
+import type { BpmnShape, ModdleElement } from "../../src/modeling/types";
 
 /**
  * `shape.replace` — Typwechsel (Auftrag: „blockiert das ContextPad").

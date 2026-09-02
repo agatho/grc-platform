@@ -12,11 +12,11 @@ import { fileURLToPath } from "node:url";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { buildScene, type Scene } from "../../src/draw/scene.js";
-import { renderScene, toSvgString } from "../../src/draw/StaticRenderer.js";
-import type { ModdleElement } from "../../src/draw/types.js";
-import { importXml } from "../../src/model/index.js";
-import { buildTextAlternative } from "../../src/viewer/TextAlternative.js";
+import { buildScene, type Scene } from "../../src/draw/scene";
+import { renderScene, toSvgString } from "../../src/draw/StaticRenderer";
+import type { ModdleElement } from "../../src/draw/types";
+import { importXml } from "../../src/model/index";
+import { buildTextAlternative } from "../../src/viewer/TextAlternative";
 
 /**
  * Rendering-Durchlauf über den gesamten Testkorpus.

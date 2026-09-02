@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { openSession } from "./helpers/harness.js";
+import { openSession } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   DATA_PROCESS,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import type { ModelingSession } from "../../src/modeling/session.js";
-import type { BpmnElement } from "../../src/modeling/types.js";
+} from "./helpers/fixtures";
+import type { ModelingSession } from "../../src/modeling/session";
+import type { BpmnElement } from "../../src/modeling/types";
 
 /**
  * Die Regeln sind die einzige Stelle der Schicht, deren Fehler der Benutzer

@@ -8,16 +8,16 @@
  * erst entstehen (Plan §4.2, §4.3).
  */
 
-import type { BpmnConnection, BpmnShape } from "../draw/types.js";
-import type { Scene } from "../draw/scene.js";
-import type { GrcOverlayData } from "./contract.js";
+import type { BpmnConnection, BpmnShape } from "../draw/types";
+import type { Scene } from "../draw/scene";
+import type { GrcOverlayData } from "./contract";
 import {
   buildLayerContext,
   type GrcFilter,
   type GrcLayer,
   type GrcLayerContext,
   type GrcLegendEntry,
-} from "./layers.js";
+} from "./layers";
 import {
   resolveSlots,
   type GrcArcSignal,
@@ -27,8 +27,8 @@ import {
   type GrcGhostEdgeSignal,
   type OwnedSignal,
   type SlotResolution,
-} from "./slots.js";
-import { defaultRegistry, resolveView, type GrcView } from "./views.js";
+} from "./slots";
+import { defaultRegistry, resolveView, type GrcView } from "./views";
 
 export interface GrcElementDecoration {
   readonly elementId: string;

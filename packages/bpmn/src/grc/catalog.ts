@@ -7,7 +7,7 @@
  * Konflikte nicht in fünfzehn Dateien nachgeschlagen werden müssen.
  */
 
-import type { BpmnConnection, BpmnShape } from "../draw/types.js";
+import type { BpmnConnection, BpmnShape } from "../draw/types";
 import {
   computeCoverage,
   type CoverageStage,
@@ -19,17 +19,17 @@ import {
   riskLevel,
   rollupRisk,
   SHORT_RETENTION_MONTHS,
-} from "./analysis.js";
-import type { GrcLineOfDefense, GrcObjectRef } from "./contract.js";
-import { isContainer, laneOf } from "./graph.js";
-import type { GrcLayer, GrcLayerContext, GrcLegendEntry } from "./layers.js";
-import { formatMinutes } from "./outage.js";
+} from "./analysis";
+import type { GrcLineOfDefense, GrcObjectRef } from "./contract";
+import { isContainer, laneOf } from "./graph";
+import type { GrcLayer, GrcLayerContext, GrcLegendEntry } from "./layers";
+import { formatMinutes } from "./outage";
 import type {
   GrcDiagramSignal,
   GrcEdgeSignal,
   GrcElementSignal,
-} from "./slots.js";
-import { EDGE_DECORATION, TONE_GLYPH, type GrcTone } from "./tokens.js";
+} from "./slots";
+import { EDGE_DECORATION, TONE_GLYPH, type GrcTone } from "./tokens";
 
 /**
  * Prioritätsordnung der Layer (§3.3.2).

@@ -13,8 +13,8 @@
  * steht und im Fremdwerkzeug fehlt.
  */
 
-import type { BpmnElement, BpmnShape } from "../types.js";
-import { boOf, is, isLabel } from "../util.js";
+import type { BpmnElement, BpmnShape } from "../types";
+import { boOf, is, isLabel } from "../util";
 
 export interface UpdateLabelContext {
   element: BpmnElement;

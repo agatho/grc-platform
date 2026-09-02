@@ -12,9 +12,9 @@
  * Die Traversierung läuft auf der Szene — kein Backend nötig.
  */
 
-import type { BpmnShape } from "../draw/types.js";
-import type { GrcBia, GrcOverlayData } from "./contract.js";
-import { type GrcGraph } from "./graph.js";
+import type { BpmnShape } from "../draw/types";
+import type { GrcBia, GrcOverlayData } from "./contract";
+import { type GrcGraph } from "./graph";
 
 export type OutageState = "affected" | "blocked" | "workaround" | "unaffected";
 

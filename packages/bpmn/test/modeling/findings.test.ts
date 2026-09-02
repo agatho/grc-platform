@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { openSession } from "./helpers/harness.js";
-import { boundsOf, planesOf, planeElementsOf } from "../../src/modeling/di.js";
-import { boOf, asArray } from "../../src/modeling/util.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
+import { openSession } from "./helpers/harness";
+import { boundsOf, planesOf, planeElementsOf } from "../../src/modeling/di";
+import { boOf, asArray } from "../../src/modeling/util";
+import type { BpmnShape } from "../../src/modeling/types";
 
 /**
  * Regressionstests zu den Befunden des Verifikationsstrangs

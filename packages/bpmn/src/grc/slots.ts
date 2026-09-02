@@ -21,8 +21,8 @@
  * exportiertes Auditdiagramm kein Beleg.
  */
 
-import type { GrcObjectRef } from "./contract.js";
-import type { GrcTone, HatchDensity } from "./tokens.js";
+import type { GrcObjectRef } from "./contract";
+import type { GrcTone, HatchDensity } from "./tokens";
 
 /** Die vier Badge-Slots. */
 export type GrcSlot = "TL" | "TR" | "BL" | "BR";

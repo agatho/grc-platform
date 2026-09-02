@@ -1,11 +1,11 @@
 /// <reference lib="dom" />
 
-import { svgAppend, svgAttr, svgCreate } from "./svg.js";
+import { svgAppend, svgAttr, svgCreate } from "./svg";
 import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE,
   LINE_HEIGHT_FACTOR,
-} from "./theme.js";
+} from "./theme";
 
 /**
  * Textlayout ohne DOM-Messung.

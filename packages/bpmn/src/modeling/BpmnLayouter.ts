@@ -24,8 +24,8 @@ import {
   withoutRedundantPoints,
 } from "diagram-js/lib/layout/ManhattanLayout.js";
 import { getMid } from "diagram-js/lib/layout/LayoutUtil.js";
-import type { BpmnConnection, BpmnElement, BpmnShape, Point } from "./types.js";
-import { boOf, is } from "./util.js";
+import type { BpmnConnection, BpmnElement, BpmnShape, Point } from "./types";
+import { boOf, is } from "./util";
 
 export interface LayoutHints {
   connectionStart?: Point;

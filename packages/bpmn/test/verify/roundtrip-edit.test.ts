@@ -31,21 +31,18 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { installBpmnJsSupport } from "./jsdom-svg.js";
-import { representativeBases } from "./bases.js";
-import { createArctosDriver } from "../../src/verify/drivers/arctos.js";
-import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs.js";
-import type { ModelingDriver } from "../../src/verify/driver.js";
-import { generateSequence } from "../../src/verify/property.js";
-import { Rng } from "../../src/verify/random.js";
-import {
-  formatOperation,
-  type Operation,
-} from "../../src/verify/operations.js";
-import { snapshotXml } from "../../src/verify/snapshot.js";
-import { canonicalize, diffCanonical } from "../../src/util/xml-canonical.js";
-import { exportXml, importXml } from "../../src/model/io.js";
-import { allKnown, lookupFinding } from "./known-findings.js";
+import { installBpmnJsSupport } from "./jsdom-svg";
+import { representativeBases } from "./bases";
+import { createArctosDriver } from "../../src/verify/drivers/arctos";
+import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs";
+import type { ModelingDriver } from "../../src/verify/driver";
+import { generateSequence } from "../../src/verify/property";
+import { Rng } from "../../src/verify/random";
+import { formatOperation, type Operation } from "../../src/verify/operations";
+import { snapshotXml } from "../../src/verify/snapshot";
+import { canonicalize, diffCanonical } from "../../src/util/xml-canonical";
+import { exportXml, importXml } from "../../src/model/io";
+import { allKnown, lookupFinding } from "./known-findings";
 
 /**
  * Map an undo-symmetry failure to a known finding, or `undefined` when it is

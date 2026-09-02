@@ -5,14 +5,14 @@ import {
   isGateway,
   isSubProcess,
   isSupportedConnectionType,
-} from "./semantic.js";
+} from "./semantic";
 import type {
   Bounds,
   BpmnConnection,
   BpmnShape,
   ModdleElement,
   Point,
-} from "./types.js";
+} from "./types";
 
 /**
  * Übersetzt einen `bpmn-moddle`-Baum samt BPMN-DI in eine flache, gezeichnete

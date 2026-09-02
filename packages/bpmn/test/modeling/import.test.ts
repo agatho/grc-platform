@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { openSession } from "./helpers/harness.js";
+import { openSession } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   DATA_PROCESS,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import { checkInvariants } from "../../src/modeling/invariants.js";
-import { importXml } from "../../src/model/io.js";
-import { boOf } from "../../src/modeling/util.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
+} from "./helpers/fixtures";
+import { checkInvariants } from "../../src/modeling/invariants";
+import { importXml } from "../../src/model/io";
+import { boOf } from "../../src/modeling/util";
+import type { BpmnShape } from "../../src/modeling/types";
 
 describe("Import in die Modellierungsschicht", () => {
   it("baut aus einem Prozess einen Elementbaum mit allen drei Bäumen verbunden", async () => {

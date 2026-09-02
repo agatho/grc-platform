@@ -1,14 +1,14 @@
 /// <reference lib="dom" />
 
-import BpmnRenderer from "../../../src/draw/BpmnRenderer.js";
-import { SVG_NS } from "../../../src/draw/svg.js";
+import BpmnRenderer from "../../../src/draw/BpmnRenderer";
+import { SVG_NS } from "../../../src/draw/svg";
 import type {
   BpmnConnection,
   BpmnRendererConfig,
   BpmnShape,
   ModdleElement,
   Point,
-} from "../../../src/draw/types.js";
+} from "../../../src/draw/types";
 
 /**
  * Zeichenhilfen für die Tests.

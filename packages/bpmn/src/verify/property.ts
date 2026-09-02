@@ -32,10 +32,10 @@
  */
 
 import type { ModdleElement } from "bpmn-moddle";
-import type { ModelingDriver, OperationOutcome } from "./driver.js";
-import type { CheckOptions, InvariantViolation } from "./invariants.js";
-import { checkAllInvariants, formatViolations } from "./invariants.js";
-import { importXml } from "../model/io.js";
+import type { ModelingDriver, OperationOutcome } from "./driver";
+import type { CheckOptions, InvariantViolation } from "./invariants";
+import { checkAllInvariants, formatViolations } from "./invariants";
+import { importXml } from "../model/io";
 import {
   BOUNDARY_EVENT_DEFINITIONS,
   CREATABLE_TYPES,
@@ -44,8 +44,8 @@ import {
   serializeSequence,
   type Operation,
   type OperationKind,
-} from "./operations.js";
-import { AWKWARD_NAMES, Rng } from "./random.js";
+} from "./operations";
+import { AWKWARD_NAMES, Rng } from "./random";
 
 // ---------------------------------------------------------------------------
 // Generation

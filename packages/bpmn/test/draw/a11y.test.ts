@@ -7,15 +7,15 @@ import { fileURLToPath } from "node:url";
 import axe from "axe-core";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { buildScene } from "../../src/draw/scene.js";
-import { importXml } from "../../src/model/index.js";
-import { buildGraphOrder } from "../../src/viewer/order.js";
+import { buildScene } from "../../src/draw/scene";
+import { importXml } from "../../src/model/index";
+import { buildGraphOrder } from "../../src/viewer/order";
 import {
   buildTextAlternative,
   renderTextAlternativeTable,
-} from "../../src/viewer/TextAlternative.js";
-import { BpmnCanvas } from "../../src/viewer/BpmnCanvas.js";
-import { installSvgPolyfills, JSDOM_LIMITATIONS } from "./helpers/jsdom-svg.js";
+} from "../../src/viewer/TextAlternative";
+import { BpmnCanvas } from "../../src/viewer/BpmnCanvas";
+import { installSvgPolyfills, JSDOM_LIMITATIONS } from "./helpers/jsdom-svg";
 
 /**
  * Barrierefreiheit (Aufgabe 3).

@@ -23,14 +23,14 @@
 import axe from "axe-core";
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { DEFAULT_PALETTE_ITEMS } from "../../src/editor/catalog.js";
-import type { ArctosContextPadProvider } from "../../src/editor/ContextPadProvider.js";
-import type { LabelEditing } from "../../src/editor/LabelEditing.js";
-import type { PaletteChrome } from "../../src/editor/PaletteChrome.js";
-import type { ReplaceMenu } from "../../src/editor/ReplaceMenu.js";
-import { JSDOM_LIMITATIONS } from "../draw/helpers/jsdom-svg.js";
-import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { openEditor, type EditorHarness } from "./helpers/editor.js";
+import { DEFAULT_PALETTE_ITEMS } from "../../src/editor/catalog";
+import type { ArctosContextPadProvider } from "../../src/editor/ContextPadProvider";
+import type { LabelEditing } from "../../src/editor/LabelEditing";
+import type { PaletteChrome } from "../../src/editor/PaletteChrome";
+import type { ReplaceMenu } from "../../src/editor/ReplaceMenu";
+import { JSDOM_LIMITATIONS } from "../draw/helpers/jsdom-svg";
+import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

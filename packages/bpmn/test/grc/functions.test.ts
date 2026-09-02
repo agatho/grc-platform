@@ -6,19 +6,19 @@ import {
   buildGrcGraph,
   onCommonPath,
   reachableFrom,
-} from "../../src/grc/graph.js";
-import { computeSod } from "../../src/grc/sod.js";
-import { computeTrustBoundaries } from "../../src/grc/trust.js";
-import { formatMinutes, simulateOutage } from "../../src/grc/outage.js";
-import { flowWidth } from "../../src/grc/catalog.js";
+} from "../../src/grc/graph";
+import { computeSod } from "../../src/grc/sod";
+import { computeTrustBoundaries } from "../../src/grc/trust";
+import { formatMinutes, simulateOutage } from "../../src/grc/outage";
+import { flowWidth } from "../../src/grc/catalog";
 import {
   bankPrivacyData,
   bankSodData,
   procurementSodData,
   salesRiskControlData,
   tourOutageData,
-} from "./fixtures.js";
-import { corpusScene } from "./helpers.js";
+} from "./fixtures";
+import { corpusScene } from "./helpers";
 
 /**
  * F3, F5, F6 — die drei Funktionen, die auf der Graphstruktur arbeiten.

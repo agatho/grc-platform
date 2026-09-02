@@ -1,18 +1,14 @@
 /// <reference lib="dom" />
 
-import type { Scene } from "../draw/scene.js";
+import type { Scene } from "../draw/scene";
 import {
   getEventDefinitionLabel,
   getEventDefinitionType,
   getLabelText,
   getTypeLabel,
-} from "../draw/semantic.js";
-import type { BpmnShape } from "../draw/types.js";
-import {
-  buildGraphOrder,
-  findContainerLabel,
-  type GraphOrder,
-} from "./order.js";
+} from "../draw/semantic";
+import type { BpmnShape } from "../draw/types";
+import { buildGraphOrder, findContainerLabel, type GraphOrder } from "./order";
 
 /**
  * Textuelle Alternative zum Bild (Plan §4.3, WCAG 1.1.1 und 1.4.10).

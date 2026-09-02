@@ -19,10 +19,10 @@
  * einen Tastaturnutzer sonst am Seitenanfang absetzt.
  */
 
-import { replaceOptionsFor } from "./catalog.js";
-import { focusDiagram, RovingFocus } from "./dom.js";
-import { describe } from "./ElementCreation.js";
-import type { EditorAnnouncer } from "./announce.js";
+import { replaceOptionsFor } from "./catalog";
+import { focusDiagram, RovingFocus } from "./dom";
+import { describe } from "./ElementCreation";
+import type { EditorAnnouncer } from "./announce";
 import type {
   BpmnShape,
   CanvasLike,
@@ -31,7 +31,7 @@ import type {
   ReplaceOption,
   RulesLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 interface OpenMenu {
   readonly element: BpmnShape;

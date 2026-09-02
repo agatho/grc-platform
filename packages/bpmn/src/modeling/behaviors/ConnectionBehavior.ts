@@ -38,9 +38,9 @@
 
 import CommandInterceptor from "diagram-js/lib/command/CommandInterceptor.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import { canConnect } from "../BpmnRules.js";
-import type { BpmnConnection, BpmnElement, BpmnShape } from "../types.js";
-import { boOf, isConnectionElement } from "../util.js";
+import { canConnect } from "../BpmnRules";
+import type { BpmnConnection, BpmnElement, BpmnShape } from "../types";
+import { boOf, isConnectionElement } from "../util";
 
 interface ModelingLike {
   removeConnection(connection: BpmnConnection): void;

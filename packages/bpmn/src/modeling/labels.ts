@@ -15,8 +15,8 @@
  * geschrieben.
  */
 
-import type { BpmnFactory } from "./BpmnFactory.js";
-import { boundsOf, labelBoundsOf } from "./di.js";
+import type { BpmnFactory } from "./BpmnFactory";
+import { boundsOf, labelBoundsOf } from "./di";
 import type {
   Bounds,
   BpmnConnection,
@@ -24,14 +24,8 @@ import type {
   BpmnShape,
   ModdleElement,
   Point,
-} from "./types.js";
-import {
-  boOf,
-  is,
-  isAny,
-  isConnectionElement,
-  isModdleElement,
-} from "./util.js";
+} from "./types";
+import { boOf, is, isAny, isConnectionElement, isModdleElement } from "./util";
 
 export const DEFAULT_LABEL_WIDTH = 90;
 export const DEFAULT_LABEL_HEIGHT = 20;

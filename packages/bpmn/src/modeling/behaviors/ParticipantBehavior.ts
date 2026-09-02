@@ -27,17 +27,17 @@
 
 import CommandInterceptor from "diagram-js/lib/command/CommandInterceptor.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import type { BpmnFactory } from "../BpmnFactory.js";
-import { planeFor } from "../di.js";
-import { processOfParticipant } from "../cmd/RootRebindHandler.js";
+import type { BpmnFactory } from "../BpmnFactory";
+import { planeFor } from "../di";
+import { processOfParticipant } from "../cmd/RootRebindHandler";
 import type {
   BpmnElement,
   BpmnParent,
   BpmnRoot,
   BpmnShape,
   ModdleElement,
-} from "../types.js";
-import { asArray, boOf, is, isShapeElement } from "../util.js";
+} from "../types";
+import { asArray, boOf, is, isShapeElement } from "../util";
 
 const HIGH_PRIORITY = 2000;
 

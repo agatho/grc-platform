@@ -17,22 +17,22 @@
  */
 
 import { beforeAll, describe, expect, it } from "vitest";
-import { installBpmnJsSupport } from "./jsdom-svg.js";
-import { editableBases, representativeBases } from "./bases.js";
+import { installBpmnJsSupport } from "./jsdom-svg";
+import { editableBases, representativeBases } from "./bases";
 import {
   BpmnJsDriver,
   isBpmnJsAvailable,
-} from "../../src/verify/drivers/bpmnjs.js";
-import { createArctosDriver } from "../../src/verify/drivers/arctos.js";
+} from "../../src/verify/drivers/bpmnjs";
+import { createArctosDriver } from "../../src/verify/drivers/arctos";
 import {
   formatDivergences,
   shadowCompare,
   summarize,
   type Divergence,
-} from "../../src/verify/shadow.js";
-import { generateSequence } from "../../src/verify/property.js";
-import { Rng } from "../../src/verify/random.js";
-import type { ModelingDriver } from "../../src/verify/driver.js";
+} from "../../src/verify/shadow";
+import { generateSequence } from "../../src/verify/property";
+import { Rng } from "../../src/verify/random";
+import type { ModelingDriver } from "../../src/verify/driver";
 
 installBpmnJsSupport();
 

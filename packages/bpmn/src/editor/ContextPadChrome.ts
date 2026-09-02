@@ -14,10 +14,10 @@
  * jedes Mal neu, weil das Menü bei jedem Öffnen frisch gebaut wird.
  */
 
-import { focusDiagram, RovingFocus } from "./dom.js";
-import { describe } from "./ElementCreation.js";
-import type { EditorAnnouncer } from "./announce.js";
-import type { BpmnElement, CanvasLike, EventBusLike } from "./types.js";
+import { focusDiagram, RovingFocus } from "./dom";
+import { describe } from "./ElementCreation";
+import type { EditorAnnouncer } from "./announce";
+import type { BpmnElement, CanvasLike, EventBusLike } from "./types";
 
 interface ContextPadLike {
   close(): void;

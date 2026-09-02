@@ -10,9 +10,9 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { LabelEditing } from "../../src/editor/LabelEditing.js";
-import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+import type { LabelEditing } from "../../src/editor/LabelEditing";
+import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

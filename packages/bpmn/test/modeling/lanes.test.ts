@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { laneRefs, openSession, operate } from "./helpers/harness.js";
+import { laneRefs, openSession, operate } from "./helpers/harness";
 import {
   COLLABORATION,
   NESTED_LANES,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import type { Bounds } from "../../src/modeling/types.js";
-import {
-  childLanes,
-  laneFor,
-  semanticLanesOf,
-} from "../../src/modeling/lanes.js";
-import { boOf } from "../../src/modeling/util.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
+} from "./helpers/fixtures";
+import type { Bounds } from "../../src/modeling/types";
+import { childLanes, laneFor, semanticLanesOf } from "../../src/modeling/lanes";
+import { boOf } from "../../src/modeling/util";
+import type { BpmnShape } from "../../src/modeling/types";
 
 /**
  * Lane-Behandlung (Auftrag Punkt 4).

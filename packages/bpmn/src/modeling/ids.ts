@@ -14,8 +14,8 @@
  * verbrennt und ein Redo dieselbe ID wiederbekommt.
  */
 
-import type { ModdleElement } from "./types.js";
-import { walkDocument } from "./invariants.js";
+import type { ModdleElement } from "./types";
+import { walkDocument } from "./invariants";
 
 /** `bpmn:UserTask` → `UserTask`, `bpmndi:BPMNShape` → `BPMNShape`. */
 export function localName(type: string): string {

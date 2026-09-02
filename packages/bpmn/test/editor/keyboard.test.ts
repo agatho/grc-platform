@@ -16,16 +16,16 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { AlignDistribute } from "../../src/editor/AlignDistribute.js";
-import type { ConnectMode } from "../../src/editor/ConnectMode.js";
-import type { EditorKeyboard } from "../../src/editor/Keyboard.js";
-import type { LabelEditing } from "../../src/editor/LabelEditing.js";
-import type { PaletteChrome } from "../../src/editor/PaletteChrome.js";
-import { arrowDelta } from "../../src/editor/Keyboard.js";
-import { checkInvariants } from "../../src/modeling/invariants.js";
-import { importXml } from "../../src/model/index.js";
-import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { openEditor, type EditorHarness } from "./helpers/editor.js";
+import type { AlignDistribute } from "../../src/editor/AlignDistribute";
+import type { ConnectMode } from "../../src/editor/ConnectMode";
+import type { EditorKeyboard } from "../../src/editor/Keyboard";
+import type { LabelEditing } from "../../src/editor/LabelEditing";
+import type { PaletteChrome } from "../../src/editor/PaletteChrome";
+import { arrowDelta } from "../../src/editor/Keyboard";
+import { checkInvariants } from "../../src/modeling/invariants";
+import { importXml } from "../../src/model/index";
+import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

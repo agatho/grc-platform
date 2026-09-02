@@ -24,15 +24,15 @@
  */
 
 import { create as createDiagramElement } from "diagram-js/lib/model/index.js";
-import { BpmnFactory, DEFAULT_LABEL_SIZE, defaultSize } from "./BpmnFactory.js";
+import { BpmnFactory, DEFAULT_LABEL_SIZE, defaultSize } from "./BpmnFactory";
 import type {
   BpmnConnection,
   BpmnElement,
   BpmnRoot,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
-import { is, isConnectionType, isModdleElement } from "./util.js";
+} from "./types";
+import { is, isConnectionType, isModdleElement } from "./util";
 
 export type ElementKind = "root" | "shape" | "connection" | "label";
 

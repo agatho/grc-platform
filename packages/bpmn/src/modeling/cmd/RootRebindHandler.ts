@@ -30,8 +30,8 @@
  * und der ist so klein, dass man ihn ansehen kann.
  */
 
-import type { BpmnElement, BpmnRoot, ModdleElement } from "../types.js";
-import { isModdleElement } from "../util.js";
+import type { BpmnElement, BpmnRoot, ModdleElement } from "../types";
+import { isModdleElement } from "../util";
 
 export interface RootRebindContext {
   root: BpmnRoot;

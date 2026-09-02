@@ -7,8 +7,8 @@
  * Szene — kein Backend nötig (§3.10).
  */
 
-import type { Scene } from "../draw/scene.js";
-import type { BpmnConnection, BpmnShape, Point } from "../draw/types.js";
+import type { Scene } from "../draw/scene";
+import type { BpmnConnection, BpmnShape, Point } from "../draw/types";
 
 const FLOW_TYPES = new Set(["bpmn:SequenceFlow", "bpmn:MessageFlow"]);
 

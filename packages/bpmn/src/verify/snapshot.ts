@@ -35,9 +35,9 @@ import {
   getProcesses,
   getWaypoints,
   isModdleElement,
-} from "../model/access.js";
-import { importXml } from "../model/io.js";
-import type { Bounds, Point } from "../model/types.js";
+} from "../model/access";
+import { importXml } from "../model/io";
+import type { Bounds, Point } from "../model/types";
 
 export interface SnapshotNode {
   readonly id: string;

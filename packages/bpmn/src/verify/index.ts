@@ -35,7 +35,7 @@ export {
   type InvariantReport,
   type InvariantSeverity,
   type InvariantViolation,
-} from "./invariants.js";
+} from "./invariants";
 
 export {
   CANDIDATE_KINDS,
@@ -51,7 +51,7 @@ export {
   type ElementRef,
   type Operation,
   type OperationKind,
-} from "./operations.js";
+} from "./operations";
 
 export {
   CandidateOrder,
@@ -59,9 +59,9 @@ export {
   type ModelingDriver,
   type OperationOutcome,
   type OperationResult,
-} from "./driver.js";
+} from "./driver";
 
-export { AWKWARD_NAMES, Rng } from "./random.js";
+export { AWKWARD_NAMES, Rng } from "./random";
 
 export {
   failureIds,
@@ -80,7 +80,7 @@ export {
   type SequenceResult,
   type ShrinkResult,
   type StepTrace,
-} from "./property.js";
+} from "./property";
 
 export {
   collectIds,
@@ -90,7 +90,7 @@ export {
   snapshotXml,
   type ModelSnapshot,
   type SnapshotNode,
-} from "./snapshot.js";
+} from "./snapshot";
 
 export {
   BOUNDS_TOLERANCE_PX,
@@ -106,7 +106,7 @@ export {
   type DivergenceVerdict,
   type ShadowResult,
   type ShadowRunOptions,
-} from "./shadow.js";
+} from "./shadow";
 
 export {
   DEFAULT_CHANNEL_THRESHOLD,
@@ -119,7 +119,7 @@ export {
   type CompareOptions,
   type CompareResult,
   type RasterOptions,
-} from "./raster.js";
+} from "./raster";
 
 export {
   canForceGc,
@@ -129,15 +129,11 @@ export {
   type BudgetEntry,
   type BudgetViolation,
   type Measurement,
-} from "./budget.js";
+} from "./budget";
 
 export {
   ArctosDriver,
   arctosDriverStatus,
   createArctosDriver,
-} from "./drivers/arctos.js";
-export {
-  BpmnJsDriver,
-  isBpmnJsAvailable,
-  loadBpmnJs,
-} from "./drivers/bpmnjs.js";
+} from "./drivers/arctos";
+export { BpmnJsDriver, isBpmnJsAvailable, loadBpmnJs } from "./drivers/bpmnjs";

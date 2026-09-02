@@ -19,8 +19,8 @@ import {
   KNOWN_FINDINGS,
   lookupFinding,
   RESOLVED_FINDINGS,
-} from "./known-findings.js";
-import { DIVERGENCE_RULES } from "../../src/verify/shadow.js";
+} from "./known-findings";
+import { DIVERGENCE_RULES } from "../../src/verify/shadow";
 
 describe("known-findings registry", () => {
   it("gives every entry an owner, a reproduction and a note", () => {

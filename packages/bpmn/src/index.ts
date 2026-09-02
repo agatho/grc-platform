@@ -11,15 +11,15 @@
  */
 
 /** GRC-Diagrammschicht (Plan §3) — als Namensraum, damit nichts kollidiert. */
-export * as grc from "./grc/index.js";
+export * as grc from "./grc/index";
 
 /** Modellierungsschicht (Plan §2.3.1) — als Namensraum, damit nichts kollidiert. */
-export * as modeling from "./modeling/index.js";
+export * as modeling from "./modeling/index";
 
 /** Editor-Schicht (Plan §2.3: Palette, ContextPad, Beschriften, Tastatur). */
-export * as editor from "./editor/index.js";
+export * as editor from "./editor/index";
 
-export { default as drawModule } from "./draw/index.js";
+export { default as drawModule } from "./draw/index";
 export {
   BpmnRenderer,
   buildScene,
@@ -50,7 +50,7 @@ export {
   type StaticRenderOptions,
   type StaticRenderResult,
   type TextLayout,
-} from "./draw/index.js";
+} from "./draw/index";
 
 export {
   BpmnCanvas,
@@ -75,4 +75,4 @@ export {
   type ImportXmlResult,
   type TextAlternativeModel,
   type TextAlternativeRow,
-} from "./viewer/index.js";
+} from "./viewer/index";

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { CORPUS_DIR, loadCorpus } from "./corpus.js";
+import { CORPUS_DIR, loadCorpus } from "./corpus";
 import {
   ARCTOS_METADATA_LOCAL_TYPE,
   ARCTOS_NAMESPACE,
@@ -33,7 +33,7 @@ import {
   markModified,
   readGrcMetadata,
   readGrcMetadataMap,
-} from "../../src/model/index.js";
+} from "../../src/model/index";
 
 const REPO_EXTENSION =
   "/work/repo/apps/web/src/components/bpmn/arctos-moddle-extension.json";

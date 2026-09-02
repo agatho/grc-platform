@@ -15,7 +15,7 @@
  */
 
 import type { ModdleElement } from "bpmn-moddle";
-import { ARCTOS_METADATA_LOCAL_TYPE } from "./moddle.js";
+import { ARCTOS_METADATA_LOCAL_TYPE } from "./moddle";
 import type {
   Bounds,
   GrcBcmKpi,
@@ -26,7 +26,7 @@ import type {
   GrcRiskRef,
   GrcRopa,
   Point,
-} from "./types.js";
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Primitives

@@ -2,12 +2,12 @@
 
 import { describe, expect, it } from "vitest";
 
-import { SUPPORTED_SHAPE_TYPES } from "../../src/draw/semantic.js";
+import { SUPPORTED_SHAPE_TYPES } from "../../src/draw/semantic";
 import {
   ACTIVITY_RADIUS,
   STROKE_THICK,
   STROKE_THIN,
-} from "../../src/draw/theme.js";
+} from "../../src/draw/theme";
 import {
   createRenderer,
   drawConnection,
@@ -19,7 +19,7 @@ import {
   strokeWidthOf,
   symbolNames,
   textContentOf,
-} from "./helpers/render.js";
+} from "./helpers/render";
 
 /**
  * Ein Test je unterstütztem Elementtyp: trägt das erzeugte SVG die

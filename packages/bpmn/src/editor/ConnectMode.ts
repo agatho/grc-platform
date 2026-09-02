@@ -24,9 +24,9 @@
  * neues Ende sein darf.
  */
 
-import { getTypeLabel } from "../draw/semantic.js";
-import type { EditorAnnouncer } from "./announce.js";
-import { describe } from "./ElementCreation.js";
+import { getTypeLabel } from "../draw/semantic";
+import type { EditorAnnouncer } from "./announce";
+import { describe } from "./ElementCreation";
 import type {
   BpmnConnection,
   BpmnElement,
@@ -38,7 +38,7 @@ import type {
   Point,
   RulesLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 export const CANDIDATE_MARKER = "arctos-connect-candidate";
 

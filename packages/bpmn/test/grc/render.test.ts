@@ -5,13 +5,13 @@ import { join } from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { renderGrcScene, toGrcSvgString } from "../../src/grc/render.js";
-import { shortRetentionFilter } from "../../src/grc/catalog.js";
-import { buildGrcTextAlternative } from "../../src/grc/text-alternative.js";
-import { viewById, type GrcViewId } from "../../src/grc/views.js";
-import type { GrcOverlayData } from "../../src/grc/contract.js";
-import type { GrcFilter } from "../../src/grc/layers.js";
-import { installSvgPolyfills } from "../draw/helpers/jsdom-svg.js";
+import { renderGrcScene, toGrcSvgString } from "../../src/grc/render";
+import { shortRetentionFilter } from "../../src/grc/catalog";
+import { buildGrcTextAlternative } from "../../src/grc/text-alternative";
+import { viewById, type GrcViewId } from "../../src/grc/views";
+import type { GrcOverlayData } from "../../src/grc/contract";
+import type { GrcFilter } from "../../src/grc/layers";
+import { installSvgPolyfills } from "../draw/helpers/jsdom-svg";
 import {
   bankPrivacyData,
   bankSodData,
@@ -21,8 +21,8 @@ import {
   procurementComplianceData,
   salesRiskControlData,
   tourOutageData,
-} from "./fixtures.js";
-import { corpusScene, RENDERED_DIR } from "./helpers.js";
+} from "./fixtures";
+import { corpusScene, RENDERED_DIR } from "./helpers";
 
 /**
  * Sichtbare Belege.

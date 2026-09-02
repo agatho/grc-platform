@@ -15,11 +15,11 @@
  * `Escape` führt zurück auf die Zeichenfläche.
  */
 
-import { PALETTE_GROUPS } from "./catalog.js";
-import { focusDiagram, RovingFocus } from "./dom.js";
-import type { EditorAnnouncer } from "./announce.js";
-import type { EditorConfiguration } from "./config.js";
-import type { CanvasLike, EventBusLike } from "./types.js";
+import { PALETTE_GROUPS } from "./catalog";
+import { focusDiagram, RovingFocus } from "./dom";
+import type { EditorAnnouncer } from "./announce";
+import type { EditorConfiguration } from "./config";
+import type { CanvasLike, EventBusLike } from "./types";
 
 const GROUP_LABELS = new Map(
   PALETTE_GROUPS.map((group) => [group.id, group.label]),

@@ -15,9 +15,9 @@
  * Diese Schicht erfindet keine.
  */
 
-import { getTypeLabel } from "../draw/semantic.js";
-import type { EditorAnnouncer } from "./announce.js";
-import type { ProbeFactory } from "./probe.js";
+import { getTypeLabel } from "../draw/semantic";
+import type { EditorAnnouncer } from "./announce";
+import type { ProbeFactory } from "./probe";
 import type {
   AutoPlaceLike,
   BpmnElement,
@@ -32,7 +32,7 @@ import type {
   Point,
   RulesLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 /** Abstand, den ein frei platziertes Element zu vorhandenen hält. */
 const FREE_SPOT_STEP = 140;

@@ -33,14 +33,14 @@
  * | `bpmn:Group` | fachliche Klammer für Abschnitte, Grundlage der Gruppensichten | §3.12 |
  */
 
-import { getTypeLabel } from "../draw/semantic.js";
+import { getTypeLabel } from "../draw/semantic";
 import type {
   BpmnShape,
   ModdleElement,
   PaletteGroup,
   PaletteItem,
   ReplaceOption,
-} from "./types.js";
+} from "./types";
 
 /** Gruppen der Palette, in Anzeigereihenfolge. */
 export const PALETTE_GROUPS: readonly PaletteGroup[] = [

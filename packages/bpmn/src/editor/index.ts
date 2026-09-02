@@ -18,9 +18,9 @@ import SnappingModule from "diagram-js/lib/features/snapping/index.js";
 import {
   ModelingSession,
   type ModelingSessionOptions,
-} from "../modeling/session.js";
-import { editorModule } from "./modules.js";
-import type { EditorConfig } from "./types.js";
+} from "../modeling/session";
+import { editorModule } from "./modules";
+import type { EditorConfig } from "./types";
 
 export {
   DEFAULT_PALETTE_ITEMS,
@@ -31,49 +31,49 @@ export {
   replaceFamilyOf,
   replaceOptionsFor,
   type PaletteCatalogOptions,
-} from "./catalog.js";
+} from "./catalog";
 export {
   DEFAULT_DISABLED_REASON,
   DEFAULT_FINE_STEP,
   DEFAULT_GRID_STEP,
   EditorConfiguration,
-} from "./config.js";
-export { EditorAnnouncer } from "./announce.js";
-export { RovingFocus, escapeHtml, isTextInput } from "./dom.js";
+} from "./config";
+export { EditorAnnouncer } from "./announce";
+export { RovingFocus, escapeHtml, isTextInput } from "./dom";
 export {
   ElementCreation,
   describe,
   type CreationResult,
-} from "./ElementCreation.js";
-export { ArctosPaletteProvider } from "./PaletteProvider.js";
-export { PaletteChrome } from "./PaletteChrome.js";
-export { ArctosContextPadProvider } from "./ContextPadProvider.js";
-export { ContextPadChrome } from "./ContextPadChrome.js";
-export { ReplaceMenu } from "./ReplaceMenu.js";
-export { LabelEditing } from "./LabelEditing.js";
-export { ConnectMode, CANDIDATE_MARKER, midOf } from "./ConnectMode.js";
-export { BendpointEditing } from "./BendpointEditing.js";
+} from "./ElementCreation";
+export { ArctosPaletteProvider } from "./PaletteProvider";
+export { PaletteChrome } from "./PaletteChrome";
+export { ArctosContextPadProvider } from "./ContextPadProvider";
+export { ContextPadChrome } from "./ContextPadChrome";
+export { ReplaceMenu } from "./ReplaceMenu";
+export { LabelEditing } from "./LabelEditing";
+export { ConnectMode, CANDIDATE_MARKER, midOf } from "./ConnectMode";
+export { BendpointEditing } from "./BendpointEditing";
 export {
   ResizeBehavior,
   minDimensionsFor,
   resizeBounds,
   type Dimensions,
   type ResizeDirection,
-} from "./ResizeBehavior.js";
-export { BpmnCopyPaste } from "./CopyPaste.js";
+} from "./ResizeBehavior";
+export { BpmnCopyPaste } from "./CopyPaste";
 export {
   hasGrcMetadata,
   materialize,
   snapshotOf,
   type SemanticSnapshot,
-} from "./copy/serialize.js";
+} from "./copy/serialize";
 export {
   AlignDistribute,
   isAlignable,
   type DistributeOrientation,
-} from "./AlignDistribute.js";
-export { EditorKeyboard, arrowDelta } from "./Keyboard.js";
-export { ProbeFactory } from "./probe.js";
+} from "./AlignDistribute";
+export { EditorKeyboard, arrowDelta } from "./Keyboard";
+export { ProbeFactory } from "./probe";
 export {
   editorChromeModule,
   editorModule,
@@ -81,14 +81,14 @@ export {
   editorServicesFor,
   type DiagramModule,
   type EditorModulesOptions,
-} from "./modules.js";
+} from "./modules";
 export type {
   EditorChrome,
   EditorConfig,
   PaletteGroup,
   PaletteItem,
   ReplaceOption,
-} from "./types.js";
+} from "./types";
 
 export default editorModule;
 

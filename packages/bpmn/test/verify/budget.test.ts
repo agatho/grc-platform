@@ -14,15 +14,12 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { installBpmnJsSupport } from "./jsdom-svg.js";
-import { loadCorpus } from "../model/corpus.js";
-import { exportXml, importXml } from "../../src/model/io.js";
-import {
-  renderDefinitions,
-  toSvgString,
-} from "../../src/draw/StaticRenderer.js";
-import { createArctosDriver } from "../../src/verify/drivers/arctos.js";
-import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs.js";
+import { installBpmnJsSupport } from "./jsdom-svg";
+import { loadCorpus } from "../model/corpus";
+import { exportXml, importXml } from "../../src/model/io";
+import { renderDefinitions, toSvgString } from "../../src/draw/StaticRenderer";
+import { createArctosDriver } from "../../src/verify/drivers/arctos";
+import { BpmnJsDriver } from "../../src/verify/drivers/bpmnjs";
 import {
   canForceGc,
   checkBudget,
@@ -30,7 +27,7 @@ import {
   measure,
   type BudgetEntry,
   type Measurement,
-} from "../../src/verify/budget.js";
+} from "../../src/verify/budget";
 
 installBpmnJsSupport();
 

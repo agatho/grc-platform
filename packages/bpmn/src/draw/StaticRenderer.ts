@@ -1,11 +1,11 @@
 /// <reference lib="dom" />
 
-import BpmnRenderer from "./BpmnRenderer.js";
-import { buildScene, type Scene } from "./scene.js";
-import { getAriaRole, getLabelText, getTypeLabel } from "./semantic.js";
-import { svgAppend, svgAttr, svgCreate } from "./svg.js";
-import { DEFAULT_PALETTE } from "./theme.js";
-import { isConnection, type BpmnElement, type ModdleElement } from "./types.js";
+import BpmnRenderer from "./BpmnRenderer";
+import { buildScene, type Scene } from "./scene";
+import { getAriaRole, getLabelText, getTypeLabel } from "./semantic";
+import { svgAppend, svgAttr, svgCreate } from "./svg";
+import { DEFAULT_PALETTE } from "./theme";
+import { isConnection, type BpmnElement, type ModdleElement } from "./types";
 
 /**
  * Rendert eine Szene ohne `diagram-js`-Canvas in ein eigenständiges SVG.

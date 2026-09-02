@@ -20,7 +20,7 @@
  *    other way round: to prove the invariant checker notices.
  */
 
-import { loadCorpus, type CorpusEntry } from "../model/corpus.js";
+import { loadCorpus, type CorpusEntry } from "../model/corpus";
 
 /**
  * Any BPMN flow node. Deliberately the full list rather than the four or five

@@ -4,16 +4,16 @@ import {
   laneRefs,
   openSession,
   operate,
-} from "./helpers/harness.js";
+} from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   DATA_PROCESS,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import { boundsOf, waypointsOf } from "../../src/modeling/di.js";
-import { boOf } from "../../src/modeling/util.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
+} from "./helpers/fixtures";
+import { boundsOf, waypointsOf } from "../../src/modeling/di";
+import { boOf } from "../../src/modeling/util";
+import type { BpmnShape } from "../../src/modeling/types";
 
 /**
  * Für **jede** Operation aus Punkt 2 des Auftrags mindestens ein Test, der die

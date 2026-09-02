@@ -12,7 +12,7 @@ export {
   type CountComparison,
   type CountDifference,
   type NodeCounts,
-} from "./xml-canonical.js";
+} from "./xml-canonical";
 
 export {
   XmlParseError,
@@ -27,4 +27,4 @@ export {
   type XmlNode,
   type XmlProcessingInstruction,
   type XmlText,
-} from "./xml-parse.js";
+} from "./xml-parse";

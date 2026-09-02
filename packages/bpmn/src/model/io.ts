@@ -14,7 +14,7 @@
  */
 
 import type { ModdleElement, ModdleWarning } from "bpmn-moddle";
-import { arctosModdle } from "./moddle.js";
+import { arctosModdle } from "./moddle";
 import type { BpmnModdleInstance } from "bpmn-moddle";
 
 export interface ImportResult {

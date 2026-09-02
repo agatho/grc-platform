@@ -19,10 +19,10 @@
 /// <reference lib="dom" />
 
 import type { ModdleElement } from "bpmn-moddle";
-import type { ModelingDriver, OperationResult } from "../driver.js";
-import { CandidateOrder, resolveIndex } from "../driver.js";
-import type { CandidateKind, Operation } from "../operations.js";
-import { isActivityType } from "../invariants.js";
+import type { ModelingDriver, OperationResult } from "../driver";
+import { CandidateOrder, resolveIndex } from "../driver";
+import type { CandidateKind, Operation } from "../operations";
+import { isActivityType } from "../invariants";
 
 // ---------------------------------------------------------------------------
 // The slice of src/modeling/ this driver uses, declared structurally so that

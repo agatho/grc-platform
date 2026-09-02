@@ -17,7 +17,7 @@ export {
   arctosExtensionDescriptor,
   arctosModdle,
   createArctosModdle,
-} from "./moddle.js";
+} from "./moddle";
 
 export {
   BpmnExportError,
@@ -31,7 +31,7 @@ export {
   type ExportOptions,
   type ImportOptions,
   type ImportResult,
-} from "./io.js";
+} from "./io";
 
-export * from "./access.js";
-export * from "./types.js";
+export * from "./access";
+export * from "./types";

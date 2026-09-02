@@ -2,17 +2,17 @@
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { renderScene } from "../../src/draw/StaticRenderer.js";
-import { importXml } from "../../src/model/index.js";
-import { BpmnCanvas } from "../../src/viewer/BpmnCanvas.js";
-import { decorateGrc } from "../../src/grc/decorate.js";
-import { buildOverlayModel } from "../../src/grc/engine.js";
-import { badgesOf, GrcBadgeCursor } from "../../src/grc/announce.js";
-import { openFindingsFilter } from "../../src/grc/catalog.js";
-import type { GrcInteraction } from "../../src/grc/contract.js";
-import { viewById } from "../../src/grc/views.js";
-import { GRC_PALETTE } from "../../src/grc/tokens.js";
-import { installSvgPolyfills } from "../draw/helpers/jsdom-svg.js";
+import { renderScene } from "../../src/draw/StaticRenderer";
+import { importXml } from "../../src/model/index";
+import { BpmnCanvas } from "../../src/viewer/BpmnCanvas";
+import { decorateGrc } from "../../src/grc/decorate";
+import { buildOverlayModel } from "../../src/grc/engine";
+import { badgesOf, GrcBadgeCursor } from "../../src/grc/announce";
+import { openFindingsFilter } from "../../src/grc/catalog";
+import type { GrcInteraction } from "../../src/grc/contract";
+import { viewById } from "../../src/grc/views";
+import { GRC_PALETTE } from "../../src/grc/tokens";
+import { installSvgPolyfills } from "../draw/helpers/jsdom-svg";
 import {
   bankPrivacyData,
   bankSodData,
@@ -20,8 +20,8 @@ import {
   procurementComplianceData,
   salesRiskControlData,
   tourOutageData,
-} from "./fixtures.js";
-import { corpusScene, corpusXml } from "./helpers.js";
+} from "./fixtures";
+import { corpusScene, corpusXml } from "./helpers";
 
 /**
  * Die Zeichenschicht der GRC-Überlagerung.

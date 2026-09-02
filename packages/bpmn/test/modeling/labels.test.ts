@@ -1,22 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { openSession, operate } from "./helpers/harness.js";
+import { openSession, operate } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import { boundsOf } from "../../src/modeling/di.js";
-import { snapToHostBorder } from "../../src/modeling/behaviors/BoundaryEventBehavior.js";
+} from "./helpers/fixtures";
+import { boundsOf } from "../../src/modeling/di";
+import { snapToHostBorder } from "../../src/modeling/behaviors/BoundaryEventBehavior";
 import {
   attachOrientation,
   preferredLayouts,
-} from "../../src/modeling/BpmnLayouter.js";
+} from "../../src/modeling/BpmnLayouter";
 import {
   externalLabelBounds,
   hasExternalLabel,
-} from "../../src/modeling/labels.js";
-import { boOf } from "../../src/modeling/util.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
+} from "../../src/modeling/labels";
+import { boOf } from "../../src/modeling/util";
+import type { BpmnShape } from "../../src/modeling/types";
 
 describe("Beschriftungen bewegen sich mit ihrem Element", () => {
   it("verschiebt das Label mit dem Ereignis", async () => {

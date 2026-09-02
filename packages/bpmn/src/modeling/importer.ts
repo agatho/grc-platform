@@ -30,8 +30,8 @@
  */
 
 import type Canvas from "diagram-js/lib/core/Canvas.js";
-import type { BpmnFactory } from "./BpmnFactory.js";
-import type { BpmnElementFactory } from "./ElementFactory.js";
+import type { BpmnFactory } from "./BpmnFactory";
+import type { BpmnElementFactory } from "./ElementFactory";
 import {
   addDi,
   boundsOf,
@@ -41,9 +41,9 @@ import {
   planeOfDiagram,
   planesOf,
   waypointsOf,
-} from "./di.js";
-import { checkInvariants, type InvariantViolation } from "./invariants.js";
-import { externalLabelBounds, hasExternalLabel, labelText } from "./labels.js";
+} from "./di";
+import { checkInvariants, type InvariantViolation } from "./invariants";
+import { externalLabelBounds, hasExternalLabel, labelText } from "./labels";
 import type {
   Bounds,
   BpmnConnection,
@@ -53,15 +53,15 @@ import type {
   BpmnShape,
   ModdleElement,
   Point,
-} from "./types.js";
+} from "./types";
 import {
   addToContainer,
   asArray,
   is,
   isModdleElement,
   setProperty,
-} from "./util.js";
-import { defaultSize } from "./BpmnFactory.js";
+} from "./util";
+import { defaultSize } from "./BpmnFactory";
 
 export interface ImportDefinitionsOptions {
   /** Welche `BPMNDiagram`-Ebene gezeichnet wird. */

@@ -1,7 +1,7 @@
 /// <reference lib="dom" />
 
-import { path, polygonPath, svgAppend, svgCreate } from "./svg.js";
-import type { EventDefinitionType } from "./semantic.js";
+import { path, polygonPath, svgAppend, svgCreate } from "./svg";
+import type { EventDefinitionType } from "./semantic";
 
 /**
  * Symbolvorrat als SVG-Pfade.

@@ -13,17 +13,14 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { AlignDistribute } from "../../src/editor/AlignDistribute.js";
-import { isAlignable } from "../../src/editor/AlignDistribute.js";
-import {
-  editorModulesFor,
-  editorServicesFor,
-} from "../../src/editor/modules.js";
-import type { EditorConfiguration } from "../../src/editor/config.js";
-import type { PaletteChrome } from "../../src/editor/PaletteChrome.js";
-import { modulesFor } from "../../src/viewer/modules.js";
-import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+import type { AlignDistribute } from "../../src/editor/AlignDistribute";
+import { isAlignable } from "../../src/editor/AlignDistribute";
+import { editorModulesFor, editorServicesFor } from "../../src/editor/modules";
+import type { EditorConfiguration } from "../../src/editor/config";
+import type { PaletteChrome } from "../../src/editor/PaletteChrome";
+import { modulesFor } from "../../src/viewer/modules";
+import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

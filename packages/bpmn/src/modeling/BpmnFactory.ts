@@ -15,9 +15,9 @@
  */
 
 import type { BpmnModdleInstance } from "bpmn-moddle";
-import { BpmnIds } from "./ids.js";
-import type { Bounds, ModdleElement, Point } from "./types.js";
-import { is, isAny, isModdleElement } from "./util.js";
+import { BpmnIds } from "./ids";
+import type { Bounds, ModdleElement, Point } from "./types";
+import { is, isAny, isModdleElement } from "./util";
 
 /** Vorgabegrößen je Typ — dieselben Maße, die `src/draw/theme.ts` zeichnet. */
 export const DEFAULT_SIZES: Readonly<

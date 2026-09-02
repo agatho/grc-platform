@@ -32,7 +32,7 @@ import {
   type XmlDocument,
   type XmlElement,
   type XmlNode,
-} from "./xml-parse.js";
+} from "./xml-parse";
 
 export const XMLNS_URI = "http://www.w3.org/2000/xmlns/";
 export const XSI_URI = "http://www.w3.org/2001/XMLSchema-instance";

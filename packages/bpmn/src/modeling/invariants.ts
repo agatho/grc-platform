@@ -26,7 +26,7 @@
  * Tests läuft `assertInvariants` nach **jeder** Operation und nach jedem Undo.
  */
 
-import type { ElementRegistryLike, ModdleElement } from "./types.js";
+import type { ElementRegistryLike, ModdleElement } from "./types";
 
 // ---------------------------------------------------------------------------
 // Befundtypen

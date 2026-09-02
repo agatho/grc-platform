@@ -17,7 +17,7 @@
  * Invarianten dieser Schicht sind Referenz-, keine Geometrieinvarianten.
  */
 
-import { isHorizontalDi } from "../di.js";
+import { isHorizontalDi } from "../di";
 import {
   childLanes,
   isLaneShape,
@@ -25,9 +25,9 @@ import {
   LANE_HEADER,
   MIN_LANE_SIZE,
   type LaneLocation,
-} from "../lanes.js";
-import type { Bounds, BpmnElement, BpmnParent, BpmnShape } from "../types.js";
-import { boOf, is, isShapeElement, participantOf } from "../util.js";
+} from "../lanes";
+import type { Bounds, BpmnElement, BpmnParent, BpmnShape } from "../types";
+import { boOf, is, isShapeElement, participantOf } from "../util";
 
 interface ModelingLike {
   createShape(

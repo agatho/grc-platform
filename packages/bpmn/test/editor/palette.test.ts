@@ -15,11 +15,11 @@ import {
   DEFAULT_PALETTE_ITEMS,
   groupsOf,
   paletteCatalog,
-} from "../../src/editor/catalog.js";
-import type { ArctosPaletteProvider } from "../../src/editor/PaletteProvider.js";
-import type { PaletteChrome } from "../../src/editor/PaletteChrome.js";
-import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+} from "../../src/editor/catalog";
+import type { ArctosPaletteProvider } from "../../src/editor/PaletteProvider";
+import type { PaletteChrome } from "../../src/editor/PaletteChrome";
+import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

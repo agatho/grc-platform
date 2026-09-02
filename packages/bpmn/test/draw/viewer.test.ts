@@ -6,10 +6,10 @@ import { fileURLToPath } from "node:url";
 
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { importXml } from "../../src/model/index.js";
-import { BpmnCanvas } from "../../src/viewer/BpmnCanvas.js";
-import { modulesFor } from "../../src/viewer/modules.js";
-import { installSvgPolyfills } from "./helpers/jsdom-svg.js";
+import { importXml } from "../../src/model/index";
+import { BpmnCanvas } from "../../src/viewer/BpmnCanvas";
+import { modulesFor } from "../../src/viewer/modules";
+import { installSvgPolyfills } from "./helpers/jsdom-svg";
 
 /**
  * Der Viewer im Ganzen: Bootstrap, Import, Canvas, Selektion, Overlays,

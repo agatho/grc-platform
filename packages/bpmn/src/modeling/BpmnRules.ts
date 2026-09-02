@@ -24,15 +24,15 @@
 
 import RuleProvider from "diagram-js/lib/features/rules/RuleProvider.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import { DEFAULT_SIZES } from "./BpmnFactory.js";
-import { isCollapsedDi } from "./di.js";
-import { isLaneShape, isParticipantShape } from "./lanes.js";
+import { DEFAULT_SIZES } from "./BpmnFactory";
+import { isCollapsedDi } from "./di";
+import { isLaneShape, isParticipantShape } from "./lanes";
 import type {
   BpmnElement,
   BpmnParent,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
+} from "./types";
 import {
   boOf,
   is,
@@ -42,7 +42,7 @@ import {
   isLabel,
   isShapeElement,
   participantOf,
-} from "./util.js";
+} from "./util";
 
 export interface ConnectionSuggestion {
   readonly type: string;

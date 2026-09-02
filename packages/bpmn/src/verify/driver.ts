@@ -17,7 +17,7 @@
  */
 
 import type { ModdleElement } from "bpmn-moddle";
-import type { CandidateKind, Operation } from "./operations.js";
+import type { CandidateKind, Operation } from "./operations";
 
 /** What happened when an operation was applied. */
 export type OperationOutcome =

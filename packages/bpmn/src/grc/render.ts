@@ -10,21 +10,21 @@
  * auf dem Bildschirm, und es enthält die GRC-Information *im SVG* (§4.5).
  */
 
-import { buildScene, type Scene } from "../draw/scene.js";
+import { buildScene, type Scene } from "../draw/scene";
 import {
   renderScene,
   toSvgString,
   type StaticRenderOptions,
-} from "../draw/StaticRenderer.js";
-import type { ModdleElement } from "../draw/types.js";
-import type { GrcOverlayData } from "./contract.js";
-import { decorateGrc, type GrcDecorationResult } from "./decorate.js";
-import { buildOverlayModel, type GrcOverlayModel } from "./engine.js";
-import type { GrcFilter } from "./layers.js";
-import { buildGrcTextAlternative } from "./text-alternative.js";
-import type { GrcView } from "./views.js";
-import { bannerWidth } from "./decorate.js";
-import { BANNER, LEGEND } from "./tokens.js";
+} from "../draw/StaticRenderer";
+import type { ModdleElement } from "../draw/types";
+import type { GrcOverlayData } from "./contract";
+import { decorateGrc, type GrcDecorationResult } from "./decorate";
+import { buildOverlayModel, type GrcOverlayModel } from "./engine";
+import type { GrcFilter } from "./layers";
+import { buildGrcTextAlternative } from "./text-alternative";
+import type { GrcView } from "./views";
+import { bannerWidth } from "./decorate";
+import { BANNER, LEGEND } from "./tokens";
 
 export interface GrcRenderOptions extends StaticRenderOptions {
   readonly view: GrcView;

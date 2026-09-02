@@ -13,7 +13,7 @@ import SnappingModule from "diagram-js/lib/features/snapping/index.js";
 import MoveCanvasModule from "diagram-js/lib/navigation/movecanvas/index.js";
 import ZoomScrollModule from "diagram-js/lib/navigation/zoomscroll/index.js";
 
-import DrawModule from "../draw/index.js";
+import DrawModule from "../draw/index";
 
 /**
  * Modus statt zweiter Implementierung (Plan §2.4).

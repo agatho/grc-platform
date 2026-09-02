@@ -17,14 +17,14 @@
  * `LANE_REF_FOREIGN_PROCESS`).
  */
 
-import type { BpmnFactory } from "./BpmnFactory.js";
+import type { BpmnFactory } from "./BpmnFactory";
 import type {
   Bounds,
   BpmnElement,
   BpmnParent,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
+} from "./types";
 import {
   addRef,
   addToContainer,
@@ -35,7 +35,7 @@ import {
   isShapeElement,
   removeRef,
   semanticContainerOf,
-} from "./util.js";
+} from "./util";
 
 /** Mindesthöhe einer Lane; darunter ist sie nicht mehr beschriftbar. */
 export const MIN_LANE_SIZE = 60;

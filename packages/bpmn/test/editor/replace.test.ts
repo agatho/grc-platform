@@ -18,11 +18,11 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { replaceOptionsFor } from "../../src/editor/catalog.js";
-import type { ReplaceMenu } from "../../src/editor/ReplaceMenu.js";
-import { snapshotOf } from "../../src/editor/copy/serialize.js";
-import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+import { replaceOptionsFor } from "../../src/editor/catalog";
+import type { ReplaceMenu } from "../../src/editor/ReplaceMenu";
+import { snapshotOf } from "../../src/editor/copy/serialize";
+import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

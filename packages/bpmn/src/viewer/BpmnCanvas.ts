@@ -6,24 +6,24 @@ import type ElementRegistry from "diagram-js/lib/core/ElementRegistry.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
 import type { ConnectionLike, ShapeLike } from "diagram-js/lib/core/Types.js";
 
-import { buildScene, type Scene } from "../draw/scene.js";
-import { renderScene, toSvgString } from "../draw/StaticRenderer.js";
+import { buildScene, type Scene } from "../draw/scene";
+import { renderScene, toSvgString } from "../draw/StaticRenderer";
 import type {
   BpmnConnection,
   BpmnRendererConfig,
   BpmnShape,
   ModdleElement,
-} from "../draw/types.js";
-import { editorModulesFor, type DiagramModule } from "../editor/modules.js";
-import type { EditorChrome, EditorConfig } from "../editor/types.js";
-import type { BpmnImporter } from "../modeling/importer.js";
-import { GraphA11y } from "./a11y.js";
-import { isEditable, type BpmnCanvasMode } from "./modules.js";
-import { buildGraphOrder, type GraphOrder } from "./order.js";
+} from "../draw/types";
+import { editorModulesFor, type DiagramModule } from "../editor/modules";
+import type { EditorChrome, EditorConfig } from "../editor/types";
+import type { BpmnImporter } from "../modeling/importer";
+import { GraphA11y } from "./a11y";
+import { isEditable, type BpmnCanvasMode } from "./modules";
+import { buildGraphOrder, type GraphOrder } from "./order";
 import {
   buildTextAlternative,
   type TextAlternativeModel,
-} from "./TextAlternative.js";
+} from "./TextAlternative";
 
 /**
  * Ein Bauteil, drei Modi (Plan §2.4).

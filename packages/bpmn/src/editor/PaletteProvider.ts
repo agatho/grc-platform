@@ -20,16 +20,16 @@
  *    zulässig ist, sonst an eine freie Stelle im sichtbaren Bereich.
  */
 
-import { escapeHtml, focusDiagram } from "./dom.js";
-import type { ElementCreation } from "./ElementCreation.js";
-import type { EditorConfiguration } from "./config.js";
-import type { EditorAnnouncer } from "./announce.js";
+import { escapeHtml, focusDiagram } from "./dom";
+import type { ElementCreation } from "./ElementCreation";
+import type { EditorConfiguration } from "./config";
+import type { EditorAnnouncer } from "./announce";
 import type {
   BpmnShape,
   CanvasLike,
   PaletteItem,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 interface PaletteLike {
   registerProvider(provider: unknown): void;

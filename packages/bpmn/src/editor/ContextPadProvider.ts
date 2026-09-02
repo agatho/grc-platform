@@ -15,19 +15,19 @@
  * genau dafür vor.
  */
 
-import type { EditorAnnouncer } from "./announce.js";
-import type { EditorConfiguration } from "./config.js";
-import type { ConnectMode } from "./ConnectMode.js";
-import type { BpmnCopyPaste } from "./CopyPaste.js";
-import type { AlignDistribute } from "./AlignDistribute.js";
-import type { BendpointEditing } from "./BendpointEditing.js";
-import type { ElementCreation } from "./ElementCreation.js";
-import type { LabelEditing } from "./LabelEditing.js";
-import type { ReplaceMenu } from "./ReplaceMenu.js";
-import { describe } from "./ElementCreation.js";
-import { escapeHtml } from "./dom.js";
-import type { ProbeFactory } from "./probe.js";
-import { boOf, is, isAny } from "../modeling/util.js";
+import type { EditorAnnouncer } from "./announce";
+import type { EditorConfiguration } from "./config";
+import type { ConnectMode } from "./ConnectMode";
+import type { BpmnCopyPaste } from "./CopyPaste";
+import type { AlignDistribute } from "./AlignDistribute";
+import type { BendpointEditing } from "./BendpointEditing";
+import type { ElementCreation } from "./ElementCreation";
+import type { LabelEditing } from "./LabelEditing";
+import type { ReplaceMenu } from "./ReplaceMenu";
+import { describe } from "./ElementCreation";
+import { escapeHtml } from "./dom";
+import type { ProbeFactory } from "./probe";
+import { boOf, is, isAny } from "../modeling/util";
 import type {
   BpmnConnection,
   BpmnElement,
@@ -36,7 +36,7 @@ import type {
   PaletteItem,
   RulesLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 interface ContextPadLike {
   registerProvider(provider: unknown): void;

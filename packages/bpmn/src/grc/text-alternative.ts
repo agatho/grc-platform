@@ -15,13 +15,13 @@
  * Verfahrensdokumentation ohnehin brauchen.
  */
 
-import type { Scene } from "../draw/scene.js";
+import type { Scene } from "../draw/scene";
 import {
   buildTextAlternative,
   type TextAlternativeRow,
-} from "../viewer/TextAlternative.js";
-import { buildGraphOrder, type GraphOrder } from "../viewer/order.js";
-import type { GrcOverlayModel } from "./engine.js";
+} from "../viewer/TextAlternative";
+import { buildGraphOrder, type GraphOrder } from "../viewer/order";
+import type { GrcOverlayModel } from "./engine";
 
 export interface GrcTextColumn {
   readonly layerId: string;

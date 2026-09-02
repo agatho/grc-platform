@@ -22,19 +22,19 @@
  * derselben Quelle wie Live-Region und Textalternative.
  */
 
-import { ACTIVITY_RADIUS, DEFAULT_FONT_FAMILY } from "../draw/theme.js";
+import { ACTIVITY_RADIUS, DEFAULT_FONT_FAMILY } from "../draw/theme";
 import {
   polygonPath,
   roundRectPath,
   svgAppend,
   svgAttr,
   svgCreate,
-} from "../draw/svg.js";
-import type { BpmnShape, Point } from "../draw/types.js";
-import type { GrcInteraction, GrcInteractionHandler } from "./contract.js";
-import type { GrcElementDecoration, GrcOverlayModel } from "./engine.js";
-import { centerOf, midpointOf } from "./graph.js";
-import { SLOT_ORDER, type GrcBadgeSignal, type GrcSlot } from "./slots.js";
+} from "../draw/svg";
+import type { BpmnShape, Point } from "../draw/types";
+import type { GrcInteraction, GrcInteractionHandler } from "./contract";
+import type { GrcElementDecoration, GrcOverlayModel } from "./engine";
+import { centerOf, midpointOf } from "./graph";
+import { SLOT_ORDER, type GrcBadgeSignal, type GrcSlot } from "./slots";
 import {
   ARC,
   BADGE,
@@ -51,7 +51,7 @@ import {
   BADGE_TEXT,
   type GrcTone,
   type HatchDensity,
-} from "./tokens.js";
+} from "./tokens";
 
 const DEFS_ID = "arctos-grc-defs";
 const OVERLAY_CLASS = "arctos-grc-overlay";

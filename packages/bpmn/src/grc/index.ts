@@ -56,7 +56,7 @@ export {
   type GrcRopa,
   type GrcSimulation,
   type GrcSodRule,
-} from "./contract.js";
+} from "./contract";
 
 export {
   asOfDate,
@@ -89,7 +89,7 @@ export {
   type RetentionResult,
   type RetentionStage,
   type RiskProfile,
-} from "./analysis.js";
+} from "./analysis";
 
 export {
   buildGrcGraph,
@@ -101,7 +101,7 @@ export {
   onCommonPath,
   reachableFrom,
   type GrcGraph,
-} from "./graph.js";
+} from "./graph";
 
 export {
   bearingRole,
@@ -111,13 +111,13 @@ export {
   type SodConflict,
   type SodEndpoint,
   type SodResult,
-} from "./sod.js";
+} from "./sod";
 
 export {
   computeTrustBoundaries,
   type TrustCrossing,
   type TrustResult,
-} from "./trust.js";
+} from "./trust";
 
 export {
   formatMinutes,
@@ -125,7 +125,7 @@ export {
   type OutageResult,
   type OutageState,
   type OutageStep,
-} from "./outage.js";
+} from "./outage";
 
 export {
   MAX_BADGES,
@@ -146,7 +146,7 @@ export {
   type OwnedSignal,
   type SlotResolution,
   type SuppressedSignal,
-} from "./slots.js";
+} from "./slots";
 
 export {
   buildLayerContext,
@@ -157,7 +157,7 @@ export {
   type GrcLayerContext,
   type GrcLayerRegistry,
   type GrcLegendEntry,
-} from "./layers.js";
+} from "./layers";
 
 export {
   ALL_LAYERS,
@@ -168,7 +168,7 @@ export {
   outageFilter,
   PRIORITY,
   shortRetentionFilter,
-} from "./catalog.js";
+} from "./catalog";
 
 export {
   defaultRegistry,
@@ -180,7 +180,7 @@ export {
   type GrcView,
   type GrcViewId,
   type ResolvedView,
-} from "./views.js";
+} from "./views";
 
 export {
   buildOverlayModel,
@@ -191,14 +191,14 @@ export {
   type GrcElementDecoration,
   type GrcLegendGroup,
   type GrcOverlayModel,
-} from "./engine.js";
+} from "./engine";
 
 export {
   decorateGrc,
   shapeCodingPath,
   type DecorateOptions,
   type GrcDecorationResult,
-} from "./decorate.js";
+} from "./decorate";
 
 export {
   buildGrcTextAlternative,
@@ -206,7 +206,7 @@ export {
   type GrcTextAlternative,
   type GrcTextColumn,
   type GrcTextRow,
-} from "./text-alternative.js";
+} from "./text-alternative";
 
 export {
   announcementFor,
@@ -215,7 +215,7 @@ export {
   GrcBadgeCursor,
   type BadgeCursorHost,
   type GrcBadgeEntry,
-} from "./announce.js";
+} from "./announce";
 
 export {
   renderGrcDefinitions,
@@ -223,7 +223,7 @@ export {
   toGrcSvgString,
   type GrcRenderOptions,
   type GrcRenderResult,
-} from "./render.js";
+} from "./render";
 
 export {
   BADGE,
@@ -235,7 +235,7 @@ export {
   type GrcTone,
   type HatchDensity,
   type ToneColors,
-} from "./tokens.js";
+} from "./tokens";
 
 export {
   contrastRatio,
@@ -244,4 +244,4 @@ export {
   relativeLuminance,
   simulateCvd,
   type ColorVisionDeficiency,
-} from "./contrast.js";
+} from "./contrast";

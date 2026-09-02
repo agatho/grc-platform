@@ -25,8 +25,8 @@
 
 import CommandInterceptor from "diagram-js/lib/command/CommandInterceptor.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import type { BpmnShape } from "../types.js";
-import { boOf, is } from "../util.js";
+import type { BpmnShape } from "../types";
+import { boOf, is } from "../util";
 
 interface ModelingLike {
   moveShape(

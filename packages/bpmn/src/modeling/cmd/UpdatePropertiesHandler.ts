@@ -15,8 +15,8 @@
  */
 
 import type ElementRegistry from "diagram-js/lib/core/ElementRegistry.js";
-import type { BpmnElement, ModdleElement } from "../types.js";
-import { boOf, isModdleElement } from "../util.js";
+import type { BpmnElement, ModdleElement } from "../types";
+import { boOf, isModdleElement } from "../util";
 
 interface Snapshot {
   readonly existed: boolean;

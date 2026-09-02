@@ -1,10 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { openSession, operate } from "./helpers/harness.js";
-import { semanticSnapshot } from "./helpers/snapshot.js";
-import type { BpmnShape } from "../../src/modeling/types.js";
-import { boOf } from "../../src/modeling/util.js";
+import { openSession, operate } from "./helpers/harness";
+import { semanticSnapshot } from "./helpers/snapshot";
+import type { BpmnShape } from "../../src/modeling/types";
+import { boOf } from "../../src/modeling/util";
 
 /**
  * Der Abnahmetest, der die eigentliche Frage stellt.

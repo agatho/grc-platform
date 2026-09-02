@@ -19,23 +19,23 @@ import BaseModeling from "diagram-js/lib/features/modeling/Modeling.js";
 import type CommandStack from "diagram-js/lib/command/CommandStack.js";
 import type ElementFactory from "diagram-js/lib/core/ElementFactory.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import UpdateLabelHandler from "./cmd/UpdateLabelHandler.js";
-import UpdatePropertiesHandler from "./cmd/UpdatePropertiesHandler.js";
+import UpdateLabelHandler from "./cmd/UpdateLabelHandler";
+import UpdatePropertiesHandler from "./cmd/UpdatePropertiesHandler";
 import {
   AddLaneHandler,
   RemoveLaneHandler,
   SplitLaneHandler,
-} from "./cmd/LaneHandlers.js";
-import ReplaceShapeHandler from "./cmd/ReplaceShapeHandler.js";
-import RootRebindHandler from "./cmd/RootRebindHandler.js";
-import type { LaneLocation } from "./lanes.js";
+} from "./cmd/LaneHandlers";
+import ReplaceShapeHandler from "./cmd/ReplaceShapeHandler";
+import RootRebindHandler from "./cmd/RootRebindHandler";
+import type { LaneLocation } from "./lanes";
 import type {
   BpmnConnection,
   BpmnElement,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
-import { boOf } from "./util.js";
+} from "./types";
+import { boOf } from "./util";
 
 interface RulesLike {
   allowed(action: string, context?: unknown): unknown;

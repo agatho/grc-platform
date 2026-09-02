@@ -15,8 +15,8 @@
  * Werkzeugleiste sehen will.
  */
 
-import { paletteCatalog } from "./catalog.js";
-import type { EditorChrome, EditorConfig, PaletteItem } from "./types.js";
+import { paletteCatalog } from "./catalog";
+import type { EditorChrome, EditorConfig, PaletteItem } from "./types";
 
 interface InjectorLike {
   get<T>(name: string, strict?: boolean): T | null;

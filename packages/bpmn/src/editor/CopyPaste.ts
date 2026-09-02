@@ -23,11 +23,11 @@
  * das `canDrop` die Typhierarchie nicht sieht) und **ohne** IDs zu verbrauchen.
  */
 
-import type { EditorAnnouncer } from "./announce.js";
-import { describe } from "./ElementCreation.js";
-import { hasGrcMetadata, materialize, snapshotOf } from "./copy/serialize.js";
-import type { ProbeFactory } from "./probe.js";
-import type { SemanticSnapshot } from "./copy/serialize.js";
+import type { EditorAnnouncer } from "./announce";
+import { describe } from "./ElementCreation";
+import { hasGrcMetadata, materialize, snapshotOf } from "./copy/serialize";
+import type { ProbeFactory } from "./probe";
+import type { SemanticSnapshot } from "./copy/serialize";
 import type {
   BpmnElement,
   BpmnFactoryLike,
@@ -41,7 +41,7 @@ import type {
   Point,
   RulesLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 interface Descriptor {
   id?: string;

@@ -21,20 +21,17 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { installSvgPolyfills } from "../draw/helpers/jsdom-svg.js";
-import {
-  renderDefinitions,
-  toSvgString,
-} from "../../src/draw/StaticRenderer.js";
-import { importXml } from "../../src/model/io.js";
-import { loadCorpus } from "../model/corpus.js";
+import { installSvgPolyfills } from "../draw/helpers/jsdom-svg";
+import { renderDefinitions, toSvgString } from "../../src/draw/StaticRenderer";
+import { importXml } from "../../src/model/io";
+import { loadCorpus } from "../model/corpus";
 import {
   compareBitmaps,
   decodePng,
   rasterize,
   rasterToolsAvailable,
   type Bitmap,
-} from "../../src/verify/raster.js";
+} from "../../src/verify/raster";
 
 installSvgPolyfills();
 

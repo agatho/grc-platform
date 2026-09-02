@@ -19,18 +19,18 @@ import RulesModule from "diagram-js/lib/features/rules/index.js";
 import SelectionModule from "diagram-js/lib/features/selection/index.js";
 import CroppingConnectionDocking from "diagram-js/lib/layout/CroppingConnectionDocking.js";
 
-import { arctosModdle } from "../model/moddle.js";
-import { BpmnFactory } from "./BpmnFactory.js";
-import { BpmnElementFactory } from "./ElementFactory.js";
-import { BpmnLayouter } from "./BpmnLayouter.js";
-import { BpmnRules } from "./BpmnRules.js";
-import { BpmnUpdater } from "./BpmnUpdater.js";
-import { BpmnModeling } from "./Modeling.js";
-import { BpmnImporter } from "./importer.js";
-import { BoundaryEventBehavior } from "./behaviors/BoundaryEventBehavior.js";
-import { ConnectionBehavior } from "./behaviors/ConnectionBehavior.js";
-import { ParticipantBehavior } from "./behaviors/ParticipantBehavior.js";
-import { LabelBehavior } from "./behaviors/LabelBehavior.js";
+import { arctosModdle } from "../model/moddle";
+import { BpmnFactory } from "./BpmnFactory";
+import { BpmnElementFactory } from "./ElementFactory";
+import { BpmnLayouter } from "./BpmnLayouter";
+import { BpmnRules } from "./BpmnRules";
+import { BpmnUpdater } from "./BpmnUpdater";
+import { BpmnModeling } from "./Modeling";
+import { BpmnImporter } from "./importer";
+import { BoundaryEventBehavior } from "./behaviors/BoundaryEventBehavior";
+import { ConnectionBehavior } from "./behaviors/ConnectionBehavior";
+import { ParticipantBehavior } from "./behaviors/ParticipantBehavior";
+import { LabelBehavior } from "./behaviors/LabelBehavior";
 
 /** Die Modellierungsschicht als `didi`-Moduldeklaration. */
 const modelingModule = {
@@ -77,18 +77,18 @@ export {
   defaultSize,
   round,
   type CreateOptions,
-} from "./BpmnFactory.js";
+} from "./BpmnFactory";
 export {
   BpmnElementFactory,
   type BpmnElementAttrs,
   type ElementKind,
-} from "./ElementFactory.js";
+} from "./ElementFactory";
 export {
   BpmnLayouter,
   attachOrientation,
   preferredLayouts,
   type LayoutHints,
-} from "./BpmnLayouter.js";
+} from "./BpmnLayouter";
 export {
   BpmnRules,
   canAlign,
@@ -108,49 +108,49 @@ export {
   type ConnectionRuleResult,
   type Dimensions,
   type ResizeRuleResult,
-} from "./BpmnRules.js";
-export { BpmnUpdater, isFullyLinked } from "./BpmnUpdater.js";
-export { BpmnModeling } from "./Modeling.js";
+} from "./BpmnRules";
+export { BpmnUpdater, isFullyLinked } from "./BpmnUpdater";
+export { BpmnModeling } from "./Modeling";
 export {
   BpmnImporter,
   importDefinitions,
   type ImportDefinitionsOptions,
   type ImportDefinitionsResult,
-} from "./importer.js";
-export { BpmnIds, localName } from "./ids.js";
+} from "./importer";
+export { BpmnIds, localName } from "./ids";
 export {
   BoundaryEventBehavior,
   keepAttachment,
   snapToHostBorder,
-} from "./behaviors/BoundaryEventBehavior.js";
+} from "./behaviors/BoundaryEventBehavior";
 export {
   ConnectionBehavior,
   affectedConnections,
-} from "./behaviors/ConnectionBehavior.js";
+} from "./behaviors/ConnectionBehavior";
 export {
   LabelBehavior,
   labelStateIsConsistent,
-} from "./behaviors/LabelBehavior.js";
+} from "./behaviors/LabelBehavior";
 export {
   AddLaneHandler,
   RemoveLaneHandler,
   SplitLaneHandler,
   isLaneTarget,
   sliceBounds,
-} from "./cmd/LaneHandlers.js";
+} from "./cmd/LaneHandlers";
 export {
   ReplaceShapeHandler,
   copySemanticProperties,
   type ReplaceShapeContext,
-} from "./cmd/ReplaceShapeHandler.js";
-export { UpdateLabelHandler, labelProperty } from "./cmd/UpdateLabelHandler.js";
-export { UpdatePropertiesHandler } from "./cmd/UpdatePropertiesHandler.js";
+} from "./cmd/ReplaceShapeHandler";
+export { UpdateLabelHandler, labelProperty } from "./cmd/UpdateLabelHandler";
+export { UpdatePropertiesHandler } from "./cmd/UpdatePropertiesHandler";
 
-export * from "./invariants.js";
-export * from "./lanes.js";
-export * from "./labels.js";
-export * from "./di.js";
-export * from "./types.js";
+export * from "./invariants";
+export * from "./lanes";
+export * from "./labels";
+export * from "./di";
+export * from "./types";
 export {
   addRef,
   addToContainer,
@@ -169,9 +169,9 @@ export {
   requireBo,
   semanticContainerOf,
   setProperty,
-} from "./util.js";
+} from "./util";
 export {
   ModelingSession,
   createModelingSession,
   type ModelingSessionOptions,
-} from "./session.js";
+} from "./session";

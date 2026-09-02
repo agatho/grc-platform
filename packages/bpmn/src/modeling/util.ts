@@ -14,8 +14,8 @@ import type {
   BpmnParent,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
-import { isConnectionElement, isShapeElement } from "./types.js";
+} from "./types";
+import { isConnectionElement, isShapeElement } from "./types";
 
 export { isConnectionElement, isShapeElement };
 

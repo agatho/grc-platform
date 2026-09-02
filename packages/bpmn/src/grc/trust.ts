@@ -11,10 +11,10 @@
  * fehlen die Lane-Daten, meldet die Funktion nichts statt zu raten.
  */
 
-import type { BpmnConnection, BpmnShape } from "../draw/types.js";
-import type { GrcLaneData, GrcOverlayData } from "./contract.js";
-import { laneOf, type GrcGraph } from "./graph.js";
-import { personalDataStage } from "./analysis.js";
+import type { BpmnConnection, BpmnShape } from "../draw/types";
+import type { GrcLaneData, GrcOverlayData } from "./contract";
+import { laneOf, type GrcGraph } from "./graph";
+import { personalDataStage } from "./analysis";
 
 export interface TrustCrossing {
   readonly edgeId: string;

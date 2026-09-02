@@ -53,19 +53,19 @@
  * Maus- und Tastaturweg denselben Satz sagen.
  */
 
-import type { EditorAnnouncer } from "./announce.js";
-import type { AlignDistribute } from "./AlignDistribute.js";
-import type { BendpointEditing } from "./BendpointEditing.js";
-import type { EditorConfiguration } from "./config.js";
-import type { ConnectMode } from "./ConnectMode.js";
-import type { ArctosContextPadProvider } from "./ContextPadProvider.js";
-import type { BpmnCopyPaste } from "./CopyPaste.js";
-import type { LabelEditing } from "./LabelEditing.js";
-import type { PaletteChrome } from "./PaletteChrome.js";
-import type { ReplaceMenu } from "./ReplaceMenu.js";
-import type { ResizeBehavior } from "./ResizeBehavior.js";
-import { describe } from "./ElementCreation.js";
-import { focusDiagram, isTextInput } from "./dom.js";
+import type { EditorAnnouncer } from "./announce";
+import type { AlignDistribute } from "./AlignDistribute";
+import type { BendpointEditing } from "./BendpointEditing";
+import type { EditorConfiguration } from "./config";
+import type { ConnectMode } from "./ConnectMode";
+import type { ArctosContextPadProvider } from "./ContextPadProvider";
+import type { BpmnCopyPaste } from "./CopyPaste";
+import type { LabelEditing } from "./LabelEditing";
+import type { PaletteChrome } from "./PaletteChrome";
+import type { ReplaceMenu } from "./ReplaceMenu";
+import type { ResizeBehavior } from "./ResizeBehavior";
+import { describe } from "./ElementCreation";
+import { focusDiagram, isTextInput } from "./dom";
 import type {
   BpmnConnection,
   BpmnElement,
@@ -76,7 +76,7 @@ import type {
   EventBusLike,
   ModelingLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 /** Bereiche des DOM, deren Tasten dem jeweiligen Bauteil gehören. */
 const OWNED_BY_OTHERS =

@@ -12,14 +12,14 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { ArctosContextPadProvider } from "../../src/editor/ContextPadProvider.js";
-import type { ContextPadChrome } from "../../src/editor/ContextPadChrome.js";
+import type { ArctosContextPadProvider } from "../../src/editor/ContextPadProvider";
+import type { ContextPadChrome } from "../../src/editor/ContextPadChrome";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   SIMPLE_PROCESS,
-} from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+} from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

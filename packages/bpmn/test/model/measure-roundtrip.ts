@@ -14,12 +14,12 @@ import { writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadCorpus } from "./corpus.js";
+import { loadCorpus } from "./corpus";
 import {
   allAssurancesHold,
   measureRoundTrip,
   type RoundTripMeasurement,
-} from "./assurances.js";
+} from "./assurances";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPORT = join(HERE, "ROUNDTRIP-REPORT.md");

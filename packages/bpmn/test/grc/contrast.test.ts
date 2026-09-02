@@ -8,7 +8,7 @@ import {
   perceptualDistance,
   simulateCvd,
   type ColorVisionDeficiency,
-} from "../../src/grc/contrast.js";
+} from "../../src/grc/contrast";
 import {
   BADGE_TEXT,
   CANVAS_BACKGROUND,
@@ -17,8 +17,8 @@ import {
   TONE_GLYPH,
   TONE_WORD,
   type GrcTone,
-} from "../../src/grc/tokens.js";
-import { DEFAULT_PALETTE } from "../../src/draw/theme.js";
+} from "../../src/grc/tokens";
+import { DEFAULT_PALETTE } from "../../src/draw/theme";
 
 /**
  * Die Kontrastregeln aus Plan §4.4 — gerechnet, nicht behauptet.

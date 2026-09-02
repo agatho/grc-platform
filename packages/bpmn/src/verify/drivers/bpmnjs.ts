@@ -34,10 +34,10 @@
 /// <reference lib="dom" />
 
 import type { ModdleElement } from "bpmn-moddle";
-import type { ModelingDriver, OperationResult } from "../driver.js";
-import type { CandidateKind, Operation } from "../operations.js";
-import { CandidateOrder, resolveIndex } from "../driver.js";
-import { isActivityType } from "../invariants.js";
+import type { ModelingDriver, OperationResult } from "../driver";
+import type { CandidateKind, Operation } from "../operations";
+import { CandidateOrder, resolveIndex } from "../driver";
+import { isActivityType } from "../invariants";
 
 // ---------------------------------------------------------------------------
 // The slice of the bpmn-js surface this driver uses

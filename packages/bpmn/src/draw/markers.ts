@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import { svgAppend, svgAttr, svgCreate, SVG_NS } from "./svg.js";
+import { svgAppend, svgAttr, svgCreate, SVG_NS } from "./svg";
 
 /**
  * Pfeilspitzen und Kantenenden als `<marker>` im `<defs>` des besitzenden SVG.

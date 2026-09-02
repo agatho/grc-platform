@@ -20,14 +20,9 @@
  * vom `CroppingConnectionDocking` gesetzt und gehören der Modellierungsschicht.
  */
 
-import type { EditorAnnouncer } from "./announce.js";
-import { describe } from "./ElementCreation.js";
-import type {
-  BpmnConnection,
-  ModelingLike,
-  Point,
-  RulesLike,
-} from "./types.js";
+import type { EditorAnnouncer } from "./announce";
+import { describe } from "./ElementCreation";
+import type { BpmnConnection, ModelingLike, Point, RulesLike } from "./types";
 
 export class BendpointEditing {
   static $inject = ["modeling", "rules", "editorAnnouncer"];

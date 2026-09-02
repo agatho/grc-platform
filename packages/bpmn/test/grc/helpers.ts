@@ -4,18 +4,12 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildScene, type Scene } from "../../src/draw/scene.js";
-import { importXml } from "../../src/model/index.js";
-import {
-  buildOverlayModel,
-  type GrcOverlayModel,
-} from "../../src/grc/engine.js";
-import type { GrcOverlayData } from "../../src/grc/contract.js";
-import {
-  buildLayerContext,
-  type GrcLayerContext,
-} from "../../src/grc/layers.js";
-import { viewById, type GrcViewId } from "../../src/grc/views.js";
+import { buildScene, type Scene } from "../../src/draw/scene";
+import { importXml } from "../../src/model/index";
+import { buildOverlayModel, type GrcOverlayModel } from "../../src/grc/engine";
+import type { GrcOverlayData } from "../../src/grc/contract";
+import { buildLayerContext, type GrcLayerContext } from "../../src/grc/layers";
+import { viewById, type GrcViewId } from "../../src/grc/views";
 
 const here = dirname(fileURLToPath(import.meta.url));
 export const CORPUS_DIR = join(here, "..", "corpus");

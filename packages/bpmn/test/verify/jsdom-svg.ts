@@ -28,7 +28,7 @@
  * the tree, this file goes with it.
  */
 
-import { installSvgPolyfills } from "../draw/helpers/jsdom-svg.js";
+import { installSvgPolyfills } from "../draw/helpers/jsdom-svg";
 
 /** Nominal font size the fake text metric assumes, in px. */
 const FAKE_FONT_SIZE = 12;

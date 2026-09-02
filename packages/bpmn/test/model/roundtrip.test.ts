@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { loadCorpus } from "./corpus.js";
-import { allAssurancesHold, measureRoundTrip } from "./assurances.js";
-import { countNodes, diffCounts } from "../../src/util/index.js";
-import { exportXml, importXml } from "../../src/model/index.js";
+import { loadCorpus } from "./corpus";
+import { allAssurancesHold, measureRoundTrip } from "./assurances";
+import { countNodes, diffCounts } from "../../src/util/index";
+import { exportXml, importXml } from "../../src/model/index";
 
 /**
  * The round-trip test bench for the model layer.

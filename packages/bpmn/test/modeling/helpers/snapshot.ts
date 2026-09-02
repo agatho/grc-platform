@@ -14,14 +14,10 @@
  * ein Unterschied im Diff sichtbar wird statt in einer Reihenfolge unterzugehen.
  */
 
-import {
-  boundsOf,
-  buildDiIndex,
-  waypointsOf,
-} from "../../../src/modeling/di.js";
-import { walkDocument } from "../../../src/modeling/invariants.js";
-import type { ModdleElement } from "../../../src/modeling/types.js";
-import { asArray, is, isModdleElement } from "../../../src/modeling/util.js";
+import { boundsOf, buildDiIndex, waypointsOf } from "../../../src/modeling/di";
+import { walkDocument } from "../../../src/modeling/invariants";
+import type { ModdleElement } from "../../../src/modeling/types";
+import { asArray, is, isModdleElement } from "../../../src/modeling/util";
 
 export interface NodeSnapshot {
   id: string;

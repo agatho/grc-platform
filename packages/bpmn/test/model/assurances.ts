@@ -19,7 +19,7 @@
  * spike has to support.
  */
 
-import { exportXml, importXml, markModified } from "../../src/model/index.js";
+import { exportXml, importXml, markModified } from "../../src/model/index";
 import {
   canonicalize,
   countNodes,
@@ -28,7 +28,7 @@ import {
   elementCount,
   type CanonicalDifference,
   type CountDifference,
-} from "../../src/util/index.js";
+} from "../../src/util/index";
 
 export interface AssuranceOutcome {
   readonly ok: boolean;

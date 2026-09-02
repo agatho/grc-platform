@@ -15,16 +15,16 @@
 
 import { describe, expect, it } from "vitest";
 import type { ModdleElement } from "bpmn-moddle";
-import { importXml } from "../../src/model/io.js";
+import { importXml } from "../../src/model/io";
 import {
   checkAllInvariants,
   checkInvariants,
   formatViolations,
   hasModelingInvariants,
   type InvariantReport,
-} from "../../src/verify/invariants.js";
-import { loadCorpus } from "../model/corpus.js";
-import { editableBases } from "./bases.js";
+} from "../../src/verify/invariants";
+import { loadCorpus } from "../model/corpus";
+import { editableBases } from "./bases";
 
 const corpus = new Map(loadCorpus().map((entry) => [entry.name, entry]));
 

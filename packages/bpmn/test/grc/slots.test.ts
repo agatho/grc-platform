@@ -7,19 +7,19 @@ import {
   resolveSlots,
   type GrcElementSignal,
   type OwnedSignal,
-} from "../../src/grc/slots.js";
-import { buildOverlayModel } from "../../src/grc/engine.js";
-import { createLayerRegistry, type GrcLayer } from "../../src/grc/layers.js";
+} from "../../src/grc/slots";
+import { buildOverlayModel } from "../../src/grc/engine";
+import { createLayerRegistry, type GrcLayer } from "../../src/grc/layers";
 import {
   defaultRegistry,
   defaultViewForRole,
   GRC_VIEWS,
   resolveView,
   viewById,
-} from "../../src/grc/views.js";
-import { openFindingsFilter, ALL_LAYERS } from "../../src/grc/catalog.js";
-import { largeProcessData, salesRiskControlData } from "./fixtures.js";
-import { corpusModel, corpusScene } from "./helpers.js";
+} from "../../src/grc/views";
+import { openFindingsFilter, ALL_LAYERS } from "../../src/grc/catalog";
+import { largeProcessData, salesRiskControlData } from "./fixtures";
+import { corpusModel, corpusScene } from "./helpers";
 
 function owned(
   layerId: string,

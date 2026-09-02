@@ -45,7 +45,7 @@ import {
   getRootElements,
   getWaypoints,
   isModdleElement,
-} from "../model/access.js";
+} from "../model/access";
 
 export type InvariantSeverity = "error" | "warning";
 

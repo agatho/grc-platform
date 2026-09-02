@@ -10,8 +10,8 @@
  * Bedienfolge muss zweimal dieselbe Datei ergeben.
  */
 
-import type { ModdleElement, Point } from "./types.js";
-import { asArray, is, isModdleElement } from "./util.js";
+import type { ModdleElement, Point } from "./types";
+import { asArray, is, isModdleElement } from "./util";
 
 export function diagramsOf(definitions: ModdleElement): ModdleElement[] {
   return asArray(definitions["diagrams"]);

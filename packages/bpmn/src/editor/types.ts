@@ -21,7 +21,7 @@ import type {
   BpmnShape,
   ModdleElement,
   Point,
-} from "../modeling/types.js";
+} from "../modeling/types";
 
 export type {
   BpmnConnection,

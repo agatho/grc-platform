@@ -23,16 +23,16 @@
  * `Tab` übernimmt und geht zum nächsten Element weiter.
  */
 
-import { getTypeLabel } from "../draw/semantic.js";
+import { getTypeLabel } from "../draw/semantic";
 import {
   externalLabelBounds,
   hasExternalLabel,
   labelText,
-} from "../modeling/labels.js";
-import { boOf } from "../modeling/util.js";
-import type { EditorAnnouncer } from "./announce.js";
-import { describe } from "./ElementCreation.js";
-import { focusDiagram, isTextInput } from "./dom.js";
+} from "../modeling/labels";
+import { boOf } from "../modeling/util";
+import type { EditorAnnouncer } from "./announce";
+import { describe } from "./ElementCreation";
+import { focusDiagram, isTextInput } from "./dom";
 import type {
   BpmnConnection,
   BpmnElement,
@@ -43,7 +43,7 @@ import type {
   EventBusLike,
   ModelingLike,
   SelectionLike,
-} from "./types.js";
+} from "./types";
 
 /** Mindestmaße des Eingabefelds, damit auch ein Ereignis beschriftbar bleibt. */
 const MIN_WIDTH = 90;

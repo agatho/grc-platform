@@ -8,7 +8,7 @@ import {
   elementNames,
   parseXml,
   XmlParseError,
-} from "../../src/util/index.js";
+} from "../../src/util/index";
 
 /**
  * The canonicaliser is the measuring instrument of this whole spike. If it is

@@ -12,15 +12,15 @@
  * hier arbeitet deshalb gegen den Vertrag, nicht gegen das Schema.
  */
 
-import type { BpmnShape } from "../draw/types.js";
+import type { BpmnShape } from "../draw/types";
 import type {
   GrcElementData,
   GrcFindingSeverity,
   GrcOverlayData,
   GrcRoleRef,
   GrcSodRule,
-} from "./contract.js";
-import { laneOf, onCommonPath, type GrcGraph } from "./graph.js";
+} from "./contract";
+import { laneOf, onCommonPath, type GrcGraph } from "./graph";
 
 export interface SodConflict {
   readonly id: string;

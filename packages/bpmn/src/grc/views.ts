@@ -12,12 +12,12 @@
  * und steht im Protokoll unter „nicht gebaut".
  */
 
-import { ALL_LAYERS } from "./catalog.js";
+import { ALL_LAYERS } from "./catalog";
 import {
   createLayerRegistry,
   type GrcLayer,
   type GrcLayerRegistry,
-} from "./layers.js";
+} from "./layers";
 
 export type GrcViewId =
   | "modeling"

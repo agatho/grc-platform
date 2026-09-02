@@ -12,10 +12,10 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { BendpointEditing } from "../../src/editor/BendpointEditing.js";
-import type { ConnectMode } from "../../src/editor/ConnectMode.js";
-import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+import type { BendpointEditing } from "../../src/editor/BendpointEditing";
+import type { ConnectMode } from "../../src/editor/ConnectMode";
+import { SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

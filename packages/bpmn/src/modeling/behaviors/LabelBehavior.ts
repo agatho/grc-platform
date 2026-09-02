@@ -23,9 +23,9 @@ import {
   defaultLabelBounds,
   labelText,
   needsLabelShape,
-} from "../labels.js";
-import type { BpmnElement, BpmnParent, BpmnShape } from "../types.js";
-import { boOf, isConnectionElement, isLabel } from "../util.js";
+} from "../labels";
+import type { BpmnElement, BpmnParent, BpmnShape } from "../types";
+import { boOf, isConnectionElement, isLabel } from "../util";
 
 interface ModelingLike {
   createLabel(

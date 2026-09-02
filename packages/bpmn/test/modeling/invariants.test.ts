@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { openSession } from "./helpers/harness.js";
+import { openSession } from "./helpers/harness";
 import {
   BOUNDARY_PROCESS,
   COLLABORATION,
   SIMPLE_PROCESS,
-} from "./helpers/fixtures.js";
-import { importXml } from "../../src/model/io.js";
+} from "./helpers/fixtures";
+import { importXml } from "../../src/model/io";
 import {
   checkInvariants,
   formatViolations,
   walkDocument,
   type InvariantCode,
-} from "../../src/modeling/invariants.js";
-import type { ModdleElement } from "../../src/modeling/types.js";
+} from "../../src/modeling/invariants";
+import type { ModdleElement } from "../../src/modeling/types";
 
 /**
  * **Prüfung des Prüfers.**
@@ -31,7 +31,7 @@ async function tree(xml = SIMPLE_PROCESS): Promise<ModdleElement> {
   const { definitions } = await importXml(xml);
   // Der Importer der Modellierungsschicht ergänzt `incoming`/`outgoing`;
   // für die reinen Modellprüfungen hier wird derselbe Schritt nachgeholt.
-  const { normalizeFlowRefs } = await import("../../src/modeling/importer.js");
+  const { normalizeFlowRefs } = await import("../../src/modeling/importer");
   normalizeFlowRefs(definitions, []);
   return definitions;
 }

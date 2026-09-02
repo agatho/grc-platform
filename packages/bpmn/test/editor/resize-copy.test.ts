@@ -12,13 +12,13 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import type { BpmnCopyPaste } from "../../src/editor/CopyPaste.js";
-import type { ResizeBehavior } from "../../src/editor/ResizeBehavior.js";
-import { resizeBounds } from "../../src/editor/ResizeBehavior.js";
-import { minDimensionsFor } from "../../src/modeling/BpmnRules.js";
-import { snapshotOf } from "../../src/editor/copy/serialize.js";
-import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures.js";
-import { act, openEditor, type EditorHarness } from "./helpers/editor.js";
+import type { BpmnCopyPaste } from "../../src/editor/CopyPaste";
+import type { ResizeBehavior } from "../../src/editor/ResizeBehavior";
+import { resizeBounds } from "../../src/editor/ResizeBehavior";
+import { minDimensionsFor } from "../../src/modeling/BpmnRules";
+import { snapshotOf } from "../../src/editor/copy/serialize";
+import { COLLABORATION, SIMPLE_PROCESS } from "../modeling/helpers/fixtures";
+import { act, openEditor, type EditorHarness } from "./helpers/editor";
 
 let harness: EditorHarness;
 

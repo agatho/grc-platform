@@ -32,8 +32,8 @@
  * nimmt den Typwechsel vollständig zurück.
  */
 
-import type { BpmnFactory } from "../BpmnFactory.js";
-import type { BpmnElementFactory } from "../ElementFactory.js";
+import type { BpmnFactory } from "../BpmnFactory";
+import type { BpmnElementFactory } from "../ElementFactory";
 import type {
   Bounds,
   BpmnConnection,
@@ -41,8 +41,8 @@ import type {
   BpmnParent,
   BpmnShape,
   ModdleElement,
-} from "../types.js";
-import { boOf, is, isModdleElement, isShapeElement } from "../util.js";
+} from "../types";
+import { boOf, is, isModdleElement, isShapeElement } from "../util";
 
 interface ModelingLike {
   createShape(

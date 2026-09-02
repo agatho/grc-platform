@@ -15,13 +15,13 @@ import {
   MARKER_BOX,
   MARKER_SYMBOLS,
   type SymbolDef,
-} from "./icons.js";
+} from "./icons";
 import {
   applyMarkers,
   MarkerRegistry,
   ownerSvg,
   type MarkerKind,
-} from "./markers.js";
+} from "./markers";
 import {
   getActivityMarkers,
   getEventDefinitionType,
@@ -43,7 +43,7 @@ import {
   isSupportedShapeType,
   isTask,
   isThrowing,
-} from "./semantic.js";
+} from "./semantic";
 import {
   circlePath,
   polygonPath,
@@ -52,8 +52,8 @@ import {
   svgAppend,
   svgAttr,
   svgCreate,
-} from "./svg.js";
-import { renderText } from "./text.js";
+} from "./svg";
+import { renderText } from "./text";
 import {
   ACTIVITY_RADIUS,
   DASH_ASSOCIATION,
@@ -70,8 +70,8 @@ import {
   STROKE_THICK,
   STROKE_THIN,
   type Palette,
-} from "./theme.js";
-import type { BpmnConnection, BpmnRendererConfig, BpmnShape } from "./types.js";
+} from "./theme";
+import type { BpmnConnection, BpmnRendererConfig, BpmnShape } from "./types";
 
 /**
  * BPMN-Renderer auf `diagram-js`' `BaseRenderer`.

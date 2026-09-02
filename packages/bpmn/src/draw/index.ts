@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 
-import BpmnRenderer from "./BpmnRenderer.js";
+import BpmnRenderer from "./BpmnRenderer";
 
 /**
  * `diagram-js`-Modul der Zeichenschicht.
@@ -16,8 +16,8 @@ const drawModule = {
 
 export default drawModule;
 
-export { default as BpmnRenderer } from "./BpmnRenderer.js";
-export { buildScene, type Scene } from "./scene.js";
+export { default as BpmnRenderer } from "./BpmnRenderer";
+export { buildScene, type Scene } from "./scene";
 export {
   describeElement,
   renderDefinitions,
@@ -25,7 +25,7 @@ export {
   toSvgString,
   type StaticRenderOptions,
   type StaticRenderResult,
-} from "./StaticRenderer.js";
+} from "./StaticRenderer";
 export {
   getActivityMarkers,
   getAriaRole,
@@ -36,9 +36,9 @@ export {
   SUPPORTED_CONNECTION_TYPES,
   SUPPORTED_SHAPE_TYPES,
   type EventDefinitionType,
-} from "./semantic.js";
-export { layoutText, measureText, type TextLayout } from "./text.js";
-export * from "./types.js";
+} from "./semantic";
+export { layoutText, measureText, type TextLayout } from "./text";
+export * from "./types";
 export {
   DEFAULT_PALETTE,
   HIGH_CONTRAST_PALETTE,
@@ -46,4 +46,4 @@ export {
   STROKE_THICK,
   STROKE_THIN,
   type Palette,
-} from "./theme.js";
+} from "./theme";

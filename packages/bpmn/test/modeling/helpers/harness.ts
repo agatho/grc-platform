@@ -15,14 +15,14 @@
  * zusätzlichen Testcode die Abdeckung, die die Abnahme verlangt.
  */
 
-import { installSvgPolyfills } from "../../draw/helpers/jsdom-svg.js";
+import { installSvgPolyfills } from "../../draw/helpers/jsdom-svg";
 import MoveModule from "diagram-js/lib/features/move/index.js";
 import ResizeModule from "diagram-js/lib/features/resize/index.js";
 import {
   ModelingSession,
   type ModelingSessionOptions,
-} from "../../../src/modeling/session.js";
-import { formatViolations } from "../../../src/modeling/invariants.js";
+} from "../../../src/modeling/session";
+import { formatViolations } from "../../../src/modeling/invariants";
 
 installSvgPolyfills();
 

@@ -1,9 +1,9 @@
-import type { Scene } from "../draw/scene.js";
+import type { Scene } from "../draw/scene";
 import {
   isConnection,
   type BpmnConnection,
   type BpmnShape,
-} from "../draw/types.js";
+} from "../draw/types";
 
 /**
  * Stabile Reihenfolge der Diagrammelemente (Plan §4.2).

@@ -1,14 +1,14 @@
 /// <reference lib="dom" />
 
-import type { Scene } from "../draw/scene.js";
-import { getAriaRole, getLabelText, getTypeLabel } from "../draw/semantic.js";
-import type { BpmnShape } from "../draw/types.js";
+import type { Scene } from "../draw/scene";
+import { getAriaRole, getLabelText, getTypeLabel } from "../draw/semantic";
+import type { BpmnShape } from "../draw/types";
 import {
   buildGraphOrder,
   findContainerLabel,
   type GraphNode,
   type GraphOrder,
-} from "./order.js";
+} from "./order";
 
 /**
  * Barrierefreiheit der Diagrammfläche (Plan §4.2).

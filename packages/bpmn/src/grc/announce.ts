@@ -15,9 +15,9 @@
  * wer sie einzeln durchgehen will, benutzt `.` und `,`.
  */
 
-import type { GrcInteraction, GrcInteractionHandler } from "./contract.js";
-import type { GrcOverlayModel } from "./engine.js";
-import { SLOT_ORDER } from "./slots.js";
+import type { GrcInteraction, GrcInteractionHandler } from "./contract";
+import type { GrcOverlayModel } from "./engine";
+import { SLOT_ORDER } from "./slots";
 
 export interface GrcBadgeEntry {
   readonly layerId: string;

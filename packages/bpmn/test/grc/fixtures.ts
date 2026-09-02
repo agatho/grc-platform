@@ -15,7 +15,7 @@ import type {
   GrcElementData,
   GrcOverlayData,
   GrcRoleRef,
-} from "../../src/grc/contract.js";
+} from "../../src/grc/contract";
 
 /** Bezugszeitpunkt aller Fristen in den Fixtures. */
 export const AS_OF = "2026-03-01T09:00:00.000Z";

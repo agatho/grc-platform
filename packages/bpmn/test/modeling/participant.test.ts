@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { openSession, operate } from "./helpers/harness.js";
-import { COLLABORATION, SIMPLE_PROCESS } from "./helpers/fixtures.js";
-import { planesOf } from "../../src/modeling/di.js";
-import { participantsOf } from "../../src/modeling/behaviors/ParticipantBehavior.js";
-import { asArray, boOf } from "../../src/modeling/util.js";
-import type { Bounds, BpmnShape } from "../../src/modeling/types.js";
+import { openSession, operate } from "./helpers/harness";
+import { COLLABORATION, SIMPLE_PROCESS } from "./helpers/fixtures";
+import { planesOf } from "../../src/modeling/di";
+import { participantsOf } from "../../src/modeling/behaviors/ParticipantBehavior";
+import { asArray, boOf } from "../../src/modeling/util";
+import type { Bounds, BpmnShape } from "../../src/modeling/types";
 
 /**
  * Wurzelwechsel Prozess ↔ Kollaboration (Plan §2.3.1).

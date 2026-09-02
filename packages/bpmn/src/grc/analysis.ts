@@ -8,7 +8,7 @@
  * abhängt, ist kein Test.
  */
 
-import type { BpmnShape } from "../draw/types.js";
+import type { BpmnShape } from "../draw/types";
 import type {
   GrcControl,
   GrcElementData,
@@ -18,8 +18,8 @@ import type {
   GrcOverlayData,
   GrcRisk,
   GrcRopa,
-} from "./contract.js";
-import { descendants, type GrcGraph } from "./graph.js";
+} from "./contract";
+import { descendants, type GrcGraph } from "./graph";
 
 /** Ab diesem Restscore gilt ein Risiko als hoch (heutige Ampelschwelle). */
 export const HIGH_RISK_SCORE = 15;

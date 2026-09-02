@@ -49,18 +49,18 @@
  * as quickly.
  */
 
-import type { ModelingDriver, OperationOutcome } from "./driver.js";
-import type { Operation } from "./operations.js";
-import { CANDIDATE_KINDS, formatOperation } from "./operations.js";
-import { canonicalize, diffCanonical } from "../util/xml-canonical.js";
-import { importXml, exportXml } from "../model/io.js";
+import type { ModelingDriver, OperationOutcome } from "./driver";
+import type { Operation } from "./operations";
+import { CANDIDATE_KINDS, formatOperation } from "./operations";
+import { canonicalize, diffCanonical } from "../util/xml-canonical";
+import { importXml, exportXml } from "../model/io";
 import {
   collectIds,
   normalizeGeneratedIds,
   snapshotXml,
   type ModelSnapshot,
   type SnapshotNode,
-} from "./snapshot.js";
+} from "./snapshot";
 
 // ---------------------------------------------------------------------------
 // Tolerances — plan §6.4

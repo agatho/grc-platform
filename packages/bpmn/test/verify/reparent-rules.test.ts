@@ -17,11 +17,11 @@
 
 import { describe, expect, it } from "vitest";
 
-import { installBpmnJsSupport } from "./jsdom-svg.js";
-import { editableBases } from "./bases.js";
-import { createArctosDriver } from "../../src/verify/drivers/arctos.js";
-import { canMove } from "../../src/modeling/BpmnRules.js";
-import { createModelingSession } from "../../src/modeling/session.js";
+import { installBpmnJsSupport } from "./jsdom-svg";
+import { editableBases } from "./bases";
+import { createArctosDriver } from "../../src/verify/drivers/arctos";
+import { canMove } from "../../src/modeling/BpmnRules";
+import { createModelingSession } from "../../src/modeling/session";
 
 installBpmnJsSupport();
 

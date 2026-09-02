@@ -20,25 +20,25 @@ import type CommandStack from "diagram-js/lib/command/CommandStack.js";
 import type ElementRegistry from "diagram-js/lib/core/ElementRegistry.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
 
-import { exportXml, importXml } from "../model/io.js";
-import drawModule from "../draw/index.js";
-import modelingModule from "./index.js";
-import type { BpmnImporter, ImportDefinitionsResult } from "./importer.js";
+import { exportXml, importXml } from "../model/io";
+import drawModule from "../draw/index";
+import modelingModule from "./index";
+import type { BpmnImporter, ImportDefinitionsResult } from "./importer";
 import {
   checkInvariants,
   formatViolations,
   InvariantError,
   type InvariantCode,
   type InvariantViolation,
-} from "./invariants.js";
-import type { BpmnModeling } from "./Modeling.js";
+} from "./invariants";
+import type { BpmnModeling } from "./Modeling";
 import type {
   BpmnConnection,
   BpmnElement,
   BpmnRoot,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
+} from "./types";
 
 export interface ModelingSessionOptions {
   /** Container für das SVG. Ohne DOM (reine Modelltests) genügt ein Stub. */

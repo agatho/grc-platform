@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { layoutText, measureText } from "../../src/draw/text.js";
+import { layoutText, measureText } from "../../src/draw/text";
 
 /**
  * Das Textlayout ist der Teil des Renderers, der ohne DOM-Messung auskommen

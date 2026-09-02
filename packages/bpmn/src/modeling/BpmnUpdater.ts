@@ -37,7 +37,7 @@
 
 import CommandInterceptor from "diagram-js/lib/command/CommandInterceptor.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
-import type { BpmnFactory } from "./BpmnFactory.js";
+import type { BpmnFactory } from "./BpmnFactory";
 import {
   addDi,
   buildDiIndex,
@@ -45,26 +45,21 @@ import {
   planeOfDi,
   planesOf,
   removeDi,
-} from "./di.js";
-import { walkDocument } from "./invariants.js";
+} from "./di";
+import { walkDocument } from "./invariants";
 import {
   clearLabelBounds,
   externalLabelBounds,
   writeLabelBounds,
-} from "./labels.js";
-import {
-  dropLaneRefs,
-  laneFor,
-  lanesRootOf,
-  reassignLaneRefs,
-} from "./lanes.js";
+} from "./labels";
+import { dropLaneRefs, laneFor, lanesRootOf, reassignLaneRefs } from "./lanes";
 import type {
   BpmnConnection,
   BpmnElement,
   BpmnParent,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
+} from "./types";
 import {
   addRef,
   addToContainer,
@@ -82,7 +77,7 @@ import {
   removeRef,
   semanticContainerOf,
   setProperty,
-} from "./util.js";
+} from "./util";
 
 type Revert = () => void;
 

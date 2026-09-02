@@ -13,26 +13,26 @@
  * niemanden aufhalten.
  */
 
-import type { BpmnConnection, BpmnShape } from "../draw/types.js";
+import type { BpmnConnection, BpmnShape } from "../draw/types";
 import {
   asOfDate,
   conformanceGate,
   summarizeFramework,
   type ConformanceGate,
   type FrameworkSummary,
-} from "./analysis.js";
-import type { GrcOverlayData } from "./contract.js";
-import { buildGrcGraph, type GrcGraph } from "./graph.js";
-import { computeSod, type SodResult } from "./sod.js";
-import { simulateOutage, type OutageResult } from "./outage.js";
-import type { Scene } from "../draw/scene.js";
+} from "./analysis";
+import type { GrcOverlayData } from "./contract";
+import { buildGrcGraph, type GrcGraph } from "./graph";
+import { computeSod, type SodResult } from "./sod";
+import { simulateOutage, type OutageResult } from "./outage";
+import type { Scene } from "../draw/scene";
 import type {
   GrcDiagramSignal,
   GrcEdgeSignal,
   GrcElementSignal,
-} from "./slots.js";
-import { computeTrustBoundaries, type TrustResult } from "./trust.js";
-import type { GrcTone } from "./tokens.js";
+} from "./slots";
+import { computeTrustBoundaries, type TrustResult } from "./trust";
+import type { GrcTone } from "./tokens";
 
 /**
  * Ein Filter blendet **nicht aus** (§3.3.5 Regel 1) — er blendet ab. Ein

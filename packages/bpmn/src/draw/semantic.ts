@@ -3,8 +3,8 @@ import type {
   BpmnElement,
   BpmnShape,
   ModdleElement,
-} from "./types.js";
-import { isConnection } from "./types.js";
+} from "./types";
+import { isConnection } from "./types";
 
 /**
  * Typabfragen auf dem moddle-Baum.

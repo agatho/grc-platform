@@ -21,12 +21,12 @@
 
 import type CommandStack from "diagram-js/lib/command/CommandStack.js";
 
-import { installSvgPolyfills } from "../../draw/helpers/jsdom-svg.js";
-import { createEditorSession } from "../../../src/editor/index.js";
-import type { EditorConfig } from "../../../src/editor/types.js";
-import type { ModelingSession } from "../../../src/modeling/session.js";
-import type { InvariantCode } from "../../../src/modeling/invariants.js";
-import type { EditorAnnouncer } from "../../../src/editor/announce.js";
+import { installSvgPolyfills } from "../../draw/helpers/jsdom-svg";
+import { createEditorSession } from "../../../src/editor/index";
+import type { EditorConfig } from "../../../src/editor/types";
+import type { ModelingSession } from "../../../src/modeling/session";
+import type { InvariantCode } from "../../../src/modeling/invariants";
+import type { EditorAnnouncer } from "../../../src/editor/announce";
 
 // `installSvgPolyfills` bringt `CSS.escape` mit — dieselbe Rechenhilfe wie für
 // jede andere jsdom-Lücke, an einer Stelle.

@@ -13,10 +13,10 @@ import {
   riskLevel,
   rollupRisk,
   summarizeFramework,
-} from "../../src/grc/analysis.js";
-import { buildGrcGraph } from "../../src/grc/graph.js";
-import { buildOverlayModel } from "../../src/grc/engine.js";
-import { viewById } from "../../src/grc/views.js";
+} from "../../src/grc/analysis";
+import { buildGrcGraph } from "../../src/grc/graph";
+import { buildOverlayModel } from "../../src/grc/engine";
+import { viewById } from "../../src/grc/views";
 import {
   AS_OF,
   goodsReceiptRetentionData,
@@ -26,8 +26,8 @@ import {
   orderRollupData,
   procurementComplianceData,
   salesRiskControlData,
-} from "./fixtures.js";
-import { corpusScene } from "./helpers.js";
+} from "./fixtures";
+import { corpusScene } from "./helpers";
 
 const asOf = new Date(AS_OF);
 
