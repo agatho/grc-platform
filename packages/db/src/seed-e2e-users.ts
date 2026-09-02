@@ -1,7 +1,36 @@
 // packages/db/src/seed-e2e-users.ts
 //
-// `npm run db:seed:e2e-users` — provisions the ROLE ACCOUNTS the E2E suite
-// needs in order to test separation of duties.
+// `npm run db:seed:e2e-users` — provisions ALL accounts the E2E suite signs
+// in as: the primary account it runs under, and the role accounts it needs in
+// order to test separation of duties.
+//
+// [E2E-TRIAGE-4 · 2026-09-02] The tenant split, resolved
+// ------------------------------------------------------
+// Until this round the suite's PRIMARY account was whatever the operator had
+// created with `db:create-admin` (`admin@arctos.local` on the reference
+// machine). Measured against the running database, that account held TWENTY
+// memberships — the two seed tenants plus one throwaway organisation per
+// `f-02`/`f-15` run, growing with every run. Since the active organisation of
+// a session is the `arctos-org-id` cookie or, when that cookie does not
+// arrive, `roles[0].orgId` (packages/auth/src/context.ts, ordered by
+// `user_organization_role.created_at` in packages/auth/src/providers.ts:279),
+// and since that cookie is issued with `Secure` and therefore never reaches
+// Playwright's `request` fixture over a plain-http target, the suite asserted
+// in TWO tenants at once: the browser half in the demo tenant `ccc4cc1c…`,
+// the API half in `6d2a7cf8…` — an organisation with, measured, zero assets.
+// Two tests were parked on that split (`document-signature`, and half of the
+// reason `i-08` never ran).
+//
+// It is fixed here rather than in the fixtures, because a fix in the fixtures
+// is a fix on one machine: `admin@arctos.local` is created by no seed at all,
+// so a fresh database could never reproduce the run.
+//
+// The primary account is now provisioned by THIS script, under the address
+// `E2E_EMAIL` names (default `e2e-admin@arctos.local`), with exactly the same
+// one-membership rule the role accounts already follow. Pointing `E2E_EMAIL`
+// at an existing account MOVES that account into the demo tenant — which is
+// what the reference machine does with `admin@arctos.local`. Create or move
+// is therefore one mechanism, chosen by what the operator names.
 //
 // [E2E-TRIAGE-3 · 2026-09-02] Why this exists
 // -------------------------------------------
@@ -35,10 +64,23 @@
 //     `request` fixture — an account with several memberships would run the
 //     API-first specs in an unpredictable tenant. With a single membership
 //     both paths resolve to the same organisation by construction.
-//   * NO platform_admin row, and an existing one is revoked. A platform
-//     administrator may create top-level tenants, which is why
-//     `f-02-org-create`'s "an org admin cannot create a top-level tenant"
-//     could not mean what it says while the suite ran as one.
+//   * The membership's `created_at` is pinned to a fixed timestamp in the
+//     past. `roles[0]` is the OLDEST membership row, and the suite itself
+//     creates organisations (`f-02` a subsidiary, `f-15` a top-level tenant)
+//     which grant the creator an admin role on the spot. Without the pin the
+//     one-membership rule would hold only until the first such spec ran;
+//     with it, every membership the suite adds is provably younger and
+//     `roles[0]` stays the demo tenant for the rest of the run — and for
+//     every later run, because the rows persist. Re-running this script also
+//     removes the accumulated throwaway memberships.
+//   * `platform_admin` is granted or revoked EXPLICITLY per account, never
+//     left as found:
+//       - the primary account HOLDS it, because `f-15` creates a top-level
+//         tenant (no `parentOrgId`), which the handler reserves for platform
+//         administrators (migration 0438);
+//       - `e2e-approver` must NOT hold it, because `f-02b` asserts that an
+//         organisation admin is refused exactly that action. While the suite
+//         ran as one principal, that assertion could not mean what it says.
 //   * `must_change_password = false`. These are fixtures whose password the
 //     operator supplies through the environment; the first-login change that
 //     `db:create-admin` forces (S02-01) would make them unusable to a
@@ -53,6 +95,11 @@
 //
 //   --org <uuid>   overrides E2E_ORG_ID
 //   --print-env    additionally prints the export lines the suite expects
+//
+//   E2E_EMAIL      address of the primary account (default
+//                  `e2e-admin@arctos.local`). Naming an existing account moves
+//                  it into the demo tenant.
+//   E2E_PASSWORD   its password; falls back to E2E_ROLE_PASSWORD.
 
 import postgres from "postgres";
 import { hash } from "bcryptjs";
@@ -73,19 +120,49 @@ function flag(name: string): boolean {
  */
 export const DEMO_TENANT_ORG_ID = "ccc4cc1c-4b09-499c-8420-ebd8da655cd7";
 
+/**
+ * The instant every seeded membership is dated to.
+ *
+ * `roles[0]` — and therefore the tenant an API-first spec runs in — is the
+ * oldest `user_organization_role` row. Pinning it into the past makes that
+ * deterministic against the organisations the suite creates while it runs.
+ */
+export const E2E_MEMBERSHIP_EPOCH = "2000-01-01T00:00:00Z";
+
 export interface E2eRoleAccount {
   /** Environment variable the Playwright setup reads the address from. */
   envVar: string;
   email: string;
   name: string;
   roles: readonly string[];
+  /**
+   * Environment variable holding this account's password. Falls back to
+   * `E2E_ROLE_PASSWORD` when unset, so a run may use one password for
+   * everything or keep the primary account's own.
+   */
+  passwordEnvVar?: string;
+  /**
+   * `platform_admin` membership, decided rather than inherited. `true` grants
+   * it, `false` (the default) revokes an existing row.
+   */
+  platformAdmin?: boolean;
 }
 
 /**
- * The role accounts, in one place. `apps/web/e2e/auth.setup.ts` reads the same
- * addresses from the same environment variables with the same defaults.
+ * The accounts, in one place. `apps/web/e2e/fixtures/storage.ts` reads the
+ * same addresses from the same environment variables with the same defaults.
  */
 export const E2E_ROLE_ACCOUNTS: readonly E2eRoleAccount[] = [
+  {
+    // The account the suite runs under. `E2E_EMAIL` may name an account that
+    // already exists — then this entry MOVES it into the demo tenant.
+    envVar: "E2E_EMAIL",
+    email: "e2e-admin@arctos.local",
+    name: "E2E Administrator",
+    roles: ["admin"],
+    passwordEnvVar: "E2E_PASSWORD",
+    platformAdmin: true,
+  },
   {
     envVar: "E2E_OWNER_EMAIL",
     email: "e2e-owner@arctos.local",
@@ -113,14 +190,30 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const password = process.env.E2E_ROLE_PASSWORD;
-  if (!password || password.length < 12) {
+  const rolePassword = process.env.E2E_ROLE_PASSWORD;
+  if (!rolePassword || rolePassword.length < 12) {
     console.error(
       "E2E_ROLE_PASSWORD must be set and at least 12 characters.\n" +
         "There is no default: WP3/S02-01 removed the last hardcoded password\n" +
         "from this repository and this script does not add a new one.",
     );
     process.exit(1);
+  }
+
+  /** The password for one account: its own variable, else the shared one. */
+  function passwordFor(account: E2eRoleAccount): string {
+    const own = account.passwordEnvVar
+      ? process.env[account.passwordEnvVar]
+      : undefined;
+    if (own === undefined || own === "") return rolePassword!;
+    if (own.length < 12) {
+      console.error(
+        `${account.passwordEnvVar} is set but shorter than 12 characters — ` +
+          "refusing (WP3/S02-01).",
+      );
+      process.exit(1);
+    }
+    return own;
   }
 
   const orgId = arg("org") ?? process.env.E2E_ORG_ID ?? DEMO_TENANT_ORG_ID;
@@ -143,12 +236,11 @@ async function main(): Promise<void> {
     }
     console.log(`Organization: ${org.name} (${org.id})`);
 
-    const passwordHash = await hash(password, 12);
-
     for (const account of E2E_ROLE_ACCOUNTS) {
       const email = (
-        process.env[account.envVar] ?? account.email
+        process.env[account.envVar] || account.email
       ).toLowerCase();
+      const passwordHash = await hash(passwordFor(account), 12);
 
       const [row] = await sql<{ id: string }[]>`
         INSERT INTO "user" (email, name, password_hash, email_verified,
@@ -192,26 +284,61 @@ async function main(): Promise<void> {
         `;
       }
 
-      // No cross-tenant power. `f-02-org-create` asserts that an ORG admin is
-      // refused a top-level tenant with 403; that assertion is only meaningful
-      // for an account that is not also a platform administrator.
+      // Pin the membership into the past — see the header. `roles[0]` is the
+      // oldest row, and the suite adds younger ones while it runs.
       await sql`
-        UPDATE platform_admin SET revoked_at = now()
-        WHERE user_id = ${row.id}::uuid AND revoked_at IS NULL
+        UPDATE user_organization_role
+        SET created_at = ${E2E_MEMBERSHIP_EPOCH}::timestamptz
+        WHERE user_id = ${row.id}::uuid AND org_id = ${orgId}::uuid
       `;
 
+      // Cross-tenant power is decided here, not inherited. See the header for
+      // why the primary account has it and `e2e-approver` must not.
+      if (account.platformAdmin) {
+        await sql`
+          INSERT INTO platform_admin (user_id, reason)
+          VALUES (${row.id}::uuid, 'E2E primary account (db:seed:e2e-users)')
+          ON CONFLICT (user_id) DO UPDATE SET revoked_at = NULL
+        `;
+      } else {
+        await sql`
+          UPDATE platform_admin SET revoked_at = now()
+          WHERE user_id = ${row.id}::uuid AND revoked_at IS NULL
+        `;
+      }
+
+      // Say what the account will actually resolve to, rather than what it was
+      // asked to be: this is the number that made the tenant split invisible.
+      const [check] = await sql<{ memberships: string; first_org: string }[]>`
+        SELECT count(*)::text AS memberships,
+               (ARRAY_AGG(org_id::text ORDER BY created_at, org_id))[1]
+                 AS first_org
+        FROM user_organization_role
+        WHERE user_id = ${row.id}::uuid AND deleted_at IS NULL
+      `;
+      if (check.first_org !== orgId) {
+        throw new Error(
+          `${email} would resolve to organisation ${check.first_org}, not ` +
+            `${orgId}. roles[0] decides the tenant of every request that ` +
+            "does not carry the org cookie — refusing to leave the account " +
+            "in that state.",
+        );
+      }
+
       console.log(
-        `  ${email.padEnd(28)} roles=${account.roles.join(",")}  id=${row.id}`,
+        `  ${email.padEnd(28)} roles=${account.roles.join(",")}` +
+          `  platform_admin=${account.platformAdmin ? "yes" : "no"}` +
+          `  memberships=${check.memberships}  id=${row.id}`,
       );
     }
 
     console.log("");
-    console.log("E2E role accounts provisioned.");
+    console.log("E2E accounts provisioned.");
     if (flag("print-env")) {
       console.log("");
       console.log(`  export E2E_ORG_ID=${orgId}`);
       for (const a of E2E_ROLE_ACCOUNTS) {
-        console.log(`  export ${a.envVar}=${process.env[a.envVar] ?? a.email}`);
+        console.log(`  export ${a.envVar}=${process.env[a.envVar] || a.email}`);
       }
       console.log("  export E2E_ROLE_PASSWORD=<the password you just used>");
     }

@@ -575,66 +575,651 @@ describe("buildDiagramOverlay", () => {
     });
 
     it("liefert keines der dort genannten Felder mit einem Ersatzwert", () => {
-      // Ein voll besetzter Datensatz — genau der Fall, in dem eine
-      // versehentliche Erfindung sichtbar würde.
+      // [STUFE2-E] Nachgezogen: der Datensatz ist jetzt **maximal** besetzt —
+      // jede der zehn neuen Tabellen liefert eine Zeile. Genau das ist der
+      // Fall, in dem eine versehentliche Erfindung sichtbar würde: was hier
+      // trotz voller Eingabe fehlt, fehlt, weil die Daten es nicht hergeben.
+      const out = buildDiagramOverlay(
+        rows({
+          steps: [
+            {
+              ...STEP,
+              lineOfDefense: "first",
+              calledProcessId: "proc-child",
+              raciResponsibleRoleId: "role-1",
+              stepKey: "11111111-1111-4111-8111-111111111111",
+            },
+          ],
+          roles: [
+            { id: "role-1", name: "Einkauf" },
+            { id: "role-2", name: "Buchhaltung" },
+          ],
+          risks: [
+            {
+              processStepId: "step-1",
+              riskId: "r1",
+              title: "R",
+              residualScore: 9,
+              inherentScore: null,
+              ownerName: null,
+              treatmentStrategy: null,
+            },
+          ],
+          controls: [
+            {
+              processStepId: "step-1",
+              controlId: "c1",
+              title: "K",
+              status: "effective",
+              lastTestedAt: "2026-01-01",
+              lastTestResult: "effective",
+              lastEvidenceAt: AT,
+              isKey: true,
+              ownerRoleId: "role-1",
+              evidenceDueAt: AT,
+            },
+          ],
+          riskControls: [{ riskId: "r1", controlId: "c1" }],
+          raci: [{ processStepId: "step-1", roleId: "role-2", raciRole: "C" }],
+          ropa: [
+            {
+              processStepId: "step-1",
+              isProcessingActivity: true,
+              purpose: "Zweck",
+              legalBasis: "contract",
+              retentionMonths: 6,
+              retentionBasis: "§ 147 AO",
+              requiresDpia: true,
+              dpiaId: "dpia-1",
+              dpiaStatus: "approved",
+              transferThirdCountry: true,
+              transferCountry: "us",
+              transferSafeguard: "SCC",
+            },
+          ],
+          dataCategories: [
+            {
+              processStepId: "step-1",
+              id: "cat-1",
+              title: "Gesundheitsdaten",
+              isSpecialCategory: true,
+            },
+          ],
+          recipients: [
+            { processStepId: "step-1", id: "vendor-1", title: "CloudCo" },
+          ],
+          bia: [
+            {
+              processStepId: "step-1",
+              criticality: "very_high",
+              mtpdMinutes: 105,
+              rtoMinutes: 60,
+              rpoMinutes: 15,
+              workaround: null,
+              workaroundMaxDurationMinutes: null,
+            },
+          ],
+          documents: [{ processStepId: "step-1", id: "doc-1", title: "AA-01" }],
+          conformanceElements: [
+            {
+              processStepId: "step-1",
+              matchKind: "exact",
+              observedCases: 2,
+              reworkLoops: 1,
+            },
+          ],
+          conformanceSummary: {
+            coverageRatio: 0.75,
+            unmappedActivities: ["Sonderfreigabe"],
+            totalTraces: 2,
+            conformantTraces: 1,
+          },
+          lanes: [
+            {
+              bpmnElementId: "Lane_1",
+              name: "Einkauf",
+              kind: "lane",
+              roleId: "role-1",
+              orgUnitId: null,
+              orgUnitName: null,
+              vendorId: null,
+              vendorName: null,
+              vendorRiskClass: null,
+              isExternal: false,
+              thirdCountry: null,
+            },
+          ],
+          sodRules: [
+            {
+              id: "sod-1",
+              roleAId: "role-1",
+              roleBId: "role-1",
+              severity: "critical",
+              rationale: null,
+              frameworkRef: null,
+            },
+          ],
+        }),
+        {
+          computedAt: AT,
+          processId: "proc-1",
+          processName: "Beschaffung",
+          outage: { assetId: "asset-1" },
+        },
+      );
+
+      const element = out.elements["Task_1"];
+      expect(element).toBeDefined();
+
+      // Die Felder, die MISSING_TODAY heute noch führt — trotz voller Eingabe.
+      for (const key of ["incidents", "workItems"] as const) {
+        expect(element).not.toHaveProperty(key);
+      }
+      expect(element?.conformance).not.toHaveProperty("meanDurationMinutes");
+      expect(element?.conformance).not.toHaveProperty("isBottleneck");
+      expect(out.diagram?.conformance).not.toHaveProperty("deviations");
+      expect(out).not.toHaveProperty("edges");
+      expect(out.diagram).not.toHaveProperty("framework");
+    });
+
+    it("führt kein Feld mehr, das der Endpunkt inzwischen liefert", () => {
+      // Der Wächter gegen die eigentliche Gefahr dieser Liste: dass sie nach
+      // einer Schemaerweiterung stehen bleibt und behauptet, etwas sei
+      // unmöglich, was längst geliefert wird. Genannt sind die Felder, die die
+      // Migrationen 0444–0454 befüllbar gemacht haben.
+      const nowDelivered = [
+        "isKey",
+        "ownerRole",
+        "evidenceDueAt",
+        "raci.consulted",
+        "elements[].ropa",
+        "elements[].bia",
+        "elements[].stepKey",
+        "lanes",
+        "diagram.sodRules",
+        "diagram.outage",
+      ];
+      const listed = MISSING_TODAY.map((entry) => entry.field).join(" | ");
+      for (const field of nowDelivered) {
+        expect(
+          listed.includes(field),
+          `MISSING_TODAY fuehrt "${field}" noch, obwohl der Endpunkt es liefert`,
+        ).toBe(false);
+      }
+    });
+  });
+
+  /* ---------------------------------------------------------------- *
+   * STUFE2-E — die zehn Layer, die durch die neuen Tabellen leben
+   * ---------------------------------------------------------------- */
+
+  describe("STUFE2-E: die nachgereichten Layer bekommen echte Daten", () => {
+    it("RACI: eine Zeile aus process_step_raci gewinnt gegen die Spalte", () => {
       const out = build({
         steps: [
           {
             ...STEP,
-            lineOfDefense: "first",
-            calledProcessId: "proc-child",
-            raciResponsibleRoleId: "role-1",
+            raciResponsibleRoleId: "role-alt",
+            raciAccountableRoleId: "role-alt",
           },
         ],
-        roles: [{ id: "role-1", name: "Einkauf" }],
-        risks: [
-          {
-            processStepId: "step-1",
-            riskId: "r1",
-            title: "R",
-            residualScore: 9,
-            inherentScore: null,
-            ownerName: null,
-            treatmentStrategy: null,
-          },
+        roles: [
+          { id: "role-alt", name: "Alt" },
+          { id: "role-1", name: "Einkauf" },
+          { id: "role-2", name: "Buchhaltung" },
+          { id: "role-3", name: "Aufsicht" },
         ],
+        raci: [
+          { processStepId: "step-1", roleId: "role-1", raciRole: "A" },
+          { processStepId: "step-1", roleId: "role-3", raciRole: "C" },
+          { processStepId: "step-1", roleId: "role-2", raciRole: "C" },
+          { processStepId: "step-1", roleId: "role-2", raciRole: "I" },
+        ],
+      });
+      const raci = out.elements["Task_1"]?.raci;
+      // A steht in der Tabelle und gewinnt gegen die Spalte; für R gibt es
+      // keine Zeile, also bleibt die Spalte stehen.
+      expect(raci?.accountable?.id).toBe("role-1");
+      expect(raci?.responsible?.id).toBe("role-alt");
+      // C und I: ausschließlich aus der Tabelle, nach Namen sortiert.
+      expect(raci?.consulted?.map((role) => role.name)).toEqual([
+        "Aufsicht",
+        "Buchhaltung",
+      ]);
+      expect(raci?.informed?.map((role) => role.id)).toEqual(["role-2"]);
+    });
+
+    it("RACI: eine Rolle, die der Datensatz nicht kennt, wird verworfen", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [],
+        raci: [{ processStepId: "step-1", roleId: "geist", raciRole: "C" }],
+      });
+      expect(out.elements["Task_1"]).toBeUndefined();
+    });
+
+    it("Kontrolle: isKey, ownerRole und evidenceDueAt kommen durch", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [{ id: "role-1", name: "Interne Revision" }],
         controls: [
           {
             processStepId: "step-1",
             controlId: "c1",
             title: "K",
             status: "effective",
-            lastTestedAt: "2026-01-01",
-            lastTestResult: "effective",
-            lastEvidenceAt: AT,
+            lastTestedAt: null,
+            lastTestResult: null,
+            lastEvidenceAt: null,
+            isKey: true,
+            ownerRoleId: "role-1",
+            evidenceDueAt: AT,
           },
         ],
-        riskControls: [{ riskId: "r1", controlId: "c1" }],
       });
+      const control = out.elements["Task_1"]?.controls?.[0];
+      expect(control?.isKey).toBe(true);
+      expect(control?.ownerRole?.name).toBe("Interne Revision");
+      expect(control?.ownerRole?.short).toBe("IR");
+      expect(control?.evidenceDueAt).toBe(AT);
+    });
 
-      const element = out.elements["Task_1"];
-      expect(element).toBeDefined();
-      for (const key of [
-        "stepKey",
-        "ropa",
-        "bia",
-        "documents",
-        "conformance",
-        "incidents",
-        "workItems",
-      ] as const) {
-        expect(element).not.toHaveProperty(key);
-      }
-      expect(element?.controls?.[0]).not.toHaveProperty("isKey");
-      expect(element?.controls?.[0]).not.toHaveProperty("ownerRole");
-      expect(element?.controls?.[0]).not.toHaveProperty("evidenceDueAt");
+    it("Kontrolle: eine nicht abgefragte is_key-Spalte wird nicht zu false", () => {
+      const out = build({
+        steps: [STEP],
+        controls: [
+          {
+            processStepId: "step-1",
+            controlId: "c1",
+            title: "K",
+            status: "effective",
+            lastTestedAt: null,
+            lastTestResult: null,
+            lastEvidenceAt: null,
+          },
+        ],
+      });
+      expect(out.elements["Task_1"]?.controls?.[0]).not.toHaveProperty("isKey");
+    });
 
-      expect(out).not.toHaveProperty("lanes");
-      expect(out).not.toHaveProperty("edges");
+    it("ROPA: Kategorien und Empfänger hängen am ROPA-Datensatz", () => {
+      const out = build({
+        steps: [STEP],
+        ropa: [
+          {
+            processStepId: "step-1",
+            isProcessingActivity: true,
+            purpose: "Vertragsabwicklung",
+            legalBasis: "contract",
+            retentionMonths: 6,
+            retentionBasis: "§ 147 AO",
+            requiresDpia: true,
+            dpiaId: "dpia-1",
+            dpiaStatus: "approved",
+            transferThirdCountry: true,
+            transferCountry: "us",
+            transferSafeguard: "SCC 2021/914",
+          },
+        ],
+        dataCategories: [
+          {
+            processStepId: "step-1",
+            id: "cat-1",
+            title: "Gesundheitsdaten",
+            isSpecialCategory: true,
+          },
+        ],
+        recipients: [
+          { processStepId: "step-1", id: "v1", title: "CloudCo Inc." },
+        ],
+      });
+      const ropa = out.elements["Task_1"]?.ropa;
+      expect(ropa?.isProcessingActivity).toBe(true);
+      expect(ropa?.retentionMonths).toBe(6);
+      // ISO-3166-1 alpha-2 großgeschrieben — der Chip an der Doppelkante zeigt
+      // `US`, nicht `us`.
+      expect(ropa?.transferCountry).toBe("US");
+      expect(ropa?.dpiaStatus).toBe("done");
+      expect(ropa?.dataCategories?.[0]?.isSpecialCategory).toBe(true);
+      expect(ropa?.recipients?.[0]?.title).toBe("CloudCo Inc.");
+    });
+
+    it("ROPA: Kategorien ohne ROPA-Zeile erzeugen keinen Personenbezug", () => {
+      // Eine Kategorie allein ist keine Feststellung „hier wird verarbeitet".
+      const out = build({
+        steps: [STEP],
+        dataCategories: [
+          {
+            processStepId: "step-1",
+            id: "cat-1",
+            title: "Gesundheitsdaten",
+            isSpecialCategory: true,
+          },
+        ],
+      });
+      expect(out.elements["Task_1"]).toBeUndefined();
+    });
+
+    it("DPIA: eine abgelehnte Folgenabschätzung ist nicht abgeschlossen", () => {
+      const out = build({
+        steps: [STEP],
+        ropa: [
+          {
+            processStepId: "step-1",
+            isProcessingActivity: true,
+            purpose: null,
+            legalBasis: null,
+            retentionMonths: null,
+            retentionBasis: null,
+            requiresDpia: true,
+            dpiaId: "dpia-1",
+            dpiaStatus: "rejected",
+            transferThirdCountry: false,
+            transferCountry: null,
+            transferSafeguard: null,
+          },
+        ],
+      });
+      expect(out.elements["Task_1"]?.ropa?.dpiaStatus).toBe("required");
+    });
+
+    it("DPIA: ohne verknüpfte Akte bleibt der Status weg", () => {
+      const out = build({
+        steps: [STEP],
+        ropa: [
+          {
+            processStepId: "step-1",
+            isProcessingActivity: true,
+            purpose: null,
+            legalBasis: null,
+            retentionMonths: null,
+            retentionBasis: null,
+            requiresDpia: true,
+            dpiaId: null,
+            dpiaStatus: null,
+            transferThirdCountry: false,
+            transferCountry: null,
+            transferSafeguard: null,
+          },
+        ],
+      });
+      const ropa = out.elements["Task_1"]?.ropa;
+      expect(ropa?.requiresDpia).toBe(true);
+      expect(ropa).not.toHaveProperty("dpiaId");
+      expect(ropa).not.toHaveProperty("dpiaStatus");
+    });
+
+    it("BIA: Minuten kommen durch, die 0 des Workarounds bleibt erhalten", () => {
+      const out = build({
+        steps: [STEP],
+        bia: [
+          {
+            processStepId: "step-1",
+            criticality: "high",
+            mtpdMinutes: 480,
+            rtoMinutes: 240,
+            rpoMinutes: 15,
+            workaround: "Papierformular",
+            workaroundMaxDurationMinutes: 0,
+          },
+        ],
+      });
+      const bia = out.elements["Task_1"]?.bia;
+      expect(bia?.criticality).toBe("high");
+      expect(bia?.rpoMinutes).toBe(15);
+      // 0 heißt „trägt nicht" und ist eine Aussage — sie darf nicht
+      // wegfallen, sonst gälte der Schritt fälschlich als gedeckt.
+      expect(bia?.workaroundMaxDurationMinutes).toBe(0);
+    });
+
+    it("BIA: eine unlesbare Kritikalität wird verworfen, nicht auf low gesetzt", () => {
+      const out = build({
+        steps: [STEP],
+        bia: [
+          {
+            processStepId: "step-1",
+            criticality: "sehr hoch",
+            mtpdMinutes: 60,
+            rtoMinutes: null,
+            rpoMinutes: null,
+            workaround: null,
+            workaroundMaxDurationMinutes: null,
+          },
+        ],
+      });
+      expect(out.elements["Task_1"]).toBeUndefined();
+    });
+
+    it("Dokumente: Titel statt Kennung, Zeile ohne Titel fällt weg", () => {
+      const out = build({
+        steps: [STEP],
+        documents: [
+          { processStepId: "step-1", id: "d1", title: "AA-01" },
+          { processStepId: "step-1", id: "d2", title: "FB-07" },
+          { processStepId: "step-1", id: "d3", title: null },
+        ],
+      });
+      expect(out.elements["Task_1"]?.documents).toEqual([
+        { id: "d1", title: "AA-01" },
+        { id: "d2", title: "FB-07" },
+      ]);
+    });
+
+    it("Lanes: Träger, Drittland und Quoten landen unter der Element-ID", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [{ id: "role-1", name: "Einkauf" }],
+        lanes: [
+          {
+            bpmnElementId: "Lane_1",
+            name: "Einkauf",
+            kind: "lane",
+            roleId: "role-1",
+            orgUnitId: "ou-1",
+            orgUnitName: "Zentraleinkauf",
+            vendorId: null,
+            vendorName: null,
+            vendorRiskClass: null,
+            isExternal: false,
+            thirdCountry: null,
+          },
+          {
+            bpmnElementId: "Pool_Ext",
+            name: "Dienstleister",
+            kind: "pool",
+            roleId: null,
+            orgUnitId: null,
+            orgUnitName: null,
+            vendorId: "v1",
+            vendorName: "CloudCo Inc.",
+            vendorRiskClass: "critical",
+            isExternal: true,
+            thirdCountry: "us",
+          },
+        ],
+        laneRatios: [
+          {
+            roleId: "role-1",
+            memberCount: 2,
+            trainedCount: 1,
+            acknowledgedCount: 0,
+            hasMandatoryTraining: true,
+            hasMandatoryPolicy: false,
+          },
+        ],
+      });
+      expect(out.lanes?.["Lane_1"]?.role?.id).toBe("role-1");
+      expect(out.lanes?.["Lane_1"]?.orgUnit?.title).toBe("Zentraleinkauf");
+      expect(out.lanes?.["Lane_1"]?.trainingRatio).toBe(0.5);
+      // Keine Pflichtverteilung im Mandanten → keine Quote, nicht „0 %".
+      expect(out.lanes?.["Lane_1"]).not.toHaveProperty("acknowledgmentRatio");
+      expect(out.lanes?.["Pool_Ext"]?.vendor?.riskClass).toBe("critical");
+      expect(out.lanes?.["Pool_Ext"]?.thirdCountry).toBe("US");
+      expect(out.lanes?.["Pool_Ext"]?.isExternal).toBe(true);
+    });
+
+    it("Lanes: ohne Mitglieder gibt es keine Quote", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [{ id: "role-1", name: "Einkauf" }],
+        lanes: [
+          {
+            bpmnElementId: "Lane_1",
+            name: "Einkauf",
+            kind: "lane",
+            roleId: "role-1",
+            orgUnitId: null,
+            orgUnitName: null,
+            vendorId: null,
+            vendorName: null,
+            vendorRiskClass: null,
+            isExternal: false,
+            thirdCountry: null,
+          },
+        ],
+        laneRatios: [
+          {
+            roleId: "role-1",
+            memberCount: 0,
+            trainedCount: 0,
+            acknowledgedCount: 0,
+            hasMandatoryTraining: true,
+            hasMandatoryPolicy: true,
+          },
+        ],
+      });
+      expect(out.lanes?.["Lane_1"]).not.toHaveProperty("trainingRatio");
+      expect(out.lanes?.["Lane_1"]).not.toHaveProperty("acknowledgmentRatio");
+    });
+
+    it("SoD: die Selbstpaarung überlebt die Abbildung", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [{ id: "role-1", name: "Einkauf" }],
+        sodRules: [
+          {
+            id: "sod-1",
+            roleAId: "role-1",
+            roleBId: "role-1",
+            severity: "critical",
+            rationale: "Bestellen und Freigeben in einer Hand.",
+            frameworkRef: "IDW PS 261",
+          },
+        ],
+      });
+      expect(out.diagram?.sodRules).toEqual([
+        {
+          id: "sod-1",
+          roleAId: "role-1",
+          roleBId: "role-1",
+          severity: "critical",
+          rationale: "Bestellen und Freigeben in einer Hand.",
+          frameworkRef: "IDW PS 261",
+        },
+      ]);
+    });
+
+    it("SoD: eine Regel mit unbekannter Rolle wird nicht mitgezählt", () => {
+      const out = build({
+        steps: [STEP],
+        roles: [{ id: "role-1", name: "Einkauf" }],
+        sodRules: [
+          {
+            id: "sod-1",
+            roleAId: "role-1",
+            roleBId: "geist",
+            severity: "high",
+            rationale: null,
+            frameworkRef: null,
+          },
+        ],
+      });
       expect(out.diagram).not.toHaveProperty("sodRules");
-      expect(out.diagram).not.toHaveProperty("outage");
-      expect(out.diagram).not.toHaveProperty("framework");
+    });
+
+    it("Conformance: Quote, nicht zugeordnete Aktivitäten und Rework je Schritt", () => {
+      const out = build({
+        steps: [STEP],
+        conformanceElements: [
+          {
+            processStepId: "step-1",
+            matchKind: "exact",
+            observedCases: 2,
+            reworkLoops: 1,
+          },
+        ],
+        conformanceSummary: {
+          coverageRatio: 0.75,
+          unmappedActivities: ["Sonderfreigabe"],
+          totalTraces: 2,
+          conformantTraces: 1,
+        },
+      });
+      expect(out.elements["Task_1"]?.conformance).toEqual({
+        matchKind: "exact",
+        observedCases: 2,
+        reworkLoops: 1,
+      });
+      expect(out.diagram?.conformance?.coverageRatio).toBe(0.75);
+      expect(out.diagram?.conformance?.unmappedActivities).toEqual([
+        "Sonderfreigabe",
+      ]);
+      expect(out.diagram?.conformance?.conformantTraces).toBe(1);
+    });
+
+    it("Conformance: ohne Ereignisse keine Quote und damit keine Heatmap", () => {
+      const out = build({
+        steps: [STEP],
+        conformanceSummary: {
+          coverageRatio: null,
+          unmappedActivities: [],
+          totalTraces: null,
+          conformantTraces: null,
+        },
+      });
       expect(out.diagram).not.toHaveProperty("conformance");
+    });
+
+    it("Ausfallszenario: nur auf Ansage, mit aufgelöstem Assetnamen", () => {
+      const withoutSelection = build({ steps: [STEP] });
+      expect(withoutSelection.diagram).not.toHaveProperty("outage");
+
+      const out = buildDiagramOverlay(
+        rows({
+          steps: [STEP],
+          assets: [
+            {
+              processStepId: "step-1",
+              assetId: "asset-1",
+              name: "SAP FI",
+              protectionGoalClass: 4,
+              confidentiality: 4,
+              integrity: 4,
+              availability: 4,
+              ownerName: null,
+            },
+          ],
+        }),
+        {
+          computedAt: AT,
+          processId: "proc-1",
+          outage: { assetId: "asset-1", elapsedMinutes: 30 },
+        },
+      );
+      expect(out.diagram?.outage).toEqual({
+        assetId: "asset-1",
+        assetName: "SAP FI",
+        elapsedMinutes: 30,
+      });
+    });
+
+    it("stepKey wird geliefert, sobald die Spalte einen Wert hat", () => {
+      const out = build({
+        steps: [{ ...STEP, stepKey: "11111111-1111-4111-8111-111111111111" }],
+      });
+      expect(out.elements["Task_1"]?.stepKey).toBe(
+        "11111111-1111-4111-8111-111111111111",
+      );
     });
   });
 });

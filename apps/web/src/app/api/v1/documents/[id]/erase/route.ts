@@ -1,4 +1,5 @@
-import { db, document, documentFile, workItem, auditLog } from "@grc/db";
+import { db, document, documentFile, workItem } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { eraseDocumentSchema } from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
@@ -79,7 +80,7 @@ export const DELETE = withErrorHandler(async function DELETE(
       // be written outside the hash chain and outside every anchor.
       // Migration 0401 assigns the chain in a BEFORE INSERT trigger on
       // audit_log, so this entry is now chained like any other.
-      await tx.insert(auditLog).values({
+      await writeAuditEntry(tx, {
         orgId: ctx.orgId,
         userId: ctx.userId,
         userEmail: ctx.session.user.email,

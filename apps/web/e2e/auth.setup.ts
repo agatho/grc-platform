@@ -1,5 +1,6 @@
 import { test as setup, expect, type Page } from "@playwright/test";
 import {
+  PRIMARY_ACCOUNT,
   ROLE_ACCOUNTS,
   ROLE_ACCOUNTS_CONFIGURED,
   STORAGE_STATE,
@@ -27,10 +28,23 @@ import {
  * signs in the three role accounts `db:seed:e2e-users` provisions and writes
  * one storage state per role, so a spec can name the actor it means instead of
  * stopping where a second person would be needed.
+ *
+ * [E2E-TRIAGE-4 · 2026-09-02] The primary login is seeded like the others, and
+ * the tenant is now ASSERTED instead of repaired.
+ *
+ * This setup used to switch the primary account into `E2E_ORG_ID` when its
+ * session had landed somewhere else. That repair only ever reached half the
+ * suite: `switch-org` sets the `arctos-org-id` cookie, the cookie carries
+ * `Secure`, and over a plain-http target a `Secure` cookie reaches the browser
+ * context but not Playwright's `request` fixture — so the API-first specs kept
+ * running in `roles[0].orgId`, measurably an empty tenant. The account is
+ * provisioned with exactly one membership now (see
+ * `packages/db/src/seed-e2e-users.ts`), which makes both paths resolve to the
+ * same organisation; what remains here is the check that this is actually so.
  */
 
-const EMAIL = process.env.E2E_EMAIL ?? "admin@arctos.dev";
-const PASSWORD = process.env.E2E_PASSWORD;
+const EMAIL = PRIMARY_ACCOUNT.email;
+const PASSWORD = PRIMARY_ACCOUNT.password;
 
 /**
  * Signs `email` in on `page` and returns the session user.
@@ -93,50 +107,39 @@ async function signIn(
 setup("authenticate as admin", async ({ page }) => {
   expect(
     PASSWORD,
-    "E2E_PASSWORD is not set. WP3 removed the `admin123` default account " +
-      "(S02-01), so there is no credential to fall back on — export " +
-      "E2E_EMAIL / E2E_PASSWORD for the seeded account before running the " +
-      "E2E suite.",
+    "No password for the primary E2E account. Provision it with\n" +
+      "  E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users\n" +
+      "and export the same value (or E2E_PASSWORD) for the run. WP3 removed " +
+      "the `admin123` default account (S02-01), so there is nothing to fall " +
+      "back on.",
   ).toBeTruthy();
 
   const user = await signIn(page, EMAIL, PASSWORD!);
 
-  // [E2E-TRIAGE-2026-09-02] Pin the tenant into the stored state.
+  // [E2E-TRIAGE-4 · 2026-09-02] Assert the tenant; do not repair it.
   //
-  // The active organisation of a session is the `arctos-org-id` cookie or,
-  // when that cookie does not arrive, `roles[0].orgId`
-  // (packages/auth/src/context.ts). An account with several memberships
-  // therefore lands somewhere unpredictable, and `f-02-org-create` adds a
-  // THROWAWAY organisation to that set on every run, permanently. On the first
-  // full run the whole suite ended up pointed at an empty `E2E-F02b-…` tenant
-  // and every "loads with demo data" spec failed for that reason alone.
+  // `currentOrgId` on a freshly signed-in session is `roles[0].orgId` — no
+  // `arctos-org-id` cookie has been set yet — and that is precisely the value
+  // every request WITHOUT that cookie resolves to, including Playwright's
+  // `request` fixture, which never receives it because the cookie is `Secure`
+  // and the target is plain http. So this one comparison covers both halves of
+  // the suite, which the previous `switch-org` repair did not: it moved the
+  // browser into `E2E_ORG_ID` and left the API-first specs in `roles[0]`,
+  // measurably an organisation with zero assets.
   //
-  // `E2E_ORG_ID` names the tenant the suite asserts against — the one
-  // `db:seed:demo` populates; `playwright.config.ts` supplies the default so
-  // the value does not have to live in the operator's memory.
-  //
-  // Measured in this round and worth stating: that cookie is issued with
-  // `Secure`, so against a plain-http target it reaches the browser context
-  // but NOT Playwright's `request` fixture — API-first specs on this state
-  // fall back to `roles[0].orgId`. That is precisely why the ROLE accounts
-  // below hold exactly ONE membership: for them both paths resolve to the same
-  // tenant by construction. See packages/db/src/seed-e2e-users.ts.
+  // A mismatch is a seeding problem with one fix, so the message names it.
   const orgId = process.env.E2E_ORG_ID;
-  if (orgId && user?.currentOrgId !== orgId) {
-    const status = await page.evaluate(async (id: string) => {
-      const r = await fetch("/api/v1/auth/switch-org", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgId: id }),
-      });
-      return r.status;
-    }, orgId);
+  if (orgId) {
     expect(
-      status,
-      `E2E_ORG_ID=${orgId} is set, but switching ${EMAIL} into that ` +
-        `organisation answered ${status}. Refusing to write a storage state ` +
-        "for an unknown tenant.",
-    ).toBe(200);
+      user?.currentOrgId,
+      `${EMAIL} resolves to organisation ${user?.currentOrgId}, but the ` +
+        `suite asserts against ${orgId}. The primary account must hold its ` +
+        "OLDEST membership in that tenant — anything else splits the run " +
+        "across two tenants, because the org cookie does not reach the API " +
+        "fixture over http. Fix it where it is reproducible:\n" +
+        `  E2E_EMAIL=${EMAIL} E2E_ROLE_PASSWORD='<12+ chars>' ` +
+        "npm run db:seed:e2e-users",
+    ).toBe(orgId);
   }
 
   // Save auth state
@@ -165,6 +168,19 @@ for (const account of ROLE_ACCOUNTS as readonly RoleAccount[]) {
       `${account.email} has no active organisation. The account is expected ` +
         "to hold exactly one membership — re-run `npm run db:seed:e2e-users`.",
     ).toBeTruthy();
+    // [E2E-TRIAGE-4] Same check as for the primary account: the role accounts
+    // and the primary one must sign in to the SAME tenant, or a spec that
+    // hands work from one to the other (bpm-approval-pipeline,
+    // document-signature) fails as a 404 that looks like a product defect.
+    const expectedOrgId = process.env.E2E_ORG_ID;
+    if (expectedOrgId) {
+      expect(
+        user?.currentOrgId,
+        `${account.email} resolves to ${user?.currentOrgId}, the suite ` +
+          `asserts against ${expectedOrgId}. Re-run ` +
+          "`npm run db:seed:e2e-users` with the same E2E_ORG_ID.",
+      ).toBe(expectedOrgId);
+    }
 
     // A role account with the wrong roles would otherwise fail much later,
     // inside an approval chain, as a confusing 403. Check it here.

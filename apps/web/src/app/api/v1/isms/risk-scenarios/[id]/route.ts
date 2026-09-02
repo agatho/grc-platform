@@ -21,6 +21,18 @@ export const GET = withErrorHandler(async function GET(
   const { id } = await params;
 
   // Raw SQL to include all columns from migration 0087 (ALTER TABLE additions)
+  //
+  // [E2E-TRIAGE-4 · 2026-09-02] `a.tier` → `a.asset_tier`. The column on
+  // `asset` is `asset_tier`; `tier` has never existed. Postgres rejects the
+  // statement at parse time, so this endpoint answered 500 for EVERY IS risk
+  // scenario, and the detail page (isms/risks/[id]/page.tsx:157) rendered its
+  // "Risikoszenario nicht gefunden." state over a scenario that exists.
+  // Measured on the running instance:
+  //   GET /api/v1/isms/risk-scenarios/d0000000-…-0431 → 500,
+  //   "column a.tier does not exist"
+  // `isms-workflow` S2.5 only ever looked for the words "Bedrohung" and
+  // "Behandlung", which also stand on the LIST — so a click that had not yet
+  // navigated could satisfy it, and the defect stayed invisible.
   const result = await db.execute(sql`
     SELECT
       rs.*,
@@ -29,7 +41,7 @@ export const GET = withErrorHandler(async function GET(
       v.title as vulnerability_title,
       v.severity as vulnerability_severity,
       a.name as asset_name,
-      a.tier as asset_tier,
+      a.asset_tier as asset_tier,
       ou.name as owner_name
     FROM risk_scenario rs
     LEFT JOIN threat t ON t.id = rs.threat_id

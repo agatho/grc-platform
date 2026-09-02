@@ -13,7 +13,7 @@
 // part of the entry. `actionDetail` differs per outcome so the audit
 // query can separate them without parsing metadata.
 
-import { auditLog } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { withAuditContext, type ApiContext } from "@/lib/api";
 
 export type ControlledCopyOutcome =
@@ -61,7 +61,7 @@ export async function recordControlledCopyDownload(
     // S03-05: chained by the BEFORE INSERT trigger on audit_log
     // (migration 0401). "Who downloaded a controlled copy" used to be
     // recorded outside the chain and outside the external anchor.
-    await tx.insert(auditLog).values({
+    await writeAuditEntry(tx, {
       orgId: ctx.orgId,
       userId: ctx.userId,
       userEmail: ctx.session.user.email,

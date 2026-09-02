@@ -129,6 +129,13 @@ const DEMO_SEEDS = [
   "seed_demo_12_ai_act.sql", // EU AI Act register (AIS-001 …)
   "seed_demo_13_programmes.sql", // programme journeys
   "seed_demo_14_july_features.sql", // later feature demo rows
+  // [E2E-TRIAGE-4 · 2026-09-02] CVE feed, asset CPEs, CVE/asset matches.
+  // Measured before this file existed: `cve_feed_item`, `asset_cpe` and
+  // `cve_asset_match` held ZERO rows on a fully seeded database, so the whole
+  // vulnerability-intelligence surface had never been exercised and
+  // `i-08-cve-flow` skipped itself on every run. AFTER 01, which creates the
+  // assets the matches reference.
+  "seed_demo_15_cve.sql",
 ];
 
 /**

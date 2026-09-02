@@ -1,4 +1,5 @@
-import { db, document, auditLog } from "@grc/db";
+import { db, document } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -74,7 +75,7 @@ export const GET = withErrorHandler(async function GET(
     // S03-05: chained by the BEFORE INSERT trigger on audit_log
     // (migration 0401). Before that, integrity-verification events were
     // themselves written outside the integrity chain.
-    await tx.insert(auditLog).values({
+    await writeAuditEntry(tx, {
       orgId: ctx.orgId,
       userId: ctx.userId,
       userEmail: ctx.session.user.email,

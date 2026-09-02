@@ -91,6 +91,15 @@ vi.mock("@/lib/documents/signature-timestamp", () => ({
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
+  // [E2E-TRIAGE-4] `sql` keeps its template so the audit-entry write can be
+  // asserted by CONTENT. The chain anchor moved from `tx.insert(auditLog)` to
+  // the SECURITY DEFINER helper `write_audit_entry()` (the runtime role has
+  // no INSERT on `audit_log`, migration 0407); a mock that discards the query
+  // would let that write disappear again unnoticed.
+  const sqlTag = (strings: TemplateStringsArray, ...values: unknown[]) => ({
+    text: Array.isArray(strings) ? strings.join("?") : String(strings),
+    values,
+  });
   return {
     eq: noop,
     and: noop,
@@ -99,7 +108,7 @@ vi.mock("drizzle-orm", () => {
     asc: noop,
     desc: noop,
     inArray: noop,
-    sql: Object.assign(noop, { raw: noop }),
+    sql: Object.assign(sqlTag, { raw: noop }),
   };
 });
 
@@ -123,6 +132,9 @@ function txThenable(result: unknown[]) {
   return chain;
 }
 
+/** Raw statements the handler ran on the transaction (write_audit_entry). */
+const executed: Array<{ text: string; values: unknown[] }> = [];
+
 const txMock = {
   insert: (table: unknown) => ({
     values: (vals: unknown) => {
@@ -136,7 +148,16 @@ const txMock = {
       return txThenable(updateReturning.shift() ?? []);
     },
   }),
+  execute: async (q: unknown) => {
+    executed.push(q as { text: string; values: unknown[] });
+    return [];
+  },
 };
+
+/** The `write_audit_entry(...)` call, or undefined if none was made. */
+function auditEntryCall(): { text: string; values: unknown[] } | undefined {
+  return executed.find((q) => q?.text?.includes("write_audit_entry"));
+}
 
 let authResult: unknown = null; // set in beforeEach
 
@@ -234,6 +255,7 @@ function jsonRequest(url: string, body?: unknown) {
 beforeEach(() => {
   selectQueue.length = 0;
   inserted.length = 0;
+  executed.length = 0;
   updated.length = 0;
   insertReturning.length = 0;
   updateReturning.length = 0;
@@ -457,6 +479,26 @@ describe("POST /signature-requests/[id]/sign", () => {
     expect((notifications[0].values as { userId: string }).userId).toBe(
       CREATOR,
     );
+
+    // #S06-05 / [E2E-TRIAGE-4]: the chain link is anchored in the audit
+    // trail, and it is written through `write_audit_entry()` — the runtime
+    // role has SELECT and nothing else on `audit_log` (migration 0407), so a
+    // direct insert here answered 500 and the trail stayed empty.
+    const audit = auditEntryCall();
+    expect(
+      audit,
+      "sign() must anchor the chain link in the audit trail via " +
+        "write_audit_entry(); nothing was executed",
+    ).toBeDefined();
+    expect(audit!.values).toContain("document_signature");
+    expect(audit!.values).toContain("signature_chain_anchor");
+    const auditMetadata = JSON.parse(
+      audit!.values.find(
+        (v): v is string => typeof v === "string" && v.includes('"decision"'),
+      )!,
+    ) as { decision: string; chainHash: string };
+    expect(auditMetadata.decision).toBe("signed");
+    expect(auditMetadata.chainHash).toBe(set.chainHash);
   });
 });
 
@@ -499,6 +541,21 @@ describe("POST /signature-requests/[id]/decline", () => {
 
     const reqUpdate = updated.find((u) => u.table === documentSignatureRequest);
     expect((reqUpdate!.set as { status: string }).status).toBe("declined");
+
+    // [E2E-TRIAGE-4] A decline is anchored in the audit trail exactly like a
+    // signature, through `write_audit_entry()` (see the sign case above).
+    const audit = auditEntryCall();
+    expect(
+      audit,
+      "decline() must anchor its chain link via write_audit_entry()",
+    ).toBeDefined();
+    expect(audit!.values).toContain("signature_chain_anchor");
+    const auditMetadata = JSON.parse(
+      audit!.values.find(
+        (v): v is string => typeof v === "string" && v.includes('"decision"'),
+      )!,
+    ) as { decision: string };
+    expect(auditMetadata.decision).toBe("declined");
   });
 });
 

@@ -67,6 +67,38 @@ export interface RoleAccount {
 
 const ROLE_PASSWORD = process.env.E2E_ROLE_PASSWORD;
 
+/**
+ * [E2E-TRIAGE-4 · 2026-09-02] The PRIMARY account, from the same source.
+ *
+ * `admin@arctos.dev` used to be the default here and in
+ * `tests/e2e/fixtures/auth.ts`. That account is created by `db:seed` with
+ * `must_change_password = true` and a password nothing outside the operator's
+ * terminal knows, so the default could only ever fail — while the account that
+ * actually ran the suite (`admin@arctos.local` on the reference machine) was
+ * created by `db:create-admin`, i.e. by no seed at all. A fresh database could
+ * not reproduce the run, and that account's twenty memberships put the
+ * browser half of the suite in one tenant and the API half in another.
+ *
+ * `db:seed:e2e-users` now provisions the primary account as well, under
+ * exactly this address, with exactly one membership in the tenant
+ * `db:seed:demo` fills. The default below and the default in
+ * `packages/db/src/seed-e2e-users.ts` are deliberately the same literal.
+ */
+export const PRIMARY_ACCOUNT: {
+  email: string;
+  password: string | undefined;
+  storageState: string;
+  roles: readonly string[];
+} = {
+  email: process.env.E2E_EMAIL || "e2e-admin@arctos.local",
+  // `E2E_PASSWORD` when the operator keeps a separate password for the primary
+  // account, otherwise the shared one — the same fallback the seed applies, so
+  // a single export is enough for a full run.
+  password: process.env.E2E_PASSWORD || ROLE_PASSWORD,
+  storageState: STORAGE_STATE,
+  roles: ["admin"],
+};
+
 export const ROLE_ACCOUNTS: readonly RoleAccount[] = [
   {
     key: "owner",

@@ -83,7 +83,20 @@ export function NotificationBell() {
       >
         <Bell size={18} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          // [E2E-TRIAGE-4 · 2026-09-02] `bg-red-500` -> `bg-red-700`.
+          //
+          // White 10px bold on `bg-red-500` (#fb2c36) is a contrast ratio of
+          // **3.8:1**, measured by axe on the running instance; WCAG 2 AA
+          // requires 4.5:1 for text this size. `bg-red-700` (#c10007) is
+          // 6.5:1.
+          //
+          // The three `a11y-smoke` specs had never seen it: the badge renders
+          // only when the signed-in account has unread notifications, and the
+          // E2E account had none until `document-signature` started completing
+          // signature requests — completion notifies the request's creator.
+          // The defect is older than that; it was simply never on screen while
+          // axe was looking.
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-700 px-1 text-[10px] font-bold text-white">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}

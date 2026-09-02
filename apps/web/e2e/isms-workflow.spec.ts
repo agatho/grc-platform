@@ -85,8 +85,41 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   test("S2.5: Risk scenario detail page loads", async ({ page }) => {
     await page.goto("/isms/risks");
     await awaitAppReady(page);
-    await page.locator("table tbody tr").first().click();
+
+    // [E2E-TRIAGE-4 · 2026-09-02] Wait for the NAVIGATION, not for a timer.
+    //
+    // The row click is handled by `router.push('/isms/risks/<id>')` in a
+    // client component (isms/risks/page.tsx:220). `awaitAppReady` resolves on
+    // the list as soon as it has rendered, so a click that lands before the
+    // router hydrates does nothing at all — and the two assertions below then
+    // run against the LIST. The list carries a „Bedrohung" column but no
+    // „Behandlung" one, so the first assertion passed and the second failed
+    // with "element(s) not found": a navigation that never happened, reported
+    // as a missing treatment section. Measured once in a repeat full run
+    // (test 84 of 199) and not reproducible in isolation, i.e. exactly the
+    // shape one writes off as flaky.
+    //
+    // Waiting for the detail URL also makes the assertions mean what they
+    // say: they can no longer be satisfied by text that happens to stand on
+    // the list.
+    const rows = page.locator("table tbody tr");
+    await expect(rows.first()).toBeVisible();
+    await rows.first().click();
+    await page.waitForURL(/\/isms\/risks\/[0-9a-f-]{36}/, { timeout: 30_000 });
     await awaitAppReady(page);
+
+    // [E2E-TRIAGE-4] The detail page must have LOADED the scenario, not just
+    // rendered its labels. `GET /api/v1/isms/risk-scenarios/:id` answered 500
+    // for every scenario ("column a.tier does not exist"), and the page then
+    // shows "Risikoszenario nicht gefunden." — while the two label
+    // assertions below could still be satisfied by the list behind a click
+    // that had not navigated. Pin the not-found state out first.
+    await expect(
+      page.getByText(/nicht gefunden|not found/i),
+      "the detail page rendered its not-found state — the scenario exists, " +
+        "so this is the detail endpoint failing, not a missing row",
+    ).toHaveCount(0);
+
     // Should show risk details
     await expect(page.getByText(/bedrohung|threat/i).first()).toBeVisible();
     await expect(page.getByText(/behandlung|treatment/i).first()).toBeVisible();

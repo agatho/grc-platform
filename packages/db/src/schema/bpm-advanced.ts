@@ -171,10 +171,16 @@ export const processKpiDefinition = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // STUFE2-E (0454): Bezugsschritt der Kennzahl (Gutter am Element).
+    processStepId: uuid("process_step_id"),
+    // BPMN-ID der Kante, wenn die Kennzahl eine Durchlaufzeit ZWISCHEN zwei
+    // Schritten misst. Kein Fremdschluessel — Kanten haben keine Zeile.
+    sequenceFlowId: varchar("sequence_flow_id", { length: 100 }),
   },
   (table) => [
     index("pkd_process_idx").on(table.processId),
     index("pkd_org_idx").on(table.orgId),
+    index("pkd_process_step_idx").on(table.processStepId),
   ],
 );
 

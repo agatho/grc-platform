@@ -37,6 +37,8 @@ const selectQueue: unknown[][] = [];
 const txSelectQueue: unknown[][] = [];
 const inserted: Array<{ table: string; values: unknown }> = [];
 const updated: Array<{ table: string; values: unknown }> = [];
+/** Raw statements run on the transaction (write_audit_entry). */
+const executed: Array<{ text: string; values: unknown[] }> = [];
 
 function tableName(t: unknown): string {
   return (t as { __name?: string })?.__name ?? "unknown";
@@ -79,7 +81,16 @@ const tx = {
       };
     },
   }),
+  execute: async (q: unknown) => {
+    executed.push(q as { text: string; values: unknown[] });
+    return [];
+  },
 };
+
+/** The `write_audit_entry(...)` call, or undefined if none was made. */
+function auditEntryCall(): { text: string; values: unknown[] } | undefined {
+  return executed.find((q) => q?.text?.includes("write_audit_entry"));
+}
 
 vi.mock("@grc/db", () => ({
   db: {
@@ -97,7 +108,15 @@ vi.mock("@grc/db", () => ({
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
-  return { eq: noop, and: noop, isNull: noop, sql: noop };
+  // [E2E-TRIAGE-4] `sql` keeps its template: the audit entry for a rejected
+  // upload moved from `tx.insert(auditLog)` to the SECURITY DEFINER helper
+  // `write_audit_entry()`, because the runtime role holds SELECT and nothing
+  // else on `audit_log` (migration 0407) and the direct insert answered 500.
+  const sqlTag = (strings: TemplateStringsArray, ...values: unknown[]) => ({
+    text: Array.isArray(strings) ? strings.join("?") : String(strings),
+    values,
+  });
+  return { eq: noop, and: noop, isNull: noop, sql: sqlTag };
 });
 
 vi.mock("@grc/auth", () => ({
@@ -213,6 +232,7 @@ describe("documents/[id]/upload — released versions are immutable (S06-01)", (
     txSelectQueue.length = 0;
     inserted.length = 0;
     updated.length = 0;
+    executed.length = 0;
     createdVersions.length = 0;
     auditContextCalls.length = 0;
     storagePut.mockClear();
@@ -336,7 +356,14 @@ describe("documents/[id]/upload — released versions are immutable (S06-01)", (
     expect(body.code).toBe("pdf_not_stampable");
     expect(body.reason).toBe("encrypted");
     expect(storagePut).not.toHaveBeenCalled();
-    // The rejection itself is an audit event.
-    expect(inserted.some((i) => i.table === "audit_log")).toBe(true);
+    // The rejection itself is an audit event — written through the helper
+    // the runtime role is actually allowed to call, and carrying the reason.
+    const audit = auditEntryCall();
+    expect(
+      audit,
+      "a rejected upload must be recorded in the audit trail via " +
+        "write_audit_entry()",
+    ).toBeDefined();
+    expect(audit!.values).toContain("upload_rejected_unstampable_pdf");
   });
 });

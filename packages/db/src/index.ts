@@ -73,6 +73,7 @@ import * as incidentTimelineSchema from "./schema/incident-timeline";
 import * as processRaciSchema from "./schema/process-raci";
 import * as processGrcSchema from "./schema/process-grc";
 import * as processApprovalSchema from "./schema/process-approval";
+import * as processDiagramGrcSchema from "./schema/process-diagram-grc";
 import * as apiPlatformSchema from "./schema/api-platform";
 import * as extensionSchema from "./schema/extension";
 import * as onboardingSchema from "./schema/onboarding";
@@ -380,6 +381,7 @@ export const schema = {
   ...processRaciSchema,
   ...processGrcSchema,
   ...processApprovalSchema,
+  ...processDiagramGrcSchema,
   ...apiPlatformSchema,
   ...extensionSchema,
   ...onboardingSchema,
@@ -535,6 +537,7 @@ export * from "./schema/incident-timeline";
 export * from "./schema/process-raci";
 export * from "./schema/process-grc";
 export * from "./schema/process-approval";
+export * from "./schema/process-diagram-grc";
 export * from "./schema/api-platform";
 export * from "./schema/extension";
 export * from "./schema/onboarding";

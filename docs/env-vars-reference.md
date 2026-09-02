@@ -232,6 +232,35 @@ ist ihr Zweck (vgl. `AUDIT_SEAL_KEY`).
 | ------------------------- | ------- | -------------------------------------------------------- |
 | `NEXT_TELEMETRY_DISABLED` | opt     | `1` — verhindert Next.js-Telemetry (Self-Hosted-Default) |
 
+## E2E-Testumgebung (nie produktiv)
+
+[E2E-TRIAGE-4 · 2026-09-02] Diese Variablen gehoeren an zwei verschiedene
+Stellen, und die Verwechslung hat schon zwei Triage-Runden gekostet: die
+`RATE_LIMIT_*`- und `CLAMAV_*`-Werte liest der **Server**, die `E2E_*`-Werte
+der **Testlaeufer**. Ein `RATE_LIMIT_AUTH` in `playwright.config.ts` ist ein
+beruhigendes Nichts.
+
+**Am Server (Produktionsbau der Testinstanz):**
+
+| Variable             | req/opt | Beschreibung                                                                                                                                                                                                            |
+| -------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RATE_LIMIT_DEFAULT` | opt     | `3000/60` — die Suite laeuft seriell unter EINEM Prinzipal, gemessen ueber 500 Anfragen/min gegen ein Produktbudget von 300/min. Ohne den Wert scheitern Tests mit 429, die wie Produktdefekte aussehen und keine sind. |
+| `RATE_LIMIT_AUTH`    | opt     | `1000/60` — Anmeldebudget, adressgeschluesselt.                                                                                                                                                                         |
+| `CLAMAV_OPTIONAL`    | opt     | `1` — `isClamAvRequired()` ist unter `NODE_ENV=production` wahr; ohne konfigurierten clamd weist der Upload mit **503** ab (S04-06, richtig so). Ein clamd auf `CLAMAV_HOST:3310` ist die bessere Alternative.          |
+
+**Am Testlaeufer:**
+
+| Variable            | req/opt | Beschreibung                                                                                                                                                                        |
+| ------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E2E_ROLE_PASSWORD` | **req** | Passwort aller Testkonten, mindestens 12 Zeichen. `npm run db:seed:e2e-users` legt ohne diesen Wert nichts an — ein Vorgabewert waere S02-01.                                       |
+| `E2E_EMAIL`         | opt     | Hauptkonto; leer = `e2e-admin@arctos.local`. Zeigt es auf ein vorhandenes Konto, verschiebt der Seed dieses in den Demo-Mandanten (genau eine Mitgliedschaft).                      |
+| `E2E_PASSWORD`      | opt     | Passwort des Hauptkontos; leer = `E2E_ROLE_PASSWORD`.                                                                                                                               |
+| `E2E_ORG_ID`        | opt     | Mandant, gegen den die Suite behauptet. Vorgabe in beiden `playwright.config.ts`: `ccc4cc1c-4b09-499c-8420-ebd8da655cd7`. Leer gesetzt schaltet die Mandanten-Pruefung im Setup ab. |
+| `E2E_BASE_URL`      | opt     | Ziel-URL, Vorgabe `http://localhost:3000`.                                                                                                                                          |
+
+Der vollstaendige Weg von einer leeren Datenbank steht in
+`docs/bpmn-engine/E2E-TRIAGE-4.md`, Abschnitt „Wie der Lauf reproduziert wird".
+
 ## Inspektion
 
 Einzelne Werte aus laufendem Container:

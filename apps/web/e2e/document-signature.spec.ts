@@ -4,20 +4,42 @@
  * API-first (pattern: bpm-approval-pipeline.spec.ts):
  *   1. Create a document + upload a small test PDF (programmatic bytes)
  *   2. Create a signature request with 2 signers, sequential
- *      (order: risk manager first, admin second)
+ *      (order: second signer first, the creator second)
  *   3. Out-of-turn signer (admin) → 409 (sequential enforcement);
  *      403 would indicate a non-signer — both are rejections
- *   4. First signer signs (second browser context, demo credentials
- *      from SETUP.md) → request still pending
+ *   4. First signer signs (second browser context, the role account
+ *      `db:seed:e2e-users` provisions) → request still pending
  *   5. Second signer signs → request completed
  *   6. GET /verify → chain + file integrity valid
  *   7. GET /certificate → application/pdf starting with %PDF
- *   8. Publish (four-eyes: transitions done by the risk manager, who is
+ *   8. Publish (four-eyes: transitions done by the second signer, who is
  *      neither creator nor last content editor) → GET /download returns
  *      X-Controlled-Copy: watermarked
  *
- * Requires the seeded demo user risk.manager@arctos.dev (SETUP.md) to be
- * a member of the admin's active org — otherwise the spec skips.
+ * [E2E-TRIAGE-4 · 2026-09-02] The skip is gone, and it was hiding THREE
+ * separate reasons this test could not run — only the first of which the
+ * skip message named:
+ *
+ *   1. Tenant. The second signer was `risk.manager@arctos.dev`, which
+ *      `db:seed` puts in `Meridian Holdings GmbH`, while the `request`
+ *      fixture resolved to `roles[0].orgId` of the primary account —
+ *      neither that org nor the demo tenant. `GET /users` never returned
+ *      the address and the spec skipped itself.
+ *   2. Password. The literal `arctos2026!` was removed from the seed by
+ *      WP3/S02-01; `db:seed` now hashes `SEED_DEMO_PASSWORD` or a value it
+ *      prints once. The login in step 4 could not have succeeded on any
+ *      database seeded after that change.
+ *   3. First login. That account carries `must_change_password = true`, so
+ *      even with the right password the sign-in lands on the password-change
+ *      page and `waitForURL(/dashboard/)` expires.
+ *
+ * The second signer is now `e2e-approver@arctos.local` — provisioned by
+ * `npm run db:seed:e2e-users` in the SAME tenant as the primary account, with
+ * a password the run already has and without the first-login gate. It holds
+ * `admin`, which `PUT /documents/:id/status` requires
+ * (`withAuth("admin","risk_manager","dpo","process_owner")`), so the four-eyes
+ * half of the ceremony is performed by somebody who is genuinely entitled to
+ * perform it and genuinely not the author.
  */
 import {
   test,
@@ -25,10 +47,9 @@ import {
   type Browser,
   type BrowserContext,
 } from "@playwright/test";
-import { STORAGE_STATE } from "./fixtures/storage";
+import { STORAGE_STATE, roleAccount } from "./fixtures/storage";
 
-const SIGNER_EMAIL = "risk.manager@arctos.dev";
-const SIGNER_PASSWORD = "arctos2026!";
+const SIGNER = roleAccount("approver");
 
 /** Minimal but valid single-page PDF (enough for upload + watermarking). */
 function buildTestPdf(): Buffer {
@@ -59,9 +80,27 @@ async function loginAs(
   const context = await browser.newContext({ storageState: undefined });
   const page = await context.newPage();
   await page.goto("/login");
-  await page.waitForSelector('input[type="email"]', { timeout: 15000 });
-  await page.locator('input[type="email"]').fill(email);
-  await page.locator('input[type="password"]').fill(password);
+  const emailInput = page.locator('input[type="email"]');
+  const passwordInput = page.locator('input[type="password"]');
+  await emailInput.waitFor({ state: "visible", timeout: 30000 });
+  // [E2E-TRIAGE-4] Fill, then CHECK, then submit — same hydration guard as
+  // auth.setup.ts: the selector resolves on the server-rendered markup and
+  // React discards controlled-input values when it hydrates afterwards.
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    await emailInput.fill(email);
+    await passwordInput.fill(password);
+    if (
+      (await emailInput.inputValue()) === email &&
+      (await passwordInput.inputValue()) === password
+    ) {
+      break;
+    }
+    expect(
+      attempt,
+      `the login form kept discarding its input for ${email}`,
+    ).toBeLessThan(3);
+    await page.waitForTimeout(300);
+  }
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/dashboard/, { timeout: 60000 });
   await page.close();
@@ -87,16 +126,38 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
       const adminId: string = me?.data?.id ?? me?.user?.id ?? me?.id;
       expect(adminId).toBeTruthy();
 
+      expect(
+        SIGNER.password,
+        "no password for the second signer. The ceremony needs two people; " +
+          "provision them with\n" +
+          "  E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users",
+      ).toBeTruthy();
+
       const usersRes = await request.get("/api/v1/users?limit=100");
       expect(usersRes.ok(), await usersRes.text()).toBeTruthy();
       const users: Array<{ id: string; email: string }> = (
         await usersRes.json()
       ).data;
-      const signer = users.find((u) => u.email === SIGNER_EMAIL);
-      test.skip(
-        !signer,
-        `Demo user ${SIGNER_EMAIL} not found in the current org — seed demo data first (SETUP.md).`,
-      );
+      const signer = users.find((u) => u.email === SIGNER.email);
+      // [E2E-TRIAGE-4] A hard failure, not a skip. The second signer is
+      // provisioned by a seed command in the SAME tenant as the account this
+      // request runs as; if it is absent, the environment is wrong and the
+      // run has to say so instead of reporting a green suite that never
+      // executed its own subject.
+      expect(
+        signer,
+        `${SIGNER.email} is not a member of the organisation this request ` +
+          `resolves to. Both accounts come from the same command — run\n` +
+          "  E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users\n" +
+          `Users visible here: ${users.map((u) => u.email).join(", ")}`,
+      ).toBeTruthy();
+      // Without this the four assertions about four-eyes and sequential
+      // signing would all be about one person signing twice.
+      expect(
+        signer!.id,
+        "creator and second signer must be different accounts, or neither " +
+          "the sequential order nor the four-eyes rule below asserts anything",
+      ).not.toBe(adminId);
 
       // 1. Create document + upload test PDF
       const createRes = await request.post("/api/v1/documents", {
@@ -121,7 +182,7 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
       const uploaded = (await uploadRes.json()).data;
       expect(uploaded.sha256).toMatch(/^[0-9a-f]{64}$/);
 
-      // 2. Signature request: [risk manager, admin], sequential
+      // 2. Signature request: [second signer, creator], sequential
       const reqRes = await request.post(
         `/api/v1/documents/${documentId}/signature-requests`,
         {
@@ -146,8 +207,8 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
       );
       expect([403, 409]).toContain(wrongTurn.status());
 
-      // 4. Correct signer (risk manager) signs via own session
-      signerContext = await loginAs(browser, SIGNER_EMAIL, SIGNER_PASSWORD);
+      // 4. Correct signer signs via own session
+      signerContext = await loginAs(browser, SIGNER.email, SIGNER.password!);
       const sign1 = await signerContext.request.post(
         `/api/v1/signature-requests/${requestId}/sign`,
       );
@@ -168,8 +229,44 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
         `/api/v1/signature-requests/${requestId}`,
       );
       expect(detail.ok()).toBeTruthy();
-      const detailBody = (await detail.json()).data;
-      expect(detailBody.request.status).toBe("completed");
+      // [E2E-TRIAGE-4] The real contract, measured. This line read
+      // `detailBody.request.status` — a shape `GET /signature-requests/:id`
+      // has never returned: the CREATE route answers
+      // `{data:{request,signatures}}`, the DETAIL route spreads the request
+      // FLAT into `data` and appends `documentTitle`, `versionLabel`,
+      // `versionNumber` and `signatures`. `detailBody.request` was
+      // `undefined`, so the assertion could only have thrown a TypeError —
+      // which the skip above it had hidden since the spec was written.
+      // Assert the whole ceremony instead of one field.
+      const detailBody = (await detail.json()).data as {
+        id: string;
+        status: string;
+        signatures: Array<{
+          signerUserId: string;
+          signOrder: number;
+          status: string;
+          chainHash: string | null;
+          previousChainHash: string | null;
+        }>;
+      };
+      expect(detailBody.id).toBe(requestId);
+      expect(detailBody.status).toBe("completed");
+      expect(detailBody.signatures).toHaveLength(2);
+      expect(detailBody.signatures.map((s) => s.status)).toEqual([
+        "signed",
+        "signed",
+      ]);
+      // Two DIFFERENT people, in the order the request defined, and the
+      // second link chained onto the first — the point of the ceremony.
+      expect(detailBody.signatures[0].signerUserId).toBe(signer!.id);
+      expect(detailBody.signatures[1].signerUserId).toBe(adminId);
+      expect(detailBody.signatures[0].signOrder).toBeLessThan(
+        detailBody.signatures[1].signOrder,
+      );
+      expect(detailBody.signatures[0].previousChainHash).toBeNull();
+      expect(detailBody.signatures[1].previousChainHash).toBe(
+        detailBody.signatures[0].chainHash,
+      );
 
       // 6. Verify: hash chain + file integrity valid
       const verifyRes = await request.get(
@@ -192,21 +289,21 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
       expect(certBody.subarray(0, 4).toString()).toBe("%PDF");
 
       // 8. Publish the document. Four-eyes: admin (creator + uploader)
-      // must not approve/publish — the risk manager performs both.
+      // must not approve/publish — the second signer performs both.
       const toReview = await request.put(
         `/api/v1/documents/${documentId}/status`,
         { data: { status: "in_review" } },
       );
       expect(toReview.ok(), await toReview.text()).toBeTruthy();
 
-      const rmRequest = signerContext.request;
-      const toApproved = await rmRequest.put(
+      const secondSignerRequest = signerContext.request;
+      const toApproved = await secondSignerRequest.put(
         `/api/v1/documents/${documentId}/status`,
         { data: { status: "approved" } },
       );
       expect(toApproved.ok(), await toApproved.text()).toBeTruthy();
 
-      const toPublished = await rmRequest.put(
+      const toPublished = await secondSignerRequest.put(
         `/api/v1/documents/${documentId}/status`,
         { data: { status: "published" } },
       );

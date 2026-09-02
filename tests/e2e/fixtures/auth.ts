@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { PRIMARY_ACCOUNT } from "../../../apps/web/e2e/fixtures/storage";
 
 // [ARCTOS-FULL-2026-08-31 / WP11 · S11-08, S11-07, S11-15]
 //
@@ -16,8 +17,15 @@ import { expect, type Page } from "@playwright/test";
 // named error otherwise. It also waits for a state change instead of sleeping
 // (S11-15).
 
-const EMAIL = process.env.E2E_EMAIL ?? "admin@arctos.dev";
-const PASSWORD = process.env.E2E_PASSWORD;
+// [E2E-TRIAGE-4 · 2026-09-02] One source for the primary account.
+//
+// The default was `admin@arctos.dev` — an account `db:seed` creates with
+// `must_change_password = true` and a password that exists only on the
+// operator's screen, so the default could never have signed in. It is now the
+// account `db:seed:e2e-users` provisions, with the same defaults the seed
+// writes; see `apps/web/e2e/fixtures/storage.ts`.
+const EMAIL = PRIMARY_ACCOUNT.email;
+const PASSWORD = PRIMARY_ACCOUNT.password;
 
 /**
  * [E2E-TRIAGE-2026-09-02] Optional tenant pin.
@@ -56,9 +64,11 @@ export interface Session {
 export async function login(page: Page): Promise<Session> {
   if (!PASSWORD) {
     throw new Error(
-      "E2E_PASSWORD is not set. The default admin password was removed in " +
-        "WP3 (S02-01), so there is no safe fallback any more — the E2E run " +
-        "must be given the seeded credentials via E2E_EMAIL / E2E_PASSWORD.",
+      `no password for the primary E2E account (${EMAIL}). The default admin ` +
+        "password was removed in WP3 (S02-01), so there is no fallback — " +
+        "provision the account with\n" +
+        "  E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users\n" +
+        "and export the same value (or E2E_PASSWORD) for the run.",
     );
   }
 

@@ -342,6 +342,10 @@ export const securityIncident = pgTable(
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // STUFE2-E (0454): betroffener Prozessschritt (F14,
+    // GrcElementData.incidents). ON DELETE SET NULL — ein Vorfall bleibt ein
+    // Vorfall, wenn der Schritt aus dem Diagramm verschwindet.
+    processStepId: uuid("process_step_id"),
     tags: text("tags")
       .array()
       .notNull()
@@ -351,6 +355,7 @@ export const securityIncident = pgTable(
     index("si_org_idx").on(t.orgId),
     index("si_status_idx").on(t.orgId, t.status),
     index("si_severity_idx").on(t.orgId, t.severity),
+    index("security_incident_process_step_idx").on(t.processStepId),
     index("si_breach_idx")
       .on(t.orgId)
       .where(sql`is_data_breach = true`),

@@ -18,7 +18,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organization, user } from "./platform";
+import { customRole, organization, user } from "./platform";
 import { risk } from "./risk";
 import { workItem } from "./work-item";
 import { task } from "./task";
@@ -207,11 +207,33 @@ export const control = pgTable(
       .array()
       .notNull()
       .default(sql`'{}'::text[]`),
+    // ── STUFE2-E (0453) ────────────────────────────────────────
+    // `GrcControl.isKey`. Ausdruecklich gesetzt, nicht aus der Beschreibung
+    // erraten: eine uebersehene Schluesselkontrolle ist ein Testloch, das
+    // erst in der Jahresabschlusspruefung auffaellt.
+    isKey: boolean("is_key").notNull().default(false),
+    // Verantwortliche ROLLE der Kontrolle — Grundlage der
+    // Selbstkontroll-Pruefung (§3.4/A4). `ownerId` zeigt auf einen BENUTZER
+    // und beantwortet diese Frage nicht. ON DELETE SET NULL: faellt die Rolle
+    // weg, ist die Pruefung nicht durchfuehrbar, und die Diagrammschicht
+    // meldet dann nichts, statt etwas zu behaupten.
+    ownerRoleId: uuid("owner_role_id").references(() => customRole.id, {
+      onDelete: "set null",
+    }),
+    // Naechste Faelligkeit des Nachweises (F4). Gepflegt, nicht aus
+    // `frequency` hochgerechnet. `last_test_result`/`last_evidence_at` kommen
+    // bewusst NICHT als Spalten — sie sind aus `control_test` bzw. `evidence`
+    // ableitbar, und eine ungepflegte Kopie waere eine zweite Wahrheit
+    // (Begruendung im Kopfkommentar von Migration 0453).
+    evidenceDueAt: timestamp("evidence_due_at", { withTimezone: true }),
   },
   (table) => [
     index("control_org_status_idx").on(table.orgId, table.status),
     index("control_owner_idx").on(table.ownerId),
     index("control_type_idx").on(table.orgId, table.controlType),
+    index("control_owner_role_idx").on(table.ownerRoleId),
+    index("control_evidence_due_idx").on(table.orgId, table.evidenceDueAt),
+    index("control_is_key_idx").on(table.orgId, table.isKey),
   ],
 );
 

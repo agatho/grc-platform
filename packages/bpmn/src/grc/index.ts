@@ -26,6 +26,11 @@
 
 export {
   EMPTY_OVERLAY_DATA,
+  // [STUFE2-E] Der Typ war im Vertrag deklariert, aber nicht ausgeliefert —
+  // der Overlay-Endpunkt fuellt `elements[].conformance.matchKind` seit
+  // Migration 0451 und braucht ihn, um den String zu pruefen statt ihn zu
+  // behaupten.
+  type GrcActivityMatchKind,
   type GrcAsset,
   type GrcBia,
   type GrcCalledProcess,

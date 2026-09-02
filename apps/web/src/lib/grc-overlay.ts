@@ -25,8 +25,13 @@
  */
 
 import type {
+  GrcActivityMatchKind,
   GrcAsset,
+  GrcBia,
   GrcComments,
+  GrcConformanceElement,
+  GrcConformanceSummary,
+  GrcDataCategory,
   GrcFrameworkMapping,
   GrcControl,
   GrcControlEffectiveness,
@@ -34,13 +39,17 @@ import type {
   GrcElementData,
   GrcFinding,
   GrcFindingSeverity,
+  GrcLaneData,
   GrcLineOfDefense,
   GrcObjectRef,
+  GrcOutageScenario,
   GrcOverlayData,
   GrcRaci,
   GrcRisk,
   GrcRoleRef,
+  GrcRopa,
   GrcSimulation,
+  GrcSodRule,
 } from "@grc/bpmn/grc";
 
 /* ------------------------------------------------------------------ *
@@ -54,6 +63,8 @@ export interface StepRow {
   readonly calledProcessId: string | null;
   readonly raciResponsibleRoleId: string | null;
   readonly raciAccountableRoleId: string | null;
+  /** `process_step.step_key` seit Migration 0445. */
+  readonly stepKey?: string | null;
 }
 
 export interface RiskRow {
@@ -74,6 +85,12 @@ export interface ControlRow {
   readonly lastTestedAt: string | null;
   readonly lastTestResult: string | null;
   readonly lastEvidenceAt: string | null;
+  /** `control.is_key` seit Migration 0453. */
+  readonly isKey?: boolean | null;
+  /** `control.owner_role_id` seit Migration 0453 — die Rolle, nicht der Nutzer. */
+  readonly ownerRoleId?: string | null;
+  /** `control.evidence_due_at` seit Migration 0453. */
+  readonly evidenceDueAt?: string | null;
 }
 
 /** `risk_control` — die Verknüpfung, die F1 überhaupt erst rechenbar macht. */
@@ -161,6 +178,131 @@ export interface CalledProcessRow {
   readonly openFindings: number;
 }
 
+/* ------------------------------------------------------------------ *
+ * STUFE2-E — die Zeilen der zehn neuen Tabellen (Migrationen 0444–0452)
+ * ------------------------------------------------------------------ */
+
+/**
+ * `process_lane` (0444) samt aufgelöstem Träger.
+ *
+ * Schlüssel ist die **BPMN-Element-ID**, nicht die Zeilen-ID: der Vertrag
+ * führt `lanes` als Record über Diagrammelemente, und die Diagrammschicht
+ * schlägt dort mit der Shape-ID nach.
+ */
+export interface LaneRow {
+  readonly bpmnElementId: string;
+  readonly name: string | null;
+  readonly kind: string | null;
+  readonly roleId: string | null;
+  readonly orgUnitId: string | null;
+  readonly orgUnitName: string | null;
+  readonly vendorId: string | null;
+  readonly vendorName: string | null;
+  readonly vendorRiskClass: string | null;
+  readonly isExternal: boolean | null;
+  readonly thirdCountry: string | null;
+}
+
+/**
+ * Quoten je Lane-Rolle, getrennt beschafft.
+ *
+ * Sie hängen nicht an der Lane, sondern an ihrer Rolle — und sie sind eine
+ * Aggregation über Mitgliedschaften, Schulungen und Kenntnisnahmen. Ohne
+ * Pflichtschulung bzw. Pflichtverteilung im Mandanten gibt es **keine** Quote:
+ * „0 %" hieße „niemand ist geschult", und das wäre eine Aussage, die die Daten
+ * nicht tragen.
+ */
+export interface LaneRatioRow {
+  readonly roleId: string;
+  readonly memberCount: number;
+  readonly trainedCount: number;
+  readonly acknowledgedCount: number;
+  readonly hasMandatoryTraining: boolean;
+  readonly hasMandatoryPolicy: boolean;
+}
+
+/** `process_step_raci` (0447) — die Heimat von C und I. */
+export interface RaciRow {
+  readonly processStepId: string;
+  readonly roleId: string;
+  readonly raciRole: string;
+}
+
+/** `sod_rule` (0446) — die Regelmenge von F3. */
+export interface SodRuleRow {
+  readonly id: string;
+  readonly roleAId: string;
+  readonly roleBId: string;
+  readonly severity: string | null;
+  readonly rationale: string | null;
+  readonly frameworkRef: string | null;
+}
+
+/** `process_step_ropa` (0448) mit dem Status der verknüpften DPIA. */
+export interface RopaRow {
+  readonly processStepId: string;
+  readonly isProcessingActivity: boolean;
+  readonly purpose: string | null;
+  readonly legalBasis: string | null;
+  readonly retentionMonths: number | null;
+  readonly retentionBasis: string | null;
+  readonly requiresDpia: boolean;
+  readonly dpiaId: string | null;
+  readonly dpiaStatus: string | null;
+  readonly transferThirdCountry: boolean;
+  readonly transferCountry: string | null;
+  readonly transferSafeguard: string | null;
+}
+
+/** `process_step_data_category` ⋈ `ropa_data_category` (0448). */
+export interface DataCategoryRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly title: string | null;
+  readonly isSpecialCategory: boolean;
+}
+
+/** `process_step_recipient` (0448), Name über `vendor` bzw. `eam_org_unit`. */
+export interface RecipientRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly title: string | null;
+}
+
+/** `process_step_bia` (0449) — in Minuten, nicht in Stunden. */
+export interface BiaRow {
+  readonly processStepId: string;
+  readonly criticality: string | null;
+  readonly mtpdMinutes: number | null;
+  readonly rtoMinutes: number | null;
+  readonly rpoMinutes: number | null;
+  readonly workaround: string | null;
+  readonly workaroundMaxDurationMinutes: number | null;
+}
+
+/** `process_step_document` ⋈ `document` (0450). */
+export interface DocumentRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly title: string | null;
+}
+
+/** Je Schritt aus `process_event_activity_map` ⋈ `process_event` (0451). */
+export interface ConformanceElementRow {
+  readonly processStepId: string;
+  readonly matchKind: string | null;
+  readonly observedCases: number | null;
+  readonly reworkLoops: number | null;
+}
+
+/** Diagrammweite Conformance-Kennzahlen — der Torwächter von F7. */
+export interface ConformanceSummaryRow {
+  readonly coverageRatio: number | null;
+  readonly unmappedActivities: readonly string[] | null;
+  readonly totalTraces: number | null;
+  readonly conformantTraces: number | null;
+}
+
 export interface OverlayQueryResult {
   readonly steps: readonly StepRow[];
   readonly risks: readonly RiskRow[];
@@ -174,6 +316,19 @@ export interface OverlayQueryResult {
   readonly simulation: readonly SimulationRow[];
   readonly dmn: readonly DmnRow[];
   readonly calledProcesses: readonly CalledProcessRow[];
+  // --- STUFE2-E; alle optional, damit Bestandstests und Teilabfragen
+  //     (`?layers=`) unverändert bauen.
+  readonly lanes?: readonly LaneRow[];
+  readonly laneRatios?: readonly LaneRatioRow[];
+  readonly raci?: readonly RaciRow[];
+  readonly sodRules?: readonly SodRuleRow[];
+  readonly ropa?: readonly RopaRow[];
+  readonly dataCategories?: readonly DataCategoryRow[];
+  readonly recipients?: readonly RecipientRow[];
+  readonly bia?: readonly BiaRow[];
+  readonly documents?: readonly DocumentRow[];
+  readonly conformanceElements?: readonly ConformanceElementRow[];
+  readonly conformanceSummary?: ConformanceSummaryRow | undefined;
 }
 
 export interface BuildOverlayOptions {
@@ -183,6 +338,15 @@ export interface BuildOverlayOptions {
   readonly processName?: string | undefined;
   readonly versionId?: string | undefined;
   readonly ttlSeconds?: number | undefined;
+  /**
+   * Auswahl der Ausfallsimulation (F6).
+   *
+   * Kommt aus den Abfrageparametern und **nicht** aus der Datenbank: welches
+   * Asset ausfällt, ist eine Frage des Betrachters, keine hinterlegte
+   * Tatsache. Ohne Auswahl liefert der Endpunkt kein `diagram.outage`, und
+   * `simulateOutage` gibt `undefined` zurück — der Layer schweigt.
+   */
+  readonly outage?: GrcOutageScenario | undefined;
 }
 
 /* ------------------------------------------------------------------ *
@@ -201,69 +365,39 @@ export const MISSING_TODAY: ReadonlyArray<{
   readonly reason: string;
 }> = [
   {
-    field: "elements[].controls[].isKey",
-    reason:
-      "control.is_key existiert nicht (Schemabedarf §5.2). Ohne die Spalte ist jede Schlüsselkontroll-Markierung geraten.",
-  },
-  {
-    field: "elements[].controls[].ownerRole",
-    reason:
-      "control.owner_id zeigt auf einen Benutzer, nicht auf eine Rolle; control.owner_role_id fehlt (§5.2). Damit ist die Selbstkontroll-Prüfung (§3.4/A4) nicht rechenbar.",
-  },
-  {
-    field: "elements[].controls[].evidenceDueAt",
-    reason:
-      "control.evidence_due_at fehlt (§5.2). F4 fällt deshalb auf die Altersregel zurück, die die GRC-Schicht dafür vorsieht.",
-  },
-  {
-    field: "elements[].raci.consulted, .raci.informed",
-    reason:
-      "process_step_raci fehlt (§5.1). process_raci_override kennt zwar C und I, benennt die Beteiligten aber über rohe BPMN-Lane-IDs ohne Fremdschlüssel auf custom_role — eine Lane als Rolle auszugeben wäre eine Erfindung.",
-  },
-  {
-    field: "elements[].ropa, .bia, .documents",
-    reason:
-      "Alle drei hängen im heutigen Schema am Prozess, nicht am Element (process_ropa_profile 1:1, bia_process_impact(process_id), process_document(process_id) — §5.1/§5.2). Eine Prozessaussage an jedes Element zu hängen wäre falsch.",
-  },
-  {
     field: "elements[].frameworks[].frameworkName",
     reason:
       "process_framework_mapping führt nur den Rahmenwerkscode (framework_code), keinen Anzeigenamen; der Katalog dahinter ist optional verknüpft. Ausgegeben wird deshalb der Code — eine Abkürzung, kein erfundener Name.",
   },
   {
-    field: "elements[].conformance und diagram.conformance",
+    field: "elements[].conformance.meanDurationMinutes, .isBottleneck",
     reason:
-      "process_event.activity ist ein Aktivitätsname, keine BPMN-ID; ohne process_event_activity_map (§5.1) gibt es keine Zuordnungsquote. Die GRC-Schicht verweigert F7 ohne coverageRatio ausdrücklich.",
+      "process_event trägt genau einen Zeitstempel je Ereignis und kein Lebenszyklus-Merkmal (start/complete). Ohne Anfang UND Ende gibt es keine Dauer, und ohne Dauer keinen Engpass. Die Differenz zum nächsten Ereignis desselben Falls wäre die Wartezeit davor, nicht die Bearbeitungszeit — sie als Dauer auszugeben wäre eine andere Größe unter demselben Namen.",
+  },
+  {
+    field: "diagram.conformance.deviations",
+    reason:
+      "fitness_gaps (process_conformance_result) führt {activity, type, frequency, percentage} — einen Aktivitätsnamen mit Häufigkeit. Der Vertrag verlangt ein KANTENPAAR (fromElementId/toElementId). Aus einem Knoten ein Paar zu machen wäre geraten.",
   },
   {
     field: "elements[].incidents, .workItems",
     reason:
-      "security_incident und work_item haben keinen Elementbezug (§5.2). Vertrag vorbereitet, Layer bewusst nicht gebaut.",
+      "Der Elementbezug existiert seit Migration 0454 (security_incident.process_step_id, work_item.process_step_id). Die zugehörigen Layer F14/F16 sind bewusst nicht gebaut (STUFE2-A2-GRC.md §6); der Endpunkt fragt die Spalten deshalb nicht ab — ein Feld zu liefern, das keine Schicht liest, ist Ballast, kein Nutzen. Eine Zeile Abfrage je Feld, sobald ein Layer sie braucht.",
   },
   {
-    field: "elements[].stepKey",
+    field: "elements[].controls[].lastTestResult, .lastEvidenceAt",
     reason:
-      "process_step.step_key existiert nicht (§5.2); Schlüssel des Datensatzes bleibt die BPMN-Element-ID.",
-  },
-  {
-    field: "lanes",
-    reason:
-      "Es gibt keine Lane-Tabelle (process_lane, §5.1). Ohne sie sind Vertrauensgrenzen (F5), Lane-Quoten (F17) und der Lane-Bezug der SoD-Prüfung datenlos.",
+      "Beide werden geliefert, aber ABGELEITET (jüngster control_test bzw. evidence(entity_type='control')) und nicht aus einer Spalte gelesen. Migration 0453 legt sie bewusst nicht als Spalten an: eine gespeicherte Kopie, die nichts fortschreibt, zeigte nach dem nächsten Kontrolltest einen veralteten Stand an.",
   },
   {
     field: "edges",
     reason:
-      "Häufigkeit und Verzweigungswahrscheinlichkeit je Kante kommen aus dem Ereignisprotokoll; die Zuordnung fehlt (siehe conformance). carriesPersonalData setzt process_step_ropa voraus.",
+      "Häufigkeit und Verzweigungswahrscheinlichkeit je KANTE bräuchten eine Zuordnung des Ereignisprotokolls auf Übergänge; process_event_activity_map (0451) ordnet Aktivitäten zu, nicht Übergänge. carriesPersonalData ist dagegen nicht mehr nötig: computeTrustBoundaries leitet den Personenbezug aus dem ROPA-Datensatz der beiden Kantenenden ab.",
   },
   {
-    field: "diagram.sodRules",
+    field: "diagram.framework",
     reason:
-      "sod_rule fehlt (§5.1). abac_policy und access_review decken Zugriffsrechte ab, nicht Aufgabentrennung.",
-  },
-  {
-    field: "diagram.outage, diagram.framework",
-    reason:
-      "Beides sind Auswahlparameter einer Simulation bzw. Sicht. Die Ausfallsimulation braucht zusätzlich process_step_bia (§5.1); ohne Elementebene wäre der MTPD-Reißpunkt geschätzt statt gerechnet.",
+      "Auswahlparameter der Sicht F8 (welches Rahmenwerk, welche Anforderungen), keine hinterlegte Tatsache. Er gehört an die Sichtwahl der Oberfläche, nicht in den Datensatz.",
   },
 ];
 
@@ -475,6 +609,84 @@ function shortFor(name: string): string | undefined {
     .join("");
 }
 
+/* ------------------------------------------------------------------ *
+ * STUFE2-E — Abbildungen der neuen Tabellen
+ * ------------------------------------------------------------------ */
+
+const CRITICALITIES = new Set<GrcCriticality>([
+  "very_high",
+  "high",
+  "medium",
+  "low",
+]);
+
+const MATCH_KINDS = new Set<GrcActivityMatchKind>([
+  "exact",
+  "normalized",
+  "fuzzy",
+  "manual",
+  "unmapped",
+]);
+
+/**
+ * `sod_rule.severity` → `GrcFindingSeverity`.
+ *
+ * Migration 0446 führt die Spalte ausdrücklich in der **Vertragsform** und
+ * nicht als `finding_severity` (der ISO-19011-Enum mit zehn Werten), damit
+ * genau hier keine zweite verlustbehaftete Übersetzung entsteht. Die
+ * CHECK-Bedingung der Tabelle lässt nur die vier Werte zu; der Rückfall auf
+ * `high` ist der Vorgabewert derselben Spalte und praktisch unerreichbar — er
+ * steht hier, damit ein von außen eingespieltes Datum die Regel nicht still
+ * auf die harmloseste Stufe fallen lässt.
+ */
+function sodSeverity(value: string | null): GrcFindingSeverity {
+  const normalized = nonEmpty(value);
+  return normalized && SEVERITIES.has(normalized as GrcFindingSeverity)
+    ? (normalized as GrcFindingSeverity)
+    : "high";
+}
+
+/**
+ * `dpia_status` (Migration 0060ff.) → die vier Stufen von `GrcRopa.dpiaStatus`.
+ *
+ * Die Zuordnung ist bewusst grob und in eine Richtung vorsichtig: `rejected`
+ * wird **nicht** `done`. Eine abgelehnte Folgenabschätzung heißt, dass die
+ * Verarbeitung so nicht laufen darf — sie als „abgeschlossen" anzuzeigen wäre
+ * die Umkehrung der Aussage. `pending_dpo_review` ist laufend, nicht fertig.
+ */
+function dpiaStatusFor(value: string | null): GrcRopa["dpiaStatus"] {
+  switch (nonEmpty(value)) {
+    case "completed":
+    case "approved":
+      return "done";
+    case "in_progress":
+    case "pending_dpo_review":
+    case "draft":
+      return "in_progress";
+    case "rejected":
+      return "required";
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Eine Quote nur, wenn sie eine Aussage ist.
+ *
+ * `0/0` ist keine Null-Prozent-Quote, sondern keine Quote. Und ohne eine
+ * einzige Pflichtschulung im Mandanten wäre „0 % geschult" die Aussage
+ * „niemand ist geschult", obwohl in Wahrheit niemand etwas zu absolvieren
+ * hat — genau die Sorte Befund, die ein Prüfungswerkzeug nicht erfinden darf.
+ */
+function ratio(
+  count: number,
+  total: number,
+  applicable: boolean,
+): number | undefined {
+  if (!applicable || total <= 0) return undefined;
+  return count / total;
+}
+
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 /**
@@ -532,6 +744,17 @@ export function buildDiagramOverlay(
     set.add(control.controlId);
   }
 
+  // --- Rollen (zuerst: Kontrollen und RACI schlagen darin nach) ------------
+  const roleById = new Map<string, GrcRoleRef>();
+  for (const row of rows.roles) {
+    const name = nonEmpty(row.name);
+    if (!name) continue;
+    const ref: Mutable<GrcRoleRef> = { id: row.id, name };
+    const short = shortFor(name);
+    if (short) ref.short = short;
+    roleById.set(row.id, ref);
+  }
+
   // --- Kontrollen ---------------------------------------------------------
   const controlsByStep = new Map<string, GrcControl[]>();
   for (const row of rows.controls) {
@@ -547,6 +770,17 @@ export function buildDiagramOverlay(
     if (lastTestResult) control.lastTestResult = lastTestResult;
     const evidenceAt = nonEmpty(row.lastEvidenceAt);
     if (evidenceAt) control.lastEvidenceAt = evidenceAt;
+    // STUFE2-E (0453). `isKey` wird nur gesetzt, wenn die Spalte tatsächlich
+    // einen Wahrheitswert liefert — `undefined` heißt „nicht abgefragt", und
+    // daraus `false` zu machen wäre die Aussage „keine Schlüsselkontrolle".
+    if (typeof row.isKey === "boolean") control.isKey = row.isKey;
+    const ownerRoleId = nonEmpty(row.ownerRoleId);
+    if (ownerRoleId) {
+      const ownerRole = roleById.get(ownerRoleId);
+      if (ownerRole) control.ownerRole = ownerRole;
+    }
+    const evidenceDueAt = nonEmpty(row.evidenceDueAt);
+    if (evidenceDueAt) control.evidenceDueAt = evidenceDueAt;
     list.push(control);
     controlsByStep.set(row.processStepId, list);
   }
@@ -632,16 +866,47 @@ export function buildDiagramOverlay(
     if (entry) entry.assets = list;
   }
 
-  // --- Line of Defense, RACI (R/A), Call Activity -------------------------
-  const roleById = new Map<string, GrcRoleRef>();
-  for (const row of rows.roles) {
-    const name = nonEmpty(row.name);
-    if (!name) continue;
-    const ref: Mutable<GrcRoleRef> = { id: row.id, name };
-    const short = shortFor(name);
-    if (short) ref.short = short;
-    roleById.set(row.id, ref);
+  // --- RACI aus `process_step_raci` (0447) ---------------------------------
+  //
+  // Vorrangregel, einmal festgelegt und getestet: eine Zeile dieser Tabelle
+  // gewinnt gegen die denormalisierte Spalte an `process_step`. Sie ist die
+  // spezifischere und die pflegbare Angabe; die Spalten bleiben der
+  // Bestandsweg für R und A. C und I gibt es ausschließlich hier.
+  const raciRowsByStep = new Map<
+    string,
+    { R?: GrcRoleRef; A?: GrcRoleRef; C: GrcRoleRef[]; I: GrcRoleRef[] }
+  >();
+  for (const row of rows.raci ?? []) {
+    const role = roleById.get(row.roleId);
+    if (!role) continue;
+    let slot = raciRowsByStep.get(row.processStepId);
+    if (!slot) {
+      slot = { C: [], I: [] };
+      raciRowsByStep.set(row.processStepId, slot);
+    }
+    switch (row.raciRole) {
+      case "R":
+        slot.R = role;
+        break;
+      case "A":
+        slot.A = role;
+        break;
+      case "C":
+        slot.C.push(role);
+        break;
+      case "I":
+        slot.I.push(role);
+        break;
+      default:
+        // Die CHECK-Bedingung der Tabelle lässt nur RACI zu; alles andere
+        // wird verworfen statt in einen der vier Töpfe geraten.
+        break;
+    }
   }
+  // Stabile Reihenfolge — die Diagrammschicht löst Slotkonflikte auch über
+  // die Reihenfolge gleichrangiger Signale auf.
+  const byName = (a: GrcRoleRef, b: GrcRoleRef): number =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : a.id < b.id ? -1 : 1;
 
   const rollupByProcess = new Map<string, CalledProcessRow>();
   for (const row of rows.calledProcesses) {
@@ -658,16 +923,36 @@ export function buildDiagramOverlay(
       if (entry) entry.lineOfDefense = lod as GrcLineOfDefense;
     }
 
-    const responsible = step.raciResponsibleRoleId
-      ? roleById.get(step.raciResponsibleRoleId)
-      : undefined;
-    const accountable = step.raciAccountableRoleId
-      ? roleById.get(step.raciAccountableRoleId)
-      : undefined;
-    if (responsible || accountable) {
+    const stepKey = nonEmpty(step.stepKey);
+    if (stepKey) {
+      const entry = at(step.id);
+      if (entry) entry.stepKey = stepKey;
+    }
+
+    const explicit = raciRowsByStep.get(step.id);
+    const responsible =
+      explicit?.R ??
+      (step.raciResponsibleRoleId
+        ? roleById.get(step.raciResponsibleRoleId)
+        : undefined);
+    const accountable =
+      explicit?.A ??
+      (step.raciAccountableRoleId
+        ? roleById.get(step.raciAccountableRoleId)
+        : undefined);
+    const consulted = [...(explicit?.C ?? [])].sort(byName);
+    const informed = [...(explicit?.I ?? [])].sort(byName);
+    if (
+      responsible ||
+      accountable ||
+      consulted.length > 0 ||
+      informed.length > 0
+    ) {
       const raci: Mutable<GrcRaci> = {};
       if (responsible) raci.responsible = responsible;
       if (accountable) raci.accountable = accountable;
+      if (consulted.length > 0) raci.consulted = consulted;
+      if (informed.length > 0) raci.informed = informed;
       const entry = at(step.id);
       if (entry) entry.raci = raci;
     }
@@ -776,6 +1061,194 @@ export function buildDiagramOverlay(
     entry.simulation = simulation;
   }
 
+  // --- Datenschutz: ROPA, Kategorien, Empfänger (0448) ---------------------
+  //
+  // Reihenfolge zählt: Kategorien und Empfänger werden zuerst nach Schritt
+  // gebündelt, damit `GrcRopa` in einem Stück entsteht. Ein Schritt **ohne**
+  // ROPA-Zeile bekommt kein `ropa` — auch dann nicht, wenn er Kategorien
+  // trägt. `personalDataStage` liest `isProcessingActivity`, und eine
+  // Kategorie ohne die ausdrückliche Feststellung „hier wird verarbeitet"
+  // wäre genau die Schlussfolgerung, die ein Mensch treffen muss.
+  const categoriesByStep = new Map<string, GrcDataCategory[]>();
+  for (const row of rows.dataCategories ?? []) {
+    const title = nonEmpty(row.title);
+    if (!title) continue;
+    const list = categoriesByStep.get(row.processStepId) ?? [];
+    const category: Mutable<GrcDataCategory> = { id: row.id, title };
+    if (row.isSpecialCategory) category.isSpecialCategory = true;
+    list.push(category);
+    categoriesByStep.set(row.processStepId, list);
+  }
+
+  const recipientsByStep = new Map<string, GrcObjectRef[]>();
+  for (const row of rows.recipients ?? []) {
+    const title = nonEmpty(row.title);
+    if (!title) continue;
+    const list = recipientsByStep.get(row.processStepId) ?? [];
+    list.push({ id: row.id, title });
+    recipientsByStep.set(row.processStepId, list);
+  }
+
+  for (const row of rows.ropa ?? []) {
+    const ropa: Mutable<GrcRopa> = {
+      isProcessingActivity: row.isProcessingActivity === true,
+    };
+    const purpose = nonEmpty(row.purpose);
+    if (purpose) ropa.purpose = purpose;
+    const legalBasis = nonEmpty(row.legalBasis);
+    if (legalBasis) ropa.legalBasis = legalBasis;
+    if (typeof row.retentionMonths === "number") {
+      ropa.retentionMonths = row.retentionMonths;
+    }
+    const retentionBasis = nonEmpty(row.retentionBasis);
+    if (retentionBasis) ropa.retentionBasis = retentionBasis;
+    if (row.requiresDpia === true) ropa.requiresDpia = true;
+    const dpiaId = nonEmpty(row.dpiaId);
+    if (dpiaId) {
+      ropa.dpiaId = dpiaId;
+      // Nur aus der verknüpften Akte. Ohne Verknüpfung bleibt der Status weg
+      // — der Layer sagt dann „erforderlich, aber nicht verknüpft", und das
+      // ist der Befund, nicht ein erratener Zustand.
+      const status = dpiaStatusFor(row.dpiaStatus);
+      if (status) ropa.dpiaStatus = status;
+    }
+    if (row.transferThirdCountry === true) ropa.transferThirdCountry = true;
+    const transferCountry = nonEmpty(row.transferCountry);
+    if (transferCountry) ropa.transferCountry = transferCountry.toUpperCase();
+    const transferSafeguard = nonEmpty(row.transferSafeguard);
+    if (transferSafeguard) ropa.transferSafeguard = transferSafeguard;
+
+    const categories = categoriesByStep.get(row.processStepId);
+    if (categories && categories.length > 0) ropa.dataCategories = categories;
+    const recipients = recipientsByStep.get(row.processStepId);
+    if (recipients && recipients.length > 0) ropa.recipients = recipients;
+
+    const entry = at(row.processStepId);
+    if (entry) entry.ropa = ropa;
+  }
+
+  // --- Kontinuität (0449) --------------------------------------------------
+  //
+  // `criticality` ist Pflichtfeld des Vertrags. Eine Zeile mit einem Wert
+  // außerhalb der vier Stufen wird verworfen statt auf „low" normalisiert:
+  // eine unlesbare Einstufung als niedrigste auszugeben wäre eine Entwarnung.
+  for (const row of rows.bia ?? []) {
+    const criticality = nonEmpty(row.criticality);
+    if (!criticality || !CRITICALITIES.has(criticality as GrcCriticality)) {
+      continue;
+    }
+    const bia: Mutable<GrcBia> = {
+      criticality: criticality as GrcCriticality,
+    };
+    if (typeof row.mtpdMinutes === "number") bia.mtpdMinutes = row.mtpdMinutes;
+    if (typeof row.rtoMinutes === "number") bia.rtoMinutes = row.rtoMinutes;
+    if (typeof row.rpoMinutes === "number") bia.rpoMinutes = row.rpoMinutes;
+    const workaround = nonEmpty(row.workaround);
+    if (workaround) bia.workaround = workaround;
+    // Die 0 wird ausdrücklich übernommen — sie heißt „trägt nicht" und ist
+    // eine Aussage, kein fehlender Wert (STUFE2-A2-GRC.md §7.4).
+    if (typeof row.workaroundMaxDurationMinutes === "number") {
+      bia.workaroundMaxDurationMinutes = row.workaroundMaxDurationMinutes;
+    }
+    const entry = at(row.processStepId);
+    if (entry) entry.bia = bia;
+  }
+
+  // --- Dokumente (0450) ----------------------------------------------------
+  const documentsByStep = new Map<string, GrcObjectRef[]>();
+  for (const row of rows.documents ?? []) {
+    const title = nonEmpty(row.title);
+    if (!title) continue;
+    const list = documentsByStep.get(row.processStepId) ?? [];
+    list.push({ id: row.id, title });
+    documentsByStep.set(row.processStepId, list);
+  }
+  for (const [stepId, list] of documentsByStep) {
+    const entry = at(stepId);
+    if (entry) entry.documents = list;
+  }
+
+  // --- Conformance je Element (0451) ---------------------------------------
+  for (const row of rows.conformanceElements ?? []) {
+    const matchKind = nonEmpty(row.matchKind);
+    if (!matchKind || !MATCH_KINDS.has(matchKind as GrcActivityMatchKind)) {
+      continue;
+    }
+    const conformance: Mutable<GrcConformanceElement> = {
+      matchKind: matchKind as GrcActivityMatchKind,
+    };
+    if (typeof row.observedCases === "number") {
+      conformance.observedCases = row.observedCases;
+    }
+    if (typeof row.reworkLoops === "number") {
+      conformance.reworkLoops = row.reworkLoops;
+    }
+    // `meanDurationMinutes` und `isBottleneck` bleiben weg — siehe
+    // MISSING_TODAY: `process_event` trägt keinen Lebenszyklus.
+    const entry = at(row.processStepId);
+    if (entry) entry.conformance = conformance;
+  }
+
+  // --- Lanes (0444) --------------------------------------------------------
+  //
+  // Schlüssel ist die BPMN-Element-ID der Lane bzw. des Pools; die
+  // Diagrammschicht schlägt mit der Shape-ID nach.
+  const ratioByRole = new Map<string, LaneRatioRow>();
+  for (const row of rows.laneRatios ?? []) {
+    ratioByRole.set(row.roleId, row);
+  }
+  const lanes = new Map<string, GrcLaneData>();
+  for (const row of rows.lanes ?? []) {
+    const elementId = nonEmpty(row.bpmnElementId);
+    if (!elementId) continue;
+    const lane: Mutable<GrcLaneData> = {};
+    const name = nonEmpty(row.name);
+    if (name) lane.name = name;
+    const kind = nonEmpty(row.kind);
+    if (kind === "lane" || kind === "pool") lane.kind = kind;
+    const roleId = nonEmpty(row.roleId);
+    const role = roleId ? roleById.get(roleId) : undefined;
+    if (role) lane.role = role;
+    const orgUnitId = nonEmpty(row.orgUnitId);
+    const orgUnitName = nonEmpty(row.orgUnitName);
+    if (orgUnitId && orgUnitName) {
+      lane.orgUnit = { id: orgUnitId, title: orgUnitName };
+    }
+    const vendorId = nonEmpty(row.vendorId);
+    const vendorName = nonEmpty(row.vendorName);
+    if (vendorId && vendorName) {
+      const vendor: Mutable<NonNullable<GrcLaneData["vendor"]>> = {
+        id: vendorId,
+        name: vendorName,
+      };
+      const riskClass = nonEmpty(row.vendorRiskClass);
+      if (riskClass) vendor.riskClass = riskClass;
+      lane.vendor = vendor;
+    }
+    if (row.isExternal === true) lane.isExternal = true;
+    const thirdCountry = nonEmpty(row.thirdCountry);
+    if (thirdCountry) lane.thirdCountry = thirdCountry.toUpperCase();
+
+    const counts = roleId ? ratioByRole.get(roleId) : undefined;
+    if (counts) {
+      const training = ratio(
+        counts.trainedCount,
+        counts.memberCount,
+        counts.hasMandatoryTraining,
+      );
+      if (training !== undefined) lane.trainingRatio = training;
+      const ack = ratio(
+        counts.acknowledgedCount,
+        counts.memberCount,
+        counts.hasMandatoryPolicy,
+      );
+      if (ack !== undefined) lane.acknowledgmentRatio = ack;
+    }
+
+    if (Object.keys(lane).length === 0) continue;
+    lanes.set(elementId, lane);
+  }
+
   const diagram: Mutable<NonNullable<GrcOverlayData["diagram"]>> = {
     processId: options.processId,
     asOf: options.computedAt,
@@ -784,6 +1257,72 @@ export function buildDiagramOverlay(
     diagram.processName = options.processName;
   if (options.versionId !== undefined) diagram.versionId = options.versionId;
 
+  // --- SoD-Regeln (0446) ---------------------------------------------------
+  //
+  // Eine Regel, deren beide Rollen der Datensatz nicht kennt, wird
+  // weggelassen: `computeSod` fände damit ohnehin nichts, und eine Regel ohne
+  // benennbare Rollen in der Kopfzeile mitzuzählen wäre eine Zahl ohne Inhalt.
+  const sodRules: GrcSodRule[] = [];
+  for (const row of rows.sodRules ?? []) {
+    if (!roleById.has(row.roleAId) || !roleById.has(row.roleBId)) continue;
+    const rule: Mutable<GrcSodRule> = {
+      id: row.id,
+      roleAId: row.roleAId,
+      roleBId: row.roleBId,
+      severity: sodSeverity(row.severity),
+    };
+    const rationale = nonEmpty(row.rationale);
+    if (rationale) rule.rationale = rationale;
+    const frameworkRef = nonEmpty(row.frameworkRef);
+    if (frameworkRef) rule.frameworkRef = frameworkRef;
+    sodRules.push(rule);
+  }
+  if (sodRules.length > 0) diagram.sodRules = sodRules;
+
+  // --- Ausfallszenario (F6) ------------------------------------------------
+  //
+  // Kommt aus den Abfrageparametern, nicht aus der Datenbank. Der Name des
+  // Assets wird aus den bereits geladenen Zeilen aufgelöst, statt ihn erneut
+  // abzufragen oder die ID als Namen auszugeben.
+  if (options.outage) {
+    const scenario: Mutable<GrcOutageScenario> = {
+      assetId: options.outage.assetId,
+    };
+    const known = rows.assets.find(
+      (row) => row.assetId === options.outage?.assetId,
+    );
+    const assetName =
+      nonEmpty(options.outage.assetName) ?? nonEmpty(known?.name);
+    if (assetName) scenario.assetName = assetName;
+    if (typeof options.outage.elapsedMinutes === "number") {
+      scenario.elapsedMinutes = options.outage.elapsedMinutes;
+    }
+    diagram.outage = scenario;
+  }
+
+  // --- Conformance-Zusammenfassung (der Torwächter von F7) -----------------
+  const summaryRow = rows.conformanceSummary;
+  if (summaryRow) {
+    const summary: Mutable<GrcConformanceSummary> = {};
+    // `coverageRatio` ist die einzige Angabe, ohne die `conformanceGate` die
+    // Heatmap verweigert — sie wird deshalb nur gesetzt, wenn tatsächlich
+    // Ereignisse gezählt wurden.
+    if (typeof summaryRow.coverageRatio === "number") {
+      summary.coverageRatio = summaryRow.coverageRatio;
+    }
+    const unmapped = (summaryRow.unmappedActivities ?? []).filter(
+      (name): name is string => typeof name === "string" && name.trim() !== "",
+    );
+    if (unmapped.length > 0) summary.unmappedActivities = unmapped;
+    if (typeof summaryRow.totalTraces === "number") {
+      summary.totalTraces = summaryRow.totalTraces;
+    }
+    if (typeof summaryRow.conformantTraces === "number") {
+      summary.conformantTraces = summaryRow.conformantTraces;
+    }
+    if (Object.keys(summary).length > 0) diagram.conformance = summary;
+  }
+
   const payload: Mutable<GrcOverlayData> = {
     computedAt: options.computedAt,
     elements: Object.fromEntries(
@@ -791,6 +1330,11 @@ export function buildDiagramOverlay(
     ) as GrcOverlayData["elements"],
     diagram,
   };
+  if (lanes.size > 0) {
+    payload.lanes = Object.fromEntries(
+      [...lanes].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    ) as GrcOverlayData["lanes"];
+  }
   if (options.ttlSeconds !== undefined) payload.ttlSeconds = options.ttlSeconds;
   return payload;
 }

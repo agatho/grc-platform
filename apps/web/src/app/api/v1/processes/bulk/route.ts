@@ -1,4 +1,5 @@
-import { db, process, auditLog, userOrganizationRole } from "@grc/db";
+import { db, process, userOrganizationRole } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { bulkActionSchema, PROCESS_STATUS_TRANSITIONS } from "@grc/shared";
 import type { ProcessStatus } from "@grc/shared";
@@ -160,7 +161,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     // assignment into a BEFORE INSERT trigger on audit_log itself, so this
     // row is now scoped, scrubbed, committed and hashed like any other.
     // No caller-side change is needed and none is possible to forget.
-    await tx.insert(auditLog).values({
+    await writeAuditEntry(tx, {
       orgId: ctx.orgId,
       userId: ctx.userId,
       userEmail: ctx.session.user.email,

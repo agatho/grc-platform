@@ -38,16 +38,27 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import {
   buildDiagramOverlay,
   type AssetRow,
+  type BiaRow,
   type CalledProcessRow,
   type CommentRow,
+  type ConformanceElementRow,
+  type ConformanceSummaryRow,
   type ControlRow,
+  type DataCategoryRow,
   type DmnRow,
+  type DocumentRow,
   type FindingRow,
   type FrameworkRow,
+  type LaneRatioRow,
+  type LaneRow,
+  type RaciRow,
+  type RecipientRow,
   type RiskControlRow,
   type RiskRow,
   type RoleRow,
+  type RopaRow,
   type SimulationRow,
+  type SodRuleRow,
   type StepRow,
 } from "@/lib/grc-overlay";
 
@@ -72,6 +83,16 @@ const GROUPS = [
   "framework",
   "operations",
   "dmn",
+  // --- STUFE2-E: die Gruppen der zehn nachgereichten Layer ---------------
+  // Sie stehen hier erst, seit die Migrationen 0444–0452 sie befüllbar
+  // machen. Vorher hätte `?layers=ropa` eine Zusage gegeben, die niemand
+  // einhält — deshalb war der Name bis dahin ein 422.
+  "lane",
+  "sod",
+  "ropa",
+  "bia",
+  "document",
+  "conformance",
 ] as const;
 type Group = (typeof GROUPS)[number];
 
@@ -96,6 +117,16 @@ const querySchema = z.object({
       // Der Text nennt die zulässigen Werte, damit ein Aufrufer nicht raten muss.
       { message: `layers must be a subset of: ${GROUPS.join(", ")}` },
     ),
+  /**
+   * Ausfallsimulation (F6): welches Asset fällt aus, und seit wann.
+   *
+   * Ein **Auswahlparameter**, keine hinterlegte Tatsache — deshalb steht er
+   * in der Abfrage und nicht in einer Tabelle. Ohne ihn liefert der Endpunkt
+   * kein `diagram.outage`, und der Layer schweigt, statt einen Ausfall zu
+   * unterstellen, den niemand angenommen hat.
+   */
+  outage: z.string().uuid().optional(),
+  outageElapsed: z.coerce.number().int().min(0).max(525_600).optional(),
 });
 
 function isGroup(value: string): value is Group {
@@ -196,7 +227,9 @@ export const GET = withErrorHandler(async function GET(
                  line_of_defense           AS "lineOfDefense",
                  called_process_id         AS "calledProcessId",
                  raci_responsible_role_id  AS "raciResponsibleRoleId",
-                 raci_accountable_role_id  AS "raciAccountableRoleId"
+                 raci_accountable_role_id  AS "raciAccountableRoleId",
+                 -- STUFE2-E (0445): stabile Identität über Round-Trips.
+                 step_key::text            AS "stepKey"
           FROM process_step
           WHERE process_id = ${processId} AND org_id = ${ctx.orgId}
             AND deleted_at IS NULL
@@ -258,7 +291,13 @@ export const GET = withErrorHandler(async function GET(
                           FROM evidence e
                          WHERE e.entity_type = 'control' AND e.entity_id = c.id
                            AND e.org_id = ${ctx.orgId} AND e.deleted_at IS NULL
-                         ORDER BY e.created_at DESC LIMIT 1)   AS "lastEvidenceAt"
+                         ORDER BY e.created_at DESC LIMIT 1)   AS "lastEvidenceAt",
+                       -- STUFE2-E (0453). last_test_result und
+                       -- last_evidence_at gibt es bewusst NICHT als Spalten;
+                       -- sie bleiben abgeleitet (Kopfkommentar der Migration).
+                       c.is_key                                AS "isKey",
+                       c.owner_role_id                         AS "ownerRoleId",
+                       ${TS("c.evidence_due_at")}              AS "evidenceDueAt"
                 FROM process_step_control psc
                 JOIN control c ON c.id = psc.control_id AND c.deleted_at IS NULL
                 WHERE psc.org_id = ${ctx.orgId}
@@ -322,19 +361,92 @@ export const GET = withErrorHandler(async function GET(
           ),
         );
 
-  // --- Rollen (R/A) -------------------------------------------------------
-  const roleIds = want("raci")
-    ? [
-        ...new Set(
-          steps
-            .flatMap((step) => [
+  // --- RACI-Zeilen (0447) — C und I gibt es ausschließlich hier ------------
+  const raci: RaciRow[] =
+    empty || !want("raci")
+      ? []
+      : rowsOf<RaciRow>(
+          await db.execute(
+            sql`SELECT process_step_id AS "processStepId",
+                       role_id         AS "roleId",
+                       raci_role       AS "raciRole"
+                FROM process_step_raci
+                WHERE org_id = ${ctx.orgId}
+                  AND process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY process_step_id, raci_role, role_id`,
+          ),
+        );
+
+  // --- Lanes (0444) --------------------------------------------------------
+  //
+  // Träger und Drittland stehen an der Lane; der Name des Dienstleisters und
+  // der Organisationseinheit kommt per Join, damit die Antwort keine bloßen
+  // Kennungen enthält, die die Diagrammschicht nicht anzeigen kann.
+  const lanes: LaneRow[] = !want("lane")
+    ? []
+    : rowsOf<LaneRow>(
+        await db.execute(
+          sql`SELECT pl.bpmn_element_id AS "bpmnElementId",
+                     pl.name            AS "name",
+                     pl.kind            AS "kind",
+                     pl.custom_role_id  AS "roleId",
+                     pl.org_unit_id     AS "orgUnitId",
+                     ou.name            AS "orgUnitName",
+                     pl.vendor_id       AS "vendorId",
+                     v.name             AS "vendorName",
+                     v.tier::text       AS "vendorRiskClass",
+                     pl.is_external     AS "isExternal",
+                     pl.third_country   AS "thirdCountry"
+              FROM process_lane pl
+              LEFT JOIN eam_org_unit ou
+                     ON ou.id = pl.org_unit_id AND ou.org_id = ${ctx.orgId}
+              LEFT JOIN vendor v
+                     ON v.id = pl.vendor_id AND v.org_id = ${ctx.orgId}
+                    AND v.deleted_at IS NULL
+              WHERE pl.org_id = ${ctx.orgId} AND pl.process_id = ${processId}
+              ORDER BY pl.sequence_order, pl.bpmn_element_id`,
+        ),
+      );
+
+  // --- SoD-Regeln (0446) ---------------------------------------------------
+  //
+  // Mandantenweit, nicht prozessbezogen: eine Aufgabentrennungsregel gilt
+  // zwischen zwei Rollen, unabhängig davon, in welchem Diagramm sie sich
+  // treffen. Nur aktive Regeln — eine ausser Kraft gesetzte Regel bleibt der
+  // Nachvollziehbarkeit halber stehen, darf aber keinen Konflikt erzeugen.
+  const sodRules: SodRuleRow[] = !want("sod")
+    ? []
+    : rowsOf<SodRuleRow>(
+        await db.execute(
+          sql`SELECT id,
+                     role_a_id     AS "roleAId",
+                     role_b_id     AS "roleBId",
+                     severity      AS "severity",
+                     rationale     AS "rationale",
+                     framework_ref AS "frameworkRef"
+              FROM sod_rule
+              WHERE org_id = ${ctx.orgId} AND is_active
+              ORDER BY id`,
+        ),
+      );
+
+  // --- Rollen: R/A der Schritte, RACI-Zeilen, Lane-Träger, SoD, Kontrollen -
+  const roleIds = [
+    ...new Set(
+      [
+        ...(want("raci")
+          ? steps.flatMap((step) => [
               step.raciResponsibleRoleId,
               step.raciAccountableRoleId,
             ])
-            .filter((value): value is string => typeof value === "string"),
-        ),
-      ]
-    : [];
+          : []),
+        ...raci.map((row) => row.roleId),
+        ...lanes.map((row) => row.roleId),
+        ...sodRules.flatMap((row) => [row.roleAId, row.roleBId]),
+        ...controls.map((row) => row.ownerRoleId ?? null),
+      ].filter((value): value is string => typeof value === "string"),
+    ),
+  ];
   const roles: RoleRow[] =
     roleIds.length === 0
       ? []
@@ -345,6 +457,280 @@ export const GET = withErrorHandler(async function GET(
                 ORDER BY id`,
           ),
         );
+
+  // --- Quoten je Lane-Rolle (F17) ------------------------------------------
+  //
+  // Zwei Quoten über die Mitglieder der Lane-Rolle: abgeschlossene
+  // Pflichtschulung und Kenntnisnahme einer Pflichtverteilung. Die beiden
+  // `EXISTS` sind der eigentliche Punkt der Abfrage — ohne sie wäre ein
+  // Mandant ohne Pflichtschulung ununterscheidbar von einem, in dem niemand
+  // sie absolviert hat, und die Fläche zeigte „0 %" als Befund. Die Auswertung
+  // dieser Unterscheidung steht in `ratio()` in lib/grc-overlay.ts.
+  const laneRoleIds = [
+    ...new Set(
+      lanes
+        .map((row) => row.roleId)
+        .filter((value): value is string => typeof value === "string"),
+    ),
+  ];
+  const laneRatios: LaneRatioRow[] =
+    laneRoleIds.length === 0
+      ? []
+      : rowsOf<LaneRatioRow>(
+          await db.execute(
+            sql`SELECT ucr.custom_role_id AS "roleId",
+                       COUNT(DISTINCT ucr.user_id)::int AS "memberCount",
+                       COUNT(DISTINCT ae.user_id)
+                         FILTER (WHERE ae.status = 'completed')::int
+                         AS "trainedCount",
+                       COUNT(DISTINCT pa.user_id)
+                         FILTER (WHERE pa.status = 'acknowledged')::int
+                         AS "acknowledgedCount",
+                       EXISTS (SELECT 1 FROM academy_course ac
+                                WHERE ac.org_id = ${ctx.orgId}
+                                  AND ac.is_mandatory) AS "hasMandatoryTraining",
+                       EXISTS (SELECT 1 FROM policy_distribution pd
+                                WHERE pd.org_id = ${ctx.orgId}
+                                  AND pd.is_mandatory) AS "hasMandatoryPolicy"
+                FROM user_custom_role ucr
+                LEFT JOIN academy_enrollment ae
+                       ON ae.user_id = ucr.user_id
+                      AND ae.org_id = ${ctx.orgId}
+                      AND ae.course_id IN (SELECT id FROM academy_course
+                                            WHERE org_id = ${ctx.orgId}
+                                              AND is_mandatory)
+                LEFT JOIN policy_acknowledgment pa
+                       ON pa.user_id = ucr.user_id
+                      AND pa.org_id = ${ctx.orgId}
+                      AND pa.distribution_id IN (SELECT id FROM policy_distribution
+                                                  WHERE org_id = ${ctx.orgId}
+                                                    AND is_mandatory)
+                WHERE ucr.org_id = ${ctx.orgId}
+                  AND ucr.custom_role_id = ANY(${laneRoleIds}::uuid[])
+                GROUP BY ucr.custom_role_id
+                ORDER BY ucr.custom_role_id`,
+          ),
+        );
+
+  // --- Datenschutz je Schritt (0448) ---------------------------------------
+  const ropa: RopaRow[] =
+    empty || !want("ropa")
+      ? []
+      : rowsOf<RopaRow>(
+          await db.execute(
+            sql`SELECT r.process_step_id        AS "processStepId",
+                       r.is_processing_activity AS "isProcessingActivity",
+                       r.purpose                AS "purpose",
+                       r.legal_basis::text      AS "legalBasis",
+                       r.retention_months       AS "retentionMonths",
+                       r.retention_basis        AS "retentionBasis",
+                       r.requires_dpia          AS "requiresDpia",
+                       r.dpia_id                AS "dpiaId",
+                       d.status::text           AS "dpiaStatus",
+                       r.transfer_third_country AS "transferThirdCountry",
+                       r.transfer_country       AS "transferCountry",
+                       r.transfer_safeguard     AS "transferSafeguard"
+                FROM process_step_ropa r
+                LEFT JOIN dpia d ON d.id = r.dpia_id AND d.org_id = ${ctx.orgId}
+                                AND d.deleted_at IS NULL
+                WHERE r.org_id = ${ctx.orgId}
+                  AND r.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY r.process_step_id`,
+          ),
+        );
+
+  const dataCategories: DataCategoryRow[] =
+    empty || !want("ropa")
+      ? []
+      : rowsOf<DataCategoryRow>(
+          await db.execute(
+            sql`SELECT psdc.process_step_id     AS "processStepId",
+                       rdc.id                   AS "id",
+                       rdc.category             AS "title",
+                       psdc.is_special_category AS "isSpecialCategory"
+                FROM process_step_data_category psdc
+                JOIN ropa_data_category rdc ON rdc.id = psdc.ropa_data_category_id
+                WHERE psdc.org_id = ${ctx.orgId}
+                  AND psdc.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY psdc.process_step_id, rdc.category, rdc.id`,
+          ),
+        );
+
+  // Polymorph: `recipient_id` trägt keinen Fremdschlüssel (Migration 0448),
+  // deshalb genau zwei LEFT JOINs und ein COALESCE über den Namen. Eine Zeile
+  // ohne auflösbaren Namen fällt in der Abbildung weg — eine nackte UUID als
+  // Empfänger anzuzeigen wäre schlimmer als kein Empfänger.
+  const recipients: RecipientRow[] =
+    empty || !want("ropa")
+      ? []
+      : rowsOf<RecipientRow>(
+          await db.execute(
+            sql`SELECT psr.process_step_id AS "processStepId",
+                       psr.recipient_id    AS "id",
+                       COALESCE(v.name, ou.name) AS "title"
+                FROM process_step_recipient psr
+                LEFT JOIN vendor v
+                       ON psr.kind = 'vendor' AND v.id = psr.recipient_id
+                      AND v.org_id = ${ctx.orgId} AND v.deleted_at IS NULL
+                LEFT JOIN eam_org_unit ou
+                       ON psr.kind = 'org_unit' AND ou.id = psr.recipient_id
+                      AND ou.org_id = ${ctx.orgId}
+                WHERE psr.org_id = ${ctx.orgId}
+                  AND psr.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY psr.process_step_id, psr.kind, psr.recipient_id`,
+          ),
+        );
+
+  // --- Kontinuität je Schritt (0449) ---------------------------------------
+  const bia: BiaRow[] =
+    empty || !want("bia")
+      ? []
+      : rowsOf<BiaRow>(
+          await db.execute(
+            sql`SELECT process_step_id  AS "processStepId",
+                       criticality      AS "criticality",
+                       mtpd_minutes     AS "mtpdMinutes",
+                       rto_minutes      AS "rtoMinutes",
+                       rpo_minutes      AS "rpoMinutes",
+                       workaround       AS "workaround",
+                       workaround_max_duration_minutes
+                         AS "workaroundMaxDurationMinutes"
+                FROM process_step_bia
+                WHERE org_id = ${ctx.orgId}
+                  AND process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY process_step_id`,
+          ),
+        );
+
+  // --- Dokumente je Schritt (0450) -----------------------------------------
+  const documents: DocumentRow[] =
+    empty || !want("document")
+      ? []
+      : rowsOf<DocumentRow>(
+          await db.execute(
+            sql`SELECT psd.process_step_id AS "processStepId",
+                       d.id                AS "id",
+                       d.title             AS "title"
+                FROM process_step_document psd
+                JOIN document d ON d.id = psd.document_id AND d.deleted_at IS NULL
+                WHERE psd.org_id = ${ctx.orgId}
+                  AND psd.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY psd.process_step_id, d.title, d.id`,
+          ),
+        );
+
+  // --- Conformance (0451) --------------------------------------------------
+  //
+  // Genommen wird das zuletzt importierte Ereignisprotokoll dieses Prozesses —
+  // dieselbe Regel wie beim Simulationsszenario. Über mehrere Protokolle zu
+  // mitteln ergäbe eine Quote, die in keinem Protokoll steht.
+  //
+  // `reworkLoops` = Fälle, in denen die Aktivität MEHR ALS EINMAL vorkommt.
+  // Das ist aus `process_event` unmittelbar zählbar. `meanDurationMinutes` und
+  // `isBottleneck` sind es nicht (ein Zeitstempel je Ereignis, kein
+  // Lebenszyklus) und bleiben deshalb weg — siehe MISSING_TODAY.
+  const conformanceElements: ConformanceElementRow[] =
+    empty || !want("conformance")
+      ? []
+      : rowsOf<ConformanceElementRow>(
+          await db.execute(
+            sql`WITH log AS (
+                  SELECT id FROM process_event_log
+                   WHERE org_id = ${ctx.orgId} AND process_id = ${processId}
+                   ORDER BY imported_at DESC, id DESC LIMIT 1
+                ),
+                mapped AS (
+                  SELECT m.activity_name, m.process_step_id, m.match_kind
+                    FROM process_event_activity_map m
+                    JOIN log ON log.id = m.event_log_id
+                   WHERE m.org_id = ${ctx.orgId}
+                     AND m.process_step_id = ANY(${stepIds}::uuid[])
+                ),
+                per_case AS (
+                  SELECT mp.process_step_id AS step_id,
+                         e.case_id,
+                         COUNT(*)::int AS occurrences
+                    FROM process_event e
+                    JOIN log ON log.id = e.event_log_id
+                    JOIN mapped mp ON mp.activity_name = e.activity
+                   WHERE e.org_id = ${ctx.orgId}
+                   GROUP BY mp.process_step_id, e.case_id
+                ),
+                agg AS (
+                  SELECT step_id,
+                         COUNT(*)::int AS cases,
+                         COUNT(*) FILTER (WHERE occurrences > 1)::int AS rework
+                    FROM per_case GROUP BY step_id
+                )
+                SELECT m.process_step_id AS "processStepId",
+                       (ARRAY_AGG(m.match_kind ORDER BY
+                          CASE m.match_kind
+                            WHEN 'exact' THEN 0 WHEN 'manual' THEN 1
+                            WHEN 'normalized' THEN 2 WHEN 'fuzzy' THEN 3
+                            ELSE 4 END))[1]              AS "matchKind",
+                       COALESCE(MAX(a.cases), 0)::int    AS "observedCases",
+                       COALESCE(MAX(a.rework), 0)::int   AS "reworkLoops"
+                  FROM mapped m
+                  LEFT JOIN agg a ON a.step_id = m.process_step_id
+                 GROUP BY m.process_step_id
+                 ORDER BY m.process_step_id`,
+          ),
+        );
+
+  // Die Abdeckungsquote — ohne sie verweigert `conformanceGate` die Heatmap
+  // ausdrücklich, und genau deshalb wird sie hier gemessen und nicht
+  // geschätzt: gezählte Ereignisse mit Zuordnung durch gezählte Ereignisse.
+  const conformanceSummary: ConformanceSummaryRow | undefined = !want(
+    "conformance",
+  )
+    ? undefined
+    : rowsOf<ConformanceSummaryRow>(
+        await db.execute(
+          sql`WITH log AS (
+                SELECT id FROM process_event_log
+                 WHERE org_id = ${ctx.orgId} AND process_id = ${processId}
+                 ORDER BY imported_at DESC, id DESC LIMIT 1
+              ),
+              totals AS (
+                SELECT COUNT(*)::int AS events,
+                       COUNT(DISTINCT e.case_id)::int AS traces
+                  FROM process_event e JOIN log ON log.id = e.event_log_id
+                 WHERE e.org_id = ${ctx.orgId}
+              ),
+              matched AS (
+                SELECT COUNT(*)::int AS events
+                  FROM process_event e
+                  JOIN log ON log.id = e.event_log_id
+                  JOIN process_event_activity_map m
+                    ON m.event_log_id = e.event_log_id
+                   AND m.activity_name = e.activity
+                   AND m.process_step_id IS NOT NULL
+                 WHERE e.org_id = ${ctx.orgId} AND m.org_id = ${ctx.orgId}
+              ),
+              unmapped AS (
+                SELECT ARRAY_AGG(DISTINCT e.activity) AS names
+                  FROM process_event e
+                  JOIN log ON log.id = e.event_log_id
+                  LEFT JOIN process_event_activity_map m
+                    ON m.event_log_id = e.event_log_id
+                   AND m.activity_name = e.activity
+                   AND m.process_step_id IS NOT NULL
+                 WHERE e.org_id = ${ctx.orgId} AND m.id IS NULL
+              )
+              SELECT CASE WHEN totals.events > 0
+                          THEN matched.events::float8 / totals.events
+                     END                                   AS "coverageRatio",
+                     COALESCE(unmapped.names, ARRAY[]::varchar[])
+                                                           AS "unmappedActivities",
+                     NULLIF(totals.traces, 0)              AS "totalTraces",
+                     (SELECT r.conformant_traces
+                        FROM process_conformance_result r
+                        JOIN log ON log.id = r.event_log_id
+                       WHERE r.org_id = ${ctx.orgId}
+                       ORDER BY r.computed_at DESC LIMIT 1) AS "conformantTraces"
+                FROM totals, matched, unmapped`,
+        ),
+      )[0];
 
   // --- Kommentare je Schritt ----------------------------------------------
   const comments: CommentRow[] =
@@ -525,6 +911,17 @@ export const GET = withErrorHandler(async function GET(
       simulation,
       dmn,
       calledProcesses,
+      lanes,
+      laneRatios,
+      raci,
+      sodRules,
+      ropa,
+      dataCategories,
+      recipients,
+      bia,
+      documents,
+      conformanceElements,
+      conformanceSummary,
     },
     {
       computedAt,
@@ -534,6 +931,17 @@ export const GET = withErrorHandler(async function GET(
       // Kurz genug, dass ein Kontrollwechsel im Diagramm ankommt, lang genug,
       // dass Zoomen und Sichtwechsel den Endpunkt nicht erneut befragen.
       ttlSeconds: 60,
+      // Die Ausfallsimulation ist eine Auswahl des Betrachters. Sie wird nur
+      // durchgereicht, wenn der Aufrufer sie nennt — sonst kein
+      // `diagram.outage`, und der Layer schweigt.
+      outage: parsed.data.outage
+        ? {
+            assetId: parsed.data.outage,
+            ...(parsed.data.outageElapsed !== undefined
+              ? { elapsedMinutes: parsed.data.outageElapsed }
+              : {}),
+          }
+        : undefined,
     },
   );
 

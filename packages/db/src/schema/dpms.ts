@@ -271,6 +271,12 @@ export const dpia = pgTable(
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     processId: uuid("process_id"),
+    // STUFE2-E (0454): ausloesender Prozessschritt. NULL = die DPIA gilt
+    // fuer den ganzen Prozess. ON DELETE SET NULL — der Elementbezug ist eine
+    // Verfeinerung, die Akte bleibt ohne ihn gueltig. Drizzle-Fremdschluessel
+    // ausgelassen (Zyklus dpms.ts -> process.ts); die Bedingung
+    // `dpia_process_step_fk` steht in der Migration.
+    processStepId: uuid("process_step_id"),
     tags: text("tags")
       .array()
       .notNull()
@@ -279,6 +285,7 @@ export const dpia = pgTable(
   (t) => [
     index("dpia_org_idx").on(t.orgId),
     index("dpia_status_idx").on(t.orgId, t.status),
+    index("dpia_process_step_idx").on(t.processStepId),
   ],
 );
 

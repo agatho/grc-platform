@@ -106,11 +106,30 @@ describe("GET /processes/:id/diagram-overlay", () => {
   });
 
   it("weist eine unbekannte Layergruppe mit 422 zurück", async () => {
+    // [STUFE2-E] Der frühere Fall war `ropa` — er war unbekannt, weil das
+    // Schema die Tabelle nicht hatte. Seit Migration 0448 ist er eine gültige
+    // Gruppe (siehe den Test unten), und der Wächter braucht einen Namen, den
+    // es wirklich nicht gibt. Die Aussage des Tests bleibt unverändert: eine
+    // unbekannte Gruppe wird zurückgewiesen, nicht still geschluckt.
     queue([[{ id: PROCESS_ID, name: "P" }]]);
-    const res = await callRoute(`${URL_BASE}?layers=ropa`);
+    const res = await callRoute(`${URL_BASE}?layers=hellsehen`);
     expect(res.status).toBe(422);
     const body = (await res.json()) as { error: string };
     expect(body.error).toBe("Validation failed");
+  });
+
+  it("kennt die Gruppen der zehn nachgereichten Layer", async () => {
+    queue([[{ id: PROCESS_ID, name: "P" }], []]);
+    const res = await callRoute(
+      `${URL_BASE}?layers=lane,sod,ropa,bia,document,conformance`,
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("weist eine Ausfallauswahl zurück, die keine UUID ist", async () => {
+    queue([[{ id: PROCESS_ID, name: "P" }]]);
+    const res = await callRoute(`${URL_BASE}?outage=SAP-FI`);
+    expect(res.status).toBe(422);
   });
 
   it("weist eine Version zurück, die nicht zu diesem Prozess gehört", async () => {
@@ -156,11 +175,40 @@ describe("GET /processes/:id/diagram-overlay", () => {
     const res = await callRoute(`${URL_BASE}?layers=line-of-defense`);
     expect(res.status).toBe(200);
     // Prozess + Schritte. Risiken, Kontrollen, Feststellungen, Assets,
-    // Kommentare, Simulation und DMN entfallen vollständig.
+    // Kommentare, Simulation, DMN — und seit STUFE2-E auch Lanes, SoD, ROPA,
+    // Kategorien, Empfänger, BIA, Dokumente und die beiden
+    // Conformance-Abfragen — entfallen vollständig.
     expect(executeMock).toHaveBeenCalledTimes(2);
     const body = (await res.json()) as {
       data: { elements: Record<string, { lineOfDefense?: string }> };
     };
     expect(body.data.elements["Task_1"]?.lineOfDefense).toBe("first");
+  });
+
+  it("fragt für ?layers=lane nur die Lane-Kette ab, nicht die Elementtabellen", async () => {
+    // Die Lane-Abfrage hängt nicht an den Schritten (eine Lane ist keine
+    // Aktivität), die Quotenabfrage nur an den gefundenen Lane-Rollen. Ohne
+    // Lane mit Rolle darf die zweite gar nicht laufen.
+    queue([
+      [{ id: PROCESS_ID, name: "P" }],
+      [],
+      [
+        {
+          bpmnElementId: "Lane_1",
+          name: "Einkauf",
+          kind: "lane",
+          roleId: null,
+        },
+      ],
+    ]);
+    const res = await callRoute(`${URL_BASE}?layers=lane`);
+    expect(res.status).toBe(200);
+    // Prozess + Schritte + Lanes. Keine Rollen (keine Rolle an der Lane),
+    // keine Quoten, nichts sonst.
+    expect(executeMock).toHaveBeenCalledTimes(3);
+    const body = (await res.json()) as {
+      data: { lanes?: Record<string, { name?: string }> };
+    };
+    expect(body.data.lanes?.["Lane_1"]?.name).toBe("Einkauf");
   });
 });

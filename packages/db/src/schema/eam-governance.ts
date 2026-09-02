@@ -6,6 +6,7 @@ import {
   uuid,
   varchar,
   text,
+  boolean,
   numeric,
   timestamp,
   index,
@@ -83,11 +84,19 @@ export const eamBpmnElementPlacement = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // STUFE2-E (0454): F12 (zweite Zeichenebene) — nicht gebaut, die Spalten
+    // stehen, damit der Arbeitsstrang Modellierung sie nicht selbst erfindet.
+    // `bpmnNodeId` bleibt die Anzeigezuordnung; `processStepId` ueberlebt
+    // einen Re-Export.
+    processStepId: uuid("process_step_id"),
+    labelVisible: boolean("label_visible").notNull().default(true),
+    relationType: varchar("relation_type", { length: 20 }),
   },
   (table) => ({
     processIdx: index("ebep_process_idx").on(table.processVersionId),
     elementIdx: index("ebep_element_idx").on(table.eamElementId),
     orgIdx: index("ebep_org_idx").on(table.orgId),
+    stepIdx: index("eam_placement_process_step_idx").on(table.processStepId),
   }),
 );
 

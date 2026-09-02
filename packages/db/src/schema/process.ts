@@ -233,6 +233,24 @@ export const processStep = pgTable(
       (): AnyPgColumn => process.id,
       { onDelete: "set null" },
     ),
+    // STUFE2-E (0445): stabile Identitaet ueber Round-Trips durch fremde
+    // Editoren (Plan §3.2). Die BPMN-Element-ID darf ein fremder Editor beim
+    // Re-Export neu vergeben; dieser Schluessel nicht. NOT NULL mit
+    // Vorgabewert, damit es keine Zeile ohne Identitaet gibt.
+    stepKey: uuid("step_key").notNull().defaultRandom(),
+    // Umschliessender Schritt (Subprozess/Transaktion). ON DELETE SET NULL,
+    // nicht CASCADE: ein geloeschter Container darf nicht die Pruefungsspur
+    // seiner Kinder mitnehmen (S09-10).
+    parentStepId: uuid("parent_step_id").references(
+      (): AnyPgColumn => processStep.id,
+      { onDelete: "set null" },
+    ),
+    // Lane-Zugehoerigkeit; zeigt auf `process_lane(id)` (0444). Der
+    // Drizzle-Fremdschluessel ist ausgelassen, weil `process-diagram-grc.ts`
+    // aus dieser Datei importiert und die Gegenrichtung einen Zyklus ergaebe
+    // — dieselbe Loesung wie bei `finding.processStepId`. Die Bedingung
+    // `process_step_lane_fk` steht in der Migration.
+    laneStepId: uuid("lane_step_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -247,6 +265,12 @@ export const processStep = pgTable(
     uniqueIndex("process_step_unique").on(table.processId, table.bpmnElementId),
     index("process_step_lod_idx").on(table.processId, table.lineOfDefense),
     index("process_step_called_process_idx").on(table.calledProcessId),
+    index("process_step_parent_idx").on(table.parentStepId),
+    index("process_step_lane_idx").on(table.laneStepId),
+    uniqueIndex("process_step_step_key_uniq").on(
+      table.processId,
+      table.stepKey,
+    ),
   ],
 );
 

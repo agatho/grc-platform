@@ -19,7 +19,6 @@
 // routes map to HTTP statuses via `signatureErrorResponse()`.
 
 import {
-  auditLog,
   db,
   document,
   documentVersion,
@@ -29,6 +28,7 @@ import {
   user,
   userOrganizationRole,
 } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import {
@@ -770,7 +770,7 @@ class InHouseSignatureProvider implements SignatureProvider {
           // Even without a TSA token the link then hangs off the
           // FreeTSA-anchored audit_log chain (ADR-011 rev.4) instead of
           // standing alone on an app-server clock.
-          await tx.insert(auditLog).values({
+          await writeAuditEntry(tx, {
             orgId: ctx.orgId,
             userId: ctx.userId,
             userEmail: ctx.session.user.email,
@@ -957,7 +957,7 @@ class InHouseSignatureProvider implements SignatureProvider {
             .where(eq(documentSignatureRequest.id, req.id));
 
           // #S06-05: anchor the decline link in the audit chain too.
-          await tx.insert(auditLog).values({
+          await writeAuditEntry(tx, {
             orgId: ctx.orgId,
             userId: ctx.userId,
             userEmail: ctx.session.user.email,

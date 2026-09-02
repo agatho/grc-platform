@@ -1,4 +1,5 @@
-import { db, document, documentVersion, documentFile, auditLog } from "@grc/db";
+import { db, document, documentVersion, documentFile } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -241,7 +242,7 @@ export const POST = withErrorHandler(async function POST(
     const stampable = await checkPdfStampable(buffer);
     if (!stampable.ok) {
       await withAuditContext(ctx, async (tx) => {
-        await tx.insert(auditLog).values({
+        await writeAuditEntry(tx, {
           orgId: ctx.orgId,
           userId: ctx.userId,
           userEmail: ctx.session.user.email,
@@ -294,7 +295,7 @@ export const POST = withErrorHandler(async function POST(
     await withAuditContext(ctx, async (tx) => {
       // S03-05: chained by the BEFORE INSERT trigger on audit_log
       // (migration 0401).
-      await tx.insert(auditLog).values({
+      await writeAuditEntry(tx, {
         orgId: ctx.orgId,
         userId: ctx.userId,
         userEmail: ctx.session.user.email,
