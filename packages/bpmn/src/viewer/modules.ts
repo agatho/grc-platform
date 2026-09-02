@@ -3,7 +3,6 @@ import ChangeSupportModule from "diagram-js/lib/features/change-support/index.js
 import InteractionEventsModule from "diagram-js/lib/features/interaction-events/index.js";
 import KeyboardModule from "diagram-js/lib/features/keyboard/index.js";
 import LabelSupportModule from "diagram-js/lib/features/label-support/index.js";
-import ModelingModule from "diagram-js/lib/features/modeling/index.js";
 import MoveModule from "diagram-js/lib/features/move/index.js";
 import OutlineModule from "diagram-js/lib/features/outline/index.js";
 import OverlaysModule from "diagram-js/lib/features/overlays/index.js";
@@ -45,32 +44,26 @@ const BASE_MODULES: DiagramModule[] = [
 /**
  * Generische Bearbeitungsmodule aus `diagram-js`.
  *
- * Sie sind vollständig vorhanden — was fehlt, sind die *BPMN-spezifischen*
- * Ergänzungen (`BpmnRules`, `BpmnFactory`, `BpmnUpdater`, `BpmnLayouter`,
- * Palette- und ContextPad-Inhalte, Label-Editing). Die stehen im Plan als AP6
- * und sind ausdrücklich **nicht** Teil dieses Spikes.
+ * Das **BPMN-spezifische** Gegenstück — `bpmnRules`, `bpmnFactory`,
+ * `bpmnUpdater`, `bpmnLayouter`, Palette, Kontextmenü, Direktbeschriftung —
+ * steht in `src/modeling` und `src/editor` und kommt über
+ * `editorModulesFor({ mode: "edit" })` hinzu. Diese Liste hier bleibt bewusst
+ * frei davon: sonst wüssten zwei Dateien über den Modus Bescheid.
+ *
+ * **Nicht enthalten: `diagram-js/features/modeling`.** Es registriert
+ * `modeling` und `layouter`, und beide liefert `src/modeling` in einer
+ * BPMN-fähigen Fassung. Zwei Anbieter desselben Dienstnamens wären eine
+ * Reihenfolgenfrage statt einer Entscheidung; die Modellierungsschicht bringt
+ * das generische Modul über ihre eigenen `__depends__` mit, wo es hingehört.
  */
 const EDITING_MODULES: DiagramModule[] = [
   RulesModule as DiagramModule,
   // `label-support` hängt an `modeling` und gehört deshalb in diese Gruppe.
   LabelSupportModule as DiagramModule,
-  ModelingModule as DiagramModule,
   MoveModule as DiagramModule,
   ResizeModule as DiagramModule,
   BendpointsModule as DiagramModule,
   SnappingModule as DiagramModule,
-];
-
-/**
- * Was der Editor-Pfad zusätzlich braucht und was der Spike bewusst offenlässt.
- * Wird von `BpmnCanvas` in der Fehlermeldung ausgegeben, damit niemand rätselt.
- */
-export const MISSING_EDIT_MODULES: readonly string[] = [
-  "bpmnRules (welches Element darf woran)",
-  "bpmnFactory / bpmnUpdater (moddle-Baum + DI synchron halten)",
-  "bpmnLayouter (Kantenführung)",
-  "paletteProvider / contextPadProvider (kuratierte BPMN-Palette)",
-  "labelEditingProvider (Direktbeschriftung)",
 ];
 
 export function modulesFor(mode: BpmnCanvasMode): DiagramModule[] {

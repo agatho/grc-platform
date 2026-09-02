@@ -1,17 +1,20 @@
 export {
   BpmnCanvas,
   type BpmnCanvasOptions,
+  type ExportXmlFn,
   type ImportDiagramResult,
   type ImportXmlFn,
   type ImportXmlResult,
 } from "./BpmnCanvas.js";
 export { GraphA11y, type A11yHost, type GraphA11yOptions } from "./a11y.js";
+export { isEditable, modulesFor, type BpmnCanvasMode } from "./modules.js";
+// Die vollständige Modulliste eines Modus — der Editor-Modus registriert
+// darüber `src/modeling` und `src/editor` (Plan §2.4, zweite Achse).
 export {
-  isEditable,
-  MISSING_EDIT_MODULES,
-  modulesFor,
-  type BpmnCanvasMode,
-} from "./modules.js";
+  editorModulesFor,
+  editorServicesFor,
+  type EditorModulesOptions,
+} from "../editor/modules.js";
 export {
   buildGraphOrder,
   findContainerLabel,

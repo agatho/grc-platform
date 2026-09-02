@@ -54,15 +54,25 @@ const SPECS: Readonly<Record<MarkerKind, MarkerSpec>> = {
         "stroke-linejoin": "round",
       }),
   },
+  // Der unausgefüllte Kreis am Ursprung ist das Erkennungszeichen des
+  // Nachrichtenflusses. Bisher war er praktisch unsichtbar: `markerUnits`
+  // ist `userSpaceOnUse`, die viewBox (20) wurde auf `width` (10) abgebildet
+  // — jede Einheit also 0,5 px, der Kreis damit 3,5 px im Durchmesser und
+  // zur Hälfte unter der 2 px starken Kontur der Quellform.
+  // Jetzt: 1 px je viewBox-Einheit (20 → 20), 7 px Durchmesser wie in der
+  // BPMN-Notation üblich, und der Referenzpunkt liegt am *hinteren*
+  // Kreisrand, zuzüglich der halben Strichstärke der Quellkontur
+  // (`refX = cx − r − 1`). Dadurch sitzt der Kreis vor dem Anfangspunkt der
+  // Kante, vollständig außerhalb der Quellform statt halb unter ihr.
   "messageflow-start": {
     viewBox: "0 0 20 20",
-    refX: 6,
+    refX: 5.5,
     refY: 10,
-    width: 10,
-    height: 10,
+    width: 20,
+    height: 20,
     draw: ({ stroke, fill }) =>
       svgCreate("circle", {
-        cx: 6,
+        cx: 10,
         cy: 10,
         r: 3.5,
         fill,
@@ -70,18 +80,22 @@ const SPECS: Readonly<Record<MarkerKind, MarkerSpec>> = {
         "stroke-width": 1,
       }),
   },
+  // Offene Pfeilspitze am Ziel — der Gegenpart zum Kreis: zwei Striche, kein
+  // geschlossener, gefüllter Umriss (das ist der Sequenzfluss). In derselben
+  // Größenordnung wie der Kreis, damit beide als ein Zeichen gelesen werden.
   "messageflow-end": {
     viewBox: "0 0 20 20",
-    refX: 11,
+    refX: 12,
     refY: 10,
-    width: 10,
-    height: 10,
-    draw: ({ stroke, fill }) =>
+    width: 20,
+    height: 20,
+    draw: ({ stroke }) =>
       svgCreate("path", {
-        d: "M 1 5 L 11 10 L 1 15",
-        fill,
+        d: "M 4 5 L 12 10 L 4 15",
+        fill: "none",
         stroke,
-        "stroke-width": 1,
+        "stroke-width": 1.5,
+        "stroke-linecap": "round",
         "stroke-linejoin": "round",
       }),
   },
@@ -180,7 +194,18 @@ export class MarkerRegistry {
       orient: "auto",
       markerUnits: "userSpaceOnUse",
     });
-    svgAppend(marker, spec.draw({ stroke, fill: this.colors.fill }));
+    const drawn = spec.draw({ stroke, fill: this.colors.fill });
+    // `stroke-dasharray` ist eine vererbte Eigenschaft. Nach SVG 1.1 erbt der
+    // Markerinhalt vom `<marker>`-Element, nicht von der Kante — mehrere
+    // Renderer (u. a. cairosvg, ältere WebKit-Fassungen) machen es trotzdem
+    // falsch und ziehen die gestrichelte Linie des Nachrichtenflusses in den
+    // Marker hinein: aus dem Kreis am Ursprung wird dann ein aufgebrochener
+    // Bogen. `stroke-dasharray="none"` genügt dagegen nicht — cairosvg
+    // behandelt `none` wie „nicht gesetzt" und erbt weiter (nachgemessen).
+    // Ein Muster, das länger ist als jeder Markerumriss, wirkt in allen
+    // Fällen durchgezogen und überschreibt die Vererbung sicher.
+    svgAttr(drawn, { "stroke-dasharray": "10000 1" });
+    svgAppend(marker, drawn);
     svgAppend(this.defs(), marker);
     this.created.set(key, id);
     return `url(#${id})`;

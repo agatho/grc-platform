@@ -380,7 +380,14 @@ export class BpmnJsDriver implements ModelingDriver {
           }
           const allowed = modeler
             .get("rules")
-            .allowed("elements.move", { shapes: [target], target });
+            // `target` des Kontexts ist das **Ziel** der Bewegung, nicht das
+            // bewegte Element. Hier stand `target` (das bewegte Element) —
+            // die Regel bekam damit die Frage „darf X in X?" gestellt und
+            // antwortete für einen Subprozess mit „ja". Ein `reparent` in
+            // eine `bpmn:Collaboration` lief deshalb an den Regeln vorbei und
+            // erzeugte einen `CONTAINER_MISMATCH`, den keine Engine
+            // verschuldet hatte. Gefunden im 500er-Lauf mit Startwert 424242.
+            .allowed("elements.move", { shapes: [target], target: parent });
           if (allowed === false) return { outcome: "rejected", resolved };
           const position = this.inside(parent, op.x, op.y);
           modeling.moveElements(

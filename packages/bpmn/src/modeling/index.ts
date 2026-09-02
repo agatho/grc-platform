@@ -8,7 +8,7 @@
  * `CroppingConnectionDocking`.
  *
  * Was hier entsteht: `bpmnFactory`, `elementFactory`, `bpmnUpdater`,
- * `bpmnRules`, `modeling`, `layouter`, `bpmnImporter` und zwei Verhalten.
+ * `bpmnRules`, `modeling`, `layouter`, `bpmnImporter` und vier Verhalten.
  */
 
 import AttachSupportModule from "diagram-js/lib/features/attach-support/index.js";
@@ -28,6 +28,8 @@ import { BpmnUpdater } from "./BpmnUpdater.js";
 import { BpmnModeling } from "./Modeling.js";
 import { BpmnImporter } from "./importer.js";
 import { BoundaryEventBehavior } from "./behaviors/BoundaryEventBehavior.js";
+import { ConnectionBehavior } from "./behaviors/ConnectionBehavior.js";
+import { ParticipantBehavior } from "./behaviors/ParticipantBehavior.js";
 import { LabelBehavior } from "./behaviors/LabelBehavior.js";
 
 /** Die Modellierungsschicht als `didi`-Moduldeklaration. */
@@ -45,6 +47,8 @@ const modelingModule = {
     "bpmnRules",
     "labelBehavior",
     "boundaryEventBehavior",
+    "connectionBehavior",
+    "participantBehavior",
     "modeling",
   ],
   moddle: ["value", arctosModdle],
@@ -58,6 +62,8 @@ const modelingModule = {
   connectionDocking: ["type", CroppingConnectionDocking],
   labelBehavior: ["type", LabelBehavior],
   boundaryEventBehavior: ["type", BoundaryEventBehavior],
+  connectionBehavior: ["type", ConnectionBehavior],
+  participantBehavior: ["type", ParticipantBehavior],
 } as const;
 
 export default modelingModule;
@@ -85,17 +91,23 @@ export {
 } from "./BpmnLayouter.js";
 export {
   BpmnRules,
+  canAlign,
   canAttach,
   canConnect,
   canConnectAssociation,
   canConnectDataAssociation,
   canConnectMessageFlow,
   canConnectSequenceFlow,
+  canCopy,
   canDrop,
   canMove,
   canReconnect,
+  canReplace,
   canResize,
+  minDimensionsFor,
   type ConnectionRuleResult,
+  type Dimensions,
+  type ResizeRuleResult,
 } from "./BpmnRules.js";
 export { BpmnUpdater, isFullyLinked } from "./BpmnUpdater.js";
 export { BpmnModeling } from "./Modeling.js";
@@ -108,8 +120,13 @@ export {
 export { BpmnIds, localName } from "./ids.js";
 export {
   BoundaryEventBehavior,
+  keepAttachment,
   snapToHostBorder,
 } from "./behaviors/BoundaryEventBehavior.js";
+export {
+  ConnectionBehavior,
+  affectedConnections,
+} from "./behaviors/ConnectionBehavior.js";
 export {
   LabelBehavior,
   labelStateIsConsistent,
@@ -121,6 +138,11 @@ export {
   isLaneTarget,
   sliceBounds,
 } from "./cmd/LaneHandlers.js";
+export {
+  ReplaceShapeHandler,
+  copySemanticProperties,
+  type ReplaceShapeContext,
+} from "./cmd/ReplaceShapeHandler.js";
 export { UpdateLabelHandler, labelProperty } from "./cmd/UpdateLabelHandler.js";
 export { UpdatePropertiesHandler } from "./cmd/UpdatePropertiesHandler.js";
 

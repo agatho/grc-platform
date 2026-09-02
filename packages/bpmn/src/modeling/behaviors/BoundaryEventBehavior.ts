@@ -80,6 +80,49 @@ export function snapToHostBorder(
   };
 }
 
+/**
+ * Verhindert, dass ein Verschieben die Anheftung stillschweigend löst.
+ *
+ * `features/attach-support` von `diagram-js` liest nach jedem `elements.move`
+ * das Feld `context.newHost`. Ist es leer, hält es jeden mitbewegten Anhefter,
+ * dessen Wirt **nicht** mitbewegt wurde, für abgelöst und ruft
+ * `modeling.updateAttachment(attacher, undefined)` auf. Genau das trifft den
+ * häufigsten Fall überhaupt: `moveElements([boundaryEvent], delta)` — ein
+ * Randereignis auf seinem Wirt verschieben. Nach einem Zug um **null Pixel**
+ * steht das Ereignis ohne `attachedToRef` da; `moddle` verwirft das Attribut
+ * beim nächsten Speichern still, und das Ereignis ist in jedem Werkzeug
+ * unplatzierbar.
+ *
+ * `bpmn-js` löst denselben Konflikt anders: sein `DetachEventBehavior` ersetzt
+ * das Randereignis beim Ablösen durch ein Zwischen-Ereignis. Diese Schicht
+ * kennt das Ablösen gar nicht — `canMove` erlaubt einem Randereignis nur die
+ * Bewegung **innerhalb seines Containers** (`BpmnRules.canMove`), ein
+ * Containerwechsel ist verboten. Damit gibt es hier keinen zulässigen
+ * Ablösefall, den man interpretieren müsste: die Anheftung bleibt.
+ *
+ * Umgesetzt wird das, indem `context.newHost` auf den **bisherigen** Wirt
+ * gesetzt wird, statt an `attach-support` vorbeizuarbeiten. Für eine einzelne
+ * Form heißt das „an denselben Wirt anheften" (wirkungslos, aber ausgesprochen);
+ * bei mehreren Formen lässt `attach-support` die Anheftungen von sich aus
+ * unangetastet. Ein ausdrückliches `newHost` (auch `null` aus
+ * `hints.attach === false`) wird nicht überschrieben — wer ablösen will, sagt
+ * es, und dann meldet die Invariante den Zustand, statt ihn zu verstecken.
+ */
+export function keepAttachment(context: Record<string, unknown>): void {
+  if (context["newHost"] !== undefined) return;
+  const shapes = context["shapes"];
+  if (!Array.isArray(shapes)) return;
+  const moved = shapes as BpmnShape[];
+  const detaching = moved.find(
+    (shape) =>
+      is(boOf(shape), "bpmn:BoundaryEvent") &&
+      shape.host !== undefined &&
+      !moved.includes(shape.host as BpmnShape),
+  );
+  if (!detaching) return;
+  context["newHost"] = detaching.host;
+}
+
 export class BoundaryEventBehavior extends CommandInterceptor {
   static $inject = ["eventBus", "modeling"];
 
@@ -88,6 +131,15 @@ export class BoundaryEventBehavior extends CommandInterceptor {
     private readonly modeling: ModelingLike,
   ) {
     super(eventBus);
+
+    // Ein Verschieben ohne ausdrückliche Absicht darf die Anheftung nicht
+    // lösen — siehe {@link keepAttachment}.
+    this.preExecute(
+      "elements.move",
+      (event: { context?: Record<string, unknown> }) => {
+        if (event.context) keepAttachment(event.context);
+      },
+    );
 
     // Nach dem Verkleinern/Vergrößern des Wirts: Anhefter zurück auf den Rand.
     this.postExecuted(

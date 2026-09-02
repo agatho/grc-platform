@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { laneRefs, openSession, operate } from "./helpers/harness.js";
-import { COLLABORATION, SIMPLE_PROCESS } from "./helpers/fixtures.js";
+import {
+  COLLABORATION,
+  NESTED_LANES,
+  SIMPLE_PROCESS,
+} from "./helpers/fixtures.js";
 import type { Bounds } from "../../src/modeling/types.js";
 import {
   childLanes,
@@ -144,11 +148,12 @@ describe("lane.split", () => {
 });
 
 describe("Pool in einem Prozessdiagramm", () => {
-  it("wird verweigert, solange keine Collaboration da ist", async () => {
-    // Der Übergang Process → Collaboration wechselt das Wurzelelement der
-    // Ebene und ist in dieser Stufe nicht gebaut (siehe BpmnRules.canDrop).
-    // Der Test hält fest, dass die Schicht das *sagt*, statt einen Pool
-    // anzulegen, der in der Datei fehlt.
+  it("ist erlaubt — der Wurzelwechsel geschieht dabei", async () => {
+    // Früher war das hier eine Verbotsregel: Der Übergang Process →
+    // Collaboration war nicht gebaut, und ein Pool, der im Editor erscheint
+    // und in der Datei fehlt, wäre schlimmer als ein „geht nicht". Der
+    // Übergang ist inzwischen gebaut (`behaviors/ParticipantBehavior.ts`,
+    // `test/modeling/participant.test.ts`), also fällt das Verbot.
     const session = await openSession(SIMPLE_PROCESS);
     const rules = session.get<{ allowed(a: string, c?: unknown): unknown }>(
       "rules",
@@ -158,6 +163,23 @@ describe("Pool in einem Prozessdiagramm", () => {
       .createShape({ type: "bpmn:Participant" });
     expect(
       rules.allowed("shape.create", { shape: pool, target: session.root() }),
+    ).toBe(true);
+    session.destroy();
+  });
+
+  it("bleibt in einem Container verboten", async () => {
+    const session = await openSession(COLLABORATION);
+    const rules = session.get<{ allowed(a: string, c?: unknown): unknown }>(
+      "rules",
+    );
+    const pool = session
+      .get<{ createShape: (attrs: unknown) => BpmnShape }>("elementFactory")
+      .createShape({ type: "bpmn:Participant" });
+    expect(
+      rules.allowed("shape.create", {
+        shape: pool,
+        target: session.shape("Sub_A"),
+      }),
     ).toBe(false);
     session.destroy();
   });
@@ -287,3 +309,131 @@ describe("Lane-Zugehörigkeit", () => {
     session.destroy();
   });
 });
+
+describe("Geschachtelte Lanes", () => {
+  it("hängt flowNodeRef an die innerste Lane", async () => {
+    const session = await openSession(NESTED_LANES);
+    expect(laneRefs(session, "Lane_Innen1")).toEqual(["Task_N1"]);
+    expect(laneRefs(session, "Lane_Innen2")).toEqual(["Task_N2"]);
+    // Die äußere Lane beansprucht die Knoten ihrer Kinder **nicht**.
+    expect(laneRefs(session, "Lane_Aussen")).toEqual([]);
+    expect(laneFor(session.shape("Task_N1"))?.id).toBe("Lane_Innen1");
+    session.destroy();
+  });
+
+  it("lässt beim Entfernen einer inneren Lane die Geschwisterlane wachsen — nicht den Pool", async () => {
+    const session = await openSession(NESTED_LANES);
+    const poolHeightBefore = session.shape("Pool_N").height;
+    const outerHeightBefore = session.shape("Lane_Aussen").height;
+
+    operate(
+      session,
+      "innere Lane entfernen",
+      () => {
+        session.modeling.removeLane(session.shape("Lane_Innen1"));
+      },
+      {
+        after: () => {
+          expect(session.has("Lane_Innen1")).toBe(false);
+          // Die Geschwisterlane füllt die Lücke.
+          expect(session.shape("Lane_Innen2").height).toBe(200);
+          // Weder der Pool noch die äußere Lane ändern ihre Größe.
+          expect(session.shape("Pool_N").height).toBe(poolHeightBefore);
+          expect(session.shape("Lane_Aussen").height).toBe(outerHeightBefore);
+          // Der Knoten der entfernten Lane gehört jetzt zur Geschwisterlane.
+          expect(laneRefs(session, "Lane_Innen2").sort()).toEqual([
+            "Task_N1",
+            "Task_N2",
+          ]);
+        },
+        afterUndo: () => {
+          expect(session.has("Lane_Innen1")).toBe(true);
+          expect(laneRefs(session, "Lane_Innen1")).toEqual(["Task_N1"]);
+          expect(laneRefs(session, "Lane_Innen2")).toEqual(["Task_N2"]);
+        },
+      },
+    );
+    session.destroy();
+  });
+
+  it("verkleinert beim Entfernen der letzten Lane einer Ebene nichts", async () => {
+    const session = await openSession(NESTED_LANES);
+    session.modeling.removeLane(session.shape("Lane_Innen1"));
+    session.assertInvariants("erste innere Lane weg");
+    const outerBefore = session.shape("Lane_Aussen").height;
+    const poolBefore = session.shape("Pool_N").height;
+
+    operate(
+      session,
+      "letzte innere Lane entfernen",
+      () => {
+        session.modeling.removeLane(session.shape("Lane_Innen2"));
+      },
+      {
+        after: () => {
+          // Die äußere Lane verliert ihre Unterteilung, nicht ihre Größe.
+          expect(session.shape("Lane_Aussen").height).toBe(outerBefore);
+          expect(session.shape("Pool_N").height).toBe(poolBefore);
+          expect(childLanes(session.shape("Lane_Aussen"))).toHaveLength(0);
+          // Die Knoten hängen nun an der äußeren Lane.
+          expect(laneRefs(session, "Lane_Aussen").sort()).toEqual([
+            "Task_N1",
+            "Task_N2",
+          ]);
+        },
+      },
+    );
+    session.destroy();
+  });
+
+  it("lässt den Pool beim Entfernen seiner letzten Lane unverändert groß", async () => {
+    const session = await openSession(NESTED_LANES);
+    const poolBefore = { ...boundsOfShape(session.shape("Pool_N")) };
+
+    session.modeling.removeLane(session.shape("Lane_Aussen"));
+    session.assertInvariants("äußere Lane weg");
+    session.modeling.removeLane(session.shape("Lane_Unten"));
+    session.assertInvariants("letzte Lane weg");
+
+    expect(boundsOfShape(session.shape("Pool_N"))).toEqual(poolBefore);
+    expect(childLanes(session.shape("Pool_N"))).toHaveLength(0);
+    // Der Knoten, der in der letzten Lane lag, ist noch da.
+    expect(session.has("Task_N3")).toBe(true);
+    session.destroy();
+  });
+
+  it("nimmt beim Entfernen einer äußeren Lane ihre Kind-Lanes mit", async () => {
+    const session = await openSession(NESTED_LANES);
+
+    operate(
+      session,
+      "äußere Lane mit Kindern entfernen",
+      () => {
+        session.modeling.removeLane(session.shape("Lane_Aussen"));
+      },
+      {
+        after: () => {
+          expect(session.has("Lane_Innen1")).toBe(false);
+          expect(session.has("Lane_Innen2")).toBe(false);
+          // Die Knoten bleiben — sie gehören dem Prozess.
+          expect(session.has("Task_N1")).toBe(true);
+          expect(session.has("Task_N2")).toBe(true);
+        },
+        afterUndo: () => {
+          expect(session.has("Lane_Innen1")).toBe(true);
+          expect(laneRefs(session, "Lane_Innen1")).toEqual(["Task_N1"]);
+        },
+      },
+    );
+    session.destroy();
+  });
+});
+
+function boundsOfShape(shape: BpmnShape): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+}

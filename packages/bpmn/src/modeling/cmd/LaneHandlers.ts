@@ -316,17 +316,18 @@ export class RemoveLaneHandler {
     this.modeling.removeShape(lane);
 
     if (siblings.length === 0) {
-      // Letzte Lane: der Pool schrumpft um sie.
-      this.modeling.resizeShape(pool, {
-        x: pool.x,
-        y: pool.y,
-        width: horizontal
-          ? pool.width
-          : Math.max(MIN_LANE_SIZE, pool.width - lane.width),
-        height: horizontal
-          ? Math.max(MIN_LANE_SIZE, pool.height - lane.height)
-          : pool.height,
-      });
+      // **Letzte Lane auf ihrer Ebene: nichts wird verkleinert.**
+      //
+      // Bis hierher schrumpfte der Pool um die Höhe der Lane. Das war falsch,
+      // und zwar deutlich: Eine einzelne Lane füllt ihren Container fast
+      // vollständig aus — der Pool wäre auf die Mindesthöhe zusammengefallen
+      // und hätte seinen eigenen Inhalt aus der Fläche geschoben. Bei einer
+      // geschachtelten Lane traf es zudem den falschen Container: geschrumpft
+      // wurde der Pool, obwohl die Lane in einer Eltern-Lane lag.
+      //
+      // Richtig ist die einfachere Aussage: Der Container verliert seine
+      // Unterteilung, nicht seine Größe. Der Inhalt bleibt, wo er ist, und die
+      // Zugehörigkeit rechnet der Updater neu.
       return;
     }
 

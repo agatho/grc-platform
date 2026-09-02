@@ -24,7 +24,13 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: monorepoRoot,
   },
-  transpilePackages: ["@grc/auth", "@grc/db", "@grc/shared", "@grc/ui"],
+  transpilePackages: [
+    "@grc/auth",
+    "@grc/bpmn",
+    "@grc/db",
+    "@grc/shared",
+    "@grc/ui",
+  ],
   // Keep node-only OTS dependency out of the bundler — it pulls in
   // fs/tls via the legacy `request` http client. Only the /audit-log/
   // anchor/upgrade route touches it, server-side.

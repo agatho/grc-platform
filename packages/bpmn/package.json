@@ -8,7 +8,10 @@
     ".": "./src/index.ts",
     "./model": "./src/model/index.ts",
     "./draw": "./src/draw/index.ts",
-    "./viewer": "./src/viewer/index.ts"
+    "./viewer": "./src/viewer/index.ts",
+    "./modeling": "./src/modeling/index.ts",
+    "./editor": "./src/editor/index.ts",
+    "./grc": "./src/grc/index.ts"
   },
   "scripts": {
     "lint": "eslint . --no-error-on-unmatched-pattern",

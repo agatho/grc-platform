@@ -11,117 +11,117 @@ The four assurances are the ones stated in §5.1 of `/work/bpmn-plan/ARCTOS_BPMN
 
 ## Summary
 
-| assurance | files passing |
-|---|---|
-| Z-A canonical equivalence | 43 / 52 |
-| Z-B idempotence | 52 / 52 |
-| Z-C non-loss | 44 / 52 |
-| Z-D read-preserve-write | 52 / 52 |
-| **all four** | **43 / 52** |
+| assurance                 | files passing |
+| ------------------------- | ------------- |
+| Z-A canonical equivalence | 43 / 52       |
+| Z-B idempotence           | 52 / 52       |
+| Z-C non-loss              | 44 / 52       |
+| Z-D read-preserve-write   | 52 / 52       |
+| **all four**              | **43 / 52**   |
 
 ### By origin
 
-| group | files | all four assurances |
-|---|---:|---|
-| extracted from the repository (`repo-*`) | 33 | 33 / 33 |
-| hard cases built for the spike (`synth-*`) | 19 | 10 / 19 |
+| group                                      | files | all four assurances |
+| ------------------------------------------ | ----: | ------------------- |
+| extracted from the repository (`repo-*`)   |    33 | 33 / 33             |
+| hard cases built for the spike (`synth-*`) |    19 | 10 / 19             |
 
-Sibling element order — *not* one of the assurances, since Z-A is stated over an element set — is preserved in 43 / 52 files. `moddle-xml` writes children back in schema order, so a plain text diff of a saved file will show movement even where Z-A holds.
+Sibling element order — _not_ one of the assurances, since Z-A is stated over an element set — is preserved in 43 / 52 files. `moddle-xml` writes children back in schema order, so a plain text diff of a saved file will show movement even where Z-A holds.
 
 ## Root causes
 
 Every deviation below traces back to one of four behaviours of `moddle-xml`. None of them is a bug in this package; all of them are properties the replacement engine inherits, and they are what the assurances have to be stated against.
 
 1. **An attribute whose value equals the schema default is omitted on write.** The attribute was in the source, is not in the output, and the document still means the same thing — a Z-C failure by the letter of the assurance and a non-event by its intent. It is the single largest cause here.
-2. **An IDREF that cannot be resolved is dropped**, with a `moddle` warning. This one *is* data loss: `dataStoreRef`, `messageRef`, `errorRef` and `BPMNShape/@bpmnElement` pointing at a missing element vanish silently from the saved file. A partial export from a foreign repository loses information the first time ARCTOS saves it.
+2. **An IDREF that cannot be resolved is dropped**, with a `moddle` warning. This one _is_ data loss: `dataStoreRef`, `messageRef`, `errorRef` and `BPMNShape/@bpmnElement` pointing at a missing element vanish silently from the saved file. A partial export from a foreign repository loses information the first time ARCTOS saves it.
 3. **`xml.tagAlias: "lowerCase"` normalises `GrcMetadata` to `grcMetadata`.** Required by §5.2 of the plan, not a defect — but it does move Z-A, so it is listed rather than hidden.
 4. **Comments and processing instructions are not represented in the moddle tree** and are dropped. They are outside Z-C (which counts elements, attributes and text nodes) but they are content someone wrote on purpose.
 
 Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1**.
 
-| lost node kind |
-|---|
-| `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape/@bpmnElement` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@parallelMultiple` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference/@dataStoreRef` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition/@errorRef` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@gatewayDirection` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition/@messageRef` |
+| lost node kind                                                                                |
+| --------------------------------------------------------------------------------------------- |
+| `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape/@bpmnElement`                            |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity`                  |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@parallelMultiple`                |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection`                       |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference/@dataStoreRef`               |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage`                |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage`                      |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition/@errorRef`                 |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType`            |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@gatewayDirection`            |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate`                 |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition/@messageRef`             |
 | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics/@isSequential` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@isInterrupting` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@parallelMultiple` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess/@triggeredByEvent` |
-| `{http://www.omg.org/spec/BPMN/20100524/MODEL}task/@isForCompensation` |
-| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata` |
-| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@complianceProfile` |
-| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@isCriticalProcess` |
-| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@lineOfDefense` |
-| `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess` |
-| `{https://arctos.grc/schema/bpmn/1.0}ropa/@isProcessingActivity` |
-| `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia` |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@isInterrupting`                     |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@parallelMultiple`                   |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess/@triggeredByEvent`                   |
+| `{http://www.omg.org/spec/BPMN/20100524/MODEL}task/@isForCompensation`                        |
+| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata`                                             |
+| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@complianceProfile`                          |
+| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@isCriticalProcess`                          |
+| `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@lineOfDefense`                              |
+| `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess`                          |
+| `{https://arctos.grc/schema/bpmn/1.0}ropa/@isProcessingActivity`                              |
+| `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia`                                      |
 
 ## Per file
 
-| file | elem | Z-A | Z-B | Z-C | Z-D | order kept | note |
-|---|---:|---|---|---|---|---|---|
-| `repo-arctos-basic-no-extensions` | 4 | ok | ok | ok | ok | yes |  |
-| `repo-arctos-foreign-extension-and-existing-grcmetadata` | 9 | ok | ok | ok | ok | yes |  |
-| `repo-arctos-full-grcmetadata` | 12 | ok | ok | ok | ok | yes |  |
-| `repo-arctos-without-metadata` | 3 | ok | ok | ok | ok | yes |  |
-| `repo-diff-added-task-v2` | 6 | ok | ok | ok | ok | yes |  |
-| `repo-diff-base-v1` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-diff-modified-truncated` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-diff-removed-task` | 4 | ok | ok | ok | ok | yes |  |
-| `repo-diff-renamed-task` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-e2e-approval-changed` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-e2e-approval-initial` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-e2e-process-portal` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-extractor-legacy-regex-fixture` | 3 | ok | ok | ok | ok | yes |  |
-| `repo-parser-di-without-bounds` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-parser-empty-process` | 2 | ok | ok | ok | ok | yes |  |
-| `repo-parser-mixed-types-subprocess` | 23 | ok | ok | ok | ok | yes |  |
-| `repo-parser-no-di-section` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-parser-partial-di` | 7 | ok | ok | ok | ok | yes |  |
-| `repo-parser-start-end-with-di` | 6 | ok | ok | ok | ok | yes |  |
-| `repo-prd-procurement` | 52 | ok | ok | ok | ok | yes |  |
-| `repo-prd-sales-with-gateway` | 60 | ok | ok | ok | ok | yes |  |
-| `repo-prd-single-start-event` | 7 | ok | ok | ok | ok | yes |  |
-| `repo-seed-customer-service` | 34 | ok | ok | ok | ok | yes |  |
-| `repo-seed-goods-receipt` | 34 | ok | ok | ok | ok | yes |  |
-| `repo-seed-management-review` | 43 | ok | ok | ok | ok | yes |  |
-| `repo-seed-order-callactivity` | 43 | ok | ok | ok | ok | yes |  |
-| `repo-seed-risk-management` | 43 | ok | ok | ok | ok | yes |  |
-| `repo-seed-tour-planning` | 34 | ok | ok | ok | ok | yes |  |
-| `repo-validator-disconnected-task` | 8 | ok | ok | ok | ok | yes |  |
-| `repo-validator-gateway-condition-expression` | 13 | ok | ok | ok | ok | yes |  |
-| `repo-validator-missing-end-event` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-validator-missing-start-event` | 5 | ok | ok | ok | ok | yes |  |
-| `repo-validator-valid-minimal` | 7 | ok | ok | ok | ok | yes |  |
-| `synth-all-event-types` | 77 | ok | ok | ok | ok | yes |  |
-| `synth-all-gateway-types` | 82 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 2 differing canonical line(s); Z-C: 2 lost node kind(s) |
-| `synth-all-task-types` | 69 | ok | ok | ok | ok | yes |  |
-| `synth-boundary-events` | 78 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 23 differing canonical line(s); Z-C: 1 lost node kind(s) |
-| `synth-cdata-umlauts-entities` | 56 | ok | ok | ok | ok | yes |  |
-| `synth-collaboration-pools-lanes` | 93 | ok | ok | ok | ok | yes |  |
-| `synth-comments-and-pi` | 19 | **FAIL** | ok | ok | ok | no | Z-A: 6 differing canonical line(s) |
-| `synth-dangling-references` | 20 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 4 differing canonical line(s); Z-C: 4 lost node kind(s) |
-| `synth-data-objects-and-artifacts` | 69 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 1 differing canonical line(s); Z-C: 1 lost node kind(s) |
-| `synth-default-namespace-unprefixed` | 25 | ok | ok | ok | ok | yes |  |
-| `synth-excel-import-lanes` | 23 | ok | ok | ok | ok | yes |  |
-| `synth-foreign-camunda-extensions` | 51 | ok | ok | ok | ok | yes |  |
-| `synth-foreign-namespace-declared-locally` | 6 | ok | ok | ok | ok | yes |  |
-| `synth-grcmetadata-uppercase-tagalias` | 9 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 5 differing canonical line(s); Z-C: 5 lost node kind(s) |
-| `synth-large-flat-process` | 556 | ok | ok | ok | ok | yes |  |
-| `synth-nested-subprocesses` | 78 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 1 differing canonical line(s); Z-C: 1 lost node kind(s) |
-| `synth-schema-default-attributes` | 26 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 16 differing canonical line(s); Z-C: 16 lost node kind(s) |
-| `synth-unusual-attribute-order` | 25 | **FAIL** | ok | **FAIL** | ok | no | Z-A: 2 differing canonical line(s); Z-C: 2 lost node kind(s) |
-| `synth-without-di-section` | 23 | ok | ok | ok | ok | yes |  |
+| file                                                     | elem | Z-A      | Z-B | Z-C      | Z-D | order kept | note                                                           |
+| -------------------------------------------------------- | ---: | -------- | --- | -------- | --- | ---------- | -------------------------------------------------------------- |
+| `repo-arctos-basic-no-extensions`                        |    4 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-arctos-foreign-extension-and-existing-grcmetadata` |    9 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-arctos-full-grcmetadata`                           |   12 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-arctos-without-metadata`                           |    3 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-diff-added-task-v2`                                |    6 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-diff-base-v1`                                      |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-diff-modified-truncated`                           |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-diff-removed-task`                                 |    4 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-diff-renamed-task`                                 |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-e2e-approval-changed`                              |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-e2e-approval-initial`                              |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-e2e-process-portal`                                |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-extractor-legacy-regex-fixture`                    |    3 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-di-without-bounds`                          |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-empty-process`                              |    2 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-mixed-types-subprocess`                     |   23 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-no-di-section`                              |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-partial-di`                                 |    7 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-parser-start-end-with-di`                          |    6 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-prd-procurement`                                   |   52 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-prd-sales-with-gateway`                            |   60 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-prd-single-start-event`                            |    7 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-customer-service`                             |   34 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-goods-receipt`                                |   34 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-management-review`                            |   43 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-order-callactivity`                           |   43 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-risk-management`                              |   43 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-seed-tour-planning`                                |   34 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-validator-disconnected-task`                       |    8 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-validator-gateway-condition-expression`            |   13 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-validator-missing-end-event`                       |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-validator-missing-start-event`                     |    5 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `repo-validator-valid-minimal`                           |    7 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-all-event-types`                                  |   77 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-all-gateway-types`                                |   82 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 2 differing canonical line(s); Z-C: 2 lost node kind(s)   |
+| `synth-all-task-types`                                   |   69 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-boundary-events`                                  |   78 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 23 differing canonical line(s); Z-C: 1 lost node kind(s)  |
+| `synth-cdata-umlauts-entities`                           |   56 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-collaboration-pools-lanes`                        |   93 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-comments-and-pi`                                  |   19 | **FAIL** | ok  | ok       | ok  | no         | Z-A: 6 differing canonical line(s)                             |
+| `synth-dangling-references`                              |   20 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 4 differing canonical line(s); Z-C: 4 lost node kind(s)   |
+| `synth-data-objects-and-artifacts`                       |   69 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 1 differing canonical line(s); Z-C: 1 lost node kind(s)   |
+| `synth-default-namespace-unprefixed`                     |   25 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-excel-import-lanes`                               |   23 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-foreign-camunda-extensions`                       |   51 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-foreign-namespace-declared-locally`               |    6 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-grcmetadata-uppercase-tagalias`                   |    9 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 5 differing canonical line(s); Z-C: 5 lost node kind(s)   |
+| `synth-large-flat-process`                               |  556 | ok       | ok  | ok       | ok  | yes        |                                                                |
+| `synth-nested-subprocesses`                              |   78 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 1 differing canonical line(s); Z-C: 1 lost node kind(s)   |
+| `synth-schema-default-attributes`                        |   26 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 16 differing canonical line(s); Z-C: 16 lost node kind(s) |
+| `synth-unusual-attribute-order`                          |   25 | **FAIL** | ok  | **FAIL** | ok  | no         | Z-A: 2 differing canonical line(s); Z-C: 2 lost node kind(s)   |
+| `synth-without-di-section`                               |   23 | ok       | ok  | ok       | ok  | yes        |                                                                |
 
 ## Differences in detail
 
@@ -131,17 +131,17 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 2 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 236 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@eventGatewayType="Exclusive"` |
-| 238 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@instantiate="false"` |
+| line |                  | in `<element>`                                                   | canonical line                  |
+| ---: | ---------------- | ---------------------------------------------------------------- | ------------------------------- |
+|  236 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@eventGatewayType="Exclusive"` |
+|  238 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@instantiate="false"`          |
 
 **Z-C non-loss — 2 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate` | 1 | 0 |
+| kind      | node                                                                               | count in | count out |
+| --------- | ---------------------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType` |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate`      |        1 |         0 |
 
 ### `synth-boundary-events`
 
@@ -149,37 +149,37 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 23 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 201 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@cancelActivity="true"` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@id="Boundary_Error"` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@name="Fehler"` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@id="ErrorDef_1"` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `text "Flow_Fehler"` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>` |
-| 202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@attachedToRef="Task_Freigabe"` |
-| 215 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>` |
-| 216 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@attachedToRef="Task_Freigabe"` |
-| 217 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@id="Boundary_Error"` |
-| 218 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@name="Fehler"` |
-| 219 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
-| 220 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `@id="ErrorDef_1"` |
-| 221 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
-| 222 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>` |
-| 223 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing` | `text "Flow_Fehler"` |
-| 224 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>` |
-| 225 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>` |
+| line |                         | in `<element>`                                                      | canonical line                                                         |
+| ---: | ----------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+|  201 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@cancelActivity="true"`                                               |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@id="Boundary_Error"`                                                 |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@name="Fehler"`                                                       |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>`  |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@id="ErrorDef_1"`                                                     |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>`              |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `text "Flow_Fehler"`                                                   |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>`             |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>`        |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>`         |
+|  202 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@attachedToRef="Task_Freigabe"`                                       |
+|  215 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>`         |
+|  216 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@attachedToRef="Task_Freigabe"`                                       |
+|  217 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@id="Boundary_Error"`                                                 |
+|  218 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `@name="Fehler"`                                                       |
+|  219 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>`  |
+|  220 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `@id="ErrorDef_1"`                                                     |
+|  221 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition>` |
+|  222 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing`             | `<{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>`              |
+|  223 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing`             | `text "Flow_Fehler"`                                                   |
+|  224 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing`             | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}outgoing>`             |
+|  225 | − only in source        | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`        | `</{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent>`        |
 
 **Z-C non-loss — 1 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity` | 2 | 1 |
+| kind      | node                                                                         | count in | count out |
+| --------- | ---------------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity` |        2 |         1 |
 
 ### `synth-comments-and-pi`
 
@@ -187,14 +187,14 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 6 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 1 | − only in source | `(root)` | `<?arctos-hint layout="manual"?>` |
-| 2 | − only in source | `(root)` | `<!--Kopfkommentar: Freigabe durch QM am 2026-03-01-->` |
-| 6 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `<!--Kommentar innerhalb der Definitions-->` |
-| 47 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}process` | `<!--Kommentar innerhalb des Prozesses, direkt vor dem Startereignis-->` |
-| 75 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task` | `<!--Kommentar innerhalb eines Flow-Nodes-->` |
-| 85 | − only in source | `(root)` | `<!--Fusskommentar-->` |
+| line |                  | in `<element>`                                             | canonical line                                                           |
+| ---: | ---------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ |
+|    1 | − only in source | `(root)`                                                   | `<?arctos-hint layout="manual"?>`                                        |
+|    2 | − only in source | `(root)`                                                   | `<!--Kopfkommentar: Freigabe durch QM am 2026-03-01-->`                  |
+|    6 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `<!--Kommentar innerhalb der Definitions-->`                             |
+|   47 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}process`     | `<!--Kommentar innerhalb des Prozesses, direkt vor dem Startereignis-->` |
+|   75 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task`        | `<!--Kommentar innerhalb eines Flow-Nodes-->`                            |
+|   85 | − only in source | `(root)`                                                   | `<!--Fusskommentar-->`                                                   |
 
 ### `synth-dangling-references`
 
@@ -209,21 +209,21 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 4 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 20 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape` | `@bpmnElement="Shape_For_Missing_Element"` |
-| 46 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference` | `@dataStoreRef="DataStore_Missing"` |
-| 54 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition` | `@errorRef="Error_Missing"` |
-| 76 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition` | `@messageRef="Message_Missing"` |
+| line |                  | in `<element>`                                                        | canonical line                             |
+| ---: | ---------------- | --------------------------------------------------------------------- | ------------------------------------------ |
+|   20 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape`                 | `@bpmnElement="Shape_For_Missing_Element"` |
+|   46 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference`     | `@dataStoreRef="DataStore_Missing"`        |
+|   54 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition`   | `@errorRef="Error_Missing"`                |
+|   76 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition` | `@messageRef="Message_Missing"`            |
 
 **Z-C non-loss — 4 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape/@bpmnElement` | 2 | 1 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference/@dataStoreRef` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition/@errorRef` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition/@messageRef` | 1 | 0 |
+| kind      | node                                                                              | count in | count out |
+| --------- | --------------------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/DI}BPMNShape/@bpmnElement`                |        2 |         1 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataStoreReference/@dataStoreRef`   |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}errorEventDefinition/@errorRef`     |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}messageEventDefinition/@messageRef` |        1 |         0 |
 
 ### `synth-data-objects-and-artifacts`
 
@@ -231,15 +231,15 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 1 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 205 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject` | `@isCollection="false"` |
+| line |                  | in `<element>`                                            | canonical line          |
+| ---: | ---------------- | --------------------------------------------------------- | ----------------------- |
+|  205 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject` | `@isCollection="false"` |
 
 **Z-C non-loss — 1 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection` | 1 | 0 |
+| kind      | node                                                                    | count in | count out |
+| --------- | ----------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection` |        1 |         0 |
 
 ### `synth-grcmetadata-uppercase-tagalias`
 
@@ -247,32 +247,32 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 5 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 11 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata` | `<{https://arctos.grc/schema/bpmn/1.0}GrcMetadata>` |
-| 12 | + only after round-trip | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata` | `<{https://arctos.grc/schema/bpmn/1.0}grcMetadata>` |
-| 33 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}ropa` | `@requiresDpia="false"` |
-| 35 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata` | `</{https://arctos.grc/schema/bpmn/1.0}GrcMetadata>` |
-| 36 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}extensionElements` | `</{https://arctos.grc/schema/bpmn/1.0}grcMetadata>` |
+| line |                         | in `<element>`                                                   | canonical line                                       |
+| ---: | ----------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
+|   11 | − only in source        | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata`                | `<{https://arctos.grc/schema/bpmn/1.0}GrcMetadata>`  |
+|   12 | + only after round-trip | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata`                | `<{https://arctos.grc/schema/bpmn/1.0}grcMetadata>`  |
+|   33 | − only in source        | `{https://arctos.grc/schema/bpmn/1.0}ropa`                       | `@requiresDpia="false"`                              |
+|   35 | − only in source        | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata`                | `</{https://arctos.grc/schema/bpmn/1.0}GrcMetadata>` |
+|   36 | + only after round-trip | `{http://www.omg.org/spec/BPMN/20100524/MODEL}extensionElements` | `</{https://arctos.grc/schema/bpmn/1.0}grcMetadata>` |
 
 **Z-C non-loss — 5 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| element | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@complianceProfile` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@isCriticalProcess` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@lineOfDefense` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia` | 1 | 0 |
+| kind      | node                                                                 | count in | count out |
+| --------- | -------------------------------------------------------------------- | -------: | --------: |
+| element   | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata`                    |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@complianceProfile` |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@isCriticalProcess` |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}GrcMetadata/@lineOfDefense`     |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia`             |        1 |         0 |
 
 <details><summary>4 node kind(s) added by the serialiser (allowed under Z-C)</summary>
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| element | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata` | 0 | 1 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@complianceProfile` | 0 | 1 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess` | 0 | 1 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@lineOfDefense` | 0 | 1 |
+| kind      | node                                                                 | count in | count out |
+| --------- | -------------------------------------------------------------------- | -------: | --------: |
+| element   | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata`                    |        0 |         1 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@complianceProfile` |        0 |         1 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess` |        0 |         1 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@lineOfDefense`     |        0 |         1 |
 
 </details>
 
@@ -282,15 +282,15 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 1 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 241 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics` | `@isSequential="false"` |
+| line |                  | in `<element>`                                                                  | canonical line          |
+| ---: | ---------------- | ------------------------------------------------------------------------------- | ----------------------- |
+|  241 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics` | `@isSequential="false"` |
 
 **Z-C non-loss — 1 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics/@isSequential` | 1 | 0 |
+| kind      | node                                                                                          | count in | count out |
+| --------- | --------------------------------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics/@isSequential` |        1 |         0 |
 
 ### `synth-schema-default-attributes`
 
@@ -298,45 +298,45 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 16 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 2 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@expressionLanguage="http://www.w3.org/1999/XPath"` |
-| 5 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@typeLanguage="http://www.w3.org/2001/XMLSchema"` |
-| 13 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@cancelActivity="true"` |
-| 15 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent` | `@parallelMultiple="false"` |
-| 25 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject` | `@isCollection="false"` |
-| 31 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata` | `@isCriticalProcess="false"` |
-| 33 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}ropa` | `@isProcessingActivity="false"` |
-| 34 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}ropa` | `@requiresDpia="false"` |
-| 46 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@eventGatewayType="Exclusive"` |
-| 47 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@gatewayDirection="Unspecified"` |
-| 49 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway` | `@instantiate="false"` |
-| 80 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent` | `@isInterrupting="true"` |
-| 81 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent` | `@parallelMultiple="false"` |
-| 88 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess` | `@triggeredByEvent="false"` |
-| 94 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics` | `@isSequential="false"` |
-| 101 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task` | `@isForCompensation="false"` |
+| line |                  | in `<element>`                                                                  | canonical line                                       |
+| ---: | ---------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------- |
+|    2 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions`                      | `@expressionLanguage="http://www.w3.org/1999/XPath"` |
+|    5 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions`                      | `@typeLanguage="http://www.w3.org/2001/XMLSchema"`   |
+|   13 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`                    | `@cancelActivity="true"`                             |
+|   15 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent`                    | `@parallelMultiple="false"`                          |
+|   25 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject`                       | `@isCollection="false"`                              |
+|   31 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata`                               | `@isCriticalProcess="false"`                         |
+|   33 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}ropa`                                      | `@isProcessingActivity="false"`                      |
+|   34 | − only in source | `{https://arctos.grc/schema/bpmn/1.0}ropa`                                      | `@requiresDpia="false"`                              |
+|   46 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway`                | `@eventGatewayType="Exclusive"`                      |
+|   47 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway`                | `@gatewayDirection="Unspecified"`                    |
+|   49 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway`                | `@instantiate="false"`                               |
+|   80 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent`                       | `@isInterrupting="true"`                             |
+|   81 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent`                       | `@parallelMultiple="false"`                          |
+|   88 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess`                       | `@triggeredByEvent="false"`                          |
+|   94 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics` | `@isSequential="false"`                              |
+|  101 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task`                             | `@isForCompensation="false"`                         |
 
 **Z-C non-loss — 16 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@parallelMultiple` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@gatewayDirection` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics/@isSequential` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@isInterrupting` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@parallelMultiple` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess/@triggeredByEvent` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task/@isForCompensation` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@isProcessingActivity` | 1 | 0 |
-| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia` | 1 | 0 |
+| kind      | node                                                                                          | count in | count out |
+| --------- | --------------------------------------------------------------------------------------------- | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@cancelActivity`                  |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}boundaryEvent/@parallelMultiple`                |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}dataObject/@isCollection`                       |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage`                |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage`                      |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@eventGatewayType`            |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@gatewayDirection`            |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}eventBasedGateway/@instantiate`                 |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}multiInstanceLoopCharacteristics/@isSequential` |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@isInterrupting`                     |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}startEvent/@parallelMultiple`                   |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}subProcess/@triggeredByEvent`                   |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}task/@isForCompensation`                        |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}grcMetadata/@isCriticalProcess`                          |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@isProcessingActivity`                              |        1 |         0 |
+| attribute | `{https://arctos.grc/schema/bpmn/1.0}ropa/@requiresDpia`                                      |        1 |         0 |
 
 ### `synth-unusual-attribute-order`
 
@@ -344,14 +344,14 @@ Distinct attributes lost anywhere in the corpus: **23**; distinct elements: **1*
 
 **Z-A canonical equivalence — 2 differing canonical line(s)**
 
-| line | | in `<element>` | canonical line |
-|---:|---|---|---|
-| 4 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@expressionLanguage="http://www.w3.org/1999/XPath"` |
-| 7 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@typeLanguage="http://www.w3.org/2001/XMLSchema"` |
+| line |                  | in `<element>`                                             | canonical line                                       |
+| ---: | ---------------- | ---------------------------------------------------------- | ---------------------------------------------------- |
+|    4 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@expressionLanguage="http://www.w3.org/1999/XPath"` |
+|    7 | − only in source | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions` | `@typeLanguage="http://www.w3.org/2001/XMLSchema"`   |
 
 **Z-C non-loss — 2 lost node kind(s)**
 
-| kind | node | count in | count out |
-|---|---|---:|---:|
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage` | 1 | 0 |
-| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage` | 1 | 0 |
+| kind      | node                                                                           | count in | count out |
+| --------- | ------------------------------------------------------------------------------ | -------: | --------: |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@expressionLanguage` |        1 |         0 |
+| attribute | `{http://www.omg.org/spec/BPMN/20100524/MODEL}definitions/@typeLanguage`       |        1 |         0 |

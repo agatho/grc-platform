@@ -14,12 +14,17 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { allKnown, KNOWN_FINDINGS, lookupFinding } from "./known-findings.js";
+import {
+  allKnown,
+  KNOWN_FINDINGS,
+  lookupFinding,
+  RESOLVED_FINDINGS,
+} from "./known-findings.js";
 import { DIVERGENCE_RULES } from "../../src/verify/shadow.js";
 
 describe("known-findings registry", () => {
   it("gives every entry an owner, a reproduction and a note", () => {
-    for (const finding of KNOWN_FINDINGS) {
+    for (const finding of [...KNOWN_FINDINGS, ...RESOLVED_FINDINGS]) {
       expect(finding.id, "a finding without an id cannot be matched").not.toBe(
         "",
       );
@@ -35,19 +40,36 @@ describe("known-findings registry", () => {
   });
 
   it("has no duplicate ids", () => {
-    const ids = KNOWN_FINDINGS.map((finding) => finding.id);
+    const ids = [...KNOWN_FINDINGS, ...RESOLVED_FINDINGS].map(
+      (finding) => finding.id,
+    );
     expect(new Set(ids).size, `duplicate ids: ${ids.join(", ")}`).toBe(
       ids.length,
     );
   });
 
-  it("matches only what is listed", () => {
-    expect(allKnown(["ref/boundary-attached-to"])).toBe(true);
-    expect(allKnown(["ref/boundary-attached-to", "something/new"])).toBe(false);
+  it("matches only what is listed — and the list is empty", () => {
+    // Der schärfste Zustand, den dieses Register haben kann: `allKnown`
+    // antwortet für **jede** Kennung `false`, also zählt jeder Befund des
+    // Eigenschaftslaufs als echter Befund — auch ohne `PROPERTY_STRICT=1`.
     expect(allKnown([]), "an empty failure must never count as known").toBe(
       false,
     );
+    expect(allKnown(["ref/boundary-attached-to"])).toBe(false);
     expect(lookupFinding("something/new")).toBeUndefined();
+    expect(lookupFinding("ref/boundary-attached-to")).toBeUndefined();
+  });
+
+  it("keeps a fix and a regression test on every resolved entry", () => {
+    // Ein Eintrag darf nur dann in die Erledigt-Liste, wenn nachlesbar ist,
+    // **wo** er behoben wurde — sonst ist „erledigt" eine Behauptung.
+    for (const finding of RESOLVED_FINDINGS) {
+      expect(
+        finding.fixedIn.length,
+        `${finding.id}: „behoben" ohne Fundstelle ist keine Angabe`,
+      ).toBeGreaterThan(20);
+    }
+    expect(RESOLVED_FINDINGS.length).toBeGreaterThan(0);
   });
 
   it("keeps the count of open engine defects visible", () => {
@@ -58,8 +80,13 @@ describe("known-findings registry", () => {
       byOwner[`${finding.owner}/${finding.verdict}`] =
         (byOwner[`${finding.owner}/${finding.verdict}`] ?? 0) + 1;
     }
-    console.info(`[known-findings] ${JSON.stringify(byOwner)}`);
-    expect(KNOWN_FINDINGS.length).toBeGreaterThan(0);
+    console.info(
+      `[known-findings] open=${String(KNOWN_FINDINGS.length)} ` +
+        `${JSON.stringify(byOwner)} resolved=${String(RESOLVED_FINDINGS.length)}`,
+    );
+    // Ausdrücklich **keine** untere Schranke: null offene Befunde ist das
+    // Ziel, nicht ein Fehler des Registers.
+    expect(KNOWN_FINDINGS.length).toBeGreaterThanOrEqual(0);
   });
 
   it("keeps the shadow divergence rules explained too", () => {

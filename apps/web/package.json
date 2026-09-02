@@ -18,6 +18,7 @@
   "dependencies": {
     "@grc/ai": "^0.1.0",
     "@grc/auth": "^0.1.0",
+    "@grc/bpmn": "^0.1.0",
     "@grc/automation": "^0.1.0",
     "@grc/db": "^0.1.0",
     "@grc/events": "^0.1.0",

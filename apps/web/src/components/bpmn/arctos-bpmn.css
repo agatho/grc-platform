@@ -1,0 +1,91 @@
+/*
+ * Das Aussehen der eigenen Engine.
+ *
+ * `@grc/bpmn` bringt bewusst kein Stylesheet mit (STUFE2-B1-EDITOR.md §8): die
+ * Bedienschicht setzt die Klassennamen, das Aussehen liefert die Anwendung.
+ * Ohne diese Datei ist die Bearbeitungsfläche vollständig und unsichtbar — die
+ * Palette steht im DOM, hat aber keine Position, keinen Rahmen und keinen
+ * Fokusindikator.
+ *
+ * **Warum nicht `bpmn-editor.css`.** Die dort importierten Stylesheets kommen
+ * aus `bpmn-js/dist/assets/` — dieselbe Abhängigkeit, die dieser Pfad gerade
+ * ablösen soll, samt Wasserzeichenregel. Hier wird ausschließlich
+ * `diagram-js/assets/diagram-js.css` benutzt (MIT, Teil der eigenen
+ * Abhängigkeiten). Der Rest sind die drei Klassen, die `src/editor` selbst
+ * vergibt und für die es in `diagram-js` nichts gibt.
+ */
+
+@import "diagram-js/assets/diagram-js.css";
+
+/*
+ * Fokusindikator, Plan §4.4 Regel 6: doppelter Ring, damit er auf hellem und
+ * auf dunklem Grund sichtbar bleibt. Er gilt für jedes Bedienelement der
+ * Editor-Schicht, nicht nur für die Palette — Maus- und Tastaturweg sollen
+ * sich nicht unterscheiden.
+ */
+.djs-palette .entry:focus-visible,
+.djs-context-pad .entry:focus-visible,
+.arctos-bpmn-replace-menu .entry:focus-visible,
+.arctos-bpmn-label-input:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #ffffff;
+}
+
+/* Eine Palette ohne Bearbeitungsrecht: sichtbar, bedienlos, mit Begründung. */
+.djs-palette .entry[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Typwechselmenü. `diagram-js` kennt es nicht; die Klasse kommt aus src/editor. */
+.arctos-bpmn-replace-menu {
+  position: absolute;
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 220px;
+  padding: 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+  font-size: 13px;
+}
+
+.arctos-bpmn-replace-menu .entry {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.arctos-bpmn-replace-menu .entry:hover,
+.arctos-bpmn-replace-menu .entry[aria-selected="true"] {
+  background: #eff6ff;
+}
+
+/* Direktbeschriftung: liegt über der Form und übernimmt deren Maße. */
+.arctos-bpmn-label-editing {
+  position: absolute;
+  z-index: 100;
+}
+
+.arctos-bpmn-label-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  border: 1px solid #1d4ed8;
+  border-radius: 3px;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center;
+  resize: none;
+}

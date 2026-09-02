@@ -51,10 +51,32 @@ describe("Modus statt zweiter Implementierung", () => {
     );
   });
 
-  it("der Editor-Modus verweigert sich mit einer erklärenden Meldung", () => {
-    expect(() => new BpmnCanvas({ container, mode: "edit" })).toThrow(
-      /bpmnUpdater|bpmnRules/,
-    );
+  it("der Editor-Modus bringt die BPMN-Dienste mit, der Lesemodus nicht", () => {
+    const editor = new BpmnCanvas({ container, mode: "edit" });
+    for (const service of [
+      "bpmnRules",
+      "bpmnUpdater",
+      "bpmnFactory",
+      "bpmnImporter",
+      "modeling",
+      "commandStack",
+      "paletteProvider",
+      "contextPadProvider",
+      "labelEditing",
+    ]) {
+      expect(editor.get(service), service).toBeTruthy();
+    }
+    expect(editor.editable).toBe(true);
+    editor.destroy();
+
+    const reader = new BpmnCanvas({ container, mode: "read" });
+    expect(reader.editable).toBe(false);
+    // Nicht „verboten", sondern **nicht registriert** — das ist der ganze
+    // Unterschied zwischen den Modi.
+    expect(() => reader.get("modeling")).toThrow();
+    expect(() => reader.get("paletteProvider")).toThrow();
+    expect(reader.canUndo()).toBe(false);
+    reader.destroy();
   });
 });
 
@@ -206,6 +228,93 @@ describe("BpmnCanvas (Lesepfad)", () => {
       },
     });
     await expect(canvas.importXml("<xml/>")).rejects.toThrow(/kaputt/);
+    canvas.destroy();
+  });
+});
+
+/**
+ * Der Bearbeitungspfad — die Lücke, die `STUFE2-B2-EINBINDUNG.md` §3.4 als
+ * „drei von vier Einbindungen" beschrieb. Geprüft wird nicht die Maus (das
+ * geht in jsdom nicht, B1 §7.1), sondern dass dieselbe Komponente im Modus
+ * `edit` die Modellierungsschicht bedient und **schreiben** kann.
+ */
+describe("BpmnCanvas (Bearbeitungspfad)", () => {
+  it("importiert über die Modellierungsschicht: geschachtelt statt flach", async () => {
+    const canvas = new BpmnCanvas({
+      container,
+      mode: "edit",
+      importXml,
+    });
+    await canvas.importXml(corpus("synth-boundary-events"));
+
+    const registry = canvas.get<{
+      get: (id: string) => { parent?: { id?: string }; host?: { id?: string } };
+    }>("elementRegistry");
+    // Der flache Szenenaufbau des Lesepfads kennt weder `parent` noch `host`.
+    expect(registry.get("Boundary_Timer").host?.id).toBe("Task_Freigabe");
+    expect(registry.get("Task_Freigabe").parent?.id).toBe("Process_Boundary");
+    canvas.destroy();
+  });
+
+  it("gibt unbearbeitetes XML byteweise unverändert zurück (Z-D)", async () => {
+    const source = corpus("repo-prd-sales-with-gateway");
+    const canvas = new BpmnCanvas({ container, mode: "edit", importXml });
+    await canvas.importXml(source);
+
+    expect(canvas.dirty).toBe(false);
+    expect(await canvas.exportXml()).toBe(source);
+    canvas.destroy();
+  });
+
+  it("exportiert nach einer Bearbeitung aus dem Modell — und nimmt sie mit", async () => {
+    const source = corpus("repo-prd-sales-with-gateway");
+    const canvas = new BpmnCanvas({ container, mode: "edit", importXml });
+    await canvas.importXml(source);
+
+    const modeling = canvas.get<{
+      createShape: (
+        attrs: unknown,
+        position: unknown,
+        parent: unknown,
+      ) => { id: string };
+    }>("modeling");
+    const root = canvas.get<{ getRootElement: () => unknown }>("canvas");
+    const created = modeling.createShape(
+      { type: "bpmn:Task", name: "Nachtraeglich ergaenzt" },
+      { x: 900, y: 400 },
+      root.getRootElement(),
+    );
+
+    expect(canvas.dirty).toBe(true);
+    const written = await canvas.exportXml();
+    expect(written).not.toBe(source);
+    expect(written).toContain("Nachtraeglich ergaenzt");
+    expect(written).toContain(created.id);
+    // Und die Textalternative zeigt den neuen Stand, nicht den alten.
+    expect(canvas.getTextAlternative().prose).toContain(
+      "Nachtraeglich ergaenzt",
+    );
+    canvas.destroy();
+  });
+
+  it("bedient Undo und Redo, der Lesemodus nicht", async () => {
+    const canvas = new BpmnCanvas({ container, mode: "edit", importXml });
+    await canvas.importXml(corpus("repo-prd-sales-with-gateway"));
+    expect(canvas.canUndo()).toBe(false);
+
+    const modeling = canvas.get<{
+      updateProperties: (element: unknown, properties: unknown) => void;
+    }>("modeling");
+    const registry = canvas.get<{ get: (id: string) => unknown }>(
+      "elementRegistry",
+    );
+    const target = registry.get("Task_offer");
+    expect(target).toBeDefined();
+    modeling.updateProperties(target, { name: "Umbenannt" });
+
+    expect(canvas.canUndo()).toBe(true);
+    canvas.undo();
+    expect(canvas.canRedo()).toBe(true);
     canvas.destroy();
   });
 });

@@ -24,6 +24,7 @@
 
 import RuleProvider from "diagram-js/lib/features/rules/RuleProvider.js";
 import type EventBus from "diagram-js/lib/core/EventBus.js";
+import { DEFAULT_SIZES } from "./BpmnFactory.js";
 import { isCollapsedDi } from "./di.js";
 import { isLaneShape, isParticipantShape } from "./lanes.js";
 import type {
@@ -127,6 +128,26 @@ export class BpmnRules extends RuleProvider {
       return canResize(c.shape);
     });
 
+    // Ausrichten, Verteilen, Kopieren.
+    //
+    // Sie stehen hier, weil `CommandStack.canExecute` für ein Kommando **ohne
+    // Handler** hart `false` liefert: eine nicht formulierte Regel verbietet
+    // die Funktion, sie erlaubt sie nicht. Ohne diese drei Zeilen bleiben
+    // „ausrichten", „verteilen" und die **gesamte Zwischenablage** stumm
+    // wirkungslos (Befund 1 aus `STUFE2-B1-EDITOR.md` §6).
+    this.addRule("elements.align", (context: unknown) => {
+      const c = context as { elements?: BpmnElement[] };
+      return (c.elements ?? []).filter(canAlign);
+    });
+    this.addRule("elements.distribute", (context: unknown) => {
+      const c = context as { elements?: BpmnElement[] };
+      return (c.elements ?? []).filter(canAlign);
+    });
+    this.addRule("element.copy", (context: unknown) => {
+      const c = context as { element?: BpmnElement };
+      return canCopy(c.element);
+    });
+
     this.addRule("elements.delete", (context: unknown) => {
       const c = context as { elements?: BpmnElement[] };
       // Alles darf gelöscht werden **außer** der Wurzel; das Löschen der
@@ -135,6 +156,15 @@ export class BpmnRules extends RuleProvider {
       return (c.elements ?? []).filter(
         (element) => element.parent !== undefined,
       );
+    });
+
+    this.addRule("shape.replace", (context: unknown) => {
+      const c = context as {
+        element?: BpmnShape;
+        oldShape?: BpmnShape;
+        newData?: { type?: string };
+      };
+      return canReplace(c.oldShape ?? c.element, c.newData?.type);
     });
 
     this.addRule("shape.toggleCollapse", (context: unknown) => {
@@ -344,7 +374,11 @@ export function canDrop(
   // bekommt ein „geht nicht", statt eines Pools, der im Editor erscheint und
   // in der Datei fehlt.
   if (is(bo, "bpmn:Participant")) {
-    return target.parent === undefined && is(targetBo, "bpmn:Collaboration");
+    // Auf der Wurzel — und zwar auf beiden Sorten Wurzel. Liegt dort noch ein
+    // `bpmn:Process`, wandelt `ParticipantBehavior` ihn beim Anlegen des
+    // ersten Pools in eine `bpmn:Collaboration` um.
+    if (target.parent !== undefined) return false;
+    return is(targetBo, "bpmn:Collaboration") || is(targetBo, "bpmn:Process");
   }
 
   // Lanes liegen in einem Pool oder in einer Lane.
@@ -403,9 +437,41 @@ export function canAttach(
     return false;
   }
   if (!is(targetBo, "bpmn:Activity")) return false;
-  // An sich selbst und an einen eingeklappten Container nicht.
   if (shape === target) return false;
+
+  // Drei Aktivitäten, an die **kein** Boundary Event gehört. Die Regel „Ziel
+  // ist eine Aktivität" allein ist zu grob; der Vergleichslauf gegen `bpmn-js`
+  // hat die Lücke gezeigt (Verifikationsbericht §3.7), und die Spezifikation
+  // gibt der Referenz recht — es ist also keine Nachahmung, sondern eine
+  // Korrektur.
+  //
+  // (1) **Ereignis-Subprozess.** Er wird durch sein Startereignis ausgelöst,
+  //     nicht durch einen Sequenzfluss, und hat weder Rand- noch Kantenkontakt.
+  if (isEventSubProcess(targetBo)) return false;
+
+  // (2) **Kompensationsaktivität.** Sie läuft außerhalb des normalen Ablaufs;
+  //     ein Ereignis auf ihrem Rand hätte keinen Auslösekontext.
+  if (targetBo["isForCompensation"] === true) return false;
+
+  // (3) **Receive Task hinter einem ereignisbasierten Gateway.** Das Gateway
+  //     entscheidet dort bereits über das eintreffende Ereignis; ein
+  //     zusätzliches Boundary Event wäre ein zweiter, widersprüchlicher
+  //     Auslöser.
+  if (is(targetBo, "bpmn:ReceiveTask") && followsEventBasedGateway(target)) {
+    return false;
+  }
+
   return "attach";
+}
+
+/** Hat dieses Element einen eingehenden Fluss aus einem ereignisbasierten Gateway? */
+function followsEventBasedGateway(element: BpmnParent): boolean {
+  const incoming = (element as { incoming?: unknown }).incoming;
+  if (!Array.isArray(incoming)) return false;
+  return incoming.some((connection) => {
+    const source = (connection as { source?: BpmnElement }).source;
+    return is(boOf(source), "bpmn:EventBasedGateway");
+  });
 }
 
 /**
@@ -446,17 +512,127 @@ export function canMove(
   return true;
 }
 
-/** Was ist in seiner Größe veränderbar? Ereignisse und Gateways nicht. */
-export function canResize(shape: BpmnShape | undefined): boolean {
+/**
+ * Darf dieses Element durch den genannten Typ ersetzt werden?
+ *
+ * Verboten sind die Strukturträger: Ein Pool oder eine Lane zu „ersetzen"
+ * hieße, den Prozess dahinter, seine Lane-Hierarchie und die
+ * `flowNodeRef`-Zuordnungen aller Knoten umzuhängen — das ist kein Typwechsel,
+ * sondern ein Umbau des Diagramms, und er steht nicht in dieser Stufe.
+ */
+export function canReplace(
+  element: BpmnShape | undefined,
+  newType: string | undefined,
+): boolean {
+  const bo = boOf(element);
+  if (!bo || typeof newType !== "string" || newType === "") return false;
+  if (isAny(bo, ["bpmn:Participant", "bpmn:Lane"])) return false;
+  // Zieltyp muss selbst platzierbar sein — ein `bpmn:Participant` als Ziel
+  // wäre derselbe Strukturumbau von der anderen Seite.
+  if (newType === "bpmn:Participant" || newType === "bpmn:Lane") return false;
+  return true;
+}
+
+const RESIZABLE = [
+  "bpmn:SubProcess",
+  "bpmn:Transaction",
+  "bpmn:AdHocSubProcess",
+  "bpmn:Participant",
+  "bpmn:Lane",
+  "bpmn:Group",
+  "bpmn:TextAnnotation",
+] as const;
+
+/**
+ * Was ist in seiner Größe veränderbar — und wie klein darf es werden?
+ *
+ * Die Antwort ist bewusst **kein** blankes `true`: `diagram-js` liest die
+ * Untergrenze aus `context.minDimensions` und nimmt ohne Angabe 10 × 10 an.
+ * Ein Pool mit 10 × 10 ist kein Pool mehr — er zeigt weder seinen Namen noch
+ * seine Lanes, und die Lane-Zuordnung rechnet anschließend jeden Knoten aus
+ * ihm heraus. Die Untergrenze ist damit eine **Regel** und keine Frage der
+ * Bedienoberfläche; sie stand bis hierher in der Editor-Schicht
+ * (`STUFE2-B1-EDITOR.md` §6, Befund 2) und gehört hierher.
+ *
+ * Das Ergebnis ist wahrheitswertig verwendbar (`false` oder ein Objekt), so
+ * wie `canConnect` es mit seinem Kantenvorschlag schon hält.
+ */
+export type ResizeRuleResult = false | { readonly minDimensions: Dimensions };
+
+export interface Dimensions {
+  readonly width: number;
+  readonly height: number;
+}
+
+export function canResize(shape: BpmnShape | undefined): ResizeRuleResult {
   const bo = boOf(shape);
-  if (!bo) return false;
-  return isAny(bo, [
-    "bpmn:SubProcess",
-    "bpmn:Transaction",
-    "bpmn:AdHocSubProcess",
-    "bpmn:Participant",
-    "bpmn:Lane",
-    "bpmn:Group",
-    "bpmn:TextAnnotation",
-  ]);
+  if (!bo || !isAny(bo, RESIZABLE)) return false;
+  return { minDimensions: minDimensionsFor(shape as BpmnShape) };
+}
+
+/**
+ * Mindestmaße je Typ.
+ *
+ * Container werden auf einen Bruchteil ihrer Vorgabegröße begrenzt: klein
+ * genug, dass Umbauen möglich bleibt, groß genug, dass Beschriftung und Inhalt
+ * noch Platz haben. Abgeleitet aus {@link DEFAULT_SIZES} derselben Schicht,
+ * damit es keine zweite Wahrheit über Elementgrößen gibt.
+ */
+export function minDimensionsFor(shape: BpmnShape | undefined): Dimensions {
+  const bo = boOf(shape);
+  const type = bo?.$type ?? shape?.type ?? "";
+  if (isAny(bo, ["bpmn:Participant", "bpmn:Lane"])) {
+    return { width: 300, height: 60 };
+  }
+  if (is(bo, "bpmn:TextAnnotation")) return { width: 50, height: 30 };
+  if (
+    isAny(bo, [
+      "bpmn:Group",
+      "bpmn:SubProcess",
+      "bpmn:Transaction",
+      "bpmn:AdHocSubProcess",
+    ])
+  ) {
+    return { width: 140, height: 120 };
+  }
+  const fallback = DEFAULT_SIZES[type];
+  if (fallback) {
+    return {
+      width: Math.max(36, Math.round(fallback.width / 2)),
+      height: Math.max(36, Math.round(fallback.height / 2)),
+    };
+  }
+  return { width: 50, height: 50 };
+}
+
+// ---------------------------------------------------------------------------
+// Ausrichten, Verteilen, Kopieren
+// ---------------------------------------------------------------------------
+
+/**
+ * Was sich ausrichten und verteilen lässt.
+ *
+ * Rein strukturell: keine Kanten (ihre Geometrie folgt den Knoten), keine
+ * Beschriftungen (sie folgen ihrem Ziel), keine Rahmen (Pools, Lanes, Gruppen
+ * — sie *sind* das Raster, an dem ausgerichtet wird; ein ausgerichteter Pool
+ * verschöbe die Lane-Zuordnung aller Knoten darin).
+ */
+export function canAlign(element: BpmnElement | undefined): boolean {
+  if (!element || element.parent === undefined) return false;
+  const shape = element as BpmnShape;
+  if (typeof shape.width !== "number") return false;
+  if (shape.labelTarget !== undefined) return false;
+  if (shape.isFrame === true) return false;
+  return !isAny(boOf(element), ["bpmn:Participant", "bpmn:Lane", "bpmn:Group"]);
+}
+
+/**
+ * Kopiert wird alles außer der Wurzel.
+ *
+ * Was mit einem kopierten Element anschließend geschehen darf, entscheidet
+ * `elements.create` beim Einfügen — hier eine zweite Meinung darüber zu
+ * formulieren wäre der Anfang zweier Wahrheiten.
+ */
+export function canCopy(element: BpmnElement | undefined): boolean {
+  return element !== undefined && element.parent !== undefined;
 }

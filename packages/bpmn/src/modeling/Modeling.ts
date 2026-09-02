@@ -26,6 +26,8 @@ import {
   RemoveLaneHandler,
   SplitLaneHandler,
 } from "./cmd/LaneHandlers.js";
+import ReplaceShapeHandler from "./cmd/ReplaceShapeHandler.js";
+import RootRebindHandler from "./cmd/RootRebindHandler.js";
 import type { LaneLocation } from "./lanes.js";
 import type {
   BpmnConnection,
@@ -68,7 +70,12 @@ export class BpmnModeling extends BaseModeling {
     return {
       ...handlers,
       "element.updateProperties": UpdatePropertiesHandler,
+      // Ersetzt den generischen Handler von `diagram-js`: der Typwechsel ist
+      // in BPMN kein reines Austauschen (Eigenschaften, extensionElements,
+      // Anhefter, ID) — siehe `cmd/ReplaceShapeHandler.ts`.
+      "shape.replace": ReplaceShapeHandler,
       "element.updateLabel": UpdateLabelHandler,
+      "root.rebind": RootRebindHandler,
       "lane.add": AddLaneHandler,
       "lane.split": SplitLaneHandler,
       "lane.remove": RemoveLaneHandler,
@@ -111,6 +118,24 @@ export class BpmnModeling extends BaseModeling {
       { ...attrs, type } as never,
       hints as never,
     ) as unknown as BpmnConnection;
+  }
+
+  /**
+   * Typwechsel eines Elements.
+   *
+   * `newData.type` ist der Zieltyp; `eventDefinitionType` setzt zugleich die
+   * Ereignisdefinition. Die ID bleibt erhalten, weil ARCTOS BPMN-Elemente aus
+   * der Datenbank heraus über sie referenziert — mit `hints.newId` lässt sich
+   * das abschalten.
+   */
+  override replaceShape(
+    oldShape: BpmnShape,
+    newData: Record<string, unknown>,
+    hints?: Record<string, unknown>,
+  ): BpmnShape {
+    const context: Record<string, unknown> = { oldShape, newData, hints };
+    this.stack.execute("shape.replace", context);
+    return context["newShape"] as BpmnShape;
   }
 
   /** Semantische Eigenschaften eines Elements ändern (inkl. `id`). */

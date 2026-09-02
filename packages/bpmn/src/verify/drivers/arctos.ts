@@ -76,14 +76,6 @@ interface Factory {
   createShape(attrs: Record<string, unknown>): GraphElement;
 }
 
-interface SemanticFactory {
-  create(
-    type: string,
-    attrs?: Record<string, unknown>,
-    options?: { parent?: ModdleElement | undefined },
-  ): ModdleElement;
-}
-
 interface Stack {
   undo(): void;
   redo(): void;
@@ -372,7 +364,14 @@ export class ArctosDriver implements ModelingDriver {
           }
           const allowed = session
             .get<RuleSet>("rules")
-            .allowed("elements.move", { shapes: [target], target });
+            // `target` des Kontexts ist das **Ziel** der Bewegung, nicht das
+            // bewegte Element. Hier stand `target` (das bewegte Element) —
+            // die Regel bekam damit die Frage „darf X in X?" gestellt und
+            // antwortete für einen Subprozess mit „ja". Ein `reparent` in
+            // eine `bpmn:Collaboration` lief deshalb an den Regeln vorbei und
+            // erzeugte einen `CONTAINER_MISMATCH`, den keine Engine
+            // verschuldet hatte. Gefunden im 500er-Lauf mit Startwert 424242.
+            .allowed("elements.move", { shapes: [target], target: parent });
           if (allowed === false) return { outcome: "rejected", resolved };
           const position = this.inside(parent, op.x, op.y);
           modeling.moveElements(
@@ -407,7 +406,19 @@ export class ArctosDriver implements ModelingDriver {
           resolved.push(host.id);
           if (!isActivityType(host.type))
             return { outcome: "rejected", resolved };
-          const shape = factory.createShape({ type: "bpmn:BoundaryEvent" });
+          // One operation, one command. The element factory of
+          // `src/modeling/` builds the event definition together with the
+          // event (`eventDefinitionType`), so `createShape` is the only entry
+          // that reaches the command stack — same as bpmn-js. It used to take
+          // a second `updateProperties`, and that difference alone made one
+          // undo per operation insufficient: the boundary event and its DI
+          // stayed behind while only the definition was rolled back.
+          const shape = factory.createShape({
+            type: "bpmn:BoundaryEvent",
+            ...(op.eventDefinition !== undefined
+              ? { eventDefinitionType: op.eventDefinition }
+              : {}),
+          });
           const position = {
             x: (host.x ?? 0) + (host.width ?? 100) / 2,
             y: (host.y ?? 0) + (host.height ?? 80),
@@ -424,24 +435,6 @@ export class ArctosDriver implements ModelingDriver {
             attach: true,
           });
           resolved.push(created.id);
-          if (op.eventDefinition !== undefined) {
-            // `src/modeling/`'s element factory takes no `eventDefinitionType`;
-            // the event definition is set as a property afterwards, which is
-            // the same end state bpmn-js reaches in one step.
-            const bpmnFactory = session.get<SemanticFactory>("bpmnFactory");
-            // The `$parent` back-link has to be set by the caller: the factory
-            // takes it as an option and `updateProperties` does not infer it.
-            // Leaving it out made the modeling layer's own PARENT_LINK_BROKEN
-            // invariant fire — on this harness, not on the engine.
-            const definition = bpmnFactory.create(
-              op.eventDefinition,
-              {},
-              { parent: created.businessObject },
-            );
-            modeling.updateProperties(created, {
-              eventDefinitions: [definition],
-            });
-          }
           return { outcome: "applied", resolved };
         }
         case "rename": {

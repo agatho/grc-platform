@@ -130,6 +130,13 @@ describe("S12-03 — no secret is inlined into the client bundle", () => {
       "NEXT_PUBLIC_GIT_SHA",
       "NEXT_PUBLIC_GIT_BRANCH",
       "NEXT_PUBLIC_BUILD_TIME",
+      // Angesehen (BPMN-Engine-Umstellung, Parallelbetrieb): der Wert ist
+      // eines von zwei Literalen, `legacy` oder `arctos`, und wählt zur
+      // Laufzeit die Diagramm-Engine. Er muss im Client-Bündel stehen, weil
+      // die Diagrammfläche eine Client-Komponente ist. Kein Geheimnis, keine
+      // Mandantenkennung, kein Endpunkt — die Belegung ist ohnehin am
+      // gerenderten DOM ablesbar (`data-bpmn-engine`).
+      "NEXT_PUBLIC_ARCTOS_BPMN_ENGINE",
     ]);
     const found = new Set<string>();
     for (const f of APP_FILES) {

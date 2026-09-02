@@ -612,6 +612,59 @@ describe("Kanten", () => {
     expect(line?.getAttribute("marker-end")).toMatch(/messageflow-end/);
   });
 
+  /**
+   * Der Kreis am Ursprung war bis hierher zwar vorhanden, aber unsichtbar:
+   * 3,5 px Durchmesser, zur Hälfte unter der Kontur der Quellform, und in
+   * Rasterern, die `stroke-dasharray` fälschlich in den Marker vererben,
+   * zusätzlich als aufgebrochener Bogen. Geprüft wird deshalb die Geometrie,
+   * nicht nur die Anwesenheit des Verweises.
+   */
+  it("Nachrichtenfluss: der Kreis am Ursprung ist sichtbar und liegt außerhalb der Quelle", () => {
+    const { svg, visual } = drawConnection(makeConnection("bpmn:MessageFlow"));
+    const line = visual.querySelector("path");
+    const id = /url\(#(.*)\)/.exec(
+      line?.getAttribute("marker-start") ?? "",
+    )?.[1];
+    expect(id).toBeDefined();
+
+    const marker = svg.querySelector(`#${id ?? ""}`);
+    const circle = marker?.querySelector("circle");
+    expect(circle).not.toBeNull();
+
+    // viewBox-Einheiten je Benutzerpixel: viewBox-Breite / markerWidth.
+    const viewBox = (marker?.getAttribute("viewBox") ?? "").split(/\s+/);
+    const perPixel =
+      Number(viewBox[2]) / Number(marker?.getAttribute("markerWidth"));
+    const radius = Number(circle?.getAttribute("r")) / perPixel;
+    // Mindestens 6 px Durchmesser — darunter verschwindet der Kreis neben
+    // einer 2 px starken Kante.
+    expect(radius * 2).toBeGreaterThanOrEqual(6);
+
+    // Referenzpunkt hinter dem Kreis: der Kreis sitzt vor dem Anfangspunkt
+    // der Kante, nicht auf ihm, und wird von der Quellkontur nicht verdeckt.
+    const refX = Number(marker?.getAttribute("refX"));
+    const cx = Number(circle?.getAttribute("cx"));
+    const r = Number(circle?.getAttribute("r"));
+    expect(refX).toBeLessThanOrEqual(cx - r);
+
+    // Unausgefüllt (Flächenfarbe, nicht Linienfarbe) und durchgezogen.
+    expect(circle?.getAttribute("fill")).not.toBe(
+      circle?.getAttribute("stroke"),
+    );
+    expect(circle?.getAttribute("stroke-dasharray")).toBe("10000 1");
+  });
+
+  it("Nachrichtenfluss: die Spitze am Ziel ist offen, nicht gefüllt", () => {
+    const { svg, visual } = drawConnection(makeConnection("bpmn:MessageFlow"));
+    const line = visual.querySelector("path");
+    const id = /url\(#(.*)\)/.exec(line?.getAttribute("marker-end") ?? "")?.[1];
+    const head = svg.querySelector(`#${id ?? ""}`)?.querySelector("path");
+
+    expect(head?.getAttribute("fill")).toBe("none");
+    // Kein `z` im Pfad: die Spitze ist nicht geschlossen.
+    expect(head?.getAttribute("d")).not.toMatch(/z/i);
+  });
+
   it("Assoziation ohne Richtung: gepunktet, ohne Pfeilspitze", () => {
     const { visual } = drawConnection(makeConnection("bpmn:Association"));
     const line = visual.querySelector("path");

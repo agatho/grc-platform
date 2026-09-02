@@ -16,6 +16,9 @@ export * as grc from "./grc/index.js";
 /** Modellierungsschicht (Plan §2.3.1) — als Namensraum, damit nichts kollidiert. */
 export * as modeling from "./modeling/index.js";
 
+/** Editor-Schicht (Plan §2.3: Palette, ContextPad, Beschriften, Tastatur). */
+export * as editor from "./editor/index.js";
+
 export { default as drawModule } from "./draw/index.js";
 export {
   BpmnRenderer,
@@ -55,8 +58,9 @@ export {
   buildTextAlternative,
   findContainerLabel,
   GraphA11y,
+  editorModulesFor,
+  editorServicesFor,
   isEditable,
-  MISSING_EDIT_MODULES,
   modulesFor,
   renderTextAlternativeTable,
   type A11yHost,
@@ -64,6 +68,8 @@ export {
   type BpmnCanvasOptions,
   type GraphNode,
   type GraphOrder,
+  type EditorModulesOptions,
+  type ExportXmlFn,
   type ImportDiagramResult,
   type ImportXmlFn,
   type ImportXmlResult,

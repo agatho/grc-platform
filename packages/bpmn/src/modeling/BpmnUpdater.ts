@@ -46,6 +46,7 @@ import {
   planesOf,
   removeDi,
 } from "./di.js";
+import { walkDocument } from "./invariants.js";
 import {
   clearLabelBounds,
   externalLabelBounds,
@@ -72,6 +73,7 @@ import {
   collaborationOf,
   containmentProperty,
   is,
+  isAny,
   isConnectionElement,
   isLabel,
   isModdleElement,
@@ -410,6 +412,18 @@ export class BpmnUpdater extends CommandInterceptor {
       undo.push(...dropLaneRefs(container, bo));
     }
 
+    // Verschwindet eine **Lane**, fallen ihre Knoten in die Lane darüber —
+    // oder in gar keine. Beides muss `flowNodeRef` widerspiegeln. Ohne diese
+    // Neuzuordnung stünde nach dem Entfernen der letzten inneren Lane ein
+    // Knoten in keiner einzigen Lane, obwohl er geometrisch mitten in der
+    // äußeren liegt.
+    if (is(bo, "bpmn:Lane")) {
+      const laneRoot = oldParent
+        ? (lanesRootOf(oldParent) ?? oldParent)
+        : undefined;
+      this.resyncLaneMembersUnder(laneRoot, undo);
+    }
+
     // 2. DI aus der Ebene nehmen (die DI selbst bleibt am Element hängen,
     //    damit ein Undo sie unverändert zurückgeben kann).
     const di = this.diOf(shape);
@@ -426,9 +440,143 @@ export class BpmnUpdater extends CommandInterceptor {
     //    zu diesem Zeitpunkt bereits von `DeleteShapeHandler` geleert.
     if (is(bo, "bpmn:Participant") && definitions) {
       const process = bo["processRef"];
-      if (isModdleElement(process)) {
+      // **Es sei denn, der Prozess ist gerade zur Wurzel geworden.** Beim
+      // Löschen des letzten Pools bindet `ParticipantBehavior` die Ebene
+      // vorher auf diesen Prozess zurück (Plan §2.3.1: die Collaboration
+      // kollabiert). Ihn dann aus `rootElements` zu nehmen, hieße: das
+      // Diagramm zeigt einen Prozess, den das Dokument nicht mehr enthält.
+      // Geprüft wird an der **DI**, nicht am grafischen Baum: zu diesem
+      // Zeitpunkt ist der Pool schon aus der Fläche genommen, sein `parent`
+      // also nicht mehr aussagekräftig. Trägt eine Ebene den Prozess als
+      // `bpmnElement`, ist er die neue Wurzel und bleibt.
+      const isPlaneRoot =
+        isModdleElement(process) &&
+        planesOf(definitions).some((plane) => plane["bpmnElement"] === process);
+      if (isModdleElement(process) && !isPlaneRoot) {
         undo.push(removeFromContainer(definitions, process, "rootElements"));
       }
+    }
+
+    // 5. Datenassoziationen, die auf das gelöschte Element zeigen.
+    this.dropDataAssociations(bo, undo);
+
+    // 5b. Datenassoziationen, die das gelöschte Element **selbst besitzt**.
+    this.dropOwnedDataAssociationDi(bo, undo);
+
+    // 6. Eigene Diagrammebenen des Elements und seiner Nachfahren.
+    this.dropOwnPlanes(bo, undo);
+  }
+
+  /**
+   * Nimmt die DI der eigenen Datenassoziationen aus der Ebene.
+   *
+   * Der Spiegelfall zu {@link dropDataAssociations}: Dort geht es um
+   * Assoziationen **anderer** Aktivitäten, die auf das gelöschte Datenobjekt
+   * zeigen; hier um die, die die gelöschte **Aktivität selbst trägt**. Sie
+   * verschwinden semantisch von allein — sie stehen in
+   * `activity.dataInputAssociations` und gehen mit der Aktivität aus
+   * `flowElements`. Ihre `bpmndi:BPMNEdge` steht aber in der Ebene und bleibt
+   * dort zurück, weil eine Datenassoziation regelmäßig kein grafisches
+   * Element hat und die Kaskade von `DeleteShapeHandler` sie deshalb nicht
+   * anfasst. Ergebnis: eine Kante in der Ebene, die auf ein Element zeigt, das
+   * es nicht mehr gibt — `moddle` verwirft den Verweis beim nächsten Speichern
+   * still (Round-Trip-Bericht, Ursache 2).
+   *
+   * Gefunden vom Eigenschaftslauf über 1.000 Folgen: `remove(D_Task_Erfassen)`
+   * in `synth-data-objects-and-artifacts`, eine einzige Operation.
+   */
+  private dropOwnedDataAssociationDi(bo: ModdleElement, undo: Revert[]): void {
+    const definitions = this.definitions();
+    if (!definitions) return;
+    const index = buildDiIndex(definitions);
+
+    for (const { element } of walkDocument(bo)) {
+      if (
+        !isAny(element, [
+          "bpmn:DataInputAssociation",
+          "bpmn:DataOutputAssociation",
+        ])
+      ) {
+        continue;
+      }
+      const di = index.get(element);
+      if (!di) continue;
+      const plane = planeOfDi(definitions, di);
+      if (plane) undo.push(removeDi(plane, di));
+    }
+  }
+
+  /**
+   * Entfernt jede `dataInputAssociation`/`dataOutputAssociation` im Dokument,
+   * die auf das gelöschte Element zeigt.
+   *
+   * Warum das nicht über die grafische Kaskade läuft: Eine Datenassoziation ist
+   * im Korpus regelmäßig **nicht gezeichnet**. `DataOutputAssoc_1` in
+   * `synth-data-objects-and-artifacts` hat nur einen `targetRef` und gar keinen
+   * `sourceRef`, `DataInputAssoc_1` zeigt auf eine `bpmn:Property` als
+   * Platzhalter. Solche Assoziationen haben kein grafisches Gegenstück, also
+   * greift `DeleteShapeHandler` nicht — und der Verweis überlebt das Löschen
+   * des Datenobjekts. Beim nächsten Speichern verwirft `moddle` ihn still
+   * (Round-Trip-Bericht, Ursache 2). Gefunden vom Eigenschaftslauf des
+   * Verifikationsstrangs bei Folge 90 von 200 (§3.4).
+   */
+  private dropDataAssociations(bo: ModdleElement, undo: Revert[]): void {
+    const definitions = this.definitions();
+    if (!definitions) return;
+
+    for (const { element } of walkDocument(definitions)) {
+      for (const property of [
+        "dataInputAssociations",
+        "dataOutputAssociations",
+      ] as const) {
+        for (const assoc of asArray(element[property])) {
+          if (!referencesElement(assoc, bo)) continue;
+          undo.push(removeFromContainer(element, assoc, property));
+          const di = buildDiIndex(definitions).get(assoc);
+          if (!di) continue;
+          const plane = planeOfDi(definitions, di);
+          if (plane) undo.push(removeDi(plane, di));
+        }
+      }
+    }
+  }
+
+  /**
+   * Entfernt die eigene `BPMNPlane` des gelöschten Elements — und die seiner
+   * semantischen Nachfahren.
+   *
+   * Ein aufgeklappter oder eingeklappter Subprozess kann eine eigene
+   * Diagrammebene haben (`<bpmndi:BPMNPlane bpmnElement="Sub_L1">`). Wird er
+   * gelöscht, bleibt diese Ebene mit allen `BPMNShape`/`BPMNEdge` darin im
+   * Dokument stehen und zeigt auf Elemente, die es nicht mehr gibt
+   * (Verifikationsbericht §3.2: eine Operation, kein Undo, sieben verwaiste
+   * Einträge).
+   *
+   * Die **Nachfahren** müssen mit, weil ein eingeklappter Subprozess seine
+   * Kinder gar nicht erst grafisch bekommt: sie verschwinden mit ihm aus dem
+   * semantischen Baum, ohne dass je ein `shape.delete` für sie liefe. Ihre
+   * Ebenen kennt deshalb nur dieser Durchlauf.
+   */
+  private dropOwnPlanes(bo: ModdleElement, undo: Revert[]): void {
+    const definitions = this.definitions();
+    if (!definitions) return;
+
+    const removed = new Set<ModdleElement>([bo]);
+    const collect = (container: ModdleElement): void => {
+      for (const child of asArray(container["flowElements"])) {
+        if (removed.has(child)) continue;
+        removed.add(child);
+        collect(child);
+      }
+    };
+    collect(bo);
+
+    for (const diagram of asArray(definitions["diagrams"])) {
+      const plane = diagram["plane"];
+      if (!isModdleElement(plane)) continue;
+      const root = plane["bpmnElement"];
+      if (!isModdleElement(root) || !removed.has(root)) continue;
+      undo.push(removeFromContainer(definitions, diagram, "diagrams"));
     }
   }
 
@@ -555,7 +703,14 @@ export class BpmnUpdater extends CommandInterceptor {
 
   /** Alle Flussknoten unter der Lane-Wurzel neu zuordnen. */
   private resyncLaneMembers(shape: BpmnShape, undo: Revert[]): void {
-    const root = lanesRootOf(shape) ?? shape;
+    this.resyncLaneMembersUnder(lanesRootOf(shape) ?? shape, undo);
+  }
+
+  private resyncLaneMembersUnder(
+    root: BpmnParent | undefined,
+    undo: Revert[],
+  ): void {
+    if (!root) return;
     const children = (root as BpmnShape).children ?? [];
     for (const child of children) {
       if (!isShapeElement(child)) continue;
@@ -623,17 +778,22 @@ export class BpmnUpdater extends CommandInterceptor {
       return;
     }
 
+    // **Nur Sequenzflüsse.** `bpmn:FlowNode.incoming` und `.outgoing` sind im
+    // BPMN-2.0-Metamodell als Verweise auf `bpmn:SequenceFlow` typisiert. Ein
+    // Nachrichtenfluss, der dort steht, wird vom nächsten Leser als
+    // Sequenzfluss aufgelöst — das Diagramm sieht richtig aus, der Prozess ist
+    // ein anderer. Der Vergleichslauf gegen `bpmn-js` hat den Fall entschieden
+    // (Verifikationsbericht §3.3): gleiche Eingabe, gleiche Operation,
+    // Referenz widerspricht, und das Metamodell gibt der Referenz recht.
+    const twoSided = is(bo, "bpmn:SequenceFlow");
+
     if (sourceBo) {
       undo.push(setProperty(bo, "sourceRef", sourceBo));
-      if (!is(bo, "bpmn:Association")) {
-        undo.push(addRef(sourceBo, "outgoing", bo));
-      }
+      if (twoSided) undo.push(addRef(sourceBo, "outgoing", bo));
     }
     if (targetBo) {
       undo.push(setProperty(bo, "targetRef", targetBo));
-      if (!is(bo, "bpmn:Association")) {
-        undo.push(addRef(targetBo, "incoming", bo));
-      }
+      if (twoSided) undo.push(addRef(targetBo, "incoming", bo));
     }
   }
 
@@ -774,25 +934,26 @@ export class BpmnUpdater extends CommandInterceptor {
       (context["newTarget"] as BpmnElement | undefined) ?? connection.target,
     );
 
-    const isAssociation = is(bo, "bpmn:Association");
+    // Eintragen nur für Sequenzflüsse (siehe `wireEndpoints`), **austragen**
+    // dagegen immer: eine Altdatei kann einen Nachrichtenfluss fälschlich in
+    // den Listen führen, und dann muss das Umhängen ihn dort auch entfernen.
+    const twoSided = is(bo, "bpmn:SequenceFlow");
 
     if (newSource && newSource !== oldSource) {
       if (oldSource) {
         if (oldSource["default"] === bo) {
           undo.push(setProperty(oldSource, "default", undefined));
         }
-        if (!isAssociation) undo.push(removeRef(oldSource, "outgoing", bo));
+        undo.push(removeRef(oldSource, "outgoing", bo));
       }
       undo.push(setProperty(bo, "sourceRef", newSource));
-      if (!isAssociation) undo.push(addRef(newSource, "outgoing", bo));
+      if (twoSided) undo.push(addRef(newSource, "outgoing", bo));
     }
 
     if (newTarget && newTarget !== oldTarget) {
-      if (oldTarget && !isAssociation) {
-        undo.push(removeRef(oldTarget, "incoming", bo));
-      }
+      if (oldTarget) undo.push(removeRef(oldTarget, "incoming", bo));
       undo.push(setProperty(bo, "targetRef", newTarget));
-      if (!isAssociation) undo.push(addRef(newTarget, "incoming", bo));
+      if (twoSided) undo.push(addRef(newTarget, "incoming", bo));
     }
 
     const di = this.diOf(connection);
@@ -877,6 +1038,22 @@ export class BpmnUpdater extends CommandInterceptor {
 }
 
 export default BpmnUpdater;
+
+/**
+ * Zeigt eine Datenassoziation auf `target`? Geprüft werden beide Enden, und
+ * `sourceRef` auch als Mengeneigenschaft — das Schema erlaubt dort mehrere.
+ */
+function referencesElement(
+  assoc: ModdleElement,
+  target: ModdleElement,
+): boolean {
+  for (const property of ["sourceRef", "targetRef"] as const) {
+    const value = assoc[property];
+    if (value === target) return true;
+    if (Array.isArray(value) && value.includes(target)) return true;
+  }
+  return false;
+}
 
 /** Nur für Tests: sind an einem Element alle drei Bäume verbunden? */
 export function isFullyLinked(element: BpmnElement): boolean {

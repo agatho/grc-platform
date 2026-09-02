@@ -51,6 +51,10 @@ export interface BpmnElementAttrs {
   labelTarget?: BpmnElement | undefined;
   host?: BpmnShape | undefined;
   waypoints?: Array<{ x: number; y: number }> | undefined;
+  /** `bpmn:TimerEventDefinition`, … — wird beim Erzeugen mit angelegt. */
+  eventDefinitionType?: string | undefined;
+  /** Attribute der Ereignisdefinition, falls sie welche braucht. */
+  eventDefinitionAttrs?: Record<string, unknown> | undefined;
   [key: string]: unknown;
 }
 
@@ -116,8 +120,10 @@ export class BpmnElementFactory {
         this.semanticAttrsFrom(next),
         next.id !== undefined ? { id: next.id } : {},
       );
+      this.applyEventDefinition(bo, next);
       next.businessObject = bo;
     }
+    delete next["eventDefinitionType"];
 
     next.type = type ?? bo.$type;
     if (next.id === undefined && typeof bo.id === "string") next.id = bo.id;
@@ -155,6 +161,37 @@ export class BpmnElementFactory {
     const out: Record<string, unknown> = {};
     if (typeof attrs["name"] === "string") out["name"] = attrs["name"];
     return out;
+  }
+
+  /**
+   * Ereignisdefinition beim Erzeugen mitgeben — `bpmn:TimerEventDefinition`,
+   * `bpmn:ErrorEventDefinition`, …
+   *
+   * Warum das in die Fabrik gehört und nicht in ein nachgelagertes
+   * `updateProperties`: Ein Ereignis **ist** durch seine Definition definiert.
+   * Wer es zweistufig baut, erzeugt zwei Einträge auf dem Kommandostapel — und
+   * dann stellt ein Undo pro Bedienschritt das Dokument nicht mehr her, weil
+   * ein Bedienschritt zwei Undos braucht. Der Verifikationsstrang hat genau
+   * das gemessen (Bericht §3.5 und §3.6): nicht die Umkehrfunktion war falsch,
+   * sondern die Zahl der Kommandos. `bpmn-js` erzeugt Ereignis und Definition
+   * in einem Schritt; für die Vergleichbarkeit und für ein vorhersagbares
+   * Ctrl-Z muss diese Schicht das auch tun.
+   */
+  private applyEventDefinition(
+    bo: ModdleElement,
+    attrs: BpmnElementAttrs,
+  ): void {
+    const type = attrs["eventDefinitionType"];
+    if (typeof type !== "string" || type === "") return;
+    const values = attrs["eventDefinitionAttrs"];
+    const definition = this.bpmnFactory.create(
+      type,
+      typeof values === "object" && values !== null
+        ? (values as Record<string, unknown>)
+        : {},
+      { parent: bo },
+    );
+    bo["eventDefinitions"] = [definition];
   }
 
   private instantiate(kind: string, attrs: BpmnElementAttrs): BpmnElement {

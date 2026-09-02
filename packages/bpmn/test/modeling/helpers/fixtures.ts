@@ -231,3 +231,71 @@ export const DATA_PROCESS = `<?xml version="1.0" encoding="UTF-8"?>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>`;
+
+/**
+ * Pool mit **geschachtelten** Lanes (`childLaneSet`).
+ *
+ * Der Bestandskorpus enthält keinen solchen Fall — er ist der Grund, warum die
+ * Geometrie geschachtelter Lanes im ersten Durchgang offen blieb. Zwei Ebenen
+ * genügen, um die Fragen zu stellen, auf die es ankommt: Auf welcher Ebene
+ * hängt `flowNodeRef`, und welcher Container ändert seine Größe, wenn eine
+ * innere Lane verschwindet?
+ */
+export const NESTED_LANES = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_5" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collab_5">
+    <bpmn:participant id="Pool_N" name="Haus" processRef="Process_N" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_N" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_N">
+      <bpmn:lane id="Lane_Aussen" name="Bereich">
+        <bpmn:childLaneSet id="LaneSet_Innen">
+          <bpmn:lane id="Lane_Innen1" name="Team A">
+            <bpmn:flowNodeRef>Task_N1</bpmn:flowNodeRef>
+          </bpmn:lane>
+          <bpmn:lane id="Lane_Innen2" name="Team B">
+            <bpmn:flowNodeRef>Task_N2</bpmn:flowNodeRef>
+          </bpmn:lane>
+        </bpmn:childLaneSet>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Unten" name="Leitung">
+        <bpmn:flowNodeRef>Task_N3</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:task id="Task_N1" name="Erfassen" />
+    <bpmn:task id="Task_N2" name="Pruefen" />
+    <bpmn:task id="Task_N3" name="Freigeben" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_5">
+    <bpmndi:BPMNPlane id="Plane_5" bpmnElement="Collab_5">
+      <bpmndi:BPMNShape id="Pool_N_di" bpmnElement="Pool_N" isHorizontal="true">
+        <dc:Bounds x="100" y="100" width="700" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Aussen_di" bpmnElement="Lane_Aussen" isHorizontal="true">
+        <dc:Bounds x="130" y="100" width="670" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Innen1_di" bpmnElement="Lane_Innen1" isHorizontal="true">
+        <dc:Bounds x="160" y="100" width="640" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Innen2_di" bpmnElement="Lane_Innen2" isHorizontal="true">
+        <dc:Bounds x="160" y="200" width="640" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Unten_di" bpmnElement="Lane_Unten" isHorizontal="true">
+        <dc:Bounds x="130" y="300" width="670" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_N1_di" bpmnElement="Task_N1">
+        <dc:Bounds x="250" y="110" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_N2_di" bpmnElement="Task_N2">
+        <dc:Bounds x="250" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_N3_di" bpmnElement="Task_N3">
+        <dc:Bounds x="250" y="310" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;

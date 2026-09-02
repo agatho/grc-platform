@@ -132,6 +132,8 @@ export function installSvgPolyfills(): void {
   }
   installed = true;
 
+  installCssEscape();
+
   const svgProto = SVGElement.prototype as unknown as Record<string, unknown>;
   const svgSvgProto = SVGSVGElement.prototype as unknown as Record<
     string,
@@ -495,6 +497,26 @@ function pathBox(d: string): Box | null {
     maxX: Math.max(...xs),
     maxY: Math.max(...ys),
   };
+}
+
+/**
+ * `CSS.escape` fehlt in jsdom.
+ *
+ * `diagram-js` benutzt es beim Aufbau von Palette und Kontextmenü, um den
+ * Gruppennamen in einen Selektor zu setzen (`[data-group=…]`). Ohne die
+ * Funktion bricht der Aufbau ab — und zwar in einem Ereignis-Zuhörer, also
+ * ohne dass ein Test es als Fehler sähe: die Palette wäre einfach leer. Eine
+ * Lücke der Prüfumgebung, nicht des Produktivcodes; deshalb steht der Ersatz
+ * hier bei den übrigen jsdom-Ersatzteilen und nicht in `src/`.
+ */
+export function installCssEscape(): void {
+  const scope = globalThis as unknown as {
+    CSS?: { escape?: (value: string) => string };
+  };
+  if (typeof scope.CSS?.escape === "function") return;
+  const escape = (value: string): string =>
+    String(value).replace(/[^\w-]/g, (char) => `\\${char}`);
+  scope.CSS = { ...(scope.CSS ?? {}), escape };
 }
 
 /**

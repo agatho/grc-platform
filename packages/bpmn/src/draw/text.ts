@@ -164,8 +164,20 @@ export interface TextLayout {
 /**
  * Bricht `text` auf `width` um.
  *
- * Bricht bevorzugt an Leerzeichen, dann an `-` und `/`, zuletzt hart mitten im
- * Wort (lange IDs, URLs). Vorhandene Zeilenumbrüche bleiben erhalten.
+ * Reihenfolge der Umbruchstellen — strikt, nicht „bevorzugt":
+ *
+ * 1. **Wortgrenzen.** Solange ein Wort als Ganzes in eine Zeile passt, wird es
+ *    nie zerteilt. Das ist der Normalfall.
+ * 2. **Trennstellen im Wort** (`-`, `/`, `_`, `.`, `,`, `:`, `;` und der
+ *    Übergang Kleinbuchstabe→Großbuchstabe) — nur für Wörter, die allein
+ *    breiter als die Zeile sind. So brechen `Antrags-Prüfung`, Dateipfade und
+ *    `camelCaseBezeichner` an lesbaren Stellen.
+ * 3. **Harter Bruch im Wort.** Erst wenn auch ein einzelnes Wortstück ohne
+ *    Trennstelle breiter als die Zeile ist. Das Stück bekommt dann einen
+ *    Trennstrich angehängt, damit die Fortsetzung in der nächsten Zeile als
+ *    Fortsetzung erkennbar bleibt und nicht als eigenes Wort gelesen wird.
+ *
+ * Vorhandene Zeilenumbrüche bleiben erhalten.
  */
 export function layoutText(
   text: string,
@@ -211,6 +223,9 @@ export function layoutText(
   };
 }
 
+/** Trennstrich, der bei einem harten Bruch im Wort angehängt wird. */
+const SOFT_HYPHEN_MARK = "-";
+
 function wrapParagraph(
   paragraph: string,
   available: number,
@@ -220,8 +235,59 @@ function wrapParagraph(
   const lines: string[] = [];
   let current = "";
 
+  const flush = (): void => {
+    if (current !== "") {
+      lines.push(current);
+      current = "";
+    }
+  };
+
   for (const word of words) {
     const candidate = current === "" ? word : `${current} ${word}`;
+    if (measureText(candidate, fontSize) <= available) {
+      current = candidate;
+      continue;
+    }
+
+    // Das Wort passt nicht mehr in die laufende Zeile. Es wird **nicht**
+    // zerteilt, solange es allein in eine Zeile passt — das ist die
+    // Wortgrenzen-Regel.
+    flush();
+    if (measureText(word, fontSize) <= available) {
+      current = word;
+      continue;
+    }
+
+    // Nur jetzt — ein einzelnes Wort ist breiter als die Zeile — wird im Wort
+    // getrennt. Die letzte Teilzeile bleibt offen, damit ihr die folgenden
+    // Wörter noch zulaufen können; sie ist durch den Trennstrich der
+    // Vorgängerzeile eindeutig als Fortsetzung markiert.
+    const pieces = breakLongWord(word, available, fontSize);
+    const last = pieces.pop();
+    lines.push(...pieces);
+    current = last ?? "";
+  }
+
+  flush();
+  return lines.length > 0 ? lines : [""];
+}
+
+/**
+ * Zerlegt genau ein Wort, das allein breiter als `available` ist.
+ *
+ * Zuerst an den Trennstellen im Wort, dann — und nur wenn ein so entstandenes
+ * Stück immer noch zu breit ist — hart, mit angehängtem Trennstrich.
+ */
+function breakLongWord(
+  word: string,
+  available: number,
+  fontSize: number,
+): string[] {
+  const lines: string[] = [];
+  let current = "";
+
+  for (const segment of splitAtBreakOpportunities(word)) {
+    const candidate = current + segment;
     if (measureText(candidate, fontSize) <= available) {
       current = candidate;
       continue;
@@ -230,12 +296,12 @@ function wrapParagraph(
       lines.push(current);
       current = "";
     }
-    if (measureText(word, fontSize) <= available) {
-      current = word;
+    if (measureText(segment, fontSize) <= available) {
+      current = segment;
       continue;
     }
-    // Wort passt allein nicht: an Trennzeichen, sonst hart brechen.
-    const pieces = breakLongWord(word, available, fontSize);
+    // Auch das einzelne Stück ist zu breit: harter Bruch mit Trennstrich.
+    const pieces = hardBreak(segment, available, fontSize);
     const last = pieces.pop();
     lines.push(...pieces);
     current = last ?? "";
@@ -244,37 +310,77 @@ function wrapParagraph(
   if (current !== "") {
     lines.push(current);
   }
-  return lines.length > 0 ? lines : [""];
+  return lines.length > 0 ? lines : [word];
 }
 
-function breakLongWord(
-  word: string,
+/**
+ * Zerlegt ein Wort an seinen inneren Trennstellen, ohne Zeichen zu verlieren.
+ *
+ * Ein Trennzeichen bleibt am Ende des Stücks, das es abschließt
+ * (`Antrags-Prüfung` → `Antrags-`, `Prüfung`); vor einem Großbuchstaben nach
+ * einem Kleinbuchstaben wird davor getrennt (`camelCase` → `camel`, `Case`).
+ */
+function splitAtBreakOpportunities(word: string): string[] {
+  const separators = new Set(["-", "/", "_", ".", ",", ":", ";", "\\"]);
+  const segments: string[] = [];
+  let current = "";
+  let previous = "";
+
+  for (const char of word) {
+    const isCamelBoundary =
+      current !== "" &&
+      previous !== "" &&
+      previous === previous.toLowerCase() &&
+      previous !== previous.toUpperCase() &&
+      char === char.toUpperCase() &&
+      char !== char.toLowerCase();
+    if (isCamelBoundary) {
+      segments.push(current);
+      current = "";
+    }
+    current += char;
+    if (separators.has(char)) {
+      segments.push(current);
+      current = "";
+    }
+    previous = char;
+  }
+  if (current !== "") {
+    segments.push(current);
+  }
+  return segments.length > 0 ? segments : [word];
+}
+
+/**
+ * Letzte Instanz: ein Stück ohne jede Trennstelle, das breiter als die Zeile
+ * ist (lange IDs, Prüfsummen, URLs ohne Trenner). Jedes Stück außer dem
+ * letzten bekommt einen Trennstrich, der in die Breite mit eingerechnet wird.
+ */
+function hardBreak(
+  segment: string,
   available: number,
   fontSize: number,
 ): string[] {
+  const chars = [...segment];
   const pieces: string[] = [];
   let current = "";
-  for (const char of word) {
+
+  for (const char of chars) {
     const candidate = current + char;
-    if (current !== "" && measureText(candidate, fontSize) > available) {
-      pieces.push(current);
+    if (
+      current !== "" &&
+      measureText(candidate + SOFT_HYPHEN_MARK, fontSize) > available
+    ) {
+      pieces.push(current + SOFT_HYPHEN_MARK);
       current = char;
       continue;
     }
     current = candidate;
-    // Nach einem Trennzeichen darf umgebrochen werden.
-    if (
-      (char === "-" || char === "/") &&
-      measureText(current, fontSize) > available * 0.6
-    ) {
-      pieces.push(current);
-      current = "";
-    }
   }
   if (current !== "") {
     pieces.push(current);
   }
-  return pieces.length > 0 ? pieces : [word];
+  return pieces.length > 0 ? pieces : [segment];
 }
 
 function truncate(line: string, available: number, fontSize: number): string {

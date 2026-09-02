@@ -440,6 +440,7 @@ function checkIds(walked: ReturnType<typeof walkDocument>, add: Add): void {
       }
       continue;
     }
+    if (!isDiagramIdentifier(element)) continue;
     const bucket = byId.get(id);
     if (bucket) {
       if (!bucket.includes(element)) bucket.push(element);
@@ -460,6 +461,37 @@ function checkIds(walked: ReturnType<typeof walkDocument>, add: Add): void {
       );
     }
   }
+}
+
+/**
+ * Namensräume, in denen ein `id`-Attribut eine **Diagrammkennung** ist.
+ *
+ * Alles andere ist eine Erweiterung, und dort ist `id` ein Feld des fremden
+ * Schemas — bei ARCTOS ein **Fremdschlüssel**: `arctos:riskRef/@id` nennt die
+ * Kennung eines Risikos in der Datenbank, nicht die eines Diagrammelements.
+ * Zwei Aufgaben, die dasselbe Risiko tragen, sind der Normalfall (im Editor
+ * beim Kopieren einer Aufgabe genauso wie in jeder von Hand gepflegten Datei)
+ * und keine doppelte Kennung. Vor dieser Einschränkung schlug `DUPLICATE_ID`
+ * genau darauf an — `STUFE2-B1-EDITOR.md` §6, Punkt 3.
+ *
+ * Die Eindeutigkeit, die BPMN fordert, gilt für `bpmn:`/`bpmndi:`/`dc:`/`di:`;
+ * die Eindeutigkeit innerhalb einer fremden Erweiterung zu beurteilen steht
+ * diesem Prüfer nicht zu — er kennt deren Schema nicht.
+ */
+const DIAGRAM_NAMESPACES: ReadonlySet<string> = new Set([
+  "bpmn",
+  "bpmndi",
+  "dc",
+  "di",
+]);
+
+function isDiagramIdentifier(element: ModdleElement): boolean {
+  const type = element.$type;
+  if (typeof type !== "string") return false;
+  const colon = type.indexOf(":");
+  // Ein Typ ohne Präfix kommt aus keiner Erweiterung.
+  if (colon < 0) return true;
+  return DIAGRAM_NAMESPACES.has(type.slice(0, colon));
 }
 
 /** Welche Typen brauchen zwingend eine id, damit die DI sie referenzieren kann? */
@@ -520,6 +552,7 @@ function checkContainment(
     }
     const owner = owners[0]?.owner;
     if (!owner) continue;
+    if (!needsParentLink(element)) continue;
     const parent = element["$parent"];
     if (parent === undefined) {
       add(
@@ -541,6 +574,32 @@ function checkContainment(
   }
 
   checkContainerKinds(walked, add);
+}
+
+/**
+ * Für welche Elemente wird `$parent` verlangt?
+ *
+ * **Nicht für alle** — diese Invariante war zu streng, und der Beleg dafür ist
+ * der stärkste, den es gibt: sie schlug beim Vergleichslauf auch auf `bpmn-js`
+ * an (Verifikationsbericht §3.8). `moddle-xml` serialisiert Kinder über die
+ * deklarierte Eigenschaft, nicht über `$parent`; ein `dc:Bounds` ohne
+ * Elternverweis läuft korrekt durch den Round-Trip, und die
+ * Referenzimplementierung setzt ihn seit einem Jahrzehnt nicht.
+ *
+ * Dass eine Invariante auf der Referenz anschlägt, ist der sauberste Beweis,
+ * den es für „zu streng" gibt — und der Grund, warum der Vergleichslauf mehr
+ * ist als ein Sicherheitsnetz.
+ *
+ * Verlangt wird `$parent` weiterhin dort, wo er etwas steuert: an Elementen
+ * mit eigener Identität, auf die verwiesen wird und deren Umhängen zwischen
+ * Containern diese Schicht selbst besorgt. Die reinen Geometrie-Wertobjekte
+ * (`dc:Bounds`, `dc:Point`, `di:Waypoint`, `bpmndi:BPMNLabel`) sind ausgenommen.
+ */
+function needsParentLink(element: ModdleElement): boolean {
+  const type = element.$type;
+  if (type.startsWith("dc:") || type.startsWith("di:")) return false;
+  if (type === "bpmndi:BPMNLabel") return false;
+  return true;
 }
 
 /**

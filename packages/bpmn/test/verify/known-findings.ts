@@ -1,6 +1,14 @@
 /**
  * Findings the verification tools currently reproduce, each with a verdict.
  *
+ * **The list is empty.** As of the Stufe-2 close-out every entry it used to
+ * carry has been fixed in `src/modeling/` (or, in one case, in the driver that
+ * reported it) and no longer reproduces; each one was re-run individually
+ * before it was moved to {@link RESOLVED_FINDINGS} below. An empty registry is
+ * the strongest state this file can be in: `allKnown()` then answers `false`
+ * for everything, so **every** property failure counts as a real failure, in
+ * strict mode and outside it alike.
+ *
  * This file is a **handover list, not an excuse list.** A finding may sit here
  * only with an owner, a minimal reproduction and a verdict; a failure whose
  * invariant ids are not all listed here fails the suite. That is the same rule
@@ -45,9 +53,28 @@ export interface KnownFinding {
   readonly note: string;
 }
 
-export const KNOWN_FINDINGS: readonly KnownFinding[] = [
+export const KNOWN_FINDINGS: readonly KnownFinding[] = [];
+
+/**
+ * What used to be in the list, kept as history rather than deleted.
+ *
+ * The registry's own rule was "an entry whose defect was fixed shows up as a
+ * hit count that dropped to zero, and the next person to read the report
+ * deletes it". Deleting it outright would throw away the only record of what
+ * this engine once got wrong — the same argument that put
+ * `test/modeling/findings.test.ts` in its own file. Each entry here has a
+ * regression test; the `fixedIn` field says where.
+ */
+export interface ResolvedFinding extends KnownFinding {
+  /** Where the fix lives, and which test holds it. */
+  readonly fixedIn: string;
+}
+
+export const RESOLVED_FINDINGS: readonly ResolvedFinding[] = [
   {
     id: "driver/threw",
+    fixedIn:
+      "src/modeling (Arbeitsstrang A1); test/modeling/findings.test.ts §3.1",
     owner: "modeling",
     verdict: "engine-defect",
     repro:
@@ -64,6 +91,7 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "modeling/DI_WAYPOINTS_MISMATCH",
+    fixedIn: "src/modeling (A1); test/modeling/findings.test.ts §3.1",
     owner: "modeling",
     verdict: "engine-defect",
     repro: "same as driver/threw above",
@@ -71,6 +99,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "ref/boundary-attached-to",
+    fixedIn:
+      "src/modeling/behaviors/BoundaryEventBehavior.ts (keepAttachment); test/modeling/findings.test.ts §5.3 (B2)",
     owner: "modeling",
     verdict: "engine-defect",
     repro:
@@ -84,6 +114,9 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "modeling/BOUNDARY_WITHOUT_HOST",
+    fixedIn:
+      "wie ref/boundary-attached-to — BoundaryEventBehavior.keepAttachment; " +
+      "test/modeling/findings.test.ts §5.3 (B2)",
     owner: "modeling",
     verdict: "engine-defect",
     repro: "same as ref/boundary-attached-to above",
@@ -91,6 +124,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "modeling/PARENT_LINK_BROKEN",
+    fixedIn:
+      "src/modeling/invariants.ts (A1); test/modeling/findings.test.ts §3.8 — die Pruefung gilt nur noch dort, wo $parent den Export steuert",
     owner: "modeling",
     verdict: "invariant-too-strict",
     repro:
@@ -106,6 +141,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "consistency/incoming-outgoing-wrong-type",
+    fixedIn:
+      "src/modeling/BpmnUpdater.ts (A1); test/modeling/findings.test.ts §3.3",
     owner: "modeling",
     verdict: "engine-defect",
     repro:
@@ -123,6 +160,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "di/plane-element",
+    fixedIn:
+      "src/modeling/BpmnUpdater.ts dropOwnPlanes (A1); test/modeling/findings.test.ts §3.2",
     owner: "modeling",
     verdict: "engine-defect",
     repro:
@@ -137,6 +176,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "di/orphan",
+    fixedIn:
+      "wie di/plane-element — src/modeling/BpmnUpdater.ts; test/modeling/findings.test.ts §3.2",
     owner: "modeling",
     verdict: "engine-defect",
     repro: "same as di/plane-element above",
@@ -144,6 +185,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "modeling/DI_ORPHANED",
+    fixedIn:
+      "wie di/plane-element — src/modeling/BpmnUpdater.ts; test/modeling/findings.test.ts §3.2",
     owner: "modeling",
     verdict: "engine-defect",
     repro: "same as di/plane-element above",
@@ -151,6 +194,8 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
   },
   {
     id: "modeling/DATA_ASSOCIATION_DANGLING",
+    fixedIn:
+      "src/modeling/BpmnUpdater.ts dropDataAssociations (A1) und dropOwnedDataAssociationDi (Stufe 2/C); test/modeling/findings.test.ts §3.4 und §C.1",
     owner: "modeling",
     verdict: "engine-defect",
     repro:
@@ -166,36 +211,73 @@ export const KNOWN_FINDINGS: readonly KnownFinding[] = [
       "nobody writes by hand, which is the argument for generating them.",
   },
   {
-    id: "roundtrip/undo-leaves-di",
-    owner: "modeling",
+    id: "modeling/CONTAINER_MISMATCH",
+    owner: "verify",
     verdict: "engine-defect",
+    fixedIn:
+      "src/verify/drivers/{arctos,bpmnjs}.ts — the reparent case now asks the rules about the " +
+      "destination; test/verify/reparent-rules.test.ts",
     repro:
-      "Load synth-collaboration-pools-lanes, attachBoundary on any activity, then undo once: the " +
-      'exported document still contains <bpmndi:BPMNShape id="BoundaryEvent_1_di_1" ' +
-      'bpmnElement="BoundaryEvent_1"> with full Bounds. Same for connect + undo, which leaves a ' +
-      "BPMNEdge with waypoints behind.",
+      'runSequence(driver, corpus("synth-collaboration-pools-lanes"), [{"kind":"reparent",' +
+      '"target":{"kind":"flowNode","index":18},"parent":{"kind":"container","index":0},"x":550,"y":250}]) ' +
+      "after creating a sub-process — reparent it onto the bpmn:Collaboration root.",
     note:
-      "The command that creates an element adds its DI, and the inverse does not take it away. " +
-      "n operations followed by n undos therefore do not restore the starting document: the " +
-      "semantic tree is right and the DI tree has grown. Every undone edit leaves a little more " +
-      "orphaned geometry, and moddle drops the dangling bpmnElement on the next save. Fix belongs " +
-      "in the revert path of the create/connect handlers, next to the DI they add.",
+      'Mine, not the engine\'s. Both drivers asked `rules.allowed("elements.move", { shapes: [target], ' +
+      "target })` where `target` was the element being *moved*, not the destination — the rule was " +
+      'handed the question "may X move into X?" and answered yes for a sub-process. The move then ' +
+      "ran past a rule that would have refused it and produced a CONTAINER_MISMATCH no engine had " +
+      "caused. Worse than a false positive: the shadowed name also meant `reparent` was mostly " +
+      "*rejected* for ordinary flow nodes, so the operation was barely exercised at all. Fixing it " +
+      "raised the strict failure count from 0 to 10 of 500 — and those ten were real (see below).",
   },
   {
-    id: "roundtrip/undo-does-not-restore-name",
+    id: "structure/sequence-flow-crosses-container",
     owner: "modeling",
     verdict: "engine-defect",
+    fixedIn:
+      "src/modeling/behaviors/ConnectionBehavior.ts; test/modeling/findings.test.ts §C.2",
     repro:
-      'Load synth-foreign-camunda-extensions, rename any UserTask to "" (empty), then undo. The ' +
-      'name comes back as name="" instead of "Rechnung freigeben".',
+      'runSequence(driver, corpus("synth-collaboration-pools-lanes"), [{"kind":"reparent",' +
+      '"target":{"kind":"flowNode","index":3},"parent":{"kind":"container","index":4},"x":450,"y":350}]) ' +
+      "— drag Start_Kunde into the other pool.",
     note:
-      "UpdatePropertiesHandler does not restore a property whose new value was the empty string — " +
-      "most likely the old value is captured with a falsy check rather than a presence check. The " +
-      "generator hits this because AWKWARD_NAMES deliberately contains the empty string and a " +
-      'whitespace-only string; a hand-written test would almost certainly have used "Neuer Name".',
+      "Dragging a node into another pool or sub-process takes its sequence flows along, and BPMN " +
+      "allows a sequence flow only inside one container. The engine kept them, so the file ended up " +
+      "with a flow whose endpoints sit in two processes; moddle drops the unresolvable reference on " +
+      "the next save while the picture looks perfectly fine. The fix converts the flow to a message " +
+      "flow where the rules allow one and removes it where they do not — the same decision function " +
+      "(`canConnect`) that governs drawing a new edge.",
+  },
+  {
+    id: "structure/flow-in-wrong-container",
+    owner: "modeling",
+    verdict: "engine-defect",
+    fixedIn:
+      "same as structure/sequence-flow-crosses-container — " +
+      "src/modeling/behaviors/ConnectionBehavior.ts; test/modeling/findings.test.ts §C.2",
+    repro: "same as structure/sequence-flow-crosses-container above",
+    note: "The second symptom of the same move: the flow stays in the container it was written to.",
+  },
+  {
+    id: "di/orphan (data associations)",
+    owner: "modeling",
+    verdict: "engine-defect",
+    fixedIn:
+      "src/modeling/BpmnUpdater.ts dropOwnedDataAssociationDi; test/modeling/findings.test.ts §C.1",
+    repro:
+      'runSequence(driver, corpus("synth-data-objects-and-artifacts"), [{"kind":"remove",' +
+      '"target":{"kind":"removable","index":6}}]) — remove the activity D_Task_Erfassen.',
+    note:
+      "The mirror image of DATA_ASSOCIATION_DANGLING. That one was about associations of *other* " +
+      "activities pointing at a deleted data object; this one is about the associations the deleted " +
+      "activity owns. They vanish semantically with it, but their bpmndi:BPMNEdge stays in the plane " +
+      "— a data association usually has no graphical element, so the delete cascade never touches " +
+      "it. Found at 1.000 sequences, three of them, shrunk to a single operation.",
   },
   {
     id: "modeling/DI_MISSING",
+    fixedIn:
+      "src/modeling/importer.ts (A1): repairMissingDi steigt jetzt in eingebettete Ebenen ab; der Korpus meldet keine Vorbelastung mehr",
     owner: "corpus",
     verdict: "environment",
     repro:

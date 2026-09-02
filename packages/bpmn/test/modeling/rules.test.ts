@@ -273,17 +273,48 @@ describe("Anheften und Ablegen", () => {
 
   it("erlaubt die Größenänderung nur bei Containern, nicht bei Ereignissen", async () => {
     const session = await openSession(COLLABORATION);
+    // Die Antwort ist wahrheitswertig **und** sie nennt die Untergrenze:
+    // `diagram-js` liest sie aus `context.minDimensions`, und ohne Angabe wäre
+    // es 10 × 10 — ein Pool, der weder Namen noch Lanes zeigt.
     expect(
       rules(session).allowed("shape.resize", { shape: session.shape("Sub_A") }),
-    ).toBe(true);
+    ).toEqual({ minDimensions: { width: 140, height: 120 } });
     expect(
       rules(session).allowed("shape.resize", {
         shape: session.shape("Pool_A"),
       }),
-    ).toBe(true);
+    ).toEqual({ minDimensions: { width: 300, height: 60 } });
     expect(
       rules(session).allowed("shape.resize", {
         shape: session.shape("Start_A"),
+      }),
+    ).toBe(false);
+    session.destroy();
+  });
+
+  it("formuliert Ausrichten, Verteilen und Kopieren — sonst sperren sie", async () => {
+    // `CommandStack.canExecute` liefert für ein Kommando ohne Handler `false`:
+    // eine nicht formulierte Regel **verbietet** die Funktion. Diese drei
+    // fehlten (`STUFE2-B1-EDITOR.md` §6, Punkt 1) und machten Ausrichten,
+    // Verteilen und die gesamte Zwischenablage stumm wirkungslos.
+    const session = await openSession(COLLABORATION);
+    const task = session.shape("Task_A1");
+    const pool = session.shape("Pool_A");
+
+    expect(
+      rules(session).allowed("elements.align", { elements: [task, pool] }),
+    ).toEqual([task]);
+    expect(
+      rules(session).allowed("elements.distribute", {
+        elements: [task, pool],
+      }),
+    ).toEqual([task]);
+    expect(rules(session).allowed("element.copy", { element: task })).toBe(
+      true,
+    );
+    expect(
+      rules(session).allowed("element.copy", {
+        element: session.root(),
       }),
     ).toBe(false);
     session.destroy();
