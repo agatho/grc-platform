@@ -1,0 +1,28 @@
+Kreditantrag — Organisation & SoD
+
+Sicht: Organisation & SoD — Aufgabentrennung zwischen Lanes — die klassische Prüfungsfrage jedes IKS-Audits.
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+1 Aufgabentrennungskonflikt, 1 Selbstkontrolle.
+
+Der Prozess hat 2 Startereignisse: „Antrag eingegangen“, „Startereignis Start_Kunde“. Schritt 1: „Antrag eingegangen“ (Sachbearbeitung) führt zu „Antrag pruefen“. Schritt 2: „Antrag pruefen“ (Sachbearbeitung) führt zu „Entscheiden“. Schritt 3: „Entscheiden“ (Genehmigung) verzweigt in 2 Pfade: nach „Bearbeitet“, bei „Bescheid“ nach „Bescheid empfangen“. Schritt 4: „Bearbeitet“ (Genehmigung) endet hier. Schritt 5: „Bescheid empfangen“ (Kunde) führt zu „Endereignis End_Kunde“. Schritt 6: „Endereignis End_Kunde“ (Kunde) endet hier. Schritt 7: „Startereignis Start_Kunde“ (Kunde) führt zu „Antrag stellen“. Schritt 8: „Antrag stellen“ (Kunde) verzweigt in 2 Pfade: nach „Bescheid empfangen“, bei „Antrag“ nach „Antrag pruefen“. 1 Aufgabentrennungskonflikt, 1 Selbstkontrolle. Aufgabentrennungskonflikt (hoch): „Entscheiden“ (Sachbearbeitung) und „Antrag pruefen“ (Sachbearbeitung) liegen im selben Prozesspfad. Antragsprüfung und Kreditentscheidung dürfen nicht in einer Hand liegen. Bezug: MaRisk BTO 1.1. 4 Elemente tragen GRC-Hinweise in der Sicht „Organisation & SoD".
+
+1. Antrag eingegangen (Startereignis)
+2. Antrag pruefen (Aufgabe)
+    Aufgabentrennung: Aufgabentrennungskonflikt (hoch): „Entscheiden“ (Sachbearbeitung) und „Antrag pruefen“ (Sachbearbeitung) liegen im selben Prozesspfad. Antragsprüfung und Kreditentscheidung dürfen nicht in einer Hand liegen. Bezug: MaRisk BTO 1.1. Selbstkontrolle: „Antrag pruefen“ wird von Sachbearbeitung ausgeführt und die einzige Kontrolle „Plausibilitätsprüfung der Antragsdaten“ wird von derselben Rolle verantwortet.
+    Verteidigungslinie: 1. Verteidigungslinie.
+    Verantwortung (RACI): Durchführung: Sachbearbeitung. Rechenschaft: Sachbearbeitung.
+    Kommentare: Kommentare: 1 offen von 2.
+3. Entscheiden (Benutzeraufgabe)
+    Aufgabentrennung: Aufgabentrennungskonflikt (hoch): „Entscheiden“ (Sachbearbeitung) und „Antrag pruefen“ (Sachbearbeitung) liegen im selben Prozesspfad. Antragsprüfung und Kreditentscheidung dürfen nicht in einer Hand liegen. Bezug: MaRisk BTO 1.1.
+    Verantwortung (RACI): Durchführung: Sachbearbeitung. Rechenschaft: Sachbearbeitung.
+4. Bearbeitet (Endereignis)
+5. Bescheid empfangen (Empfangsaufgabe)
+6. End_Kunde (Endereignis)
+7. Start_Kunde (Startereignis)
+8. Antrag stellen (Sendeaufgabe)
+9. Bank (Pool)
+10. Sachbearbeitung (Lane)
+    Lane-Träger: Rolle Sachbearbeitung, Organisationseinheit Kreditbearbeitung Inland, Qualifikationsquote 92 %. Qualifikationsquote 92 % der Rollenmitglieder.
+11. Genehmigung (Lane)
+    Lane-Träger: Rolle Kreditentscheidung, Dienstleister ScoreWorks Inc. (Risikoklasse hoch), Sitz im Drittland US, Qualifikationsquote 61 %. Qualifikationsquote 61 % der Rollenmitglieder.
+12. Kunde (Pool)

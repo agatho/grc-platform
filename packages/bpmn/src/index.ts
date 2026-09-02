@@ -10,6 +10,12 @@
  * Das Paket importiert **nie** `bpmn-js` — das ist der Zweck des Vorhabens.
  */
 
+/** GRC-Diagrammschicht (Plan §3) — als Namensraum, damit nichts kollidiert. */
+export * as grc from "./grc/index.js";
+
+/** Modellierungsschicht (Plan §2.3.1) — als Namensraum, damit nichts kollidiert. */
+export * as modeling from "./modeling/index.js";
+
 export { default as drawModule } from "./draw/index.js";
 export {
   BpmnRenderer,
