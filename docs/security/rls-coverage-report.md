@@ -3,7 +3,7 @@
 **Quelle: die laufende Datenbank** (`pg_class`, `pg_policies`,
 `pg_trigger`, `information_schema`) — nicht die Migrationstexte.
 
-Erzeugt mit `node scripts/audit-rls-coverage.mjs` gegen `postgres://grc:***@127.0.0.1:5432/w3_verify`.
+Erzeugt mit `node scripts/audit-rls-coverage.mjs` gegen `postgresql://grc:***@localhost:5432/grc_op089`.
 Die Gegenprüfung `node scripts/audit-rls-coverage.mjs --check` schlägt
 fehl, wenn eine Lücke besteht **oder** dieser Report vom gemessenen Ist
 abweicht.
@@ -19,8 +19,8 @@ abweicht.
 | Status             | Anzahl  |
 | ------------------ | ------- |
 | OK                 | 561     |
-| PLATFORM_EXEMPT    | 55      |
-| **Objekte gesamt** | **616** |
+| PLATFORM_EXEMPT    | 56      |
+| **Objekte gesamt** | **617** |
 | **Lücken**         | **0**   |
 
 ## Geltungsbereiche
@@ -108,6 +108,7 @@ Finding S01-14 beanstandet hat.
 | `architecture_relationship`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `architecture_rule`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `architecture_rule_violation`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `arctos_rls_guard_event`                   | PLATFORM     | ✅  | ❌    | 1        | ❌            | PLATFORM_EXEMPT |
 | `assessment_control_eval`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `assessment_risk_eval`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `assessment_run`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
@@ -254,7 +255,7 @@ Finding S01-14 beanstandet hat.
 | `copilot_prompt_template`                  | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
 | `copilot_rag_source`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `copilot_suggested_action`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
-| `copilot_usage_stats`                      | MATVIEW      | ❌  | ❌    | 0        | ❌            | OK              |
+| `copilot_usage_stats`                      | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
 | `country_risk_profile`                     | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
 | `crisis_communication_log`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `crisis_contact_node`                      | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
@@ -357,7 +358,7 @@ Finding S01-14 beanstandet hat.
 | `evidence_review_gap`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `evidence_review_job`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `evidence_review_result`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
-| `evidence_review_summary`                  | MATVIEW      | ❌  | ❌    | 0        | ❌            | OK              |
+| `evidence_review_summary`                  | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
 | `exception_report`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `executive_kpi_snapshot`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `export_approval`                          | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |

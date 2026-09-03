@@ -208,10 +208,103 @@ for (const [key, sites] of used) {
 const dynamicPrefixes = dynamic
   .map((d) => d.split("\t")[1].split("${")[0].replace(/\.$/, ""))
   .filter(Boolean);
-const unused = [...leaves].filter((k) => {
-  if (used.has(k)) return false;
-  return !dynamicPrefixes.some((p) => k.startsWith(p));
-});
+
+// ---------------------------------------------------------------------------
+// [ARCTOS-FULL-2026-08-31 · OP-073] Zwei Korrekturen an DIESER Zahl.
+//
+// Die Frage von OP-073 war nicht „6.796 — ist das viel?", sondern „sind das
+// tote Schlüssel oder sieht der Detektor sie nur nicht?". Gemessen wurde
+// beides, und beides war ein Defekt DES DETEKTORS, nicht des Katalogs:
+//
+// (1) DOPPELZÄHLUNG. `buildCatalogue` bildet die Merge-Regel aus
+//     `src/i18n/request.ts` nach, und die legt `common.json` ZWEIMAL ab:
+//     einmal in die Wurzel (`{...commonFile}`) und einmal unter `common`.
+//     Jede der 4.340 Nachrichten aus `common.json` steht damit unter ZWEI
+//     Pfaden im Blattverzeichnis — von 12.956 gezählten „Nachrichten" sind
+//     4.340 Phantome. Der Code erreicht je Nachricht immer nur EINE der
+//     beiden Schreibweisen (wer `useTranslations("common")` bindet, trifft
+//     `common.x`; wer die Wurzel bindet, `x`), also meldete der Zähler die
+//     jeweils andere als „nie erreicht". Gemessen: 4.331 der 6.805 Einträge
+//     waren nichts als diese Doppelung.
+//
+// (2) INDIREKTE SCHLÜSSEL. Der Detektor kannte nur zwei Formen: das Literal
+//     in `t("…")` und das Template in `t(`…${x}`)`. Die dritte Form —
+//     Schlüssel als Daten, die eine Konfigurationstabelle trägt und die
+//     Aufrufstelle als Variable durchreicht (`t(item.labelKey)`) — sah er
+//     überhaupt nicht: `t(` ohne folgendes Anführungszeichen passt auf keine
+//     der beiden Regexe. Gemessen: 35 solche Aufrufstellen, und die
+//     wichtigste davon ist die Seitenleiste. `nav-config.ts` führt 205
+//     Schlüssel, 204 davon standen auf der Liste der „nie erreichten";
+//     `module-tab-config.ts` 113 von 113. Das sind die Beschriftungen der
+//     Navigation und der Modul-Reiter — sichtbar bei JEDEM Seitenaufruf.
+//     Wer die Liste als Löschliste gelesen hätte, hätte die Navigation
+//     entbeschriftet.
+//
+// Beide Korrekturen machen die Zahl kleiner. Das ist keine Kosmetik, sondern
+// die Voraussetzung dafür, dass sie überhaupt etwas bedeutet: eine Liste, auf
+// der die Hauptnavigation steht, ist als Löschliste unbrauchbar, und ein
+// Budget über einer zu 64 % aus Phantomen bestehenden Zahl schützt nichts.
+//
+// Die Richtung des verbleibenden Messfehlers ist bewusst gewählt: ein
+// punktiertes Literal wird als Referenz gewertet, sobald es exakt auf einen
+// Katalogpfad passt. Das kann im Einzelfall einen wirklich toten Schlüssel
+// am Leben halten; die umgekehrte Richtung — ein lebender Schlüssel auf der
+// Löschliste — hat die teurere Folge.
+// ---------------------------------------------------------------------------
+
+/** Blätter von `common.json` — die Nachrichten, die zweimal im Baum stehen. */
+const commonLeaves = new Set();
+{
+  const p = path.join(messagesRoot, "de", "common.json");
+  if (fs.existsSync(p)) {
+    flatten(
+      JSON.parse(fs.readFileSync(p, "utf8")),
+      "",
+      commonLeaves,
+      new Set(),
+    );
+  }
+}
+
+/** Beide Schreibweisen derselben Nachricht auf einen Namen bringen. */
+function canonicalKey(key) {
+  if (
+    key.startsWith("common.") &&
+    commonLeaves.has(key.slice("common.".length))
+  )
+    return key.slice("common.".length);
+  return key;
+}
+
+/**
+ * Schlüssel, die als Zeichenkette irgendwo in `src/` stehen und exakt auf
+ * einen Katalogpfad passen — die Datenform aus (2). Gesammelt über ALLE
+ * Dateien, nicht nur die mit `useTranslations`: `nav-config.ts` importiert
+ * next-intl gar nicht, es liefert nur die Schlüssel.
+ */
+const literalKeys = new Set();
+for (const file of tsxFiles) {
+  const text = fs.readFileSync(file, "utf8");
+  for (const m of text.matchAll(
+    /["'`]([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+)["'`]/g,
+  )) {
+    if (leaves.has(m[1])) literalKeys.add(m[1]);
+  }
+}
+
+/** Wird diese Schreibweise von irgendeiner Aufrufform erreicht? */
+function isReached(key) {
+  if (used.has(key)) return true;
+  if (literalKeys.has(key)) return true;
+  return dynamicPrefixes.some((p) => key.startsWith(p));
+}
+
+// Kanonische Nachrichtenmenge: jede Nachricht einmal, erreicht, sobald EINE
+// ihrer Schreibweisen erreicht wird.
+const canonicalReached = new Set();
+for (const k of leaves) if (isReached(k)) canonicalReached.add(canonicalKey(k));
+const canonicalLeaves = new Set([...leaves].map(canonicalKey));
+const unused = [...canonicalLeaves].filter((k) => !canonicalReached.has(k));
 
 // ── 3b. i18n COVERAGE of pages and components (S14-14) ────────────────────
 //
@@ -333,6 +426,9 @@ if (asJson) {
         ].map((f) => path.relative(repoRoot, f)),
         unusedCount: unused.length,
         unused,
+        canonicalLeafCount: canonicalLeaves.size,
+        commonDuplicateCount: commonLeaves.size,
+        literalKeyCount: literalKeys.size,
         dynamicCount: dynamic.length,
         usedCount: used.size,
         leafCount: leaves.size,
@@ -349,10 +445,20 @@ if (asJson) {
   console.log(
     `Namespace files on disk (messages/de)        : ${onDisk.length}`,
   );
-  console.log(`Catalogue messages (leaves)                  : ${leaves.size}`);
+  console.log(`Catalogue paths (leaves, both spellings)     : ${leaves.size}`);
+  // [OP-073] Die Zahl, die zaehlt: `common.json` steht zweimal im Baum
+  // (Wurzel + `common`), also sind `leaves.size - commonLeaves.size` die
+  // tatsaechlichen Nachrichten.
+  console.log(
+    `Catalogue messages (canonical)               : ${canonicalLeaves.size}` +
+      ` (${commonLeaves.size} aus common.json doppelt gefuehrt)`,
+  );
   console.log(`Distinct keys used in code (static)          : ${used.size}`);
   console.log(
     `Call sites with a computed key               : ${dynamic.length}`,
+  );
+  console.log(
+    `Keys referenced as data (t(item.labelKey), …): ${literalKeys.size}`,
   );
   console.log("");
 

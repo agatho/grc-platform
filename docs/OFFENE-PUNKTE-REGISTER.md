@@ -612,6 +612,80 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-03 — Welle 4c: die Kennzahlen, und was hinter ihnen stand
+
+OP-074, OP-075, OP-073, OP-089 und ein Teil von OP-069 sind abgearbeitet.
+Einzelheiten in `docs/UMSETZUNG-WELLE-4C.md`.
+
+| OP     | vorher                                                    | nachher                                                                                     |
+| ------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| OP-074 | Report nannte 1.991 in 322 Dateien; gemessen 2.765 in 470 | Report auf den gemessenen Stand geschrieben                                                 |
+| OP-075 | kein Tor                                                  | vierte Ratsche mit **drei Armen** (Gesamtzahl, je Datei, Aktualität des Reports), in der CI |
+| OP-073 | 6.805 gegen Budget 6.800 — **das Tor war rot**            | **2.166**; **kein Schlüssel gelöscht**                                                      |
+| OP-089 | zwei mandantenübergreifende Materialized Views            | Migration 0478: **keine Materialized View mehr im Schema**, 428/428 von Null, 617 Tabellen  |
+| OP-069 | gesamt 33,92 % Zeilen                                     | **34,34 %**; `api.ts` 69,9 → 80,1 %, `api-wrapper.ts` 60,0 → 97,8 %                         |
+
+**OP-073 — die Liste taugte nicht als Löschliste, und das ist der Befund.**
+Zwei unabhängige Defekte des Detektors, beide korrigiert:
+
+1. **4.331 der 6.805 Einträge waren Phantome.** `common.json` steht durch die
+   Merge-Regel aus `i18n/request.ts` **zweimal** im Nachrichtenbaum (Wurzel und
+   `common`). Von 12.956 gezählten „Nachrichten" sind 4.340 Dubletten; der Code
+   erreicht je Nachricht nur eine Schreibweise, die andere galt als tot.
+2. **Die Hauptnavigation stand auf der Liste.** 35 Aufrufstellen reichen den
+   Schlüssel als Variable durch (`t(item.labelKey)`) — das sah der Detektor
+   nicht. Ergebnis: **204 von 205** Schlüsseln aus `nav-config.ts` und **113 von
+   113** aus `module-tab-config.ts` galten als „nie erreicht".
+
+Hätte jemand diese Liste als Arbeitsauftrag genommen, wäre **die Navigation
+entbeschriftet** worden. Belastbar tot sind 278 Schlüssel in vier nie
+gebundenen Namensräumen; ihre Löschung liegt in `apps/web/messages/**` und
+wartet auf einen eigenen Schnitt.
+
+**OP-089 — und ein zweiter Befund darunter.** RLS trägt auf einer Materialized
+View nicht (PostgreSQL kennt dafür kein `ENABLE ROW LEVEL SECURITY`, und der
+REFRESH läuft im Kontext des Eigentümers). Getragen hat die normale View mit
+`security_invoker = true`; alle fünf Basistabellen führen bereits RLS, FORCE
+und org-Policy. Nebenbei: Im ganzen Repository steht **kein einziges
+`REFRESH`** — die beiden Views waren seit ihrer Anlage nicht nur unsicher,
+sondern **leer**. Und `ALTER DEFAULT PRIVILEGES` aus 0399/0437 gab den neuen
+Views ungefragt `arwd` für `grc_app` _und_ `grc_worker`, weshalb die Migration
+ein ausdrückliches `REVOKE ALL` voranstellt.
+
+**Vier weitere Tore standen bei `8a212b47` rot.** Der Reihe nach:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                           | Art | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| OP-183 | **Das Prettier-Tor der CI las `.prettierignore` nie.** `--ignore-path .gitignore` **ersetzt** die Vorgabeliste, statt sie zu ergänzen. Lokal meldete `npm run format` grün (es läuft ohne `--ignore-path`, also greift `.prettierignore`), in der CI wurde eine andere Dateimenge geprüft. Zwei Massstäbe für dieselbe Frage. | Tor | behoben |
+| —      | Die i18n-Ratsche (6.805 gegen Budget 6.800) — mit OP-073 erledigt.                                                                                                                                                                                                                                                            | Tor | behoben |
+| —      | Die Coverage-Ratsche (`packages/shared` functions). **Verursacht durch `logger.ts` aus meinem eigenen Commit `08a4ae4f`.** Mit Tests geschlossen, **nicht** abgesenkt.                                                                                                                                                        | Tor | behoben |
+| —      | Der eingecheckte RLS-Report (616 gegen 617 Objekte).                                                                                                                                                                                                                                                                          | Tor | behoben |
+
+**Ein Fehler von mir, offen benannt.** Ich habe bei der Abnahme von Welle 4b-2
+`npm run coverage:gate` laufen lassen und grün gemeldet — gegen einen
+**veralteten** `coverage/aggregated-summary.json` aus einem früheren Lauf. Das
+Tor war zu diesem Zeitpunkt in Wahrheit rot, und zwar durch meine eigene
+Änderung. Es ist dieselbe Fehlerform wie bei der Messung zu Next 16.3.4: ein
+Artefakt als Ergebnis gelesen, ohne zu prüfen, ob es den aktuellen Stand
+beschreibt. Die Abnahme erzeugt den Bericht jetzt neu, bevor sie das Tor
+befragt.
+
+**Damit sind es sechs Tore in diesem Audit, die nicht auslösen konnten** — eine
+ignorierte Tor-Eingabe, ein `git diff` auf ungetrackte Pfade, ein `tee` ohne
+`pipefail`, ein Test der an seiner Vorbedingung starb (OP-168), eine Suite die
+ihre Voraussetzung erriet (OP-170), eine `allow`-Liste die das Gefährliche
+durchliess (OP-171) — und mit OP-183 ein siebtes: ein Tor, das die falsche
+Dateimenge prüfte. Das neue Dead-Exports-Tor ist deshalb in fünf Lagen künstlich
+verletzt und jedes Mal rot geworden, darunter eigens der Fall, den OP-074
+beschreibt.
+
+**Aufgenommen, nicht behoben** (ausserhalb der Dateihoheit dieses Strangs):
+`SELECT "pg_sleep"(3600)` passiert die Ausnahmeliste für Custom-SQL, weil der
+Funktionsname in Anführungszeichen steht; `isValidWpTransition` wirft bei
+`"toString"`; `computeQaScore` liefert `NaN` bei Gewicht 0; und
+`verify-db-integrity.mjs` ist mit 54 gegen 45 SECURITY-DEFINER-Funktionen rot —
+die Baseline wurde bewusst **nicht** angehoben.
+
 ### Nachtrag 2026-09-03 — die Restdefekte aus Strang 3, und ein 500er, der nie auffiel
 
 Strang 4 hat die fünf Produktdefekte abgearbeitet, die Strang 3 gefunden,

@@ -30,6 +30,8 @@
     "env:check": "node scripts/check-env-example.mjs",
     "lint:ratchet": "node scripts/lint-ratchet.mjs",
     "coverage:gate": "node scripts/coverage-gate.mjs",
+    "deadexports": "node scripts/audit-dead-exports.mjs",
+    "deadexports:gate": "node scripts/audit-dead-exports.mjs --check",
     "deps:hygiene": "node scripts/check-dependency-hygiene.mjs",
     "ci:actions-pinned": "node scripts/check-action-pinning.mjs",
     "posttest:coverage": "tsx scripts/coverage-aggregate.ts",

@@ -34,6 +34,22 @@ const ROOT = resolve(process.cwd());
 const GATE_INPUTS = [
   [".eslint-ratchet.json", "scripts/lint-ratchet.mjs (Lint-Ratsche)"],
   [".coverage-ratchet.json", "scripts/coverage-gate.mjs (Coverage-Ratsche)"],
+  // [ARCTOS-FULL-2026-08-31 · OP-075] Die vierte Ratsche. Sie liegt aus
+  // demselben Grund in der Wurzel wie die Coverage-Ratsche seit OP-066:
+  // `docs/perf/` waere naheliegend gewesen, aber jede Ablage in einem
+  // Verzeichnis, das auch Generat aufnimmt, ist genau der Weg, auf dem
+  // C-15 und OP-066 entstanden sind.
+  [
+    ".dead-exports-ratchet.json",
+    "scripts/audit-dead-exports.mjs --check (Dead-Exports-Ratsche)",
+  ],
+  // Der Report ist nicht nur Ausgabe, sondern EINGABE des Tors: `--check`
+  // vergleicht die dort genannte Kennzahl mit dem Gemessenen (OP-074). Faellt
+  // er aus dem Repository, prueft das Tor eine Datei, die niemand mehr sieht.
+  [
+    "docs/perf/dead-exports-report.md",
+    "scripts/audit-dead-exports.mjs --check (Frischepruefung, OP-074)",
+  ],
   [".env.example", "scripts/check-env-example.mjs"],
   ["scripts/db-integrity-baseline.json", "DB-Integritätsprüfung"],
   [

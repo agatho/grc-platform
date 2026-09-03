@@ -138,12 +138,34 @@ jobs:
       - name: Fail on keys used in code but missing from the catalogue
         run: node scripts/audit-i18n-usage.mjs
 
-      # Ungenutzte Schluessel sind kein Fehler, sondern eine Ratsche: 6.794 ist
-      # der Stand nach dieser Remediation und eine Obergrenze -- 400
-      # Aufrufstellen bauen ihren Schluessel dynamisch (S14-21). Die Zahl darf
-      # sinken, nicht steigen; beim Absenken diesen Wert nachziehen.
+      # Ungenutzte Schluessel sind kein Fehler, sondern eine Ratsche. Die Zahl
+      # darf sinken, nicht steigen; beim Absenken diesen Wert nachziehen.
+      #
+      # [ARCTOS-FULL-2026-08-31 · OP-073] Von 6.800 auf 2.166, und das ist
+      # keine Lockerung durch Loeschen, sondern eine Korrektur des Zaehlers.
+      # Zwei gemessene Befunde am Detektor, beide in
+      # scripts/audit-i18n-usage.mjs behoben und dort ausfuehrlich begruendet:
+      #
+      #   1. `common.json` steht durch die Merge-Regel aus src/i18n/request.ts
+      #      ZWEIMAL im Nachrichtenbaum (Wurzel und `common`). Von 12.956
+      #      gezaehlten "Nachrichten" waren 4.340 Phantome; 4.331 der 6.805
+      #      gemeldeten Eintraege waren nichts als diese Doppelung.
+      #   2. 35 Aufrufstellen reichen den Schluessel als Variable durch
+      #      (`t(item.labelKey)`). Darunter die Seitenleiste: 204 der 205
+      #      Schluessel aus components/layout/nav-config.ts und 113 von 113
+      #      aus module-tab-config.ts standen auf der Liste der "nie
+      #      erreichten" -- die Beschriftungen der gesamten Navigation.
+      #
+      # Nebenbefund: die Ratsche war beim Messen am 2026-09-03 mit 6.805
+      # gegen Budget 6.800 ROT. Die Korrektur ersetzt sie nicht, sie macht
+      # sie erst pruefbar.
+      #
+      # Von den verbleibenden 2.166 sind fuenf ganze Namespaces
+      # (`ermEvaluation`, `bpmDerived`, `grcUx`, `frameworks` und Teile von
+      # `abac`) nachweislich unerreicht -- das ist Katalogpflege und gehoert
+      # nicht in diese Welle; siehe docs/UMSETZUNG-WELLE-4C.md §4.
       - name: Unused-key ratchet
-        run: node scripts/audit-i18n-usage.mjs --max-unused 6800
+        run: node scripts/audit-i18n-usage.mjs --max-unused 2166
 
       # [WP12 - S14-14] Zweite Ratsche: Dateien, die Text zeigen, ihn aber nicht
       # uebersetzen. Stand 2026-09-02: 78 von 482 Pages und 73 von 134

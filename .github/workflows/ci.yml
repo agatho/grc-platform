@@ -75,8 +75,43 @@ jobs:
       - name: ESLint ratchet (apps/worker, packages/*, scripts/*)
         run: node scripts/lint-ratchet.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · OP-074/OP-075] Die vierte Ratsche.
+      #
+      # `scripts/audit-dead-exports.mjs` gab es seit langem, aber kein Tor rief
+      # es auf: die Zahl konnte beliebig wachsen, und sie tat es — der
+      # eingecheckte Report nannte 1.991 tote Exporte in 322 Dateien, gemessen
+      # waren 2.765 in 470. Beides faellt hier jetzt auf, weil `--check` beides
+      # prueft: die Ratsche (gesamt UND je Datei) und die Frische des
+      # eingecheckten Reports.
+      #
+      # Gegengeprueft am 2026-09-03, fuenf kuenstliche Verletzungen, jede
+      # rot: ein zusaetzlicher toter Export in einer Bestandsdatei; eine neue
+      # Datei mit toten Exporten; ein Report mit veralteter Kennzahl (genau
+      # die Zahlen aus OP-074); ein Report ohne lesbare Kennzahl-Zeile;
+      # fehlende Baseline. Siehe docs/UMSETZUNG-WELLE-4C.md §3.
+      - name: Dead-Exports-Ratsche (OP-075) und Report-Frische (OP-074)
+        run: node scripts/audit-dead-exports.mjs --check
+
+      # [ARCTOS-FULL-2026-08-31 · Welle 4c] `--ignore-path` ERSETZT die
+      # Vorgabeliste, es ergaenzt sie nicht. Mit nur `.gitignore` wurde
+      # `.prettierignore` in diesem Schritt nie gelesen — also genau die
+      # Datei, die OP-141 angelegt hat, um zu sagen, welche ERZEUGTEN Dateien
+      # vom Format-Tor ausgenommen sind (`docs/openapi.yaml`,
+      # `.eslint-ratchet.json`, die BPMN-Renderausgabe). Wirkung: der Schritt
+      # war am 2026-09-03 gegen den unveraenderten Stand rot —
+      # `.eslint-ratchet.json` und
+      # `apps/web/src/app/api/v1/compliance/coverage/route.ts` —, waehrend
+      # `npm run format` lokal gruen meldete, weil es ohne `--ignore-path`
+      # laeuft und `.prettierignore` damit greift. Zwei Massstaebe fuer
+      # dieselbe Frage; der ausschlaggebende war der falsche.
+      #
+      # Beide Listen werden jetzt uebergeben. Nachgemessen: mit beiden faellt
+      # der Schritt auf dem unveraenderten Stand nicht mehr aus, und ein
+      # unformatiertes, NICHT ignoriertes .ts bringt ihn weiterhin zu Fall.
       - name: Prettier (format check)
-        run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
+        run: |
+          npx prettier --check "**/*.{ts,tsx,js,json,md}" \
+            --ignore-path .gitignore --ignore-path .prettierignore
 
       - name: TypeScript (type check — web)
         run: npx tsc --noEmit -p apps/web/tsconfig.json

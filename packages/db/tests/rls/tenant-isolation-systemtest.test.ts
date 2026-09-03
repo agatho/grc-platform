@@ -319,13 +319,27 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     expect(bad.map((b) => b.relname)).toEqual([]);
   });
 
-  it("materialized views are not readable by the runtime role", async () => {
+  // [ARCTOS-FULL-2026-08-31 · OP-089] Hier stand `expect(mvs.length)
+  // .toBeGreaterThan(0)` — eine Vorbedingung, die verlangte, dass es
+  // ueberhaupt eine Materialized View GIBT. Sobald die letzte verschwindet
+  // (Migration 0478 ersetzt die zwei verbliebenen durch
+  // `security_invoker`-Views), starb der Test an dieser Zeile, obwohl der
+  // gepruefte Zustand der bestmoegliche ist. Das ist dieselbe Fehlerform wie
+  // OP-109: ein Test, der an seiner Vorbedingung scheitert, sagt nichts ueber
+  // die Sache aus.
+  //
+  // Die Aussage lautet jetzt in der richtigen Reihenfolge: KEINE Materialized
+  // View ist der Sollzustand — sie kann keine RLS tragen und ist damit
+  // mandantenuebergreifend materialisiert. Existiert doch eine, muss die
+  // Laufzeitrolle sie nicht lesen koennen. Beide Haelften sind eine echte
+  // Zusicherung; die alte Vorbedingung war keine.
+  it("materialized views: keine da — und eine spaetere waere fuer grc_app gesperrt", async () => {
     const mvs = await admin.client.unsafe<{ relname: string }[]>(`
       SELECT c.relname FROM pg_class c
         JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname = 'public' AND c.relkind = 'm' ORDER BY c.relname
     `);
-    expect(mvs.length).toBeGreaterThan(0);
+    expect(mvs.map((m) => m.relname)).toEqual([]);
     for (const mv of mvs) {
       await expect(
         app.client.unsafe(`SELECT 1 FROM public."${mv.relname}" LIMIT 1`),
@@ -555,7 +569,10 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     // überhaupt als prüfpflichtig klassifiziert sein.
     expect(report.counts.tenantChildTables).toBeGreaterThan(10);
     expect(report.counts.views).toBeGreaterThan(0);
-    expect(report.counts.matviews).toBeGreaterThan(0);
+    // [OP-089] War `toBeGreaterThan(0)`. Materialized Views sind seit 0478
+    // keine mehr vorhanden; die Klassifizierung selbst bleibt im Werkzeug,
+    // damit eine kuenftige wieder auffaellt.
+    expect(report.counts.matviews).toBe(0);
     expect(report.counts.authTables).toBe(4);
   }, 120_000);
 });

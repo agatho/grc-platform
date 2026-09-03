@@ -2,10 +2,10 @@
   "_comment": "#S13-25 Coverage-Ratsche. Von scripts/coverage-gate.mjs geprüft. Werte dürfen nur STEIGEN. Neu setzen über `node scripts/coverage-gate.mjs --update-baseline` in einem eigenen, begründeten Commit; eine Absenkung verlangt zusätzlich --reason und wird in _history festgehalten.",
   "_updatedAt": "2026-09-03",
   "totals": {
-    "lines": 33.79,
-    "statements": 34.25,
-    "functions": 33.04,
-    "branches": 25.3
+    "lines": 34.32,
+    "statements": 34.75,
+    "functions": 33.42,
+    "branches": 25.84
   },
   "packages": {
     "packages/email": {
@@ -15,10 +15,10 @@
       "branches": 91.63
     },
     "packages/shared": {
-      "lines": 84.17,
-      "statements": 82.13,
-      "functions": 74.77,
-      "branches": 70.94
+      "lines": 85.89,
+      "statements": 83.85,
+      "functions": 75.42,
+      "branches": 73.8
     },
     "packages/ui": {
       "lines": 100,
@@ -27,9 +27,9 @@
       "branches": 100
     },
     "packages/auth": {
-      "lines": 65.55,
-      "statements": 64.23,
-      "functions": 68.14,
+      "lines": 65.6,
+      "statements": 64.28,
+      "functions": 68.38,
       "branches": 52.62
     },
     "packages/automation": {
@@ -57,10 +57,10 @@
       "branches": 54.84
     },
     "apps/worker": {
-      "lines": 48.73,
-      "statements": 47.73,
-      "functions": 55.96,
-      "branches": 27.29
+      "lines": 49,
+      "statements": 48,
+      "functions": 56.28,
+      "branches": 28.16
     },
     "packages/graph": {
       "lines": 27.23,
@@ -69,22 +69,22 @@
       "branches": 21.58
     },
     "apps/web": {
-      "lines": 19.31,
-      "statements": 20.75,
-      "functions": 20.69,
-      "branches": 12.45
+      "lines": 19.74,
+      "statements": 21.16,
+      "functions": 20.99,
+      "branches": 12.82
     },
     "packages/db": {
-      "lines": 30.97,
-      "statements": 29.87,
-      "functions": 30.23,
+      "lines": 31.2,
+      "statements": 30.09,
+      "functions": 31.81,
       "branches": 28.04
     },
     "packages/bpmn": {
-      "lines": 90,
-      "statements": 87.42,
-      "functions": 90.82,
-      "branches": 73.9
+      "lines": 90.13,
+      "statements": 87.54,
+      "functions": 90.89,
+      "branches": 74.03
     }
   },
   "_history": [
@@ -202,6 +202,43 @@
         "total functions: 32.89 % → 33.04 %",
         "total lines: 33.43 % → 33.79 %",
         "total statements: 33.90 % → 34.25 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 34.32,
+        "statements": 34.75,
+        "functions": 33.42,
+        "branches": 25.84
+      },
+      "changed": [
+        "apps/web branches: 12.45 % → 12.82 %",
+        "apps/web functions: 20.69 % → 20.99 %",
+        "apps/web lines: 19.31 % → 19.74 %",
+        "apps/web statements: 20.75 % → 21.16 %",
+        "apps/worker branches: 27.29 % → 28.16 %",
+        "apps/worker functions: 55.96 % → 56.28 %",
+        "apps/worker lines: 48.73 % → 49.00 %",
+        "apps/worker statements: 47.73 % → 48.00 %",
+        "packages/auth functions: 68.14 % → 68.38 %",
+        "packages/auth lines: 65.55 % → 65.60 %",
+        "packages/auth statements: 64.23 % → 64.28 %",
+        "packages/bpmn branches: 73.90 % → 74.03 %",
+        "packages/bpmn functions: 90.82 % → 90.89 %",
+        "packages/bpmn lines: 90.00 % → 90.13 %",
+        "packages/bpmn statements: 87.42 % → 87.54 %",
+        "packages/db functions: 30.23 % → 31.81 %",
+        "packages/db lines: 30.97 % → 31.20 %",
+        "packages/db statements: 29.87 % → 30.09 %",
+        "packages/shared branches: 70.94 % → 73.80 %",
+        "packages/shared functions: 74.77 % → 75.42 %",
+        "packages/shared lines: 84.17 % → 85.89 %",
+        "packages/shared statements: 82.13 % → 83.85 %",
+        "total branches: 25.30 % → 25.84 %",
+        "total functions: 33.04 % → 33.42 %",
+        "total lines: 33.79 % → 34.32 %",
+        "total statements: 34.25 % → 34.75 %"
       ]
     }
   ]
