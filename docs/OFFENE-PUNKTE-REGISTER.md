@@ -452,3 +452,88 @@ OP-105, OP-115, OP-140.
 **Vier Tore sind heute rot:** Lint-Ratsche (OP-064), Coverage-Gate (OP-066), i18n-Bundle
 (OP-072) und i18n-Untranslated-Ratsche (OP-071). Keines davon steht in einem der Berichte —
 alle vier stammen aus der Messung vom 2026-09-02.
+
+---
+
+## Nachtrag 2026-09-03 — ein neuer Punkt aus der Abnahme der Wellen 0–3
+
+| ID     | Titel                                                                          | Herkunft                                                                  | Kategorie             | Umfang | Blockiert durch          | Wert                                                             |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- | --------------------- | ------ | ------------------------ | ---------------------------------------------------------------- |
+| OP-167 | **Der Produktionsbau bricht ab: `/_global-error` lässt sich nicht prerendern** | Eigene Messung 2026-09-03 auf der Maschine des Eigentümers, vier Bauläufe | Betrieb (Fremdfehler) | offen  | Fehler in Next.js 16.2.x | Ohne Produktionsbau gibt es kein Deployment und keinen E2E-Lauf. |
+
+**Was gemessen wurde.** `next build` bricht bei 516 von 688 Seiten ab:
+
+```
+Error occurred prerendering page "/_global-error"
+TypeError: Cannot read properties of null (reading 'useContext')
+    at ignore-listed frames { digest: '3120278025' }
+```
+
+Vier Läufe, vier Ausschlüsse — die Ursache liegt **nicht** in diesem Repository:
+
+| Lauf                                         | Ergebnis                           | Was er ausschliesst                                     |
+| -------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| unverändert                                  | rot, `digest: 3120278025`          | —                                                       |
+| `global-error.tsx` auf ein Minimum reduziert | rot, **derselbe** digest           | Der Inhalt unserer Datei.                               |
+| `global-error.tsx` ganz entfernt             | rot, **derselbe** digest           | Unsere Datei überhaupt — Next erzeugt die Route selbst. |
+| Node 24.13 statt 25.2                        | rot, **derselbe** digest           | Die Node-Version.                                       |
+| `--debug-prerender`                          | **grün**, 688/688 Seiten, 0 Fehler | —                                                       |
+
+Dazu: nur eine React-Kopie im Baum (19.2.7), `package-lock.json` seit dem letzten
+grünen Bau unverändert, und die Dateien der Anwendungshülle (`layout.tsx`,
+`global-error.tsx`, `not-found.tsx`, die vier Provider) sind seit dem letzten
+erfolgreichen Bau bei `4caff361` **nicht angefasst** worden.
+
+**Es ist ein bekannter Fehler in Next.js 16.2.x** (vercel/next.js#95741, gemeldet
+für 16.2.6 und 16.2.10; wir fahren 16.2.11). Die Ursache dort: mehrere Routen
+werden beim statischen Erzeugen als ungekeyte Geschwister in einen Renderdurchgang
+gebündelt, und welche Route dabei abstürzt, hängt von der Verteilung auf die
+Arbeiter ab. **Das erklärt, warum der Bau bei 685 Seiten durchlief und bei 688
+nicht mehr**: die Bündelung hat sich mit den neuen Seiten verschoben. Der
+vorherige grüne Lauf war Glück, kein Beweis.
+
+**`--debug-prerender` ist keine Lösung.** Es schaltet ausweislich der Next-Doku
+`serverMinification` und `turbopackMinify` ab, erzeugt Server-Sourcemaps und
+setzt `prerenderEarlyExit=false` — und die Doku sagt ausdrücklich: „Do not deploy
+builds generated with `--debug-prerender` to production." Der Lauf ist der
+Beleg für die Diagnose, nicht der Weg zum Artefakt.
+
+### Die zwei Wege — was davon gemessen ist
+
+**(a) `next build --webpack`.** Gemessen, zweimal, und **kein Ersatz auf
+Zuruf**:
+
+- Der erste Lauf starb an `JavaScript heap out of memory` beim voreingestellten
+  Heap von 4 GB. Webpack braucht für diesen Baum deutlich mehr; mit 16 GB läuft
+  er weiter.
+- Der zweite Lauf kam bis TypeScript und brach dort ab — mit einem Fehler, den
+  der Turbopack-Bau **gar nicht erhebt**:
+
+  ```
+  Type '{ __tag__: "GET"; __param_position__: "second";
+          __param_type__: { params: Promise<{ id: string }> } | undefined }'
+  does not satisfy the constraint 'ParamCheck<RouteContext>'.
+    Type 'undefined' is not assignable to type 'RouteContext'.
+  ```
+
+  Der Webpack-Pfad erzeugt strengere Routentypen, und unsere
+  `withErrorHandler`-Wickel deklarieren den zweiten Parameter optional. Das ist
+  behebbar, aber es ist eigene Arbeit an über tausend Routen und keine
+  Bauflagge.
+
+Dazu kommt: Commit `cea14434` hat den **Turbopack-Produktionsbau ausdrücklich
+gewählt**. Ihn wegen eines Fremdfehlers aufzugeben, ist eine Entscheidung und
+keine Reparatur.
+
+**(b) Anhebung auf Next 16.3.4.** Verfügbar; der Fehler ist für 16.2.6/16.2.10
+gemeldet, ob 16.3.x ihn behebt, steht nirgends. **Nicht gemessen**, und zwar
+bewusst: die Anhebung wechselt die ausgelieferte Rahmenwerksversion, sie lässt
+sich in diesem Container nicht zu Ende prüfen (dort kommt kein Produktionsbau
+durch), und ein Wechsel des Rahmenwerks gehört nicht unbeaufsichtigt in einen
+Zweig, der auf Freigabe wartet.
+
+**Vorlage an den Eigentümer.** Der Weg ist zu entscheiden, nicht zu raten:
+16.3.4 anheben und messen (naheliegend, eine `^`-Anhebung innerhalb von 16.x,
+die `npm install` ohnehin ziehen würde), oder auf Webpack wechseln und die
+Routentypen nachziehen. Bis dahin ist der Produktionsbau blockiert und mit ihm
+der Playwright-Lauf.
