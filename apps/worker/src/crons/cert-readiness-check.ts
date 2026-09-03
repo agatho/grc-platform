@@ -5,6 +5,7 @@ import { db, certReadinessAssessment } from "@grc/db";
 import { eq, ne } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface CertSnapshotResult {
   processed: number;
   updated: number;
@@ -56,10 +57,10 @@ export const processCertReadinessCheck = withCronInstrumentation(
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:cert-readiness-check] Error for ${assessment.id}:`,
-          message,
-        );
+        log.error("[cron:cert-readiness-check] Error for assessment", {
+          assessmentId: assessment.id,
+          err: message,
+        });
       }
     }
 

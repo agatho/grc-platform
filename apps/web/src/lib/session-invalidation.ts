@@ -1,6 +1,7 @@
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 
+import { log } from "@/lib/logger";
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-085] Sitzungen eines Nutzers beenden.
  *
@@ -51,9 +52,6 @@ export async function invalidateUserSessions(
       sql`SELECT public.auth_invalidate_user_sessions(${userId}::uuid, ${actorId}::uuid)`,
     );
   } catch (err) {
-    console.error(
-      "[OP-085] Sitzungs-Invalidierung fehlgeschlagen:",
-      err instanceof Error ? err.message : err,
-    );
+    log.error("[OP-085] Sitzungs-Invalidierung fehlgeschlagen", { err });
   }
 }

@@ -22,6 +22,7 @@ import type { Session } from "next-auth";
 import type { UserRole } from "@grc/shared";
 import type { DbTransaction } from "@/lib/db-types";
 
+import { log } from "@/lib/logger";
 export interface ApiContext {
   session: Session;
   orgId: string;
@@ -206,10 +207,9 @@ async function establishRequestScopedContext(ctx: {
       // reserve succeeded but enterWith/after threw — don't leak the connection.
       await reserved.release().catch(() => {});
     }
-    console.error(
-      "[rls-context] failed to establish request-scoped context:",
-      err instanceof Error ? err.message : err,
-    );
+    log.error("[rls-context] failed to establish request-scoped context", {
+      err,
+    });
     // [WP2 · S01-21] Fail closed, laut und unterscheidbar — nicht still auf
     // den kontextlosen Basis-Pool zurückfallen.
     return new Response(
@@ -443,10 +443,7 @@ export async function isPlatformAdmin(userId: string): Promise<boolean> {
   } catch (err) {
     // Fail closed. A missing function (migration not yet applied) must deny,
     // never grant — otherwise the fix would be weaker than the finding.
-    console.error(
-      "[platform-admin] check failed, denying:",
-      err instanceof Error ? err.message : err,
-    );
+    log.error("[platform-admin] check failed, denying", { err });
     return false;
   }
 }

@@ -612,6 +612,38 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-03 — OP-152 erledigt, und drei Punkte, die dabei auffielen
+
+OP-152 ist abgetragen: `no-console` fällt im gemessenen Bereich der Ratsche von
+**23 auf 0**, die Gesamtzahl von 306 auf 283. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-2.md`. Drei Beobachtungen gehören ins Register, weil
+sie über den Punkt hinausreichen.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                | Beleg                     | Art     | Stand   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------- | ------- |
+| OP-171 | **Die Ratsche sah 23 Befunde, wo 88 Aufrufe standen.** Die Regel war nicht aus, sie war nachsichtig: `allow: ["warn","error","info","debug"]` nahm genau die vier Stufen aus, auf denen man ein Fehlerobjekt ausgibt — also die Form, um die es bei OP-152 geht. Gezählt wurde nur `console.log`.                                  | Eigene Messung 2026-09-03 | Tor     | behoben |
+| OP-172 | **`redactEmail` liess den ersten Buchstaben des lokalen Teils stehen** (`p***@domain`) und schrieb ihn auf dem VORGABEPFAD der Produktion (`EMAIL_ENABLED=false`) an den Log-Empfänger. Die Begründung an der Aufrufstelle sagt seit S10-24, Vorlagenschlüssel und Domain reichten zur Diagnose — der Buchstabe war nie gefordert. | Eigene Messung 2026-09-03 | Produkt | behoben |
+| OP-173 | **`apps/web` hat keine Lint-Ratsche.** Der grösste Workspace des Repositories wird von `.eslint-ratchet.json._targets` nicht erfasst; sein Bestand an Lint-Befunden ist nicht gedeckelt. Bis Welle 4b kannte seine Konfiguration ausserdem `no-console` überhaupt nicht.                                                           | Eigene Messung 2026-09-03 | Tor     | offen   |
+
+**Was OP-171 mit den bisherigen Funden verbindet.** Es ist der fünfte Fall
+derselben Art in diesem Audit: ein Tor, das nicht auslösen kann. Vorher waren es
+eine ausgeschlossene Tor-Eingabe, ein `git diff` auf ungetrackte Pfade, ein
+`tee` ohne `pipefail`, ein Datenbanktest, der an seiner eigenen Vorbedingung
+starb (OP-168), und eine Suite, die ihre Voraussetzung erriet (OP-170). Hier
+war es eine Ausnahmeliste, die das Gefährliche durchliess und das Harmlose
+zählte.
+
+**Was bei OP-172 methodisch wichtig ist.** Der neue Logger maskiert
+adressartige Werte von sich aus (`p***@domain`, nachgemessen). Das ist
+Tiefenverteidigung — hatte aber zur Folge, dass die bestehende Zusicherung
+„schreibt die Empfängeradresse nicht nach stdout" **nicht mehr unterscheiden
+konnte**, ob der `EmailService` selbst redigiert: Die Gegenprobe mit entfernter
+Quell-Redigierung lief grün. Erst nachdem `redactEmail` vollständig redigiert
+(`***@domain`), trennt der Unterschied zur blossen Logger-Maskierung die beiden
+Schichten wieder. Ein zusätzlicher Schutz kann eine Zusicherung blind machen;
+das ist kein Grund gegen den Schutz, wohl aber einer, die Zusicherung danach
+neu gegenzuprüfen.
+
 ### Nachtrag 2026-09-03 — OP-170: eine Suite, die ihre eigene Voraussetzung erriet
 
 Beim Gesamtlauf gegen die frisch migrierte Datenbank `grc_v4b` fiel

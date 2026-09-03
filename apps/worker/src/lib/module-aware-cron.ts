@@ -33,6 +33,7 @@ import { processEsgCollectionReminder } from "../crons/esg-collection-reminder";
 import { processWbDeadlineMonitor } from "../crons/wb-deadline-monitor";
 import { NotImplementedEvidenceError } from "./job-runtime";
 
+import { log } from "./logger";
 interface CronResult {
   processed: number;
 }
@@ -87,8 +88,8 @@ const cronRegistry: Record<string, CronHandler> = {
  * Returns the registry so the worker can expose individual endpoints.
  */
 export function registerModuleCrons(): Record<string, CronHandler> {
-  console.log(
-    `[ModuleCrons] Registered ${Object.keys(cronRegistry).length} background processes`,
-  );
+  log.info("[ModuleCrons] Registered background processes", {
+    count: Object.keys(cronRegistry).length,
+  });
   return cronRegistry;
 }

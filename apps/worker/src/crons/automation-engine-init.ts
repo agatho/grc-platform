@@ -24,6 +24,7 @@ import { sql } from "drizzle-orm";
 import { resolveOrgRecipients } from "../lib/recipients";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 // #S10-16 (ARCTOS-FULL-2026-08-31, Medium): tables the `change_status`
 // automation action may write to.
 //
@@ -89,8 +90,9 @@ const automationActionServices: ActionServices = {
         params.assigneeRole,
       );
       if (!createdBy) {
-        console.error(
-          `[AutomationServices] createTask: no user with role ${params.assigneeRole} or admin in org ${params.orgId}`,
+        log.error(
+          "[AutomationServices] createTask: no user with the requested role or admin in org",
+          { assigneeRole: params.assigneeRole, orgId: params.orgId },
         );
         return { id: "failed" };
       }
@@ -114,7 +116,7 @@ const automationActionServices: ActionServices = {
         .returning({ id: task.id });
       return { id: created.id };
     } catch (err) {
-      console.error("[AutomationServices] createTask failed:", err);
+      log.error("[AutomationServices] createTask failed", { err });
       return { id: "failed" };
     }
   },
@@ -133,7 +135,7 @@ const automationActionServices: ActionServices = {
         templateData: params.link ? { link: params.link } : {},
       });
     } catch (err) {
-      console.error("[AutomationServices] sendNotification failed:", err);
+      log.error("[AutomationServices] sendNotification failed", { err });
     }
   },
 
@@ -154,8 +156,9 @@ const automationActionServices: ActionServices = {
         { limit: 25 },
       );
       if (recipients.length === 0) {
-        console.error(
-          `[AutomationServices] sendEmail: no active member with role ${params.recipientRole} in org ${params.orgId}`,
+        log.error(
+          "[AutomationServices] sendEmail: no active member with the requested role in org",
+          { recipientRole: params.recipientRole, orgId: params.orgId },
         );
         return;
       }
@@ -183,7 +186,7 @@ const automationActionServices: ActionServices = {
         );
       }
     } catch (err) {
-      console.error("[AutomationServices] sendEmail failed:", err);
+      log.error("[AutomationServices] sendEmail failed", { err });
     }
   },
 
@@ -192,8 +195,13 @@ const automationActionServices: ActionServices = {
     // #S10-16: refuse any entity that is not automation-managed. See the
     // AUTOMATION_STATUS_TABLES comment at the top of this file.
     if (!AUTOMATION_STATUS_TABLES.has(params.entityType)) {
-      console.error(
-        `[AutomationServices] changeStatus refused: '${params.entityType}' is not an automation-managed entity (org ${params.orgId}, entity ${params.entityId})`,
+      log.error(
+        "[AutomationServices] changeStatus refused: not an automation-managed entity",
+        {
+          entityType: params.entityType,
+          orgId: params.orgId,
+          entityId: params.entityId,
+        },
       );
       return;
     }
@@ -202,7 +210,7 @@ const automationActionServices: ActionServices = {
         sql`UPDATE ${sql.identifier(params.entityType)} SET status = ${params.newStatus}, updated_at = now() WHERE id = ${params.entityId}::uuid AND org_id = ${params.orgId}::uuid`,
       );
     } catch (err) {
-      console.error("[AutomationServices] changeStatus failed:", err);
+      log.error("[AutomationServices] changeStatus failed", { err });
     }
   },
 
@@ -225,7 +233,7 @@ const automationActionServices: ActionServices = {
         channel: "both",
       });
     } catch (err) {
-      console.error("[AutomationServices] escalate failed:", err);
+      log.error("[AutomationServices] escalate failed", { err });
     }
   },
 
@@ -248,8 +256,9 @@ const automationActionServices: ActionServices = {
         );
 
       if (!webhook) {
-        console.warn(
-          `[AutomationServices] triggerWebhook: webhook ${params.webhookId} not found or inactive`,
+        log.warn(
+          "[AutomationServices] triggerWebhook: webhook not found or inactive",
+          { webhookId: params.webhookId },
         );
         return;
       }
@@ -258,8 +267,9 @@ const automationActionServices: ActionServices = {
       // ran (PR #200), but rows that predate it could still be delivered.
       const urlCheck = checkWebhookUrl(webhook.url);
       if (!urlCheck.ok) {
-        console.error(
-          `[AutomationServices] triggerWebhook: refusing unsafe URL for webhook ${webhook.id}: ${urlCheck.reason}`,
+        log.error(
+          "[AutomationServices] triggerWebhook: refusing unsafe URL for webhook",
+          { webhookId: webhook.id, reason: urlCheck.reason },
         );
         await db.insert(webhookDeliveryLog).values({
           webhookId: webhook.id,
@@ -281,8 +291,9 @@ const automationActionServices: ActionServices = {
       // Resolve and verify before issuing fetch.
       const hostCheck = await checkResolvedHostIsPublic(urlCheck.url.hostname);
       if (!hostCheck.ok) {
-        console.error(
-          `[AutomationServices] triggerWebhook: DNS rebind guard rejected ${webhook.id}: ${hostCheck.reason}`,
+        log.error(
+          "[AutomationServices] triggerWebhook: DNS rebind guard rejected webhook",
+          { webhookId: webhook.id, reason: hostCheck.reason },
         );
         await db.insert(webhookDeliveryLog).values({
           webhookId: webhook.id,
@@ -363,7 +374,7 @@ const automationActionServices: ActionServices = {
         errorMessage,
       });
     } catch (err) {
-      console.error("[AutomationServices] triggerWebhook failed:", err);
+      log.error("[AutomationServices] triggerWebhook failed", { err });
     }
   },
 };
@@ -395,7 +406,7 @@ export function initAutomationEngine(): AutomationEngine {
     void engineInstance!.handleEvent(event);
   });
 
-  console.log(
+  log.info(
     "[Sprint28] AutomationEngine initialized and subscribed to Event Bus",
   );
 

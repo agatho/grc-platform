@@ -102,10 +102,6 @@ export default tseslint.config(
       "no-eval": "error",
       "no-implied-eval": "error",
       "no-new-func": "error",
-      // Ein `console.log` im Worker geht an den Log-Shipper vorbei (S13-15);
-      // erlaubt bleiben die Diagnosestufen.
-      "no-console": ["warn", { allow: ["warn", "error", "info", "debug"] }],
-
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -130,6 +126,34 @@ export default tseslint.config(
       "@typescript-eslint/no-empty-object-type": "warn",
       "@typescript-eslint/no-unused-expressions": "warn",
       "@typescript-eslint/ban-ts-comment": "warn",
+    },
+  },
+
+  {
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152] Ein `console.log` geht am
+    // Field-Scrubbing des Log-Shippers vorbei (S13-15). Die `allow`-Liste ist
+    // der Grund, warum die Ratsche hier nur 23 Befunde sah, wo 88
+    // `console.*`-Aufrufe standen: `warn`, `error`, `info` und `debug` waren
+    // ausgenommen — also gerade die Stufen, auf denen ein Fehlerobjekt
+    // ausgegeben wird.
+    //
+    // Dieser nachsichtige Satz steht bewusst in einem EIGENEN Objekt mit
+    // `ignores`, statt im Basisblock: Flat Config behaelt die OPTIONEN eines
+    // frueheren Blocks bei, wenn ein spaeterer nur die Schwere setzt. Stand
+    // die `allow`-Liste im Basisblock, liesse sich sie weiter unten gar nicht
+    // mehr loswerden — `"no-console": ["error", { allow: [] }]` ist kein
+    // Ausweg, denn das ESLint-Schema verlangt fuer `allow` mindestens einen
+    // Eintrag (`Value [] should NOT have fewer than 1 items`). Aufgefallen ist
+    // beides dem Tor-Test selbst
+    // (`apps/worker/tests/lib/no-console-gate.test.ts`).
+    //
+    // Fuer `apps/worker/src/**` gilt dieses Objekt deshalb nicht; dort greift
+    // weiter unten `"no-console": "error"` ohne geerbte Ausnahmen. Fuer
+    // `packages/**` steht die Nachsicht noch, weil dort ein Restbestand
+    // liegt, den dieser Strang nicht abgetragen hat.
+    ignores: ["apps/worker/src/**/*.ts", "apps/worker/src/**/*.tsx"],
+    rules: {
+      "no-console": ["warn", { allow: ["warn", "error", "info", "debug"] }],
     },
   },
   {
@@ -188,6 +212,40 @@ export default tseslint.config(
     ],
     rules: {
       "no-console": "off",
+    },
+  },
+  {
+    // ── Das Tor zu OP-152 ────────────────────────────────────────────────
+    //
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152]
+    //
+    // `apps/worker/src` hatte 85 `console.*`-Aufrufe. Sie gingen roh auf
+    // stdout/stderr — ohne Field-Scrubbing, obwohl ADR-017 das Scrubbing zur
+    // Voraussetzung für externes Log-Shipping macht. Alle 85 sind auf
+    // `apps/worker/src/lib/logger.ts` umgestellt.
+    //
+    // Ohne Tor hält das nicht: die nächste Kopiervorlage bringt den nächsten
+    // `console.error(err)` zurück. Deshalb hier `error` OHNE `allow`-Liste —
+    // die alte Liste nahm `warn`/`error`/`info`/`debug` aus und liess damit
+    // 65 der 88 Aufrufe unsichtbar durch die Ratsche.
+    //
+    // Der Geltungsbereich ist genau `src/`: `apps/worker/tests/**` bleibt
+    // ausgenommen (Testcode, weiter oben geregelt), und
+    // `tests/require-db.mjs` ist ein Einmalläufer, dessen Ausgabe der
+    // Betreiber vor `npm test` liest — dort gibt es keinen Log-Empfänger, an
+    // dem etwas vorbeigehen könnte.
+    //
+    // Der einzige zulässige Ausgang für eine fertige, bereits gescrubbte
+    // Zeile ist `writeLine()` in `packages/shared/src/logger.ts`; er trägt
+    // dort eine benannte `eslint-disable`-Direktive.
+    files: ["apps/worker/src/**/*.{ts,tsx}"],
+    rules: {
+      // Ohne geerbte `allow`-Liste: Der nachsichtige Satz weiter oben nimmt
+      // `apps/worker/src/**` ausdruecklich aus, deshalb genuegt hier die
+      // Schwere. Stuende die Nachsicht im Basisblock, behielte Flat Config
+      // ihre OPTIONEN bei und `console.error(err)` waere im Worker weiter
+      // erlaubt — also genau die Form, um die es bei OP-152 geht.
+      "no-console": "error",
     },
   },
   {

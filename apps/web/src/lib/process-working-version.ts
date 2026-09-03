@@ -13,6 +13,7 @@ import { process, processVersion, processStep } from "@grc/db";
 import { parseBpmnXml } from "@grc/shared";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 
+import { log } from "@/lib/logger";
 interface PromoteArgs {
   // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
   tx: DbTransaction; // drizzle transaction (same convention as withAuditContext)
@@ -204,12 +205,12 @@ export async function promoteWorkingVersion({
           stepIdByBpmnElement,
         });
       } catch (e) {
-        console.error("arctos rehydrate failed on promote", e);
+        log.error("arctos rehydrate failed on promote", { err: e });
       }
     } catch (e) {
       // Step sync is best-effort on promotion; the version itself is
       // already released at this point.
-      console.error("step sync failed on promote", e);
+      log.error("step sync failed on promote", { err: e });
     }
   }
 

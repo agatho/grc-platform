@@ -6,6 +6,7 @@ import { and, sql, eq, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface ContractExpiryResult {
   processed: number;
   notified: number;
@@ -111,10 +112,10 @@ export const processContractExpiryMonitor = withCronInstrumentation(
         transitioned++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:contract-expiry-monitor] Failed for contract ${c.id}:`,
-          message,
-        );
+        log.error("[cron:contract-expiry-monitor] Failed for contract", {
+          contractId: c.id,
+          err: message,
+        });
       }
     }
 
@@ -166,9 +167,12 @@ export const processContractExpiryMonitor = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:contract-expiry-monitor] Notice alert failed for ${c.id}:`,
-          message,
+        log.error(
+          "[cron:contract-expiry-monitor] Notice alert failed for contract",
+          {
+            contractId: c.id,
+            err: message,
+          },
         );
       }
     }

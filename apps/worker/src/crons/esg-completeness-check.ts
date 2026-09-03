@@ -14,6 +14,7 @@ import { and, eq, sql, isNull, count } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface EsgCompletenessResult {
   processed: number;
   notified: number;
@@ -132,19 +133,22 @@ export const processEsgCompletenessCheck = withCronInstrumentation(
               notified++;
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err);
-              console.error(
-                `[cron:esg-completeness-check] Notification failed for user ${user.userId}:`,
-                message,
+              log.error(
+                "[cron:esg-completeness-check] Notification failed for user",
+                {
+                  userId: user.userId,
+                  err: message,
+                },
               );
             }
           }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:esg-completeness-check] Failed for report ${report.id}:`,
-          message,
-        );
+        log.error("[cron:esg-completeness-check] Failed for report", {
+          reportId: report.id,
+          err: message,
+        });
       }
     }
 

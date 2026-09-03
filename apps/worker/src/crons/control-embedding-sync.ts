@@ -60,6 +60,7 @@ import {
 import { controlEmbeddingContentHash, controlEmbeddingText } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 const BATCH_LIMIT = 50;
 
 interface ControlEmbeddingSyncResult {
@@ -84,7 +85,7 @@ export const processControlEmbeddingSync = withCronInstrumentation(
     if (!provider) {
       // Das ist der EINZIGE legitime Skip: der Betreiber hat keinen
       // Embedding-Provider freigeschaltet. Kein Fehler, keine Degradierung.
-      console.log(
+      log.info(
         "[control-embedding-sync] no embedding provider configured (OPENAI_API_KEY or OLLAMA_BASE_URL) — skipping run",
       );
       return {
@@ -137,10 +138,15 @@ export const processControlEmbeddingSync = withCronInstrumentation(
           // Richtlinie lokale Verarbeitung verlangt, wird für diese
           // Organisation NICHT eingebettet — statt es trotzdem zu tun.
           orgsPolicyBlocked++;
-          console.warn(
-            `[control-embedding-sync] org ${org.id}: embedding provider ${provider.provider} ` +
-              `processes in ${embeddingPlacement?.country}, policy is ${policy.egressMode} — skipping org. ` +
-              `Set EMBEDDING_PROVIDER=ollama to embed locally.`,
+          log.warn(
+            "[control-embedding-sync] embedding provider processes outside the policy — skipping org. " +
+              "Set EMBEDDING_PROVIDER=ollama to embed locally.",
+            {
+              orgId: org.id,
+              provider: provider.provider,
+              country: embeddingPlacement?.country,
+              egressMode: policy.egressMode,
+            },
           );
           continue;
         }
@@ -216,9 +222,9 @@ export const processControlEmbeddingSync = withCronInstrumentation(
             if (errors >= 3 && processed === 0) {
               // Provider evidently down — abort instead of burning the
               // whole batch; the next run retries.
-              console.error(
-                "[control-embedding-sync] aborting after 3 consecutive failures:",
-                msg,
+              log.error(
+                "[control-embedding-sync] aborting after 3 consecutive failures",
+                { err: msg },
               );
               break;
             }
@@ -228,7 +234,10 @@ export const processControlEmbeddingSync = withCronInstrumentation(
         errors++;
         const msg = err instanceof Error ? err.message : String(err);
         failures.push(`org ${org.id}: ${msg}`);
-        console.error(`[control-embedding-sync] org ${org.id} failed:`, msg);
+        log.error("[control-embedding-sync] org failed", {
+          orgId: org.id,
+          err: msg,
+        });
       }
     }
 
@@ -239,9 +248,9 @@ export const processControlEmbeddingSync = withCronInstrumentation(
       orgs.length > 0 && orgsProcessed === 0 && orgsPolicyBlocked < orgs.length;
 
     if (degraded) {
-      console.error(
-        "[control-embedding-sync] run degraded — no organisation could be processed:",
-        failures.slice(0, 5).join(" | "),
+      log.error(
+        "[control-embedding-sync] run degraded — no organisation could be processed",
+        { failures: failures.slice(0, 5).join(" | ") },
       );
     }
 

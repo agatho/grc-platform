@@ -49,6 +49,7 @@ import {
 } from "@grc/ai";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface RelevanceScorerResult {
   processed: number;
   scored: number;
@@ -113,10 +114,10 @@ export const processRegulatoryRelevanceScorer = withCronInstrumentation(
         );
       } catch (err) {
         errors++;
-        console.error(
-          `[regulatory-relevance-scorer] policy load failed for org ${org.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[regulatory-relevance-scorer] policy load failed for org", {
+          orgId: org.id,
+          err,
+        });
         continue;
       }
 
@@ -202,8 +203,9 @@ export const processRegulatoryRelevanceScorer = withCronInstrumentation(
               // KEINE Ersatzbewertung. Die Meldung bleibt unbewertet und
               // wird im nächsten Lauf erneut versucht.
               invalidOutput++;
-              console.warn(
-                `[regulatory-relevance-scorer] unusable model output for item ${item.id} / org ${org.id} — nothing persisted`,
+              log.warn(
+                "[regulatory-relevance-scorer] unusable model output — nothing persisted",
+                { itemId: item.id, orgId: org.id },
               );
               continue;
             }
@@ -214,8 +216,12 @@ export const processRegulatoryRelevanceScorer = withCronInstrumentation(
               policyBlocked++;
               const code =
                 (err as { code?: string }).code ?? "policy_violation";
-              console.warn(
-                `[regulatory-relevance-scorer] blocked by AI policy for org ${org.id}: ${code}`,
+              log.warn(
+                "[regulatory-relevance-scorer] blocked by AI policy for org",
+                {
+                  orgId: org.id,
+                  code,
+                },
               );
               // Die Richtlinie gilt für alle Meldungen dieser Org.
               break;
@@ -246,10 +252,11 @@ export const processRegulatoryRelevanceScorer = withCronInstrumentation(
           processed++;
         } catch (err) {
           errors++;
-          console.error(
-            `[regulatory-relevance-scorer] item ${item.id} / org ${org.id} failed:`,
-            err instanceof Error ? err.message : String(err),
-          );
+          log.error("[regulatory-relevance-scorer] item failed", {
+            itemId: item.id,
+            orgId: org.id,
+            err,
+          });
         }
       }
     }

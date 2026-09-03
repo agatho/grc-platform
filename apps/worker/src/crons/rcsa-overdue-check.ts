@@ -6,6 +6,7 @@ import { eq, and, sql, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface RcsaOverdueResult {
   processed: number;
   markedOverdue: number;
@@ -28,7 +29,7 @@ export const processRcsaOverdueCheck = withCronInstrumentation(
       .where(eq(rcsaCampaign.status, "active"));
 
     if (activeCampaigns.length === 0) {
-      console.log("[cron:rcsa-overdue-check] No active campaigns found");
+      log.info("[cron:rcsa-overdue-check] No active campaigns found");
       return { processed: 0, markedOverdue: 0, escalationsSent: 0, errors: [] };
     }
 

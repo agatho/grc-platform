@@ -34,6 +34,7 @@ import { withOrgContext } from "../lib/org-context";
 import { createRunReport } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface CalendarDigestResult {
   processed: number;
   digestsCreated: number;
@@ -75,7 +76,7 @@ export const processCalendarDigest = withCronInstrumentation(
     );
 
     if (!orgs || orgs.length === 0) {
-      console.log("[cron:calendar-digest] No active users found");
+      log.info("[cron:calendar-digest] No active users found");
       return report.toResult({ processed: 0, digestsCreated: 0 });
     }
 

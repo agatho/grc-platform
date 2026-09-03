@@ -12,6 +12,8 @@
 // even a module-load failure (or a partially mocked @grc/db in tests)
 // only logs an error. Same signatures as @grc/events emitEntity*.
 
+import { log } from "@/lib/logger";
+
 type EventsModule = typeof import("@grc/events");
 
 async function withEventsModule(
@@ -26,7 +28,7 @@ async function withEventsModule(
     }
     apply(mod);
   } catch (err) {
-    console.error("[entity-events] event emission skipped:", err);
+    log.error("[entity-events] event emission skipped", { err });
   }
 }
 

@@ -46,6 +46,7 @@ import * as freetsa from "@grc/shared/lib/freetsa";
 import * as opentimestamps from "@grc/shared/lib/opentimestamps";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface AnchorResult {
   orgsProcessed: number;
   anchorsCreated: number;
@@ -70,7 +71,7 @@ export const processDailyAuditAnchor = withCronInstrumentation<
   const base = targetDate ?? new Date(Date.now() - 24 * 60 * 60 * 1000);
   const dayIso = base.toISOString().slice(0, 10);
 
-  console.log(`[cron:daily-audit-anchor] target day ${dayIso}`);
+  log.info("[cron:daily-audit-anchor] target day", { day: dayIso });
 
   // Every (tenant, day) that has audit activity and no complete/pending
   // anchor yet — the target day plus any day inside the retry window that
@@ -107,9 +108,10 @@ export const processDailyAuditAnchor = withCronInstrumentation<
     : [];
 
   const orgs = new Set(rows.map((r) => r.org_id));
-  console.log(
-    `[cron:daily-audit-anchor] ${rows.length} (tenant, day) pair(s) across ${orgs.size} tenant(s) need anchoring`,
-  );
+  log.info("[cron:daily-audit-anchor] (tenant, day) pair(s) need anchoring", {
+    pairs: rows.length,
+    tenants: orgs.size,
+  });
 
   // Verify each tenant's chain once, not once per day.
   const gateByOrg = new Map<string, boolean>();
@@ -134,16 +136,21 @@ export const processDailyAuditAnchor = withCronInstrumentation<
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       errors.push(`org ${orgId} day ${day}: ${msg}`);
-      console.error(
-        `[cron:daily-audit-anchor] org ${orgId} day ${day} failed:`,
-        msg,
-      );
+      log.error("[cron:daily-audit-anchor] org/day failed", {
+        orgId,
+        day,
+        err: msg,
+      });
     }
   }
 
-  console.log(
-    `[cron:daily-audit-anchor] done — orgs=${orgs.size} anchors=${anchorsCreated} retried=${daysRetried} refused=${chainsRefused} errors=${errors.length}`,
-  );
+  log.info("[cron:daily-audit-anchor] done", {
+    orgs: orgs.size,
+    anchors: anchorsCreated,
+    retried: daysRetried,
+    refused: chainsRefused,
+    errors: errors.length,
+  });
   return {
     orgsProcessed: orgs.size,
     anchorsCreated,
@@ -281,7 +288,7 @@ async function writeAnchor(row: {
       // detects an overwritten anchor from inside the database. It just
       // does not survive an actor who can write the seal ledger too.
       // /audit-log/integrity reports this as `anchor_unsealed`.
-      console.warn(
+      log.warn(
         "[cron:daily-audit-anchor] AUDIT_SEAL_KEY is not set — anchors are sealed but not signed (S03-01)",
       );
     }
@@ -326,10 +333,12 @@ async function logAnchorFailure(
   err: unknown,
 ): Promise<void> {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(
-    `[cron:daily-audit-anchor] ${provider} failed for org ${orgId} day ${dayIso}:`,
-    msg,
-  );
+  log.error("[cron:daily-audit-anchor] anchor provider failed", {
+    provider,
+    orgId,
+    day: dayIso,
+    err: msg,
+  });
 
   // A failed row records the attempt and is explicitly NOT sealed — it is
   // not evidence. The DB guard allows it to be replaced by a real anchor
@@ -353,9 +362,11 @@ async function logAnchorFailure(
       // The append-only guard refuses to downgrade a completed anchor to
       // failed. That is correct: evidence is not overwritten by a later
       // error. Log and move on.
-      console.error(
-        `[cron:daily-audit-anchor] could not record failure for ${orgId}/${dayIso}/${provider}:`,
-        e instanceof Error ? e.message : String(e),
-      );
+      log.error("[cron:daily-audit-anchor] could not record anchor failure", {
+        orgId,
+        day: dayIso,
+        provider,
+        err: e,
+      });
     });
 }

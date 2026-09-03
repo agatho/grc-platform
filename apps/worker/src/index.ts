@@ -42,6 +42,7 @@ import { processDailyAuditAnchor } from "./crons/daily-audit-anchor";
 import { assertWorkerDbRole } from "./lib/db-role-guard";
 import { emitCronEvent } from "./lib/cron-instrument";
 
+import { log } from "./lib/logger";
 const app = new Hono();
 
 // ──────────────────────────────────────────────────────────────
@@ -388,11 +389,11 @@ const port = Number(process.env.PORT ?? 3001);
 // binding a port or starting the scheduler's socket.
 if (process.env.WORKER_NO_LISTEN !== "true") {
   serve({ fetch: app.fetch, port }, (info) => {
-    console.log(
-      `[worker] listening on http://0.0.0.0:${info.port} — ` +
-        `${JOB_REGISTRY.length} jobs registered, scheduler ` +
-        `${scheduler ? "running" : "disabled"}`,
-    );
+    log.info("[worker] listening", {
+      port: info.port,
+      jobs: JOB_REGISTRY.length,
+      scheduler: scheduler ? "running" : "disabled",
+    });
   });
 }
 

@@ -7,6 +7,7 @@ import { eq, and, sql, lt, gt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface RcsaReminderResult {
   processed: number;
   remindersSent: number;
@@ -27,7 +28,7 @@ export const processRcsaReminder = withCronInstrumentation(
       .where(eq(rcsaCampaign.status, "active"));
 
     if (activeCampaigns.length === 0) {
-      console.log("[cron:rcsa-reminder] No active campaigns found");
+      log.info("[cron:rcsa-reminder] No active campaigns found");
       return { processed: 0, remindersSent: 0, errors: [] };
     }
 

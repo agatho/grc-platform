@@ -1,3 +1,4 @@
+import { createLogger } from "@grc/shared/logger";
 import { Resend } from "resend";
 import * as React from "react";
 import type { EmailParams, EmailResult, EmailTemplateKey } from "./types";
@@ -113,6 +114,8 @@ import {
 } from "./template-registry";
 import { EmailDeliveryError } from "./types";
 
+const log = createLogger("arctos-email");
+
 interface RenderedTemplate {
   subject: string;
   component: React.ReactElement;
@@ -125,8 +128,21 @@ interface RenderedTemplate {
 function redactEmail(address: string): string {
   const at = address.lastIndexOf("@");
   if (at <= 0) return "<redacted>";
-  const local = address.slice(0, at);
-  return `${local.slice(0, 1)}***@${address.slice(at + 1)}`;
+  // [Welle 4b · OP-152] Der erste Buchstabe des lokalen Teils stand hier
+  // vorher noch: `${local.slice(0, 1)}***@…`. Die Begründung an der
+  // Aufrufstelle sagt seit S10-24, „der Vorlagenschlüssel und die Domain
+  // reichen zur Diagnose einer Fehlkonfiguration" — der Buchstabe war also
+  // von Anfang an nicht gefordert, aber er ging auf dem VORGABEPFAD der
+  // Produktion an einen Log-Empfänger. Er ist für sich genommen wenig, in
+  // Verbindung mit der Domain aber ein Personenmerkmal, und OP-152 ist
+  // angetreten, aus der Zusage „keine sensiblen Daten im Log" eine
+  // nachprüfbare Aussage zu machen. Er fällt weg.
+  //
+  // Nebeneffekt, der die Prüfbarkeit erst herstellt: Der Logger maskiert
+  // jeden adressartigen Wert ohnehin zu `p***@domain`. Solange diese
+  // Funktion dasselbe Ergebnis lieferte, konnte KEIN Test unterscheiden, ob
+  // die Redigierung an der Quelle überhaupt stattfindet.
+  return `***@${address.slice(at + 1)}`;
 }
 
 const RETRY_DELAYS = [1_000, 5_000, 30_000];
@@ -190,9 +206,16 @@ export class EmailService {
       // write every recipient to stdout, from where ADR-017 phase 2 ships
       // logs to a third party. The template key and the domain are enough
       // to diagnose a misconfiguration.
-      console.log(
-        `[EmailService] disabled, skipping: ${params.templateKey} -> ${redactEmail(params.to)}`,
-      );
+      // [Welle 4b · OP-152] War der letzte `console.*`-Aufruf im gemessenen
+      // Bereich der Lint-Ratsche. Die Adresse war zwar schon redigiert, die
+      // Zeile ging aber weiterhin am Field-Scrubbing vorbei — und das auf
+      // dem VORGABEPFAD der Produktion. Jetzt über den strukturierten
+      // Logger, und nach dessen Merkregel: die Nachricht ist konstant, die
+      // Werte sind Felder.
+      log.info("e-mail disabled, skipping", {
+        templateKey: params.templateKey,
+        to: redactEmail(params.to),
+      });
       return null;
     }
 

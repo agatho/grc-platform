@@ -6,6 +6,7 @@ import { and, sql, eq, isNull, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface DdReminderResult {
   processed: number;
   notified: number;
@@ -44,7 +45,7 @@ export const processDdReminder = withCronInstrumentation(
       );
 
     if (activeSessions.length === 0) {
-      console.log("[cron:dd-reminder] No active DD sessions found");
+      log.info("[cron:dd-reminder] No active DD sessions found");
       return { processed: 0, notified: 0 };
     }
 
@@ -107,10 +108,10 @@ export const processDdReminder = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:dd-reminder] Failed for session ${session.sessionId}:`,
-          message,
-        );
+        log.error("[cron:dd-reminder] Failed for session", {
+          ddSessionId: session.sessionId,
+          err: message,
+        });
       }
     }
 

@@ -6,6 +6,7 @@ import { and, sql, isNull, isNotNull, ne } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface DoraDeadlineResult {
   processed: number;
   notified: number;
@@ -64,10 +65,10 @@ export const processDoraIncidentDeadlineMonitor = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:dora-incident-deadlines] Failed for ${incident.id}:`,
-          message,
-        );
+        log.error("[cron:dora-incident-deadlines] Failed for incident", {
+          incidentId: incident.id,
+          err: message,
+        });
       }
     }
 

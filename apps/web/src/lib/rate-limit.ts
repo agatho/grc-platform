@@ -43,11 +43,17 @@
 // `N × capacity`. A Redis backend is the next step (`REDIS_URL` is already
 // in the compose file); this API does not change when it lands.
 
-// NOTE: no `@/lib/logger` import here on purpose. This module is imported
-// by `middleware.ts`, which Next.js runs in the EDGE runtime, and the
-// logger writes through `process.stdout.write`, which the edge runtime does
-// not provide. `console.error` works in both runtimes and is still picked up
-// by the Docker log driver.
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152] Hier stand: "no `@/lib/logger`
+// import here on purpose" — dieses Modul wird von `middleware.ts` importiert
+// und laeuft damit in der EDGE-Laufzeit, in der es `process.stdout.write`
+// nicht gibt. Der Ausweg war eine handgebaute JSON-Zeile an `console.error`,
+// die dasselbe Format traf, aber am Field-Scrubbing vorbeiging — und
+// `key: opts.key` enthaelt bei den Auth-Limits eine IP-Adresse.
+//
+// Der Logger faellt jetzt auf `console` zurueck, wenn `process.stdout.write`
+// fehlt (`packages/shared/src/logger.ts`, `writeLine`). Die Laufzeit bleibt
+// unveraendert, das Scrubbing gilt auch hier.
+import { log } from "@/lib/logger";
 
 export interface RateLimitOptions {
   /** Unique bucket key — e.g. "auth:<ip>" or "copilot:<userId>". */
@@ -169,16 +175,11 @@ export async function rateLimit(
   try {
     return inMemoryCheck(opts);
   } catch (e) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        service: process.env.ARCTOS_SERVICE ?? "arctos-web",
-        msg: "rate-limit check failed",
-        key: opts.key,
-        failClosed: Boolean(opts.failClosed),
-        error: String(e),
-      }),
-    );
+    log.error("rate-limit check failed", {
+      key: opts.key,
+      failClosed: Boolean(opts.failClosed),
+      err: e,
+    });
     if (opts.failClosed) {
       return { allowed: false, remaining: 0, retryAfterSeconds: 60 };
     }

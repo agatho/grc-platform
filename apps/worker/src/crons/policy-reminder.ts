@@ -12,6 +12,7 @@ import { eq, and, sql, gt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface PolicyReminderResult {
   processed: number;
   remindersSent: number;
@@ -32,7 +33,7 @@ export const processPolicyReminder = withCronInstrumentation(
       .where(eq(policyDistribution.status, "active"));
 
     if (activeDistributions.length === 0) {
-      console.log("[cron:policy-reminder] No active distributions found");
+      log.info("[cron:policy-reminder] No active distributions found");
       return { processed: 0, remindersSent: 0, errors: [] };
     }
 

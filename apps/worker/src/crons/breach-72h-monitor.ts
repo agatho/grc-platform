@@ -7,6 +7,7 @@ import { and, isNull, sql, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface Breach72hResult {
   processed: number;
   notified: number;
@@ -41,7 +42,7 @@ export const processBreach72hMonitor = withCronInstrumentation(
       );
 
     if (activeBreaches.length === 0) {
-      console.log(
+      log.info(
         "[cron:breach-72h-monitor] No active breaches requiring DPA notification",
       );
       return { processed: 0, notified: 0 };
@@ -114,10 +115,10 @@ export const processBreach72hMonitor = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:breach-72h-monitor] Failed for breach ${breach.id}:`,
-          message,
-        );
+        log.error("[cron:breach-72h-monitor] Failed for breach", {
+          breachId: breach.id,
+          err: message,
+        });
       }
     }
 

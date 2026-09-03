@@ -247,13 +247,37 @@ describe("EmailService delivery accounting (S10-04)", () => {
   it("does not write the recipient address to stdout when disabled", async () => {
     // S10-24: EMAIL_ENABLED defaults to false in production, so this was
     // the DEFAULT path and logged every recipient to a third-party log sink.
+    //
+    // [Welle 4b · OP-152] Der Kanal hat sich geändert, die Zusicherung
+    // nicht: Die Zeile geht seither über den strukturierten Logger, und der
+    // schreibt nach `process.stdout.write`. Die Beobachtung sitzt deshalb
+    // jetzt dort — beide `expect` sind Wort für Wort dieselben geblieben.
+    // Der Test würde sonst eine leere Konsole prüfen und immer bestehen.
     process.env.EMAIL_ENABLED = "false";
-    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const spy = vi
+      .spyOn(process.stdout, "write")
+      .mockImplementation(() => true);
     const svc = await service();
     await svc.send({ ...params, to: "personal.name@customer.example" });
     const logged = spy.mock.calls.flat().join(" ");
     expect(logged).not.toContain("personal.name@customer.example");
     expect(logged).toContain("customer.example"); // domain kept for triage
+
+    // [Welle 4b · OP-152] Die beiden Zusicherungen oben allein sind KEIN
+    // Nachweis mehr über den EmailService: Der Logger maskiert jeden Wert,
+    // der wie eine Adresse aussieht, auch ohne Zutun des Aufrufers — mit
+    // ROHER Adresse gemessen kommt `p***@customer.example` heraus, also
+    // ebenfalls ohne den vollen Namen und mit erhaltener Domain. Beide
+    // `expect` bestünden dann weiter. Nachgemessen genau so.
+    //
+    // Was diesen Test wieder trennscharf macht, ist der Unterschied ZWISCHEN
+    // den beiden Schichten: `redactEmail` im EmailService macht den lokalen
+    // Teil zu `***`, der Logger maskiert das zu `****@…`. Ohne die
+    // Quell-Redigierung bliebe der erste Buchstabe stehen (`p***@…`). Genau
+    // dieser eine Buchstabe ist hier die Zusicherung — die Verteidigung an
+    // der Quelle, nicht nur die im Logger.
+    expect(logged).toContain("****@customer.example");
+    expect(logged).not.toMatch(/[^*]\*\*\*@customer\.example/);
     spy.mockRestore();
   });
 });

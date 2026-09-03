@@ -37,6 +37,7 @@ import { sql } from "drizzle-orm";
 import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 /** HinSchG § 11 Abs. 5: drei Jahre nach Abschluss des Verfahrens. */
 const HINSCHG_RETENTION_DAYS = 1095;
 
@@ -110,10 +111,12 @@ export const processRetentionWhistleblowing = withCronInstrumentation(
           if (await storage.delete(f.storage_path)) filesDeleted++;
         } catch (err) {
           filesFailed++;
-          console.error(
-            "[retention-whistleblowing] evidence file could not be deleted:",
-            f.storage_path,
-            err instanceof Error ? err.message : String(err),
+          log.error(
+            "[retention-whistleblowing] evidence file could not be deleted",
+            {
+              storagePath: f.storage_path,
+              err,
+            },
           );
         }
       }

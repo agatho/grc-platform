@@ -1,6 +1,6 @@
 {
   "_comment": "#S13-17 ESLint-Ratsche für apps/worker, packages/* und scripts/*. Zahlen dürfen nur SINKEN. Neu setzen: node scripts/lint-ratchet.mjs --update. Eine Anhebung verlangt zusätzlich --reason und wird in _history festgehalten. apps/web hat eine eigene, strengere Konfiguration (WP12) und wird hier nicht gezählt.",
-  "_updatedAt": "2026-09-02",
+  "_updatedAt": "2026-09-03",
   "_targets": [
     "apps/worker",
     "packages",
@@ -11,7 +11,6 @@
     "@typescript-eslint/no-explicit-any": 26,
     "@typescript-eslint/no-require-imports": 1,
     "@typescript-eslint/no-unused-vars": 249,
-    "no-console": 23,
     "no-control-regex": 3,
     "no-empty": 2,
     "no-useless-escape": 1
@@ -23,6 +22,14 @@
       "changed": [
         "no-console: 121 → 23"
       ]
+    },
+    {
+      "date": "2026-09-03",
+      "total": 283,
+      "changed": [
+        "no-console: 23 → 0"
+      ],
+      "reason": "Welle 4b-2 / OP-152: 164 console.*-Aufrufe in apps/worker/src und der letzte in packages/email auf den strukturierten Logger umgestellt; no-console faellt 23 -> 0, Gesamtzahl 306 -> 283. Die neue Zahl ist der gemessene Stand, nicht ein geerbter."
     }
   ]
 }

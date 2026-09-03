@@ -81,29 +81,39 @@ describe("EmailService", () => {
   // EMAIL_ENABLED=false returns null
   // ---------------------------------------------------------------------------
   describe("when EMAIL_ENABLED is not true", () => {
+    // [Welle 4b · OP-152] Beobachtet wird `process.stdout.write` statt
+    // `console.log`: Die Zeile geht seither über den strukturierten Logger.
+    // Die Zusicherung ist dieselbe geblieben — dass der Vorgabepfad das
+    // Überspringen überhaupt MELDET —, nur auf den Text angepasst, den der
+    // Logger schreibt. Bliebe der Spy auf `console.log`, prüfte er eine
+    // leere Konsole und bestünde immer.
     it("should return null and skip sending", async () => {
       process.env.EMAIL_ENABLED = "false";
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const outSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
 
       const result = await service.send(baseParams);
 
       expect(result).toBeNull();
       expect(mockResendSend).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("[EmailService] disabled"),
+      expect(outSpy).toHaveBeenCalledWith(
+        expect.stringContaining("e-mail disabled, skipping"),
       );
-      consoleSpy.mockRestore();
+      outSpy.mockRestore();
     });
 
     it("should return null when EMAIL_ENABLED is undefined", async () => {
       delete process.env.EMAIL_ENABLED;
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const outSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
 
       const result = await service.send(baseParams);
 
       expect(result).toBeNull();
       expect(mockResendSend).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      outSpy.mockRestore();
     });
   });
 

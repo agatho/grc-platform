@@ -38,6 +38,7 @@ import { sql } from "drizzle-orm";
 import { verifyTimestampResponse } from "@grc/shared/lib/freetsa";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface ScopeResult {
   scope: string;
   orgId: string | null;
@@ -155,10 +156,11 @@ export const processAuditChainVerify = withCronInstrumentation<
   );
 
   if (anchorGaps.length > 0) {
-    console.warn(
-      `[cron:audit-chain-verify] ${anchorGaps.length} tenant-day(s) older than 48h have audit activity but no external anchor. ` +
+    log.warn(
+      "[cron:audit-chain-verify] tenant-day(s) older than 48h have audit activity but no external anchor. " +
         "Those events are outside the tamper-evidence guarantee. Check that a scheduler actually calls POST /crons/daily-audit-anchor — " +
         "the worker ships no scheduler of its own.",
+      { anchorGaps: anchorGaps.length },
     );
   }
 
@@ -168,22 +170,24 @@ export const processAuditChainVerify = withCronInstrumentation<
     // Deliberately loud and unstructured-readable in addition to the
     // NDJSON the instrumentation emits: this is the line an operator
     // greps for at 03:00.
-    console.error(
-      "[cron:audit-chain-verify] AUDIT TRAIL INTEGRITY FAILURE — " +
-        `${unhealthy.length} scope(s) unhealthy, ${failing} anchor(s) fail re-verification. ` +
+    log.error(
+      "[cron:audit-chain-verify] AUDIT TRAIL INTEGRITY FAILURE. " +
         "This is a tamper signal until proven otherwise. Do NOT run a rehash: " +
         "recomputing hashes from the current content makes whatever changed it permanent.",
+      { unhealthyScopes: unhealthy.length, failingAnchors: failing },
     );
     for (const u of unhealthy) {
-      console.error(
-        `[cron:audit-chain-verify]   ${u.scope}: ${u.problems.join("; ")}`,
-      );
+      log.error("[cron:audit-chain-verify]   unhealthy scope", {
+        scope: u.scope,
+        problems: u.problems.join("; "),
+      });
     }
   }
 
   if (refused > 0) {
-    console.warn(
-      `[cron:audit-chain-verify] ${refused} destructive operation(s) against the log tables were refused in the last 24h — see audit_log_write_attempt`,
+    log.warn(
+      "[cron:audit-chain-verify] destructive operation(s) against the log tables were refused in the last 24h — see audit_log_write_attempt",
+      { refused },
     );
   }
 
@@ -297,9 +301,10 @@ async function reverifyTimestamps(): Promise<{
     } catch (err) {
       failing++;
       const msg = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:audit-chain-verify] anchor ${row.id} fails re-verification: ${msg}`,
-      );
+      log.error("[cron:audit-chain-verify] anchor fails re-verification", {
+        anchorId: row.id,
+        err: msg,
+      });
       // Record it without claiming the anchor is verified. The guard
       // permits last_error and tsa_verified on a complete anchor; it does
       // not permit touching merkle_root, leaf_count or proof.

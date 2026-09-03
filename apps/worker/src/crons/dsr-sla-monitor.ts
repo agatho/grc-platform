@@ -7,6 +7,7 @@ import { and, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface DsrSlaResult {
   processed: number;
   notified: number;
@@ -39,9 +40,7 @@ export const processDsrSlaMonitor = withCronInstrumentation(
       );
 
     if (approachingDeadline.length === 0) {
-      console.log(
-        "[cron:dsr-sla-monitor] No DSRs approaching deadline threshold",
-      );
+      log.info("[cron:dsr-sla-monitor] No DSRs approaching deadline threshold");
       return { processed: 0, notified: 0 };
     }
 
@@ -83,10 +82,10 @@ export const processDsrSlaMonitor = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:dsr-sla-monitor] Failed for DSR ${dsrRow.id}:`,
-          message,
-        );
+        log.error("[cron:dsr-sla-monitor] Failed for DSR", {
+          dsrId: dsrRow.id,
+          err: message,
+        });
       }
     }
 

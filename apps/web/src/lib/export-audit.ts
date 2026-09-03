@@ -32,6 +32,7 @@
 import { db, dataExportLog } from "@grc/db";
 import { getEntityDefinition } from "./import-export/entity-registry";
 
+import { log } from "@/lib/logger";
 /**
  * Rollen, die einen Export mit Personenbezug auslösen dürfen.
  *
@@ -203,9 +204,9 @@ export async function logExportOrThrow(entry: ExportLogEntry): Promise<void> {
       ipAddress: entry.ipAddress ?? null,
     });
   } catch (err) {
-    console.error(
-      "[export-audit] data_export_log write failed — refusing to deliver the export:",
-      err instanceof Error ? err.message : String(err),
+    log.error(
+      "[export-audit] data_export_log write failed — refusing to deliver the export",
+      { err },
     );
     throw new ExportNotLoggedError(err);
   }

@@ -21,6 +21,7 @@
 import { checkRuntimeRoleIsolation } from "@grc/db";
 import { emitCronEvent } from "./cron-instrument";
 
+import { log } from "./logger";
 export interface WorkerRoleVerdict {
   role: string;
   isSuperuser: boolean;
@@ -59,18 +60,19 @@ export async function assertWorkerDbRole(): Promise<WorkerRoleVerdict> {
       `(S10-01) would inherit. Point DATABASE_URL at the role grc_worker ` +
       `(deploy/provision-grc-app.sh, GRC_WORKER_PASSWORD).`;
     if (process.env.NODE_ENV === "production") {
-      console.error(detail);
+      log.fatal(detail);
       process.exit(1);
     }
-    console.warn(detail.replace("FATAL", "WARNING"));
+    log.warn(detail.replace("FATAL", "WARNING"));
     return verdict;
   }
 
   if (!check.canBypassRls) {
-    console.warn(
-      `[worker] role "${check.role}" has neither SUPERUSER nor BYPASSRLS. ` +
-        `Cross-org system jobs will see only rows their org context allows ` +
-        `(usually none). Expected role: grc_worker.`,
+    log.warn(
+      "[worker] connected role has neither SUPERUSER nor BYPASSRLS. " +
+        "Cross-org system jobs will see only rows their org context allows " +
+        "(usually none). Expected role: grc_worker.",
+      { role: check.role },
     );
   }
 

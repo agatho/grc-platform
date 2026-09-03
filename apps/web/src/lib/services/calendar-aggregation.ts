@@ -11,6 +11,7 @@ import type {
 } from "@grc/shared";
 import { MODULE_COLORS } from "@grc/shared";
 
+import { log } from "@/lib/logger";
 interface EnabledModulesMap {
   [moduleKey: string]: boolean;
 }
@@ -250,7 +251,10 @@ export async function getCalendarEvents(
         const e = err as { code?: string; message?: string };
         // Log but keep going; the missing rows just won't appear in
         // the user's calendar this run.
-        console.warn("[calendar] source query failed:", e.code, e.message);
+        log.warn("[calendar] source query failed", {
+          code: e.code,
+          err: e.message,
+        });
       }
     }),
   );

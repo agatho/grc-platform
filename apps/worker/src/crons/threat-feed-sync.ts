@@ -10,6 +10,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { safeFetch } from "@grc/shared/lib/url-safety-server";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface ThreatFeedSyncResult {
   sourcesChecked: number;
   newItems: number;
@@ -220,9 +221,11 @@ export const processThreatFeedSync = withCronInstrumentation(
         // operators, not silently folded into an error counter.
         const message = err instanceof Error ? err.message : String(err);
         if (message.startsWith("Blocked by SSRF guard")) {
-          console.warn(
-            `[threat-feed-sync] feed source ${source.id} (org ${source.orgId}) refused: ${message}`,
-          );
+          log.warn("[threat-feed-sync] feed source refused", {
+            sourceId: source.id,
+            orgId: source.orgId,
+            reason: message,
+          });
         }
         errors++;
       }

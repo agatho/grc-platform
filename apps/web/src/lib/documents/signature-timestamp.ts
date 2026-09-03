@@ -30,6 +30,7 @@
 import { createHash } from "node:crypto";
 import { requestTimestamp } from "@grc/shared/lib/freetsa";
 
+import { log } from "@/lib/logger";
 export type SignatureTsaStatus =
   "granted" | "unavailable" | "disabled" | "error";
 
@@ -95,9 +96,9 @@ export async function timestampChainLink(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.warn(
-      `[signature-timestamp] RFC 3161 timestamp unavailable: ${message}`,
-    );
+    log.warn("[signature-timestamp] RFC 3161 timestamp unavailable", {
+      err: message,
+    });
     return { ...DISABLED, status: "unavailable", error: message };
   }
 }

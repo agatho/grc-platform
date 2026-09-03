@@ -7,6 +7,7 @@ import { and, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface AiIncidentMonitorResult {
   processed: number;
   notified: number;
@@ -41,7 +42,7 @@ export const processAiActIncidentDeadlineMonitor = withCronInstrumentation(
       );
 
     if (activeIncidents.length === 0) {
-      console.log(
+      log.info(
         "[cron:ai-act-incident-deadline] No active incidents pending notification",
       );
       return { processed: 0, notified: 0 };
@@ -118,10 +119,10 @@ export const processAiActIncidentDeadlineMonitor = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:ai-act-incident-deadline] Failed for incident ${incident.id}:`,
-          message,
-        );
+        log.error("[cron:ai-act-incident-deadline] Failed for incident", {
+          incidentId: incident.id,
+          err: message,
+        });
       }
     }
 

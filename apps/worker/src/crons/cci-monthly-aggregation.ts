@@ -32,6 +32,7 @@ import type {
 } from "@grc/shared";
 import { reportJobError } from "../lib/job-runtime";
 
+import { log } from "../lib/logger";
 interface AggregationResult {
   orgsProcessed: number;
   snapshotsCreated: number;
@@ -46,9 +47,7 @@ export const processCCIMonthlyAggregation = withCronInstrumentation(
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const period = getPeriodString(prevMonth);
 
-    console.log(
-      `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
-    );
+    log.info("[cron:cci-monthly] Starting CCI aggregation", { period });
 
     let orgsProcessed = 0;
     let snapshotsCreated = 0;

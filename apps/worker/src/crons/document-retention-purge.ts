@@ -20,6 +20,7 @@ import { isRetentionPurgeEligible } from "@grc/shared";
 import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface DocumentRetentionPurgeResult {
   scanned: number;
   purged: number;
@@ -188,11 +189,10 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
           ) as { n: number }[];
           auditEntriesRedacted += Number(list[0]?.n ?? 0);
         } catch (err) {
-          console.error(
-            "[document-retention-purge] audit redaction failed for",
-            doc.id,
-            err instanceof Error ? err.message : String(err),
-          );
+          log.error("[document-retention-purge] audit redaction failed", {
+            documentId: doc.id,
+            err,
+          });
           redactionFailures++;
         }
 
@@ -209,11 +209,10 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
             // auffindbar noch löschbar ist — eine Datei ohne Eigentümer
             // und ohne Löschpfad. Sie wird jetzt gezählt und gemeldet.
             filesFailed++;
-            console.error(
-              "[document-retention-purge] file could not be deleted:",
+            log.error("[document-retention-purge] file could not be deleted", {
               relPath,
-              err instanceof Error ? err.message : String(err),
-            );
+              err,
+            });
           }
         }
       } catch (err) {
@@ -221,18 +220,17 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
         // fehlgeschlagenen Purge als Erfolg durchgehen. Der Lauf zählt
         // ihn jetzt und meldet ihn am Ende.
         purgeFailures++;
-        console.error(
-          "[document-retention-purge] purge failed for",
-          doc.id,
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[document-retention-purge] purge failed", {
+          documentId: doc.id,
+          err,
+        });
       }
     }
 
     if (purgeFailures > 0 || filesFailed > 0) {
-      console.error(
-        `[document-retention-purge] ${purgeFailures} purge failure(s), ` +
-          `${filesFailed} file(s) left behind in object storage`,
+      log.error(
+        "[document-retention-purge] purge failure(s), file(s) left behind in object storage",
+        { purgeFailures, filesFailed },
       );
     }
 

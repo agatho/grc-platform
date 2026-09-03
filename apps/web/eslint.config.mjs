@@ -122,6 +122,56 @@ export default tseslint.config(
     },
   },
 
+  // ── Das Tor zu OP-152: kein `console.*` auf den Serverpfaden ──────────
+  //
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152]
+  //
+  // Bis Welle 4b kannte diese Konfiguration `no-console` ueberhaupt nicht —
+  // fuer den groessten Workspace des Repositories gab es zu dieser
+  // Defektklasse gar keine Regel, auch keine als `warn`. Die Lint-Ratsche
+  // zaehlt `apps/web` nicht (`.eslint-ratchet.json._targets`), also war der
+  // Bestand auch nicht gedeckelt.
+  //
+  // Der Geltungsbereich ist bewusst genau der SERVERSEITIGE Code, denn nur
+  // dort trifft die Begruendung aus ADR-017 zu:
+  //
+  //   * `src/lib/**`      — Node- und Edge-Laufzeit, schreibt in den
+  //                         Prozess-Log-Strom, der an den Log-Empfaenger
+  //                         geht. Alle zehn Aufrufe sind umgestellt.
+  //   * `src/auth.ts`, `src/middleware.ts`, `src/app/api/auth/**`,
+  //     `src/app/api/health/**` — dieselbe Laufzeit, heute schon frei von
+  //     `console.*`. Die Regel haelt sie frei.
+  //
+  // NICHT im Geltungsbereich, jeweils mit Grund:
+  //
+  //   * `src/app/api/v1/**` — 53 Aufrufe, die Dateihoheit liegt bei einem
+  //     anderen Strang dieser Welle. Derselbe Defekt, dieselbe Reparatur,
+  //     fremde Dateien. Siehe docs/UMSETZUNG-WELLE-4B-2.md §6.
+  //   * `"use client"`-Komponenten (26 Aufrufe in 24 Seiten, `src/hooks`,
+  //     `src/components`) — sie laufen im BROWSER des Nutzers. Dort gibt es
+  //     weder `process.stdout` noch einen Log-Empfaenger, an dem etwas
+  //     vorbeigehen koennte; der Kopfkommentar des Loggers sagt seit WP10
+  //     ausdruecklich, dass Browsercode bei `console.*` bleibt. Sie unter
+  //     diese Regel zu nehmen hiesse, eine ANDERE Frage (Konsolenrauschen
+  //     im Browser) unter der Nummer von OP-152 zu beantworten.
+  {
+    files: [
+      "src/lib/**/*.{ts,tsx}",
+      "src/auth.ts",
+      "src/middleware.ts",
+      "src/app/api/auth/**/*.{ts,tsx}",
+      "src/app/api/health/**/*.{ts,tsx}",
+    ],
+    // Ohne Optionen: Diese Konfiguration kannte `no-console` bis Welle 4b
+    // gar nicht, es gibt also keine `allow`-Liste aus einem frueheren Block,
+    // die geerbt werden koennte. (`{ allow: [] }` waere ohnehin kein
+    // Ausweg — das ESLint-Schema verlangt fuer `allow` mindestens einen
+    // Eintrag.) Kommt spaeter ein nachsichtiger Block hinzu, gehoert er wie
+    // in der Wurzelkonfiguration in ein eigenes Objekt mit `ignores`, nicht
+    // vor diesen hier.
+    rules: { "no-console": "error" },
+  },
+
   // ── Deliberate exceptions ─────────────────────────────────────────────
   {
     // `react-hooks/exhaustive-deps` reports 23 sites, all of them existing

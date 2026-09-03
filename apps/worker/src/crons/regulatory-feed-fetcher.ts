@@ -6,6 +6,7 @@ import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 
+import { log } from "../lib/logger";
 interface FeedFetcherResult {
   fetched: number;
   newItems: number;
@@ -62,9 +63,10 @@ async function fetchRssFeed(
     });
 
     if (!response.ok) {
-      console.warn(
-        `[cron:regulatory-feed-fetcher] HTTP ${response.status} from ${sourceConfig.name}`,
-      );
+      log.warn("[cron:regulatory-feed-fetcher] HTTP error from source", {
+        status: response.status,
+        source: sourceConfig.name,
+      });
       return [];
     }
 
@@ -110,10 +112,10 @@ async function fetchRssFeed(
 
     return items;
   } catch (err) {
-    console.error(
-      `[cron:regulatory-feed-fetcher] Error fetching ${sourceConfig.name}:`,
-      err instanceof Error ? err.message : String(err),
-    );
+    log.error("[cron:regulatory-feed-fetcher] Error fetching source", {
+      source: sourceConfig.name,
+      err,
+    });
     return [];
   }
 }

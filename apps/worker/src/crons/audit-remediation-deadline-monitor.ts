@@ -26,6 +26,7 @@ import { and, isNull, isNotNull, lt, eq, inArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface AuditRemediationResult {
   processed: number;
   notifiedChecklistItems: number;
@@ -128,9 +129,9 @@ export const processAuditRemediationDeadlines = withCronInstrumentation(
         );
         notifiedChecklistItems++;
       } catch (err) {
-        console.error(
-          `[cron:audit-remediation-deadline-monitor] Failed for checklist item ${item.id}:`,
-          err instanceof Error ? err.message : String(err),
+        log.error(
+          "[cron:audit-remediation-deadline-monitor] Failed for checklist item",
+          { itemId: item.id, err },
         );
       }
     }
@@ -201,9 +202,12 @@ export const processAuditRemediationDeadlines = withCronInstrumentation(
         );
         notifiedFindings++;
       } catch (err) {
-        console.error(
-          `[cron:audit-remediation-deadline-monitor] Failed for finding ${f.id}:`,
-          err instanceof Error ? err.message : String(err),
+        log.error(
+          "[cron:audit-remediation-deadline-monitor] Failed for finding",
+          {
+            findingId: f.id,
+            err,
+          },
         );
       }
     }

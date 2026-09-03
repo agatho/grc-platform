@@ -16,6 +16,7 @@ import { computeAssuranceScore } from "@grc/shared";
 import type { ModuleAssuranceData } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 const ASSURANCE_MODULES = [
   "erm",
   "isms",
@@ -97,20 +98,21 @@ export const processAssuranceSnapshot = withCronInstrumentation(
             snapshotsCreated++;
           } catch (err) {
             errors++;
-            console.error(
-              `[cron:assurance-snapshot] Error for org ${org.id} module ${mod}:`,
-              err instanceof Error ? err.message : String(err),
-            );
+            log.error("[cron:assurance-snapshot] Error for org module", {
+              orgId: org.id,
+              module: mod,
+              err,
+            });
           }
         }
 
         orgsProcessed++;
       } catch (err) {
         errors++;
-        console.error(
-          `[cron:assurance-snapshot] Error for org ${org.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[cron:assurance-snapshot] Error for org", {
+          orgId: org.id,
+          err,
+        });
       }
     }
 
