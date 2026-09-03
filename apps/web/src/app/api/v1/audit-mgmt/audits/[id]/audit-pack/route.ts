@@ -1,7 +1,13 @@
 // Audit Overhaul Phase 2: per-audit ZIP audit-pack.
 //
 // Bundles README.txt, scope.txt, checklist.csv, findings.csv, evidence.csv,
-// working-papers.csv, sign-off-chain.txt, plus the report document if attached.
+// working-papers.csv and sign-off-chain.txt.
+//
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-175] Hier stand „plus the report
+// document if attached", und die README kuendigte `- report.pdf` an. Ein
+// `zip.file("report.pdf", …)` gibt es in dieser Datei nicht und hat es nie
+// gegeben. Aufgeloest wurde das gegen die Ankuendigung, nicht gegen das
+// Paket — die Begruendung steht bei der README-Zeile weiter unten.
 
 import JSZip from "jszip";
 import { db, audit } from "@grc/db";
@@ -54,8 +60,9 @@ type AuditDetailRow = {
   scope_frameworks: string[] | null;
   lead_auditor_name: string | null;
   auditee_name: string | null;
+  /** `report_document_id` stammt aus `a.*`; `report_title` aus der Unterabfrage. */
+  report_document_id: string | null;
   report_title: string | null;
-  report_path: string | null;
 };
 
 /** `method_entries` ist eine JSONB-Spalte; die Route liest daraus `method`. */
@@ -139,8 +146,7 @@ export const POST = withErrorHandler(async function POST(
       SELECT a.*,
         (SELECT u.name FROM "user" u WHERE u.id = a.lead_auditor_id) AS lead_auditor_name,
         (SELECT u.name FROM "user" u WHERE u.id = a.auditee_id) AS auditee_name,
-        (SELECT d.title FROM document d WHERE d.id = a.report_document_id) AS report_title,
-        (SELECT d.file_path FROM document d WHERE d.id = a.report_document_id) AS report_path
+        (SELECT d.title FROM document d WHERE d.id = a.report_document_id) AS report_title
       FROM audit a WHERE a.id = ${id}
     `)) as unknown as AuditDetailRow[];
 
@@ -219,17 +225,29 @@ export const POST = withErrorHandler(async function POST(
       `- evidence.csv (${data.evidence.length})`,
       `- working-papers.csv (${data.workingPapers.length})`,
       `- sign-off-chain.txt (${data.signOffs.length} signatures)`,
-      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-175] Diese Zeile kuendigt
-      // eine Datei an, die das ZIP NIE enthaelt: es gibt kein
-      // `zip.file("report.pdf", …)`. Aufgefallen beim Benennen der
-      // Zeilenform (OP-076) — `report_title` und `report_path` werden
-      // selektiert, `report_title` wird nirgends gelesen und `report_path`
-      // nur fuer dieses Versprechen. Der Kopfkommentar der Datei behauptet
-      // dasselbe („plus the report document if attached"). Nicht hier
-      // behoben: den Bericht wirklich beizulegen heisst, den Dateispeicher
-      // zu lesen, und das ist eine Produktaenderung, keine Typisierung.
-      // Der Befund steht als OP-175 im Register.
-      det?.report_path ? `- report.pdf` : "",
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-175]
+      //
+      // Hier stand `- report.pdf`, und die Datei lag nie bei. Entschieden
+      // wurde GEGEN das Beilegen und FUER eine ehrliche Ankuendigung:
+      //
+      // Der Berichtsbeleg ist ein Dokument des DMS, und `documents/[id]/
+      // download` setzt an ihm vier Kontrollen durch, die ein ZIP nicht
+      // mitbringt: die Wasserzeichenpflicht fuer freigegebene PDF
+      // (#S06-07), die SHA-256-Pruefung der gespeicherten Bytes gegen
+      // `document.file_sha256` (#S06-09), einen Protokolleintrag JE
+      // Download (#S06-08) und die Beschraenkung der unmarkierten
+      // Rohfassung auf admin/quality_manager. Dieses Paket steht auch
+      // `auditor` und `compliance_officer` offen. Die Bytes hier
+      // hineinzukopieren waere also nicht „eine Datei mehr", sondern ein
+      // Weg an vier absichtlich gesetzten Kontrollen vorbei — im selben
+      // Aufwasch, in dem dieser Strang Kontrollen wiederherstellt.
+      //
+      // Die README benennt den Bericht deshalb mit Titel und Kennung und
+      // sagt, wo er kontrolliert zu bekommen ist. `report_title` wird
+      // damit erstmals gelesen; ohne die Zeile waere es eine tote Spalte.
+      det?.report_document_id
+        ? `- (report not included) "${det.report_title ?? "report"}" — controlled document ${det.report_document_id}, download via /api/v1/documents/${det.report_document_id}/download`
+        : `- (no report document attached to this audit)`,
     ].join("\n"),
   );
 

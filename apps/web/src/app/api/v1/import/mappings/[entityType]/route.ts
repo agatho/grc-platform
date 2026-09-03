@@ -30,17 +30,24 @@ export const GET = withErrorHandler(async function GET(
   return Response.json({ data: mappings });
 });
 // DELETE /api/v1/import/mappings/:entityType (with id query param)
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-180] Das Pfadsegment
+// `:entityType` wurde von DIESEM Handler nicht ausgewertet: geloescht wurde
+// allein nach `?id=` und `org_id`. Ein DELETE auf
+// `/import/mappings/asset?id=<mapping-einer-risiko-zuordnung>` traf damit
+// eine Zuordnung, die gar nicht unter der aufgerufenen URL liegt. Kein
+// Mandantenleck (die `org_id`-Bedingung stand), aber die URL benannte einen
+// Gegenstand, den der Handler nie geprueft hat — und die Antwort meldete
+// `success`. Der Entitaetstyp ist jetzt Teil der WHERE-Bedingung; ein
+// Treffer unter dem falschen Pfad ist damit ein 404 wie jeder andere
+// Nichttreffer.
 export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
-  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-180] Das Pfadsegment
-  // `:entityType` wird von DIESEM Handler nicht ausgewertet; geloescht wird
-  // allein nach `?id=` und `org_id`. Die Signatur bleibt stehen, weil sie
-  // die Route beschreibt; dass die URL mehr verspricht, als der Handler
-  // prueft, steht als OP-180 im Register.
-  _context: { params: Promise<{ entityType: string }> },
+  { params }: { params: Promise<{ entityType: string }> },
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+
+  const { entityType } = await params;
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
@@ -58,6 +65,7 @@ export const DELETE = withErrorHandler(async function DELETE(
       and(
         eq(importColumnMapping.id, id),
         eq(importColumnMapping.orgId, ctx.orgId),
+        eq(importColumnMapping.entityType, entityType),
       ),
     )
     .returning();

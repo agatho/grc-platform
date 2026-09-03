@@ -1,5 +1,5 @@
 import { db, riskPrediction } from "@grc/db";
-import { correlationQuerySchema } from "@grc/shared";
+import { correlationQuerySchema, type CorrelatedEntity } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
@@ -26,11 +26,18 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     );
   }
 
-  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] `minCorrelation`
-  // war hier entnommen und wurde nirgends angewandt — die Antwort enthaelt
-  // alle Korrelationen, auch die unterhalb der angeforderten Schwelle.
-  // Nicht mehr entnommen; der Befund steht als OP-176 im Register.
-  const { entityType, entityId } = query.data;
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-176] `minCorrelation` war
+  // entnommen und wurde nirgends angewandt: die Antwort enthielt ALLE
+  // Korrelationen, auch die unterhalb der angeforderten Schwelle — und weil
+  // der Vorgabewert 0.5 ist, galt das auch fuer jeden Aufrufer, der gar
+  // keine Schwelle gesetzt hat.
+  //
+  // `depth` bleibt weiterhin ohne Wirkung. Das ist KEIN Filter, den man
+  // nachtragen koennte: er verlangt einen Nachbarschaftslauf ueber mehrere
+  // Stufen, den diese Route nicht hat (sie liest eine einzige Zeile
+  // `risk_prediction` und deren `correlated_entities`). Der Befund ist im
+  // Bericht zu Welle 4b-4 §7 als offener Punkt beschrieben.
+  const { entityType, entityId, minCorrelation } = query.data;
 
   // Get predictions with correlations for the specified entity
   const predictions = await db
@@ -52,5 +59,28 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     )
     .limit(50);
 
-  return Response.json({ data: predictions });
+  // `correlated_entities` ist eine JSONB-Spalte der dokumentierten Form
+  // `[{entityType, entityId, correlation}]`. Drizzle kann sie nicht typisieren,
+  // deshalb wird sie geprueft und nicht zugesichert. Eintraege ohne
+  // numerische `correlation` koennen die Schwelle nicht nachweislich
+  // erreichen und fallen damit heraus.
+  function atLeast(value: unknown, min: number): CorrelatedEntity[] {
+    if (!Array.isArray(value)) return [];
+    return value.filter((entry): entry is CorrelatedEntity => {
+      if (typeof entry !== "object" || entry === null) return false;
+      const correlation = (entry as { correlation?: unknown }).correlation;
+      return typeof correlation === "number" && correlation >= min;
+    });
+  }
+
+  return Response.json({
+    data: predictions.map((prediction) => ({
+      ...prediction,
+      correlatedEntities: atLeast(
+        prediction.correlatedEntities,
+        minCorrelation,
+      ),
+    })),
+    minCorrelation,
+  });
 });

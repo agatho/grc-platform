@@ -612,6 +612,53 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-03 — die Restdefekte aus Strang 3, und ein 500er, der nie auffiel
+
+Strang 4 hat die fünf Produktdefekte abgearbeitet, die Strang 3 gefunden,
+benannt und bewusst nicht behoben hatte. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-4.md`.
+
+| OP     | Ergebnis                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-175 | **behoben** — und zwar **gegen** das Beilegen der PDF entschieden: `documents/[id]/download` setzt am Berichtsdokument vier Kontrollen durch (Wasserzeichen S06-07, SHA-256-Abgleich S06-09, Protokolleintrag je Download S06-08, Rohfassung nur admin/quality_manager), das Pack steht aber vier Rollen offen. Die Bytes hineinzukopieren wäre ein Weg an allen vieren vorbei gewesen. Die README nennt jetzt Titel, Dokumentkennung und den kontrollierten Downloadpfad.                                                                                                                                                                                                             |
+| OP-176 | **6 von 7** Routen wirken jetzt; **4** Parameter bleiben mit Begründung offen — siehe unten.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| OP-177 | **behoben.** Die vom ursprünglichen Autor offengelassene Auflösung ist im Schema eindeutig: `audit_qa_review.reviewer_id` → `"user"(id)`, und `audit_resource_allocation.auditor_id` → `auditor_profile(id)` → `auditor_profile.user_id` → `"user"(id)` mit UNIQUE `ap_user_idx`, also 1:1 und verlustfrei. Beim Nachschlagen kamen **zwei weitere** Konfliktwege heraus, die der Kopfkommentar nicht nannte: `audit.lead_auditor_id` und `audit.auditor_ids`. Die Teamliste ist die häufigere Besetzung — nur `audit_resource_allocation` zu prüfen hätte wieder eine Kontrolle ergeben, die selten trifft. Jetzt drei Konfliktwege und zwei Vorbedingungen, 422 mit `conflict`-Feld. |
+| OP-179 | **behoben** — `UNION ALL`-Verzeichnis, darauf `LIMIT/OFFSET`, `count(*)` und Facetten sehen **dieselbe volle Menge**, feste Sortierung. `?page=abc` wird abgefangen (hätte mit OFFSET einen Datenbankfehler ergeben).                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| OP-180 | **2 von 2 behoben** — `entity_type` steht in der DELETE-Bedingung, die Szenarien sind über `simulation_scenario.process_id` an den Prozess gebunden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+**Der schwerste Fund kam nebenbei:**
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                              | Beleg                                                                                                                                                                                                              | Art     | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------- |
+| OP-182 | **Die Auditorenansicht war seit jeher leer.** `role-dashboards/data/auditor` enthielt `WHERE status = 'open'` gegen den Enum `finding_status` (`identified, in_remediation, remediated, verified, accepted, closed`). Die Abfrage steht **unbedingt** im Pfad, die Route lief also **bei jedem Aufruf in einen 500er**, und die Seite rendert bei fehlendem `data` `null`. Kein Fehlschlag, keine Meldung, nur eine leere Seite. | Eigene Nachmessung 2026-09-03 gegen das laufende Schema: `select 1 from finding where status = 'open'` → `ERROR: invalid input value for enum finding_status: "open"`; alter Code `3dbc48f5:…/auditor/route.ts:54` | Produkt | behoben |
+
+Repariert mit der Hausdefinition `["identified","in_remediation"]`, die fünf
+andere Routen bereits verwenden.
+
+**Ein Fallstrick, der ohne Messung gegen die laufende Datenbank durchgegangen
+wäre.** Drizzle expandiert ein JS-Array im `sql`-Baustein zur
+**Parameterliste**, nicht zum Array: `ANY(${arr}::finding_status[])` wird zu
+`ANY(($2, $3)::finding_status[])` und schlägt fehl. Sichtbar erst zur
+Laufzeit — mit grünem `tsc`, grünem Lint und grünem Unit-Test wären drei
+Bedingungen in Produktion gefallen. Daher `api/v1/_lib/pg-array.ts`. Das ist
+dieselbe Klasse wie OP-182 und wie der `as any`-Befund aus Strang 3: **der
+Compiler beruhigt, die Datenbank entscheidet.**
+
+**Was mit Begründung offen bleibt** (nicht behoben, weil es kein Ziel gibt):
+
+- `status` in `role-dashboards/data/auditor`, `departmentId` und `timeRange` in
+  `role-dashboards/data/department-manager`, `depth` in
+  `predictive-risk/correlations`.
+- `departmentId` hat **beweisbar kein Ziel**: `task` hat keine Abteilung,
+  `risk.department`/`control.department` sind `varchar`, `eam_org_unit` hängt
+  nur an `eam_business_context`/`process_lane`. Dahinter steckt der eigentliche
+  Befund: Die Route filtert auf `assignee_id = ctx.userId` — ein
+  „Abteilungsleiter"-Dashboard **ohne Abteilungsbegriff**. Das ist Produktarbeit,
+  kein Nachziehen.
+- Die Marktplatzsuche wirkt in der Oberfläche noch nicht:
+  `extensions/marketplace/page.tsx` hält `search` im Zustand und sendet es nie
+  (ausserhalb der Dateihoheit dieses Strangs).
+
 ### Nachtrag 2026-09-03 — OP-076/OP-077 erledigt: zwei „Stilregeln", die Defektdetektoren waren
 
 OP-076 (129 `any`), OP-077 (483 tote Bindungen) und der Restbestand von OP-152

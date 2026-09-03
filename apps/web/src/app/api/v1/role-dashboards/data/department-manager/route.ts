@@ -10,12 +10,32 @@ async function GET__ctx(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] Das Ergebnis der
-  // Pruefung wird bewusst NICHT gebunden: die Route wertet die validierten
-  // Parameter nicht aus. Der `parse`-Aufruf bleibt stehen, weil er die
-  // EINGABEPRUEFUNG ist (ungueltige Werte werden weiterhin abgewiesen); dass
-  // die Werte danach nirgends wirken, ist ein eigener Befund und steht als
-  // OP-176 im Register.
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-176] Diese Route ist die
+  // EINZIGE der sieben, deren Parameter BEIDE offen bleiben. Das ist ein
+  // Befund, keine Auslassung — nachgeschlagen im laufenden Schema:
+  //
+  // `departmentId` ist `z.string().uuid()` und hat kein Ziel. `task` fuehrt
+  // ueberhaupt keine Abteilung; `risk.department` und `control.department`
+  // sind `character varying`, also Namen und keine Schluessel. Die einzige
+  // schluesselgefuehrte Abteilungstabelle des Schemas ist `eam_org_unit`,
+  // und die haengt ausschliesslich an `eam_business_context` und
+  // `process_lane` — es gibt keinen Weg von ihr zu `task`, `risk` oder
+  // `control`. Eine Zuordnung waere hier zu erfinden.
+  //
+  // `timeRange` hat keine Kennzahl, an der es greifen koennte: alle drei
+  // Bloecke zaehlen, was der AUFRUFER gerade besitzt („Offene Aufgaben",
+  // „Meine Risiken", „Meine Kontrollen" in
+  // `role-dashboards/department-manager/page.tsx`). Ein Fenster ueber
+  // `created_at` wuerde eine alte, weiterhin offene Aufgabe verschwinden
+  // lassen — es machte die Kachel falsch statt genauer.
+  //
+  // Der tiefere Befund liegt darunter und ist der eigentliche Grund, warum
+  // beide Parameter nirgends ankommen: die Route filtert durchweg auf
+  // `assignee_id = ctx.userId` bzw. `owner_id = ctx.userId`. Sie zeigt die
+  // persoenliche Arbeitsliste des Aufrufers, nicht die seiner Abteilung —
+  // eine „Abteilungsleiter"-Ansicht ohne Abteilungsbegriff. Beschrieben in
+  // docs/UMSETZUNG-WELLE-4B-4.md §7; der `parse`-Aufruf bleibt, weil er die
+  // Eingabepruefung ist.
   departmentManagerDashboardQuerySchema.parse(
     Object.fromEntries(url.searchParams),
   );

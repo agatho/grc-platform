@@ -34,9 +34,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     status,
     jurisdiction,
     since,
-    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] `framework` war
-    // hier entnommen und wurde in keine Bedingung uebersetzt; der Filter
-    // wirkt nicht. Nicht mehr entnommen — geprueft wird er weiterhin.
+    framework,
   } = query.data;
   const offset = (page - 1) * limit;
   const conditions = [eq(horizonScanItem.orgId, ctx.orgId)];
@@ -47,6 +45,16 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (jurisdiction)
     conditions.push(eq(horizonScanItem.jurisdiction, jurisdiction));
   if (since) conditions.push(gte(horizonScanItem.publishedAt, new Date(since)));
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-176] `framework` war entnommen
+  // und wurde in keine Bedingung uebersetzt: wer nach einem Rahmenwerk
+  // filterte, bekam die ungefilterte Liste — inklusive `total`, das den
+  // Filter ebenfalls nicht kannte. `affected_frameworks` ist `text[]`, die
+  // Bedingung ist deshalb eine Enthaltensein-Pruefung (dieselbe Form wie in
+  // `assets/route.ts` fuer `visible_in_modules`).
+  if (framework)
+    conditions.push(
+      sql`${horizonScanItem.affectedFrameworks} @> ARRAY[${framework}]::text[]`,
+    );
 
   const [rows, countResult] = await Promise.all([
     db
