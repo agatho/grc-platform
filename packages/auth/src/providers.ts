@@ -1,3 +1,27 @@
+// ════════════════════════════════════════════════════════════════════
+// #OP-081 — Server-Guard: dieses Modul gehoert nicht in ein Client-Bundle
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund. Diese Datei traegt den Anmeldepfad: Passwortvergleich (bcrypt),
+// den Konto-Lockout ueber SECURITY-DEFINER-Funktionen, die Rollenaufloesung
+// und die Entra-ID-Zugangsdaten aus `AUTH_MICROSOFT_ENTRA_ID_*`. Der
+// Kopfkommentar sagte bisher nur "Node.js only" — als Satz, nicht als
+// Zusicherung. Ein Import aus einer `"use client"`-Datei war ein stiller
+// Shim, kein Fehler.
+//
+// Mittel und Bauart siehe packages/db/src/index.ts (derselbe Guard, dort
+// mit der vollstaendigen Messung). Kurz: `import()` statt `import`, weil
+// das npm-Paket `server-only` seinen Wurf ueber die `default`-Condition
+// ausliefert und Node — anders als Next.js — die Condition `react-server`
+// nicht setzt. Ein statisches `import "server-only"` machte am 2026-09-03
+// vier Suiten in packages/auth rot (u. a. providers.test.ts,
+// login-lockout.test.ts, scim.test.ts) und haette zusaetzlich
+// packages/db/tests/rls/auth-session-refresh-rls.test.ts getroffen, das
+// `loadRoles` aus diesem Modul zieht.
+void import("server-only").catch(() => {
+  // Erwartet unter Node; die Wirkung dieses Guards liegt im Bundler.
+});
+
 // Auth providers — Node.js only (requires DB access)
 // These are imported in apps/web/src/auth.ts, NOT in middleware.
 

@@ -1,3 +1,67 @@
+// ════════════════════════════════════════════════════════════════════
+// #OP-081 — Server-Guard: dieses Modul gehoert nicht in ein Client-Bundle
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund. Dieser Barrel exportiert `db` — den postgres-js-Pool samt
+// Verbindungszeichenfolge aus `DATABASE_URL` — und den kompletten
+// Drizzle-Schemabaum. Importierte eine Datei mit `"use client"` ihn
+// (direkt oder ueber eine Kette), erzeugte der Bundler bisher ein
+// Browser-Bundle daraus: `postgres` wird auf einen Shim gelegt, und
+// alles, was der Bundler als Konstante ansieht, landet im ausgelieferten
+// JavaScript. Es gab keinen Fehler, nur ein groesseres Bundle.
+//
+// Mittel. Der Marker `server-only` (React/Next). Next.js bildet den
+// Spezifikator je Bundle-Schicht ab
+// (node_modules/next/dist/build/create-compiler-aliases.js:185-197):
+//
+//   Server-Schichten : "server-only$" -> next/dist/compiled/server-only/empty
+//   alle uebrigen    : "server-only$" -> next/dist/compiled/server-only/index
+//
+// und laesst auf die zweite Aufloesung den `next-invalid-import-error-loader`
+// los (webpack-config.js:1143-1158), der den Build mit
+// "'server-only' cannot be imported from a Client Component module"
+// abbricht (Fehlercode E394). Ein Import aus einer Client-Datei ist damit
+// ein BUILDFEHLER statt eines stillen Shims.
+//
+// Warum hier KEIN `import "server-only";` steht — gemessen, nicht vermutet.
+// Das npm-Paket `server-only` liefert seinen Wurf ueber die
+// `default`-Condition aus (`exports: { ".": { "react-server": "./empty.js",
+// "default": "./index.js" } }`, index.js ist ein blosses `throw`). Nur
+// Next.js setzt die Condition `react-server`; Node setzt sie nicht. Dieser
+// Barrel hat aber ausserhalb von Next drei weitere Konsumenten:
+// apps/worker (137 Dateien), die tsx-Skripte in packages/db (migrate-all,
+// seed) und saemtliche vitest-Suiten. Ein statisches `import "server-only"`
+// wurde am 2026-09-03 ausprobiert und ergab:
+//
+//   packages/db  vitest run   1 Suite rot  (schema-drift.test.ts)
+//   packages/auth vitest run  4 Suiten rot
+//   apps/worker  vitest run   4 Suiten + 2 Tests rot
+//   `import("@grc/db")` unter tsx   -> Error: This module cannot be
+//                                      imported from a Client Component
+//
+// Deshalb der dynamische Import: der Bundler nimmt die Abhaengigkeit
+// unbedingt in den Modulgraphen auf (ein `import()` laesst sich nicht
+// wegoptimieren), also greifen Alias und Loader unveraendert. Unter Node
+// wird derselbe Wurf zu einer abgelehnten Zusage und hier abgefangen — ein
+// Compilerfehler laesst sich durch ein `catch` NICHT unterdruecken, denn er
+// entsteht beim Uebersetzen, nicht beim Ausfuehren.
+// Die Typen: `server-only` liefert keine mit (index.js ist ein blosses
+// `throw`). apps/web typprueft mit `allowJs`, packages/db und packages/auth
+// mit `module: "preserve"` — dort faellt das nicht auf; apps/worker hat
+// beides nicht und meldete TS7016 an genau dieser Zeile. Die
+// Umgebungsdeklaration steht in server-only.d.ts; sie muss ueber eine
+// Dreifach-Schraegstrich-Referenz kommen, weil apps/worker nur sein eigenes
+// `src/**` einliest und eine freistehende .d.ts eines fremden Pakets sonst
+// nicht in sein Programm gelangt.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- siehe oben
+/// <reference path="./server-only.d.ts" />
+void import("server-only").catch(() => {
+  // Erwartet unter Node (Worker, tsx, vitest): das Paket wirft ueber seine
+  // `default`-Condition. Ebenso erwartet, wenn das Paket im Produktionsbaum
+  // fehlt. Beides ist hier folgenlos; die Wirkung dieses Guards liegt
+  // ausschliesslich im Bundler.
+});
+
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 // #SEC-F01b — request-scoped RLS context. Imported here so the `db` proxy can

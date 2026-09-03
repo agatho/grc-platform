@@ -94,9 +94,7 @@ vi.mock("next/server", async (orig) => {
   };
 });
 
-const SU_URL =
-  process.env.DATABASE_URL ??
-  "postgresql://grc:grc_dev_password@localhost:5432/grc_platform";
+const SU_URL = process.env.DATABASE_URL!; // [OP-170] kein Rueckfallwert: setup-require-roles.ts erzwingt ihn
 const suClient = postgres(SU_URL, { max: 1 });
 const adminDb = drizzle(suClient, { schema });
 

@@ -26,7 +26,8 @@
     "bcryptjs": "^3.0.3",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "server-only": "0.0.1"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",

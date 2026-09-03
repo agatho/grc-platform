@@ -12,9 +12,9 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const module = url.searchParams.get("module");
+  const moduleKey = url.searchParams.get("module");
 
-  const conditions = module ? eq(pluginHook.module, module) : undefined;
+  const conditions = moduleKey ? eq(pluginHook.module, moduleKey) : undefined;
 
   const rows = await db
     .select()

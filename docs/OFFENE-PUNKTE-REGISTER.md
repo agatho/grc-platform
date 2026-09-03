@@ -612,6 +612,33 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-03 — OP-170: eine Suite, die ihre eigene Voraussetzung erriet
+
+Beim Gesamtlauf gegen die frisch migrierte Datenbank `grc_v4b` fiel
+`organizations-create-rls.test.ts` aus — und zwar als vermeintlicher
+RLS-Defekt. Er war keiner.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                                                                                      | Art  | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ------- |
+| OP-170 | **Die Routenketten-Suite lief still gegen die falsche Datenbank und notfalls unter der falschen Rolle.** Jede der vier Dateien hatte einen fest verdrahteten Rueckfallwert auf `…/grc_platform`. Fehlte `APP_DATABASE_URL`, legte der privilegierte Kanal die Fixtures in der einen Datenbank an, waehrend die geprüfte Rolle in einer **anderen** suchte. Fehlte sie ganz, konnte die Suite als SUPERUSER laufen und trotzdem gruen melden — ein Test namens „unter grc_app", der die Rolle nie sah. | Eigene Messung 2026-09-03: `DATABASE_URL` → `grc_v4b`, `APP_DATABASE_URL` → `grc_platform` | Test | behoben |
+
+**Warum das hierher gehoert.** Es ist zum vierten Mal dasselbe Muster:
+_die Wache ueber der Sache war kaputt_. Ein Test, der seine eigene
+Voraussetzung erraet, prueft etwas anderes als sein Name behauptet — und der
+Rueckfallwert war nicht nur unnoetig, er war irrefuehrend: Der Fehlschlag las
+sich wie ein Mandantentrennungsproblem und war ein Umgebungsfehler.
+
+**Behebung.** Ein Setup-Modul
+(`src/__tests__/rls-route-chain/setup-require-roles.ts`, in
+`vitest.rls.config.ts` als `setupFiles` eingehaengt) bricht ab, wenn eine der
+beiden Verbindungen fehlt **oder** wenn sie auf verschiedene Datenbanken
+zeigen. Die fuenf fest verdrahteten Rueckfallwerte in den vier Dateien sind
+entfernt. Nachgemessen in drei Lagen: ohne `APP_DATABASE_URL` bricht die
+Suite ab, bei verschiedenen Datenbanken bricht sie ab und nennt beide Namen,
+richtig gesetzt laeuft sie (4 Dateien, 24 Tests). Die CI setzt beide Werte
+bereits auf dieselbe Datenbank (`grc_platform_test`), ist also nicht
+betroffen.
+
 ### Nachtrag 2026-09-03 — die Canary, und was sie widerlegt hat
 
 Auf Weisung des Eigentümers („probiere erst mal die canary") wurde

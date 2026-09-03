@@ -208,10 +208,12 @@ export default tseslint.config(
       // it is not WP12's file to touch, and it would bury this package's diff
       // in 800 lines of other people's routes.
       "@typescript-eslint/no-unused-vars": "off",
-      // Six routes declare a local `const module = …` (the module-key string),
-      // which shadows the CommonJS `module` global. Renaming a local is safe
-      // but, again, not WP12's file. Handed over with the rest.
-      "@next/next/no-assign-module-variable": "off",
+      // Frueher stand hier zusaetzlich
+      // `"@next/next/no-assign-module-variable": "off"` — sechs Routen
+      // deklarierten ein lokales `const module = …` (den Modulschluessel) und
+      // verdeckten damit die CommonJS-Bindung `module`. Die sechs Bindungen
+      // heissen seit OP-078 `moduleKey`; die Regel gilt hier wieder wie
+      // ueberall sonst. Siehe docs/UMSETZUNG-WELLE-4B-1.md §3.
     },
   },
   {

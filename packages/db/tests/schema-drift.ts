@@ -108,11 +108,11 @@ export interface DbTrigger {
  * Die Wächter, die `ENABLE ALWAYS` sein MÜSSEN.
  *
  * Warum ein Register im Code und keine Ableitung aus den Migrationen: sechs der
- * siebzehn werden gar nicht als Literal gesetzt, sondern in einer Schleife —
+ * achtzehn werden gar nicht als Literal gesetzt, sondern in einer Schleife —
  * `0401_audit_chain_assign_and_guards.sql:458` schreibt
  * `EXECUTE format('ALTER TABLE public.%I ENABLE ALWAYS TRIGGER %I', t, t ||
  * '_no_truncate')`. Ein Textscan über `drizzle/*.sql` findet deshalb nur 11 von
- * 17 (gemessen 2026-09-03), und eine Ableitung, die ein Drittel der Wächter
+ * 18 (gemessen 2026-09-03), und eine Ableitung, die ein Drittel der Wächter
  * übersieht, ist als Soll-Zustand schlechter als gar keine.
  *
  * Das Register bleibt trotzdem nicht sich selbst überlassen: `unregistered-
@@ -121,7 +121,7 @@ export interface DbTrigger {
  * ist — die Liste kann nicht stillschweigend hinter dem Schema zurückbleiben.
  *
  * Gemessen am 2026-09-03 gegen eine von Null migrierte Datenbank
- * (426 Migrationen): genau diese 17, und keine weiteren.
+ * (427 Migrationen): genau diese 18, und keine weiteren.
  */
 export const ALWAYS_ENABLED_GUARDS: readonly {
   readonly table: string;
@@ -182,6 +182,17 @@ export const ALWAYS_ENABLED_GUARDS: readonly {
     table: "audit_log",
     trigger: "audit_log_tombstone_guard",
     why: "Grenzt die eine erlaubte Ausnahme (Tombstone) gegen freie Änderung ab.",
+  },
+  {
+    // [Welle 4b · OP-087] Der einzige CONSTRAINT TRIGGER des Registers und der
+    // einzige, der nichts bewahrt, sondern etwas wiederherstellt: er feuert
+    // beim COMMIT und schliesst eine Mandantentabelle, die die Transaktion
+    // offen gelassen hat (Migration 0477). Auf `ENABLE ALWAYS`, weil
+    // `SET session_replication_role = 'replica'` ihn sonst genau dann
+    // abschaltet, wenn jemand ohnehin an den Sicherungen vorbeiarbeitet.
+    table: "arctos_rls_guard_event",
+    trigger: "arctos_rls_guard_settle_trg",
+    why: "Stellt RLS, FORCE und die Org-Policy wieder her, bevor die Transaktion committet (0477).",
   },
   {
     table: "audit_log_write_attempt",

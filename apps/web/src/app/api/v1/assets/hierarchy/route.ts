@@ -27,16 +27,18 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const module = url.searchParams.get("module");
+  const moduleKey = url.searchParams.get("module");
 
   const conditions: SQL[] = [
     eq(asset.orgId, ctx.orgId),
     isNull(asset.deletedAt),
   ];
 
-  // Filter by visible_in_modules if module param provided
-  if (module) {
-    conditions.push(sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`);
+  // Filter by visible_in_modules if the `module` query param is provided
+  if (moduleKey) {
+    conditions.push(
+      sql`${asset.visibleInModules} @> ARRAY[${moduleKey}]::text[]`,
+    );
   }
 
   const rows = await db

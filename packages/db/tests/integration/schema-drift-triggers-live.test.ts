@@ -4,15 +4,16 @@
 // Der Unit-Test (`tests/unit/schema-drift.test.ts`) prüft die Logik gegen
 // erfundene Zeilen — er kann nicht wissen, ob das Register
 // `ALWAYS_ENABLED_GUARDS` noch dem Schema entspricht. Genau das ist hier die
-// Frage: eine Liste von 17 Namen im Quelltext ist eine Behauptung über eine
+// Frage: eine Liste von 18 Namen im Quelltext ist eine Behauptung über eine
 // Datenbank, und eine Behauptung ohne Messung altert.
 //
 // Warum überhaupt ein Register und keine Ableitung aus den Migrationen:
-// sechs der siebzehn werden nicht als Literal gesetzt, sondern in einer
+// sechs der achtzehn werden nicht als Literal gesetzt, sondern in einer
 // Schleife (`0401_audit_chain_assign_and_guards.sql:458` schreibt
 // `EXECUTE format('ALTER TABLE public.%I ENABLE ALWAYS TRIGGER %I', t,
 // t || '_no_truncate')`). Ein Textscan über `drizzle/*.sql` findet deshalb 11
-// von 17 — gemessen am 2026-09-03. Ein Soll-Zustand, der ein Drittel der
+// von 18 — gemessen am 2026-09-03 (Welle 4b/OP-087 hat den achtzehnten
+// hinzugefuegt: arctos_rls_guard_settle_trg aus Migration 0477). Ein Soll-Zustand, der ein Drittel der
 // Wächter übersieht, ist schlechter als keiner.
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
@@ -45,7 +46,7 @@ describe("OP-155 · ENABLE-Zustand der Trigger gegen die laufende Datenbank", ()
     expect(triggers.length).toBeGreaterThan(100);
   });
 
-  it("kennt genau die 17 ENABLE-ALWAYS-Wächter, die die Datenbank trägt", () => {
+  it("kennt genau die 18 ENABLE-ALWAYS-Wächter, die die Datenbank trägt", () => {
     const inDb = triggers
       .filter((t) => t.tgenabled === "A")
       .map((t) => `${t.table_name}.${t.trigger_name}`)

@@ -372,8 +372,16 @@ describe("trigger ENABLE state (OP-155)", () => {
   // Das Register ist eine Behauptung über die Datenbank. Diese Zusicherung
   // hält sie wenigstens in sich konsistent; ob sie mit dem laufenden Schema
   // übereinstimmt, prüft der Live-Lauf (tests/integration/schema-drift-live).
-  it("registers 17 guards, each with a stated reason and no duplicates", () => {
-    expect(ALWAYS_ENABLED_GUARDS).toHaveLength(17);
+  //
+  // Die Zahl ist Absicht und kein Detail: Sie fällt, sobald ein Wächter
+  // still hinzukommt oder verschwindet. Sie wird deshalb nur zusammen mit
+  // dem Grund fortgeschrieben, nie um einen roten Lauf zu beruhigen.
+  //   17 → 18 am 2026-09-03 (OP-087, Migration 0477): Die drei neuen
+  //   Wächter gegen `ALTER … DISABLE RLS` und `DROP POLICY` sind
+  //   `ENABLE ALWAYS`; dazu kam der aus 0397, der auf 'O' stand und damit
+  //   unter `session_replication_role = replica` wirkungslos war.
+  it("registers 18 guards, each with a stated reason and no duplicates", () => {
+    expect(ALWAYS_ENABLED_GUARDS).toHaveLength(18);
     const keys = ALWAYS_ENABLED_GUARDS.map((g) => `${g.table}.${g.trigger}`);
     expect(new Set(keys).size).toBe(keys.length);
     for (const g of ALWAYS_ENABLED_GUARDS) {

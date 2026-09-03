@@ -146,9 +146,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   }
 
   // Filter by visible_in_modules (array overlap)
-  const module = searchParams.get("module");
-  if (module) {
-    conditions.push(sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`);
+  const moduleKey = searchParams.get("module");
+  if (moduleKey) {
+    conditions.push(
+      sql`${asset.visibleInModules} @> ARRAY[${moduleKey}]::text[]`,
+    );
   }
 
   // Search by name

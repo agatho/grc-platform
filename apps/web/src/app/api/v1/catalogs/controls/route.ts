@@ -31,9 +31,9 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     conditions.push(eq(catalog.source, source));
   }
 
-  const module = searchParams.get("module");
-  if (module) {
-    conditions.push(arrayContains(catalog.targetModules, [module]));
+  const moduleKey = searchParams.get("module");
+  if (moduleKey) {
+    conditions.push(arrayContains(catalog.targetModules, [moduleKey]));
   }
 
   const where = and(...conditions);
