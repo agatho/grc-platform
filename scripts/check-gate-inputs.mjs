@@ -25,7 +25,7 @@
 // Aufruf: node scripts/check-gate-inputs.mjs
 // ============================================================================
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const ROOT = resolve(process.cwd());
@@ -89,10 +89,64 @@ for (const [file, gate] of GATE_INPUTS) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// [ARCTOS-FULL-2026-08-31 · Welle 3, Abnahme] Die Sperrdatei muss sagen, was
+// die Manifeste sagen.
+//
+// Gefunden beim Verifizieren von Welle 2: `packages/shared/package.json` bekam
+// `"@grc/bpmn": "^0.1.0"`, und `package-lock.json` wurde nicht neu erzeugt.
+// Der Fund ist deshalb interessant, weil `npm ci --dry-run` das NICHT
+// bemerkt hat — in einem Workspace-Baum löst der fehlende Eintrag sich über
+// die gehobene Wurzel trotzdem auf, und die Installation läuft durch. Die
+// Sperrdatei behauptet dann etwas anderes als das Manifest, und der Tag, an
+// dem das auffällt, ist der Tag, an dem jemand das Paket einzeln
+// installiert oder ein Werkzeug den Baum aus dem Lock rekonstruiert.
+//
+// Geprüft wird deshalb direkt: für jedes Workspace-Manifest muss der Block
+// unter `packages/<pfad>` in der Sperrdatei dieselben Abhängigkeiten führen.
+// ---------------------------------------------------------------------------
+{
+  const lockPath = resolve(ROOT, "package-lock.json");
+  if (existsSync(lockPath)) {
+    const lock = JSON.parse(readFileSync(lockPath, "utf8"));
+    const workspaces = git(["ls-files", "*/package.json", "*/*/package.json"])
+      .split("\n")
+      .filter(Boolean)
+      .filter((p) => !p.includes("node_modules/"));
+
+    for (const manifestPath of workspaces) {
+      const dir = manifestPath.replace(/\/package\.json$/, "");
+      const entry = lock.packages?.[dir];
+      if (!entry) {
+        failures.push(
+          `${manifestPath} hat keinen Eintrag "${dir}" in package-lock.json.\n` +
+            "      `npm install --package-lock-only` erzeugt ihn.\n",
+        );
+        continue;
+      }
+      const manifest = JSON.parse(
+        readFileSync(resolve(ROOT, manifestPath), "utf8"),
+      );
+      for (const feld of ["dependencies", "devDependencies"]) {
+        const erklaert = Object.entries(manifest[feld] ?? {});
+        const verzeichnet = entry[feld] ?? {};
+        for (const [name, bereich] of erklaert) {
+          if (verzeichnet[name] !== bereich) {
+            failures.push(
+              `${manifestPath} führt ${feld}.${name}=${bereich}, ` +
+                `package-lock.json führt ${String(verzeichnet[name] ?? "nichts")}.\n` +
+                "      Die Sperrdatei ist nach jeder Manifeständerung neu zu\n" +
+                "      erzeugen: `npm install --package-lock-only`.\n",
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
 if (failures.length > 0) {
-  console.error(
-    `✗ ${failures.length} Tor-Eingabe(n) stehen nicht im Repository:\n`,
-  );
+  console.error(`✗ ${failures.length} Befund(e) an den Eingaben der Tore:\n`);
   for (const f of failures) console.error(`  ✗ ${f}`);
   console.error(
     "\n  Ein Tor, dessen Eingabe fehlt, ist entweder dauerhaft rot oder\n" +
@@ -102,5 +156,6 @@ if (failures.length > 0) {
 }
 
 console.log(
-  `✓ ${GATE_INPUTS.length} Tor-Eingaben sind vorhanden, verfolgt und nicht ignoriert.`,
+  `✓ ${GATE_INPUTS.length} Tor-Eingaben sind vorhanden, verfolgt und nicht ignoriert;\n` +
+    "  package-lock.json stimmt mit allen Workspace-Manifesten überein.",
 );
