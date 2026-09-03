@@ -30,6 +30,7 @@ import { z } from "zod";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const reverseSchema = z.object({
   findingId: z.string().uuid().optional(),
@@ -364,7 +365,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
         .returning({ id: finding.id });
       findingUpdated = updated.length > 0;
     } catch (err) {
-      console.error("[reverse-from-finding] finding status update failed", err);
+      log.error("[reverse-from-finding] finding status update failed", {
+        err,
+      });
     }
   }
 

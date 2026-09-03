@@ -1,6 +1,6 @@
 import { db, riskPrediction } from "@grc/db";
 import { correlationQuerySchema } from "@grc/shared";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -26,7 +26,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     );
   }
 
-  const { entityType, entityId, minCorrelation } = query.data;
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] `minCorrelation`
+  // war hier entnommen und wurde nirgends angewandt — die Antwort enthaelt
+  // alle Korrelationen, auch die unterhalb der angeforderten Schwelle.
+  // Nicht mehr entnommen; der Befund steht als OP-176 im Register.
+  const { entityType, entityId } = query.data;
 
   // Get predictions with correlations for the specified entity
   const predictions = await db

@@ -1,6 +1,6 @@
 import { db, process, processReviewSchedule, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, lte, sql } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { alias } from "drizzle-orm/pg-core";
 import type { ProcessStatus } from "@grc/shared";

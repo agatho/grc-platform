@@ -18,7 +18,7 @@
 
 import { db, frameworkMapping, soaEntry, catalog, catalogEntry } from "@grc/db";
 import { withAuth } from "@/lib/api";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

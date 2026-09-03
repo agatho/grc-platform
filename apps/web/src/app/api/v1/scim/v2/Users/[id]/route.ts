@@ -23,14 +23,8 @@
 // handelt als Dienst, nicht als Person, und der Audit-Trigger schreibt
 // entsprechend keinen Akteur statt einen erfundenen.
 
-import {
-  db,
-  user,
-  userOrganizationRole,
-  scimSyncLog,
-  runWithRequestContext,
-} from "@grc/db";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { db, user, scimSyncLog, runWithRequestContext } from "@grc/db";
+import { eq, sql } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
 import { arctosToScimUser, buildScimError } from "@grc/auth/scim";
 import { scimPatchOpSchema, scimReplaceUserSchema } from "@grc/shared";
@@ -46,6 +40,20 @@ function scimResponse(data: unknown, status = 200) {
 }
 
 // GET /api/v1/scim/v2/Users/:id — Get single user
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenformen der rohen
+// SCIM-Abfragen, aus ihren SELECT-Listen benannt.
+type ScimUserRow = {
+  id: string;
+  email: string;
+  // `user.name`, `user.is_active`, `created_at` und `updated_at` sind in
+  // `packages/db/src/schema/platform.ts` NOT NULL; nur `external_id` nicht.
+  name: string;
+  external_id: string | null;
+  is_active: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
+};
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -75,7 +83,7 @@ export async function GET(
     LIMIT 1
   `);
 
-      const row = (result as any[])[0];
+      const row = (result as unknown as ScimUserRow[])[0];
       if (!row) {
         return scimResponse(buildScimError("User not found", 404), 404);
       }
@@ -133,7 +141,7 @@ export async function PUT(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `)) as any[];
+  `)) as unknown as Array<Partial<ScimUserRow> & { id: string }>;
 
       if (!existing) {
         return scimResponse(buildScimError("User not found", 404), 404);
@@ -221,7 +229,7 @@ export async function PATCH(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `)) as any[];
+  `)) as unknown as Array<Partial<ScimUserRow> & { id: string }>;
 
       if (!existing) {
         return scimResponse(buildScimError("User not found", 404), 404);
@@ -332,7 +340,7 @@ export async function DELETE(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `)) as any[];
+  `)) as unknown as Array<Partial<ScimUserRow> & { id: string }>;
 
       if (!existing) {
         return scimResponse(buildScimError("User not found", 404), 404);

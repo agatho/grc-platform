@@ -8,7 +8,7 @@ import { installListingSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/marketplace/installations
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

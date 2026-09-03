@@ -22,8 +22,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     Math.max(1, Number(url.searchParams.get("limit")) || 20),
   );
 
-  const today = new Date().toISOString().split("T")[0];
-
   const entries = await db
     .select({
       id: auditUniverseEntry.id,

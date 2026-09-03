@@ -1,6 +1,6 @@
 import { db, customFieldDefinition } from "@grc/db";
 import { createCustomFieldSchema } from "@grc/shared";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

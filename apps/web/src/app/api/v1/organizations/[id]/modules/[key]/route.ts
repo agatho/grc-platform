@@ -14,7 +14,6 @@ import {
   updateModuleConfigSchema,
   MODULE_KEYS,
   type ModuleKey,
-  type ModuleUiStatus,
 } from "@grc/shared";
 import { moduleConfigCache } from "@grc/auth";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

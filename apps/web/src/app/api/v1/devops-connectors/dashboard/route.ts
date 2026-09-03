@@ -1,4 +1,4 @@
-import { db, devopsTestResult, devopsConnectorConfig } from "@grc/db";
+import { db, devopsTestResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -13,10 +13,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const configs = await db
-    .select()
-    .from(devopsConnectorConfig)
-    .where(eq(devopsConnectorConfig.orgId, ctx.orgId));
   const results = await db
     .select()
     .from(devopsTestResult)

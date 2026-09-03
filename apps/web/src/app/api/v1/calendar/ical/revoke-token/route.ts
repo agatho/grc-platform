@@ -7,7 +7,7 @@ import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // DELETE /api/v1/calendar/ical/revoke-token — Revoke iCal token for current user
-export const DELETE = withErrorHandler(async function DELETE(req: Request) {
+export const DELETE = withErrorHandler(async function DELETE(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

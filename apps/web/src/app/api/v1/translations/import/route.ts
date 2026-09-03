@@ -1,7 +1,7 @@
 // Sprint 21: Translation Import API
 // POST /api/v1/translations/import — Import XLIFF or CSV translations
 
-import { db, translationStatus } from "@grc/db";
+import { translationStatus } from "@grc/db";
 import {
   xliffImportSchema,
   csvImportSchema,
@@ -14,6 +14,11 @@ import {
 import { parseXliff, parseCsv } from "@grc/shared";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die beiden Hilfsfunktionen
+// beschrieben ihren Kontext als `{ …; session: any }` und gaben ihn dann
+// an `withAuditContext` weiter, das den vollen Kontext erwartet. Der Typ
+// dafuer existiert bereits.
+import type { ApiContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
@@ -41,10 +46,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
 
   return handleXliffImport(ctx, rawBody);
 });
-async function handleXliffImport(
-  ctx: { orgId: string; userId: string; session: any },
-  rawBody: unknown,
-) {
+async function handleXliffImport(ctx: ApiContext, rawBody: unknown) {
   const body = xliffImportSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
@@ -239,10 +241,7 @@ async function handleXliffImport(
   });
 }
 
-async function handleCsvImport(
-  ctx: { orgId: string; userId: string; session: any },
-  rawBody: unknown,
-) {
+async function handleCsvImport(ctx: ApiContext, rawBody: unknown) {
   const body = csvImportSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(

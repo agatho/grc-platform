@@ -1,4 +1,4 @@
-import { db, controlTestChecklist } from "@grc/db";
+import { controlTestChecklist } from "@grc/db";
 import { generateChecklistSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the

@@ -37,7 +37,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     .groupBy(finding.severity, sql`bucket`);
 
   // Pivot into structured response
-  const buckets = ["lt30", "30to60", "60to90", "gt90"] as const;
   const bySeverity: Record<string, Record<string, number>> = {};
   const totals: Record<string, number> = {
     lt30: 0,

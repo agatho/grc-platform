@@ -1,5 +1,5 @@
 import { db, controlLibraryEntry } from "@grc/db";
-import { eq, count, ilike, sql } from "drizzle-orm";
+import { eq, count, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { requireModule } from "@grc/auth";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

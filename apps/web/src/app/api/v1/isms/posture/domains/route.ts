@@ -1,6 +1,6 @@
 import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { PostureDomain } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

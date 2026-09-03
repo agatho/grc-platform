@@ -1,12 +1,11 @@
 import {
   db,
   architectureElement,
-  applicationPortfolio,
   businessCapability,
   eamDataObject,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc, sql, ilike } from "drizzle-orm";
+import { eq, and, sql, ilike } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -30,7 +29,15 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     parseInt(url.searchParams.get("pageSize") ?? "50"),
     200,
   );
-  const offset = (page - 1) * pageSize;
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-179] Hier stand
+  // `const offset = (page - 1) * pageSize;` — berechnet und nie benutzt.
+  // Die drei Teilabfragen holen je `LIMIT pageSize` ohne `OFFSET`, und die
+  // Antwort schneidet mit `items.slice(0, pageSize)`. Der EAM-Katalog
+  // liefert deshalb fuer JEDE Seite dieselbe erste Seite, gibt aber `page`
+  // in der Antwort zurueck. Die tote Rechnung zu entfernen behebt das
+  // nicht; eine richtige Loesung muss auch `total` und die Facetten
+  // klaeren, die heute ueber der bereits abgeschnittenen Menge entstehen.
+  // Steht als OP-179 im Register.
 
   // Build union query across multiple tables
   const items: Array<Record<string, unknown>> = [];

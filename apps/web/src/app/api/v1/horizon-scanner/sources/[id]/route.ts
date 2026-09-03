@@ -1,6 +1,6 @@
 import { db, horizonScanSource } from "@grc/db";
 import { updateHorizonSourceSchema } from "@grc/shared";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

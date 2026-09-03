@@ -1,12 +1,4 @@
-import {
-  db,
-  ddSession,
-  ddResponse,
-  ddEvidence,
-  questionnaireSection,
-  questionnaireQuestion,
-  runWithRequestContext,
-} from "@grc/db";
+import { db, ddSession, ddResponse, runWithRequestContext } from "@grc/db";
 import { portalSubmitSchema } from "@grc/shared";
 import { eq, sql } from "drizzle-orm";
 import { validateDdToken } from "@/lib/portal-auth";

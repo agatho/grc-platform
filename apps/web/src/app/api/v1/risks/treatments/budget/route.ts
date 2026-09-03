@@ -17,7 +17,7 @@
 
 import { db, riskTreatment, risk, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, isNull, sql, inArray } from "drizzle-orm";
+import { and, eq, isNull, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 

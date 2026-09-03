@@ -13,6 +13,17 @@ import { withAuth, withReadContext } from "@/lib/api";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type RacmChecklistRow = {
+  control_id: string | null;
+  item_result: string | null;
+  evidence_count: number | null;
+  finding_count: number | null;
+  critical_finding_count: number | null;
+  [column: string]: unknown;
+};
+
 export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -66,7 +77,7 @@ export const GET = withErrorHandler(async function GET(
   });
 
   // Group result tallies
-  const summary = (rows as any[]).reduce(
+  const summary = (rows as unknown as RacmChecklistRow[]).reduce(
     (acc, r) => {
       const result = r.item_result ?? "unrated";
       acc.byResult[result] = (acc.byResult[result] ?? 0) + 1;
@@ -77,7 +88,7 @@ export const GET = withErrorHandler(async function GET(
       return acc;
     },
     {
-      itemCount: (rows as any[]).length,
+      itemCount: (rows as unknown as RacmChecklistRow[]).length,
       itemsWithControl: 0,
       totalEvidence: 0,
       totalFindings: 0,

@@ -1,4 +1,4 @@
-import { db, bcpProcedure } from "@grc/db";
+import { bcpProcedure } from "@grc/db";
 import { updateBcpProcedureSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";

@@ -1,4 +1,4 @@
-import { db, bcExerciseLesson, bcExercise, task } from "@grc/db";
+import { db, bcExerciseLesson, bcExercise } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

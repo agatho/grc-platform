@@ -1,12 +1,7 @@
 import { db, customDashboard, customDashboardWidget } from "@grc/db";
-import { createDashboardSchema, dashboardListQuerySchema } from "@grc/shared";
+import { createDashboardSchema } from "@grc/shared";
 import { eq, and, or, ilike, sql, desc, isNull } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).

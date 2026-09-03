@@ -1,5 +1,4 @@
 import { db, dataRegion } from "@grc/db";
-import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext, requirePlatformAdmin } from "@/lib/api";
 import { updateDataRegionSchema } from "@grc/shared";

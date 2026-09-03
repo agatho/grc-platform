@@ -3,20 +3,11 @@ import {
   playbookTemplate,
   playbookPhase,
   playbookTaskTemplate,
-  playbookActivation,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  createPlaybookTemplateSchema,
-  playbookListQuerySchema,
-} from "@grc/shared";
+import { createPlaybookTemplateSchema } from "@grc/shared";
 import { eq, and, ilike, inArray, sql, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/playbooks — List playbook templates

@@ -1,5 +1,5 @@
 import { db, simulationComparison } from "@grc/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createSimulationComparisonSchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -7,7 +7,7 @@ import { createSimulationComparisonSchema } from "@grc/shared";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

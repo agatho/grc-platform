@@ -8,6 +8,7 @@ import { reportGenerator } from "@grc/reporting";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/reports/generate — Generate report (async, returns job ID)
 export const POST = withErrorHandler(async function POST(req: Request) {
@@ -36,7 +37,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   }
 
   // Create generation log entry (queued)
-  const [log] = await db
+  const [generationLog] = await db
     .insert(reportGenerationLog)
     .values({
       orgId: ctx.orgId,
@@ -52,22 +53,22 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   // The generator updates the log entry as it progresses
   reportGenerator
     .generate(
-      log.id,
+      generationLog.id,
       ctx.orgId,
       body.templateId,
       body.parameters as Record<string, unknown>,
       body.outputFormat,
     )
     .catch((error) => {
-      console.error(
-        `[report-generate] Job ${log.id} failed:`,
-        error instanceof Error ? error.message : String(error),
-      );
+      log.error("[report-generate] job failed", {
+        logId: generationLog.id,
+        err: error,
+      });
     });
 
   return Response.json({
     data: {
-      logId: log.id,
+      logId: generationLog.id,
       status: "queued",
       templateName: template.name,
       outputFormat: body.outputFormat,

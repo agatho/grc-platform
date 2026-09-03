@@ -1,4 +1,4 @@
-import { db, process, userOrganizationRole } from "@grc/db";
+import { db, process } from "@grc/db";
 import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { bulkActionSchema, PROCESS_STATUS_TRANSITIONS } from "@grc/shared";

@@ -18,7 +18,6 @@ import {
   gte,
   lte,
   or,
-  sql,
 } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
@@ -35,6 +34,7 @@ import {
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const MAX_EXPORT_ROWS = 5000;
 
@@ -180,10 +180,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     });
   } catch (err) {
     // Log failure should not block the export
-    console.error(
-      "[risks/export] Failed to log export:",
-      err instanceof Error ? err.message : String(err),
-    );
+    log.error("[risks/export] export audit log write failed", { err });
   }
 
   if (format === "json") {

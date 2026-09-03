@@ -141,12 +141,12 @@ export default tseslint.config(
   //   * `src/auth.ts`, `src/middleware.ts`, `src/app/api/auth/**`,
   //     `src/app/api/health/**` — dieselbe Laufzeit, heute schon frei von
   //     `console.*`. Die Regel haelt sie frei.
+  //   * `src/app/api/v1/**` — seit Welle 4b, Strang 3 IM Geltungsbereich.
+  //     Die 53 Aufrufe dieses Verzeichnisses sind auf `@/lib/logger`
+  //     umgestellt; siehe docs/UMSETZUNG-WELLE-4B-3.md §2.
   //
   // NICHT im Geltungsbereich, jeweils mit Grund:
   //
-  //   * `src/app/api/v1/**` — 53 Aufrufe, die Dateihoheit liegt bei einem
-  //     anderen Strang dieser Welle. Derselbe Defekt, dieselbe Reparatur,
-  //     fremde Dateien. Siehe docs/UMSETZUNG-WELLE-4B-2.md §6.
   //   * `"use client"`-Komponenten (26 Aufrufe in 24 Seiten, `src/hooks`,
   //     `src/components`) — sie laufen im BROWSER des Nutzers. Dort gibt es
   //     weder `process.stdout` noch einen Log-Empfaenger, an dem etwas
@@ -161,6 +161,8 @@ export default tseslint.config(
       "src/middleware.ts",
       "src/app/api/auth/**/*.{ts,tsx}",
       "src/app/api/health/**/*.{ts,tsx}",
+      // [Welle 4b · Strang 3] 1.375 Routendateien, 53 Aufrufe umgestellt.
+      "src/app/api/v1/**/*.{ts,tsx}",
     ],
     // Ohne Optionen: Diese Konfiguration kannte `no-console` bis Welle 4b
     // gar nicht, es gibt also keine `allow`-Liste aus einem frueheren Block,
@@ -237,35 +239,30 @@ export default tseslint.config(
     ],
     rules: { "@typescript-eslint/no-explicit-any": "off" },
   },
-  {
-    // ── HANDOVER, not an exemption on the merits ─────────────────────────
-    // 129 of the 267 `any` occurrences (S14-19) live under
-    // `apps/web/src/app/api/v1/**`, which is outside WP12's file ownership —
-    // WP2, WP3, WP6 and WP9 hold those routes and edited them in waves 1–3.
-    // The rule is ON everywhere else; this scope is named explicitly so the
-    // debt stays visible in one place instead of dissolving into a global
-    // `"off"`. Hotspots for the owning packages, from the audit:
-    //   processes/audit-pack/route.ts                     (14×)
-    //   tprm/vendors/[id]/onboarding-pack/route.ts        (12×)
-    //   audit-mgmt/audits/[id]/audit-pack/route.ts        (12×)
-    //   whistleblowing/statistics/route.ts                 (8×, `as any[]` on raw SQL rows)
-    // See /work/audit/remediation/WP12.md, "Bedarf an andere Pakete".
-    files: ["src/app/api/v1/**"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      // Same boundary, same reason: 483 of the 1.127 dead bindings live in
-      // those 1.355 route files. Removing an unused import there is safe but
-      // it is not WP12's file to touch, and it would bury this package's diff
-      // in 800 lines of other people's routes.
-      "@typescript-eslint/no-unused-vars": "off",
-      // Frueher stand hier zusaetzlich
-      // `"@next/next/no-assign-module-variable": "off"` — sechs Routen
-      // deklarierten ein lokales `const module = …` (den Modulschluessel) und
-      // verdeckten damit die CommonJS-Bindung `module`. Die sechs Bindungen
-      // heissen seit OP-078 `moduleKey`; die Regel gilt hier wieder wie
-      // ueberall sonst. Siehe docs/UMSETZUNG-WELLE-4B-1.md §3.
-    },
-  },
+  // ── Die Uebergabe unter `src/app/api/v1/**` ist eingeloest ────────────
+  //
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · Strang 3 — OP-076, OP-077]
+  //
+  // Hier stand bis Welle 4b ein eigenes Konfigurationsobjekt fuer
+  // `src/app/api/v1/**` mit zwei abgeschalteten Regeln:
+  //
+  //   "@typescript-eslint/no-explicit-any": "off"   (gemessen 128 Stellen)
+  //   "@typescript-eslint/no-unused-vars":  "off"   (gemessen 500 Stellen)
+  //
+  // Beide waren als HANDOVER begruendet, nicht in der Sache: WP12 durfte
+  // diese 1.375 Routendateien nicht anfassen. Strang 3 dieser Welle hat die
+  // Dateihoheit und hat den Bestand abgetragen — beide Zahlen stehen auf 0,
+  // nachgemessen mit `eslint --rule` gegen dasselbe Regelwerk, das oben
+  // fuer den Rest des Workspaces gilt.
+  //
+  // Damit faellt das Objekt ersatzlos: die zwei Regeln gelten in diesem
+  // Verzeichnis wieder wie ueberall sonst. Einzelheiten und die Befunde,
+  // die dabei sichtbar wurden, in docs/UMSETZUNG-WELLE-4B-3.md.
+  //
+  // (Die dritte Ausnahme dieses Objekts,
+  // `@next/next/no-assign-module-variable`, war schon in Welle 4b-1 mit
+  // OP-078 gefallen.)
+
   {
     ignores: [
       ".next/**",

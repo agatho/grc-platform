@@ -2,12 +2,12 @@ import { db, importJob } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { importValidateSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { parseFile } from "@/lib/import-export/file-parser";
 import { validateRows } from "@/lib/import-export/validation-engine";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/import/:jobId/validate — Validate all rows with mapping
 export const POST = withErrorHandler(async function POST(
@@ -114,7 +114,7 @@ export const POST = withErrorHandler(async function POST(
     // #SEC-LEAK-FIX: see /import/[jobId]/execute — the importJob.status
     // = "failed" transition is the operator's signal; detail isn't
     // needed in the response body.
-    console.error("[import/validate] failed", err);
+    log.error("[import/validate] failed", { err });
     return Response.json({ error: "Validation failed" }, { status: 500 });
   }
 });

@@ -1,12 +1,9 @@
 import {
   db,
-  architectureElement,
   applicationPortfolio,
   technologyEntry,
   architectureRuleViolation,
   dataFlow,
-  applicationInterface,
-  architectureHealthSnapshot,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";

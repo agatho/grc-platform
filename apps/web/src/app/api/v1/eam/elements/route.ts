@@ -4,6 +4,7 @@ import {
   VALID_LAYER_TYPES,
 } from "@grc/shared";
 import { requireModule } from "@grc/auth";
+import { isEnumValue } from "../../_lib/enum-filter";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -71,7 +72,18 @@ export const GET = withErrorHandler(async function GET(req: Request) {
         layer as "business" | "application" | "technology",
       ),
     );
-  if (type) conditions.push(eq(architectureElement.type, type as any));
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] wie oben bei `layer`:
+  // der Wert kommt roh aus der Abfragezeichenkette und ging frueher als
+  // `any` in eine Aufzaehlungsspalte — ein Tippfehler wurde zum 500er.
+  if (type) {
+    if (!isEnumValue(architectureElement.type.enumValues, type)) {
+      return Response.json(
+        { error: `Unknown type filter: ${type}` },
+        { status: 422 },
+      );
+    }
+    conditions.push(eq(architectureElement.type, type));
+  }
   if (status) conditions.push(eq(architectureElement.status, status));
 
   const elements = await db

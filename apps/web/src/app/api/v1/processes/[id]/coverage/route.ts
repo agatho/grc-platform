@@ -3,7 +3,7 @@
 
 import { db, process, processFrameworkMapping } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { resolveCatalogEntry } from "@/lib/catalog-resolver";
 import { z } from "zod";

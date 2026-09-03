@@ -1,7 +1,7 @@
 import { db, continuousAuditRule } from "@grc/db";
 import { createContinuousAuditRuleSchema, isReadOnlySql } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

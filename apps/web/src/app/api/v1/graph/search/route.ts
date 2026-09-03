@@ -5,6 +5,7 @@ import { searchEntities } from "@grc/graph";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/graph/search?q=term
 // Search entities across all types for graph display.
@@ -36,7 +37,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       },
     );
   } catch (err) {
-    console.error("[graph/search] Error:", err);
+    log.error("[graph/search] request failed", { err });
     return Response.json(
       { error: "Failed to search entities" },
       { status: 500 },

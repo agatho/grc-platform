@@ -20,6 +20,7 @@ import { randomUUID, createHash } from "crypto";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -278,7 +279,7 @@ export const POST = withErrorHandler(async function POST(
   // the same hole as a fail-open error (WP5 note on S04-06).
   const scan: ClamScanResult = await scanBuffer(buffer);
   if (scan.status === "skipped" && isClamAvRequired()) {
-    console.error(
+    log.error(
       "[documents/upload] ClamAV is not configured but required in this environment — upload rejected",
     );
     return Response.json(
@@ -325,9 +326,9 @@ export const POST = withErrorHandler(async function POST(
   }
   if (scan.status === "error") {
     if (isClamAvFailClosed()) {
-      console.error(
-        `[documents/upload] ClamAV scan failed (fail-closed): ${scan.error}`,
-      );
+      log.error("[documents/upload] ClamAV scan failed (fail-closed)", {
+        scanError: scan.error,
+      });
       return Response.json(
         {
           error: "Malware scan unavailable — upload rejected (fail-closed)",
@@ -336,8 +337,11 @@ export const POST = withErrorHandler(async function POST(
         { status: 503 },
       );
     }
-    console.warn(
-      `[documents/upload] ClamAV scan failed (fail-open, file accepted): ${scan.error}`,
+    log.warn(
+      "[documents/upload] ClamAV scan failed (fail-open, file accepted)",
+      {
+        scanError: scan.error,
+      },
     );
   }
   const scannedAt = scan.status === "skipped" ? null : new Date();

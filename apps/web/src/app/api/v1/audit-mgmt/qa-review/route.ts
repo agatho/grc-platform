@@ -1,10 +1,5 @@
-import {
-  db,
-  auditQaReview,
-  auditQaChecklistItem,
-  auditResourceAllocation,
-} from "@grc/db";
-import { createQaReviewSchema, computeQaScore } from "@grc/shared";
+import { db, auditQaReview, auditQaChecklistItem } from "@grc/db";
+import { createQaReviewSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -212,14 +207,18 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     );
   }
 
-  // Validate reviewer independence: reviewer must NOT be in audit_resource_allocation
-  const allocations = await db
-    .select({ auditorId: auditResourceAllocation.auditorId })
-    .from(auditResourceAllocation)
-    .where(eq(auditResourceAllocation.auditId, auditId));
-
-  // Check if reviewer is in the audit team (by userId, need to resolve auditor profiles)
-  // Simplified: check if reviewer is directly referenced
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-177]
+  // Hier stand eine Abfrage auf `audit_resource_allocation` unter der
+  // Ueberschrift „Validate reviewer independence: reviewer must NOT be in
+  // audit_resource_allocation" — ihr Ergebnis wurde NIE gelesen; darunter
+  // stand „Simplified: check if reviewer is directly referenced" und dann
+  // nichts. Die Unabhaengigkeitspruefung des QA-Reviewers findet also nicht
+  // statt: ein Mitglied des Pruefteams kann sich selbst als QA-Reviewer
+  // eintragen. Die Abfrage ist entfernt — sie war ein Rundlauf zur Datenbank
+  // ohne Wirkung und hat die fehlende Pruefung wie eine vorhandene aussehen
+  // lassen. Der Befund selbst steht als OP-177 im Register; er braucht die
+  // Aufloesung von `auditor_profile` → `user`, die der urspruengliche Autor
+  // ausdruecklich offengelassen hat („need to resolve auditor profiles").
 
   const created = await withAuditContext(ctx, async (tx) => {
     const [review] = await tx

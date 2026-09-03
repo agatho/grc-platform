@@ -1,4 +1,4 @@
-import { db, biReportWidget } from "@grc/db";
+import { biReportWidget } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

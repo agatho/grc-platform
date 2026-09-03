@@ -17,6 +17,7 @@ import { instantiateJourney } from "@/lib/programme/instantiate";
 // queries run on the context-less base pool, and RLS filters every row — the
 // route answers 200 with an EMPTY list instead of the tenant's data.
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
@@ -134,7 +135,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     // identifier disclosure, the same class of finding as the SQL text the
     // audit removed elsewhere. The detail belongs in the server log, where the
     // line above already puts it, not in the payload.
-    console.error("[programmes/journeys/POST] failed:", message);
+    log.error("[programmes/journeys/POST] failed", { err });
     return Response.json(
       {
         error: "Failed to create journey",

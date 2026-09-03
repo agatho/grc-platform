@@ -48,7 +48,7 @@ export const PUT = withErrorHandler(async function PUT(req: Request) {
     );
   }
 
-  const result = await withAuditContext(ctx, async (tx) => {
+  await withAuditContext(ctx, async (tx) => {
     // Update the settings JSONB field
     const [updated] = await tx
       .update(organization)

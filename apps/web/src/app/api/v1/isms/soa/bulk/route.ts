@@ -8,6 +8,7 @@ import { syncSoaEntryToProgramme } from "@grc/db";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/isms/soa/bulk
 export const POST = withErrorHandler(async function POST(req: Request) {
@@ -95,7 +96,10 @@ export const POST = withErrorHandler(async function POST(req: Request) {
         syncedSubtasks++;
       }
     } catch (err) {
-      console.error("[soa bulk] sync failed for", row.id, err);
+      log.error("[soa bulk] programme sync failed", {
+        soaEntryId: row.id,
+        err,
+      });
     }
   }
 

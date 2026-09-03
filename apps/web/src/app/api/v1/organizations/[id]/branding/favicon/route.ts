@@ -1,4 +1,4 @@
-import { db, orgBranding } from "@grc/db";
+import { orgBranding } from "@grc/db";
 import { uploadFaviconSchema } from "@grc/shared";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

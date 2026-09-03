@@ -1,5 +1,4 @@
 import {
-  db,
   ssoConfig,
   user,
   userOrganizationRole,
@@ -16,8 +15,10 @@ import {
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import { openSecret } from "@grc/shared";
-import type { OidcClaimMapping, GroupRoleMapping } from "@grc/shared";
+import type { GroupRoleMapping } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
+import { isEnumValue } from "../../../../_lib/enum-filter";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/auth/sso/oidc/callback — OIDC authorization callback
 export async function GET(req: Request) {
@@ -226,10 +227,32 @@ export async function GET(req: Request) {
           config.defaultRole ?? "viewer",
         );
 
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `resolveRole` gibt
+        // `string` zurueck — die Zuordnung Gruppe→Rolle stammt aus der
+        // IdP-Konfiguration der Organisation und ist damit frei getippter
+        // Text. Mit `as any` ging ein Tippfehler in dieser Konfiguration
+        // ungeprueft in eine Aufzaehlungsspalte: die Datenbank wies ihn ab
+        // (`invalid input value for enum user_role`), und der SSO-Login
+        // scheiterte mit einem 500er statt mit einer Rolle. Unbekannte
+        // Werte fallen jetzt auf `viewer` zurueck — den Wert, den die
+        // Konfiguration ohnehin als Vorgabe fuehrt — und werden protokolliert.
+        const safeRole = isEnumValue(userOrganizationRole.role.enumValues, role)
+          ? role
+          : "viewer";
+        if (safeRole !== role) {
+          log.warn(
+            "[oidc/callback] unknown role in group mapping, falling back",
+            {
+              role,
+              orgId,
+            },
+          );
+        }
+
         await sdb.insert(userOrganizationRole).values({
           userId,
           orgId,
-          role: role as any,
+          role: safeRole,
         });
       }
       return { userId, email };

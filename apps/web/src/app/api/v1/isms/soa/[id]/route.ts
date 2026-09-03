@@ -8,6 +8,7 @@ import { syncSoaEntryToProgramme } from "@grc/db";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/isms/soa/[id]
 export const GET = withErrorHandler(async function GET(
@@ -112,7 +113,7 @@ export const PUT = withErrorHandler(async function PUT(
   try {
     syncResult = await syncSoaEntryToProgramme(db, ctx.orgId, id, ctx.userId);
   } catch (err) {
-    console.error("[soa PUT] sync failed for", id, err);
+    log.error("[soa PUT] programme sync failed", { soaEntryId: id, err });
   }
 
   return Response.json({ data: result, sync: syncResult });

@@ -1,4 +1,4 @@
-import { db, agentRecommendation } from "@grc/db";
+import { agentRecommendation } from "@grc/db";
 import { updateRecommendationSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

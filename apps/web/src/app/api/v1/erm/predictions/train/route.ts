@@ -1,4 +1,4 @@
-import { db, auditRiskPredictionModel } from "@grc/db";
+import { auditRiskPredictionModel } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { trainModelSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";

@@ -7,7 +7,7 @@ import {
   audit,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

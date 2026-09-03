@@ -1,8 +1,5 @@
 import { db, evidenceConnector } from "@grc/db";
-import {
-  createEvidenceConnectorSchema,
-  connectorQuerySchema,
-} from "@grc/shared";
+import { createEvidenceConnectorSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc, ilike } from "drizzle-orm";
 import {

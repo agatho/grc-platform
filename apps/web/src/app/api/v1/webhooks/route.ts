@@ -1,7 +1,7 @@
 import { db, webhookRegistration } from "@grc/db";
 import { createWebhookSchema } from "@grc/shared";
 import { generateWebhookSecret } from "@grc/events";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { sql } from "drizzle-orm";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

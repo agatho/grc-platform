@@ -1,4 +1,4 @@
-import { db, eamContextAttribute, architectureElement } from "@grc/db";
+import { db, eamContextAttribute } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

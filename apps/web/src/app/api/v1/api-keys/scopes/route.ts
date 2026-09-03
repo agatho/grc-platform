@@ -6,7 +6,7 @@ import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/api-keys/scopes — List available API scopes
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

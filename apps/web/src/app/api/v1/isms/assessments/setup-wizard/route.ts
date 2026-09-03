@@ -10,7 +10,7 @@
 //     Frameworks gewaehlt wurden (DB-Feld ist varchar(100))
 //   - Gibt den erzeugten Run + Checklist + hint-naechster-Schritt zurueck
 
-import { db, assessmentRun } from "@grc/db";
+import { assessmentRun } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   assessmentSetupWizardSchema,

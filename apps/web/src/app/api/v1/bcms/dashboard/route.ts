@@ -1,6 +1,5 @@
 import {
   db,
-  biaAssessment,
   biaProcessImpact,
   bcp,
   crisisScenario,

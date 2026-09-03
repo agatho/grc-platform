@@ -39,6 +39,7 @@ import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { eq } from "drizzle-orm";
 import { createHash, randomUUID } from "crypto";
 import { extname } from "path";
+import { log } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -151,10 +152,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       try {
         await storage.put(storageKey, buffer, { contentType: file.type });
       } catch (err) {
-        console.error(
-          "[portal/mailbox/evidence] storage write failed:",
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[portal/mailbox/evidence] storage write failed", { err });
         // 502, nicht 201: die hinweisgebende Person muss erfahren, dass
         // ihr Beweismittel NICHT angekommen ist.
         return Response.json(
@@ -175,9 +173,9 @@ export async function POST(req: Request, { params }: RouteParams) {
         stored = false;
       }
       if (!stored) {
-        console.error(
-          "[portal/mailbox/evidence] storage reported success but the object is absent:",
-          storageKey,
+        log.error(
+          "[portal/mailbox/evidence] storage reported success but the object is absent",
+          { storageKey },
         );
         return Response.json(
           { error: "The evidence could not be stored." },
@@ -226,15 +224,12 @@ export async function POST(req: Request, { params }: RouteParams) {
         try {
           await storage.delete(storageKey);
         } catch {
-          console.error(
-            "[portal/mailbox/evidence] orphaned object could not be removed:",
-            storageKey,
+          log.error(
+            "[portal/mailbox/evidence] orphaned object could not be removed",
+            { storageKey },
           );
         }
-        console.error(
-          "[portal/mailbox/evidence] insert failed:",
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[portal/mailbox/evidence] insert failed", { err });
         return Response.json(
           { error: "The evidence could not be recorded." },
           { status: 502 },

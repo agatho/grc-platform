@@ -1,5 +1,5 @@
 import { db, user, userOrganizationRole } from "@grc/db";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -19,8 +19,14 @@ export const GET = withErrorHandler(async function GET(
 
   // Non-admins can only view themselves
   if (!isSelf) {
-    const isAdmin = ctx.session.user.roles.some(
-      (r: any) => r.orgId === ctx.orgId && r.role === "admin",
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `ctx.session.user` ist
+    // vom NextAuth-Typ her offen; die Rollenliste wird hier genannt statt
+    // ueber `any` unterlaufen.
+    const sessionRoles = (
+      ctx.session.user as { roles?: Array<{ orgId: string; role: string }> }
+    ).roles;
+    const isAdmin = (sessionRoles ?? []).some(
+      (r) => r.orgId === ctx.orgId && r.role === "admin",
     );
     if (!isAdmin) {
       return Response.json({ error: "Forbidden" }, { status: 403 });

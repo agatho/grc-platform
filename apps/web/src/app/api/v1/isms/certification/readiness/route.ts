@@ -4,11 +4,9 @@ import {
   managementReview,
   assetClassification,
   asset,
-  controlMaturity,
-  control,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, isNull, gte, desc } from "drizzle-orm";
+import { eq, and, sql, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import {
   CERT_READINESS_CHECKS,

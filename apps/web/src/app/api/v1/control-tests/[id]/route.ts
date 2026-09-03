@@ -1,5 +1,4 @@
 import { db, controlTest, control, user, evidence, finding } from "@grc/db";
-import { executeTestSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

@@ -32,6 +32,7 @@ import { resolveWbMailboxToken } from "@grc/auth/anonymous-token";
 import { replyToMailboxSchema } from "@grc/shared";
 import { encrypt, decrypt, isWbCryptoConfigured } from "@grc/shared";
 import { eq, asc, sql } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -57,9 +58,8 @@ async function resolveMailbox(token: string) {
 }
 
 function cryptoUnavailable(): Response {
-  console.error(
-    "[portal/mailbox] SECURITY: WB_ENCRYPTION_KEY is not configured — " +
-      "refusing to serve or accept case correspondence.",
+  log.error(
+    "[portal/mailbox] SECURITY: WB_ENCRYPTION_KEY is not configured — refusing to serve or accept case correspondence.",
   );
   return Response.json(
     { error: "The reporting channel is temporarily unavailable." },
@@ -126,10 +126,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
           // vernichteten Schlüssel liegt), darf nicht die gesamte Mailbox
           // unerreichbar machen — es wird als unlesbar geliefert und der
           // Vorfall protokolliert.
-          console.error(
-            "[portal/mailbox] message could not be decrypted:",
-            err instanceof Error ? err.message : String(err),
-          );
+          log.error("[portal/mailbox] message could not be decrypted", { err });
           content = "";
         }
         return {

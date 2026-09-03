@@ -9,7 +9,7 @@ import {
 import { processRisk } from "@grc/db";
 import { updateProcessSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, count, sql } from "drizzle-orm";
+import { eq, and, isNull, count } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { alias } from "drizzle-orm/pg-core";

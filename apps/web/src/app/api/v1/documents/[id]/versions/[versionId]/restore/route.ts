@@ -14,6 +14,7 @@ import { randomUUID } from "node:crypto";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/documents/:id/versions/:versionId/restore — Restore an
 // old version by creating a NEW version with the old content/file
@@ -114,9 +115,10 @@ export const POST = withErrorHandler(async function POST(
       if (err instanceof FileNotFoundInStorageError) {
         // The source object is already gone — restore the metadata
         // snapshot but do not invent a key that holds nothing.
-        console.warn(
-          `[documents/restore] source object missing for version ${versionId}: ${source.filePath}`,
-        );
+        log.warn("[documents/restore] source object missing for version", {
+          versionId,
+          filePath: source.filePath,
+        });
         restoredFilePath = source.filePath;
       } else {
         throw err;

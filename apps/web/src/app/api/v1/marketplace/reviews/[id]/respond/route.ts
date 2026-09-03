@@ -1,4 +1,4 @@
-import { db, marketplaceReview } from "@grc/db";
+import { marketplaceReview } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { respondToReviewSchema } from "@grc/shared";

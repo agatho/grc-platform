@@ -13,7 +13,7 @@ import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/regulatory-changes/dashboard
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "dpo", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 

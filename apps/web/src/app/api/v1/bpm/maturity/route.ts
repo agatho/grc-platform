@@ -10,12 +10,7 @@ import {
 } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).

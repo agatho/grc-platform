@@ -1,6 +1,6 @@
 import { db, regulatoryFeedItem } from "@grc/db";
-import { sql, count, desc, eq, and } from "drizzle-orm";
-import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { sql, count, desc, and } from "drizzle-orm";
+import { withAuth, paginatedResponse } from "@/lib/api";
 import { regulatoryFeedQuerySchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

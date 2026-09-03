@@ -1,10 +1,7 @@
-import { db, wbProtectionCase, wbProtectionEvent } from "@grc/db";
-import {
-  createProtectionCaseSchema,
-  createProtectionEventSchema,
-} from "@grc/shared";
+import { db, wbProtectionCase } from "@grc/db";
+import { createProtectionCaseSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

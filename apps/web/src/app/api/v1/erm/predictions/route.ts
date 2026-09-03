@@ -18,8 +18,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const { page, limit, offset, searchParams } = paginate(req);
   const minProbability = searchParams.get("minProbability");
 
-  const conditions = [eq(auditRiskPrediction.orgId, ctx.orgId)];
-
   const rows = await db
     .select()
     .from(auditRiskPrediction)

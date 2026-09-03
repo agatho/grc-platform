@@ -1,4 +1,4 @@
-import { db, dpia, workItem, user } from "@grc/db";
+import { db, dpia, workItem } from "@grc/db";
 import { createDpiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc, asc, inArray, ilike } from "drizzle-orm";

@@ -1,6 +1,5 @@
 import {
   db,
-  ddSession,
   ddResponse,
   ddEvidence,
   questionnaireTemplate,

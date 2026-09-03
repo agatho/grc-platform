@@ -1,7 +1,7 @@
 import { db, orgEntityRelationship, riskPropagationResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { propagationSimulateSchema } from "@grc/shared";
-import { eq, and, or } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { randomUUID } from "crypto";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

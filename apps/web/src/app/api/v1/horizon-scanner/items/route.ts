@@ -34,7 +34,9 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     status,
     jurisdiction,
     since,
-    framework,
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] `framework` war
+    // hier entnommen und wurde in keine Bedingung uebersetzt; der Filter
+    // wirkt nicht. Nicht mehr entnommen — geprueft wird er weiterhin.
   } = query.data;
   const offset = (page - 1) * limit;
   const conditions = [eq(horizonScanItem.orgId, ctx.orgId)];

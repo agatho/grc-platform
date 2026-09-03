@@ -92,7 +92,14 @@ export const GET = withErrorHandler(async function GET(req: Request) {
           WHERE ce.id = ANY(${entryIds})`,
     );
     const entryMap = new Map(
-      (entries as any[]).map((e: any) => [
+      (
+        entries as unknown as Array<{
+          id: string;
+          code: string | null;
+          name: string | null;
+          catalog_name: string | null;
+        }>
+      ).map((e) => [
         e.id,
         { code: e.code, name: e.name, catalogName: e.catalog_name },
       ]),

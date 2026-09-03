@@ -4,7 +4,6 @@ import {
   control,
   controlTest,
   evidence,
-  finding,
   moduleConfig,
 } from "@grc/db";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";

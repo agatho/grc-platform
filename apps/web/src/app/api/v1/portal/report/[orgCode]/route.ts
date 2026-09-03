@@ -16,6 +16,7 @@ import {
   isWbCryptoConfigured,
 } from "@grc/shared";
 import { sql } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 interface RouteParams {
   params: Promise<{ orgCode: string }>;
@@ -82,10 +83,8 @@ export async function POST(req: Request, { params }: RouteParams) {
   // beliebiger Aufrufer soll den Konfigurationszustand nicht erfragen
   // können.
   if (!isWbCryptoConfigured()) {
-    console.error(
-      "[portal/report] SECURITY: WB_ENCRYPTION_KEY is not configured — " +
-        "the whistleblowing intake channel is refusing reports instead of " +
-        "storing them unencrypted or losing them (HinSchG §12).",
+    log.error(
+      "[portal/report] SECURITY: WB_ENCRYPTION_KEY is not configured — the whistleblowing intake channel is refusing reports instead of storing them unencrypted or losing them (HinSchG §12).",
     );
     return Response.json(
       {
@@ -132,7 +131,11 @@ export async function POST(req: Request, { params }: RouteParams) {
     const countResult = await db.execute(
       sql`SELECT COUNT(*) as cnt FROM wb_case WHERE org_id = ${org.id} AND EXTRACT(YEAR FROM created_at) = ${year}`,
     );
-    const count = Number((countResult as any)[0]?.cnt ?? 0) + 1;
+    const count =
+      Number(
+        (countResult as unknown as Array<{ cnt: string | number }>)[0]?.cnt ??
+          0,
+      ) + 1;
     const caseNumber = `WB-${year}-${String(count).padStart(3, "0")}`;
 
     // Create report, case, and mailbox in transaction

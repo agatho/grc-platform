@@ -1,4 +1,4 @@
-import { db, evidenceFreshnessConfig } from "@grc/db";
+import { evidenceFreshnessConfig } from "@grc/db";
 import { updateFreshnessConfigSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";

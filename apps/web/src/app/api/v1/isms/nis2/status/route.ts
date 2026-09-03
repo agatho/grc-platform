@@ -1,6 +1,6 @@
-import { db, soaEntry, catalogEntry, control, controlMaturity } from "@grc/db";
+import { db, soaEntry, catalogEntry, controlMaturity } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, isNull, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import {
   NIS2_ART21_REQUIREMENTS,

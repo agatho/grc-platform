@@ -1,4 +1,4 @@
-import { db, controlTestScript } from "@grc/db";
+import { controlTestScript } from "@grc/db";
 import { generateTestScriptSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

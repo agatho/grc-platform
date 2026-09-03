@@ -1,4 +1,4 @@
-import { db, horizonCalendarEvent } from "@grc/db";
+import { horizonCalendarEvent } from "@grc/db";
 import { updateHorizonCalendarEventSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

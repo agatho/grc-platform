@@ -1,10 +1,4 @@
-import {
-  db,
-  controlEffectivenessScore,
-  control,
-  controlTest,
-  finding,
-} from "@grc/db";
+import { db, controlEffectivenessScore, control, finding } from "@grc/db";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { cesRecomputeSchema, computeCES, computeTrend } from "@grc/shared";

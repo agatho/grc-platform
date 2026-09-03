@@ -16,12 +16,7 @@ import { createSodRuleSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).

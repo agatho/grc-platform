@@ -24,7 +24,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 // round-trips → 1 + 1 + 500-parallel = ~3 sequential round-trips
 // (the parallel UPDATEs are bounded by node-postgres' default pool
 // size of 10, so still ~50 RTTs total; ~30× speedup on hot path).
-export const POST = withErrorHandler(async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 

@@ -29,6 +29,10 @@ function bucket(pct: number): number {
   return 1;
 }
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type SignalRow = Record<string, unknown>;
+
 export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -81,7 +85,7 @@ export const POST = withErrorHandler(async function POST(
         (SELECT COUNT(*) FROM process_kpi_measurement m
            JOIN process_kpi_definition d ON d.id = m.kpi_definition_id
            WHERE d.process_id = ${id} AND m.status = 'green')::int AS kpi_green
-    `)) as any[];
+    `)) as unknown as SignalRow[];
     return c;
   });
 

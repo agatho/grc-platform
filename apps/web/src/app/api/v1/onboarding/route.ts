@@ -67,7 +67,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   return Response.json({ data: session }, { status: 201 });
 });
 // GET /api/v1/onboarding — Get current onboarding session
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

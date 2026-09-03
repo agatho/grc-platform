@@ -5,11 +5,9 @@ import { CCI_FACTOR_KEYS, getPreviousPeriod } from "@grc/shared";
 import type {
   CCIFactorsResponse,
   CCIFactorDetail,
-  CCIFactorKey,
   CCIFactorScores,
   CCIFactorWeights,
   CCIRawMetrics,
-  CCIRawMetricDetail,
   CCITrend,
 } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -18,7 +16,7 @@ import type {
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/compliance/cci/factors — Detailed factor breakdown
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 

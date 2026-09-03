@@ -1,11 +1,6 @@
-import {
-  db,
-  copilotConversation,
-  copilotMessage,
-  copilotFeedback,
-} from "@grc/db";
+import { db, copilotConversation, copilotFeedback } from "@grc/db";
 import { copilotUsageQuerySchema } from "@grc/shared";
-import { eq, sql, and, gte, lte } from "drizzle-orm";
+import { eq, sql, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

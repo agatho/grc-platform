@@ -7,7 +7,7 @@ import {
   soaImplementationEnum,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { syncSoaEntryToProgramme } from "@grc/db";
 import { z } from "zod";
@@ -16,6 +16,7 @@ import { parseQueryParams, searchQueryParam } from "@/lib/query-schema";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
 // against a schema instead of being read as `string | null` and cast
@@ -212,7 +213,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
         synced++;
       }
     } catch (err) {
-      console.error("[soa POST] sync failed for", id, err);
+      log.error("[soa POST] programme sync failed", { soaEntryId: id, err });
     }
   }
 

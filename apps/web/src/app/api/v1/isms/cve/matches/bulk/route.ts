@@ -1,4 +1,4 @@
-import { db, cveAssetMatch } from "@grc/db";
+import { cveAssetMatch } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

@@ -1,6 +1,6 @@
 import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
 // [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the

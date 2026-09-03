@@ -23,6 +23,7 @@ import { syncLanesFromCurrentVersion } from "../../_lib/sync-process-lanes";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // PUT /api/v1/processes/:id/status — Status transition
 // (also exported as PATCH below for client robustness — B1.3)
@@ -126,7 +127,11 @@ export const PUT = withErrorHandler(async function PUT(
         tx,
         processId: id,
         orgId: ctx.orgId,
-        target: targetStatus as any,
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `targetStatus`
+        // stammt aus `transitionProcessStatusSchema` und hat damit genau
+        // die fuenf Werte, die `ProcessStatus` nennt; die Zusicherung war
+        // ueberfluessig.
+        target: targetStatus,
       }),
     );
     const errorBlockers = blockers.filter((b) => b.severity === "error");
@@ -189,7 +194,12 @@ export const PUT = withErrorHandler(async function PUT(
                 userId: ctx.userId,
               });
             } catch (e) {
-              console.error("process_lane sync after promotion failed", e);
+              log.error(
+                "[processes/status] process_lane sync after promotion failed",
+                {
+                  err: e,
+                },
+              );
             }
           }
         }
@@ -251,7 +261,7 @@ export const PUT = withErrorHandler(async function PUT(
         }
       } catch (e) {
         // Auto-versioning is best-effort; do not block the state transition.
-        console.error("auto-versioning failed", e);
+        log.error("[processes/status] auto-versioning failed", { err: e });
       }
     }
 
@@ -305,7 +315,9 @@ export const PUT = withErrorHandler(async function PUT(
           }
         }
       } catch (e) {
-        console.error("acknowledgment activation failed", e);
+        log.error("[processes/status] acknowledgment activation failed", {
+          err: e,
+        });
       }
     }
 

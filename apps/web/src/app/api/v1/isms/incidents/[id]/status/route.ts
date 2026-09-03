@@ -1,4 +1,4 @@
-import { db, securityIncident } from "@grc/db";
+import { securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   incidentStatusTransitionSchema,

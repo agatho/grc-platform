@@ -9,6 +9,10 @@ import { withAuth, withReadContext } from "@/lib/api";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type CrossModuleRow = Record<string, unknown>;
+
 export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -45,7 +49,7 @@ export const GET = withErrorHandler(async function GET(
            WHERE c.vendor_id = ${id} AND m.is_breach = true)::int AS sla_breaches,
         (SELECT COUNT(*) FROM vendor_exit_plan WHERE vendor_id = ${id})::int AS exit_plans,
         0::int AS incidents
-    `)) as any[];
+    `)) as unknown as CrossModuleRow[];
 
     const contracts = (await tx.execute(sql`
       SELECT id, title, status, contract_type, start_date, end_date, value_amount, value_currency
@@ -53,7 +57,7 @@ export const GET = withErrorHandler(async function GET(
       WHERE vendor_id = ${id} AND deleted_at IS NULL
       ORDER BY end_date DESC NULLS LAST
       LIMIT 25
-    `)) as any[];
+    `)) as unknown as CrossModuleRow[];
 
     return { stats, contracts };
   });

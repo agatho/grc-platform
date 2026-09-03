@@ -1,7 +1,6 @@
-import { db, attackPathResult } from "@grc/db";
+import { attackPathResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { computeAttackPathsSchema } from "@grc/shared";
-import { eq, and, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { randomUUID } from "crypto";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -80,8 +79,8 @@ interface ComputedPath {
 }
 
 async function computeAttackPaths(
-  orgId: string,
-  maxDepth: number,
+  _orgId: string,
+  _maxDepth: number,
 ): Promise<ComputedPath[]> {
   // BFS from entry points to crown jewels using entity_reference
   // Simplified implementation — production would use full graph from entity_reference + CVE data

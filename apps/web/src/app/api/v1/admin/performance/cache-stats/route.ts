@@ -6,7 +6,7 @@ import type { CacheStatsResponse } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/performance/cache-stats — Redis cache hit/miss stats
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

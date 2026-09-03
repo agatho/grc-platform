@@ -1,6 +1,6 @@
 import { db, threatFeedSource } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createThreatFeedSourceSchema, checkOutboundUrl } from "@grc/shared";
 import { assertUrlIsSafe } from "@grc/shared/lib/url-safety-server";

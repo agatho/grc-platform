@@ -1,6 +1,6 @@
 import { db, nis2IncidentReport, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, desc, isNull } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the
 // `requestDbStorage.run(...)` frame that `withAuth` -> establishRequestScopedContext

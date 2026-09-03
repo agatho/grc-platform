@@ -7,7 +7,7 @@ import {
   asset,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, isNull, desc, gte, or } from "drizzle-orm";
+import { eq, and, sql, isNull, desc, or } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import {
   createCertSnapshotSchema,

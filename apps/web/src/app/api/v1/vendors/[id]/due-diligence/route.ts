@@ -1,8 +1,5 @@
 import { db, vendor, vendorDueDiligence } from "@grc/db";
-import {
-  createDueDiligenceSchema,
-  reviewDueDiligenceSchema,
-} from "@grc/shared";
+import { createDueDiligenceSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

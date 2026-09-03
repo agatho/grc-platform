@@ -5,6 +5,7 @@ import { analyzeImpact } from "@grc/graph";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/graph/impact
 // Run impact analysis for an entity. Returns affected entities with distance-based impact decay.
@@ -39,7 +40,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       headers: { "Cache-Control": "private, max-age=15" },
     });
   } catch (err) {
-    console.error("[graph/impact] Error:", err);
+    log.error("[graph/impact] request failed", { err });
     return Response.json(
       { error: "Failed to run impact analysis" },
       { status: 500 },

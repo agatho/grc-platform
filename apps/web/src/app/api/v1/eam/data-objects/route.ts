@@ -1,6 +1,6 @@
 import { db, eamDataObject } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { createDataObjectSchema, updateDataObjectSchema } from "@grc/shared";
+import { createDataObjectSchema } from "@grc/shared";
 import { eq, and, desc, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

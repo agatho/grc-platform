@@ -1,6 +1,5 @@
 import { db, assuranceScoreSnapshot } from "@grc/db";
-import { eq, and, gte, desc } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { eq, and, gte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { AssuranceTrendData, TrendPoint } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

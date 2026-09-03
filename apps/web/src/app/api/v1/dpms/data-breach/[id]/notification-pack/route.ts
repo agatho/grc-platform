@@ -119,14 +119,23 @@ export const POST = withErrorHandler(async function POST(
   zip.file(
     "notifications-log.csv",
     [
-      "RecipientType,Recipient,Channel,NotifiedAt,Status",
-      ...notifications.map((n: any) =>
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076 → OP-181]
+      // Vier der fuenf Spalten gab es in `data_breach_notification` nicht:
+      // `recipient`, `channel`, `notifiedAt` und `status` sind keine Felder
+      // dieser Tabelle (sie heissen `recipient_email`, `sent_at`,
+      // `response_status`, ein `channel` gibt es nicht). Unter `(n: any)`
+      // lieferte jeder dieser Zugriffe `undefined`, und `csv(undefined)`
+      // schreibt eine leere Zelle: das Meldeprotokoll im DSGVO-Meldepaket
+      // (Art. 33/34) war seit jeher bis auf die erste Spalte LEER, ohne
+      // dass irgendetwas fehlschlug. Die Kopfzeile nennt jetzt die Spalten,
+      // die es wirklich gibt.
+      "RecipientType,RecipientEmail,SentAt,ResponseStatus",
+      ...notifications.map((n) =>
         [
           csv(n.recipientType),
-          csv(n.recipient),
-          csv(n.channel),
-          csv(n.notifiedAt),
-          csv(n.status),
+          csv(n.recipientEmail),
+          csv(n.sentAt),
+          csv(n.responseStatus),
         ].join(","),
       ),
     ].join("\n"),

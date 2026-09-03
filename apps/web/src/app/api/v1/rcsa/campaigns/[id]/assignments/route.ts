@@ -1,5 +1,5 @@
 import { db, rcsaAssignment, rcsaCampaign, risk, control, user } from "@grc/db";
-import { eq, and, sql, count } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";

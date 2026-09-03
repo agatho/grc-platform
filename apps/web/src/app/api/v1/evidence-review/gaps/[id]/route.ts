@@ -1,4 +1,4 @@
-import { db, evidenceReviewGap } from "@grc/db";
+import { evidenceReviewGap } from "@grc/db";
 import { updateEvidenceReviewGapSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { requireModule } from "@grc/auth";

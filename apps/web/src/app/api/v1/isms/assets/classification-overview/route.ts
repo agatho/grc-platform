@@ -1,7 +1,7 @@
 import { db, asset, assetClassification } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
-import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withAuth, paginate } from "@/lib/api";
 import { z } from "zod";
 import { parseQueryParams } from "@/lib/query-schema";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

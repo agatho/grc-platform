@@ -3,6 +3,7 @@ import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { exportEntities } from "@/lib/import-export/export-engine";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/findings/export?format=csv|xlsx
 //
@@ -49,10 +50,9 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       fileName: result.fileName,
     });
   } catch (logErr) {
-    console.error(
-      "[findings-export] Failed to log:",
-      logErr instanceof Error ? logErr.message : String(logErr),
-    );
+    log.error("[findings-export] export audit log write failed", {
+      err: logErr,
+    });
   }
 
   return new Response(new Uint8Array(result.data), {

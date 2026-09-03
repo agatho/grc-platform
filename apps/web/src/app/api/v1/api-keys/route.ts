@@ -1,6 +1,6 @@
-import { db, apiKey, apiKeyScope, apiScope } from "@grc/db";
+import { db, apiKey, apiKeyScope } from "@grc/db";
 import { createApiKeySchema } from "@grc/shared";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { randomBytes, createHash } from "crypto";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

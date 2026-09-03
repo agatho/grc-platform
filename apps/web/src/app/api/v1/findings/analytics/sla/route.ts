@@ -1,5 +1,5 @@
 import { db, finding, findingSlaConfig } from "@grc/db";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { isWithinSla } from "@grc/shared";

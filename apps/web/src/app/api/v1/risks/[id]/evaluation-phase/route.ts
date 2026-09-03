@@ -1,7 +1,7 @@
-import { db, risk, riskEvaluationLog } from "@grc/db";
+import { db, riskEvaluationLog } from "@grc/db";
 import { phaseTransitionSchema, validatePhaseTransition } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

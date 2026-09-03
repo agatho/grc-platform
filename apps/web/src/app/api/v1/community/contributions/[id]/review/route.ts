@@ -1,4 +1,4 @@
-import { db, communityContribution } from "@grc/db";
+import { communityContribution } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { reviewContributionSchema } from "@grc/shared";

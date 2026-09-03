@@ -1,6 +1,6 @@
-import { db, kri, risk, notification, userOrganizationRole } from "@grc/db";
+import { db, kri, risk } from "@grc/db";
 import { createKriSchema } from "@grc/shared";
-import { eq, and, isNull, count, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, count, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

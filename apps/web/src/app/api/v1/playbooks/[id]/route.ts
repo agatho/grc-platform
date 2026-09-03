@@ -7,7 +7,7 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { updatePlaybookTemplateSchema } from "@grc/shared";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { getTemplateWithPhasesAndTasks } from "@/lib/playbook-engine";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

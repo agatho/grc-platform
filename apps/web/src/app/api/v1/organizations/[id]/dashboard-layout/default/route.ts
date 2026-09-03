@@ -1,4 +1,4 @@
-import { db, userDashboardLayout } from "@grc/db";
+import { userDashboardLayout } from "@grc/db";
 import { setOrgDefaultLayoutSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

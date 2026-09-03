@@ -1,5 +1,4 @@
 import { db } from "@grc/db";
-import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { boardDashboardQuerySchema } from "@grc/shared";

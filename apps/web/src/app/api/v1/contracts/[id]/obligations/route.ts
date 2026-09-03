@@ -1,7 +1,7 @@
 import { db, contract, contractObligation, user } from "@grc/db";
 import { createObligationSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

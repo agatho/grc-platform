@@ -1,4 +1,4 @@
-import { db, portalQuestionnaireResponse } from "@grc/db";
+import { portalQuestionnaireResponse } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { reviewQuestionnaireSchema } from "@grc/shared";

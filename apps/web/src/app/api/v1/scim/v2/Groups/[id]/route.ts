@@ -40,6 +40,15 @@ function scimResponse(data: unknown, status = 200) {
 }
 
 // GET /api/v1/scim/v2/Groups/:id — Get single group
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenformen der rohen
+// SCIM-Abfragen, aus ihren SELECT-Listen benannt.
+type GroupRow = {
+  id: string;
+  name: string | null;
+  created_at: Date | string | null;
+  updated_at: Date | string | null;
+};
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -60,7 +69,7 @@ export async function GET(
       SELECT id, name, created_at, updated_at
       FROM user_group
       WHERE id = ${id} AND org_id = ${authCtx.orgId} AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as GroupRow[];
 
         if (!group) {
           return scimResponse(buildScimError("Group not found", 404), 404);
@@ -71,7 +80,7 @@ export async function GET(
       FROM user_group_member ugm
       JOIN "user" u ON u.id = ugm.user_id
       WHERE ugm.group_id = ${id}
-    `)) as any[];
+    `)) as unknown as Array<{ value: string; display: string | null }>;
 
         return scimResponse({
           schemas: [SCIM_GROUP_SCHEMA],
@@ -120,7 +129,7 @@ export async function PATCH(
         const [group] = (await db.execute(sql`
       SELECT id FROM user_group
       WHERE id = ${id} AND org_id = ${authCtx.orgId} AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as Array<{ id: string }>;
 
         if (!group) {
           return scimResponse(buildScimError("Group not found", 404), 404);
@@ -165,7 +174,7 @@ export async function PATCH(
         const [updated] = (await db.execute(sql`
       SELECT id, name, created_at, updated_at
       FROM user_group WHERE id = ${id}
-    `)) as any[];
+    `)) as unknown as GroupRow[];
 
         return scimResponse({
           schemas: [SCIM_GROUP_SCHEMA],

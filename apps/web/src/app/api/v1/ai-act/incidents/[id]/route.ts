@@ -1,4 +1,4 @@
-import { db, toRows, firstRow } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
@@ -69,6 +69,13 @@ export const PUT = withErrorHandler(async function PUT(
   } = parsed.data;
 
   // If being resolved, set resolved_at
+  //
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077] Dieser Ausdruck wurde
+  // gebaut und dann NIE in das UPDATE eingesetzt — `resolved_at` blieb
+  // beim Abschluss eines KI-Vorfalls leer. Sichtbar wurde das erst, als
+  // `no-unused-vars` in diesem Verzeichnis eingeschaltet wurde: die tote
+  // Bindung war der einzige Hinweis. Fuer Art. 73 KI-VO ist der Zeitpunkt
+  // des Abschlusses ein berichtspflichtiges Datum, nicht Kosmetik.
   const resolvedClause =
     status === "resolved"
       ? sql`, resolved_at = COALESCE(resolved_at, now())`
@@ -92,7 +99,7 @@ export const PUT = withErrorHandler(async function PUT(
         harm_description = COALESCE(${harm_description ?? null}, harm_description),
         authority_notified_at = COALESCE(${authority_notified_at ?? null}, authority_notified_at),
         authority_reference = COALESCE(${authority_reference ?? null}, authority_reference),
-        updated_at = now()
+        updated_at = now()${resolvedClause}
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
     `);

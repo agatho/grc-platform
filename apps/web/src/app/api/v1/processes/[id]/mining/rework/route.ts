@@ -42,7 +42,13 @@ export const GET = withErrorHandler(async function GET(
     `);
   });
 
-  const latest = (rows as any[])[0];
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+  const latest = (
+    rows as unknown as Array<{
+      rework_loops: unknown;
+      computed_at: Date | string | null;
+    }>
+  )[0];
   return Response.json({
     data: {
       reworkLoops: latest?.rework_loops ?? [],

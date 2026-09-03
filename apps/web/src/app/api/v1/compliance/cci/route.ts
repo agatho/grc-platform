@@ -1,7 +1,7 @@
 import { db, complianceCultureSnapshot } from "@grc/db";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import type { CCICurrentResponse, CCISnapshot } from "@grc/shared";
+import type { CCICurrentResponse } from "@grc/shared";
 import { getPreviousPeriod } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -9,7 +9,7 @@ import { getPreviousPeriod } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/compliance/cci — Current CCI (latest snapshot) + trend
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 

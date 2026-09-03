@@ -3,12 +3,10 @@ import {
   esgMaterialityAssessment,
   esgMaterialityTopic,
   esrsDatapointDefinition,
-  esrsMetric,
-  esgMeasurement,
   esgAnnualReport,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, gte, lte, count, sql } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -89,7 +87,10 @@ export const GET = withErrorHandler(async function GET(
       WHERE dp.is_mandatory = true
         AND dp.esrs_standard = ANY(${materialTopics})
     `);
-    coveredDatapoints = Number((coveredResult as any)[0]?.covered ?? 0);
+    coveredDatapoints = Number(
+      (coveredResult as unknown as Array<{ covered: string | number }>)[0]
+        ?.covered ?? 0,
+    );
   }
 
   const completenessPercent =

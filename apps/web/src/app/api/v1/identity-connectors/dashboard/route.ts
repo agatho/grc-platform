@@ -1,6 +1,6 @@
-import { db, identityTestResult, identityConnectorConfig } from "@grc/db";
+import { db, identityTestResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -13,11 +13,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
-
-  const configs = await db
-    .select()
-    .from(identityConnectorConfig)
-    .where(eq(identityConnectorConfig.orgId, ctx.orgId));
 
   const latestResults = await db
     .select()

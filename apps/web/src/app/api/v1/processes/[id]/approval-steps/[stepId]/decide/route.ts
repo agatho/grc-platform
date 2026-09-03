@@ -34,6 +34,7 @@ import { syncLanesFromCurrentVersion } from "../../../../_lib/sync-process-lanes
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 export const POST = withErrorHandler(async function POST(
   req: Request,
@@ -269,7 +270,12 @@ export const POST = withErrorHandler(async function POST(
             userId: ctx.userId,
           });
         } catch (e) {
-          console.error("process_lane sync after promotion failed", e);
+          log.error(
+            "[processes/approval-steps] process_lane sync after promotion failed",
+            {
+              err: e,
+            },
+          );
         }
 
         if (proc.status === "draft" || proc.status === "in_review") {

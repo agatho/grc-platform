@@ -1,4 +1,4 @@
-import { db, consentRecord, consentType } from "@grc/db";
+import { db, consentRecord } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

@@ -39,6 +39,7 @@ import { db, eamAiConfig } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { decryptSecret, encryptSecret, isEncryptedSecret } from "@grc/shared";
 import { assertUrlIsSafe } from "@grc/shared/lib/url-safety-server";
+import { log } from "@/lib/logger";
 
 export interface EamAiConfigValues {
   provider: string;
@@ -85,9 +86,8 @@ function openEamAiConfig(stored: string): {
   }
   // Altbestand: Base64 ohne Envelope. Wird beim nächsten Schreiben neu
   // versiegelt; bis dahin ausdrücklich als ungeschützt ausgewiesen.
-  console.warn(
-    "[eam/ai/config] legacy base64 payload found in eam_ai_config.config_encrypted — " +
-      "re-save the configuration to seal it with SECRET_ENCRYPTION_KEY",
+  log.warn(
+    "[eam/ai/config] legacy base64 payload found in eam_ai_config.config_encrypted — re-save the configuration to seal it with SECRET_ENCRYPTION_KEY",
   );
   return {
     values: JSON.parse(

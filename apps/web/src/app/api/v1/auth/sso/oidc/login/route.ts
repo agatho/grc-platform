@@ -4,6 +4,7 @@ import { discoverOIDCEndpoints } from "@grc/auth/oidc";
 import { generatePKCE } from "@grc/auth/oidc";
 import { cookies } from "next/headers";
 import { getBaseUrl } from "@/lib/base-url";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/auth/sso/oidc/login?orgId=... — SP-initiated OIDC login
 export async function GET(req: Request) {
@@ -87,7 +88,7 @@ export async function GET(req: Request) {
     // URL, internal DNS hints, or library-specific parse errors. The
     // unauthenticated caller doesn't need any of that — log it server-
     // side, return a stable opaque message.
-    console.error("[oidc/login] OIDC discovery failed", err);
+    log.error("[oidc/login] OIDC discovery failed", { err });
     return Response.json(
       { error: "OIDC discovery failed for this organization" },
       { status: 500 },

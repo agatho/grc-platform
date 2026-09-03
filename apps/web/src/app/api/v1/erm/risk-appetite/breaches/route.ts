@@ -1,6 +1,6 @@
 import { db, riskAppetiteThreshold, risk, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, isNotNull, gt, sql } from "drizzle-orm";
+import { eq, and, isNull, isNotNull, gt } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { RiskAppetiteBreach, RiskCategory } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

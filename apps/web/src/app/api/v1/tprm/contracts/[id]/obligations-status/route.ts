@@ -46,7 +46,10 @@ export const GET = withErrorHandler(async function GET(
       ORDER BY due_date ASC NULLS LAST
     `);
 
-    const summary = (obligations as any[]).reduce(
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+    const summary = (
+      obligations as unknown as Array<{ sla_state: string }>
+    ).reduce(
       (acc, o) => {
         acc.total += 1;
         acc[o.sla_state] = (acc[o.sla_state] ?? 0) + 1;

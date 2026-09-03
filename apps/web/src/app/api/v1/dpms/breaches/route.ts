@@ -1,17 +1,7 @@
 import { db, dataBreach, workItem, notification, user } from "@grc/db";
 import { createDataBreachSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  asc,
-  inArray,
-  ilike,
-  sql,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, asc, inArray, ilike } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

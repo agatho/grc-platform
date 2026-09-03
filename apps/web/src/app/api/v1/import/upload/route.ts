@@ -1,5 +1,4 @@
-import { db, importJob } from "@grc/db";
-import { importUploadSchema } from "@grc/shared";
+import { importJob } from "@grc/db";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { parseFile } from "@/lib/import-export/file-parser";
 import { autoDetectMapping } from "@/lib/import-export/column-mapper";
@@ -8,6 +7,7 @@ import { getSupportedEntityTypes } from "@/lib/import-export/entity-registry";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -118,9 +118,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       { status: 201 },
     );
   } catch (err) {
-    // #SEC-LEAK-FIX: full detail to console.error for operator grep;
+    // #SEC-LEAK-FIX: full detail into the structured log for operator grep;
     // only generic error body to the caller.
-    console.error("[import/upload] Error:", err);
+    log.error("[import/upload] failed", { err });
     return Response.json(
       { error: "Failed to process upload" },
       { status: 500 },

@@ -1,5 +1,4 @@
 import { db, regionTenantConfig } from "@grc/db";
-import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { upsertRegionTenantConfigSchema } from "@grc/shared";
@@ -9,7 +8,7 @@ import { upsertRegionTenantConfigSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/data-sovereignty/tenant-config
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const [row] = await db

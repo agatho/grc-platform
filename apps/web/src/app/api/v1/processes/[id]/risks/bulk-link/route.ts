@@ -2,7 +2,7 @@
 
 import { db, process, risk, processRisk } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, inArray, sql } from "drizzle-orm";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -79,7 +79,7 @@ export const POST = withErrorHandler(async function POST(
             inArray(processRisk.riskId, parsed.data.riskIds),
           ),
         );
-      const skip = new Set(existingLinks.map((l: any) => l.riskId));
+      const skip = new Set(existingLinks.map((l) => l.riskId));
       const toInsert = parsed.data.riskIds.filter((rid) => !skip.has(rid));
       if (toInsert.length === 0) {
         return { created: 0, skippedDuplicates: parsed.data.riskIds.length };

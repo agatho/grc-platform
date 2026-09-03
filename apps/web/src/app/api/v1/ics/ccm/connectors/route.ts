@@ -1,6 +1,6 @@
 import { db, ccmConnector } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, count, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

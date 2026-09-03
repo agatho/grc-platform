@@ -1,5 +1,5 @@
 import { db, contract, contractSla } from "@grc/db";
-import { createSlaSchema, updateSlaSchema } from "@grc/shared";
+import { createSlaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

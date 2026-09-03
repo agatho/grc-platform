@@ -26,6 +26,87 @@ function csv(s: unknown): string {
   return cell.includes(";") ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+//
+// Sechs rohe Abfragen, bis Welle 4b sechsmal `as any[]`. Die Zeilenformen
+// sind hier aus der SELECT-Liste benannt; sie bleiben eine Zusicherung, aber
+// eine nachlesbare. `csv()` nimmt ohnehin `unknown`, es ging also nie um
+// Bequemlichkeit beim Schreiben, sondern nur darum, dass der Feldname nicht
+// geprueft wurde.
+
+/**
+ * `SELECT a.*` plus vier berechnete Spalten. Benannt sind NUR die Spalten,
+ * die diese Route liest — eine erfundene Vollabbildung der Tabelle `audit`
+ * waere breiter als das, was hier tatsaechlich bekannt ist.
+ */
+type AuditDetailRow = {
+  title: string | null;
+  audit_type: string | null;
+  status: string | null;
+  conclusion: string | null;
+  planned_start: Date | string | null;
+  planned_end: Date | string | null;
+  actual_start: Date | string | null;
+  actual_end: Date | string | null;
+  scope_description: string | null;
+  scope_processes: string[] | null;
+  scope_departments: string[] | null;
+  scope_frameworks: string[] | null;
+  lead_auditor_name: string | null;
+  auditee_name: string | null;
+  report_title: string | null;
+  report_path: string | null;
+};
+
+/** `method_entries` ist eine JSONB-Spalte; die Route liest daraus `method`. */
+type ChecklistItemRow = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  result: string | null;
+  method_entries: ({ method?: string } | string)[] | null;
+  risk_rating: string | null;
+  notes: string | null;
+  control_title: string | null;
+};
+
+type FindingRow = {
+  id: string;
+  title: string | null;
+  severity: string | null;
+  status: string | null;
+  source: string | null;
+  remediation_due_date: Date | string | null;
+  remediation_plan: string | null;
+  control_title: string | null;
+};
+
+type EvidenceRow = {
+  id: string;
+  title: string | null;
+  description: string | null;
+  file_path: string | null;
+  created_at: Date | string | null;
+  source_file: string | null;
+};
+
+type WorkingPaperRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  content_summary: string | null;
+  created_at: Date | string | null;
+};
+
+type SignOffRow = {
+  signer_role: string;
+  signoff_type: string;
+  signed_at: Date | string | null;
+  comments: string | null;
+  chain_hash: string | null;
+  previous_chain_hash: string | null;
+};
+
 export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -61,7 +142,7 @@ export const POST = withErrorHandler(async function POST(
         (SELECT d.title FROM document d WHERE d.id = a.report_document_id) AS report_title,
         (SELECT d.file_path FROM document d WHERE d.id = a.report_document_id) AS report_path
       FROM audit a WHERE a.id = ${id}
-    `)) as any[];
+    `)) as unknown as AuditDetailRow[];
 
     const checklist = (await tx.execute(sql`
       SELECT ci.id, ci.title, ci.description, ci.result, ci.method_entries, ci.risk_rating,
@@ -71,7 +152,7 @@ export const POST = withErrorHandler(async function POST(
       LEFT JOIN control c ON c.id = ci.control_id
       WHERE ck.audit_id = ${id}
       ORDER BY ck.created_at, ci.created_at
-    `)) as any[];
+    `)) as unknown as ChecklistItemRow[];
 
     const findings = (await tx.execute(sql`
       SELECT f.id, f.title, f.severity, f.status, f.source,
@@ -81,7 +162,7 @@ export const POST = withErrorHandler(async function POST(
       WHERE f.org_id = ${ctx.orgId} AND f.audit_id = ${id} AND f.deleted_at IS NULL
       ORDER BY
         CASE f.severity WHEN 'critical' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END
-    `)) as any[];
+    `)) as unknown as FindingRow[];
 
     const evidence = (await tx.execute(sql`
       SELECT ae.id, ae.title, ae.description, ae.file_path, ae.created_at,
@@ -89,20 +170,20 @@ export const POST = withErrorHandler(async function POST(
       FROM audit_evidence ae
       LEFT JOIN evidence ev ON ev.id = ae.evidence_id
       WHERE ae.audit_id = ${id}
-    `)) as any[];
+    `)) as unknown as EvidenceRow[];
 
     const workingPapers = (await tx.execute(sql`
       SELECT id, title, status, content_summary, created_at
       FROM audit_working_paper
       WHERE audit_id = ${id}
-    `)) as any[];
+    `)) as unknown as WorkingPaperRow[];
 
     const signOffs = (await tx.execute(sql`
       SELECT signer_role, signoff_type, signed_at, comments, chain_hash, previous_chain_hash
       FROM audit_sign_off
       WHERE audit_id = ${id}
       ORDER BY signed_at
-    `)) as any[];
+    `)) as unknown as SignOffRow[];
 
     return {
       auditDetail,
@@ -138,6 +219,16 @@ export const POST = withErrorHandler(async function POST(
       `- evidence.csv (${data.evidence.length})`,
       `- working-papers.csv (${data.workingPapers.length})`,
       `- sign-off-chain.txt (${data.signOffs.length} signatures)`,
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-175] Diese Zeile kuendigt
+      // eine Datei an, die das ZIP NIE enthaelt: es gibt kein
+      // `zip.file("report.pdf", …)`. Aufgefallen beim Benennen der
+      // Zeilenform (OP-076) — `report_title` und `report_path` werden
+      // selektiert, `report_title` wird nirgends gelesen und `report_path`
+      // nur fuer dieses Versprechen. Der Kopfkommentar der Datei behauptet
+      // dasselbe („plus the report document if attached"). Nicht hier
+      // behoben: den Bericht wirklich beizulegen heisst, den Dateispeicher
+      // zu lesen, und das ist eine Produktaenderung, keine Typisierung.
+      // Der Befund steht als OP-175 im Register.
       det?.report_path ? `- report.pdf` : "",
     ].join("\n"),
   );
@@ -158,7 +249,7 @@ export const POST = withErrorHandler(async function POST(
     "checklist.csv",
     [
       "ItemID,Title,Description,Control,Result,RiskRating,Methods,Notes",
-      ...data.checklist.map((c: any) =>
+      ...data.checklist.map((c) =>
         [
           csv(c.id),
           csv(c.title),
@@ -167,7 +258,9 @@ export const POST = withErrorHandler(async function POST(
           csv(c.result),
           csv(c.risk_rating),
           csv(
-            (c.method_entries ?? []).map((m: any) => m?.method ?? m).join("|"),
+            (c.method_entries ?? [])
+              .map((m) => (typeof m === "string" ? m : (m?.method ?? m)))
+              .join("|"),
           ),
           csv(c.notes),
         ].join(","),
@@ -179,7 +272,7 @@ export const POST = withErrorHandler(async function POST(
     "findings.csv",
     [
       "ID,Title,Severity,Status,Source,Control,RemediationDue,RemediationPlan",
-      ...data.findings.map((f: any) =>
+      ...data.findings.map((f) =>
         [
           csv(f.id),
           csv(f.title),
@@ -198,7 +291,7 @@ export const POST = withErrorHandler(async function POST(
     "evidence.csv",
     [
       "ID,Title,Description,FilePath,SourceFile,Created",
-      ...data.evidence.map((e: any) =>
+      ...data.evidence.map((e) =>
         [
           csv(e.id),
           csv(e.title),
@@ -215,7 +308,7 @@ export const POST = withErrorHandler(async function POST(
     "working-papers.csv",
     [
       "ID,Title,Status,Summary,Created",
-      ...data.workingPapers.map((w: any) =>
+      ...data.workingPapers.map((w) =>
         [
           csv(w.id),
           csv(w.title),
@@ -231,7 +324,7 @@ export const POST = withErrorHandler(async function POST(
     "sign-off-chain.txt",
     data.signOffs
       .map(
-        (s: any) =>
+        (s) =>
           `${s.signed_at}  ${s.signoff_type.padEnd(18)} ${s.signer_role.padEnd(20)} chain:${s.chain_hash?.slice(0, 16) ?? ""}\n${s.comments ?? ""}`,
       )
       .join("\n\n"),

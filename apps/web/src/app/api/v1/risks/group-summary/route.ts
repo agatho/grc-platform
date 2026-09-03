@@ -1,5 +1,5 @@
-import { db, risk, kri, organization, userOrganizationRole } from "@grc/db";
-import { eq, and, isNull, inArray, sql } from "drizzle-orm";
+import { db, userOrganizationRole } from "@grc/db";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

@@ -1,5 +1,5 @@
-import { db, scimSyncLog } from "@grc/db";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -51,5 +51,13 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     WHERE ${whereClause}
   `);
 
-  return paginatedResponse(items as any[], total, page, limit);
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `paginatedResponse` ist
+  // generisch; noetig ist eine Elementform, nicht das Abschalten der
+  // Pruefung.
+  return paginatedResponse(
+    items as unknown as Array<Record<string, unknown>>,
+    total,
+    page,
+    limit,
+  );
 });

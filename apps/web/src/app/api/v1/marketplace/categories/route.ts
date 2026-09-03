@@ -1,6 +1,6 @@
 import { db, marketplaceCategory } from "@grc/db";
 import { eq, and, asc } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth } from "@/lib/api";
 import {
   createMarketplaceCategorySchema,
   listMarketplaceCategoriesQuerySchema,

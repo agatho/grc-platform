@@ -1,6 +1,6 @@
 import { db, grcRoiCalculation } from "@grc/db";
 import { eq, and, desc, isNotNull } from "drizzle-orm";
-import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withAuth, paginate } from "@/lib/api";
 import { sql, count } from "drizzle-orm";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

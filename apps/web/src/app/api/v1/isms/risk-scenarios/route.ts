@@ -1,7 +1,7 @@
 import { db, riskScenario, threat, vulnerability, asset } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createRiskScenarioSchema } from "@grc/shared";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

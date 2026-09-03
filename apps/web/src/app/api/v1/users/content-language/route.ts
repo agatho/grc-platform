@@ -11,7 +11,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

@@ -2,7 +2,6 @@
 //
 // Returns the 4 quadrants: In Review, Pending Approval, Overdue Review, Critical Risks.
 
-import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
@@ -10,6 +9,10 @@ import { withAuth, withReadContext } from "@/lib/api";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type CockpitRow = Record<string, unknown>;
 
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
@@ -96,7 +99,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       FROM process
       WHERE org_id = ${ctx.orgId}
         AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as CockpitRow[];
 
     return {
       stats,

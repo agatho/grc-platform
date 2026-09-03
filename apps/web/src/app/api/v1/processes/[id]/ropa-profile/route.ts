@@ -16,6 +16,7 @@ import { z } from "zod";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const ropaProfileSchema = z.object({
   isProcessingActivity: z.boolean(),
@@ -137,7 +138,7 @@ export const PUT = withErrorHandler(async function PUT(
     // Der Versuch wird nicht still verworfen. Wer die Pflichtprüfung
     // abwählen will, braucht eine dokumentierte Ausnahme des DSB — die
     // Route ist dafür nicht der Ort.
-    console.warn(
+    log.warn(
       "[ropa-profile] S07-10: requiresDpia=false was requested for a high-risk profile and ignored",
       { processId: id, userId: ctx.userId, orgId: ctx.orgId },
     );
@@ -161,9 +162,12 @@ export const PUT = withErrorHandler(async function PUT(
         processId: id,
         updatedAt: new Date(),
         updatedBy: ctx.userId,
-      } as any;
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die Zeilen- und
+        // Einfuegeformen dieser Tabelle leitet Drizzle selbst ab; frueher
+        // stand hier zweimal `any`.
+      } as typeof processRopaProfile.$inferInsert;
 
-      let row: any;
+      let row: typeof processRopaProfile.$inferSelect;
       if (existing) {
         [row] = await tx
           .update(processRopaProfile)

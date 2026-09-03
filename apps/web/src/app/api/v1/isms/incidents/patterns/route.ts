@@ -1,6 +1,6 @@
 import { db, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, gte, isNull, desc } from "drizzle-orm";
+import { eq, and, gte, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
 import { parseQueryParams, intQueryParam } from "@/lib/query-schema";

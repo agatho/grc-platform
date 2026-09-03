@@ -612,6 +612,60 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-03 — OP-076/OP-077 erledigt: zwei „Stilregeln", die Defektdetektoren waren
+
+OP-076 (129 `any`), OP-077 (483 tote Bindungen) und der Restbestand von OP-152
+(56 `console.*`) in `apps/web/src/app/api/v1/**` sind abgetragen; die
+namentlichen Ausnahmen in `apps/web/eslint.config.mjs` sind **ersatzlos
+entfernt**. Selbst nachgemessen über alle 1.376 Routendateien: **0 Befunde**,
+und die drei Regeln stehen dort nachweislich auf Schwere 2 (`error`) — die
+Null kommt nicht daher, dass niemand hinsieht. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-3.md`.
+
+Gemessen statt geschätzt: `no-unused-vars` **500** (Register: 483) → 0,
+`no-explicit-any` **128** (Register: 129) → 0, `no-console` **53**
+(Register: 56) → 0.
+
+**Der eigentliche Befund ist nicht die Zahl.** Die beiden abgeschalteten
+Regeln waren keine Stilregeln, sondern **Defektdetektoren**. Acht
+Produktdefekte hingen an genau der Meldung, die seit WP12 auf `off` stand:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Art     | Stand                                                        |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------ |
+| OP-181 | **Vier von fünf Spalten des DSGVO-Meldeprotokolls waren immer leer.** `dpms/data-breach/[id]/notification-pack` griff unter `(n: any)` auf `recipient`, `channel`, `notifiedAt` und `status` zu — **diese Spalten gibt es in `data_breach_notification` nicht** (sie heissen `recipient_email`, `sent_at`, `response_status`; ein `channel` existiert gar nicht; gegen das laufende Schema nachgeprüft). `csv(undefined)` schreibt eine leere Zelle: Das Meldeprotokoll im Paket zu Art. 33/34 DSGVO war seit jeher bis auf die erste Spalte leer, **ohne dass irgendetwas fehlschlug**. | Produkt | behoben                                                      |
+| —      | **`resolved_at` blieb beim Abschluss eines KI-Vorfalls leer.** In `ai-act/incidents/[id]` wurde `resolvedClause` gebaut und nie in das UPDATE eingesetzt. Für Art. 73 KI-VO ist der Abschlusszeitpunkt ein berichtspflichtiges Datum.                                                                                                                                                                                                                                                                                                                                                    | Produkt | behoben                                                      |
+| OP-177 | **Die Unabhängigkeitsprüfung des QA-Reviewers findet nicht statt.** In `audit-mgmt/qa-review` steht die Abfrage unter der Überschrift „reviewer must NOT be in audit_resource_allocation" — ihr Ergebnis liest niemand. Ein Mitglied des Prüfteams kann sich selbst als QA-Reviewer eintragen.                                                                                                                                                                                                                                                                                           | Produkt | **offen**                                                    |
+| OP-178 | **`catalogs/active-entries` baut SQL per Zeichenkette** (`WHERE org_id = '${ctx.orgId}'`). Beide Werte sind heute nicht steuerbar, die Form ist trotzdem falsch. Eine zweite Abfrage war **tot und immer fehlschlagend** (`$1::uuid[]` ohne Parameter) und wurde von einem leeren `catch` verschluckt.                                                                                                                                                                                                                                                                                   | Produkt | behoben                                                      |
+| OP-179 | **Der EAM-Katalog kann nicht geblättert werden.** `offset` wurde berechnet und nie angewandt — jede Seite ist die erste.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Produkt | **offen** (Fassung von `total` und Facetten ist mitzuklären) |
+| OP-176 | **Sieben Routen prüfen einen Parameter und werfen ihn weg** (`timeRange`, `framework`, `minCorrelation`, `search`, `page` …). Die Eingabeprüfung bleibt, die Wirkung fehlt.                                                                                                                                                                                                                                                                                                                                                                                                              | Produkt | **offen**                                                    |
+| OP-180 | **Zwei Routen werten ihr Pfadsegment nicht aus** (`import/mappings/[entityType]` DELETE; `processes/[id]/simulation/compare`). Organisationsgebunden, also kein Mandantenleck — aber die URL verspricht mehr, als der Handler prüft.                                                                                                                                                                                                                                                                                                                                                     | Produkt | **offen**                                                    |
+| OP-175 | **Ein Paket kündigt eine Datei an, die es nie enthält** (`report.pdf` im Audit-Pack).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Produkt | **offen**                                                    |
+| OP-174 | **Roher Treibertext in der Antwort** (`programmes/journeys/[id]/next-actions`) — dieselbe Reparatur wie in der Schwesterroute aus E2E-TRIAGE-2026-09-02, diese Datei war dort nicht erfasst.                                                                                                                                                                                                                                                                                                                                                                                             | Produkt | behoben                                                      |
+
+Dazu zwei Befunde, die keine eigene Nummer brauchen, aber die Richtung zeigen:
+`processes/[id]/dmn-links` gab die DMN-Entscheidungen **fremder Prozesse**
+zurück (behoben), und `reports/soa` zählte „Teilweise umgesetzt", übersetzte es
+in beiden Sprachen — und liess die Kachel weg, so dass die Kachelzeile nicht
+aufging (behoben).
+
+**`as any` hatte eine Wirkung, nicht nur eine Typlücke.** Nachgemessen:
+`SELECT … WHERE status = 'bogus'` → `ERROR: invalid input value for enum
+wb_case_status`. Ein Tippfehler im Filter wurde damit zum **500er**; im
+SSO-Rückkanal machte derselbe Cast einen Tippfehler in der IdP-Rollenzuordnung
+zum **fehlgeschlagenen Login**. Jetzt 422 beziehungsweise Rückfall auf
+`viewer`, geprüft über `column.enumValues`. Das ist der Punkt: Der Cast hat den
+Compiler beruhigt und den Fehler an die Datenbank weitergereicht.
+
+**Was daraus für dieses Register folgt.** Eine abgeschaltete Lint-Regel ist
+hier kein Stilverzicht gewesen, sondern ein **abgeschalteter Detektor** — und
+sie stand mit der Begründung „800 Diff-Zeilen in fremden Dateien" seit WP12
+aus. Die Diff-Zeilen kamen; acht Produktdefekte kamen mit. Sie waren die ganze
+Zeit sichtbar, es sah nur niemand hin.
+
+Randbefund: 16 Routen importierten `requireModule` und riefen es nie auf — für
+`data-sovereignty` und `role-dashboards` gibt es gar keinen Modulschlüssel. Der
+Import war Kopiervorlage und **las sich wie eine vorhandene Prüfung**.
+
 ### Nachtrag 2026-09-03 — OP-152 erledigt, und drei Punkte, die dabei auffielen
 
 OP-152 ist abgetragen: `no-console` fällt im gemessenen Bereich der Ratsche von

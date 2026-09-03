@@ -1,4 +1,4 @@
-import { db, orgActiveCatalog } from "@grc/db";
+import { orgActiveCatalog } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

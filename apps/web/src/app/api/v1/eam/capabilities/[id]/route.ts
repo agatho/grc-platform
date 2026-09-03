@@ -1,4 +1,4 @@
-import { db, businessCapability } from "@grc/db";
+import { businessCapability } from "@grc/db";
 import { updateBusinessCapabilitySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";

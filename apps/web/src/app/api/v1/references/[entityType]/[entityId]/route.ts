@@ -1,5 +1,5 @@
 import { db, entityReference } from "@grc/db";
-import { eq, and, or, sql } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

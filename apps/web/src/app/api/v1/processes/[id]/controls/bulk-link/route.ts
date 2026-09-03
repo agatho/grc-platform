@@ -77,7 +77,7 @@ export const POST = withErrorHandler(async function POST(
             inArray(processControl.controlId, parsed.data.controlIds),
           ),
         );
-      const skip = new Set(existingLinks.map((l: any) => l.controlId));
+      const skip = new Set(existingLinks.map((l) => l.controlId));
       const toInsert = parsed.data.controlIds.filter((cid) => !skip.has(cid));
       if (toInsert.length === 0) {
         return { created: 0, skippedDuplicates: parsed.data.controlIds.length };

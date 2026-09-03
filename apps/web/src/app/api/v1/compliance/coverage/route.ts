@@ -24,14 +24,7 @@
 // (b) live computation paths (2) and (3) so the dashboard shows
 // realistic values immediately on an unused alpha tenant.
 
-import {
-  db,
-  frameworkGapAnalysis,
-  controlFrameworkCoverage,
-  control,
-  catalog,
-  catalogEntry,
-} from "@grc/db";
+import { frameworkGapAnalysis, controlFrameworkCoverage, control, catalog, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc, sql, isNull, inArray } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";

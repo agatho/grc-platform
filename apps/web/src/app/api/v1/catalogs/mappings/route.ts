@@ -5,8 +5,29 @@ import { withAuth } from "@/lib/api";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // GET /api/v1/catalogs/mappings — Cross-framework mappings for a specific entry or catalog
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Beide Zweige projizieren
+// dieselbe Verbund-Zeile; sie ist hier einmal aus der SELECT-Liste benannt.
+type MappingRow = {
+  mapping_id: string;
+  relationship: string | null;
+  confidence: string | number | null;
+  mapping_source: string | null;
+  source_reference: string | null;
+  source_code: string | null;
+  source_name: string | null;
+  source_catalog_name: string | null;
+  source_catalog_source: string | null;
+  source_catalog_id: string | null;
+  target_code: string | null;
+  target_name: string | null;
+  target_catalog_name: string | null;
+  target_catalog_source: string | null;
+  target_catalog_id: string | null;
+};
+
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -52,7 +73,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
         ORDER BY tc.name, tce.code
       `);
 
-      const data = (result as any[]).map((row: any) => ({
+      const data = (result as unknown as MappingRow[]).map((row) => ({
         sourceEntry: {
           code: row.source_code,
           name: row.source_name,
@@ -103,7 +124,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       LIMIT 500
     `);
 
-    const data = (result as any[]).map((row: any) => ({
+    const data = (result as unknown as MappingRow[]).map((row) => ({
       sourceEntry: {
         code: row.source_code,
         name: row.source_name,
@@ -124,7 +145,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
     return Response.json({ data });
   } catch (error) {
-    console.error("Failed to fetch catalog mappings:", error);
+    log.error("[catalogs/mappings] fetch failed", { err: error });
     return Response.json(
       { error: "Failed to fetch mappings" },
       { status: 500 },

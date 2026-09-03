@@ -1,5 +1,5 @@
 import { db, exportSchedule } from "@grc/db";
-import { eq, desc, and, count } from "drizzle-orm";
+import { eq, desc, count } from "drizzle-orm";
 import { createExportScheduleSchema } from "@grc/shared";
 import {
   withAuth,

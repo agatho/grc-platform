@@ -14,7 +14,7 @@
 
 import { db, soaEntry, catalogEntry, catalog } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
 import { parseQueryParams, uuidQueryParam } from "@/lib/query-schema";

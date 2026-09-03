@@ -1,6 +1,6 @@
 import { db, controlTestCampaign, controlTest, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, count } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

@@ -1,4 +1,4 @@
-import { db, grcRoiCalculation, grcCostEntry } from "@grc/db";
+import { grcRoiCalculation, grcCostEntry } from "@grc/db";
 import { roiRecomputeSchema } from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

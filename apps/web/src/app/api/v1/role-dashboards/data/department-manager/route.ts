@@ -1,5 +1,4 @@
 import { db } from "@grc/db";
-import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { departmentManagerDashboardQuerySchema } from "@grc/shared";
@@ -11,7 +10,13 @@ async function GET__ctx(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = departmentManagerDashboardQuerySchema.parse(
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] Das Ergebnis der
+  // Pruefung wird bewusst NICHT gebunden: die Route wertet die validierten
+  // Parameter nicht aus. Der `parse`-Aufruf bleibt stehen, weil er die
+  // EINGABEPRUEFUNG ist (ungueltige Werte werden weiterhin abgewiesen); dass
+  // die Werte danach nirgends wirken, ist ein eigener Befund und steht als
+  // OP-176 im Register.
+  departmentManagerDashboardQuerySchema.parse(
     Object.fromEntries(url.searchParams),
   );
 

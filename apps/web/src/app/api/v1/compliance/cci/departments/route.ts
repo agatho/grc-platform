@@ -1,5 +1,5 @@
 import { db, complianceCultureSnapshot } from "@grc/db";
-import { eq, and, isNotNull, desc, sql } from "drizzle-orm";
+import { eq, and, isNotNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { cciDepartmentsQuerySchema } from "@grc/shared";
 import type {

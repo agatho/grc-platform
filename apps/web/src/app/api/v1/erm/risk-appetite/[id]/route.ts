@@ -1,4 +1,4 @@
-import { db, riskAppetiteThreshold } from "@grc/db";
+import { riskAppetiteThreshold } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { updateRiskAppetiteThresholdSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";

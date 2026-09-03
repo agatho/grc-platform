@@ -8,7 +8,7 @@ import { updateFindingSlaConfigSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/ics/finding-sla — Get SLA config for org
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

@@ -7,7 +7,7 @@ import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/roni/overview — Aggregated RONI across all entities
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 

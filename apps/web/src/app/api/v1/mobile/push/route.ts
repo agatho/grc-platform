@@ -1,5 +1,5 @@
 import { db, pushNotification, deviceRegistration } from "@grc/db";
-import { sendPushNotificationSchema, bulkSendPushSchema } from "@grc/shared";
+import { sendPushNotificationSchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

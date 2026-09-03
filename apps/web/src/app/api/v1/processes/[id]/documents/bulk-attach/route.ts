@@ -85,7 +85,7 @@ export const POST = withErrorHandler(async function POST(
             inArray(processDocument.documentId, parsed.data.documentIds),
           ),
         );
-      const skip = new Set(existingLinks.map((l: any) => l.documentId));
+      const skip = new Set(existingLinks.map((l) => l.documentId));
       const toInsert = parsed.data.documentIds.filter((did) => !skip.has(did));
       if (toInsert.length === 0) {
         return {

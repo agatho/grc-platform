@@ -35,6 +35,7 @@ import {
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const PROBLEM_BASE = "https://arctos.charliehund.de/errors";
 
@@ -76,10 +77,7 @@ async function approvalIsValid(
     ) as { ok: boolean }[];
     return list[0]?.ok === true;
   } catch (err) {
-    console.error(
-      "[export/bulk] approval check failed:",
-      err instanceof Error ? err.message : String(err),
-    );
+    log.error("[export/bulk] approval check failed", { err });
     return false;
   }
 }
@@ -205,7 +203,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       );
     }
     // #SEC-LEAK-FIX: don't echo err.message back to the client.
-    console.error("[export/bulk] failed", err);
+    log.error("[export/bulk] failed", { err });
     return Response.json({ error: "Bulk export failed" }, { status: 500 });
   }
 });

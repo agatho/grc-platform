@@ -2,12 +2,7 @@ import { db, cloudTestExecution, cloudTestSuite } from "@grc/db";
 import { triggerCloudTestSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

@@ -3,12 +3,7 @@ import { createVersionSchema } from "@grc/shared";
 import { parseBpmnXml, computeBpmnDiff } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext } from "@/lib/api";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 import {
   upsertWorkingVersion,
@@ -20,6 +15,7 @@ import {
 import { withErrorHandler } from "@/lib/api-wrapper";
 // [ARCTOS-FULL-2026-08-31 · OP-002] siehe `../../_lib/bpmn-lanes.ts`.
 import { syncProcessLanes } from "../../_lib/sync-process-lanes";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/processes/:id/versions — Save BPMN as new version
 export const POST = withErrorHandler(async function POST(
@@ -246,7 +242,7 @@ export const POST = withErrorHandler(async function POST(
         stepIdByBpmnElement,
       });
     } catch (e) {
-      console.error("process_lane sync failed", e);
+      log.error("[processes/versions] process_lane sync failed", { err: e });
     }
 
     // BPM Overhaul Phase 5 P5: rehydrate DB cross-links from arctos:*
@@ -261,7 +257,7 @@ export const POST = withErrorHandler(async function POST(
         stepIdByBpmnElement,
       });
     } catch (e) {
-      console.error("arctos rehydrate failed", e);
+      log.error("[processes/versions] arctos rehydrate failed", { err: e });
     }
 
     return version;

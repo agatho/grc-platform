@@ -24,6 +24,10 @@ function clamp(n: number, lo = 0, hi = 100) {
   return Math.max(lo, Math.min(hi, n));
 }
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Alle fuenf Abfragen liefern
+// ausschliesslich `::int`-Spalten; mehr behauptet dieser Typ nicht.
+type IntRow = Record<string, number>;
+
 export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -62,7 +66,7 @@ export const GET = withErrorHandler(async function GET(
         WHERE ps.process_id = ${id}
       ) AS uniq
       JOIN risk r ON r.id = uniq.risk_id AND r.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [controls] = (await tx.execute(sql`
       SELECT
@@ -77,7 +81,7 @@ export const GET = withErrorHandler(async function GET(
         WHERE ps.process_id = ${id}
       ) AS uniq
       JOIN control c ON c.id = uniq.control_id AND c.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [findings] = (await tx.execute(sql`
       SELECT
@@ -90,7 +94,7 @@ export const GET = withErrorHandler(async function GET(
           f.process_id = ${id}
           OR f.process_step_id IN (SELECT id FROM process_step WHERE process_id = ${id})
         )
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [maturity] = (await tx.execute(sql`
       SELECT overall_level::int AS level
@@ -98,13 +102,13 @@ export const GET = withErrorHandler(async function GET(
       WHERE process_id = ${id} AND org_id = ${ctx.orgId}
       ORDER BY assessment_date DESC
       LIMIT 1
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [steps] = (await tx.execute(sql`
       SELECT COUNT(*)::int AS total
       FROM process_step
       WHERE process_id = ${id} AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     return { risks, controls, findings, maturity, steps };
   });

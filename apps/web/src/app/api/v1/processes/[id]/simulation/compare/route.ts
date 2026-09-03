@@ -10,7 +10,12 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 // GET /api/v1/processes/:id/simulation/compare?scenarioA=...&scenarioB=...
 export const GET = withErrorHandler(async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-180] Das Pfadsegment
+  // `:id` (der Prozess) wird nicht ausgewertet; verglichen werden zwei
+  // Szenarien allein nach `?scenarioA/B=` und `org_id`. Zwei Szenarien
+  // VERSCHIEDENER Prozesse derselben Organisation lassen sich darueber
+  // gegeneinanderstellen. Signatur bleibt, Befund als OP-180 im Register.
+  _context: { params: Promise<{ id: string }> },
 ) {
   const ctx = await withAuth("admin", "process_owner", "viewer");
   if (ctx instanceof Response) return ctx;

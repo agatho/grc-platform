@@ -1,5 +1,5 @@
 import { db, controlEffectivenessScore, control } from "@grc/db";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { sql, count } from "drizzle-orm";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

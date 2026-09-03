@@ -1,4 +1,4 @@
-import { db, userCustomRole } from "@grc/db";
+import { userCustomRole } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

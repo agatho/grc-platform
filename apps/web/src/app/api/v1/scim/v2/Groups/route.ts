@@ -40,6 +40,15 @@ function scimResponse(data: unknown, status = 200) {
 }
 
 // GET /api/v1/scim/v2/Groups — List groups
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenformen der rohen
+// SCIM-Abfragen, aus ihren SELECT-Listen benannt.
+type GroupRow = {
+  id: string;
+  name: string | null;
+  created_at: Date | string | null;
+  updated_at: Date | string | null;
+};
+
 export async function GET(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
@@ -77,7 +86,7 @@ export async function GET(req: Request) {
       WHERE org_id = ${authCtx.orgId} AND deleted_at IS NULL
     `);
 
-        const resources = (groups as any[]).map((g) => ({
+        const resources = (groups as unknown as GroupRow[]).map((g) => ({
           schemas: [SCIM_GROUP_SCHEMA],
           id: g.id,
           displayName: g.name,
@@ -137,7 +146,7 @@ export async function POST(req: Request) {
       INSERT INTO user_group (org_id, name, created_at, updated_at)
       VALUES (${authCtx.orgId}, ${parsed.data.displayName}, now(), now())
       RETURNING id, name, created_at, updated_at
-    `)) as any[];
+    `)) as unknown as GroupRow[];
 
         // Add members if provided
         if (parsed.data.members?.length) {

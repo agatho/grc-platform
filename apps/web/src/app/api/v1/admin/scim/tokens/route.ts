@@ -1,5 +1,5 @@
 import { db, scimToken } from "@grc/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createScimTokenSchema } from "@grc/shared";
 import {
@@ -14,7 +14,7 @@ import {
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/scim/tokens — List SCIM tokens for current org
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

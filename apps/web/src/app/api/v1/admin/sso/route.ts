@@ -1,5 +1,5 @@
 import { db, ssoConfig } from "@grc/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import {
   createSsoConfigSchema,
@@ -56,7 +56,7 @@ function describeSamlCertificate(pem: string | null) {
 }
 
 // GET /api/v1/admin/sso — Get SSO configuration for current org
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -191,7 +191,7 @@ export const PUT = withErrorHandler(async function PUT(req: Request) {
   return Response.json({ data: maskSsoSecret(result) });
 });
 // DELETE /api/v1/admin/sso — Delete (soft) SSO configuration
-export const DELETE = withErrorHandler(async function DELETE(req: Request) {
+export const DELETE = withErrorHandler(async function DELETE(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

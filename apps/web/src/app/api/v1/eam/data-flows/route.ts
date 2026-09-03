@@ -1,5 +1,5 @@
 import { db, dataFlow } from "@grc/db";
-import { createDataFlowSchema, updateDataFlowSchema } from "@grc/shared";
+import { createDataFlowSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

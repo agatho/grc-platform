@@ -17,6 +17,7 @@ import {
   notification,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
+import type { GateBlocker } from "@/lib/process-gates";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import {
@@ -43,7 +44,7 @@ const bulkSchema = z.object({
 interface PerProcessResult {
   processId: string;
   status: "approved" | "skipped" | "error";
-  blockers?: any[];
+  blockers?: GateBlocker[];
   error?: string;
   newStatus?: string;
 }

@@ -1,5 +1,4 @@
 import { db, sovereigntyAuditLog } from "@grc/db";
-import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { listSovereigntyAuditLogQuerySchema } from "@grc/shared";

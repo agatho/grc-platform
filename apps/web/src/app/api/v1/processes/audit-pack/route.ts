@@ -38,6 +38,70 @@ const schema = z.object({
 // it is an availability risk.
 const AUDIT_PACK_MAX_PROCESSES = 250;
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+//
+// Die sechs Abfragen dieser Route laufen ueber `tx.execute(sql`…`)`. Drizzle
+// kann fuer rohes SQL keine Zeilenform ableiten; bis Welle 4b stand deshalb
+// ueberall `as any[]`, und damit war JEDER Feldzugriff darunter ungeprueft —
+// ein Tippfehler in `r.line_of_defense` haette schweigend `undefined` in die
+// RACM-CSV geschrieben.
+//
+// Die Form wird hier aus der SELECT-Liste der jeweiligen Abfrage benannt.
+// Das bleibt eine Zusicherung (`as unknown as …`) und keine Ableitung — die
+// Datenbank kann sie nicht bestaetigen —, aber sie ist UEBERPRUEFBAR: sie
+// steht neben der Abfrage, und wer die SELECT-Liste aendert, sieht die
+// Zeilenform daneben. Genau das ist der Unterschied zu `any`, das gar nichts
+// behauptet. Spalten, die der Treiber je nach Konfiguration als `Date` oder
+// als `string` liefert, sind als Vereinigung genannt statt erfunden.
+
+type ProcessRow = {
+  id: string;
+  name: string;
+  department: string | null;
+  status: string;
+};
+
+type MetaRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  department: string | null;
+  status: string;
+  current_version: number | string | null;
+  published_at: Date | string | null;
+  owner: string | null;
+  reviewer: string | null;
+};
+
+type SignOffRow = {
+  process_id: string;
+  signer_role: string;
+  signoff_type: string;
+  signed_at: Date | string | null;
+  comments: string | null;
+  chain_hash: string | null;
+};
+
+type MappingRow = {
+  process_id: string;
+  framework_code: string | null;
+  entry_code: string | null;
+  entry_title: string | null;
+  mapping_strength: string | null;
+};
+
+type RacmRow = {
+  process_id: string;
+  bpmn_element_id: string | null;
+  step_name: string | null;
+  line_of_defense: string | null;
+  /** `json_agg(…)` liefert `null`, wenn es keine verknuepfte Zeile gibt. */
+  risks: string[] | null;
+  controls: string[] | null;
+};
+
+type XmlRow = { process_id: string; bpmn_xml: string | null };
+
 /** `IN (…)` list for a raw SQL fragment. */
 function idList(ids: string[]) {
   return sql.join(
@@ -77,12 +141,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   }
 
   // Resolve target processes: explicit IDs, OR all published + filtered by framework code
-  let processes: {
-    id: string;
-    name: string;
-    department: string | null;
-    status: string;
-  }[];
+  let processes: ProcessRow[];
   if (parsed.data.processIds?.length) {
     processes = await db
       .select({
@@ -109,7 +168,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
           AND p.status = 'published'
           AND p.deleted_at IS NULL
           AND pfm.framework_code = ${parsed.data.frameworkCode}
-      `)) as any[];
+      `)) as unknown as ProcessRow[];
     });
   } else {
     processes = await db
@@ -151,20 +210,20 @@ export const POST = withErrorHandler(async function POST(req: Request) {
              (SELECT u.name FROM "user" u WHERE u.id = p.process_owner_id) AS owner,
              (SELECT u.name FROM "user" u WHERE u.id = p.reviewer_id) AS reviewer
       FROM process p WHERE p.id IN (${idList(processIds)})
-    `)) as any[];
+    `)) as unknown as MetaRow[];
 
     const signOffRows = (await tx.execute(sql`
       SELECT process_id, signer_role, signoff_type, signed_at, comments, chain_hash
       FROM process_sign_off
       WHERE process_id IN (${idList(processIds)})
       ORDER BY process_id, signed_at
-    `)) as any[];
+    `)) as unknown as SignOffRow[];
 
     const mappingRows = (await tx.execute(sql`
       SELECT process_id, framework_code, entry_code, entry_title, mapping_strength
       FROM process_framework_mapping
       WHERE process_id IN (${idList(processIds)})
-    `)) as any[];
+    `)) as unknown as MappingRow[];
 
     const racmRows = (await tx.execute(sql`
       SELECT ps.process_id, ps.bpmn_element_id, ps.name AS step_name, ps.line_of_defense,
@@ -177,28 +236,22 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       FROM process_step ps
       WHERE ps.process_id IN (${idList(processIds)}) AND ps.deleted_at IS NULL
       ORDER BY ps.process_id, ps.sequence_order
-    `)) as any[];
+    `)) as unknown as RacmRow[];
 
     const xmlRows = (await tx.execute(sql`
       SELECT process_id, bpmn_xml FROM process_version
       WHERE process_id IN (${idList(processIds)}) AND is_current = true
-    `)) as any[];
+    `)) as unknown as XmlRow[];
 
     return { metaRows, signOffRows, mappingRows, racmRows, xmlRows };
   });
 
-  const metaById = new Map(batch.metaRows.map((r: any) => [r.id, r]));
-  const signOffsByProcess = groupBy(
-    batch.signOffRows,
-    (r: any) => r.process_id,
-  );
-  const mappingsByProcess = groupBy(
-    batch.mappingRows,
-    (r: any) => r.process_id,
-  );
-  const racmByProcess = groupBy(batch.racmRows, (r: any) => r.process_id);
+  const metaById = new Map(batch.metaRows.map((r) => [r.id, r] as const));
+  const signOffsByProcess = groupBy(batch.signOffRows, (r) => r.process_id);
+  const mappingsByProcess = groupBy(batch.mappingRows, (r) => r.process_id);
+  const racmByProcess = groupBy(batch.racmRows, (r) => r.process_id);
   const xmlByProcess = new Map(
-    batch.xmlRows.map((r: any) => [r.process_id, r.bpmn_xml]),
+    batch.xmlRows.map((r) => [r.process_id, r.bpmn_xml] as const),
   );
 
   const zip = new JSZip();
@@ -251,7 +304,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     // title starting with `=`/`+`/`-`/`@` was exported as a live formula.
     const racmCsv = [
       toCsvRow(["Activity", "LineOfDefense", "Risks", "Controls"]),
-      ...meta.racmRows.map((r: any) =>
+      ...meta.racmRows.map((r) =>
         toCsvRow([
           r.step_name ?? r.bpmn_element_id,
           r.line_of_defense ?? "",
@@ -267,7 +320,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       "framework-mappings.csv",
       [
         toCsvRow(["Framework", "EntryCode", "Title", "Strength"]),
-        ...meta.mappings.map((m: any) =>
+        ...meta.mappings.map((m) =>
           toCsvRow([
             m.framework_code ?? "",
             m.entry_code ?? "",
@@ -283,7 +336,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       "sign-off-chain.txt",
       meta.signOffs
         .map(
-          (s: any) =>
+          (s) =>
             `${s.signed_at}  ${s.signoff_type.padEnd(10)} ${s.signer_role.padEnd(20)} chain:${s.chain_hash?.slice(0, 16) ?? ""}\n${s.comments ?? ""}`,
         )
         .join("\n\n"),

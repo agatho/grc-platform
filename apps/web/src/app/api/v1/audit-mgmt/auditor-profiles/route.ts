@@ -1,7 +1,7 @@
 import { db, auditorProfile } from "@grc/db";
 import { createAuditorProfileSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

@@ -1,4 +1,3 @@
-import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

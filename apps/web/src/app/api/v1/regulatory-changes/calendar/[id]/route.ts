@@ -1,4 +1,4 @@
-import { db, regulatoryCalendarEvent } from "@grc/db";
+import { regulatoryCalendarEvent } from "@grc/db";
 import { updateCalendarEventSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

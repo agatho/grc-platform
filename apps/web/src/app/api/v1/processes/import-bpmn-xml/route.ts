@@ -1,10 +1,9 @@
 // BPM Overhaul Phase 5: dedicated standalone import endpoint.
 // Creates a new process from a BPMN XML payload + rehydrates arctos:* metadata.
 
-import { db, process, processVersion, processStep } from "@grc/db";
+import { process, processVersion, processStep } from "@grc/db";
 import { parseBpmnXml } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 import { z } from "zod";
@@ -18,6 +17,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 // Lane-Zugehoerigkeit eines Schritts wurde in `packages/bpmn` geometrisch
 // geraten. Siehe `_lib/bpmn-lanes.ts`.
 import { syncProcessLanes } from "../_lib/sync-process-lanes";
+import { log } from "@/lib/logger";
 
 const importSchema = z.object({
   name: z.string().min(3).max(500),
@@ -114,7 +114,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
           stepIdByBpmnElement,
         });
       } catch (e) {
-        console.error("process_lane sync during import failed", e);
+        log.error("[processes/import-bpmn-xml] process_lane sync failed", {
+          err: e,
+        });
       }
 
       // Rehydrate arctos:* metadata
@@ -129,7 +131,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
           stepIdByBpmnElement,
         });
       } catch (e) {
-        console.error("arctos rehydrate during import failed", e);
+        log.error("[processes/import-bpmn-xml] arctos rehydrate failed", {
+          err: e,
+        });
       }
 
       return {

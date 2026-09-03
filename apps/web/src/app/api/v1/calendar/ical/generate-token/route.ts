@@ -9,7 +9,7 @@ import { hashOpaqueToken } from "@grc/auth/anonymous-token";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/calendar/ical/generate-token — Generate iCal token for current user
-export const POST = withErrorHandler(async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

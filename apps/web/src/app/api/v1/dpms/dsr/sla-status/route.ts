@@ -8,6 +8,14 @@ import { withAuth, withReadContext } from "@/lib/api";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type DsrSlaRow = {
+  sla_status: "closed" | "overdue" | "due_soon" | "on_track";
+  days_remaining: number | null;
+  [column: string]: unknown;
+};
+
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -38,17 +46,14 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     `);
   });
 
-  const overdue = (data as any[]).filter(
-    (r) => r.sla_status === "overdue",
-  ).length;
-  const dueSoon = (data as any[]).filter(
-    (r) => r.sla_status === "due_soon",
-  ).length;
+  const rows = data as unknown as DsrSlaRow[];
+  const overdue = rows.filter((r) => r.sla_status === "overdue").length;
+  const dueSoon = rows.filter((r) => r.sla_status === "due_soon").length;
 
   return Response.json({
     data: {
       requests: data,
-      summary: { total: (data as any[]).length, overdue, dueSoon },
+      summary: { total: rows.length, overdue, dueSoon },
     },
   });
 });

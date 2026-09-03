@@ -1,5 +1,5 @@
 import { db, communityEditionConfig } from "@grc/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { upsertCommunityEditionConfigSchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -8,7 +8,7 @@ import { upsertCommunityEditionConfigSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/community/edition-config
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

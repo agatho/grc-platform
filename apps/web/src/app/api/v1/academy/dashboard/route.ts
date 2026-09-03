@@ -4,7 +4,7 @@ import {
   academyEnrollment,
   academyCertificate,
 } from "@grc/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { academyDashboardQuerySchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -18,9 +18,13 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = academyDashboardQuerySchema.parse(
-    Object.fromEntries(url.searchParams),
-  );
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-176] Das Ergebnis der
+  // Pruefung wird bewusst NICHT gebunden: die Route wertet die validierten
+  // Parameter nicht aus. Der `parse`-Aufruf bleibt stehen, weil er die
+  // EINGABEPRUEFUNG ist (ungueltige Werte werden weiterhin abgewiesen); dass
+  // die Werte danach nirgends wirken, ist ein eigener Befund und steht als
+  // OP-176 im Register.
+  academyDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
 
   const [courseStats] = await db
     .select({

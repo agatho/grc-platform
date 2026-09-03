@@ -35,12 +35,10 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const {
-    page,
-    limit: rawLimit,
-    offset: rawOffset,
-    searchParams,
-  } = paginate(req);
+  // `paginate` liefert auch `limit`/`offset`; beide werden hier durch die
+  // eigene Vorgabe (25 statt der Standardgroesse) ersetzt und deshalb gar
+  // nicht erst entnommen.
+  const { page, searchParams } = paginate(req);
 
   // Override default page size to 25
   const limit = Math.min(

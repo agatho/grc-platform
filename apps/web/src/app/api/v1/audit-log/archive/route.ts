@@ -1,4 +1,4 @@
-import { db, auditLog, auditAnchor, organization } from "@grc/db";
+import { db, auditAnchor, organization } from "@grc/db";
 import { and, eq, sql, gte, lte, asc } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import JSZip from "jszip";

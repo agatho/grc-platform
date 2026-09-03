@@ -1,4 +1,4 @@
-import { db, toRows, firstRow } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";

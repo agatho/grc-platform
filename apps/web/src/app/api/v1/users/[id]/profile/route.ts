@@ -1,5 +1,4 @@
 import { cookies } from "next/headers";
-import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { withAuth, withAuditContext } from "@/lib/api";

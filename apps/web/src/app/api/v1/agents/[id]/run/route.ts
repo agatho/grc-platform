@@ -159,15 +159,15 @@ async function observePhase(agent: typeof agentRegistration.$inferSelect) {
 }
 
 async function evaluatePhase(
-  agent: typeof agentRegistration.$inferSelect,
-  observation: Record<string, unknown>,
+  _agent: typeof agentRegistration.$inferSelect,
+  _observation: Record<string, unknown>,
 ) {
   return { phase: "evaluate", significantFindings: 0, riskLevel: "low" };
 }
 
 async function recommendPhase(
-  agent: typeof agentRegistration.$inferSelect,
-  evaluation: Record<string, unknown>,
+  _agent: typeof agentRegistration.$inferSelect,
+  _evaluation: Record<string, unknown>,
 ) {
   // Returns empty recommendations by default; real implementation uses AI
   return [] as {

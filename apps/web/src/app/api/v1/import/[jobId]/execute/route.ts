@@ -6,6 +6,7 @@ import { executeImport } from "@/lib/import-export/import-executor";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/import/:jobId/execute — Run import in single transaction
 export const POST = withErrorHandler(async function POST(
@@ -114,7 +115,7 @@ export const POST = withErrorHandler(async function POST(
     // the error detail for the admin who triggered the job (visible
     // via GET /api/v1/import/{jobId}). The response body itself stays
     // generic so the detail isn't double-emitted to the network.
-    console.error("[import/execute] failed", err);
+    log.error("[import/execute] failed", { err });
     return Response.json({ error: "Import execution failed" }, { status: 500 });
   }
 });

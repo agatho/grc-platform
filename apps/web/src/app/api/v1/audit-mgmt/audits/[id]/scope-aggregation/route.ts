@@ -10,6 +10,11 @@ import { withAuth, withReadContext } from "@/lib/api";
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
 
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die drei Aggregate liefern
+// Bezeichner als Text und alle Zaehler als `::int`; die Risikobewertungen
+// kommen aus `risk` und koennen `null` sein.
+type AggregateRow = Record<string, string | number | null>;
+
 export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -50,7 +55,7 @@ export const GET = withErrorHandler(async function GET(
       WHERE p.org_id = ${ctx.orgId} AND p.deleted_at IS NULL
       GROUP BY p.id, p.name, p.department
       ORDER BY critical_count DESC, finding_count DESC
-    `)) as any[];
+    `)) as unknown as AggregateRow[];
 
     const byControl = (await tx.execute(sql`
       SELECT
@@ -65,7 +70,7 @@ export const GET = withErrorHandler(async function GET(
       WHERE c.org_id = ${ctx.orgId} AND c.deleted_at IS NULL
       GROUP BY c.id, c.title, c.status
       ORDER BY critical_count DESC, finding_count DESC
-    `)) as any[];
+    `)) as unknown as AggregateRow[];
 
     const relatedRisks = (await tx.execute(sql`
       SELECT DISTINCT r.id, r.title, r.risk_score_inherent, r.risk_score_residual
@@ -74,7 +79,7 @@ export const GET = withErrorHandler(async function GET(
       WHERE r.org_id = ${ctx.orgId} AND r.deleted_at IS NULL
       ORDER BY r.risk_score_residual DESC NULLS LAST
       LIMIT 50
-    `)) as any[];
+    `)) as unknown as AggregateRow[];
 
     return { byProcess, byControl, relatedRisks };
   });

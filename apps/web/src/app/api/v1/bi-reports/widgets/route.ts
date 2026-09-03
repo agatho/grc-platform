@@ -1,6 +1,6 @@
 import { db, biReportWidget, biReport } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createBiReportWidgetSchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

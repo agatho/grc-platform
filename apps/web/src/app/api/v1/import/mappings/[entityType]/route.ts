@@ -32,7 +32,12 @@ export const GET = withErrorHandler(async function GET(
 // DELETE /api/v1/import/mappings/:entityType (with id query param)
 export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ entityType: string }> },
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-180] Das Pfadsegment
+  // `:entityType` wird von DIESEM Handler nicht ausgewertet; geloescht wird
+  // allein nach `?id=` und `org_id`. Die Signatur bleibt stehen, weil sie
+  // die Route beschreibt; dass die URL mehr verspricht, als der Handler
+  // prueft, steht als OP-180 im Register.
+  _context: { params: Promise<{ entityType: string }> },
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;

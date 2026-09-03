@@ -24,7 +24,6 @@
 import {
   db,
   controlMaturity,
-  control,
   catalogEntry,
   catalog,
   orgActiveCatalog,
@@ -32,7 +31,7 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
   parseQueryParams,

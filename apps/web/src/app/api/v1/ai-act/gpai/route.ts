@@ -1,11 +1,10 @@
-import { db, toRows, firstRow } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   withAuth,
   withAuditContext,
   withReadContext,
   paginate,
-  paginatedResponse,
 } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { createAiGpaiModelSchema } from "@grc/shared";
@@ -13,6 +12,12 @@ import { createAiGpaiModelSchema } from "@grc/shared";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+
+/**
+ * `COUNT(*)` ist in Postgres `bigint`; der Treiber liefert es als
+ * Zeichenkette. [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+ */
+type CountRow = { count: string | number };
 
 export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
@@ -51,8 +56,8 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       tx.execute(countQuery),
     ]);
     const rows = toRows(r);
-    const countArr = toRows(c);
-    return { rows, count: Number((countArr[0] as any)?.count ?? 0) };
+    const countArr = toRows(c) as unknown as CountRow[];
+    return { rows, count: Number(countArr[0]?.count ?? 0) };
   });
   return Response.json({
     data: result.rows,

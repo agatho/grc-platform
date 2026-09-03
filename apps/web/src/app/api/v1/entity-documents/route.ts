@@ -1,4 +1,4 @@
-import { db, documentEntityLink, document } from "@grc/db";
+import { db, documentEntityLink } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";

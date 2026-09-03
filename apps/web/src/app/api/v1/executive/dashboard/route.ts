@@ -1,7 +1,6 @@
 import {
   db,
   controlEffectivenessScore,
-  control,
   risk,
   finding,
   findingSlaConfig,
@@ -15,7 +14,7 @@ import { isWithinSla } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/executive/dashboard — Cross-module KPI summary
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 

@@ -1,4 +1,4 @@
-import { db, dataFlow, architectureElement } from "@grc/db";
+import { db, dataFlow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

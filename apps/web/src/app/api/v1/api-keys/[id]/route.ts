@@ -1,5 +1,5 @@
 import { db, apiKey, apiKeyScope } from "@grc/db";
-import { updateApiKeySchema, revokeApiKeySchema } from "@grc/shared";
+import { updateApiKeySchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

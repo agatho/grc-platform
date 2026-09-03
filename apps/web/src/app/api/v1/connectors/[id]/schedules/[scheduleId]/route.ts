@@ -1,4 +1,4 @@
-import { db, connectorSchedule } from "@grc/db";
+import { connectorSchedule } from "@grc/db";
 import { updateConnectorScheduleSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";

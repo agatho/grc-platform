@@ -1,9 +1,4 @@
-import {
-  db,
-  questionnaireTemplate,
-  questionnaireSection,
-  questionnaireQuestion,
-} from "@grc/db";
+import { db, questionnaireTemplate, questionnaireSection } from "@grc/db";
 import { publishTemplateSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";

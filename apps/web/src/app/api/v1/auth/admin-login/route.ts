@@ -1,5 +1,5 @@
 import { db, userOrganizationRole, ssoConfig } from "@grc/db";
-import { eq, and, isNull, inArray, sql } from "drizzle-orm";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 import { compare } from "bcryptjs";
 import { breakGlassLoginSchema } from "@grc/shared";
 import {

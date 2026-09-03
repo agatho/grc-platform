@@ -1,7 +1,7 @@
 import { db, eamOrgUnit } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createOrgUnitSchema, updateOrgUnitSchema } from "@grc/shared";
-import { eq, and, desc, isNull } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

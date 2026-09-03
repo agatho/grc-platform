@@ -1,4 +1,4 @@
-import { db, task, user, userOrganizationRole, notification } from "@grc/db";
+import { db, task, userOrganizationRole, notification } from "@grc/db";
 import { createTaskSchema } from "@grc/shared";
 import {
   eq,

@@ -1,7 +1,7 @@
 import { db, frameworkMappingRule } from "@grc/db";
 import { createMappingRuleSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, count, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,

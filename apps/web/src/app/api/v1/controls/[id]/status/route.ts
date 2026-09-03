@@ -1,10 +1,4 @@
-import {
-  db,
-  control,
-  workItem,
-  notification,
-  userOrganizationRole,
-} from "@grc/db";
+import { db, control, workItem, notification } from "@grc/db";
 import {
   controlStatusTransitionSchema,
   VALID_CONTROL_TRANSITIONS,

@@ -5,7 +5,7 @@ import {
   controlTestChecklist,
   controlTestLearning,
 } from "@grc/db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -13,7 +13,7 @@ import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/control-testing/dashboard
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth(
     "admin",
     "control_owner",

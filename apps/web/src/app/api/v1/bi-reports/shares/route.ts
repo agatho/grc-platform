@@ -1,6 +1,6 @@
 import { db, biSharedDashboard, biReport } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createBiShareSchema } from "@grc/shared";
 import { randomBytes } from "crypto";

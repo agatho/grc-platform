@@ -1,6 +1,6 @@
 import { db, cveAssetMatch, cveFeedItem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, gte } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the

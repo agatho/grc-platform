@@ -9,7 +9,7 @@ import type { CCIFactorScores, CCIRawMetrics, CCIFactorKey } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/compliance/cci/export-pdf — PDF export (returns JSON summary for now)
-export const POST = withErrorHandler(async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 

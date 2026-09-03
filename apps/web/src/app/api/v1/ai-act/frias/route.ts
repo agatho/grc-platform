@@ -1,6 +1,6 @@
 import { db, aiFria } from "@grc/db";
 import { createAiFriaSchema } from "@grc/shared";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

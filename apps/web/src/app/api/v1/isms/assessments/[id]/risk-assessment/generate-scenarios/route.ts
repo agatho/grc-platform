@@ -31,7 +31,7 @@ import {
   assessmentRiskEval,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()

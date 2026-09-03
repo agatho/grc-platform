@@ -16,6 +16,7 @@ import { reverseSyncSubtaskCompletion } from "@grc/db";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const patchSubtaskSchema = z
   .object({
@@ -122,7 +123,7 @@ export const PATCH = withErrorHandler(async function PATCH(
     try {
       soaSync = await reverseSyncSubtaskCompletion(db, subtaskId, ctx.orgId);
     } catch (err) {
-      console.error("[subtask PATCH] reverse SoA sync failed", err);
+      log.error("[subtask PATCH] reverse SoA sync failed", { err });
     }
   }
 

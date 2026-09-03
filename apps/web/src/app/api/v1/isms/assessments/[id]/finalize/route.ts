@@ -17,7 +17,6 @@ import {
   finding,
   control,
   catalogEntry,
-  soaEntry,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, inArray, sql } from "drizzle-orm";

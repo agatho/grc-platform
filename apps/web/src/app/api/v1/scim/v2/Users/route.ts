@@ -30,7 +30,7 @@ import {
   scimSyncLog,
   runWithRequestContext,
 } from "@grc/db";
-import { eq, and, isNull, sql, ilike } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
 import {
   scimToArctosUser,
@@ -52,6 +52,20 @@ function scimResponse(data: unknown, status = 200) {
 }
 
 // GET /api/v1/scim/v2/Users — List users (SCIM)
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform der rohen
+// SCIM-Abfrage, aus ihrer SELECT-Liste benannt.
+type ScimUserRow = {
+  id: string;
+  email: string;
+  // `user.name`, `user.is_active`, `created_at` und `updated_at` sind in
+  // `packages/db/src/schema/platform.ts` NOT NULL; nur `external_id` nicht.
+  name: string;
+  external_id: string | null;
+  is_active: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
+};
+
 export async function GET(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
@@ -123,7 +137,7 @@ export async function GET(req: Request) {
       AND ${filterCondition}
   `);
 
-      const resources = (items as any[]).map((row) =>
+      const resources = (items as unknown as ScimUserRow[]).map((row) =>
         arctosToScimUser(
           {
             id: row.id,
@@ -168,7 +182,25 @@ export async function POST(req: Request) {
       const baseUrl = getBaseUrl();
 
       try {
-        const arctosUser = scimToArctosUser(parsed.data as any);
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Hier stand
+        // `parsed.data as any`. Die Zusicherung verdeckte einen echten
+        // Formunterschied: `scimCreateUserSchema` fuehrt `emails` als
+        // optional und `type`/`primary` je Eintrag als optional, waehrend
+        // `ScimUser` beide verlangt. Statt die Pruefung abzuschalten wird
+        // die Luecke hier geschlossen — mit den Vorgaben aus RFC 7643 §2.4
+        // (`primary` fehlt = false) und ohne einen `type` zu erfinden.
+        const arctosUser = scimToArctosUser({
+          ...parsed.data,
+          emails: (parsed.data.emails ?? []).map((e) => ({
+            value: e.value,
+            type: e.type ?? "",
+            primary: e.primary === true,
+          })),
+          groups: parsed.data.groups?.map((g) => ({
+            value: g.value,
+            display: g.display ?? "",
+          })),
+        });
 
         // Check if user already exists
         const [existing] = await db

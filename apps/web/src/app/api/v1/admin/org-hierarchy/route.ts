@@ -1,5 +1,5 @@
 import { db, organization } from "@grc/db";
-import { eq, isNull, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { setParentOrgSchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -8,7 +8,7 @@ import { setParentOrgSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/org-hierarchy — Get org tree
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 

@@ -10,6 +10,7 @@ import { withAuth } from "@/lib/api";
 // row — the C-01 shape of the first triage round, which this file and 14 other
 // route files were missed by.
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // Stub services for dry-run — no real actions executed
 const dryRunServices = {
@@ -82,7 +83,7 @@ export const POST = withErrorHandler(async function POST(
     // and returns only a generic body. requestId in the response would
     // require withErrorHandler; for this manual catch we surface a
     // static message and rely on Docker logs for diagnosis.
-    console.error("[automation/rules/[id]/test] dry-run failed", err);
+    log.error("[automation/rules/test] dry-run failed", { err });
     return Response.json({ error: "Dry-run failed" }, { status: 500 });
   }
 });

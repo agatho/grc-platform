@@ -1,4 +1,4 @@
-import { db, technologyEntry, technologyApplicationLink } from "@grc/db";
+import { db, technologyEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

@@ -9,7 +9,7 @@ import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/kris/export -- Export all KRIs as CSV
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 

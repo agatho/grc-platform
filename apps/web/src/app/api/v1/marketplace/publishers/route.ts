@@ -1,5 +1,5 @@
 import { db, marketplacePublisher } from "@grc/db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createMarketplacePublisherSchema } from "@grc/shared";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
@@ -8,7 +8,7 @@ import { createMarketplacePublisherSchema } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/marketplace/publishers
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

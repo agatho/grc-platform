@@ -11,7 +11,6 @@ import {
   ilike,
   inArray,
   or,
-  sql,
 } from "drizzle-orm";
 import {
   withAuth,

@@ -6,7 +6,7 @@ import { AVAILABLE_ENTITY_TYPES, AVAILABLE_EVENT_TYPES } from "@grc/shared";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/webhooks/event-types — Available event types for webhook filter UI
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
