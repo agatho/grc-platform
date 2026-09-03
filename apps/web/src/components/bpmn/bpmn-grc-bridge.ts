@@ -19,7 +19,7 @@
  * | `elements[].findings` | `GET /processes/:id/findings` | Schwere und Status ja, `dueAt` nein |
  * | `elements[].lineOfDefense` | `process.steps[].lineOfDefense` | vollständig |
  * | `elements[].calledProcess` | `GET /processes/:id/call-links` | ohne `rollup` |
- * | alle übrigen Felder | — | leer, mit Bedarfsvermerk in `MISSING_TODAY` |
+ * | alle übrigen Felder | — | leer, mit Bedarfsvermerk in `BRIDGE_LIMITS` |
  *
  * **Die eine ehrliche Einschränkung, die man nicht übersehen darf.**
  * `control-coverage` liefert je Aktivität nur `controlCount` und
@@ -111,68 +111,80 @@ export interface BuildOverlayDataInput {
 }
 
 /* ------------------------------------------------------------------ *
- * Was heute fehlt — als Datum, nicht als Kommentar
+ * Was DIESER Weg nicht kann — und was nur er nicht kann
  * ------------------------------------------------------------------ */
 
 /**
- * Vertragsfelder, die diese Brücke **nicht** befüllen kann, mit dem Grund.
+ * [ARCTOS-FULL-2026-08-31 · OP-160] **Hier stand eine zweite, veraltete Liste.**
  *
- * Bewusst eine auswertbare Liste und kein Fließtext: sie steht so auch im
- * Protokoll, und ein Test kann prüfen, dass jedes hier genannte Feld im
- * Ergebnis tatsächlich fehlt statt still mit einem Ersatzwert dazustehen.
+ * Bis zu dieser Welle führte diese Datei ein eigenes `MISSING_TODAY` mit zehn
+ * Einträgen. Acht davon waren gegen den Code nachweislich falsch — sie
+ * behaupteten fehlende Tabellen und Spalten, die es seit den Migrationen
+ * `0444`–`0454` gibt:
+ *
+ * | Behauptung der alten Liste | Wirklichkeit |
+ * |---|---|
+ * | „Es gibt keine Lane-Tabelle (`process_lane`) und keine SoD-Regelmenge (`sod_rule`)" | `0444_process_lane.sql`, `0446_sod_rule.sql` |
+ * | „`process_step_raci` fehlt" | `0447_process_step_raci.sql` |
+ * | „`process_step.step_key` existiert nicht" | `0445_process_step_identity.sql`; `grc-overlay.ts` liefert `stepKey` |
+ * | „`finding.due_at` existiert im Schema nicht" | `grc-overlay.ts:856` liefert `dueAt` |
+ * | „`process_step_ropa`, `_bia`, `_document` fehlen" | `0448`, `0449`, `0450` |
+ * | „ohne `process_event_activity_map` keine Zuordnungsquote" | `0451_process_event_activity_map.sql` |
+ * | „Vorfälle und Maßnahmen haben keinen Elementbezug" | `0454_element_level_links.sql` |
+ * | „`/call-links` liefert nur Name und ID" (kein Roll-up) | `grc-overlay.ts:988` rechnet das Roll-up |
+ *
+ * Die Liste war der Stand vor Stufe E, und sie hatte **keinen Wächter** — der
+ * vorhandene Test prüfte nur die Liste in `lib/grc-overlay.ts`. Zwei Listen,
+ * von denen eine ungeprüft altert, sind schlimmer als eine unvollständige:
+ * wer die falsche liest, hält Funktionen für unmöglich, die es gibt.
+ *
+ * **Maßgeblich ist `lib/grc-overlay.ts`.** Sie beschreibt, was der Endpunkt
+ * `GET /api/v1/processes/:id/diagram-overlay` nicht liefert — die Aussage über
+ * das Produkt. Sie wird hier durchgereicht statt nachgebaut.
  */
-export const MISSING_TODAY: ReadonlyArray<{
+export { MISSING_TODAY } from "@/lib/grc-overlay";
+
+/**
+ * Was **dieser Weg** nicht kann — und zwar nur er.
+ *
+ * Der Unterschied zu {@link MISSING_TODAY} ist der Grund der Einschränkung:
+ * dort steht, was das *Produkt* nicht erhebt; hier steht, was die vier alten
+ * Routen nicht ausliefern. Jede Zeile hier verschwindet, sobald eine
+ * Aufrufstelle auf den Endpunkt umgestellt ist — keine nennt eine fehlende
+ * Tabelle, denn die gibt es alle.
+ *
+ * Bewusst als auswertbares Datum: `bpmn-engine-switch.test.ts` prüft, dass
+ * keine Zeile hier eine Schemalücke behauptet.
+ */
+export const BRIDGE_LIMITS: ReadonlyArray<{
   readonly field: string;
   readonly reason: string;
 }> = [
   {
     field: "elements[].controls[].title",
     reason:
-      "GET /control-coverage liefert nur Zählwerte je Aktivität, keine Kontrolltitel.",
+      "GET /control-coverage liefert je Aktivität nur controlCount und effectiveCount, keine Kontrolltitel. Der Endpunkt diagram-overlay liefert sie.",
   },
   {
     field: "elements[].risks[].controlIds",
     reason:
-      "Die Verknüpfung Risiko↔Kontrolle je Schritt (process_step_risk ⋈ process_step_control) wird von keiner Route ausgeliefert; sie ist der Join aus Plan §3.3.6.",
+      "Keine der vier alten Routen gibt die Verknüpfung Risiko↔Kontrolle je Schritt aus. Der Endpunkt diagram-overlay rechnet sie (grc-overlay.ts:836).",
   },
   {
     field: "elements[].findings[].dueAt",
-    reason: "finding.due_at existiert im Schema nicht (Schemabedarf §5.2).",
+    reason:
+      "GET /findings liefert Schwere und Status, kein Fälligkeitsdatum. Der Endpunkt diagram-overlay liefert es (grc-overlay.ts:856).",
   },
   {
     field: "elements[].calledProcess.rollup",
     reason:
-      "Das Aggregat des Zielprozesses muss serverseitig gerechnet werden; /call-links liefert nur Name und ID.",
+      "GET /call-links liefert Name und ID; das Aggregat des Zielprozesses wird serverseitig gerechnet und steht nur im Endpunkt diagram-overlay (grc-overlay.ts:988).",
   },
   {
-    field: "elements[].assets, .raci.consulted, .raci.informed",
+    field:
+      "lanes, edges, diagram.*, elements[].{raci,ropa,bia,documents,frameworks,conformance,stepKey,incidents,workItems}",
     reason:
-      "Assets nur über GET /steps/:id/assets (eine Route je Schritt, N+1); C und I haben keine DB-Heimat (process_step_raci fehlt).",
-  },
-  {
-    field: "elements[].ropa, .bia, .documents, .frameworks, .comments",
-    reason:
-      "Alle vier hängen heute am Prozess, nicht am Element (Schemabedarf §5.2: process_step_ropa, process_step_bia, process_step_document, process_framework_mapping.process_step_id).",
-  },
-  {
-    field: "elements[].conformance",
-    reason:
-      "process_event.activity ist ein Name, keine BPMN-ID; ohne process_event_activity_map ist keine Zuordnungsquote berechenbar — die GRC-Schicht liefert F7 deshalb bewusst gar nicht aus.",
-  },
-  {
-    field: "elements[].incidents, .workItems, .simulation, .dmnDecision",
-    reason:
-      "Simulation und DMN sind im Schema am Element vorhanden, aber ohne Route für die Diagrammfläche; Vorfälle und Maßnahmen haben keinen Elementbezug.",
-  },
-  {
-    field: "lanes, edges, diagram.sodRules, diagram.outage",
-    reason:
-      "Es gibt keine Lane-Tabelle (process_lane) und keine SoD-Regelmenge (sod_rule). Ohne sie sind Vertrauensgrenzen, Aufgabentrennung und Ausfallsimulation datenlos — die Brücke liefert die Felder deshalb leer statt geraten.",
-  },
-  {
-    field: "elements[].stepKey",
-    reason:
-      "process_step.step_key existiert nicht; Schlüssel bleibt die BPMN-Element-ID.",
+      "Für all das gibt es keine der vier alten Routen — die Daten existieren (Migrationen 0444–0454) und werden vom Endpunkt diagram-overlay ausgeliefert. Diese Brücke liefert die Felder deshalb gar nicht, statt sie leer zu behaupten.",
   },
 ];
 

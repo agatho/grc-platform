@@ -42,6 +42,7 @@ import {
   planesOf,
   waypointsOf,
 } from "./di";
+import { fixImportDockings } from "./docking";
 import { checkInvariants, type InvariantViolation } from "./invariants";
 import { externalLabelBounds, hasExternalLabel, labelText } from "./labels";
 import type {
@@ -370,6 +371,12 @@ export function importDefinitions(
       source,
       target,
     });
+    // [ARCTOS-FULL-2026-08-31 · OP-021] Der logische Andockpunkt fehlt der
+    // importierten DI (`di:waypoint` kennt kein `original`). Ohne ihn nimmt
+    // jede spätere Kantenrechnung den *abgeschnittenen* Punkt als Anker, und
+    // der wandert bei jeder Bearbeitung weiter auf der Kontur entlang.
+    // Begründung und Messung in `docking.ts`.
+    fixImportDockings(connection);
     canvas.addConnection(connection as never, parent as never);
     byBo.set(bo, connection);
     if (hasExternalLabel(bo) && labelText(bo).trim() !== "") {

@@ -72,8 +72,10 @@ import {
 } from "@/components/bpmn/bpmn-editor";
 import {
   buildGrcOverlayData,
-  MISSING_TODAY,
+  BRIDGE_LIMITS,
+  MISSING_TODAY as BRIDGE_MISSING_TODAY,
 } from "@/components/bpmn/bpmn-grc-bridge";
+import { MISSING_TODAY } from "@/lib/grc-overlay";
 
 const XML = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -498,7 +500,65 @@ describe("Brücke von den API-Routen auf den GRC-Vertrag", () => {
     expect(built.elements["Task_1"]?.conformance).toBeUndefined();
     expect(built.elements["Task_1"]?.stepKey).toBeUndefined();
     // Und der Bedarf ist als Datum notiert, nicht nur als Kommentar.
-    expect(MISSING_TODAY.length).toBeGreaterThan(5);
-    expect(MISSING_TODAY.every((entry) => entry.reason.length > 20)).toBe(true);
+    expect(BRIDGE_LIMITS.length).toBeGreaterThan(3);
+    expect(BRIDGE_LIMITS.every((entry) => entry.reason.length > 20)).toBe(true);
+  });
+});
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-160] Wächter über die **eine** Liste.
+ *
+ * Der Befund war nicht, dass eine Liste unvollständig war, sondern dass es
+ * zwei gab und die ältere keinen Wächter hatte
+ * (`OFFENE-PUNKTE-REGISTER.md` B.1). Diese Zusicherungen schliessen beide
+ * Lücken: die Brücke reicht die maßgebliche Liste durch statt eine eigene zu
+ * führen, und keine der beiden Listen darf eine Schemalücke behaupten, die es
+ * nicht mehr gibt.
+ */
+describe("OP-160 — es gibt nur noch eine MISSING_TODAY", () => {
+  it("reicht die Liste aus lib/grc-overlay.ts durch, statt eine zweite zu führen", () => {
+    expect(BRIDGE_MISSING_TODAY).toBe(MISSING_TODAY);
+  });
+
+  it("behauptet keine Tabelle und keine Spalte, die es seit 0444–0454 gibt", () => {
+    // Wörtlich die acht Behauptungen der alten Brückenliste. Jede war zum
+    // Zeitpunkt der Messung falsch; keine darf zurückkommen — auch nicht in
+    // die maßgebliche Liste.
+    const widerlegt = [
+      "process_lane",
+      "sod_rule",
+      "process_step_raci",
+      "process_step_ropa",
+      "process_step_bia",
+      "process_step_document",
+      "process_event_activity_map",
+      "step_key",
+      "due_at",
+    ];
+    for (const liste of [MISSING_TODAY, BRIDGE_LIMITS]) {
+      for (const eintrag of liste) {
+        for (const tabelle of widerlegt) {
+          const behauptetFehlen = new RegExp(
+            `${tabelle}[^.]{0,40}(fehlt|existiert nicht|gibt es (keine|nicht))`,
+            "i",
+          );
+          expect(
+            behauptetFehlen.test(eintrag.reason),
+            `„${eintrag.field}" behauptet, ${tabelle} fehle — die Migration existiert`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("nennt in BRIDGE_LIMITS nur Routen-, keine Schemagründe", () => {
+    // Der Unterschied zwischen den beiden Listen ist die Art der Aussage.
+    // Verschwimmt er, entsteht die Dublette von Neuem.
+    for (const eintrag of BRIDGE_LIMITS) {
+      expect(
+        /Route|GET |Endpunkt|liefert/i.test(eintrag.reason),
+        `„${eintrag.field}" begründet nicht mit dem, was eine Route liefert`,
+      ).toBe(true);
+    }
   });
 });

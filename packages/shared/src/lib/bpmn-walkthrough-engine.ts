@@ -2,6 +2,8 @@
 // Parses BPMN XML and derives sequential step-by-step flow
 
 import type { WalkthroughStep, DecisionOption } from "../schemas/bpm-derived";
+// [ARCTOS-FULL-2026-08-31 · OP-037] Eine Interpretation des Formats.
+import { extractBpmn, laneNameByNode } from "./bpmn-extract";
 
 interface SequenceFlow {
   id: string;
@@ -159,93 +161,94 @@ function resolveDecisionTargets(
 }
 
 // ─── XML Parsing Helpers ──────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · OP-037] Hier standen vier reguläre Ausdrücke über
+// dem rohen XML — einer je Elementfamilie, jeder mit `<bpmn:` fest verdrahtet.
+// Ersetzt durch `extractBpmn`; die Fehlerliste der alten Fassung steht im Kopf
+// von `bpmn-extract.ts`.
+//
+// Ein Verhaltensunterschied, beabsichtigt: die Knoten kommen jetzt in
+// **Dokumentreihenfolge**, nicht mehr in drei Blöcken (erst alle Aufgaben,
+// dann alle Gateways, dann alle Ereignisse). Für die Durchsprache ist das die
+// richtige Reihenfolge — sie folgt dem Diagramm statt der Reihenfolge, in der
+// jemand die regulären Ausdrücke hingeschrieben hat.
+
+const WALKTHROUGH_TASK_LOCAL_NAMES: ReadonlySet<string> = new Set([
+  "task",
+  "userTask",
+  "serviceTask",
+  "sendTask",
+  "receiveTask",
+  "manualTask",
+  "scriptTask",
+]);
+
+const WALKTHROUGH_GATEWAY_LOCAL_NAMES: ReadonlySet<string> = new Set([
+  "exclusiveGateway",
+  "parallelGateway",
+  "inclusiveGateway",
+]);
+
+const WALKTHROUGH_EVENT_LOCAL_NAMES: ReadonlySet<string> = new Set([
+  "startEvent",
+  "endEvent",
+  "intermediateThrowEvent",
+  "intermediateCatchEvent",
+]);
 
 function extractFlowNodes(xml: string): FlowNode[] {
   const nodes: FlowNode[] = [];
-
-  // Extract tasks
-  const taskRegex =
-    /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask|scriptTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
-  let m: RegExpExecArray | null;
-  while ((m = taskRegex.exec(xml)) !== null) {
-    nodes.push({
-      id: m[2],
-      name: m[3] || m[2],
-      type: "task",
-      outgoing: [],
-      incoming: [],
-    });
+  for (const node of extractBpmn(xml).nodes) {
+    if (WALKTHROUGH_TASK_LOCAL_NAMES.has(node.localName)) {
+      // Wie bisher: eine Aufgabe ohne Namen wird über ihre Kennung benannt,
+      // ein Gateway oder Ereignis ohne Namen bleibt namenlos.
+      nodes.push({
+        id: node.id,
+        name: node.name || node.id,
+        type: "task",
+        outgoing: [],
+        incoming: [],
+      });
+      continue;
+    }
+    if (WALKTHROUGH_GATEWAY_LOCAL_NAMES.has(node.localName)) {
+      nodes.push({
+        id: node.id,
+        name: node.name,
+        type: "gateway",
+        outgoing: [],
+        incoming: [],
+      });
+      continue;
+    }
+    if (WALKTHROUGH_EVENT_LOCAL_NAMES.has(node.localName)) {
+      nodes.push({
+        id: node.id,
+        name: node.name,
+        type: node.localName.startsWith("start")
+          ? "startEvent"
+          : node.localName.startsWith("end")
+            ? "endEvent"
+            : "intermediateEvent",
+        outgoing: [],
+        incoming: [],
+      });
+    }
   }
-
-  // Extract gateways
-  const gwRegex =
-    /<bpmn:(exclusiveGateway|parallelGateway|inclusiveGateway)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
-  while ((m = gwRegex.exec(xml)) !== null) {
-    nodes.push({
-      id: m[2],
-      name: m[3] || "",
-      type: "gateway",
-      outgoing: [],
-      incoming: [],
-    });
-  }
-
-  // Extract events
-  const eventRegex =
-    /<bpmn:(startEvent|endEvent|intermediateThrowEvent|intermediateCatchEvent)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
-  while ((m = eventRegex.exec(xml)) !== null) {
-    const type = m[1].includes("start")
-      ? "startEvent"
-      : m[1].includes("end")
-        ? "endEvent"
-        : "intermediateEvent";
-    nodes.push({
-      id: m[2],
-      name: m[3] || "",
-      type,
-      outgoing: [],
-      incoming: [],
-    });
-  }
-
   return nodes;
 }
 
 function extractSequenceFlows(xml: string): SequenceFlow[] {
-  const flows: SequenceFlow[] = [];
-  const flowRegex =
-    /<bpmn:sequenceFlow\s+id="([^"]+)"\s+sourceRef="([^"]+)"\s+targetRef="([^"]+)"(?:\s+name="([^"]*)")?/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = flowRegex.exec(xml)) !== null) {
-    flows.push({
-      id: m[1],
-      sourceRef: m[2],
-      targetRef: m[3],
-      name: m[4] || undefined,
-    });
-  }
-
-  return flows;
+  return extractBpmn(xml).flows.map((flow) => ({
+    id: flow.id,
+    sourceRef: flow.sourceRef,
+    targetRef: flow.targetRef,
+    ...(flow.name !== undefined ? { name: flow.name } : {}),
+  }));
 }
 
 function extractLaneMapping(xml: string): Map<string, string> {
-  const mapping = new Map<string, string>();
-  const laneRegex =
-    /<bpmn:lane\s+id="[^"]*"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
-  let m: RegExpExecArray | null;
-
-  while ((m = laneRegex.exec(xml)) !== null) {
-    const laneName = m[1] || "";
-    const content = m[2];
-    const refRegex = /<bpmn:flowNodeRef>([^<]+)<\/bpmn:flowNodeRef>/g;
-    let refMatch: RegExpExecArray | null;
-    while ((refMatch = refRegex.exec(content)) !== null) {
-      mapping.set(refMatch[1], laneName);
-    }
-  }
-
-  return mapping;
+  return new Map(laneNameByNode(extractBpmn(xml)));
 }
 
 function extractDataObjectsForNode(_xml: string, _nodeId: string): string[] {

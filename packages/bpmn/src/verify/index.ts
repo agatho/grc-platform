@@ -137,3 +137,14 @@ export {
   createArctosDriver,
 } from "./drivers/arctos";
 export { BpmnJsDriver, isBpmnJsAvailable, loadBpmnJs } from "./drivers/bpmnjs";
+
+// [ARCTOS-FULL-2026-08-31 · OP-043] Lexikalische Schemaprüfung über den
+// Rohtext — die Ergänzung zu `invariants.ts`, das Referenzintegrität prüft
+// und Schemakonformität ausdrücklich nicht.
+export {
+  SCHEMA_NAMESPACES,
+  checkSchema,
+  formatSchemaFindings,
+  type SchemaFinding,
+  type SchemaFindingKind,
+} from "./schema";

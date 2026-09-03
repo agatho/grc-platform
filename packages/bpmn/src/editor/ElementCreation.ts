@@ -173,22 +173,42 @@ export class ElementCreation {
   }
 
   /**
-   * Heftet ein Randereignis an eine Aktivität.
+   * Heftet ein Ereignis an eine Aktivität — und macht dabei ein Randereignis
+   * daraus.
    *
-   * Bewusst **nur typrichtige** Randereignisse: `src/modeling` erlaubt zwar das
-   * Anheften eines Zwischen-Ereignisses, aber das Verhalten, das daraus ein
-   * `bpmn:BoundaryEvent` macht, ist dort ausdrücklich nicht gebaut
-   * (STUFE2-A1 §7, Punkt 1). Bis dahin würde ein angehefteter
-   * `bpmn:IntermediateCatchEvent` eine Datei erzeugen, die kein Fremdwerkzeug
-   * als Randereignis liest.
+   * [ARCTOS-FULL-2026-08-31 · OP-019] **Hier stand eine Verweigerung.** Bis zu
+   * dieser Welle lehnte diese Methode jeden Typ ab, der nicht schon
+   * `bpmn:BoundaryEvent` war, mit dem Satz „Nur ein Randereignis lässt sich an
+   * eine Aktivität anheften" und der Begründung, die Modellierungsschicht baue
+   * den Typwechsel nicht (STUFE2-A1 §7, Punkt 1).
+   *
+   * **Gegen den Code geprüft trägt diese Begründung nicht mehr.**
+   * `BpmnRules.canAttach` lässt `bpmn:IntermediateThrowEvent` und
+   * `bpmn:IntermediateCatchEvent` ausdrücklich zu; der Kommentar dort lautet
+   * wörtlich „(und zwischenzeitliche Ereignisse, die dabei zu welchen
+   * werden)". Und `modeling.replaceShape` gibt es samt Übernahme von
+   * `extensionElements`, ID und Anheftern (`cmd/ReplaceShapeHandler.ts`). Es
+   * fehlte allein die **Bedienung**: die Regel erlaubte es, die Operation
+   * konnte es, und die Schicht dazwischen sagte nein.
+   *
+   * **Was jetzt geschieht.** Ein angeheftetes Zwischenereignis wird zum
+   * Randereignis, mit derselben Ereignisdefinition. Der Nutzer bekommt, was er
+   * meint, statt einer Ablehnung — und die Ansage nennt den Wechsel
+   * ausdrücklich, weil ein stiller Typwechsel eine Überraschung wäre.
+   *
+   * Ein Typ, der **kein** Ereignis ist (eine Aufgabe, ein Gateway), wird
+   * weiterhin abgelehnt: dafür gibt es keine Lesart, in der der Nutzer ein
+   * Randereignis gemeint hätte.
    */
   attachBoundary(host: BpmnShape, item: PaletteItem): CreationResult {
-    if (item.type !== "bpmn:BoundaryEvent") {
+    const attachable = asBoundaryItem(item);
+    if (!attachable) {
       return this.reject(
-        "Nur ein Randereignis lässt sich an eine Aktivität anheften.",
+        `${item.title} lässt sich nicht anheften — an den Rand einer Aktivität gehört ein Ereignis.`,
       );
     }
-    const shape = this.prepare(item);
+    const converted = attachable.type !== item.type;
+    const shape = this.prepare(attachable);
     if (
       this.rules.allowed("shape.attach", { shape, target: host }) !== "attach"
     ) {
@@ -206,9 +226,54 @@ export class ElementCreation {
     });
     this.selection.select(created);
     this.announcer.announce(
-      `${item.title} an ${describe(host)} angeheftet. Beschriftung mit F2.`,
+      converted
+        ? `${item.title} an ${describe(host)} angeheftet und dabei in ein Randereignis umgewandelt. Beschriftung mit F2.`
+        : `${attachable.title} an ${describe(host)} angeheftet. Beschriftung mit F2.`,
     );
     return { shape: created };
+  }
+
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-019] Ein **vorhandenes** Element an eine
+   * Aktivität anheften.
+   *
+   * Der zweite Weg desselben Punkts: nicht „neu anlegen und anheften", sondern
+   * „das hier gehört an den Rand von dem da". Mit der Maus ist das ein Zug, mit
+   * der Tastatur der Containerwechsel (`m`). Beide landen hier.
+   *
+   * Die Reihenfolge ist Absicht: **erst anheften, dann den Typ wechseln.**
+   * `ReplaceShapeHandler` übernimmt `host` des alten Shapes und legt das neue
+   * mit `attach: true` an; wer umgekehrt vorginge, hätte zwischendurch ein
+   * `bpmn:BoundaryEvent` ohne Wirt — genau der Zustand, den die Invariante
+   * `BOUNDARY_WITHOUT_HOST` zu Recht bemängelt.
+   */
+  attachExisting(element: BpmnShape, host: BpmnShape): CreationResult {
+    if (
+      this.rules.allowed("shape.attach", { shape: element, target: host }) !==
+      "attach"
+    ) {
+      return this.reject(
+        `${describe(element)} lässt sich nicht an ${describe(host)} anheften.`,
+      );
+    }
+    const wasType = boTypeOf(element);
+    this.modeling.updateAttachment(element, host);
+
+    let current = element;
+    if (wasType !== "bpmn:BoundaryEvent") {
+      const definition = eventDefinitionOf(element);
+      current = this.modeling.replaceShape(element, {
+        type: "bpmn:BoundaryEvent",
+        ...(definition ? { eventDefinitionType: definition } : {}),
+      });
+    }
+    this.selection.select(current);
+    this.announcer.announce(
+      wasType === "bpmn:BoundaryEvent"
+        ? `${describe(current)} an ${describe(host)} angeheftet.`
+        : `${getTypeLabel(wasType)} an ${describe(host)} angeheftet und dabei in ein Randereignis umgewandelt. Die Kennung ${current.id} bleibt erhalten.`,
+    );
+    return { shape: current };
   }
 
   /** Ziehen aus der Palette (Maus). */
@@ -342,6 +407,50 @@ export function describe(element: BpmnElement | undefined): string {
     typeof bo?.$type === "string" ? bo.$type : (element.type ?? ""),
   );
   return name ? `${type} „${name}“` : `${type} ${element.id}`;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-019] Der Paletteneintrag, so wie er am Rand
+ * einer Aktivität gemeint ist.
+ *
+ * `undefined` heißt „das gehört da nicht hin". Ein Ereignis wird zum
+ * `bpmn:BoundaryEvent` und behält seine Ereignisdefinition — sie ist der Grund,
+ * warum der Nutzer *dieses* Ereignis gewählt hat, und ein Randereignis ohne
+ * Auslöser wäre ein anderes Element unter demselben Namen.
+ *
+ * `bpmn:StartEvent` und `bpmn:EndEvent` bleiben draußen: Ein Start am Rand
+ * einer Aktivität ist der Auslöser eines Ereignis-Subprozesses und entsteht
+ * dort, nicht durch Anheften; ein Ende hat am Rand keine Bedeutung.
+ */
+export function asBoundaryItem(item: PaletteItem): PaletteItem | undefined {
+  if (item.type === "bpmn:BoundaryEvent") return item;
+  if (
+    item.type !== "bpmn:IntermediateCatchEvent" &&
+    item.type !== "bpmn:IntermediateThrowEvent"
+  ) {
+    return undefined;
+  }
+  return {
+    ...item,
+    type: "bpmn:BoundaryEvent",
+    title: `${item.title} als Randereignis`,
+  };
+}
+
+/** Der `$type` des Geschäftsobjekts, mit dem Shape-Typ als Rückfall. */
+export function boTypeOf(element: BpmnElement): string {
+  const bo = element.businessObject as { $type?: unknown } | undefined;
+  return typeof bo?.$type === "string" ? bo.$type : (element.type ?? "");
+}
+
+/** Die Ereignisdefinition eines Ereignisses, falls es eine trägt. */
+export function eventDefinitionOf(element: BpmnElement): string | undefined {
+  const bo = element.businessObject as
+    { eventDefinitions?: unknown } | undefined;
+  const definitions = bo?.eventDefinitions;
+  if (!Array.isArray(definitions) || definitions.length === 0) return undefined;
+  const first = definitions[0] as { $type?: unknown } | undefined;
+  return typeof first?.$type === "string" ? first.$type : undefined;
 }
 
 function containerSuffix(parent: BpmnParent): string {

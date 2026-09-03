@@ -25,7 +25,10 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BpmnViewer } from "@/components/bpmn/bpmn-viewer";
+// [ARCTOS-FULL-2026-08-31 · OP-026] Statt `BpmnViewer`: dieselbe Fläche mit
+// GRC-Sichtwahl. Die Wahl steht auf „aus"; erst wenn jemand eine Sicht
+// einschaltet, wird der Overlay-Endpunkt befragt.
+import { BpmnGrcViewer } from "@/components/bpmn/bpmn-viewer";
 import { useDateFormat } from "@/lib/format-date";
 import type { MyProcessRole } from "@/lib/process-portal-roles";
 
@@ -286,7 +289,11 @@ export default function MyProcessDetailPage() {
           </CardHeader>
           <CardContent>
             {detail.bpmnXml ? (
-              <BpmnViewer xml={detail.bpmnXml} minHeight={420} />
+              <BpmnGrcViewer
+                xml={detail.bpmnXml}
+                processId={detail.id}
+                minHeight={420}
+              />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {t("noDiagram")}

@@ -112,3 +112,14 @@ deren Eigenheiten nach, ersetzen echte Exporte aber nicht.
 
 Neue Dateien brauchen nur abgelegt und hier eingetragen zu werden; der Loader
 findet sie von selbst.
+
+## Nachtrag Welle 2a (2026-09-02)
+
+- `synth-vertical-pool-lanes.bpmn` — **senkrechter Pool** (`isHorizontal="false"`),
+  zwei Lanes als Spalten, Gateway, Boundary Event an der rechten Kante,
+  Nachrichtenfluss quer über die Poolgrenze. Ergänzt zu OP-039: bis dahin
+  enthielt der Korpus keinen einzigen senkrechten Pool, und die Lane-Geometrie
+  rechnete für beide Achsen, ohne dass eine davon je geprüft worden wäre.
+  Der Zugewinn war sofort messbar — `redistributeLanes` teilte auch bei
+  senkrechten Lanes die **Höhe** statt der Breite und warf im Eigenschaftslauf
+  (Startwert 20260901, Folge 50) „width and height cannot be less than 10px".

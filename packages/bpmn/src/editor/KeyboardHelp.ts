@@ -75,6 +75,17 @@ export const KEY_BINDINGS: readonly KeyBinding[] = [
     keys: "Strg + Leertaste",
     what: "Fokussiertes Element zur Auswahl hinzunehmen",
   },
+  // [ARCTOS-FULL-2026-08-31 · OP-032]
+  {
+    group: "Bearbeiten",
+    keys: "Strg + Umschalt + A",
+    what: "Alles im selben Container auswählen (alles in dieser Lane)",
+  },
+  {
+    group: "Bearbeiten",
+    keys: "Umschalt + Leertaste",
+    what: "Strecke vom Anker bis zum fokussierten Element auswählen",
+  },
 
   {
     group: "Betriebsarten",
@@ -103,7 +114,35 @@ export const KEY_BINDINGS: readonly KeyBinding[] = [
     what: "Betriebsart oder Menü abbrechen",
   },
 
+  // [ARCTOS-FULL-2026-08-31 · OP-031]
+  {
+    group: "Werkzeuge",
+    keys: "h",
+    what: "Hand-Werkzeug: Ansicht ziehen (Tastatur: Strg + Pfeil)",
+  },
+  {
+    group: "Werkzeuge",
+    keys: "l",
+    what: "Lasso-Werkzeug: Rahmenauswahl (Tastatur: Strg + Umschalt + A)",
+  },
+  {
+    group: "Werkzeuge",
+    keys: "s",
+    what: "Platz schaffen: mit Pfeiltasten ab dem fokussierten Element",
+  },
+
   { group: "Finden und Bewegen", keys: "/", what: "Im Diagramm suchen" },
+  // [ARCTOS-FULL-2026-08-31 · OP-018]
+  {
+    group: "Finden und Bewegen",
+    keys: "o",
+    what: "Ebene eines Subprozesses öffnen (Drill-Down)",
+  },
+  {
+    group: "Finden und Bewegen",
+    keys: "Umschalt + O",
+    what: "Eine Ebene zurück",
+  },
   {
     group: "Finden und Bewegen",
     keys: "F6 / Umschalt + F6",

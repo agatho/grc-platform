@@ -16,6 +16,7 @@
  * `src/verify/drivers/bpmnjs.ts` for the four conditions that say when.
  */
 
+import { writeFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 import { installBpmnJsSupport } from "./jsdom-svg";
 import { editableBases, representativeBases } from "./bases";
@@ -39,6 +40,56 @@ installBpmnJsSupport();
 const SEED = Number(process.env["SHADOW_SEED"] ?? 424242);
 const SEQUENCES = Number(process.env["SHADOW_SEQUENCES"] ?? 8);
 const LENGTH = Number(process.env["SHADOW_LENGTH"] ?? 6);
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-020…OP-025] Wohin der Messbericht geschrieben
+ * wird, wenn `SHADOW_REPORT` gesetzt ist.
+ *
+ * Warum das nötig ist: das Histogramm ging bisher nur über `console.info`
+ * heraus, und vitest zeigt die Ausgabe eines *grünen* Tests nicht an. Wer die
+ * Zahlen vorher/nachher belegen soll — und genau das verlangt die Arbeitsweise
+ * seit dem Audit —, musste sich dafür eine Wegwerfdatei schreiben. Die Zahl im
+ * Protokoll und die Zahl im Prüfstand liefen damit auseinander, sobald jemand
+ * die Wegwerfdatei anders parametrierte. Jetzt schreibt derselbe Lauf, der
+ * grün oder rot wird, auch den Bericht:
+ *
+ *   SHADOW_SEED=13337 SHADOW_SEQUENCES=100 SHADOW_LENGTH=10 \
+ *   SHADOW_REPORT=/tmp/shadow.json npx vitest run test/verify/shadow.test.ts
+ *
+ * Ohne die Variable ändert sich nichts.
+ */
+const REPORT = process.env["SHADOW_REPORT"];
+
+function writeReport(
+  section: string,
+  divergences: readonly Divergence[],
+): void {
+  if (!REPORT) return;
+  const histogram: Record<string, number> = {};
+  for (const divergence of divergences) {
+    const key = `${divergence.verdict ?? "UNCLASSIFIED"} ${divergence.signature}`;
+    histogram[key] = (histogram[key] ?? 0) + 1;
+  }
+  writeFileSync(
+    `${REPORT}.${section}.json`,
+    JSON.stringify(
+      {
+        seed: SEED,
+        sequences: SEQUENCES,
+        length: LENGTH,
+        summary: summarize(divergences),
+        histogram,
+        divergences: divergences.map((d) => ({
+          verdict: d.verdict,
+          signature: d.signature,
+          detail: d.detail,
+        })),
+      },
+      null,
+      2,
+    ),
+  );
+}
 
 let available = false;
 
@@ -110,6 +161,7 @@ describe("shadow comparison against bpmn-js (temporary)", () => {
     console.info(
       `[shadow] import over corpus: ${JSON.stringify(summarize(all))}`,
     );
+    writeReport("import", all);
     if (unclassified.length > 0) {
       expect.fail(
         `unclassified divergences on import in ${unclassified.length} file(s):\n` +
@@ -169,6 +221,7 @@ describe("shadow comparison against bpmn-js (temporary)", () => {
           .map(([key, count]) => `    ${String(count).padStart(4)}  ${key}`)
           .join("\n"),
     );
+    writeReport("edit", all);
     if (failures.length > 0) {
       expect.fail(
         `unclassified divergences after editing (${failures.length} of ${SEQUENCES} sequences).\n` +

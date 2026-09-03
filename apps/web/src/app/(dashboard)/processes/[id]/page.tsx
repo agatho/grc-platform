@@ -95,6 +95,24 @@ const BpmnEditorDynamic = dynamic(
     ),
   },
 );
+// [ARCTOS-FULL-2026-08-31 · OP-026] Der Versionsdialog bekommt die Sichtwahl.
+// Eigene dynamische Einbindung, damit die vier Sichten und der Overlay-Haken
+// nicht in das Bündel jeder Prozessseite geraten, sondern erst beim Öffnen des
+// Dialogs geladen werden.
+const BpmnGrcViewerDynamic = dynamic(
+  () =>
+    import("@/components/bpmn/bpmn-viewer").then((m) => ({
+      default: m.BpmnGrcViewer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      </div>
+    ),
+  },
+);
 const BpmnViewerDynamic = dynamic(
   () =>
     import("@/components/bpmn/bpmn-viewer").then((m) => ({
@@ -1732,8 +1750,17 @@ function VersionsTab({
             style={{ height: "60vh" }}
           >
             {viewingVersion?.bpmnXml ? (
-              <BpmnViewerDynamic
+              /*
+               * [ARCTOS-FULL-2026-08-31 · OP-026] Dieselbe Fläche, jetzt mit
+               * GRC-Sichtwahl. `versionId` gehört dazu: der Dialog zeigt eine
+               * bestimmte Fassung, und der Overlay-Endpunkt kennt den
+               * Parameter (`useGrcOverlay`, `?version=`). Ohne ihn läge über
+               * einer alten Fassung der Stand von heute.
+               */
+              <BpmnGrcViewerDynamic
                 xml={viewingVersion.bpmnXml}
+                processId={process.id}
+                versionId={viewingVersion.id}
                 className="h-full"
                 minHeight={400}
               />

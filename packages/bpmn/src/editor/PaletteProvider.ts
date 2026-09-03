@@ -21,6 +21,7 @@
  */
 
 import { escapeHtml, focusDiagram } from "./dom";
+import { TOOL_IDS, TOOL_LABELS, type ToolId } from "./Tools";
 import type { ElementCreation } from "./ElementCreation";
 import type { EditorConfiguration } from "./config";
 import type { EditorAnnouncer } from "./announce";
@@ -38,6 +39,23 @@ interface PaletteLike {
 interface InjectorLike {
   get<T>(name: string, strict?: boolean): T | null;
 }
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-031] Der Ausschnitt des Werkzeugdienstes, den
+ * die Palette braucht. Fehlt der Dienst (fremder `diagram-js`-Aufbau), fehlt
+ * nur die Werkzeuggruppe — der Vorrat bleibt vollständig.
+ */
+interface EditorToolsLike {
+  isActive(tool: ToolId): boolean;
+  toggle(tool: ToolId): boolean;
+}
+
+/** Symbolklassen der drei Werkzeuge; dieselben Namen wie in bpmn-js' Stylesheet. */
+const TOOL_ICONS: Readonly<Record<ToolId, string>> = {
+  hand: "bpmn-icon-hand-tool",
+  lasso: "bpmn-icon-lasso-tool",
+  space: "bpmn-icon-space-tool",
+};
 
 type EntryAction = (event: Event, autoActivate: boolean) => unknown;
 
@@ -74,6 +92,41 @@ export class ArctosPaletteProvider {
   getPaletteEntries(): Record<string, PaletteEntry> {
     const entries: Record<string, PaletteEntry> = {};
     const editable = this.config.editable;
+
+    // [ARCTOS-FULL-2026-08-31 · OP-031] Die Werkzeuge stehen **vor** dem
+    // Vorrat, in einer eigenen Gruppe. Das ist die Reihenfolge, die jedes
+    // Modellierungswerkzeug hat, und für die Tastatur ist sie die wichtigere:
+    // wer den Bereich mit `F6` betritt, landet auf dem Werkzeug und nicht auf
+    // dem achtzehnten Elementtyp.
+    const tools = this.injector.get<EditorToolsLike>("editorTools", false);
+    if (tools) {
+      for (const tool of TOOL_IDS) {
+        const label = TOOL_LABELS[tool];
+        entries[`tool.${tool}`] = {
+          group: "werkzeuge",
+          title: editable
+            ? `${label.title} (Taste ${label.key}) — ${label.description}`
+            : `${label.title} (${this.config.disabledReason})`,
+          className: TOOL_ICONS[tool],
+          html: toolMarkup(
+            tool,
+            tools.isActive(tool),
+            editable,
+            this.config.disabledReason,
+          ),
+          action: {
+            click: (event: Event) => {
+              event.preventDefault();
+              if (!editable) {
+                this.announcer.reject(this.config.disabledReason);
+                return;
+              }
+              tools.toggle(tool);
+            },
+          },
+        };
+      }
+    }
 
     for (const item of this.config.paletteItems) {
       entries[item.id] = {
@@ -177,6 +230,34 @@ function titleOf(item: PaletteItem, editable: boolean, reason: string): string {
  * ein Tastaturnutzer nie, dass es die Funktion gibt und warum sie gerade nicht
  * geht. Genau das soll `chrome="full"` verhindern.
  */
+/**
+ * Markup eines Werkzeugknopfs.
+ *
+ * `aria-pressed` statt eines Klassennamens: „welches Werkzeug ist an" ist eine
+ * Zustandsaussage, und ein Screenreader liest sie nur, wenn sie als solche
+ * ausgezeichnet ist. Eine Klasse `.active` sieht man; hören kann man sie nicht.
+ */
+function toolMarkup(
+  tool: ToolId,
+  pressed: boolean,
+  editable: boolean,
+  reason: string,
+): string {
+  const label = TOOL_LABELS[tool];
+  const name = escapeHtml(
+    editable
+      ? `${label.title}. ${label.description}`
+      : `${label.title}. ${reason}`,
+  );
+  const disabled = editable ? "" : ' aria-disabled="true"';
+  return (
+    `<button type="button" class="entry djs-palette-entry"` +
+    ` aria-label="${name}" aria-pressed="${pressed ? "true" : "false"}"${disabled}>` +
+    `<span class="djs-palette-icon" aria-hidden="true"></span>` +
+    `</button>`
+  );
+}
+
 function markupFor(
   item: PaletteItem,
   editable: boolean,

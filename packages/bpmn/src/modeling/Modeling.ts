@@ -83,6 +83,96 @@ export class BpmnModeling extends BaseModeling {
   }
 
   /**
+   * Verschiebt eine Form — **samt allem, was an ihr hängt**.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-040] `diagram-js` trennt hier zwei Ebenen:
+   * `shape.move` bewegt genau eine Form, und `label-support` sowie
+   * `attach-support` hängen am zusammengesetzten `elements.move`. Wer
+   * `moveShape` ruft, lässt die externe Beschriftung und jedes Randereignis an
+   * Ort und Stelle. `bpmn-js` hat dieselbe Eigenschaft, und
+   * `STUFE2-A1-MODELING.md` §7 Punkt 7 nennt sie „nur teilweise tragfähig" und
+   * verlangt vom Aufrufer Disziplin: „Bedienpfade müssen `moveElements`
+   * benutzen, nicht `moveShape`."
+   *
+   * Eine Regel, an die sich jeder Aufrufer erinnern muss, ist keine Regel. Der
+   * Fehler ist zudem der unangenehmen Sorte: Ein Etikett, das an der alten
+   * Stelle liegen bleibt, sieht aus wie ein Etikett eines anderen Elements —
+   * sichtbar, aber leicht zu übersehen, und in der DI dauerhaft falsch. Keine
+   * Invariante fängt es, weil das Ergebnis wohlgeformtes BPMN ist.
+   *
+   * Deshalb entscheidet die Schicht, nicht der Aufrufer: Hat die Form
+   * Beschriftungen oder Anhefter, läuft die Bewegung über `moveElements` und
+   * nimmt sie mit. Hat sie keine — der weit häufigere Fall —, bleibt es beim
+   * einfachen `shape.move`, damit ein Undo genau einen Schritt zurückgeht.
+   *
+   * Gemessen an `synth-all-event-types`: `moveShape(E_Start_Message, +120/+40)`
+   * ließ die Beschriftung auf x=125 stehen, während das Ereignis nach x=245
+   * wanderte; an `synth-boundary-events` blieb `Boundary_Timer` bei y=272,
+   * während sein Wirt nach y=332 ging.
+   */
+  override moveShape(
+    shape: BpmnShape,
+    delta: { x: number; y: number },
+    newParent?: unknown,
+    newParentIndex?: unknown,
+    hints?: Record<string, unknown>,
+  ): void {
+    // `newParentIndex` trägt bei `diagram-js` wahlweise einen Index **oder**
+    // die Hints — die Signatur ist dort überladen.
+    const passedHints =
+      typeof newParentIndex === "object" && newParentIndex !== null
+        ? (newParentIndex as Record<string, unknown>)
+        : hints;
+
+    // **Die Abbruchbedingung.** `MoveHelper.moveClosure` — der Innenteil von
+    // `elements.move` — ruft für *jede* Form dieses `moveShape`, und zwar mit
+    // `{ recurse: false, layout: false }`. Ohne diese Abfrage riefe die
+    // Umleitung unten wieder `moveElements` und die beiden Ebenen kreisten
+    // gegeneinander (gemessen: `RangeError: Maximum call stack size
+    // exceeded`). `recurse === false` heißt „ein zusammengesetzter Zug läuft
+    // bereits, dies ist sein Innenteil" — und dort ist `shape.move` genau
+    // richtig, weil `label-support` und `attach-support` an der äußeren Ebene
+    // hängen.
+    const insideComposite = passedHints?.["recurse"] === false;
+
+    const baggage =
+      !insideComposite &&
+      ((Array.isArray(shape.labels) && shape.labels.length > 0) ||
+        (Array.isArray(shape.attachers) && shape.attachers.length > 0));
+
+    if (!baggage) {
+      super.moveShape(
+        shape as never,
+        delta as never,
+        newParent as never,
+        newParentIndex as never,
+        hints as never,
+      );
+      return;
+    }
+
+    // `newParentIndex` kennt `elements.move` nicht. Das ist kein Verlust: der
+    // Index ordnet Geschwister im SVG, und eine Form mit Anhang wird nie an
+    // einer bestimmten Stelle der Kinderliste eingefügt — sie wird bewegt.
+    // Ein ausdrücklich übergebener Index würde hier still verschwinden,
+    // deshalb steht er im Fehlerbild statt in einer stillen Annahme.
+    if (typeof newParentIndex === "number") {
+      throw new Error(
+        `moveShape(${shape.id}, …, newParentIndex) ist für eine Form mit ` +
+          "Beschriftung oder Anhefter nicht definiert — der zusammengesetzte " +
+          "Weg über elements.move kennt keinen Kindindex. Bitte moveElements " +
+          "benutzen und die Reihenfolge getrennt setzen.",
+      );
+    }
+    this.moveElements(
+      [shape] as never,
+      delta as never,
+      newParent as never,
+      passedHints as never,
+    );
+  }
+
+  /**
    * Verbindet zwei Elemente mit der Kantenart, die die Regeln vorschlagen.
    * Liefern sie keine, entsteht nichts — stillschweigend einen Sequenzfluss
    * anzulegen wäre der bequeme und falsche Weg.

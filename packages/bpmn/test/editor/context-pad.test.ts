@@ -172,23 +172,42 @@ describe("Ausgelöste Einträge halten die Invarianten", () => {
     harness.destroy();
   });
 
-  it("heftet nur typrichtige Randereignisse an", async () => {
+  it("heftet ein Zwischenereignis an und macht ein Randereignis daraus", async () => {
+    // [ARCTOS-FULL-2026-08-31 · OP-019] Diese Zusicherung stand hier
+    // umgekehrt: `attachBoundary` mit einem `bpmn:IntermediateCatchEvent`
+    // musste `null` liefern und „Nur ein Randereignis lässt sich an eine
+    // Aktivität anheften" sagen. Das war die Bedienlücke selbst, nicht ihr
+    // Wächter — `BpmnRules.canAttach` liess den Typ die ganze Zeit zu. Der
+    // Test hält jetzt fest, was OP-019 verlangt; die Ablehnung ist auf das
+    // verschoben, was am Rand tatsächlich nichts zu suchen hat, und wird eine
+    // Zusicherung weiter unten geprüft. Vollständig in
+    // `test/editor/attach-boundary.test.ts`.
     harness = await openEditor(BOUNDARY_PROCESS);
     const creation = harness.service<{
       attachBoundary(
         host: unknown,
         item: unknown,
-      ): { shape: unknown; rejected?: string };
+      ): { shape: { type?: string } | null; rejected?: string };
     }>("elementCreation");
     const host = harness.session.shape("Task_A");
-    const wrong = creation.attachBoundary(host, {
+    const converted = creation.attachBoundary(host, {
       id: "x",
       type: "bpmn:IntermediateCatchEvent",
       title: "Zwischenereignis",
       group: "ereignisse",
     });
+    expect(converted.rejected).toBeUndefined();
+    expect(converted.shape?.type).toBe("bpmn:BoundaryEvent");
+
+    // Was kein Ereignis ist, wird weiterhin abgelehnt.
+    const wrong = creation.attachBoundary(host, {
+      id: "y",
+      type: "bpmn:ExclusiveGateway",
+      title: "Verzweigung",
+      group: "gateways",
+    });
     expect(wrong.shape).toBeNull();
-    expect(wrong.rejected).toContain("Randereignis");
+    expect(wrong.rejected).toContain("nicht anheften");
     harness.destroy();
   });
 });

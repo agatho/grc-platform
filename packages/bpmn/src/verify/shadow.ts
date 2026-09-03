@@ -201,14 +201,24 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
     match: /^candidate-set\/.*\/more-ours$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. ARCTOS holds elements the reference does not after the same sequence. Two " +
-      "causes are separated in the corpus but not yet in the signature: (a) deliberate — ARCTOS " +
-      "repairs missing DI on import and therefore knows flow elements that bpmn-js drops for want " +
-      "of a BPMNShape (same decision as bounds|waypoints/*/presence/only-ours), and (b) a genuine " +
-      "difference after editing, measured as one extra bpmn:SequenceFlow following connect+undo. " +
-      "(b) is what keeps the verdict at ours-wrong: an element too many after an undo is the " +
-      "beginning of the same family as the DI leaks the property runner found. Blocks plan §5.6 " +
-      "criterion 2.",
+      "OPEN DEFECT, halved in STUFE2-2A (4 -> 2). ARCTOS holds elements the reference does not " +
+      "after the same sequence.\n\n" +
+      "FIXED (2 of 4): the `shape.create` rule short-circuited to true whenever canAttach() said " +
+      "'attach'. diagram-js asks `shape.attach` first and `shape.create` only afterwards, so the " +
+      "shortcut answered a question that is never put to this rule — and it skipped canDrop(), " +
+      "whose 'a collapsed sub-process takes nothing' was therefore dead. Measured: " +
+      "createShape(bpmn:IntermediateThrowEvent, in Sub_Pruefung) on synth-boundary-events was " +
+      "applied by ARCTOS and refused by the reference; the resulting element sat inside a " +
+      "collapsed sub-process, visible on no plane, and showed up here as the extra candidate.\n\n" +
+      "OPEN (2 of 4), and **not** what STUFE2-D §2.5 assumed. The report wrote 'one extra " +
+      "bpmn:SequenceFlow after connect+undo'. Measured, both remaining cases are the reference's " +
+      "**DropOnFlowBehavior**: dropping or creating a flow node on top of a sequence flow makes " +
+      "bpmn-js split that flow and wire the node in. ARCTOS has no such behaviour, so it keeps " +
+      "the original flow and the node sits on the line unconnected. Seen once as " +
+      "element-set/bpmn:SequenceFlow/sourceRef (FF_3: F_Service against F_Start after a single " +
+      "reparent). Neither document loses data; it is a missing editing convenience, not a leak. " +
+      "Handed to wave 2b, where OP-019 (the automatic type change on attach) already lives — " +
+      "both are 'the engine reacts to where you dropped something'.",
   },
   {
     match:
@@ -244,26 +254,50 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
     verdict: "ours-wrong",
     reason:
       "OPEN DEFECT. After the same sequence the two documents contain different elements, or the " +
-      "same id carries a different type or a different sourceRef/targetRef. This is the most " +
-      "serious class in the table — it is data-level divergence, and on save it is data loss or " +
-      "data corruption rather than a cosmetic difference. Blocks plan §5.6 criterion 2.",
+      "same id carries a different type or a different sourceRef/targetRef. Data-level " +
+      "divergence, and on save that is data loss or corruption rather than a cosmetic " +
+      "difference. Blocks plan §5.6 criterion 2.\n\n" +
+      "Worked through in STUFE2-2A (11 occurrences -> 7). The single behavioural root is the " +
+      "reference's DetachEventBehavior: bpmn-js replaces a boundary event that leaves its host " +
+      "with a bpmn:IntermediateCatchEvent, ARCTOS refuses the detachment instead " +
+      "(BoundaryEventBehavior.keepAttachment — a boundary event without attachedToRef is " +
+      "invalid BPMN, and moddle drops the attribute silently). Both answers produce a valid " +
+      "document; from there the generated ids run apart and the remaining element-type entries " +
+      "are that drift, not separate defects.\n\n" +
+      "STUFE2-D §2.8 proposed a content-based alignment of generated ids (type + container + " +
+      "neighbours) as the fix for the drift. **It was built and measured, and it is worse**: " +
+      "20 -> 52 ours-wrong over the same 100 sequences, 70 with the name in the key. Grouping " +
+      "by type decouples the numbering of shapes and connections, and that is exactly what must " +
+      "not happen — CandidateOrder already makes both engines create the same elements in the " +
+      "same order, so global document position is the quantity that genuinely agrees. The " +
+      "reasoning and the table are in snapshot.ts above normalizeGeneratedIds.",
   },
   {
     match: /^waypoints\/.*\/count$/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. Different number of waypoints for the same connection after the same " +
-      "operations. Cosmetic in the picture, but it makes every save a diff. " +
-      "Two causes were separated in STUFE2-D and one of them is fixed. Fixed: the layouter " +
-      "defaulted a missing connectionStart/connectionEnd hint to getMid(shape) instead of the " +
-      "*existing* docking point, so repairConnection considered every route reparable and " +
-      "replaced a hand-laid four-point route with a straight line. BpmnLayouter now reads the " +
-      "docking from the current waypoints (dockingOf), the same rule the reference uses. " +
-      "Verified in isolation: one move of a flow node in synth-foreign-camunda-extensions now " +
-      "gives byte-identical waypoints in both engines for FF_1..FF_3. What remains is the same " +
-      "signature *inside a longer sequence*, and always after an undo/redo pair — the suspicion " +
-      "is that one engine relayouts on the redo and the other restores the stored route. Not " +
-      "chased further in this stage; it is the largest single open class.",
+      "OPEN DEFECT, all but one occurrence closed in STUFE2-2A (34 -> 1). Different number of " +
+      "waypoints for the same connection after the same operations. Cosmetic in the picture, but " +
+      "it makes every save a diff.\n\n" +
+      "Three causes were separated. (1) FIXED in STUFE2-D: the layouter defaulted a missing " +
+      "connectionStart/connectionEnd hint to getMid(shape) instead of the *existing* docking " +
+      "point, so repairConnection considered every route reparable. (2) FIXED in STUFE2-2A and " +
+      "the dominant one: BpmnLayouter offered `['straight', 'h:h']` as the preferred layouts of " +
+      "*every* sequence flow. In ManhattanLayout `straight` is not a finishing touch but a " +
+      "precedence — tryLayoutStraight pulls axis-overlapping shapes onto a common axis and the " +
+      "route collapses to two points, destroying any hand-laid bend. The reference offers " +
+      "`straight` only for message flows and for connections at an expanded sub-process. " +
+      "Dropping it alone took the class from 34 to 9; the full BPMN decision table (gateways " +
+      "v:h/h:v, boundary events by attach orientation, loops, preserveDocking, and the vertical " +
+      "counterpart for vertical pools) took it to 2. (3) FIXED: imported waypoints carried no " +
+      "`original`, so every later layout used the *cropped* point as the logical anchor — see " +
+      "the waypoints/*/position rule.\n\n" +
+      "The report STUFE2-D §2.4 suspected a relayout on redo. **That was wrong**, and the " +
+      "measurement says so: the smallest reproducing sequence is a *single* reparent on " +
+      "synth-foreign-camunda-extensions with no undo/redo at all (FF_1, FF_3: 2 waypoints " +
+      "against 4). The class had a table cause, not a state cause.\n\n" +
+      "The one remaining occurrence is a consequence of the reference's DropOnFlowBehavior " +
+      "(see candidate-set/*/more-ours), not of the routing.",
   },
   {
     match: /^outcome\/attachBoundary\/applied-vs-rejected$/,
@@ -289,6 +323,28 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
       "never a subset — the reverse direction (presence/only-reference) is NOT classified and fails.",
   },
   {
+    // Order matters: this entry must come *before* the `…/position` rule below,
+    // because `classify()` takes the first match and `…/position` would also
+    // match `…/position/grid-snap` without the `$` anchor it happens to carry.
+    match: /^waypoints\/bpmn:(Sequence|Message)Flow\/position\/grid-snap$/,
+    verdict: "intentional",
+    reason:
+      "The reference Modeler snaps the middle segments of a freshly routed connection onto a 10px " +
+      "grid (bpmn-js features/grid-snapping/behavior/GridSnappingLayoutConnectionBehavior, " +
+      "snapMiddleSegments, on connection.create and connection.layout). ARCTOS' modeling layer " +
+      "has no grid: snapping is an editing convenience and belongs to the editor, not to the " +
+      "model — a document written by a headless import/edit/export must not silently move a " +
+      "hand-laid route by five pixels. Measured in STUFE2-2A: after the layout table and the " +
+      "import-docking fix, *every* remaining waypoint-position difference in the 100-sequence " +
+      "run was of this shape (345 vs 350, 226 vs 230, 387 vs 390, 415 vs 420, 290 vs 295 …) — " +
+      "an interior waypoint, the reference exactly on the grid, ours not, the gap at most half a " +
+      "grid step. The three conditions are checked (isGridSnapDifference); a routing difference " +
+      "that does not meet all three keeps the signature without the suffix and stays ours-wrong, " +
+      "so a *new* kind of waypoint difference still fails the suite. Revisit when the editor " +
+      "strand adds grid snapping: then the two should agree again and this class should vanish " +
+      "rather than be tolerated.",
+  },
+  {
     match: /^waypoints\/bpmn:(Sequence|Message)Flow\/position$/,
     verdict: "ours-wrong",
     reason:
@@ -302,7 +358,19 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
       "raster baselines only show *imported* diagrams, whose DI is read rather than computed. " +
       "The class fell from 42+8 to 20+2 in the 100-sequence run. The rest is intermediate " +
       "waypoints after a move or connect; classified, not accepted, so that a *new* kind of " +
-      "waypoint difference still fails the suite. Blocks plan §5.6 criterion 2.",
+      "waypoint difference still fails the suite. Blocks plan §5.6 criterion 2.\n\n" +
+      "STUFE2-2A took the class from 20+2 to 1+1 through two further causes. (a) The BPMN " +
+      "decision table (see waypoints/*/count). (b) **Imported connections carried no logical " +
+      "docking point.** BPMN DI has only the drawn point; diagram-js keeps the point the routing " +
+      "meant next to it as `waypoint.original`, and every later computation uses " +
+      "`original ?? point`. Without it the *cropped* point becomes the anchor and the docking " +
+      "creeps along the outline with every edit. Measured on synth-foreign-camunda-extensions, " +
+      "one reparent: FF_1 left the start event at (188,138) — the bottom **right corner** of a " +
+      "circle's bounding box — where the reference left it at (170,138), the bottom centre. The " +
+      "reference has a dedicated component for this (ImportDockingFix); ARCTOS had none. " +
+      "src/modeling/docking.ts is the equivalent, and the importer calls it. What is left is one " +
+      "message flow endpoint and one sequence-flow waypoint that follows the lane-content " +
+      "difference below.",
   },
   {
     match: /^bounds\/.*\/created$/,
@@ -327,20 +395,35 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
       "is left is a 5px difference (515 vs 520) that comes from the *position of the newly " +
       "created shape*, not from the resize: the harness clamps a create position into the parent " +
       "(`inside()`), both drivers clamp with the same margin, and the remaining pixels follow the " +
-      "container the clamp was measured against. Small, understood, and cheaper to fix once the " +
-      "waypoint classes below are closed.",
+      "container the clamp was measured against. Still 1 occurrence after STUFE2-2A (515 against " +
+      "520 on E_EventSub). Note the correlation with the grid-snap class: the reference value is " +
+      "a multiple of the 10px grid and ours is not, which points at the same " +
+      "GridSnapping — but the arithmetic runs through the auto-resize padding and was not " +
+      "traced to the end, so the class keeps its verdict rather than being reclassified on a " +
+      "hunch.",
   },
   {
     match: /^bounds\/bpmn:/,
     verdict: "ours-wrong",
     reason:
-      "OPEN DEFECT. An *existing* element sits somewhere else after the same sequence. Measured " +
-      "cause: when a pool grows, bpmn-js' resizeLane makes room by moving the lane's contents " +
-      "(its SpaceTool path), while ARCTOS' auto-resize redistributes the lane *bounds* and leaves " +
-      "the nodes where they are (End_Bank y=255 against y=275). Neither loses data and both " +
-      "documents are valid; the verdict stays ours-wrong by burden of proof, because bpmn-js' " +
-      "behaviour is the one users of the old editor know. Distinct from `bounds/…/created`, which " +
-      "is about elements the run itself made.",
+      "OPEN DEFECT, reduced to a placement convention in STUFE2-2A. An *existing* element sits " +
+      "somewhere else after the same sequence. When a pool grows, bpmn-js' resizeLane makes room " +
+      "by moving the lane's contents (its SpaceTool path); ARCTOS redistributed the lane *bounds* " +
+      "and left the nodes standing (End_Bank y=255 against y=275).\n\n" +
+      "STUFE2-D called this cosmetic — 'neither side loses data'. Measured, it was not. " +
+      "synth-collaboration-pools-lanes, Participant_Bank grown from 260 to 390px: the boundary " +
+      "of Lane_Genehmigung moved from y=210 to y=275 *under* Task_Bank_Entscheiden, " +
+      "syncLaneMembership recomputed membership from the geometry, and the activity silently " +
+      "changed lane. In this product the lane says **who** performs the step and flowNodeRef " +
+      "carries that; a resize elsewhere in the diagram must not reassign responsibility. " +
+      "End_Bank additionally ended up above the top edge of its own lane. " +
+      "redistributeLanes now moves a leaf lane's content by the same offset as its leading edge " +
+      "— but only for nodes that would otherwise fall out of the lane, so a resize does not " +
+      "displace the element that caused it.\n\n" +
+      "What remains is the convention itself: the reference moves the whole content, ARCTOS the " +
+      "minimum. Both documents are valid; the verdict stays ours-wrong by burden of proof, " +
+      "because bpmn-js' behaviour is the one users of the old editor know. Distinct from " +
+      "`bounds/…/created`, which is about elements the run itself made.",
   },
   {
     match: /^element-name\/bpmn:(Sequence|Message)Flow\/name$/,
@@ -471,6 +554,53 @@ function compareSnapshots(
   }
 }
 
+/**
+ * Grid spacing of the reference `Modeler`, in px (`diagram-js` `GridSnapping`).
+ */
+export const REFERENCE_GRID_PX = 10;
+
+/**
+ * Is this waypoint difference the reference's grid snapping and nothing else?
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-021] `bpmn-js`' Modeler ships
+ * `GridSnappingLayoutConnectionBehavior`, which after every `connection.create`
+ * and `connection.layout` pulls the **middle** segments of the route onto a
+ * 10px grid (`snapMiddleSegments`). ARCTOS' modeling layer has no grid — grid
+ * snapping is an editing convenience and lives in the editor, not in the model.
+ *
+ * The three conditions together are what makes this recognisable rather than a
+ * blanket excuse: an interior waypoint, the reference exactly on the grid and
+ * ours not, and a gap of at most half a grid step. A genuine routing
+ * difference is not bounded by half a grid step and does not land on a
+ * multiple of ten on one side only. Measured over the 100-sequence run: every
+ * remaining `…/position` occurrence met all three (345 vs 350, 226 vs 230,
+ * 387 vs 390, 415 vs 420, …).
+ */
+function isGridSnapDifference(
+  index: number,
+  count: number,
+  ours: { x: number; y: number },
+  reference: { x: number; y: number },
+): boolean {
+  if (index === 0 || index >= count - 1) return false;
+  const half = REFERENCE_GRID_PX / 2;
+  if (
+    Math.abs(ours.x - reference.x) > half ||
+    Math.abs(ours.y - reference.y) > half
+  ) {
+    return false;
+  }
+  const onGrid = (value: number): boolean =>
+    Number.isInteger(value) && value % REFERENCE_GRID_PX === 0;
+  const changedAxes: ("x" | "y")[] = [];
+  if (ours.x !== reference.x) changedAxes.push("x");
+  if (ours.y !== reference.y) changedAxes.push("y");
+  if (changedAxes.length === 0) return false;
+  return changedAxes.every(
+    (axis) => onGrid(reference[axis]) && !onGrid(ours[axis]),
+  );
+}
+
 function compareNode(
   ours: SnapshotNode,
   reference: SnapshotNode,
@@ -564,12 +694,23 @@ function compareNode(
           Math.abs(point.x - other.x) > WAYPOINT_TOLERANCE_PX ||
           Math.abs(point.y - other.y) > WAYPOINT_TOLERANCE_PX
         ) {
+          const snapped = isGridSnapDifference(
+            index,
+            ours.waypoints.length,
+            point,
+            other,
+          );
           out.push({
             kind: "waypoints",
-            signature: `waypoints/${ours.type}/position`,
+            signature: `waypoints/${ours.type}/position${snapped ? "/grid-snap" : ""}`,
             detail:
               `${ours.id} waypoint ${index}: (${point.x},${point.y}) vs (${other.x},${other.y}), ` +
-              `tolerance ${WAYPOINT_TOLERANCE_PX}px`,
+              `tolerance ${WAYPOINT_TOLERANCE_PX}px` +
+              (snapped
+                ? ` — reference value is on the ${REFERENCE_GRID_PX}px grid, ours is not, ` +
+                  `and the gap is at most half a grid step: the reference's ` +
+                  `GridSnappingLayoutConnectionBehavior, not a routing difference`
+                : ""),
           });
           break;
         }

@@ -31,6 +31,7 @@ import { BoundaryEventBehavior } from "./behaviors/BoundaryEventBehavior";
 import { ConnectionBehavior } from "./behaviors/ConnectionBehavior";
 import { ParticipantBehavior } from "./behaviors/ParticipantBehavior";
 import { LabelBehavior } from "./behaviors/LabelBehavior";
+import { LaneResizeBehavior } from "./behaviors/LaneResizeBehavior";
 import {
   AutoResizeRules,
   BpmnAutoResize,
@@ -53,6 +54,7 @@ const modelingModule = {
     "boundaryEventBehavior",
     "connectionBehavior",
     "participantBehavior",
+    "laneResizeBehavior",
     "modeling",
     // Zuletzt: `autoResize` hört auf `postExecuted` und muss die
     // Änderungen der übrigen Verhalten schon sehen.
@@ -72,6 +74,10 @@ const modelingModule = {
   boundaryEventBehavior: ["type", BoundaryEventBehavior],
   connectionBehavior: ["type", ConnectionBehavior],
   participantBehavior: ["type", ParticipantBehavior],
+  // [ARCTOS-FULL-2026-08-31 · OP-041] Kind-Lanes ziehen mit ihrer Eltern-Lane
+  // nach. Vor `autoResize` registriert, damit eine Lane-Umverteilung
+  // abgeschlossen ist, bevor der Pool über sein Wachstum entscheidet.
+  laneResizeBehavior: ["type", LaneResizeBehavior],
   autoResize: ["type", BpmnAutoResize],
   autoResizeRules: ["type", AutoResizeRules],
 } as const;

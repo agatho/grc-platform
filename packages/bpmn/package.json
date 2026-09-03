@@ -11,7 +11,8 @@
     "./viewer": "./src/viewer/index.ts",
     "./modeling": "./src/modeling/index.ts",
     "./editor": "./src/editor/index.ts",
-    "./grc": "./src/grc/index.ts"
+    "./grc": "./src/grc/index.ts",
+    "./util": "./src/util/index.ts"
   },
   "scripts": {
     "lint": "eslint . --no-error-on-unmatched-pattern",

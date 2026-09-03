@@ -84,6 +84,32 @@ export class BpmnRules extends RuleProvider {
 
     this.addRule("connection.updateWaypoints", () => true);
 
+    // [ARCTOS-FULL-2026-08-31 · OP-023/OP-025] Hier stand vor `canDrop` noch
+    // eine Abkürzung: `if (canAttach([c.shape], target) === "attach") return
+    // true;`. Sie war doppelt falsch.
+    //
+    // (a) **`diagram-js` fragt das Anheften ohnehin zuerst.**
+    // `features/create/Create.js` prüft `shape.attach` und erst, wenn das
+    // ablehnt, `shape.create`. Die Abkürzung beantwortete also eine Frage, die
+    // an dieser Regel gar nicht gestellt wird.
+    //
+    // (b) **Sie hat das Ablegen erlaubt, wo nur das Anheften zulässig wäre.**
+    // Ein `bpmn:IntermediateThrowEvent` ist ein Anheftkandidat; jede Aktivität
+    // ist ein zulässiger Wirt. Damit lieferte `shape.create` für „Zwischen-
+    // Ereignis auf eine Aktivität" ein `true`, der Aufrufer rief aber
+    // `modeling.createShape(shape, position, parent)` **ohne** `isAttach` —
+    // das Ereignis landete als gewöhnliches Kind *im* Subprozess statt auf
+    // seinem Rand, und die eigentliche Prüfung `canDrop` lief nie. Deren
+    // Verbot „ein eingeklappter Subprozess nimmt nichts auf" war damit
+    // wirkungslos.
+    //
+    // Gemessen im Vergleichslauf: `createShape(bpmn:IntermediateThrowEvent,
+    // in Sub_Pruefung)` auf `synth-boundary-events` — ARCTOS führte aus,
+    // die Referenz lehnte ab (`outcome/createShape/applied-vs-rejected`, 2×).
+    // Das so entstandene `IntermediateThrowEvent_1` steckte danach in einem
+    // eingeklappten Subprozess, war auf keiner Ebene sichtbar und tauchte als
+    // `candidate-set/*/more-ours` wieder auf (2×) — das eine Element zu viel,
+    // das der Bericht `STUFE2-D` §2.5 einem `connect`+`undo` zuschrieb.
     this.addRule("shape.create", (context: unknown) => {
       const c = context as {
         shape?: BpmnShape;
@@ -93,7 +119,6 @@ export class BpmnRules extends RuleProvider {
       };
       const target = c.target ?? c.parent;
       if (!c.shape || !target) return false;
-      if (canAttach([c.shape], target) === "attach") return true;
       return canDrop(c.shape, target);
     });
 

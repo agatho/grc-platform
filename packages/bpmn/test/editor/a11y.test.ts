@@ -24,6 +24,7 @@ import axe from "axe-core";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { DEFAULT_PALETTE_ITEMS } from "../../src/editor/catalog";
+import { TOOL_IDS } from "../../src/editor/Tools";
 import type { ArctosContextPadProvider } from "../../src/editor/ContextPadProvider";
 import type { LabelEditing } from "../../src/editor/LabelEditing";
 import type { PaletteChrome } from "../../src/editor/PaletteChrome";
@@ -119,7 +120,12 @@ describe("Was axe nicht sieht", () => {
     const buttons = Array.from(
       node.querySelectorAll<HTMLElement>("button.entry"),
     );
-    expect(buttons).toHaveLength(DEFAULT_PALETTE_ITEMS.length);
+    // [ARCTOS-FULL-2026-08-31 · OP-031] Der Vorrat **plus** die drei
+    // Werkzeuge. Die Zahl bleibt exakt — ein Eintrag zu viel oder zu wenig
+    // macht den Test weiterhin rot; sie hat nur seit dieser Welle zwei Quellen.
+    expect(buttons).toHaveLength(
+      DEFAULT_PALETTE_ITEMS.length + TOOL_IDS.length,
+    );
     for (const button of buttons) {
       expect(button.tagName.toLowerCase()).toBe("button");
       expect(button.getAttribute("aria-label")?.length ?? 0).toBeGreaterThan(3);

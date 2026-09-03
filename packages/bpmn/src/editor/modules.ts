@@ -40,6 +40,14 @@ import CopyPasteModule from "diagram-js/lib/features/copy-paste/index.js";
 import CreateModule from "diagram-js/lib/features/create/index.js";
 import DistributeElementsModule from "diagram-js/lib/features/distribute-elements/index.js";
 import GridSnappingModule from "diagram-js/lib/features/grid-snapping/index.js";
+// [ARCTOS-FULL-2026-08-31 · OP-031] Die drei Werkzeugmodule. Sie lagen in
+// `node_modules` und waren nirgends registriert — `grep -r "lasso-tool" src/`
+// fand vor dieser Arbeit null Treffer. `tool-manager` kommt über deren
+// `__depends__` mit und ist der Ort, an dem `diagram-js` „genau ein Werkzeug
+// ist an" führt.
+import HandToolModule from "diagram-js/lib/features/hand-tool/index.js";
+import LassoToolModule from "diagram-js/lib/features/lasso-tool/index.js";
+import SpaceToolModule from "diagram-js/lib/features/space-tool/index.js";
 import MoveModule from "diagram-js/lib/features/move/index.js";
 import PaletteModule from "diagram-js/lib/features/palette/index.js";
 import ResizeModule from "diagram-js/lib/features/resize/index.js";
@@ -57,6 +65,8 @@ import { ContainerMode } from "./ContainerMode";
 import { DiagramFind } from "./Find";
 import { KeyboardHelp } from "./KeyboardHelp";
 import { ContextPadChrome } from "./ContextPadChrome";
+import { EditorTools } from "./Tools";
+import { RangeSelection } from "./RangeSelection";
 import { EditorAnnouncer } from "./announce";
 import { EditorConfiguration } from "./config";
 import { EditorKeyboard } from "./Keyboard";
@@ -91,6 +101,9 @@ export const editorModule = {
     DistributeElementsModule,
     GridSnappingModule,
     BendpointsModule,
+    HandToolModule,
+    LassoToolModule,
+    SpaceToolModule,
   ],
   __init__: [
     "paletteProvider",
@@ -119,6 +132,9 @@ export const editorModule = {
   bendpointEditing: ["type", BendpointEditing],
   resizeBehavior: ["type", ResizeBehavior],
   bpmnCopyPaste: ["type", BpmnCopyPaste],
+  // [ARCTOS-FULL-2026-08-31 · OP-031/OP-032]
+  editorTools: ["type", EditorTools],
+  rangeSelection: ["type", RangeSelection],
   alignDistribute: ["type", AlignDistribute],
   editorKeyboard: ["type", EditorKeyboard],
 } as const;

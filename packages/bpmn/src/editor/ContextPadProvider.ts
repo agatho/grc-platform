@@ -18,6 +18,7 @@
 import type { EditorAnnouncer } from "./announce";
 import type { EditorConfiguration } from "./config";
 import type { ConnectMode } from "./ConnectMode";
+import type { ContainerMode } from "./ContainerMode";
 import type { BpmnCopyPaste } from "./CopyPaste";
 import type { AlignDistribute } from "./AlignDistribute";
 import type { BendpointEditing } from "./BendpointEditing";
@@ -45,6 +46,16 @@ interface ContextPadLike {
 
 interface InjectorLike {
   get<T>(name: string, strict?: boolean): T | null;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-018] Der Ausschnitt der Ebenennavigation, den
+ * das Kontextmenü braucht. Der Dienst wird von `BpmnCanvas` eingehängt; ein
+ * fremder `diagram-js`-Aufbau ohne ihn verliert nur diesen einen Eintrag.
+ */
+interface PlaneNavigationLike {
+  canDrillDown(elementId: string): boolean;
+  drillDown(elementId: string): boolean;
 }
 
 type EntryAction = (
@@ -183,6 +194,33 @@ export class ArctosContextPadProvider {
             },
           );
         }
+        // [ARCTOS-FULL-2026-08-31 · OP-019] Der umgekehrte Weg: **dieses**
+        // Ereignis an eine Aktivität anheften. Er läuft über den
+        // Containerwechsel (`m`), weil dort schon die Frage „wohin gehört
+        // das?" gestellt wird; das Kontextmenü nennt ihn nur, damit er mit der
+        // Maus auffindbar ist.
+        const containerMode = this.injector.get<ContainerMode>(
+          "containerMode",
+          false,
+        );
+        if (
+          containerMode &&
+          isAny(boOf(shape), [
+            "bpmn:IntermediateCatchEvent",
+            "bpmn:IntermediateThrowEvent",
+            "bpmn:BoundaryEvent",
+          ])
+        ) {
+          entries["attach.to-activity"] = this.entry(
+            "An eine Aktivität anheften (Taste M)",
+            "anfuegen",
+            "bpmn-icon-intermediate-event-catch-timer",
+            () => {
+              this.contextPad.close();
+              containerMode.start([shape]);
+            },
+          );
+        }
         if (
           this.rules.allowed("shape.attach", {
             shape: this.probes.shape("bpmn:BoundaryEvent"),
@@ -199,6 +237,29 @@ export class ArctosContextPadProvider {
             },
           );
         }
+      }
+
+      // -- Ebene öffnen ---------------------------------------------------
+      // [ARCTOS-FULL-2026-08-31 · OP-018] Der Mausweg zum Drill-Down neben dem
+      // Doppelklick. Der Eintrag erscheint nur, wenn hinter dem Element
+      // tatsächlich eine eigene `BPMNPlane` liegt — im Korpus trifft das auf
+      // einen von vier verschachtelten Subprozessen zu. Ein Eintrag, der bei
+      // den anderen dreien „geht nicht" sagt, wäre genau der Menüeintrag, den
+      // der Kopf dieser Datei ausschließt.
+      const planes = this.injector.get<PlaneNavigationLike>(
+        "planeNavigation",
+        false,
+      );
+      if (planes?.canDrillDown(shape.id) === true) {
+        entries["plane.drill-down"] = this.entry(
+          "Ebene öffnen (Taste O)",
+          "navigieren",
+          "bpmn-icon-subprocess-expanded",
+          () => {
+            this.contextPad.close();
+            planes.drillDown(shape.id);
+          },
+        );
       }
 
       // -- Typ wechseln ---------------------------------------------------

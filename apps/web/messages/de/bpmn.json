@@ -34,5 +34,14 @@
       "architecture": "Architektur (EAM)",
       "responsibility": "Verantwortung"
     }
+  },
+  "chrome": {
+    "disabledReason": "Bearbeitung erfordert die Rolle Prozessmodellierer."
+  },
+  "plane": {
+    "label": "Ebene",
+    "up": "Eine Ebene zurück",
+    "breadcrumb": "Ebenen des Diagramms",
+    "openHint": "Doppelklick oder Taste O öffnet die Ebene eines Subprozesses."
   }
 }

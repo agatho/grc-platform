@@ -18,6 +18,14 @@ export default drawModule;
 
 export { default as BpmnRenderer } from "./BpmnRenderer";
 export { buildScene, type Scene } from "./scene";
+// [ARCTOS-FULL-2026-08-31 · OP-018] Ebenenbaum des Dokuments; siehe planes.ts.
+export {
+  planeIndexFor,
+  planeLabel,
+  planePath,
+  planesOf,
+  type PlaneInfo,
+} from "./planes";
 export {
   describeElement,
   renderDefinitions,

@@ -44,6 +44,10 @@ import type {
 
 /** Gruppen der Palette, in Anzeigereihenfolge. */
 export const PALETTE_GROUPS: readonly PaletteGroup[] = [
+  // [ARCTOS-FULL-2026-08-31 · OP-031] Die Werkzeuggruppe steht zuerst: `F6`
+  // führt in die Palette, und der erste Knopf dort soll das Werkzeug sein,
+  // nicht der erste Elementtyp.
+  { id: "werkzeuge", label: "Werkzeuge" },
   { id: "ereignisse", label: "Ereignisse" },
   { id: "aufgaben", label: "Aufgaben" },
   { id: "gateways", label: "Verzweigungen" },

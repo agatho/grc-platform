@@ -11,6 +11,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { TOOL_IDS } from "../../src/editor/Tools";
 import {
   DEFAULT_PALETTE_ITEMS,
   groupsOf,
@@ -112,7 +113,8 @@ describe("Palette im DOM", () => {
     }
 
     const buttons = node?.querySelectorAll("button.entry") ?? [];
-    expect(buttons.length).toBe(DEFAULT_PALETTE_ITEMS.length);
+    // [ARCTOS-FULL-2026-08-31 · OP-031] Vorrat plus Werkzeuggruppe.
+    expect(buttons.length).toBe(DEFAULT_PALETTE_ITEMS.length + TOOL_IDS.length);
     for (const button of Array.from(buttons)) {
       expect(button.getAttribute("aria-label")).toBeTruthy();
       expect(button.getAttribute("data-action")).toBeTruthy();

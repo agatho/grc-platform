@@ -71,7 +71,13 @@ import {
   STROKE_THIN,
   type Palette,
 } from "./theme";
-import type { BpmnConnection, BpmnRendererConfig, BpmnShape } from "./types";
+import type {
+  BpmnConnection,
+  BpmnRendererConfig,
+  BpmnShape,
+  ModdleElement,
+  Point,
+} from "./types";
 
 /**
  * BPMN-Renderer auf `diagram-js`' `BaseRenderer`.
@@ -117,6 +123,17 @@ export default class BpmnRenderer extends BaseRenderer {
   }
 
   override drawShape(visuals: SVGElement, element: ShapeLike): SVGElement {
+    // [ARCTOS-FULL-2026-08-31 · OP-046] Die DI-Farben werden **nach** dem
+    // Zeichnen aufgetragen, nicht in jede der vierzig Palettenstellen
+    // hineingereicht. Der Grund ist nicht Bequemlichkeit: die Palette ist die
+    // Aussage des Produkts (einschliesslich der Hochkontrastfassung), die
+    // DI-Farbe die des Dokuments. Eine Übersteuerung am Ende hält beide
+    // auseinander und lässt sich an einer Stelle abschalten, falls die
+    // GRC-Schicht einmal dieselbe Fläche einfärben will.
+    return this.applyDiColors(this.drawShapeBody(visuals, element), element);
+  }
+
+  private drawShapeBody(visuals: SVGElement, element: ShapeLike): SVGElement {
     const shape = element as unknown as BpmnShape;
     assertFiniteBounds(shape);
     svgAttr(visuals, { "data-bpmn-type": shape.type, "aria-hidden": "true" });
@@ -162,6 +179,58 @@ export default class BpmnRenderer extends BaseRenderer {
   }
 
   override drawConnection(
+    visuals: SVGElement,
+    element: ConnectionLike,
+  ): SVGElement {
+    return this.applyDiColors(
+      this.drawConnectionBody(visuals, element),
+      element,
+    );
+  }
+
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-046] DI-Farbattribute auftragen.
+   *
+   * Zwei Schreibweisen sind im Umlauf und beide kommen im Bestand vor:
+   * `bioc:stroke`/`bioc:fill` (bpmn.io, seit 2018) und
+   * `color:border-color`/`color:background-color` (BPMN-DI-Farberweiterung,
+   * OMG). Beide werden gelesen; bpmn.io hat Vorrang, weil es die Fassung ist,
+   * die der Bestandseditor schreibt.
+   *
+   * **Nur Hexfarben.** Der Wert landet in einem SVG-Attribut; eine
+   * ungeprüfte Zeichenkette aus einer hochgeladenen Datei hätte dort nichts zu
+   * suchen (`url(...)`, `expression(...)`). Was nicht wie `#rgb` oder
+   * `#rrggbb` aussieht, wird verworfen — schweigend, weil eine
+   * unbrauchbare Farbe kein Grund ist, ein Diagramm nicht zu zeichnen.
+   */
+  private applyDiColors(node: SVGElement, element: unknown): SVGElement {
+    const di = (element as { di?: ModdleElement }).di;
+    if (!di) return node;
+    const stroke = hexColor(
+      di["bioc:stroke"] ??
+        (di["$attrs"] as Record<string, unknown> | undefined)?.[
+          "bioc:stroke"
+        ] ??
+        (di["$attrs"] as Record<string, unknown> | undefined)?.[
+          "color:border-color"
+        ],
+    );
+    const fill = hexColor(
+      di["bioc:fill"] ??
+        (di["$attrs"] as Record<string, unknown> | undefined)?.["bioc:fill"] ??
+        (di["$attrs"] as Record<string, unknown> | undefined)?.[
+          "color:background-color"
+        ],
+    );
+    if (stroke) svgAttr(node, { stroke, "data-di-stroke": stroke });
+    // Eine Kante hat keine Fläche; ein `fill` an ihr würde sie zulaufen lassen.
+    if (fill && node.getAttribute("fill") !== "none") {
+      svgAttr(node, { fill, "data-di-fill": fill });
+    }
+    return node;
+  }
+
+  private drawConnectionBody(
     visuals: SVGElement,
     element: ConnectionLike,
   ): SVGElement {
@@ -235,7 +304,44 @@ export default class BpmnRenderer extends BaseRenderer {
     applyMarkers(line, registry, markers);
 
     svgAppend(visuals, line);
+
+    // [ARCTOS-FULL-2026-08-31 · OP-046] Das Nachrichtensymbol in der Mitte
+    // eines Nachrichtenflusses. BPMN 2.0 §11.1 zeigt es dort, wenn eine
+    // Nachricht am Fluss hängt (`messageRef`), und unterscheidet **gefüllt**
+    // (gesendet, Initiator) von **ungefüllt** (empfangen). Ohne das Symbol
+    // sieht ein Diagramm mit fünf Nachrichtenflüssen aus wie eines mit fünf
+    // gestrichelten Linien: welche Nachricht wohin geht, stand nur in der
+    // Datei.
+    if (connection.type === "bpmn:MessageFlow" && hasMessageRef(connection)) {
+      this.drawMessageFlowSymbol(visuals, connection);
+    }
     return line;
+  }
+
+  /** Siehe {@link drawConnection}: das Symbol am Mittelpunkt der Kante. */
+  private drawMessageFlowSymbol(
+    visuals: SVGElement,
+    connection: BpmnConnection,
+  ): void {
+    const centre = midpointOf(connection.waypoints);
+    if (!centre) return;
+    const size = 18;
+    const initiating = isInitiatingMessage(connection);
+    const group = drawSymbol(visuals, getEventSymbol("message"), {
+      x: centre.x - size / 2,
+      y: centre.y - size / 2,
+      size,
+      // Gefüllt heisst „von hier gesendet"; ungefüllt „hier empfangen".
+      body: initiating ? this.palette.stroke : this.palette.fill,
+      line: this.palette.stroke,
+      detail: initiating ? this.palette.fill : this.palette.stroke,
+      defaultStrokeWidth: STROKE_SYMBOL,
+      className: "bpmn-messageflow-symbol",
+    });
+    svgAttr(group, {
+      "data-marker": "messageflow-message",
+      "data-initiating": initiating ? "true" : "false",
+    });
   }
 
   override getShapePath(element: ShapeLike): string {
@@ -514,6 +620,17 @@ export default class BpmnRenderer extends BaseRenderer {
     if (!symbol) {
       return outline;
     }
+    // [ARCTOS-FULL-2026-08-31 · OP-046] `isMarkerVisible="false"` am
+    // exklusiven Gateway. Die BPMN-DI erlaubt es ausdrücklich (BPMN 2.0
+    // §12.2.2), das X wegzulassen — die leere Raute ist dann die Aussage
+    // „exklusiv, unmarkiert". Bis hierher zeichnete der Renderer das X
+    // **immer**; ein so gespeichertes Diagramm sah nach dem Laden anders aus
+    // als vorher. Nur das exklusive Gateway kennt das Attribut; bei allen
+    // übrigen ist das Symbol Teil des Typs.
+    if (shape.type === "bpmn:ExclusiveGateway" && !isMarkerVisible(shape)) {
+      svgAttr(outline, { "data-marker-visible": "false" });
+      return outline;
+    }
     const size = Math.min(shape.width, shape.height) * 0.42;
     const group = drawSymbol(visuals, symbol.def, {
       x: shape.x + shape.width / 2 - size / 2,
@@ -692,7 +809,44 @@ export default class BpmnRenderer extends BaseRenderer {
     }
 
     this.drawLaneHeader(visuals, shape, horizontal, "bpmn-participant-header");
+    this.drawParticipantMultiplicity(visuals, shape);
     return outline;
+  }
+
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-046] Der Mehrfachbeteiligter-Marker.
+   *
+   * `bpmn:Participant.participantMultiplicity` mit `maximum > 1` bedeutet: der
+   * Pool steht für **mehrere** Beteiligte derselben Art (BPMN 2.0 §10.3.1).
+   * Dargestellt wird das wie eine parallele Mehrfachinstanz — drei senkrechte
+   * Striche unten mittig am Pool. Fehlte der Marker, war einem Diagramm nicht
+   * anzusehen, ob „Lieferant" einer oder viele sind; das ist bei einer
+   * SoD-Betrachtung kein kosmetischer Unterschied.
+   */
+  private drawParticipantMultiplicity(
+    visuals: SVGElement,
+    shape: BpmnShape,
+  ): void {
+    if (!hasParticipantMultiplicity(shape)) return;
+    const size = 14;
+    const gap = 4;
+    const centreX = shape.x + shape.width / 2;
+    const top = shape.y + shape.height - size - 4;
+    for (let i = -1; i <= 1; i += 1) {
+      const x = centreX + i * gap;
+      svgAppend(
+        visuals,
+        svgCreate("path", {
+          d: `M ${fmt(x)} ${fmt(top)} L ${fmt(x)} ${fmt(top + size)}`,
+          class: "bpmn-participant-multiplicity",
+          fill: "none",
+          stroke: this.palette.stroke,
+          "stroke-width": STROKE_THIN,
+          "stroke-linecap": "round",
+          "data-marker": "participant-multiplicity",
+        }),
+      );
+    }
   }
 
   private drawLane(visuals: SVGElement, shape: BpmnShape): SVGElement {
@@ -952,6 +1106,102 @@ const GATEWAY_SYMBOL_BY_TYPE: Readonly<
   },
   "bpmn:ComplexGateway": { name: "complex", def: GATEWAY_SYMBOLS.complex },
 };
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-046] `isMarkerVisible` der `BPMNShape`.
+ *
+ * Fehlt das Attribut, gilt die Voreinstellung „sichtbar" — so wie jedes
+ * Werkzeug es liest. Nur ein ausdrückliches `false` (auch als Zeichenkette,
+ * denn `moddle` liefert unbekannte Attribute unkonvertiert) lässt das Symbol
+ * weg.
+ */
+function isMarkerVisible(shape: BpmnShape): boolean {
+  const di = shape.di;
+  const raw =
+    di?.["isMarkerVisible"] ??
+    (di?.["$attrs"] as Record<string, unknown> | undefined)?.[
+      "isMarkerVisible"
+    ];
+  return !(raw === false || raw === "false");
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-046] Steht dieser Pool für mehrere Beteiligte?
+ *
+ * `participantMultiplicity` ohne `maximum` bedeutet laut Metamodell `maximum=1`
+ * — ein Beteiligter, kein Marker. Der Marker hängt also am Wert, nicht am
+ * blossen Vorhandensein des Elements.
+ */
+function hasParticipantMultiplicity(shape: BpmnShape): boolean {
+  const multiplicity = shape.businessObject["participantMultiplicity"];
+  if (multiplicity === null || typeof multiplicity !== "object") return false;
+  const maximum = (multiplicity as { maximum?: unknown }).maximum;
+  if (maximum === undefined) return false;
+  const value = Number(maximum);
+  return Number.isFinite(value) && value > 1;
+}
+
+/** Hängt an diesem Nachrichtenfluss eine Nachricht? */
+function hasMessageRef(connection: BpmnConnection): boolean {
+  const ref = connection.businessObject["messageRef"];
+  return ref !== undefined && ref !== null;
+}
+
+/**
+ * Wird die Nachricht hier **gesendet**?
+ *
+ * BPMN zeichnet das Symbol gefüllt, wenn der Fluss von seinem Initiator
+ * ausgeht. Als Näherung gilt: geht die Kante von einem sendenden Element aus
+ * (`bpmn:SendTask`, ein werfendes Ereignis), ist sie initiierend. Ohne
+ * Quellinformation bleibt sie ungefüllt — das ist die zurückhaltendere der
+ * beiden Aussagen.
+ */
+function isInitiatingMessage(connection: BpmnConnection): boolean {
+  const sourceType = connection.source?.type;
+  if (sourceType === undefined) return false;
+  return sourceType === "bpmn:SendTask" || isThrowing(sourceType);
+}
+
+/** Der Punkt auf halber Länge des Polygonzugs — nicht die Mitte der Bounding-Box. */
+export function midpointOf(waypoints: readonly Point[]): Point | undefined {
+  if (waypoints.length < 2) return undefined;
+  const lengths: number[] = [];
+  let total = 0;
+  for (let i = 1; i < waypoints.length; i += 1) {
+    const a = waypoints[i - 1] as Point;
+    const b = waypoints[i] as Point;
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    lengths.push(length);
+    total += length;
+  }
+  if (total === 0) return waypoints[0];
+  let remaining = total / 2;
+  for (let i = 0; i < lengths.length; i += 1) {
+    const length = lengths[i] as number;
+    if (remaining <= length) {
+      const a = waypoints[i] as Point;
+      const b = waypoints[i + 1] as Point;
+      const ratio = length === 0 ? 0 : remaining / length;
+      return { x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio };
+    }
+    remaining -= length;
+  }
+  return waypoints[waypoints.length - 1];
+}
+
+/**
+ * Eine Farbangabe, die in ein SVG-Attribut darf.
+ *
+ * Bewusst eng: `#rgb` und `#rrggbb`, sonst nichts. Siehe {@link
+ * BpmnRenderer.applyDiColors} — der Wert stammt aus einer hochgeladenen Datei.
+ */
+export function hexColor(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(trimmed)
+    ? trimmed
+    : undefined;
+}
 
 function isCollection(shape: BpmnShape): boolean {
   const bo = shape.businessObject;

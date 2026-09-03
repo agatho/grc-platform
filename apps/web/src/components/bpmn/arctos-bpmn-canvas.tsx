@@ -82,6 +82,56 @@ export function supportsMode(mode: "read" | "review" | "edit"): boolean {
   return SUPPORTED_MODES.has(mode);
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-028] Vorgabe der zweiten Achse.
+ *
+ * Sie hängt nicht am Modus allein, sondern daran, **woher** der Lesemodus
+ * kommt — genau so, wie `packages/bpmn/src/editor/modules.ts` es begründet:
+ *
+ * - `edit` → `full`. Bearbeiten ohne Bedienelemente wäre sinnlos.
+ * - `read`/`review` → `full`. Diese Komponente wird aus `bpmn-editor.tsx`
+ *   aufgerufen, und dort folgt `readOnly` aus `!canEdit` — aus einem
+ *   **fehlenden Recht**. Eine ausgegraute Palette mit Begründung ist dort
+ *   ehrlicher als eine Oberfläche, die so tut, als gäbe es die Funktion nicht.
+ *
+ * Wo `read` aus dem **Kontext** folgt — Mitarbeiterportal, Versionsdialog —,
+ * setzt `bpmn-viewer.tsx` ausdrücklich `chrome="minimal"`. Dort will niemand
+ * eine dauerhaft graue Werkzeugleiste sehen.
+ */
+export function defaultChromeFor(
+  mode: "read" | "review" | "edit",
+): "full" | "minimal" {
+  void mode;
+  return "full";
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-029] Der Arbeitsstand, der einen Moduswechsel
+ * überlebt.
+ *
+ * **Der Befund, nachgemessen.** Der Aufbaueffekt hing an `[xml, mode]`: ein
+ * Wechsel von `read` nach `edit` zerstörte die Instanz und baute sie neu auf.
+ * Danach stand die Ansicht wieder auf `fit-viewport`, die Auswahl war leer und
+ * die GRC-Dekoration weg. Wer ein Detail eines grossen Diagramms
+ * herangezoomt hatte und auf „Bearbeiten" klickte, suchte es anschliessend
+ * wieder — bei `synth-large-flat-process` (60 Knoten) ist das keine
+ * Kleinigkeit.
+ *
+ * **Warum der Neuaufbau bleibt.** Die Modulliste eines `didi`-Containers steht
+ * beim Bootstrap fest; `edit` registriert `modeling`, `read` nicht. Einen
+ * laufenden Container umzuhängen hiesse, die Modullogik ein zweites Mal zu
+ * bauen — und sie wäre die Stelle, an der Lesen und Bearbeiten wieder
+ * auseinanderlaufen. Erhalten wird deshalb der **Zustand**, nicht die Instanz.
+ */
+interface CanvasSnapshot {
+  /** Das XML, zu dem dieser Stand gehört. Passt es nicht, wird nichts gesetzt. */
+  readonly xml: string;
+  readonly viewbox: { x: number; y: number; width: number; height: number };
+  readonly zoom: number;
+  readonly selection: readonly string[];
+  readonly planeIndex: number;
+}
+
 /** Minimalvertrag der `diagram-js`-Dienste, die dieser Adapter anfasst. */
 interface OverlayService {
   add: (
@@ -117,6 +167,17 @@ interface CanvasHandle {
   destroy: () => void;
   zoom: (scale?: number | "fit-viewport") => number;
   scroll: (delta: { dx: number; dy: number }) => void;
+  // [ARCTOS-FULL-2026-08-31 · OP-018/OP-029]
+  select: (elementId: string | null) => void;
+  getPlaneIndex: () => number;
+  showPlane: (index: number) => boolean;
+  getPlanes: () => ReadonlyArray<{ index: number }>;
+  getPlanePath: () => ReadonlyArray<{
+    index: number;
+    rootId?: string | undefined;
+    rootName?: string | undefined;
+    rootType?: string | undefined;
+  }>;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
@@ -143,6 +204,16 @@ export interface ArctosBpmnCanvasProps extends Omit<
   grcOverlayData?: GrcOverlayData;
   /** Sicht auf die GRC-Schicht (Vorgabe: `risk-control`). */
   grcView?: GrcViewId;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-028] Die zweite Achse aus Plan §2.4.
+   *
+   * `full` zeigt die Bedienelemente auch dann, wenn nicht bearbeitet werden
+   * darf — deaktiviert und mit Begründung. `minimal` lässt sie weg.
+   *
+   * Vorgabe ist **nicht** „minimal, ausser im Editor": sie hängt daran, woher
+   * das `read` kommt. Siehe {@link defaultChromeFor}.
+   */
+  chrome?: "full" | "minimal";
   /** Imperative Fläche — dieselbe wie beim Legacy-Editor. */
   handleRef?: React.RefObject<BpmnEditorRef | null>;
 }
@@ -160,6 +231,7 @@ export function ArctosBpmnCanvas({
   callActivityOverlayData,
   grcOverlayData,
   grcView,
+  chrome,
   className,
   minHeight = 400,
   handleRef,
@@ -169,6 +241,21 @@ export function ArctosBpmnCanvas({
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modelElements, setModelElements] = useState<BpmnA11yElement[]>([]);
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-018] Die Brotkrume der Ebenen. Leer bei einem
+   * Dokument mit nur einer `BPMNPlane` — dann wird auch nichts gezeigt, statt
+   * eine Zeile „Prozess" ohne Bedeutung über jedes Diagramm zu setzen.
+   */
+  const [planePath, setPlanePath] = useState<
+    ReadonlyArray<{ index: number; label: string }>
+  >([]);
+  /**
+   * Wie viele Ebenen das Dokument überhaupt hat. Die Brotkrume hängt an
+   * **dieser** Zahl und nicht an der Länge des Pfades: auf der obersten Ebene
+   * ist der Pfad einstufig, und genau dort muss der Hinweis stehen, dass es
+   * eine Ebene tiefer geht — sonst findet ihn nur, wer schon drin war.
+   */
+  const [planeCount, setPlaneCount] = useState(0);
   const t = useTranslations("bpmn");
   const describedById = useId();
 
@@ -177,6 +264,12 @@ export function ArctosBpmnCanvas({
   const onNavigateToProcessRef = useRef(onNavigateToProcess);
   onNavigateToProcessRef.current = onNavigateToProcess;
   const callTargetsRef = useRef<Map<string, string>>(new Map());
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-029] Der Arbeitsstand über den Moduswechsel
+   * hinweg. Eine Ref und kein State: ihn zu setzen darf kein Rendern auslösen,
+   * sonst baut sich die Fläche beim Aufräumen selbst noch einmal auf.
+   */
+  const restoreRef = useRef<CanvasSnapshot | null>(null);
 
   // -------------------------------------------------------------------------
   // Aufbau. Wie im Legacy-Pfad dynamisch geladen: die Engine ist DOM-gebunden
@@ -199,11 +292,20 @@ export function ArctosBpmnCanvas({
         const canvas = new engineModule.BpmnCanvas({
           container,
           mode,
-          // Im Bearbeitungsmodus zeigt die Fläche ihre Bedienelemente; im
-          // Lesemodus folgt `read` hier aus dem Kontext, nicht aus einem
-          // fehlenden Recht — dort wäre eine dauerhaft graue Werkzeugleiste
-          // falsch (Plan §2.4, zweite Achse).
-          chrome: mode === "edit" ? "full" : "minimal",
+          // [ARCTOS-FULL-2026-08-31 · OP-028] Hier stand `mode === "edit" ?
+          // "full" : "minimal"` fest verdrahtet. Damit war `chrome: "full"` im
+          // Lesemodus zwar in `packages/bpmn` gebaut (`editorChromeModule`,
+          // `editorModulesFor`), aber von keiner Einbindung erreichbar: jede
+          // lesende Fläche bekam `minimal`, auch die, deren `read` aus einem
+          // **fehlenden Recht** folgt. Wer auf `processes/[id]` nicht
+          // bearbeiten darf, sah eine Fläche ohne Werkzeuge und erfuhr nicht,
+          // dass es sie gibt. Jetzt entscheidet die Aufrufstelle — mit einer
+          // Vorgabe, die die Herkunft des `read` berücksichtigt.
+          chrome: chrome ?? defaultChromeFor(mode),
+          editor: {
+            chrome: chrome ?? defaultChromeFor(mode),
+            disabledReason: t("chrome.disabledReason"),
+          },
           // Die Modellschicht ausdrücklich mitgeben: `BpmnCanvas` würde sie
           // sonst über einen dynamischen Modulpfad nachladen, der sich mit
           // keinem Bündler auflösen lässt. Und sie kommt hier ohnehin aus der
@@ -301,6 +403,34 @@ export function ArctosBpmnCanvas({
           );
         });
 
+        // [ARCTOS-FULL-2026-08-31 · OP-018] Die Brotkrume mitführen. Sie kommt
+        // aus der Engine und wird nicht in React nachgerechnet — die Ebene ist
+        // Zustand der Fläche, und zwei Wahrheiten darüber wären genau der
+        // Fehler, den `BpmnCanvas.planeIndex` vermeidet.
+        const readPath = (): void => {
+          setPlaneCount(canvas.getPlanes().length);
+          setPlanePath(
+            canvas.getPlanePath().map((plane) => ({
+              index: plane.index,
+              label:
+                plane.rootName ??
+                plane.rootId ??
+                plane.rootType ??
+                t("plane.label"),
+            })),
+          );
+        };
+        canvas.on("plane.changed", () => {
+          readPath();
+        });
+        readPath();
+
+        // [ARCTOS-FULL-2026-08-31 · OP-029] Den Arbeitsstand des vorigen
+        // Modus wiederherstellen: Ebene zuerst (sie entscheidet, welche
+        // Elemente es überhaupt gibt), dann Ansicht, dann Auswahl.
+        restoreSnapshot(canvas, restoreRef.current, xml);
+        restoreRef.current = null;
+
         setReady(true);
       } catch (err) {
         if (destroyed) return;
@@ -317,12 +447,18 @@ export function ArctosBpmnCanvas({
       destroyed = true;
       const canvas = canvasRef.current;
       if (canvas) {
+        // [ARCTOS-FULL-2026-08-31 · OP-029] **Vor** dem Zerstören merken.
+        // Danach ist der Container weg und mit ihm Viewbox, Auswahl und
+        // Ebene.
+        restoreRef.current = takeSnapshot(canvas, xml);
         canvas.destroy();
         canvasRef.current = null;
       }
     };
-    // Wie im Legacy-Viewer: Neuaufbau, wenn sich das XML ändert.
-  }, [xml, mode]);
+    // Wie im Legacy-Viewer: Neuaufbau, wenn sich das XML ändert — und beim
+    // Moduswechsel, weil die Modulliste eine andere ist. Was dabei erhalten
+    // bleibt, regelt `restoreRef` (OP-029).
+  }, [xml, mode, chrome]);
 
   // -------------------------------------------------------------------------
   // Die GRC-Schicht (`src/grc`, 23 Layer) — ins SVG gezeichnet, nicht als
@@ -575,6 +711,43 @@ export function ArctosBpmnCanvas({
           <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
         </div>
       )}
+      {/*
+        [ARCTOS-FULL-2026-08-31 · OP-018] Die Ebenen-Brotkrume.
+        Sie erscheint nur, wenn das Dokument mehr als eine `BPMNPlane` hat —
+        im Korpus trifft das auf eine von 26 Dateien zu. Ein Balken über jedem
+        Diagramm, der immer dasselbe Wort zeigt, wäre Ballast.
+      */}
+      {planeCount > 1 && planePath.length > 0 && (
+        <nav
+          aria-label={t("plane.breadcrumb")}
+          className="mb-1 flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
+        >
+          {planePath.map((plane, position) => {
+            const last = position === planePath.length - 1;
+            return (
+              <span key={plane.index} className="flex items-center gap-1">
+                {position > 0 && <span aria-hidden="true">/</span>}
+                {last ? (
+                  <span aria-current="step" className="font-semibold">
+                    {plane.label}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                    onClick={() => {
+                      canvasRef.current?.showPlane(plane.index);
+                    }}
+                  >
+                    {plane.label}
+                  </button>
+                )}
+              </span>
+            );
+          })}
+          <span className="ml-1">{t("plane.openHint")}</span>
+        </nav>
+      )}
       <div
         ref={containerRef}
         className="h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -601,6 +774,82 @@ export function ArctosBpmnCanvas({
       />
     </div>
   );
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-029] Den Arbeitsstand einer Fläche festhalten.
+ *
+ * Jeder Zugriff einzeln abgesichert: Beim Aufräumen kann der Container schon
+ * aus dem Dokument sein, und dann wirft `viewbox()`. Ein gescheiterter
+ * Schnappschuss darf den Moduswechsel nicht mitreissen — im schlimmsten Fall
+ * steht die Ansicht danach wie bisher auf `fit-viewport`.
+ */
+function takeSnapshot(
+  canvas: CanvasHandle,
+  xml: string,
+): CanvasSnapshot | null {
+  try {
+    const view = canvas.get<{
+      viewbox(): { x: number; y: number; width: number; height: number };
+    }>("canvas");
+    const selection = canvas.get<{ get(): Array<{ id?: string }> }>(
+      "selection",
+    );
+    return {
+      xml,
+      viewbox: view.viewbox(),
+      zoom: canvas.zoom(),
+      selection: selection
+        .get()
+        .map((element) => element.id)
+        .filter((id): id is string => typeof id === "string"),
+      planeIndex: canvas.getPlaneIndex(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Den gemerkten Stand auf eine frisch aufgebaute Fläche legen.
+ *
+ * `snapshot.xml !== xml` heisst: das Diagramm ist ein anderes. Dann wird
+ * nichts gesetzt — eine Viewbox aus einem fremden Dokument zeigte auf leere
+ * Fläche, und eine Auswahl aus einem fremden Dokument gäbe es gar nicht.
+ */
+function restoreSnapshot(
+  canvas: CanvasHandle,
+  snapshot: CanvasSnapshot | null,
+  xml: string,
+): void {
+  if (!snapshot || snapshot.xml !== xml) return;
+  try {
+    if (snapshot.planeIndex !== canvas.getPlaneIndex()) {
+      canvas.showPlane(snapshot.planeIndex);
+    }
+    const view = canvas.get<{
+      viewbox(box?: {
+        x: number;
+        y: number;
+        width: number;
+        height: number;
+      }): unknown;
+    }>("canvas");
+    view.viewbox(snapshot.viewbox);
+    const selection = canvas.get<{
+      select(elements: unknown, add?: boolean): void;
+    }>("selection");
+    const registry = canvas.get<{ get(id: string): unknown }>(
+      "elementRegistry",
+    );
+    const restored = snapshot.selection
+      .map((id) => registry.get(id))
+      .filter((element) => element !== undefined && element !== null);
+    if (restored.length > 0) selection.select(restored);
+  } catch {
+    // Siehe `takeSnapshot`: ein misslungenes Wiederherstellen ist ein
+    // Komfortverlust, kein Fehler.
+  }
 }
 
 /** Gemeinsame Hülle der Textbadges — wörtlich die Klassenliste von heute. */

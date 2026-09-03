@@ -1,11 +1,11 @@
 {
   "_comment": "#S13-25 Coverage-Ratsche. Von scripts/coverage-gate.mjs geprüft. Werte dürfen nur STEIGEN. Neu setzen über `node scripts/coverage-gate.mjs --update-baseline` in einem eigenen, begründeten Commit; eine Absenkung verlangt zusätzlich --reason und wird in _history festgehalten.",
-  "_updatedAt": "2026-09-02",
+  "_updatedAt": "2026-09-03",
   "totals": {
-    "lines": 32.64,
-    "statements": 33.13,
-    "functions": 32.22,
-    "branches": 24.05
+    "lines": 33.43,
+    "statements": 33.9,
+    "functions": 32.89,
+    "branches": 24.89
   },
   "packages": {
     "packages/email": {
@@ -15,10 +15,10 @@
       "branches": 91.63
     },
     "packages/shared": {
-      "lines": 82.17,
-      "statements": 80.16,
-      "functions": 72.22,
-      "branches": 69.67
+      "lines": 84.17,
+      "statements": 82.13,
+      "functions": 74.77,
+      "branches": 70.94
     },
     "packages/ui": {
       "lines": 100,
@@ -69,10 +69,10 @@
       "branches": 21.58
     },
     "apps/web": {
-      "lines": 18.84,
-      "statements": 20.29,
-      "functions": 20.53,
-      "branches": 11.92
+      "lines": 18.93,
+      "statements": 20.37,
+      "functions": 20.6,
+      "branches": 12
     },
     "packages/db": {
       "lines": 30.97,
@@ -81,10 +81,10 @@
       "branches": 28.04
     },
     "packages/bpmn": {
-      "lines": 89.12,
-      "statements": 86.46,
-      "functions": 90.13,
-      "branches": 72.77
+      "lines": 89.98,
+      "statements": 87.32,
+      "functions": 90.44,
+      "branches": 73.88
     }
   },
   "_history": [
@@ -152,6 +152,33 @@
         "total functions: 32.09 % → 32.22 %",
         "total lines: 32.51 % → 32.64 %",
         "total statements: 32.99 % → 33.13 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 33.43,
+        "statements": 33.9,
+        "functions": 32.89,
+        "branches": 24.89
+      },
+      "changed": [
+        "apps/web branches: 11.92 % → 12.00 %",
+        "apps/web functions: 20.53 % → 20.60 %",
+        "apps/web lines: 18.84 % → 18.93 %",
+        "apps/web statements: 20.29 % → 20.37 %",
+        "packages/bpmn branches: 72.77 % → 73.88 %",
+        "packages/bpmn functions: 90.13 % → 90.44 %",
+        "packages/bpmn lines: 89.12 % → 89.98 %",
+        "packages/bpmn statements: 86.46 % → 87.32 %",
+        "packages/shared branches: 69.67 % → 70.94 %",
+        "packages/shared functions: 72.22 % → 74.77 %",
+        "packages/shared lines: 82.17 % → 84.17 %",
+        "packages/shared statements: 80.16 % → 82.13 %",
+        "total branches: 24.05 % → 24.89 %",
+        "total functions: 32.22 % → 32.89 %",
+        "total lines: 32.64 % → 33.43 %",
+        "total statements: 33.13 % → 33.90 %"
       ]
     }
   ]

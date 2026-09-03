@@ -34,5 +34,14 @@
       "architecture": "Architecture (EAM)",
       "responsibility": "Responsibility"
     }
+  },
+  "chrome": {
+    "disabledReason": "Editing requires the process modeller role."
+  },
+  "plane": {
+    "label": "Level",
+    "up": "Back one level",
+    "breadcrumb": "Diagram levels",
+    "openHint": "Double-click or press O to open a sub-process level."
   }
 }

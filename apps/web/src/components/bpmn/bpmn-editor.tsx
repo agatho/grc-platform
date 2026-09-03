@@ -97,6 +97,19 @@ function ArctosBpmnEditorBridge({
       {...props}
       xml={props.initialXml}
       mode={modeFor(props.readOnly ?? false)}
+      /*
+       * [ARCTOS-FULL-2026-08-31 · OP-028] `full`, auch im Lesemodus.
+       *
+       * Auf `processes/[id]` gilt `readOnly = !canEdit` — das `read` folgt hier
+       * aus einem **fehlenden Recht**. Die Palette wird deshalb gezeigt und ist
+       * deaktiviert, mit Begründung an jedem Knopf (`aria-disabled`, nicht
+       * `disabled`: ein `disabled`-Knopf fällt aus Fokus und Ansage, und dann
+       * erfährt ein Tastaturnutzer nie, dass es die Funktion gibt).
+       *
+       * `packages/bpmn` hatte das seit Stufe B1 gebaut (`editorChromeModule`);
+       * es war nur von keiner Einbindung aus erreichbar.
+       */
+      chrome="full"
       minHeight={500}
       handleRef={handle}
     />

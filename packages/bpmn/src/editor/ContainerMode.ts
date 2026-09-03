@@ -32,6 +32,7 @@
 
 import type { EditorAnnouncer } from "./announce";
 import { describe } from "./ElementCreation";
+import type { ElementCreation } from "./ElementCreation";
 import { midOf } from "./ConnectMode";
 import type {
   BpmnElement,
@@ -51,6 +52,14 @@ export const CONTAINER_MARKER = "arctos-container-candidate";
 interface ActiveMode {
   readonly shapes: readonly BpmnShape[];
   readonly candidates: readonly BpmnElement[];
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-019] Die Kandidaten, die **anheften** statt
+   * aufnehmen. Eine Aktivität ist kein Container — sie hat einen Rand. Beide
+   * Ziele stehen in derselben Liste, weil sie dieselbe Frage beantworten
+   * („wohin gehört das?") und weil ein zweiter Modus mit eigenen Tasten die
+   * Bedienung teilt, die B1 §1 ausdrücklich zusammenhalten will.
+   */
+  readonly attachTargets: ReadonlySet<BpmnElement>;
   index: number;
 }
 
@@ -63,6 +72,7 @@ export class ContainerMode {
     "modeling",
     "selection",
     "editorAnnouncer",
+    "injector",
   ];
 
   private active: ActiveMode | null = null;
@@ -75,6 +85,9 @@ export class ContainerMode {
     private readonly modeling: ModelingLike,
     private readonly selection: SelectionLike,
     private readonly announcer: EditorAnnouncer,
+    private readonly injector: {
+      get<T>(name: string, strict?: boolean): T | null;
+    },
   ) {
     eventBus.on(["diagram.clear", "diagram.destroy"], () => {
       this.reset();
@@ -118,16 +131,42 @@ export class ContainerMode {
     const current = shapes[0]?.parent;
     const moved = new Set<BpmnElement>(shapes);
 
+    const reachable = [
+      this.root(),
+      ...visibleElements(this.elementRegistry),
+    ].filter(
+      (target): target is BpmnElement =>
+        target !== undefined &&
+        target !== current &&
+        !moved.has(target) &&
+        !this.containsAny(target, shapes),
+    );
+
+    // [ARCTOS-FULL-2026-08-31 · OP-019] Zwei Arten von Ziel. Ein Container
+    // nimmt auf (`elements.move`), eine Aktivität heftet an (`shape.attach`) —
+    // und beim Anheften wird aus einem Zwischenereignis ein Randereignis.
+    // Angeboten wird das nur bei **einer** Form: ein Randereignis hat genau
+    // einen Wirt, und zwei Ereignisse gemeinsam anzuheften ist keine Handlung,
+    // die es in BPMN gibt.
+    const attachTargets = new Set<BpmnElement>(
+      shapes.length === 1
+        ? reachable.filter(
+            (target) =>
+              this.rules.allowed("shape.attach", {
+                shape: shapes[0],
+                target,
+              }) === "attach",
+          )
+        : [],
+    );
+
     const candidates = this.sortForReading(
       // [ARCTOS-FULL-2026-08-31 · OP-033] Ein eingeklappter Subprozess ist
       // als Ziel weiterhin zulässig — er ist ja sichtbar. Seine KINDER sind
       // es nicht, und sie standen bisher als Container zur Auswahl.
-      [this.root(), ...visibleElements(this.elementRegistry)].filter(
-        (target): target is BpmnElement =>
-          target !== undefined &&
-          target !== current &&
-          !moved.has(target) &&
-          !this.containsAny(target, shapes) &&
+      reachable.filter(
+        (target) =>
+          attachTargets.has(target) ||
           this.rules.allowed("elements.move", { shapes, target }) !== false,
       ),
     );
@@ -139,7 +178,7 @@ export class ContainerMode {
       return false;
     }
 
-    this.active = { shapes, candidates, index: 0 };
+    this.active = { shapes, candidates, attachTargets, index: 0 };
     this.mark(true);
     this.announcer.announce(
       `Container wechseln für ${describe(shapes[0] as BpmnElement)}. ` +
@@ -169,7 +208,21 @@ export class ContainerMode {
     const shape = active.shapes[0];
     if (!target || !shape) return null;
     const shapes = [...active.shapes];
+    const attaching = active.attachTargets.has(target);
     this.reset();
+
+    // [ARCTOS-FULL-2026-08-31 · OP-019] Der Rand ist kein Container: hier geht
+    // es über `attachExisting`, das anheftet **und** den Typ nachzieht.
+    if (attaching) {
+      const creation = this.injector.get<ElementCreation>(
+        "elementCreation",
+        false,
+      );
+      if (creation) {
+        creation.attachExisting(shape, target as BpmnShape);
+        return target;
+      }
+    }
 
     const destination = placeInside(target, shape);
     this.modeling.moveElements(
@@ -215,7 +268,8 @@ export class ContainerMode {
     const active = this.active;
     const target = this.current();
     if (!active || !target) return "";
-    return `Container ${String(active.index + 1)} von ${String(active.candidates.length)}: ${describe(target)}.`;
+    const what = active.attachTargets.has(target) ? "Anheften an" : "Container";
+    return `${what} ${String(active.index + 1)} von ${String(active.candidates.length)}: ${describe(target)}.`;
   }
 
   private root(): BpmnElement | undefined {

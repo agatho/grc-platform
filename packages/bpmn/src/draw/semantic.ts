@@ -21,6 +21,13 @@ const EVENT_TYPES = new Set([
   "bpmn:IntermediateCatchEvent",
   "bpmn:IntermediateThrowEvent",
   "bpmn:BoundaryEvent",
+  // [ARCTOS-FULL-2026-08-31 · OP-046] `bpmn:ImplicitThrowEvent` fehlte und
+  // wurde deshalb als gestricheltes „nicht unterstützt"-Rechteck gezeichnet.
+  // Es ist ein Ereignis der Ausführungssemantik (BPMN 2.0 §10.5.6) und wird
+  // dargestellt wie ein werfendes Zwischenereignis — doppelter Rand, gefülltes
+  // Symbol. Im Bestandskorpus kommt es nicht vor; das ist ein Grund, es klein
+  // zu halten, aber keiner, ein Rechteck mit Typnamen dafür zu zeigen.
+  "bpmn:ImplicitThrowEvent",
 ]);
 
 const TASK_TYPES = new Set([
@@ -115,7 +122,12 @@ export function isSupportedConnectionType(type: string): boolean {
 
 /** Ereignisse, die ihr Symbol *werfen* (gefüllt gezeichnet). */
 export function isThrowing(type: string): boolean {
-  return type === "bpmn:EndEvent" || type === "bpmn:IntermediateThrowEvent";
+  return (
+    type === "bpmn:EndEvent" ||
+    type === "bpmn:IntermediateThrowEvent" ||
+    // [ARCTOS-FULL-2026-08-31 · OP-046] Ein implizites Wurfereignis wirft.
+    type === "bpmn:ImplicitThrowEvent"
+  );
 }
 
 /** Der Rand ist doppelt bei Zwischen- und Randereignissen. */
@@ -123,6 +135,8 @@ export function hasDoubleBorder(type: string): boolean {
   return (
     type === "bpmn:IntermediateCatchEvent" ||
     type === "bpmn:IntermediateThrowEvent" ||
+    // [ARCTOS-FULL-2026-08-31 · OP-046]
+    type === "bpmn:ImplicitThrowEvent" ||
     type === "bpmn:BoundaryEvent"
   );
 }
@@ -382,6 +396,7 @@ const TYPE_LABELS: Readonly<Record<string, string>> = {
   "bpmn:TextAnnotation": "Textanmerkung",
   "bpmn:Group": "Gruppe",
   "bpmn:SequenceFlow": "Sequenzfluss",
+  "bpmn:ImplicitThrowEvent": "Implizites Wurfereignis",
   "bpmn:MessageFlow": "Nachrichtenfluss",
   "bpmn:Association": "Assoziation",
   "bpmn:DataInputAssociation": "Dateneingabe-Assoziation",

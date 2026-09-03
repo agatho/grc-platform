@@ -7,6 +7,13 @@ import type EventBus from "diagram-js/lib/core/EventBus.js";
 import type { ConnectionLike, ShapeLike } from "diagram-js/lib/core/Types.js";
 
 import { buildScene, type Scene } from "../draw/scene";
+import {
+  planeIndexFor,
+  planeLabel,
+  planePath,
+  planesOf,
+  type PlaneInfo,
+} from "../draw/planes";
 import { renderScene, toSvgString } from "../draw/StaticRenderer";
 import type {
   BpmnConnection,
@@ -91,6 +98,19 @@ export interface BpmnCanvasOptions {
   readonly editor?: EditorConfig;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-018] Die Ebenennavigation, wie die Bedienschicht
+ * sie sieht. Registriert als `didi`-Dienst `planeNavigation`.
+ */
+export interface PlaneNavigation {
+  canDrillDown(elementId: string): boolean;
+  canDrillUp(): boolean;
+  drillDown(elementId: string): boolean;
+  drillUp(): boolean;
+  planeLabel(): string;
+  planePath(): readonly PlaneInfo[];
+}
+
 export interface ImportDiagramResult {
   readonly scene: Scene;
   readonly warnings: readonly string[];
@@ -131,6 +151,17 @@ export class BpmnCanvas {
   private modified = false;
   /** Die Szene ist eine Projektion; nach jeder Änderung neu zu rechnen. */
   private sceneStale = false;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-018] Welche `BPMNPlane` gerade gezeigt wird.
+   *
+   * Die Zahl war bis hierher nirgends geführt — `buildScene` bekam überall die
+   * implizite `0`, und deshalb war jede weitere Ebene eines Dokuments
+   * unerreichbar. Sie steht hier und nicht in der Bedienschicht, weil auch der
+   * Lesemodus drillt und weil `currentScene()` sie kennen muss: eine Szene, die
+   * nach einer Bearbeitung neu gerechnet wird, muss dieselbe Ebene rechnen wie
+   * die, die auf dem Bildschirm steht.
+   */
+  private planeIndex = 0;
 
   constructor(options: BpmnCanvasOptions) {
     this.mode = options.mode ?? "read";
@@ -154,6 +185,25 @@ export class BpmnCanvas {
       } as unknown as DiagramModule);
     }
 
+    // [ARCTOS-FULL-2026-08-31 · OP-018] Die Ebenennavigation als Dienst.
+    //
+    // Sie gehört dieser Klasse — hier steht `planeIndex`, hier liegt der
+    // moddle-Baum. Damit das Kontextmenü (`src/editor`) sie trotzdem anbieten
+    // kann, ohne `BpmnCanvas` zu kennen, wird sie als `didi`-Wert eingehängt.
+    // Der Umweg über einen eigenen Dienst mit eigenem Zustand hätte eine
+    // zweite Wahrheit über die aktuelle Ebene erzeugt.
+    const navigation: PlaneNavigation = {
+      canDrillDown: (id) => this.canDrillDown(id),
+      canDrillUp: () => this.canDrillUp(),
+      drillDown: (id) => this.drillDown(id),
+      drillUp: () => this.drillUp(),
+      planeLabel: () => this.currentPlaneLabel(),
+      planePath: () => this.getPlanePath(),
+    };
+    modules.push({
+      planeNavigation: ["value", navigation],
+    } as unknown as DiagramModule);
+
     this.diagram = new Diagram({
       canvas: { container: options.container },
       modules: modules as never,
@@ -172,6 +222,17 @@ export class BpmnCanvas {
         this.sceneStale = true;
       });
     }
+
+    // [ARCTOS-FULL-2026-08-31 · OP-018] Der Mausweg zum Drill-Down, in **allen**
+    // Modi: Doppelklick auf einen Subprozess mit eigener Ebene öffnet sie. Er
+    // steht hier und nicht in `src/editor`, weil auch die lesende Fläche drillt
+    // und dort keine Bedienschicht registriert ist. `canDrillDown` filtert —
+    // ein Doppelklick auf irgendetwas anderes bleibt für die Anwendung übrig
+    // (`apps/web` benutzt ihn für den Sprung zum aufgerufenen Prozess).
+    this.eventBus.on("element.dblclick", (event: unknown) => {
+      const id = (event as { element?: { id?: string } }).element?.id;
+      if (id && this.canDrillDown(id)) this.drillDown(id);
+    });
   }
 
   /** Zugriff auf einen `diagram-js`-Dienst (dieselben fünf wie heute). */
@@ -304,6 +365,14 @@ export class BpmnCanvas {
               element: this.elementRegistry.get(id),
             });
           },
+          // [ARCTOS-FULL-2026-08-31 · OP-018] Drill-Down gehört in **beide**
+          // Bedienarten und in **alle** Modi. Die Bedienschicht (`src/editor`)
+          // gibt es im Lesemodus nicht; die a11y-Schicht schon — deshalb sitzt
+          // die Tastaturbelegung dort und nicht in `EditorKeyboard`.
+          drillDown: (id) => this.drillDown(id),
+          drillUp: () => this.drillUp(),
+          canDrillDown: (id) => this.canDrillDown(id),
+          planeLabel: () => this.currentPlaneLabel(),
         },
         scene,
       );
@@ -362,7 +431,12 @@ export class BpmnCanvas {
    */
   private currentScene(): Scene | null {
     if (this.sceneStale && this.definitions) {
-      this.scene = buildScene(this.definitions);
+      // [ARCTOS-FULL-2026-08-31 · OP-018] `this.planeIndex` statt der
+      // impliziten 0: nach einer Bearbeitung auf Ebene 2 hätte die
+      // Neuberechnung sonst Ebene 1 geliefert — Textalternative und
+      // SVG-Export hätten ein anderes Bild beschrieben als das, das zu sehen
+      // ist.
+      this.scene = buildScene(this.definitions, this.planeIndex);
       this.order = buildGraphOrder(this.scene);
       this.sceneStale = false;
     }
@@ -466,6 +540,141 @@ export class BpmnCanvas {
     return this.currentScene();
   }
 
+  // -------------------------------------------------------------------------
+  // [ARCTOS-FULL-2026-08-31 · OP-018] Ebenen und Drill-Down
+  //
+  // Gemessen an `test/corpus/synth-nested-subprocesses.bpmn`: das Dokument hat
+  // zwei `BPMNPlane`s (3 Formen + 2 Kanten auf Ebene 1, 4 Formen + 3 Kanten auf
+  // Ebene 2). Vor dieser Arbeit war Ebene 2 mit keiner Bedienung erreichbar,
+  // obwohl `buildScene` sie seit jeher zeichnen kann — es fehlte allein die
+  // Navigation. `buildScene` warnte darüber sogar („Definitionen enthalten 2
+  // Diagramme; gezeichnet wird Nr. 1"), ohne dass jemand etwas tun konnte.
+  // -------------------------------------------------------------------------
+
+  /** Alle Ebenen des geladenen Dokuments. Leer, solange nichts geladen ist. */
+  getPlanes(): readonly PlaneInfo[] {
+    return this.definitions ? planesOf(this.definitions) : [];
+  }
+
+  /** Welche Ebene gerade gezeigt wird. */
+  getPlaneIndex(): number {
+    return this.planeIndex;
+  }
+
+  /** Der Weg von der obersten Ebene bis zur aktuellen — die Brotkrume. */
+  getPlanePath(): readonly PlaneInfo[] {
+    return this.definitions ? planePath(this.definitions, this.planeIndex) : [];
+  }
+
+  /** Verbirgt sich hinter diesem Element eine eigene Ebene? */
+  canDrillDown(elementId: string): boolean {
+    if (!this.definitions) return false;
+    const index = planeIndexFor(this.definitions, elementId);
+    return index !== undefined && index !== this.planeIndex;
+  }
+
+  /** Gibt es eine übergeordnete Ebene? */
+  canDrillUp(): boolean {
+    return this.getPlanePath().length > 1;
+  }
+
+  /**
+   * Zeigt eine andere Ebene desselben Dokuments.
+   *
+   * **Was dabei erhalten bleibt und was nicht.** Der moddle-Baum ist die
+   * Wahrheit und wird nicht angefasst: jede Bearbeitung, die auf einer anderen
+   * Ebene gemacht wurde, steht weiterhin darin und geht in den Export ein.
+   * Erhalten bleibt auch Zusicherung Z-D — wurde nichts bearbeitet, liefert
+   * `exportXml()` weiterhin den Eingabetext byteweise.
+   *
+   * **Nicht** erhalten bleibt im Bearbeitungsmodus die Rückgängig-Kette: der
+   * Ebenenwechsel baut die Elementobjekte neu auf, und ein Kommandostapel, der
+   * auf die alten Objekte zeigt, würde beim nächsten Strg+Z auf Leichen
+   * arbeiten (dieselbe Überlegung wie in `UMSETZUNG-WELLE-1C.md` §6 zu
+   * eingeklappten Subprozessen). Die saubere Lösung wäre, alle Ebenen
+   * gleichzeitig als `root`-Elemente zu importieren; das liegt in
+   * `src/modeling/importer.ts` und damit in fremder Dateihoheit — siehe
+   * `docs/UMSETZUNG-WELLE-2B.md`, „Was an die folgenden Wellen weitergeht".
+   * Der Wechsel sagt das an, statt es geschehen zu lassen.
+   */
+  showPlane(index: number): boolean {
+    const definitions = this.definitions;
+    if (!definitions) return false;
+    if (index === this.planeIndex) return false;
+    if (!planesOf(definitions).some((plane) => plane.index === index)) {
+      return false;
+    }
+
+    // `clear()` und `renderScene()` setzen beide `definitions`, `sourceXml` und
+    // `modified` zurück — sie sind für „ein anderes Dokument" gedacht, und das
+    // hier ist dasselbe Dokument aus einem anderen Blickwinkel.
+    const keptXml = this.sourceXml;
+    const keptModified = this.modified;
+
+    if (isEditable(this.mode)) {
+      this.clear();
+      const importer = this.diagram.get<BpmnImporter>("bpmnImporter");
+      importer.import(definitions as never, {
+        repairMissingDi: true,
+        diagramIndex: index,
+      });
+      const scene = buildScene(definitions, index);
+      this.scene = scene;
+      this.order = buildGraphOrder(scene);
+      this.fitViewport();
+      this.installA11y(scene);
+    } else {
+      this.renderScene(buildScene(definitions, index));
+    }
+
+    this.definitions = definitions;
+    this.sourceXml = keptXml;
+    this.modified = keptModified;
+    this.sceneStale = false;
+    this.planeIndex = index;
+
+    // Die Ansage steht hier und nicht in `GraphA11y`: der Ebenenwechsel setzt
+    // die a11y-Schicht neu auf, und die Live-Region der alten Instanz ist
+    // danach aus dem Dokument entfernt. Sie nennt Ziel **und** Umfang — nach
+    // einem Wechsel ist der ganze Bildschirm ein anderer, und wer ihn nicht
+    // sieht, braucht beides, um sich neu zu verorten.
+    const scene = this.scene;
+    this.a11y?.announce(
+      `Ebene ${this.currentPlaneLabel()}. ${String(
+        (scene?.shapes.length ?? 0) + (scene?.connections.length ?? 0),
+      )} Elemente. Umschalt und O führt zurück.`,
+    );
+
+    this.eventBus.fire("plane.changed", {
+      index,
+      path: this.getPlanePath(),
+    } as never);
+    return true;
+  }
+
+  /** Öffnet die Ebene hinter `elementId`, falls es eine gibt. */
+  drillDown(elementId: string): boolean {
+    if (!this.definitions) return false;
+    const index = planeIndexFor(this.definitions, elementId);
+    if (index === undefined) return false;
+    return this.showPlane(index);
+  }
+
+  /** Eine Ebene zurück. */
+  drillUp(): boolean {
+    const path = this.getPlanePath();
+    const parent = path[path.length - 2];
+    if (!parent) return false;
+    return this.showPlane(parent.index);
+  }
+
+  /** Anzeigename der aktuellen Ebene — für Brotkrume und Ansage. */
+  currentPlaneLabel(): string {
+    const path = this.getPlanePath();
+    const current = path[path.length - 1];
+    return current ? planeLabel(current) : "Ebene";
+  }
+
   get editable(): boolean {
     return isEditable(this.mode);
   }
@@ -480,6 +689,7 @@ export class BpmnCanvas {
     this.sourceXml = null;
     this.modified = false;
     this.sceneStale = false;
+    this.planeIndex = 0;
   }
 
   /** Räumt Diagramm, Ereignisse und die a11y-Schicht auf. */

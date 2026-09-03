@@ -259,6 +259,45 @@ export function normalizeGeneratedIds(
     mapping.set(id, `gen-${next}`);
     next += 1;
   }
+  return rewriteIds(xml, mapping);
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-022] **Eine inhaltsbasierte Ausrichtung wurde
+ * gebaut, gemessen und wieder entfernt.**
+ *
+ * `STUFE2-D-OFFENE-PUNKTE.md` §2.8 nennt die positionelle Ausrichtung als
+ * Schwäche des Prüfstands und schlägt vor: „Eine inhaltsbasierte Ausrichtung
+ * (Typ + Container + Nachbarn) wäre die nächste Verbesserung dort." Sie wurde
+ * gebaut — erzeugte Elemente nach `Typ ‖ Container` gruppiert und innerhalb
+ * der Gruppe nummeriert — und gegen denselben Lauf gemessen (100 Folgen à 10
+ * Operationen, Startwert 13337):
+ *
+ * | Ausrichtung                                   | `ours-wrong` |
+ * | --------------------------------------------- | -----------: |
+ * | positionell (diese Funktion)                  |       **20** |
+ * | Typ + Container, Dokumentordnung in der Gruppe |           52 |
+ * | zusätzlich mit dem Namen im Schlüssel          |           70 |
+ * | Typ + Container, Ordnung nach Name/Geometrie   |           52 |
+ *
+ * **Warum sie schlechter ist.** Die Gruppierung nach Typ entkoppelt die
+ * Nummerierung von Formen und Kanten. Genau das darf sie nicht: `CandidateOrder`
+ * (`driver.ts`) sorgt dafür, dass beide Engines dieselbe Folge von Elementen in
+ * derselben Reihenfolge **erzeugen**, und die Dokumentreihenfolge des Exports
+ * folgt der Erzeugungsreihenfolge. Die globale Position ist damit gar keine
+ * Verlegenheitslösung, sondern die Größe, die zwischen den beiden Engines
+ * tatsächlich übereinstimmt. Erst die Gruppierung zerreißt sie: fehlt einer
+ * Seite eine Form, verschiebt sich in der Gruppierung nur die Formgruppe, und
+ * die Kanten paaren sich anschließend gegen fremde Endpunkte —
+ * `element-set/bpmn:SequenceFlow/sourceRef` stieg dabei von 1 auf 13.
+ *
+ * Die Vermutung des Berichts war plausibel und ist widerlegt. Der Rest der
+ * Klasse `element-set`/`element-type` hat eine andere Ursache und steht in
+ * `docs/UMSETZUNG-WELLE-2A.md` §OP-022.
+ */
+
+/** Setzt eine fertige Id-Zuordnung im Text um — Attribute und Textknoten. */
+function rewriteIds(xml: string, mapping: ReadonlyMap<string, string>): string {
   if (mapping.size === 0) return xml;
 
   let out = xml;

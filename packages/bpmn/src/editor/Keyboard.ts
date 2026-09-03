@@ -48,7 +48,11 @@
  * | `Strg+Z` / `Strg+Y`, `Strg+Umschalt+Z` | rückgängig / wiederholen |
  * | `Strg+C` / `X` / `V` / `D` | kopieren / ausschneiden / einfügen / duplizieren |
  * | `Strg+A` | alles auswählen |
+ * | `Strg+Umschalt+A` | alles im Container des fokussierten Elements (OP-032) |
  * | `Strg+Leertaste` | fokussiertes Element zur Auswahl hinzunehmen |
+ * | `Umschalt+Leertaste` | Strecke vom Anker bis zum fokussierten Element (OP-032) |
+ * | `h` / `l` / `s` | Hand-, Lasso-, Platz-Werkzeug ein und aus (OP-031) |
+ * | `o` / `Umschalt+O` | Ebene öffnen / verlassen (OP-018; verarbeitet der Betrachter) |
  * | `Escape` | Betriebsart oder Menü abbrechen |
  *
  * Jede dieser Handlungen meldet ihr Ergebnis an die Live-Region — die Ansage
@@ -70,6 +74,8 @@ import type { LabelEditing } from "./LabelEditing";
 import type { PaletteChrome } from "./PaletteChrome";
 import type { ReplaceMenu } from "./ReplaceMenu";
 import type { ResizeBehavior } from "./ResizeBehavior";
+import type { EditorTools } from "./Tools";
+import type { RangeSelection } from "./RangeSelection";
 import { describe } from "./ElementCreation";
 import { focusDiagram, isTextInput } from "./dom";
 import type {
@@ -200,6 +206,36 @@ export class EditorKeyboard {
   // -------------------------------------------------------------------------
 
   private handleModes(event: KeyboardEvent): boolean {
+    // [ARCTOS-FULL-2026-08-31 · OP-031] Ein aktives Werkzeug hat Vorrang vor
+    // allem anderen — das ist die Bedeutung von „Werkzeug": solange es an ist,
+    // meinen die Tasten etwas anderes. Ohne diesen Vorrang wäre der Zustand
+    // bloß eine Anzeige.
+    const tools = this.service<EditorTools>("editorTools");
+    const activeTool = tools?.active() ?? null;
+    if (activeTool !== null) {
+      if (event.key === "Escape") {
+        tools?.cancel();
+        return true;
+      }
+      if (activeTool === "space" && !event.ctrlKey && !event.metaKey) {
+        const delta = arrowDelta(
+          event.key,
+          event.altKey ? this.config.fineStep : this.config.gridStep,
+        );
+        if (delta) {
+          const shape = this.focused() as BpmnShape | undefined;
+          if (!shape || typeof shape.width !== "number") {
+            this.announcer.reject(
+              "Platz schaffen braucht ein Element als Anfang.",
+            );
+            return true;
+          }
+          tools?.makeSpace(shape, delta);
+          return true;
+        }
+      }
+    }
+
     const connectMode = this.service<ConnectMode>("connectMode");
     if (connectMode?.isActive()) {
       switch (event.key) {
@@ -350,6 +386,17 @@ export class EditorKeyboard {
       return true;
     }
     if (key === "a") {
+      // [ARCTOS-FULL-2026-08-31 · OP-032] `Strg+Umschalt+A` ist „alles in
+      // dieser Lane" — der Fall, den B1 §7.11 als fehlend nennt. Er steht
+      // bewusst neben `Strg+A` und nicht statt dessen: beide Fragen kommen vor,
+      // und wer den Container meint, soll nicht erst alles wählen und dann
+      // abwählen müssen.
+      if (event.shiftKey) {
+        this.service<RangeSelection>("rangeSelection")?.selectContainer(
+          this.focused(),
+        );
+        return true;
+      }
       this.selectAll();
       return true;
     }
@@ -395,6 +442,15 @@ export class EditorKeyboard {
     if (event.key === "F10" && event.shiftKey) {
       return this.openContextPad();
     }
+    // [ARCTOS-FULL-2026-08-31 · OP-032] `Umschalt+Leertaste` spannt die
+    // Strecke vom Anker bis hierher auf — die Tastaturform von „anklicken,
+    // dann mit Umschalt woanders hin klicken".
+    if (event.key === " " && event.shiftKey) {
+      this.service<RangeSelection>("rangeSelection")?.extendRange(
+        this.focused(),
+      );
+      return true;
+    }
     if (event.key === "ContextMenu") {
       return this.openContextPad();
     }
@@ -435,6 +491,20 @@ export class EditorKeyboard {
       case "g":
       case "G":
         this.service<AlignDistribute>("alignDistribute")?.toggleGrid();
+        return true;
+      // [ARCTOS-FULL-2026-08-31 · OP-031] Die drei Werkzeuge. Dieselben Tasten
+      // wie in jedem BPMN-Werkzeug (H, L, S), damit niemand umlernt.
+      case "h":
+      case "H":
+        this.service<EditorTools>("editorTools")?.toggle("hand");
+        return true;
+      case "l":
+      case "L":
+        this.service<EditorTools>("editorTools")?.toggle("lasso");
+        return true;
+      case "s":
+      case "S":
+        this.service<EditorTools>("editorTools")?.toggle("space");
         return true;
       default:
         return false;

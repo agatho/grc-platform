@@ -175,9 +175,17 @@ describe("Kantenführung", () => {
     session.destroy();
   });
 
-  it("führt Kanten aus einem Boundary Event senkrecht heraus", async () => {
+  it("führt Kanten aus einem Boundary Event über die Anheftseite heraus", async () => {
+    // [ARCTOS-FULL-2026-08-31 · OP-021] Hier stand `toContain("v:h")`.
+    // `v` heißt „senkrecht, Seite offen"; die Entscheidungstabelle nennt die
+    // Seite jetzt, an der der Anhefter wirklich sitzt. `Boundary_1` sitzt in
+    // der Prüffixtur mittig auf der **Unterkante** von `Task_A`
+    // (262…298 × 182…218 an 200…300 × 120…200), also `b`. Das ist keine
+    // Abschwächung, sondern die schärfere Aussage: `v:h` ließ oben und unten
+    // offen, `b:h` legt fest, dass die Kante nach unten herausläuft und nicht
+    // durch ihren eigenen Wirt.
     const session = await openSession(BOUNDARY_PROCESS);
-    expect(preferredLayouts(session.connection("Flow_B"))).toContain("v:h");
+    expect(preferredLayouts(session.connection("Flow_B"))).toEqual(["b:h"]);
     session.destroy();
   });
 

@@ -91,6 +91,13 @@ type Revert = () => void;
 /** Schlüssel der Rückwegliste in der Kommando-Kontextmappe. */
 const REVERTS = "__arctosBpmnUpdaterReverts";
 
+/**
+ * Name der `bpmn:Property`, die als Ziel einer eingehenden Datenassoziation
+ * dient. Der Wert ist die branchenübliche Vereinbarung (bpmn-js, Camunda) und
+ * darf sich nicht ändern — fremde Werkzeuge erkennen den Platzhalter daran.
+ */
+const TARGET_REF_PLACEHOLDER = "__targetRef_placeholder";
+
 interface CommandContext {
   [key: string]: unknown;
 }
@@ -833,13 +840,46 @@ export class BpmnUpdater extends CommandInterceptor {
     const sourceBo = boOf(source);
     const targetBo = boOf(target);
 
-    if (
-      is(bo, "bpmn:DataInputAssociation") ||
-      is(bo, "bpmn:DataOutputAssociation")
-    ) {
-      // Datenassoziationen führen keine incoming/outgoing-Listen; ihre Quelle
-      // ist eine Mengeneigenschaft.
+    // [ARCTOS-FULL-2026-08-31 · OP-044] Datenassoziationen führen keine
+    // incoming/outgoing-Listen — und ihre Enden sind **nicht** die Aktivität.
+    //
+    // Hier stand `sourceRef: [sourceBo]` und `targetRef: targetBo` für beide
+    // Richtungen, also die Aktivität einmal in `sourceRef` und einmal in
+    // `targetRef`. Beides verletzt das Schema: `bpmn:DataAssociation`
+    // typisiert `sourceRef` und `targetRef` als `bpmn:ItemAwareElement`
+    // (Datenobjekt, Datenspeicher, Property, DataInput/DataOutput). Eine
+    // `bpmn:Task` ist keines davon. Ein XSD-prüfender Leser weist die Datei
+    // zurück; ein nicht prüfender löst die Referenz auf einen Typ auf, den er
+    // dort nicht erwartet.
+    //
+    // `STUFE2-A1-MODELING.md` §7.8 beschreibt den Punkt als „flach statt
+    // `ioSpecification`". Nachgemessen ist die Sache enger und leichter zu
+    // reparieren: es fehlt nicht die `ioSpecification`, sondern ein zulässiges
+    // Ziel. Das Mittel dafür ist Stand der Technik und steht in der Referenz
+    // ausdrücklich als „as demanded by the BPMN 2.0 XSD schema"
+    // (`DataInputAssociationBehavior`): eine `bpmn:Property` mit dem
+    // vereinbarten Namen `__targetRef_placeholder` an der Aktivität, auf die
+    // `targetRef` zeigt. Sie wird bei Bedarf angelegt und wieder entfernt,
+    // sobald die letzte Assoziation sie loslässt.
+    //
+    // Für die Ausgangsrichtung ist gar nichts nötig: `sourceRef` ist 0..*, und
+    // die Referenz lässt es leer. Die Aktivität steht dort ohnehin schon —
+    // als `$parent` der Assoziation.
+    if (is(bo, "bpmn:DataInputAssociation")) {
       if (sourceBo) undo.push(setProperty(bo, "sourceRef", [sourceBo]));
+      if (targetBo) {
+        undo.push(
+          setProperty(
+            bo,
+            "targetRef",
+            this.targetRefPlaceholder(targetBo, undo),
+          ),
+        );
+      }
+      return;
+    }
+    if (is(bo, "bpmn:DataOutputAssociation")) {
+      undo.push(setProperty(bo, "sourceRef", []));
       if (targetBo) undo.push(setProperty(bo, "targetRef", targetBo));
       return;
     }
@@ -861,6 +901,35 @@ export class BpmnUpdater extends CommandInterceptor {
       undo.push(setProperty(bo, "targetRef", targetBo));
       if (twoSided) undo.push(addRef(targetBo, "incoming", bo));
     }
+  }
+
+  /**
+   * Die `bpmn:Property`, auf die die `targetRef` einer eingehenden
+   * Datenassoziation zeigen darf.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-044] Der Name `__targetRef_placeholder` ist
+   * keine Erfindung dieser Schicht, sondern die Vereinbarung, an die sich
+   * `bpmn-js` und die Camunda-Werkzeuge halten. Er ist der Grund, warum eine
+   * so erzeugte Datei in beiden Richtungen austauschbar bleibt: ein fremdes
+   * Werkzeug erkennt die Property als Platzhalter und zeigt sie nicht als
+   * Eigenschaft der Aktivität an.
+   *
+   * Idempotent: eine Aktivität mit mehreren eingehenden Datenassoziationen
+   * bekommt **eine** Property, nicht eine je Kante.
+   */
+  private targetRefPlaceholder(
+    activityBo: ModdleElement,
+    undo: Revert[],
+  ): ModdleElement {
+    const existing = asArray(activityBo["properties"]).find(
+      (property) => property["name"] === TARGET_REF_PLACEHOLDER,
+    );
+    if (existing) return existing;
+    const created = this.bpmnFactory.create("bpmn:Property", {
+      name: TARGET_REF_PLACEHOLDER,
+    });
+    undo.push(addToContainer(activityBo, created, "properties"));
+    return created;
   }
 
   /**

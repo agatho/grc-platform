@@ -37,6 +37,20 @@ export interface A11yHost {
   pan(dx: number, dy: number): void;
   /** Wird bei `Enter` ausgelöst — die Anwendung öffnet ihr Seitenpanel. */
   activate(elementId: string): void;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-018] Drill-Down in die Ebene hinter einem
+   * Element (`o`) und zurück (`Umschalt+O`).
+   *
+   * Optional, damit ein Aufrufer, der keine Ebenen führt (Formtests, fremder
+   * `diagram-js`-Aufbau), unverändert baut. Fehlt die Fähigkeit, sagt die
+   * Taste das an, statt stumm zu bleiben — eine Taste ohne Rückmeldung ist für
+   * einen Screenreader-Nutzer nicht von einer kaputten zu unterscheiden.
+   */
+  drillDown?(elementId: string): boolean;
+  drillUp?(): boolean;
+  canDrillDown?(elementId: string): boolean;
+  /** Anzeigename der Ebene, die nach dem Wechsel gilt — für die Ansage. */
+  planeLabel?(): string;
 }
 
 export interface GraphA11yOptions {
@@ -315,6 +329,12 @@ export class GraphA11y {
         }
         break;
       }
+      case "o":
+        this.drillDown();
+        break;
+      case "O":
+        this.drillUp();
+        break;
       case "Escape":
         this.host.container.focus();
         this.announce("Diagramm verlassen.");
@@ -324,6 +344,53 @@ export class GraphA11y {
     }
     event.preventDefault();
     event.stopPropagation();
+  }
+
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-018] `o` — die Ebene hinter dem fokussierten
+   * Element öffnen.
+   *
+   * Jeder Ausgang bekommt einen Satz. Ein eingeklappter Subprozess **ohne**
+   * eigene `BPMNPlane` ist der häufigste Fall im Bestand (im Korpus haben drei
+   * von vier verschachtelten Subprozessen keine); ihn stumm zu lassen hieße,
+   * den Nutzer im Ungewissen darüber zu lassen, ob die Taste nicht geht oder
+   * das Diagramm nichts hergibt.
+   */
+  private drillDown(): void {
+    const node = this.focused;
+    if (!node) {
+      this.announce("Es ist kein Element im Fokus.");
+      return;
+    }
+    if (!this.host.drillDown) {
+      this.announce("Diese Fläche führt keine Ebenen.");
+      return;
+    }
+    if (this.host.canDrillDown?.(node.shape.id) === false) {
+      this.announce(
+        `${this.describe(node, { short: true })} hat keine eigene Ebene.`,
+      );
+      return;
+    }
+    // Der Erfolgsfall sagt **nicht** hier an: der Ebenenwechsel setzt diese
+    // Schicht neu auf (`BpmnCanvas.installA11y`), und die Live-Region dieser
+    // Instanz ist danach aus dem Dokument entfernt. Ein Satz, den niemand mehr
+    // liest, ist schlimmer als keiner — die Ansage steht deshalb in
+    // `BpmnCanvas.showPlane`, wo die neue Instanz bekannt ist.
+    if (this.host.drillDown(node.shape.id)) return;
+    this.announce(
+      `${this.describe(node, { short: true })} hat keine eigene Ebene.`,
+    );
+  }
+
+  /** `Umschalt+O` — eine Ebene zurück. */
+  private drillUp(): void {
+    if (!this.host.drillUp) {
+      this.announce("Diese Fläche führt keine Ebenen.");
+      return;
+    }
+    if (this.host.drillUp()) return;
+    this.announce("Dies ist bereits die oberste Ebene.");
   }
 
   /**

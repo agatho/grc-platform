@@ -45,6 +45,13 @@ export class PaletteChrome {
     eventBus.on("palette.changed", () => {
       this.annotate();
     });
+    // [ARCTOS-FULL-2026-08-31 · OP-031] Der Werkzeugzustand als `aria-pressed`.
+    // Er wird gezielt am Knopf nachgezogen statt über einen Neuaufbau der
+    // Palette: ein Neuaufbau verwirft den Fokus, und wer das Werkzeug gerade
+    // mit der Tastatur eingeschaltet hat, stünde danach am Anfang der Liste.
+    eventBus.on("editorTools.changed", (event: { tool?: string | null }) => {
+      this.markTool(event.tool ?? null);
+    });
     eventBus.on(["diagram.destroy"], () => {
       this.destroy();
     });
@@ -92,6 +99,21 @@ export class PaletteChrome {
       },
     });
     this.annotate();
+  }
+
+  /** `aria-pressed` je Werkzeugknopf auf den neuen Zustand setzen. */
+  private markTool(active: string | null): void {
+    const container = this.container;
+    if (!container) return;
+    for (const node of Array.from(
+      container.querySelectorAll<HTMLElement>("[data-action^='tool.']"),
+    )) {
+      const id = (node.getAttribute("data-action") ?? "").slice("tool.".length);
+      const button = node.matches("button")
+        ? node
+        : node.querySelector<HTMLElement>("button.entry");
+      button?.setAttribute("aria-pressed", id === active ? "true" : "false");
+    }
   }
 
   /** Gruppen benennen und den Tabulator-Index neu setzen. */

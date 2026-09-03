@@ -89,6 +89,19 @@ export {
   type DistributeOrientation,
 } from "./AlignDistribute";
 export { EditorKeyboard, arrowDelta } from "./Keyboard";
+// [ARCTOS-FULL-2026-08-31 · OP-031/OP-032]
+export {
+  EditorTools,
+  TOOL_IDS,
+  TOOL_LABELS,
+  directionOf,
+  type ToolId,
+} from "./Tools";
+export {
+  RangeSelection,
+  compareByPosition,
+  containerLabel,
+} from "./RangeSelection";
 export { ProbeFactory } from "./probe";
 export {
   editorChromeModule,

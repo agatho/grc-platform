@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_Vertical" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:collaboration id="Collaboration_V">
+    <bpmn:participant id="Participant_Amt" name="Amt" processRef="Process_Amt"/>
+    <bpmn:participant id="Participant_Buerger" name="Buerger" processRef="Process_Buerger"/>
+    <bpmn:messageFlow id="MessageFlow_V1" name="Antrag" sourceRef="Task_Einreichen" targetRef="Task_Pruefen"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Amt" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Amt">
+      <bpmn:lane id="Lane_Eingang" name="Eingang">
+        <bpmn:flowNodeRef>Start_Amt</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Pruefen</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Boundary_Frist</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Bescheid" name="Bescheid">
+        <bpmn:flowNodeRef>Gateway_Entscheidung</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Bescheiden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Amt</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Frist</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Amt" name="Post">
+      <bpmn:outgoing>Flow_V1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_Pruefen" name="Antrag pruefen">
+      <bpmn:incoming>Flow_V1</bpmn:incoming>
+      <bpmn:outgoing>Flow_V2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="Boundary_Frist" name="Frist" attachedToRef="Task_Pruefen">
+      <bpmn:outgoing>Flow_V5</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="Timer_V"/>
+    </bpmn:boundaryEvent>
+    <bpmn:exclusiveGateway id="Gateway_Entscheidung" name="Vollstaendig?">
+      <bpmn:incoming>Flow_V2</bpmn:incoming>
+      <bpmn:outgoing>Flow_V3</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="Task_Bescheiden" name="Bescheid erstellen">
+      <bpmn:incoming>Flow_V3</bpmn:incoming>
+      <bpmn:outgoing>Flow_V4</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="End_Amt" name="Zugestellt">
+      <bpmn:incoming>Flow_V4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Frist" name="Verfristet">
+      <bpmn:incoming>Flow_V5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_V1" sourceRef="Start_Amt" targetRef="Task_Pruefen"/>
+    <bpmn:sequenceFlow id="Flow_V2" sourceRef="Task_Pruefen" targetRef="Gateway_Entscheidung"/>
+    <bpmn:sequenceFlow id="Flow_V3" sourceRef="Gateway_Entscheidung" targetRef="Task_Bescheiden"/>
+    <bpmn:sequenceFlow id="Flow_V4" sourceRef="Task_Bescheiden" targetRef="End_Amt"/>
+    <bpmn:sequenceFlow id="Flow_V5" sourceRef="Boundary_Frist" targetRef="End_Frist"/>
+  </bpmn:process>
+  <bpmn:process id="Process_Buerger" isExecutable="false">
+    <bpmn:startEvent id="Start_Buerger">
+      <bpmn:outgoing>Flow_B_V1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sendTask id="Task_Einreichen" name="Antrag einreichen">
+      <bpmn:incoming>Flow_B_V1</bpmn:incoming>
+      <bpmn:outgoing>Flow_B_V2</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:endEvent id="End_Buerger">
+      <bpmn:incoming>Flow_B_V2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_B_V1" sourceRef="Start_Buerger" targetRef="Task_Einreichen"/>
+    <bpmn:sequenceFlow id="Flow_B_V2" sourceRef="Task_Einreichen" targetRef="End_Buerger"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Vertical">
+    <bpmndi:BPMNPlane id="Plane_Vertical" bpmnElement="Collaboration_V">
+      <bpmndi:BPMNShape id="Participant_Amt_di" bpmnElement="Participant_Amt" isHorizontal="false">
+        <dc:Bounds x="100" y="80" width="500" height="620"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Eingang_di" bpmnElement="Lane_Eingang" isHorizontal="false">
+        <dc:Bounds x="100" y="110" width="250" height="590"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Bescheid_di" bpmnElement="Lane_Bescheid" isHorizontal="false">
+        <dc:Bounds x="350" y="110" width="250" height="590"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Amt_di" bpmnElement="Start_Amt">
+        <dc:Bounds x="207" y="160" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Pruefen_di" bpmnElement="Task_Pruefen">
+        <dc:Bounds x="175" y="260" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_Frist_di" bpmnElement="Boundary_Frist">
+        <dc:Bounds x="257" y="282" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Entscheidung_di" bpmnElement="Gateway_Entscheidung">
+        <dc:Bounds x="450" y="255" width="50" height="50"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Bescheiden_di" bpmnElement="Task_Bescheiden">
+        <dc:Bounds x="425" y="400" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Amt_di" bpmnElement="End_Amt">
+        <dc:Bounds x="457" y="560" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Frist_di" bpmnElement="End_Frist">
+        <dc:Bounds x="537" y="420" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_Buerger_di" bpmnElement="Participant_Buerger" isHorizontal="false">
+        <dc:Bounds x="680" y="80" width="240" height="620"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Buerger_di" bpmnElement="Start_Buerger">
+        <dc:Bounds x="792" y="160" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Einreichen_di" bpmnElement="Task_Einreichen">
+        <dc:Bounds x="760" y="260" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Buerger_di" bpmnElement="End_Buerger">
+        <dc:Bounds x="792" y="420" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_V1_di" bpmnElement="Flow_V1">
+        <di:waypoint x="225" y="196"/>
+        <di:waypoint x="225" y="260"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V2_di" bpmnElement="Flow_V2">
+        <di:waypoint x="275" y="300"/>
+        <di:waypoint x="450" y="280"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V3_di" bpmnElement="Flow_V3">
+        <di:waypoint x="475" y="305"/>
+        <di:waypoint x="475" y="400"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V4_di" bpmnElement="Flow_V4">
+        <di:waypoint x="475" y="480"/>
+        <di:waypoint x="475" y="560"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_V5_di" bpmnElement="Flow_V5">
+        <di:waypoint x="293" y="300"/>
+        <di:waypoint x="415" y="300"/>
+        <di:waypoint x="415" y="438"/>
+        <di:waypoint x="537" y="438"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B_V1_di" bpmnElement="Flow_B_V1">
+        <di:waypoint x="810" y="196"/>
+        <di:waypoint x="810" y="260"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B_V2_di" bpmnElement="Flow_B_V2">
+        <di:waypoint x="810" y="340"/>
+        <di:waypoint x="810" y="420"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_V1_di" bpmnElement="MessageFlow_V1">
+        <di:waypoint x="760" y="300"/>
+        <di:waypoint x="275" y="300"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
