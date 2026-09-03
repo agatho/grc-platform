@@ -44,6 +44,7 @@ import {
   GRC_PALETTE,
   GUTTER,
   HATCH_SPACING,
+  LANE_FOOTER,
   LEGEND,
   LOD_STRIPE,
   PIN,
@@ -348,6 +349,63 @@ function decorateElement(
     svgAttr(text, { [DECORATION_ATTR]: "gutter" });
     text.textContent = entries.join(" · ");
     svgAppend(group, text);
+  }
+
+  // 5b. Lane-Fußzeile (OP-006)
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-006] Der achte Slot. Er liegt am unteren
+  // Innenrand des Rahmens, aus demselben Grund, aus dem Lane-Badges am
+  // rechten INNENrand stehen (§7.2, Befund 4): außerhalb läge er auf der
+  // nächsten Lane oder halb außerhalb der Zeichenfläche.
+  //
+  // Der Balken trägt seinen Wert doppelt — als Länge UND als Text daneben.
+  // Eine Länge allein ist ein Vergleich ohne Bezugsgröße, und ein Leser mit
+  // Screenreader hätte gar nichts (§3.3.5 Regel 2).
+  const laneFooter = resolution.laneFooter;
+  if (laneFooter) {
+    const share = Math.min(1, Math.max(0, laneFooter.signal.share));
+    const maxWidth = shape.width * LANE_FOOTER.maxWidthRatio;
+    const width = Math.max(LANE_FOOTER.minWidth, maxWidth * share);
+    const y = shape.y + shape.height - LANE_FOOTER.offsetY - LANE_FOOTER.height;
+    const footerGroup = svgCreate("g", {
+      class: "arctos-grc-lane-footer",
+      "aria-hidden": "true",
+    });
+    svgAttr(footerGroup, { [DECORATION_ATTR]: "lane-footer" });
+    // Die Bezugsspur in Neutralton: ohne sie ist ein kurzer Balken nicht von
+    // einem abgeschnittenen zu unterscheiden.
+    svgAppend(
+      footerGroup,
+      svgCreate("rect", {
+        x: shape.x + LANE_FOOTER.offsetY,
+        y,
+        width: round(maxWidth),
+        height: LANE_FOOTER.height,
+        rx: 2,
+        fill: GRC_PALETTE.neutral.tint,
+      }),
+    );
+    svgAppend(
+      footerGroup,
+      svgCreate("rect", {
+        x: shape.x + LANE_FOOTER.offsetY,
+        y,
+        width: round(width),
+        height: LANE_FOOTER.height,
+        rx: 2,
+        fill: GRC_PALETTE[laneFooter.signal.tone].solid,
+      }),
+    );
+    const footerLabel = svgCreate("text", {
+      x: round(shape.x + LANE_FOOTER.offsetY + maxWidth + LANE_FOOTER.labelGap),
+      y: round(y + LANE_FOOTER.height),
+      "font-family": DEFAULT_FONT_FAMILY,
+      "font-size": LANE_FOOTER.fontSize,
+      fill: GRC_PALETTE.neutral.solid,
+    });
+    footerLabel.textContent = laneFooter.signal.label;
+    svgAppend(footerGroup, footerLabel);
+    svgAppend(group, footerGroup);
   }
 
   // 6. Pin-Schiene links außen

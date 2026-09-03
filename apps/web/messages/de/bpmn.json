@@ -20,6 +20,8 @@
   "grcView": {
     "label": "GRC-Sicht",
     "off": "GRC-Sicht: aus",
+    "frameworkLabel": "Rahmenwerk",
+    "frameworkOff": "Rahmenwerk: alle",
     "loading": "GRC-Daten werden geladen …",
     "error": "GRC-Daten nicht geladen ({reason})",
     "computedAt": "Stand: {timestamp}",

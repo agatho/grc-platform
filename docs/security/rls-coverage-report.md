@@ -3,7 +3,7 @@
 **Quelle: die laufende Datenbank** (`pg_class`, `pg_policies`,
 `pg_trigger`, `information_schema`) — nicht die Migrationstexte.
 
-Erzeugt mit `node scripts/audit-rls-coverage.mjs` gegen `postgres://grc:***@127.0.0.1:5432/welle1_verify`.
+Erzeugt mit `node scripts/audit-rls-coverage.mjs` gegen `postgres://grc:***@127.0.0.1:5432/w3_verify`.
 Die Gegenprüfung `node scripts/audit-rls-coverage.mjs --check` schlägt
 fehl, wenn eine Lücke besteht **oder** dieser Report vom gemessenen Ist
 abweicht.
@@ -18,9 +18,9 @@ abweicht.
 
 | Status             | Anzahl  |
 | ------------------ | ------- |
-| OK                 | 560     |
+| OK                 | 561     |
 | PLATFORM_EXEMPT    | 55      |
-| **Objekte gesamt** | **615** |
+| **Objekte gesamt** | **616** |
 | **Lücken**         | **0**   |
 
 ## Geltungsbereiche
@@ -471,6 +471,7 @@ Finding S01-14 beanstandet hat.
 | `process_event`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `process_event_activity_map`               | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
 | `process_event_log`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_event_transition_map`             | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
 | `process_framework_mapping`                | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
 | `process_kpi_definition`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
 | `process_kpi_measurement`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |

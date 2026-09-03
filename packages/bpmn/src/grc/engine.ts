@@ -10,7 +10,7 @@
 
 import type { BpmnConnection, BpmnShape } from "../draw/types";
 import type { Scene } from "../draw/scene";
-import type { GrcOverlayData } from "./contract";
+import type { GrcOverlayData, GrcValidationFinding } from "./contract";
 import {
   buildLayerContext,
   type GrcFilter,
@@ -74,6 +74,8 @@ export interface BuildOverlayOptions {
   readonly extraLayers?: readonly string[];
   readonly filter?: GrcFilter;
   readonly selectedConflictId?: string;
+  /** [ARCTOS-FULL-2026-08-31 · OP-011] Modellierungsbefunde (Sicht „Modellierung"). */
+  readonly validation?: readonly GrcValidationFinding[];
 }
 
 /** Pseudo-Layer für den Filter — damit auch das Abblenden eine Beschreibung hat. */
@@ -89,6 +91,7 @@ export function buildOverlayModel(
     ...(options.selectedConflictId
       ? { selectedConflictId: options.selectedConflictId }
       : {}),
+    ...(options.validation ? { validation: options.validation } : {}),
   });
   const resolved = resolveView(
     options.view,

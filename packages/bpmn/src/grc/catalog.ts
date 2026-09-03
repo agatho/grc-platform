@@ -13,14 +13,27 @@ import {
   type CoverageStage,
   computeEvidence,
   computeFindings,
+  computeIncidents,
+  computeKri,
+  computeLaneCosts,
+  computeWorkItems,
+  WORK_ITEM_DUE_SOON_DAYS,
+  type LaneCostResult,
   computeFrameworkElement,
   computeRetention,
+  daysBetween,
+  KRI_STALE_FACTOR,
   personalDataStage,
   riskLevel,
   rollupRisk,
   SHORT_RETENTION_MONTHS,
 } from "./analysis";
-import type { GrcLineOfDefense, GrcObjectRef } from "./contract";
+import type {
+  GrcLaneQualification,
+  GrcLineOfDefense,
+  GrcObjectRef,
+  GrcValidationFinding,
+} from "./contract";
 import { isContainer, laneOf } from "./graph";
 import type { GrcLayer, GrcLayerContext, GrcLegendEntry } from "./layers";
 import { formatMinutes } from "./outage";
@@ -39,8 +52,18 @@ import { EDGE_DECORATION, TONE_GLYPH, type GrcTone } from "./tokens";
  * Nutzer genau danach gefragt hat.
  */
 export const PRIORITY = {
+  // [ARCTOS-FULL-2026-08-31 · OP-011] Über allem, aber nur in der Sicht
+  // „Modellierung": ein Dokument, das ein Fremdwerkzeug nicht mehr lesen kann,
+  // macht jede fachliche Aussage darüber gegenstandslos. In den acht anderen
+  // Sichten ist der Layer gar nicht aktiv — dort zeichnet niemand.
+  validation: 99,
   outage: 98,
   sod: 95,
+  // [ARCTOS-FULL-2026-08-31 · OP-004] Ein Vorfall ist ein Risiko, das bereits
+  // eingetreten ist. Er schlägt jede Abdeckungsstatistik: dass eine Kontrolle
+  // als wirksam geführt wird, ist an einem Schritt, an dem gerade ein Vorfall
+  // läuft, die weniger dringende Auskunft.
+  incident: 92,
   controlCoverage: 90,
   evidence: 88,
   privacy: 86,
@@ -48,6 +71,16 @@ export const PRIORITY = {
   conformance: 84,
   bcm: 82,
   finding: 80,
+  // [ARCTOS-FULL-2026-08-31 · OP-008] Der Indikator steht UNTER dem, was
+  // bereits eingetreten ist (Vorfall, Risiko, Feststellung) und über der
+  // Rahmenwerkzuordnung. Er ist ein Frühwarnsignal: er sagt, was passieren
+  // KÖNNTE. Wo daneben etwas steht, das passiert IST, ist das die dringendere
+  // Auskunft — und der Sammel-Badge nennt ihn trotzdem.
+  kri: 77,
+  // [ARCTOS-FULL-2026-08-31 · OP-005] Die offene Maßnahme steht unmittelbar
+  // unter der Feststellung, aus der sie meist hervorgeht — und über der
+  // Kontrolle, deren Zustand sie gerade verändert.
+  workItem: 79,
   control: 78,
   framework: 76,
   controlTest: 74,
@@ -59,6 +92,12 @@ export const PRIORITY = {
   raci: 54,
   retention: 46,
   operations: 40,
+  // [ARCTOS-FULL-2026-08-31 · OP-006] Der Anteilsbalken teilt sich keinen
+  // Slot mit einem Badge — er hat einen eigenen (Lane-Fußzeile). Die
+  // Priorität entscheidet nur, welcher von zwei Fußzeilen-Layern gewinnt;
+  // heute gibt es genau einen. Sie steht neben `operations`, weil beide
+  // dieselbe Quelle lesen.
+  cost: 39,
   trustBoundary: 36,
   comments: 30,
 } as const;
@@ -1620,10 +1659,15 @@ export const conformanceLayer: GrcLayer = {
       return undefined;
     }
     const edge = context.data.edges?.[connection.id];
-    if (!edge) {
+    // [ARCTOS-FULL-2026-08-31 · OP-012] Der Übergang aus dem Ereignisprotokoll
+    // (`process_event_transition_map`, 0476) als zweite Quelle. Eine
+    // ausdrücklich gelieferte Kantenangabe schlägt sie — sonst überschriebe
+    // eine Messung eine hinterlegte Tatsache.
+    const observed = context.transitions.byEdge.get(connection.id);
+    if (!edge && !observed) {
       return undefined;
     }
-    if (edge.observation === "unobserved") {
+    if (edge?.observation === "unobserved") {
       return {
         kind: "edge",
         tone: "neutral",
@@ -1631,7 +1675,9 @@ export const conformanceLayer: GrcLayer = {
         describe: "Modelliert, aber nie beobachtet.",
       };
     }
-    if (edge.frequency === undefined) {
+    const frequency = edge?.frequency ?? observed?.frequency;
+    const probability = edge?.probability ?? observed?.probability;
+    if (frequency === undefined) {
       return undefined;
     }
     return {
@@ -1641,9 +1687,9 @@ export const conformanceLayer: GrcLayer = {
       // Kante war im ersten gerasterten Beleg genau die Tapete, die §3.3
       // verhindern soll — die Zahl steht in der Ansage und in der Tabelle.
       style: "solid",
-      width: flowWidth(edge.frequency),
-      describe: `Beobachtet in ${edge.frequency.toLocaleString("de-DE")} Fällen${
-        edge.probability === undefined ? "" : ` (${percent(edge.probability)})`
+      width: flowWidth(frequency),
+      describe: `Beobachtet in ${frequency.toLocaleString("de-DE")} Fällen${
+        probability === undefined ? "" : ` (${percent(probability)})`
       }.`,
     };
   },
@@ -1687,15 +1733,17 @@ export const conformanceLayer: GrcLayer = {
     }
     if (!isShape(element)) {
       const edge = context.data.edges?.[element.id];
-      if (!edge) {
+      const observed = context.transitions.byEdge.get(element.id);
+      if (!edge && !observed) {
         return undefined;
       }
-      if (edge.observation === "unobserved") {
+      if (edge?.observation === "unobserved") {
         return "Modelliert, aber nie beobachtet.";
       }
-      return edge.frequency === undefined
+      const frequency = edge?.frequency ?? observed?.frequency;
+      return frequency === undefined
         ? undefined
-        : `Beobachtet in ${edge.frequency.toLocaleString("de-DE")} Fällen.`;
+        : `Beobachtet in ${frequency.toLocaleString("de-DE")} Fällen.`;
     }
     const data = context.data.elements[element.id]?.conformance;
     if (!data) {
@@ -1821,27 +1869,46 @@ export const operationsLayer: GrcLayer = {
   },
 
   forEdge(connection, context): GrcEdgeSignal | undefined {
+    // [ARCTOS-FULL-2026-08-31 · OP-012] Zwei Quellen, in dieser Reihenfolge:
+    // ein ausdrücklich geliefertes `edges[]` (heute liefert es niemand, siehe
+    // MISSING_TODAY) schlägt die aus dem Ereignisprotokoll gerechnete Zahl.
+    // Eine gemessene Größe darf eine hinterlegte nicht überschreiben.
     const edge = context.data.edges?.[connection.id];
-    if (edge?.probability === undefined) {
+    const observed = context.transitions.byEdge.get(connection.id);
+    const probability = edge?.probability ?? observed?.probability;
+    const frequency = edge?.frequency ?? observed?.frequency;
+    if (probability === undefined) {
       return undefined;
     }
     return {
       kind: "edge",
       tone: "neutral",
       style: "solid",
-      width:
-        edge.frequency === undefined ? undefined : flowWidth(edge.frequency),
-      chip: percent(edge.probability),
-      describe: `Verzweigungswahrscheinlichkeit ${percent(edge.probability)}.`,
+      width: frequency === undefined ? undefined : flowWidth(frequency),
+      chip: percent(probability),
+      describe:
+        `Verzweigungswahrscheinlichkeit ${percent(probability)}` +
+        (frequency === undefined
+          ? ""
+          : `, beobachtet in ${frequency.toLocaleString("de-DE")} Fällen`) +
+        // Die Herkunft gehört dazu: eine beobachtete Quote ist keine Aussage
+        // über die modellierte Zweigwahl, und ein Prüfer muss den Unterschied
+        // sehen können, ohne die Datenherkunft zu kennen.
+        (edge?.probability === undefined && observed !== undefined
+          ? " (aus dem Ereignisprotokoll)"
+          : "") +
+        ".",
     };
   },
 
   describe(element, context) {
     if (!isShape(element)) {
-      const edge = context.data.edges?.[element.id];
-      return edge?.probability === undefined
+      const probability =
+        context.data.edges?.[element.id]?.probability ??
+        context.transitions.byEdge.get(element.id)?.probability;
+      return probability === undefined
         ? undefined
-        : `Verzweigungswahrscheinlichkeit ${percent(edge.probability)}.`;
+        : `Verzweigungswahrscheinlichkeit ${percent(probability)}.`;
     }
     const simulation = context.data.elements[element.id]?.simulation;
     if (!simulation) {
@@ -1953,12 +2020,21 @@ export const laneLayer: GrcLayer = {
       });
     }
     if (lane.trainingRatio !== undefined && lane.trainingRatio < 1) {
+      // [ARCTOS-FULL-2026-08-31 · OP-010] Die Aufschlüsselung hängt an DIESEM
+      // Badge, nicht nur an der Lane insgesamt: er ist die Stelle, auf die
+      // ein Leser mit Tastatur oder Screenreader zusteuert, wenn er wissen
+      // will, was an der Qualifikation fehlt. Eine Quote im zugänglichen
+      // Namen und die Aufschlüsselung nur woanders wäre dieselbe Zahl ohne
+      // Handlungsfolge, die OP-010 beanstandet.
+      const gaps = describeQualificationGaps(lane.qualification ?? []);
       signals.push({
         kind: "badge",
         slot: "BR",
         text: percent(lane.trainingRatio),
         tone: lane.trainingRatio < 0.8 ? "warn" : "info",
-        describe: `Qualifikationsquote ${percent(lane.trainingRatio)} der Rollenmitglieder.`,
+        describe:
+          `Qualifikationsquote ${percent(lane.trainingRatio)} der Rollenmitglieder.` +
+          (gaps.length > 0 ? ` Offen: ${gaps.join("; ")}.` : ""),
       });
     }
     return signals;
@@ -1999,9 +2075,69 @@ export const laneLayer: GrcLayer = {
         `Richtlinien-Kenntnisnahme ${percent(lane.acknowledgmentRatio)}`,
       );
     }
+    // [ARCTOS-FULL-2026-08-31 · OP-010] Die Aufschlüsselung je Rolle. Sie
+    // steht in der Beschreibung und damit im zugänglichen Namen, in der
+    // Live-Ansage und in der Textalternative — den drei Stellen, an denen
+    // diese Schicht „Panel" sagt (§4.2/§4.3). Genannt werden nur die Rollen
+    // mit einer LÜCKE: eine vollständig geschulte Rolle ist keine
+    // Handlungsanweisung, und eine Aufzählung, in der jede Zeile „12 von 12"
+    // sagt, verdeckt die eine, die es nicht tut.
+    const gaps = describeQualificationGaps(lane.qualification ?? []);
+    if (gaps.length > 0) {
+      parts.push(`offen: ${gaps.join("; ")}`);
+    }
     return parts.length === 0 ? undefined : `${parts.join(", ")}.`;
   },
 };
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-010] Die Lücken je Rolle als Satzteile.
+ *
+ * Ein Eintrag entsteht nur, wenn es überhaupt eine Pflicht gibt (`…Count` ist
+ * dann gesetzt) UND jemand sie nicht erfüllt hat. `0 von 0` ist keine Lücke,
+ * sondern keine Pflicht — der Unterschied ist derselbe, aus dem
+ * `trainingRatio` bei fehlender Pflichtschulung ganz wegbleibt
+ * (STUFE2-E-SCHEMA.md §3.1).
+ *
+ * Sortiert nach Größe der Lücke, dann nach Rollenname: dieselben Daten müssen
+ * denselben Satz ergeben, sonst hängt die Textalternative an der Reihenfolge
+ * der Datenbankzeilen.
+ */
+export function describeQualificationGaps(
+  entries: readonly GrcLaneQualification[],
+): readonly string[] {
+  const rows: { text: string; gap: number; name: string }[] = [];
+  for (const entry of entries) {
+    const missing: string[] = [];
+    let worst = 0;
+    if (entry.trainedCount !== undefined) {
+      const open = entry.memberCount - entry.trainedCount;
+      if (open > 0) {
+        missing.push(
+          `${String(open)} von ${String(entry.memberCount)} ohne Pflichtschulung`,
+        );
+        worst = Math.max(worst, open);
+      }
+    }
+    if (entry.acknowledgedCount !== undefined) {
+      const open = entry.memberCount - entry.acknowledgedCount;
+      if (open > 0) {
+        missing.push(
+          `${String(open)} von ${String(entry.memberCount)} ohne Kenntnisnahme`,
+        );
+        worst = Math.max(worst, open);
+      }
+    }
+    if (missing.length === 0) continue;
+    rows.push({
+      text: `${entry.role.name} — ${missing.join(", ")}`,
+      gap: worst,
+      name: entry.role.name,
+    });
+  }
+  rows.sort((a, b) => b.gap - a.gap || a.name.localeCompare(b.name));
+  return rows.map((row) => row.text);
+}
 
 /* ------------------------------------------------------------------ *
  * Dokumente / SOP (Slot BR) — Sicht „Verantwortung"
@@ -2047,6 +2183,661 @@ export const documentLayer: GrcLayer = {
   },
 };
 
+/* ------------------------------------------------------------------ *
+ * F14 — Vorfälle am Schritt (Slot TL)
+ * ------------------------------------------------------------------ */
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-004] Der Layer, den `STUFE2-A2-GRC.md` §6 mit
+ * „reine Badge-Arbeit, aber ohne `security_incident.process_step_id` gäbe es
+ * nichts zu zeigen" zurückgestellt hat. Die Spalte steht seit Migration 0454.
+ *
+ * **Warum ein abgeschlossener Vorfall trotzdem einen Badge bekommt.** Die
+ * naheliegende Regel wäre „nur laufende zeigen". Sie ist falsch: dann sähe der
+ * Schritt, an dem im Frühjahr ein Datenabfluss war und der seither aufgeräumt
+ * ist, genauso aus wie der Schritt, an dem nie etwas passiert ist. Für eine
+ * Risikobeurteilung sind das zwei sehr verschiedene Schritte. Der
+ * abgeschlossene Vorfall bekommt deshalb den neutralen Ton und ein `§`, der
+ * laufende die Farbe seiner Schwere.
+ */
+export const incidentLayer: GrcLayer = {
+  id: "incident",
+  title: "Vorfälle",
+  feature: "F14",
+  priority: PRIORITY.incident,
+
+  forShape(shape, context) {
+    const result = computeIncidents(context.data.elements[shape.id]);
+    if (result.stage === "none") {
+      return [];
+    }
+    const describe = this.describe(shape, context);
+    if (describe === undefined) {
+      return [];
+    }
+    const tone: GrcTone =
+      result.stage === "critical"
+        ? "critical"
+        : result.stage === "open"
+          ? "warn"
+          : "neutral";
+    return [
+      {
+        kind: "badge",
+        // **Slot TL, nicht TR — gemessen entschieden.** Beide Slots sind in
+        // der Sicht „Risiko & Kontrolle" belegt: TL von `control` (78), TR von
+        // `risk` (85). Ein Vorfall (92) verdrängt in beiden Fällen jemanden,
+        // und das Budget schiebt den Verdrängten in den Sammel-Badge — die
+        // Frage ist also nur, WEN. Auf TR verlöre das Diagramm die
+        // Risiko-Ampel an genau den Schritten, an denen gerade etwas
+        // passiert; auf TL verliert es den Kontroll-Badge, dessen Aussage die
+        // Formkodierung (`control-coverage`) in dieser Sicht ohnehin trägt.
+        // Der kleinere Verlust gewinnt.
+        slot: "TL",
+        // Laufende zuerst; ohne laufende die Gesamtzahl. Der Badge zeigt die
+        // Zahl, die zum Ton gehört — eine Zahl in einer Farbe, die etwas
+        // anderes meint, ist die schlimmste Kombination.
+        text: `V${String(result.open > 0 ? result.open : result.total)}`,
+        tone,
+        refs: refs(result.items),
+        describe,
+      },
+    ];
+  },
+
+  describe(element, context) {
+    if (!isShape(element)) {
+      return undefined;
+    }
+    const result = computeIncidents(context.data.elements[element.id]);
+    if (result.stage === "none") {
+      return undefined;
+    }
+    const parts: string[] = [];
+    if (result.open > 0) {
+      parts.push(
+        `${String(result.open)} laufende${result.open === 1 ? "r" : ""} Vorfall${
+          result.open === 1 ? "" : "e"
+        }`,
+      );
+    }
+    const closed = result.total - result.open;
+    if (closed > 0) {
+      parts.push(`${String(closed)} abgeschlossen`);
+    }
+    if (result.worst) {
+      parts.push(
+        `schwerster: ${result.worst.title} (${TONE_WORD_SEVERITY[result.worst.severity]})`,
+      );
+    }
+    if (result.dataBreaches > 0) {
+      // Ein meldepflichtiger Datenschutzvorfall ist keine Fußnote: an ihm
+      // hängt eine 72-Stunden-Frist (Art. 33 DSGVO).
+      parts.push(
+        `${String(result.dataBreaches)} meldepflichtige${
+          result.dataBreaches === 1 ? "r" : ""
+        } Datenschutzvorfall${result.dataBreaches === 1 ? "" : "e"}`,
+      );
+    }
+    return `${parts.join(", ")}.`;
+  },
+
+  legend() {
+    return [
+      {
+        tone: "critical",
+        glyph: TONE_GLYPH.critical,
+        text: "laufender Vorfall, hohe oder kritische Schwere",
+      },
+      { tone: "warn", glyph: TONE_GLYPH.warn, text: "laufender Vorfall" },
+      {
+        tone: "neutral",
+        glyph: TONE_GLYPH.neutral,
+        text: "nur abgeschlossene Vorfälle",
+      },
+    ];
+  },
+};
+
+/** Schweregrade als Wort — Farbe ist nie der einzige Träger (§3.3.5 Regel 2). */
+const TONE_WORD_SEVERITY: Readonly<Record<string, string>> = {
+  low: "gering",
+  medium: "mittel",
+  high: "hoch",
+  critical: "kritisch",
+};
+
+/* ------------------------------------------------------------------ *
+ * F16 — Offene Maßnahmen mit Fälligkeit (Slot BL)
+ * ------------------------------------------------------------------ */
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-005] Wie F14 mit Migration 0454 möglich
+ * geworden (`work_item.process_step_id`).
+ *
+ * **Die Fälligkeit ist die Aussage, nicht die Anzahl.** Ein Badge „M3" ist ein
+ * Zählwert; „M3, eine seit zwölf Tagen überfällig" ist ein Befund. Deshalb
+ * bestimmt die Frist den Ton, und die Textform nennt die Tage.
+ *
+ * **Und der Fall, den man sonst übersieht:** eine offene Maßnahme *ohne*
+ * Frist. Sie taucht in keiner Fälligkeitsliste auf und sieht in jeder Ampel
+ * grün aus. Sie wird gezählt und in der Textform genannt, statt sie
+ * stillschweigend als unkritisch zu führen.
+ */
+export const workItemLayer: GrcLayer = {
+  id: "work-item",
+  title: "Offene Maßnahmen",
+  feature: "F16",
+  priority: PRIORITY.workItem,
+
+  forShape(shape, context) {
+    const result = computeWorkItems(
+      context.data.elements[shape.id],
+      context.asOf,
+    );
+    if (result.stage === "none") {
+      return [];
+    }
+    const describe = this.describe(shape, context);
+    if (describe === undefined) {
+      return [];
+    }
+    const tone: GrcTone =
+      result.stage === "overdue"
+        ? "critical"
+        : result.stage === "due"
+          ? "warn"
+          : "info";
+    return [
+      {
+        kind: "badge",
+        slot: "BL",
+        text: `M${String(result.open)}`,
+        tone,
+        refs: refs(result.items),
+        describe,
+      },
+    ];
+  },
+
+  describe(element, context) {
+    if (!isShape(element)) {
+      return undefined;
+    }
+    const result = computeWorkItems(
+      context.data.elements[element.id],
+      context.asOf,
+    );
+    if (result.stage === "none") {
+      return undefined;
+    }
+    const parts = [
+      `${String(result.open)} offene Maßnahme${result.open === 1 ? "" : "n"}`,
+    ];
+    if (result.overdue > 0) {
+      const days = result.daysUntilDue;
+      parts.push(
+        typeof days === "number" && days < 0
+          ? `${String(result.overdue)} überfällig, älteste seit ${String(Math.abs(Math.round(days)))} Tagen`
+          : `${String(result.overdue)} überfällig`,
+      );
+    } else if (result.dueSoon > 0) {
+      parts.push(
+        `${String(result.dueSoon)} fällig in ${String(WORK_ITEM_DUE_SOON_DAYS)} Tagen`,
+      );
+    }
+    if (result.withoutDueDate > 0) {
+      parts.push(`${String(result.withoutDueDate)} ohne Frist`);
+    }
+    return `${parts.join(", ")}.`;
+  },
+
+  legend() {
+    return [
+      {
+        tone: "critical",
+        glyph: TONE_GLYPH.critical,
+        text: "Maßnahme überfällig",
+      },
+      {
+        tone: "warn",
+        glyph: TONE_GLYPH.warn,
+        text: `Maßnahme fällig in ${String(WORK_ITEM_DUE_SOON_DAYS)} Tagen`,
+      },
+      {
+        tone: "info",
+        glyph: TONE_GLYPH.info,
+        text: "offene Maßnahme ohne nahe Frist",
+      },
+    ];
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * F15 — KRI-Schwellenampel (Slot BL)
+ * ------------------------------------------------------------------ */
+
+const KRI_TREND_WORD: Readonly<Record<string, string>> = {
+  improving: "Trend verbessert sich",
+  stable: "Trend stabil",
+  worsening: "Trend verschlechtert sich",
+};
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-008] Die Ampel, die `STUFE2-A2-GRC.md` §6 mit
+ * „ohne Zeitreihenvertrag wäre der Badge eine Zahl ohne Bedeutung"
+ * zurückgestellt hat.
+ *
+ * Die Bedeutung ist da (Begründung an `GrcKri` in `contract.ts`) — und dieser
+ * Layer bringt sie mit **zwei** Zuständen, die die Datenbank nicht hat:
+ *
+ * - **„keine Schwellen"** statt Grün. `kri.current_alert_status` steht auf
+ *   `green`, sobald eine der drei Schwellen fehlt. Als grüner Punkt gezeichnet
+ *   wäre das eine Entwarnung aus fehlenden Daten.
+ * - **„veraltet"** statt Grün. Ein Indikator, dessen letzte Messung mehr als
+ *   zwei Messtakte zurückliegt, sagt nichts über heute.
+ *
+ * Beide tragen den Neutralton mit dem Formzeichen `○` — sichtbar anders als
+ * Grün, und im Text ausdrücklich benannt.
+ */
+export const kriLayer: GrcLayer = {
+  id: "kri",
+  title: "Risikoindikatoren",
+  feature: "F15",
+  priority: PRIORITY.kri,
+
+  forShape(shape, context) {
+    const result = computeKri(context.data.elements[shape.id], context.asOf);
+    if (result.stage === "none") {
+      return [];
+    }
+    const describe = this.describe(shape, context);
+    if (describe === undefined) {
+      return [];
+    }
+    const tone: GrcTone =
+      result.stage === "critical"
+        ? "critical"
+        : result.stage === "warn"
+          ? "warn"
+          : result.stage === "ok"
+            ? "ok"
+            : "neutral";
+    return [
+      {
+        kind: "badge",
+        slot: "BL",
+        // Rot zählt, sonst die Zahl der ungeklärten — nie eine Zahl, die zu
+        // einem anderen Ton gehört als der, den sie erklärt.
+        text:
+          result.stage === "critical"
+            ? `KRI ${String(result.red)}`
+            : result.stage === "warn"
+              ? `KRI ${String(result.yellow)}`
+              : result.stage === "ok"
+                ? "KRI"
+                : `KRI ${String(result.withoutThresholds + result.stale + result.neverMeasured)}`,
+        tone,
+        describe,
+      },
+    ];
+  },
+
+  describe(element, context) {
+    if (!isShape(element)) {
+      return undefined;
+    }
+    const result = computeKri(context.data.elements[element.id], context.asOf);
+    if (result.stage === "none") {
+      return undefined;
+    }
+    const parts: string[] = [];
+    if (result.red > 0) {
+      parts.push(`${String(result.red)} Indikator(en) über der roten Schwelle`);
+    }
+    if (result.yellow > 0) {
+      parts.push(`${String(result.yellow)} im Warnbereich`);
+    }
+    if (result.withoutThresholds > 0) {
+      // Ausdrücklich benannt: „ohne Schwellen" ist kein grüner Zustand.
+      parts.push(
+        `${String(result.withoutThresholds)} ohne hinterlegte Schwellen (keine Ampel möglich)`,
+      );
+    }
+    if (result.neverMeasured > 0) {
+      parts.push(`${String(result.neverMeasured)} nie gemessen`);
+    }
+    if (result.stale > 0) {
+      parts.push(
+        `${String(result.stale)} veraltet (letzte Messung älter als ${String(KRI_STALE_FACTOR)} Messtakte)`,
+      );
+    }
+    if (parts.length === 0) {
+      parts.push(
+        `${String(result.items.length)} Indikator(en) im grünen Bereich`,
+      );
+    }
+    const worst = result.worst;
+    if (worst) {
+      const detail: string[] = [worst.title];
+      if (worst.value !== undefined) {
+        detail.push(
+          `${worst.value.toLocaleString("de-DE")}${worst.unit ? ` ${worst.unit}` : ""}`,
+        );
+      }
+      // Die Richtung gehört in den Satz: „18 %" ist ohne sie keine Aussage.
+      detail.push(
+        worst.direction === "asc"
+          ? "hoch ist schlecht"
+          : "niedrig ist schlecht",
+      );
+      if (worst.trend) {
+        detail.push(KRI_TREND_WORD[worst.trend] ?? worst.trend);
+      }
+      if (worst.measuredAt) {
+        const age = Math.max(0, daysBetween(worst.measuredAt, context.asOf));
+        detail.push(`Stand vor ${String(age)} Tagen`);
+      } else {
+        detail.push("noch nie gemessen");
+      }
+      parts.push(detail.join(", "));
+    }
+    return `${parts.join("; ")}.`;
+  },
+
+  legend(context) {
+    const any = Object.values(context.data.elements).some(
+      (element) => (element?.kris?.length ?? 0) > 0,
+    );
+    if (!any) {
+      return [];
+    }
+    return [
+      {
+        tone: "critical",
+        glyph: TONE_GLYPH.critical,
+        text: "Indikator über der roten Schwelle",
+      },
+      {
+        tone: "warn",
+        glyph: TONE_GLYPH.warn,
+        text: "Indikator im Warnbereich",
+      },
+      { tone: "ok", glyph: TONE_GLYPH.ok, text: "Indikator im grünen Bereich" },
+      {
+        tone: "neutral",
+        glyph: TONE_GLYPH.neutral,
+        text: "keine Ampel möglich: Schwellen fehlen oder Messung veraltet",
+      },
+    ];
+  },
+};
+
+/* ------------------------------------------------------------------ *
+ * F11 — Kostenverteilung (Lane-Fußzeile)
+ * ------------------------------------------------------------------ */
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-006] Der Layer, für den `STUFE2-A2-GRC.md` §6
+ * erst einen Slot brauchte: „ein eigener Slot („Lane-Fußzeile"), den §3.3.1
+ * nicht vorsieht — ihn zu erfinden hätte das Slotsystem aufgeweicht, bevor es
+ * sich bewährt hat." Der Slot steht jetzt (`slots.ts`, `GrcLaneFooterSignal`).
+ *
+ * **Was der Balken sagt und was nicht.** Er sagt: dieser Rahmen trägt X % der
+ * Kosten, die dieses Diagramm KENNT. Er sagt nicht: X % der Kosten. Der
+ * Unterschied steht in der Beschreibung, sobald nicht jede Aktivität eine
+ * Kostenangabe trägt — und ohne eine einzige Angabe schweigt der Layer ganz,
+ * statt jedem Rahmen 0 % zuzuschreiben.
+ */
+export const costLayer: GrcLayer = {
+  id: "cost",
+  title: "Kostenverteilung",
+  feature: "F11",
+  priority: PRIORITY.cost,
+
+  forShape(shape, context) {
+    if (shape.type !== "bpmn:Lane" && shape.type !== "bpmn:Participant") {
+      return [];
+    }
+    const result = laneCosts(context);
+    const entry = result.byLane.get(shape.id);
+    // Kein Balken ohne bekannte Kosten: „0 %" an jedem Rahmen wäre eine
+    // Verteilungsaussage über eine Verteilung, die niemand kennt.
+    if (!entry || result.total <= 0 || entry.activitiesWithCost === 0) {
+      return [];
+    }
+    const describe = this.describe(shape, context);
+    if (describe === undefined) {
+      return [];
+    }
+    return [
+      {
+        kind: "lane-footer",
+        share: entry.share,
+        // Der höchste Anteil hebt sich ab, ohne dass er ein Befund wäre:
+        // teuer ist nicht schlecht. Deshalb `accent` und nicht `critical`.
+        tone: entry.share >= 0.4 ? "accent" : "info",
+        label: `${formatMoney(entry.cost, result.currency)} · ${percent(entry.share)}`,
+        describe,
+      },
+    ];
+  },
+
+  describe(element, context) {
+    if (!isShape(element) || !isContainer(element)) {
+      return undefined;
+    }
+    const result = laneCosts(context);
+    const entry = result.byLane.get(element.id);
+    if (!entry || result.total <= 0 || entry.activitiesWithCost === 0) {
+      return undefined;
+    }
+    const parts = [
+      `Kostenanteil ${percent(entry.share)} (${formatMoney(entry.cost, result.currency)} von ${formatMoney(result.total, result.currency)})`,
+    ];
+    if (result.coverage < 1) {
+      // Die Pflichtangabe: der Anteil bezieht sich auf die BEKANNTEN Kosten.
+      parts.push(
+        `Grundlage: ${String(result.withCost)} von ${String(result.activities)} Aktivitäten mit Kostenangabe`,
+      );
+    }
+    return `${parts.join(", ")}.`;
+  },
+
+  legend(context) {
+    const result = laneCosts(context);
+    if (result.total <= 0) {
+      return [];
+    }
+    const entries: GrcLegendEntry[] = [
+      {
+        tone: "accent",
+        glyph: TONE_GLYPH.accent,
+        text: "Rahmen mit 40 % oder mehr der bekannten Kosten",
+      },
+      {
+        tone: "info",
+        glyph: TONE_GLYPH.info,
+        text: "Kostenanteil des Rahmens",
+      },
+    ];
+    if (result.coverage < 1) {
+      entries.push({
+        tone: "neutral",
+        glyph: TONE_GLYPH.neutral,
+        text: `Anteile beziehen sich auf ${String(result.withCost)} von ${String(result.activities)} Aktivitäten mit Kostenangabe`,
+      });
+    }
+    return entries;
+  },
+};
+
+/**
+ * Die Kostenrechnung einmal je Kontext.
+ *
+ * Sie ist diagrammweit, `forShape` wird aber je Rahmen gerufen — ohne
+ * Zwischenspeicher wäre sie eine Rechnung über alle Aktivitäten je Lane. Der
+ * Schlüssel ist der Kontext, nicht die Szene: derselbe Datensatz mit einem
+ * anderen Bezugszeitpunkt ist eine andere Rechnung.
+ */
+const LANE_COST_CACHE = new WeakMap<GrcLayerContext, LaneCostResult>();
+
+function laneCosts(context: GrcLayerContext): LaneCostResult {
+  const cached = LANE_COST_CACHE.get(context);
+  if (cached) return cached;
+  const result = computeLaneCosts(
+    context.graph,
+    context.data,
+    (id) => laneOf(context.graph, id)?.id,
+  );
+  LANE_COST_CACHE.set(context, result);
+  return result;
+}
+
+/** Geldbetrag mit Tausenderpunkt; ohne bekannte Währung ohne Zeichen. */
+function formatMoney(value: number, currency: string | undefined): string {
+  const rounded = Math.round(value);
+  return `${rounded.toLocaleString("de-DE")}${currency === undefined ? "" : ` ${currency}`}`;
+}
+
+/* ------------------------------------------------------------------ *
+ * BR — Validierungsmarker (Sicht „Modellierung")
+ * ------------------------------------------------------------------ */
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-011] Der Layer, den `STUFE2-A2-GRC.md` §6 mit
+ * „die Sicht ist angelegt und lässt den Slot frei" zurückgestellt hat.
+ *
+ * **Was er zeichnet, und was ausdrücklich nicht.** Er zeichnet einen Marker an
+ * Elementen, zu denen ein Befund vorliegt. Er zeichnet **nichts** an Elementen
+ * ohne Befund — kein grünes Häkchen, keine Entwarnung. Der Grund ist der Kern
+ * dieses Layers: ohne beigelegte Befundliste (`context.validation` ist dann
+ * leer) kann er nicht unterscheiden, ob das Modell geprüft und in Ordnung ist
+ * oder ob niemand geprüft hat. Ein grünes Häkchen wäre in dem zweiten Fall
+ * eine Behauptung, die kein Werkzeug gedeckt hat — und ein Modellierungsfehler
+ * sieht auf dem Bildschirm ohnehin völlig richtig aus (die Begründung, aus der
+ * `src/verify/` überhaupt existiert).
+ *
+ * **Warum die Befunde nicht hier berechnet werden.** Die Prüfung braucht den
+ * moddle-Baum, den diese Schicht nicht hat (sie kennt nur die `Scene`), und
+ * `src/verify/` darf in kein Anwendungsbündel. Der Layer liest deshalb, was
+ * ihm beigelegt wird; die Übersetzung der beiden Prüfwerkzeuge auf diese Form
+ * steht in `src/verify/markers.ts`.
+ *
+ * **Ein Fehler ist keine Warnung.** `error` heißt: das Dokument ist kaputt,
+ * `bpmn-moddle` verliert beim nächsten Speichern, was es nicht auflösen kann
+ * (`test/model/ROUNDTRIP-REPORT.md`, Ursache 2). Das ist stiller Datenverlust
+ * einen Speichervorgang später und trägt deshalb den kritischen Ton; eine
+ * Warnung ist legales BPMN mit schlechtem Geruch.
+ */
+export const validationLayer: GrcLayer = {
+  id: "validation",
+  title: "Modellprüfung",
+  // Der Marker gehört zur Sichttabelle aus §3.3 („Modellierung", Spalte BR)
+  // und trägt keine F-Nummer: er ist keine GRC-Funktion aus §3.12, sondern
+  // die Prüfung des Dokuments, auf dem alle GRC-Funktionen aufsetzen.
+  feature: "§3.3",
+  priority: PRIORITY.validation,
+
+  forShape(shape, context) {
+    const findings = validationFor(shape.id, context.validation);
+    if (findings.length === 0) {
+      return [];
+    }
+    const describe = this.describe(shape, context);
+    if (describe === undefined) {
+      return [];
+    }
+    const errors = findings.filter(
+      (finding) => finding.severity === "error",
+    ).length;
+    return [
+      {
+        kind: "badge",
+        slot: "BR",
+        // `§` ist das Formzeichen des kritischen Tons und in dem Glyphensatz
+        // enthalten, den STUFE2-A2-GRC.md §7.2 nach dem Rastern festgelegt
+        // hat — vier Zeichen wurden dort zu leeren Kästchen.
+        text: errors > 0 ? `!${String(errors)}` : `?${String(findings.length)}`,
+        tone: errors > 0 ? "critical" : "warn",
+        refs: findings.map((finding, index) => ({
+          id: finding.elementId ?? `${shape.id}#${String(index)}`,
+          title: finding.message,
+        })),
+        describe,
+      },
+    ];
+  },
+
+  describe(element, context) {
+    const findings = validationFor(element.id, context.validation);
+    if (findings.length === 0) {
+      return undefined;
+    }
+    const errors = findings.filter((finding) => finding.severity === "error");
+    const warnings = findings.filter(
+      (finding) => finding.severity === "warning",
+    );
+    const parts: string[] = [];
+    if (errors.length > 0) {
+      parts.push(
+        `${String(errors.length)} Modellfehler: ${errors
+          .map((finding) => finding.message)
+          .join("; ")}`,
+      );
+    }
+    if (warnings.length > 0) {
+      parts.push(
+        `${String(warnings.length)} Warnung${warnings.length === 1 ? "" : "en"}: ${warnings
+          .map((finding) => finding.message)
+          .join("; ")}`,
+      );
+    }
+    return `${parts.join(". ")}.`;
+  },
+
+  legend(context) {
+    if (context.validation.length === 0) {
+      // Keine Legende ohne Befunde: eine Legende, die eine Fehlerfarbe
+      // erklärt, die im Bild nicht vorkommt, lässt den Leser suchen.
+      return [];
+    }
+    return [
+      {
+        tone: "critical",
+        glyph: TONE_GLYPH.critical,
+        text: "Modellfehler — Dokument verliert beim Speichern Angaben",
+      },
+      {
+        tone: "warn",
+        glyph: TONE_GLYPH.warn,
+        text: "Warnung — legales BPMN, aber ein Hinweis auf ein Versehen",
+      },
+    ];
+  },
+};
+
+/**
+ * Befunde zu einem Element, in stabiler Reihenfolge.
+ *
+ * Fehler vor Warnungen, dann nach Regelkennung: dieselbe Befundliste muss
+ * denselben Satz ergeben, sonst hängt die Textalternative an der Reihenfolge,
+ * in der ein Prüfwerkzeug den Baum durchläuft.
+ */
+function validationFor(
+  elementId: string,
+  findings: readonly GrcValidationFinding[],
+): readonly GrcValidationFinding[] {
+  return findings
+    .filter((finding) => finding.elementId === elementId)
+    .sort(
+      (a, b) =>
+        Number(b.severity === "error") - Number(a.severity === "error") ||
+        a.rule.localeCompare(b.rule) ||
+        a.message.localeCompare(b.message),
+    );
+}
+
 /** Alle gebauten Layer. */
 export const ALL_LAYERS: readonly GrcLayer[] = [
   controlCoverageLayer,
@@ -2072,6 +2863,11 @@ export const ALL_LAYERS: readonly GrcLayer[] = [
   commentsLayer,
   laneLayer,
   documentLayer,
+  incidentLayer,
+  workItemLayer,
+  validationLayer,
+  costLayer,
+  kriLayer,
 ];
 
 /* ------------------------------------------------------------------ *

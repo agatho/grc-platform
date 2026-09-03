@@ -226,6 +226,99 @@ export interface GrcConformanceElement {
   readonly isBottleneck?: boolean;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-008] Ein Risikoindikator am Schritt (F15).
+ *
+ * **Der Befund, der diesen Typ möglich gemacht hat.** `STUFE2-A2-GRC.md` §6
+ * hat F15 zurückgestellt, weil `kri_measurement` „keinen Zeitreihenvertrag und
+ * keine Richtungsaussage" habe — ohne Richtung wäre die Ampel eine Zahl ohne
+ * Bedeutung. Nachgemessen am Schema stimmt das nicht: `kri.direction`
+ * (`asc` | `desc`, NOT NULL) steht seit Sprint 2, ebenso die drei Schwellen,
+ * der Ampelstand, der Trend und `last_measured_at`. Und die Bedeutung ist
+ * nicht nur da, sie ist auch **angewandt**: `POST /kris/:id/measurements`
+ * rechnet Ampel und Trend bei jeder Messung aus der Richtung und schreibt sie
+ * an die Zeile zurück. Die Ampel hat also eine feste Bedeutung — dieselbe, die
+ * das ganze Produkt benutzt.
+ *
+ * **Zwei Dinge, die dieser Typ deshalb trennt.**
+ *
+ * 1. `alert` ist **optional**. Die Datenbank hat `current_alert_status` mit
+ *    Vorgabewert `green`, und die Rechnung liefert `green`, sobald EINE der
+ *    drei Schwellen fehlt. „Grün" heißt dort also auch „keine Schwellen
+ *    hinterlegt" — im Diagramm wäre das eine Entwarnung aus fehlenden Daten,
+ *    also genau die Zahl, die dieser Audit an anderer Stelle beanstandet.
+ *    Ohne vollständige Schwellen bleibt das Feld deshalb leer.
+ * 2. `measuredAt` und `frequency` gehören dazu. Ein grüner Indikator, dessen
+ *    letzte Messung acht Monate alt ist, sagt nichts über heute; ohne den
+ *    Stand ist die Ampel eine Behauptung über die Gegenwart aus Daten der
+ *    Vergangenheit. Das ist derselbe Grund, aus dem `computedAt` im ganzen
+ *    Vertrag Pflichtfeld ist.
+ */
+export interface GrcKri extends GrcObjectRef {
+  /** `asc` = hoch ist schlecht, `desc` = niedrig ist schlecht. */
+  readonly direction: "asc" | "desc";
+  /** Ampelstand — fehlt, wenn nicht alle drei Schwellen hinterlegt sind. */
+  readonly alert?: "green" | "yellow" | "red";
+  readonly trend?: "improving" | "stable" | "worsening";
+  readonly value?: number;
+  readonly unit?: string;
+  /** `kri.last_measured_at` — ohne ihn ist die Ampel undatiert. */
+  readonly measuredAt?: string;
+  /** Messtakt; Grundlage der Veraltungsprüfung. */
+  readonly frequency?: "daily" | "weekly" | "monthly" | "quarterly";
+  /** Das Risiko, dessen Frühwarnsignal dieser Indikator ist. */
+  readonly riskId?: string;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-004] Ein Sicherheitsvorfall an einem Schritt
+ * (F14) — `security_incident` mit `process_step_id` seit Migration 0454.
+ *
+ * Bis Welle 3b führte der Vertrag hier `GrcObjectRef`, also Kennung und Titel.
+ * Das reicht für eine Liste und nicht für ein Diagramm: ein Badge, das „2
+ * Vorfälle" sagt, ohne zu sagen, ob sie laufen und wie schwer sie sind, ist
+ * eine Zahl ohne Handlungsfolge. Schwere und Offenheit sind die beiden
+ * Angaben, nach denen ein Prüfer als erstes fragt — sie gehören deshalb an das
+ * Element und nicht in ein Panel dahinter.
+ */
+export interface GrcIncident extends GrcObjectRef {
+  readonly severity: GrcFindingSeverity;
+  /** `security_incident.status` als Rohwert — für die Textform. */
+  readonly status?: string;
+  /**
+   * Läuft der Vorfall noch?
+   *
+   * **Bewusst hier und nicht aus `status` abgeleitet.** Der Lebenszyklus hat
+   * sieben Stufen, und welche davon als abgeschlossen gilt, ist eine fachliche
+   * Festlegung des Endpunkts (`closed_at IS NULL AND status <> 'closed'`) —
+   * nicht eine Zeichenkettenprüfung in der Zeichenschicht.
+   */
+  readonly isOpen: boolean;
+  readonly detectedAt?: string;
+  /** Meldepflichtiger Datenschutzvorfall (Art. 33 DSGVO). */
+  readonly isDataBreach?: boolean;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-005] Eine offene Maßnahme an einem Schritt
+ * (F16) — `work_item` mit `process_step_id` seit Migration 0454.
+ *
+ * Wie bei F14 trug der Vertrag nur `GrcObjectRef`. Die **Fälligkeit** ist hier
+ * aber die ganze Aussage: „drei offene Maßnahmen" ist eine Zahl, „eine davon
+ * seit zwölf Tagen überfällig" ist ein Befund. `dueAt` ist deshalb Teil des
+ * Datensatzes und nicht optionaler Beiwert.
+ */
+export interface GrcWorkItem extends GrcObjectRef {
+  /** `work_item.due_date`; fehlt, wenn keine Frist gesetzt ist. */
+  readonly dueAt?: string;
+  /** `work_item.status` als Rohwert — für die Textform. */
+  readonly status?: string;
+  /** `work_item.type_key` (`audit`, `control`, `risk`, …). */
+  readonly typeKey?: string;
+  /** Verantwortliche Person, soweit benannt. */
+  readonly responsible?: string;
+}
+
 /* ------------------------------------------------------------------ *
  * Element-, Kanten- und Lane-Datensatz
  * ------------------------------------------------------------------ */
@@ -254,8 +347,12 @@ export interface GrcElementData {
   readonly frameworks?: readonly GrcFrameworkMapping[];
   readonly comments?: GrcComments;
   readonly conformance?: GrcConformanceElement;
-  readonly incidents?: readonly GrcObjectRef[];
-  readonly workItems?: readonly GrcObjectRef[];
+  /** [OP-008] Risikoindikatoren an diesem Schritt (F15). */
+  readonly kris?: readonly GrcKri[];
+  /** [OP-004] Sicherheitsvorfälle an diesem Schritt (F14). */
+  readonly incidents?: readonly GrcIncident[];
+  /** [OP-005] Offene Maßnahmen an diesem Schritt (F16). */
+  readonly workItems?: readonly GrcWorkItem[];
 }
 
 /** Was an einer Kante hängt (SequenceFlow, MessageFlow). */
@@ -296,6 +393,79 @@ export interface GrcLaneData {
   readonly trainingRatio?: number;
   /** Quote der Richtlinien-Kenntnisnahme, 0…1. */
   readonly acknowledgmentRatio?: number;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-010] Die Aufschlüsselung je Rolle — der
+   * fehlende Teil von F17.
+   *
+   * `trainingRatio` oben ist eine **Quote der Lane-Rolle**: eine Zahl, die
+   * sagt, dass etwas fehlt, aber nicht, bei wem und wie viel. „75 %" ist bei
+   * vier Mitgliedern etwas anderes als bei vierzig, und in einer Lane
+   * arbeiten in aller Regel mehrere Rollen — die Lane-Rolle ist nur die
+   * tragende. Ohne die Aufschlüsselung ist die Kenntnisnahmelücke zählbar
+   * und nicht handlungsfähig.
+   *
+   * Die Rollen sind die Trägerrolle der Lane **und** die RACI-Rollen der
+   * Schritte, die dieser Lane zugeordnet sind (`process_step.lane_step_id`,
+   * Migration 0445) — nicht geometrisch geraten.
+   */
+  readonly qualification?: readonly GrcLaneQualification[];
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-010] Der Qualifikationsstand einer Rolle an
+ * einer Lane.
+ *
+ * **Absolute Zahlen, keine Quoten.** Die Quote steht schon an der Lane; was
+ * hier fehlte, war die Grundlage: `3 von 12` ist eine Arbeitsanweisung, `75 %`
+ * ist eine Kennzahl. Die Flags `hasMandatoryTraining`/`hasMandatoryPolicy`
+ * bleiben erhalten, weil `0 von 0` keine Null-Prozent-Quote ist, sondern keine
+ * Quote — dieselbe Regel wie bei `trainingRatio` (STUFE2-E-SCHEMA.md §3.1).
+ */
+export interface GrcLaneQualification {
+  readonly role: GrcRoleRef;
+  /** Mitglieder der Rolle im Mandanten. */
+  readonly memberCount: number;
+  /** Mit abgeschlossener Pflichtschulung; fehlt ohne Pflichtschulung. */
+  readonly trainedCount?: number;
+  /** Mit Kenntnisnahme; fehlt ohne Pflichtverteilung. */
+  readonly acknowledgedCount?: number;
+  /** Ob die Rolle die Trägerrolle der Lane ist oder nur darin arbeitet. */
+  readonly isLaneRole: boolean;
+}
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-011] Validierungsbefunde (Sicht „Modellierung")
+ * ------------------------------------------------------------------ */
+
+export type GrcValidationSeverity = "error" | "warning";
+
+/**
+ * Ein Modellierungsbefund, an ein Element geheftet.
+ *
+ * **Warum das nicht Teil von `GrcOverlayData` ist.** Alles andere in dieser
+ * Datei ist Serverdatum: es kommt aus der Datenbank und wird über den
+ * Overlay-Endpunkt geholt. Ein Validierungsbefund ist etwas anderes — er
+ * entsteht aus dem Dokument, das der Modellierer gerade **im Browser**
+ * bearbeitet, und ändert sich mit jeder Operation. Ihn durch den Endpunkt zu
+ * schleifen hieße, den Server nach dem Zustand eines Dokuments zu fragen, das
+ * er nicht hat. Er wird deshalb dem Kontext beigelegt
+ * (`GrcLayerContext.validation`), nicht dem Datensatz.
+ *
+ * **Warum die Schicht ihre eigene Form deklariert.** Die Prüfwerkzeuge liegen
+ * in `src/verify/` und in `src/modeling/invariants.ts` und führen jeweils
+ * eigene Befundtypen (`InvariantViolation` mit `code`, `SchemaFinding` mit
+ * `kind`/`line`). Einen davon hier zu importieren hieße, die Zeichenschicht
+ * an ein Prüfwerkzeug zu binden — und `src/verify/` darf ausdrücklich in
+ * keinem Anwendungsbündel landen (siehe dessen Kopfkommentar). Die Umsetzung
+ * steht deshalb dort, wo die Werkzeuge stehen: `src/verify/markers.ts`.
+ */
+export interface GrcValidationFinding {
+  /** Stabile Kennung der Regel, z. B. `DI_MISSING` oder `attribute-type`. */
+  readonly rule: string;
+  readonly severity: GrcValidationSeverity;
+  /** BPMN-Element-ID; fehlt, wenn der Befund das Dokument als Ganzes trifft. */
+  readonly elementId?: string;
+  readonly message: string;
 }
 
 /* ------------------------------------------------------------------ *
@@ -349,6 +519,33 @@ export interface GrcConformanceSummary {
   }[];
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-012] Ein beobachteter Übergang, als Knotenpaar.
+ *
+ * **Warum als Paar und nicht als Kantenkennung.** `GrcEdgeData` ist ein Record
+ * über **Kanten-IDs**, und genau die kennt der Server nicht: die BPMN-Kennung
+ * eines SequenceFlow steht in keiner Tabelle des Schemas (nachgesehen —
+ * `process_step` führt Knoten, Kanten führt niemand). Ein Endpunkt, der keine
+ * BPMN-Datei parst, könnte eine Kantenkennung nur erfinden. Deshalb liefert er
+ * das Paar, und die Diagrammschicht löst es auf — die Szene kennt zu jeder
+ * Verbindung Quelle und Ziel. Denselben Weg geht `conformance.deviations`
+ * seit 0465.
+ *
+ * `probability` ist eine **beobachtete** Quote: dieser Übergang geteilt durch
+ * alle beobachteten Übergänge ab demselben Knoten. Sie sagt nicht, mit welcher
+ * Wahrscheinlichkeit ein Gateway einen Zweig wählt — ein nie beobachteter
+ * Zweig kommt in der Rechnung nicht vor.
+ */
+export interface GrcObservedTransition {
+  readonly fromElementId: string;
+  readonly toElementId: string;
+  readonly frequency: number;
+  /** Anteil an allen beobachteten Abgängen des Quellknotens, 0…1. */
+  readonly probability?: number;
+  /** Ob das Modell die beiden Knoten unmittelbar verbindet. */
+  readonly isModelled?: boolean;
+}
+
 export interface GrcDiagramData {
   readonly processId?: string;
   readonly processName?: string;
@@ -357,6 +554,12 @@ export interface GrcDiagramData {
   readonly outage?: GrcOutageScenario;
   readonly framework?: GrcFrameworkSelection;
   readonly conformance?: GrcConformanceSummary;
+  /**
+   * [OP-012] Beobachtete Übergänge aus dem Ereignisprotokoll
+   * (`process_event_transition_map`, Migration 0476). Die Layer lösen sie auf
+   * die Verbindungen der Szene auf.
+   */
+  readonly transitions?: readonly GrcObservedTransition[];
   /** Bezugszeitpunkt aller Fälligkeitsrechnungen (Vorgabe: `computedAt`). */
   readonly asOf?: string;
 }

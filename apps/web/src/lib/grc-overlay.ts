@@ -33,6 +33,10 @@ import type {
   GrcConformanceSummary,
   GrcDataCategory,
   GrcFrameworkMapping,
+  GrcFrameworkSelection,
+  GrcIncident,
+  GrcKri,
+  GrcObservedTransition,
   GrcControl,
   GrcControlEffectiveness,
   GrcCriticality,
@@ -40,6 +44,7 @@ import type {
   GrcFinding,
   GrcFindingSeverity,
   GrcLaneData,
+  GrcLaneQualification,
   GrcLineOfDefense,
   GrcObjectRef,
   GrcOutageScenario,
@@ -50,6 +55,7 @@ import type {
   GrcRopa,
   GrcSimulation,
   GrcSodRule,
+  GrcWorkItem,
 } from "@grc/bpmn/grc";
 
 /* ------------------------------------------------------------------ *
@@ -155,12 +161,108 @@ export interface FrameworkRow {
   readonly entryCode: string | null;
   readonly entryTitle: string | null;
   readonly mappingStrength: string | null;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-015] Anzeigename aus `catalog.name` über
+   * `process_framework_mapping.catalog_id`.
+   *
+   * Der Vertrag verlangt `frameworkName` als Pflichtfeld, und geliefert wurde
+   * bis Welle 3b der **Code** unter diesem Namen — im Chip stand `iso-27001`
+   * statt „ISO/IEC 27001:2022 Annex A". Der Anzeigename war die ganze Zeit da:
+   * `catalog.name` (nachgesehen im gemigrierten Schema, 20 Kataloge mit
+   * ausgeschriebenen Namen), erreichbar über die bereits vorhandene, nullable
+   * Spalte `catalog_id`. Fehlt die Verknüpfung, bleibt der Code stehen — eine
+   * Abkürzung ist wahr, ein aus dem Code zurückgerechneter Name wäre geraten.
+   */
+  readonly frameworkName?: string | null;
 }
 
 export interface DmnRow {
   readonly processStepId: string;
   readonly id: string;
   readonly name: string | null;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-012] `process_event_transition_map` (0476) —
+ * beobachtete Übergänge als Knotenpaar.
+ *
+ * Kantenkennungen stehen in keiner Tabelle dieses Schemas; die Auflösung auf
+ * die Verbindungen macht die Diagrammschicht (`resolveTransitions`).
+ */
+export interface TransitionRow {
+  readonly fromElementId: string;
+  readonly toElementId: string;
+  readonly frequency: number;
+  readonly probability: number | null;
+  readonly isModelled: boolean;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-008] `kri` über `risk_id` ⋈ `process_step_risk`
+ * — die Quelle von F15.
+ *
+ * **Warum die Werte aus `kri` kommen und nicht aus `kri_measurement`.** Der
+ * Ampelstand, der Trend und der letzte Messzeitpunkt werden bei jeder Messung
+ * aus der Richtung gerechnet und an die Zeile zurückgeschrieben
+ * (`POST /api/v1/kris/:id/measurements`). Sie hier aus der Zeitreihe neu zu
+ * rechnen ergäbe eine zweite Wahrheit über dieselbe Frage — und die beiden
+ * liefen beim ersten Unterschied in den Schwellen auseinander.
+ *
+ * `hasThresholds` wird in der Abfrage gebildet und nicht hier abgeleitet: die
+ * drei Schwellenspalten würden sonst nur dafür durch die Antwort wandern.
+ */
+export interface KriRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly name: string | null;
+  readonly unit: string | null;
+  readonly direction: string | null;
+  readonly value: number | null;
+  readonly alertStatus: string | null;
+  readonly trend: string | null;
+  readonly measuredAt: string | null;
+  readonly frequency: string | null;
+  readonly hasThresholds: boolean;
+  readonly riskId: string | null;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-004] `security_incident` mit `process_step_id`
+ * (Migration 0454) — die Quelle von F14.
+ *
+ * `isOpen` kommt **berechnet** aus der Abfrage und nicht als Statuszeichenkette
+ * hier an: welche der sieben Lebenszyklusstufen als abgeschlossen gilt, ist
+ * eine fachliche Festlegung und gehört an eine Stelle, nicht in jede Schicht,
+ * die den Wert liest.
+ */
+export interface IncidentRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly title: string | null;
+  readonly severity: string | null;
+  readonly status: string | null;
+  readonly isOpen: boolean;
+  readonly detectedAt: string | null;
+  readonly isDataBreach: boolean | null;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-005] `work_item` mit `process_step_id`
+ * (Migration 0454) — die Quelle von F16.
+ *
+ * Geliefert werden **nur offene** Maßnahmen; abgeschlossene, veraltete und
+ * abgebrochene filtert die Abfrage weg. Anders als bei Vorfällen (F14) ist das
+ * hier richtig: eine erledigte Maßnahme ist kein Ereignis, das am Schritt
+ * stattgefunden hat, sondern eine Aufgabe, die vom Tisch ist.
+ */
+export interface WorkItemRow {
+  readonly processStepId: string;
+  readonly id: string;
+  readonly name: string | null;
+  readonly status: string | null;
+  readonly typeKey: string | null;
+  readonly dueAt: string | null;
+  readonly responsibleName: string | null;
 }
 
 /**
@@ -219,6 +321,21 @@ export interface LaneRatioRow {
   readonly acknowledgedCount: number;
   readonly hasMandatoryTraining: boolean;
   readonly hasMandatoryPolicy: boolean;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-010] Welche Rollen an einer Lane arbeiten.
+ *
+ * Die Lane trägt genau **eine** Rolle (`process_lane.custom_role_id`) — die
+ * tragende. Gearbeitet wird in ihr von mehr: den RACI-Rollen der Schritte, die
+ * ihr zugeordnet sind. Diese Zuordnung ist seit Migration 0445 eine Spalte
+ * (`process_step.lane_step_id`) und kein geometrisches Raten mehr; genau
+ * deshalb ist die Aufschlüsselung jetzt belegbar und war es vorher nicht.
+ */
+export interface LaneRoleRow {
+  /** BPMN-Element-ID der Lane. */
+  readonly bpmnElementId: string;
+  readonly roleId: string;
 }
 
 /** `process_step_raci` (0447) — die Heimat von C und I. */
@@ -331,10 +448,20 @@ export interface OverlayQueryResult {
   readonly simulation: readonly SimulationRow[];
   readonly dmn: readonly DmnRow[];
   readonly calledProcesses: readonly CalledProcessRow[];
+  /** [OP-008] Risikoindikatoren am Schritt (F15). */
+  readonly kris?: readonly KriRow[];
+  /** [OP-012] Beobachtete Übergänge des jüngsten Analyselaufs. */
+  readonly transitions?: readonly TransitionRow[];
+  /** [OP-004] Vorfälle am Schritt (F14); optional, weil `?layers=` sie abwählt. */
+  readonly incidents?: readonly IncidentRow[];
+  /** [OP-005] Offene Maßnahmen am Schritt (F16); optional, wie oben. */
+  readonly workItems?: readonly WorkItemRow[];
   // --- STUFE2-E; alle optional, damit Bestandstests und Teilabfragen
   //     (`?layers=`) unverändert bauen.
   readonly lanes?: readonly LaneRow[];
   readonly laneRatios?: readonly LaneRatioRow[];
+  /** [OP-010] Rollen je Lane — Grundlage der Aufschlüsselung von F17. */
+  readonly laneRoles?: readonly LaneRoleRow[];
   readonly raci?: readonly RaciRow[];
   readonly sodRules?: readonly SodRuleRow[];
   readonly ropa?: readonly RopaRow[];
@@ -367,6 +494,18 @@ export interface BuildOverlayOptions {
    * `simulateOutage` gibt `undefined` zurück — der Layer schweigt.
    */
   readonly outage?: GrcOutageScenario | undefined;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-016] Rahmenwerkauswahl der Sicht F8.
+   *
+   * Ebenfalls eine Auswahl und keine hinterlegte Tatsache — mit dem
+   * Unterschied, dass sie eine dauerhafte Arbeitseinstellung ist und deshalb
+   * je Nutzer gespeichert wird (`user_diagram_preference.framework_code`,
+   * Migration 0475). Die Route löst „Parameter vor Voreinstellung" auf; hier
+   * kommt nur noch das Ergebnis an. Ohne Auswahl kein `diagram.framework`, und
+   * `summarizeFramework` gibt `undefined` zurück statt einer Abdeckungsquote
+   * über alle Rahmenwerke zusammen.
+   */
+  readonly framework?: GrcFrameworkSelection | undefined;
 }
 
 /* ------------------------------------------------------------------ *
@@ -384,41 +523,73 @@ export const MISSING_TODAY: ReadonlyArray<{
   readonly field: string;
   readonly reason: string;
 }> = [
-  {
-    field: "elements[].frameworks[].frameworkName",
-    reason:
-      "process_framework_mapping führt nur den Rahmenwerkscode (framework_code), keinen Anzeigenamen; der Katalog dahinter ist optional verknüpft. Ausgegeben wird deshalb der Code — eine Abkürzung, kein erfundener Name.",
-  },
+  // [ARCTOS-FULL-2026-08-31 · OP-015] `elements[].frameworks[].frameworkName`
+  // ist hier gestrichen — aus zwei Gründen, und der zweite ist der wichtigere.
+  //
+  // 1. Der Anzeigename wird jetzt geliefert: die Abfrage verbindet
+  //    `process_framework_mapping.catalog_id` mit `catalog.name`. Wo die
+  //    Zuordnung einen Katalog nennt, steht „ISO/IEC 27001:2022 Annex A" im
+  //    Chip statt `iso-27001`.
+  // 2. Das Feld hat aber **nie** gefehlt. Der Vertrag führt `frameworkName`
+  //    als Pflichtfeld, und die Abbildung hat es immer gesetzt — bis hierher
+  //    mit dem Code als Wert. Ein Feld, das immer da ist, gehört nicht in eine
+  //    Liste fehlender Felder; der Eintrag beschrieb einen INHALT, keine
+  //    Lücke. Das ist derselbe Befund wie bei OP-017, nur andersherum, und die
+  //    Sonden im Wächtertest sind die Antwort auf beide: sie lesen nach,
+  //    statt eine Behauptung zu glauben.
   {
     field: "elements[].conformance.meanDurationMinutes, .isBottleneck",
     reason:
-      "process_event trägt genau einen Zeitstempel je Ereignis und kein Lebenszyklus-Merkmal (start/complete). Ohne Anfang UND Ende gibt es keine Dauer, und ohne Dauer keinen Engpass. Die Differenz zum nächsten Ereignis desselben Falls wäre die Wartezeit davor, nicht die Bearbeitungszeit — sie als Dauer auszugeben wäre eine andere Größe unter demselben Namen.",
+      '[ARCTOS-FULL-2026-08-31 · OP-013] process_event trägt genau einen Zeitstempel je Ereignis und kein Lebenszyklus-Merkmal (start/complete). Ohne Anfang UND Ende gibt es keine Dauer, und ohne Dauer keinen Engpass; die Differenz zum nächsten Ereignis desselben Falls wäre die Wartezeit davor, nicht die Bearbeitungszeit. NACHGEMESSEN in Welle 3b, und der Befund geht tiefer als die Spalte: der XES-Importer (event-logs/upload/route.ts, parseXes) liest ausschließlich concept:name, time:timestamp und org:resource und schreibt additionalData fest auf {} — die Zeichenkette "lifecycle" kommt im ganzen Repository nicht ein einziges Mal vor, obwohl lifecycle:transition zum XES-Standard gehört und in jedem echten Protokoll steht. Eine Lebenszyklus-Spalte an process_event wäre deshalb heute eine Spalte, die niemand befüllt — dieselbe zweite Wahrheit, aus der Migration 0453 control.last_test_result nicht angelegt hat. Erst Parser, dann Spalte, dann Kennzahl. Übergabe an den Mining-Strang.',
   },
   {
     field: "diagram.conformance.deviations",
     reason:
       "[ARCTOS-FULL-2026-08-31 · OP-014] Die Größe existiert seit Migration 0465 (process_conformance_result.deviation_edges) und wird vom Cron process-mining-conformance erhoben; buildDiagramOverlay gibt sie aus, sobald rows.conformanceDeviations gefüllt ist. Bis die Abfrage in der Route steht (Übergabe an Strang 1a, siehe docs/UMSETZUNG-WELLE-1B.md), bleibt das Feld weg — weg heißt hier: nicht erhoben, nicht leer behauptet. Der frühere Grund — fitness_gaps führt Knoten, der Vertrag verlangt ein Kantenpaar — ist damit erledigt.",
   },
-  {
-    field: "elements[].incidents, .workItems",
-    reason:
-      "Der Elementbezug existiert seit Migration 0454 (security_incident.process_step_id, work_item.process_step_id). Die zugehörigen Layer F14/F16 sind bewusst nicht gebaut (STUFE2-A2-GRC.md §6); der Endpunkt fragt die Spalten deshalb nicht ab — ein Feld zu liefern, das keine Schicht liest, ist Ballast, kein Nutzen. Eine Zeile Abfrage je Feld, sobald ein Layer sie braucht.",
-  },
-  {
-    field: "elements[].controls[].lastTestResult, .lastEvidenceAt",
-    reason:
-      "Beide werden geliefert, aber ABGELEITET (jüngster control_test bzw. evidence(entity_type='control')) und nicht aus einer Spalte gelesen. Migration 0453 legt sie bewusst nicht als Spalten an: eine gespeicherte Kopie, die nichts fortschreibt, zeigte nach dem nächsten Kontrolltest einen veralteten Stand an.",
-  },
+  // [ARCTOS-FULL-2026-08-31 · OP-004/OP-005] `elements[].incidents` und
+  // `.workItems` sind gestrichen. Der Grund, aus dem sie hier standen, war
+  // richtig — „ein Feld zu liefern, das keine Schicht liest, ist Ballast" —
+  // und er gilt nicht mehr: die Layer F14 (`incident`) und F16 (`work-item`)
+  // sind gebaut, in drei Sichten aktiv, und der Endpunkt fragt beide Spalten
+  // ab. Die Reihenfolge war damit die richtige: erst der Leser, dann das Feld.
+  // [ARCTOS-FULL-2026-08-31 · OP-017] `elements[].controls[].lastTestResult`
+  // und `.lastEvidenceAt` standen bis Welle 3b hier — zu Unrecht, und der
+  // Eintrag ist gestrichen. Diese Liste führt Felder, die der Endpunkt NICHT
+  // liefert. Beide werden aber geliefert; nachgemessen an derselben Eingabe,
+  // mit der der Wächter unten arbeitet, kommt
+  // `{lastTestedAt:"2026-01-01", lastTestResult:"passed", lastEvidenceAt:…}`
+  // heraus. Der Grund, aus dem sie hier standen, war die HERKUNFT — abgeleitet
+  // (jüngster `control_test` bzw. `evidence(entity_type='control')`) statt aus
+  // einer Spalte gelesen —, und eine Herkunft ist kein Fehlen. Migration 0453
+  // hat die beiden Spalten mit Absicht nicht angelegt: eine gespeicherte
+  // Kopie, die nichts fortschreibt, zeigte nach dem nächsten Kontrolltest
+  // „zuletzt geprüft: bestanden" für eine Kontrolle, die gestern durchgefallen
+  // ist (STUFE2-E-SCHEMA.md §2.1). Die Ableitung IST die Lösung.
+  //
+  // Ein Eintrag, der ein geliefertes Feld als fehlend führt, ist genau die
+  // Gefahr, gegen die der Gegenwächter geschrieben wurde: er lädt die nächste
+  // Lesung dazu ein, eine Spalte anzulegen, die das Produkt schlechter macht.
+  // `führt kein Feld mehr, das der Endpunkt inzwischen liefert` nennt beide
+  // Felder jetzt namentlich und hält den Eintrag draußen.
   {
     field: "edges",
     reason:
-      "Häufigkeit und Verzweigungswahrscheinlichkeit je KANTE bräuchten eine Zuordnung des Ereignisprotokolls auf Übergänge; process_event_activity_map (0451) ordnet Aktivitäten zu, nicht Übergänge. carriesPersonalData ist dagegen nicht mehr nötig: computeTrustBoundaries leitet den Personenbezug aus dem ROPA-Datensatz der beiden Kantenenden ab.",
+      "[ARCTOS-FULL-2026-08-31 · OP-012] Die ZAHLEN gibt es seit Migration 0476 (process_event_transition_map): Häufigkeit und beobachtete Verzweigungsquote je Übergang, erhoben vom Cron process-mining-conformance. Was es weiterhin nicht gibt, ist der SCHLÜSSEL dieses Records — die BPMN-Kennung eines SequenceFlow steht in keiner Tabelle des Schemas (process_step führt Knoten, Kanten führt niemand), und dieser Endpunkt parst kein BPMN. Er könnte eine Kanten-ID also nur erfinden. Geliefert wird deshalb diagram.transitions als Knotenpaar; die Diagrammschicht löst es über die Szene auf (resolveTransitions), genau wie bei conformance.deviations seit 0465. carriesPersonalData ist unabhängig davon nicht mehr nötig: computeTrustBoundaries leitet den Personenbezug aus dem ROPA-Datensatz der Kantenenden ab.",
   },
-  {
-    field: "diagram.framework",
-    reason:
-      "Auswahlparameter der Sicht F8 (welches Rahmenwerk, welche Anforderungen), keine hinterlegte Tatsache. Er gehört an die Sichtwahl der Oberfläche, nicht in den Datensatz.",
-  },
+  // [ARCTOS-FULL-2026-08-31 · OP-016] `diagram.framework` ist gestrichen. Der
+  // Grund, aus dem es hier stand, war richtig und die Folge falsch:
+  // „Auswahlparameter der Sicht F8, keine hinterlegte Tatsache — er gehört an
+  // die Sichtwahl der Oberfläche". Genau dort gab es ihn aber nicht, und ein
+  // Auswahlparameter ohne Bedienelement ist keine Auswahl, sondern eine
+  // Festverdrahtung auf „gar keins": die Sicht „Compliance & Nachweis" zeigte
+  // nie einen Abdeckungsgrad, obwohl die Zuordnungen vorhanden sind.
+  //
+  // Seit Welle 3b hat er beides — ein Bedienelement (`GrcViewSelect`, zweites
+  // Auswahlfeld) und ein Gedächtnis (`user_diagram_preference.framework_code`,
+  // Migration 0475) —, und der Endpunkt gibt das Feld aus, sobald eine Wahl
+  // vorliegt. Ohne Wahl bleibt es weg: das ist kein Fehlen, sondern die
+  // Abwesenheit einer Frage.
 ];
 
 /* ------------------------------------------------------------------ *
@@ -1017,7 +1188,15 @@ export function buildDiagramOverlay(
     const mapping: Mutable<GrcFrameworkMapping> = {
       id: row.id,
       frameworkId,
-      frameworkName: frameworkId,
+      // [ARCTOS-FULL-2026-08-31 · OP-015] Der Anzeigename aus `catalog.name`,
+      // sobald `process_framework_mapping.catalog_id` gesetzt ist; sonst
+      // weiterhin der Code. Der Code IST eine wahre Angabe — deshalb steht er
+      // als Rückfall und nicht `undefined`: `frameworkName` ist Pflichtfeld
+      // des Vertrags, und ein leerer Chip wäre schlechter als eine Abkürzung.
+      // Aus dem Code einen Namen zurückzurechnen (`iso-27001` → „ISO 27001")
+      // wäre dagegen geraten und bleibt unterlassen: die Zeichenkette ist ein
+      // freies Feld, kein Schlüssel in einen Namensraum.
+      frameworkName: nonEmpty(row.frameworkName ?? null) ?? frameworkId,
       requirementRef,
       coverage: toCoverage(row.mappingStrength),
     };
@@ -1029,6 +1208,137 @@ export function buildDiagramOverlay(
   for (const [stepId, list] of frameworksByStep) {
     const entry = at(stepId);
     if (entry) entry.frameworks = list;
+  }
+
+  // --- Risikoindikatoren am Schritt (F15) ----------------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-008] Die zwei Stellen, an denen diese
+  // Abbildung sich von der Datenbank unterscheidet — und beide sind der Grund,
+  // aus dem der Layer überhaupt etwas taugt:
+  //
+  // 1. **`alert` nur bei vollständigen Schwellen.** `current_alert_status`
+  //    trägt `green` als Vorgabewert und bleibt grün, sobald eine der drei
+  //    Schwellen fehlt (`computeAlertStatus` in der Messroute). Grün heißt in
+  //    der Spalte also auch „nichts hinterlegt". Im Diagramm wäre das eine
+  //    Entwarnung aus fehlenden Daten.
+  // 2. **`direction` ist Pflicht.** Ohne Richtung ist der Wert eine Zahl ohne
+  //    Bedeutung („18 % — gut oder schlecht?"). Die Spalte ist NOT NULL; kommt
+  //    trotzdem etwas Unbekanntes an, fällt der Indikator weg statt eine
+  //    Richtung zu unterstellen.
+  const krisByStep = new Map<string, GrcKri[]>();
+  for (const row of rows.kris ?? []) {
+    const title = nonEmpty(row.name);
+    const direction = nonEmpty(row.direction);
+    if (!title || (direction !== "asc" && direction !== "desc")) continue;
+    const kri: Mutable<GrcKri> = { id: row.id, title, direction };
+    if (row.hasThresholds) {
+      const alert = nonEmpty(row.alertStatus);
+      if (alert === "green" || alert === "yellow" || alert === "red") {
+        kri.alert = alert;
+      }
+    }
+    const trend = nonEmpty(row.trend);
+    if (trend === "improving" || trend === "stable" || trend === "worsening") {
+      kri.trend = trend;
+    }
+    if (typeof row.value === "number" && Number.isFinite(row.value)) {
+      kri.value = row.value;
+    }
+    const unit = nonEmpty(row.unit);
+    if (unit) kri.unit = unit;
+    const measuredAt = nonEmpty(row.measuredAt);
+    if (measuredAt) kri.measuredAt = measuredAt;
+    const frequency = nonEmpty(row.frequency);
+    if (
+      frequency === "daily" ||
+      frequency === "weekly" ||
+      frequency === "monthly" ||
+      frequency === "quarterly"
+    ) {
+      kri.frequency = frequency;
+    }
+    const riskId = nonEmpty(row.riskId);
+    if (riskId) kri.riskId = riskId;
+    const list = krisByStep.get(row.processStepId) ?? [];
+    list.push(kri);
+    krisByStep.set(row.processStepId, list);
+  }
+  for (const [stepId, list] of krisByStep) {
+    const entry = at(stepId);
+    if (entry) entry.kris = list;
+  }
+
+  // --- Vorfälle am Schritt (F14, 0454) -------------------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-004] Ein Vorfall ohne Titel fällt weg — eine
+  // nackte UUID im Badge ist kein Vorfall, dieselbe Regel wie bei Dokumenten
+  // (§3.6). Die Schwere folgt der Aufzählung `incident_severity`, die anders
+  // als `finding_severity` (zehn Werte, siehe SEVERITY_MAP) genau die vier
+  // Stufen des Vertrags führt — deshalb hier eine Prüfung und keine Zuordnung.
+  const incidentsByStep = new Map<string, GrcIncident[]>();
+  for (const row of rows.incidents ?? []) {
+    const title = nonEmpty(row.title);
+    if (!title) continue;
+    const severity = nonEmpty(row.severity);
+    const incident: Mutable<GrcIncident> = {
+      id: row.id,
+      title,
+      // Ein unbekannter Schweregrad wird NICHT zu `low`. Er wird zu `medium`
+      // — der Stufe, die keine Entwarnung ist und keine Panik. Eine fehlende
+      // Angabe als „gering" auszugeben wäre eine Aussage, die die Daten nicht
+      // tragen, und sie fiele in der Ampel nach unten durch.
+      severity:
+        severity === "low" ||
+        severity === "medium" ||
+        severity === "high" ||
+        severity === "critical"
+          ? severity
+          : "medium",
+      isOpen: row.isOpen,
+    };
+    const status = nonEmpty(row.status);
+    if (status) incident.status = status;
+    const detectedAt = nonEmpty(row.detectedAt);
+    if (detectedAt) incident.detectedAt = detectedAt;
+    // `false` ist hier eine Aussage („geprüft, kein Datenschutzvorfall") und
+    // wird deshalb ausgegeben; `null` heißt „nicht abgefragt" und bleibt weg.
+    if (typeof row.isDataBreach === "boolean") {
+      incident.isDataBreach = row.isDataBreach;
+    }
+    const list = incidentsByStep.get(row.processStepId) ?? [];
+    list.push(incident);
+    incidentsByStep.set(row.processStepId, list);
+  }
+  for (const [stepId, list] of incidentsByStep) {
+    const entry = at(stepId);
+    if (entry) entry.incidents = list;
+  }
+
+  // --- Offene Maßnahmen am Schritt (F16, 0454) -----------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-005] Wie oben: ohne Namen keine Maßnahme.
+  // `dueAt` bleibt weg, wenn keine Frist gesetzt ist — `computeWorkItems`
+  // zählt diesen Fall ausdrücklich als „ohne Frist" und verschweigt ihn nicht.
+  const workItemsByStep = new Map<string, GrcWorkItem[]>();
+  for (const row of rows.workItems ?? []) {
+    const title = nonEmpty(row.name);
+    if (!title) continue;
+    const item: Mutable<GrcWorkItem> = { id: row.id, title };
+    const dueAt = nonEmpty(row.dueAt);
+    if (dueAt) item.dueAt = dueAt;
+    const status = nonEmpty(row.status);
+    if (status) item.status = status;
+    const typeKey = nonEmpty(row.typeKey);
+    if (typeKey) item.typeKey = typeKey;
+    const responsible = nonEmpty(row.responsibleName);
+    if (responsible) item.responsible = responsible;
+    const list = workItemsByStep.get(row.processStepId) ?? [];
+    list.push(item);
+    workItemsByStep.set(row.processStepId, list);
+  }
+  for (const [stepId, list] of workItemsByStep) {
+    const entry = at(stepId);
+    if (entry) entry.workItems = list;
   }
 
   // --- Kommentare ---------------------------------------------------------
@@ -1217,6 +1527,13 @@ export function buildDiagramOverlay(
   for (const row of rows.laneRatios ?? []) {
     ratioByRole.set(row.roleId, row);
   }
+  // [OP-010] Rollen je Lane, aus `process_step.lane_step_id` ⋈ RACI.
+  const rolesByLane = new Map<string, string[]>();
+  for (const row of rows.laneRoles ?? []) {
+    const list = rolesByLane.get(row.bpmnElementId) ?? [];
+    list.push(row.roleId);
+    rolesByLane.set(row.bpmnElementId, list);
+  }
   const lanes = new Map<string, GrcLaneData>();
   for (const row of rows.lanes ?? []) {
     const elementId = nonEmpty(row.bpmnElementId);
@@ -1263,6 +1580,48 @@ export function buildDiagramOverlay(
         counts.hasMandatoryPolicy,
       );
       if (ack !== undefined) lane.acknowledgmentRatio = ack;
+    }
+
+    // [ARCTOS-FULL-2026-08-31 · OP-010] Die Aufschlüsselung je Rolle.
+    //
+    // Die Trägerrolle der Lane steht zuerst, dann die Rollen, die in ihr
+    // arbeiten (RACI an den zugeordneten Schritten) — nach Namen sortiert,
+    // damit dieselben Zeilen denselben Satz ergeben. Eine Rolle, die der
+    // Datensatz nicht kennt, wird verworfen statt mit ihrer UUID benannt;
+    // dieselbe Regel wie bei RACI und SoD.
+    const laneRoleIds = new Set<string>();
+    if (roleId) laneRoleIds.add(roleId);
+    for (const entry of rolesByLane.get(elementId) ?? []) {
+      laneRoleIds.add(entry);
+    }
+    const qualification: GrcLaneQualification[] = [];
+    for (const id of laneRoleIds) {
+      const role = roleById.get(id);
+      const counts = ratioByRole.get(id);
+      // Ohne Mitgliederzahl gibt es nichts aufzuschlüsseln: `0 von 0` ist
+      // keine Lücke, sondern keine Rolle mit Mitgliedern.
+      if (!role || !counts || counts.memberCount <= 0) continue;
+      const entry: Mutable<GrcLaneQualification> = {
+        role,
+        memberCount: counts.memberCount,
+        isLaneRole: id === roleId,
+      };
+      // Die beiden Zählwerte bleiben weg, wenn es die Pflicht gar nicht gibt.
+      // Sonst läse sich „0 von 12 geschult" als Befund, wo in Wahrheit keine
+      // Pflichtschulung existiert (STUFE2-E-SCHEMA.md §3.1).
+      if (counts.hasMandatoryTraining) entry.trainedCount = counts.trainedCount;
+      if (counts.hasMandatoryPolicy) {
+        entry.acknowledgedCount = counts.acknowledgedCount;
+      }
+      qualification.push(entry);
+    }
+    if (qualification.length > 0) {
+      qualification.sort(
+        (a, b) =>
+          Number(b.isLaneRole) - Number(a.isLaneRole) ||
+          a.role.name.localeCompare(b.role.name),
+      );
+      lane.qualification = qualification;
     }
 
     if (Object.keys(lane).length === 0) continue;
@@ -1319,6 +1678,54 @@ export function buildDiagramOverlay(
     }
     diagram.outage = scenario;
   }
+
+  // --- Rahmenwerkauswahl (F8) ----------------------------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-016] Wie das Ausfallszenario eine Auswahl,
+  // nicht eine hinterlegte Tatsache — und wie dort gilt: **keine** Auswahl
+  // heißt kein Feld. Eine Vorgabe „das erste Rahmenwerk, das der Prozess
+  // führt" wäre bequem und falsch; sie machte aus dem Zufall der
+  // Sortierreihenfolge eine Prüfaussage.
+  //
+  // Ein Code ohne Anzeigenamen bekommt hier keinen Ersatznamen:
+  // `summarizeFramework` fällt selbst auf den Code zurück
+  // (`frameworkName ?? frameworkId`), und ein hier erfundener Name wäre
+  // dieselbe Sorte Behauptung, die OP-015 an anderer Stelle beseitigt hat.
+  if (options.framework) {
+    const selection: Mutable<GrcFrameworkSelection> = {
+      frameworkId: options.framework.frameworkId,
+    };
+    const name = nonEmpty(options.framework.frameworkName ?? null);
+    if (name) selection.frameworkName = name;
+    const refs = options.framework.requirementRefs;
+    if (refs && refs.length > 0) selection.requirementRefs = [...refs];
+    diagram.framework = selection;
+  }
+
+  // --- Beobachtete Übergänge (F7/B4, OP-012) -------------------------------
+  //
+  // Knotenpaare, keine Kantenkennungen — der Endpunkt parst kein BPMN und
+  // wüsste die Kanten-ID nicht (Begründung an `GrcObservedTransition`). Eine
+  // Wahrscheinlichkeit ohne Wert bleibt weg statt auf 0 zu fallen: „0 %" hieße
+  // „dieser Weg wird nie genommen", und das ist etwas anderes als „nicht
+  // gerechnet".
+  const transitions: GrcObservedTransition[] = [];
+  for (const row of rows.transitions ?? []) {
+    const transition: Mutable<GrcObservedTransition> = {
+      fromElementId: row.fromElementId,
+      toElementId: row.toElementId,
+      frequency: row.frequency,
+    };
+    if (
+      typeof row.probability === "number" &&
+      Number.isFinite(row.probability)
+    ) {
+      transition.probability = row.probability;
+    }
+    transition.isModelled = row.isModelled;
+    transitions.push(transition);
+  }
+  if (transitions.length > 0) diagram.transitions = transitions;
 
   // --- Conformance-Zusammenfassung (der Torwächter von F7) -----------------
   const summaryRow = rows.conformanceSummary;

@@ -20,7 +20,10 @@ import type {
 /** Bezugszeitpunkt aller Fristen in den Fixtures. */
 export const AS_OF = "2026-03-01T09:00:00.000Z";
 
-function iso(daysFromAsOf: number): string {
+/** [ARCTOS-FULL-2026-08-31 · OP-008] Exportiert: die F15-Tests brauchen
+ * dieselbe Zeitrechnung wie die Fixtures, damit kein Test an `Date.now()`
+ * hängt. */
+export function iso(daysFromAsOf: number): string {
   return new Date(Date.parse(AS_OF) + daysFromAsOf * 86_400_000).toISOString();
 }
 
@@ -166,6 +169,55 @@ export function salesRiskControlData(): GrcOverlayData {
           consulted: [ROLES.buchhaltung],
         },
         comments: { openThreads: 1, totalThreads: 1, blocking: 1 },
+        // [ARCTOS-FULL-2026-08-31 · OP-004] Ein laufender und ein
+        // abgeschlossener Vorfall am selben Schritt — der Fall, an dem sich
+        // zeigt, ob der Layer die beiden auseinanderhält.
+        incidents: [
+          {
+            id: "inc-1",
+            title: "Angebotsdatei an falschen Empfänger versandt",
+            severity: "high",
+            status: "contained",
+            isOpen: true,
+            detectedAt: iso(-6),
+            isDataBreach: true,
+          },
+          {
+            id: "inc-2",
+            title: "Preisliste im Kundenportal einsehbar",
+            severity: "medium",
+            status: "closed",
+            isOpen: false,
+            detectedAt: iso(-200),
+            isDataBreach: false,
+          },
+        ],
+        // [ARCTOS-FULL-2026-08-31 · OP-005] Drei Maßnahmen: eine überfällig,
+        // eine bald fällig, eine ganz ohne Frist. Die dritte ist der Fall,
+        // den eine Fälligkeitsliste nie zeigt.
+        workItems: [
+          {
+            id: "wi-1",
+            title: "Freigabegrenze im ERP erzwingen",
+            dueAt: iso(-12),
+            status: "in_treatment",
+            typeKey: "control",
+            responsible: "M. Krause",
+          },
+          {
+            id: "wi-2",
+            title: "Angebotsvorlage überarbeiten",
+            dueAt: iso(9),
+            status: "active",
+            typeKey: "audit",
+          },
+          {
+            id: "wi-3",
+            title: "Schulung Preisfreigabe",
+            status: "active",
+            typeKey: "risk",
+          },
+        ],
       },
       Task_reject: {
         lineOfDefense: "second",
@@ -365,6 +417,40 @@ export function procurementSodData(): GrcOverlayData {
  * ------------------------------------------------------------------ */
 
 /**
+ * [ARCTOS-FULL-2026-08-31 · OP-006] Kostenverteilung je Lane (F11).
+ *
+ * Drei Aktivitäten in zwei Lanes; eine davon **ohne** Kostenangabe. Genau der
+ * Fall, in dem ein Anteilsbalken ohne Deckungsangabe zur Behauptung würde:
+ * die Prüfung trägt 2.000 €, die Entscheidung 8.000 €, und „Antrag stellen"
+ * gar nichts — 20 % / 80 % gilt also für die BEKANNTEN Kosten, nicht für die
+ * Kosten.
+ */
+export function laneCostData(): GrcOverlayData {
+  return base({
+    Task_Bank_Pruefen: {
+      simulation: {
+        durationMinutes: 25,
+        costPerExecution: 4,
+        executions: 500,
+        currency: "€",
+      },
+    },
+    Task_Bank_Entscheiden: {
+      simulation: {
+        durationMinutes: 60,
+        costPerExecution: 40,
+        executions: 200,
+        currency: "€",
+      },
+    },
+    // Ohne Kostenangabe — bewusst.
+    Task_Kunde_Antrag: {
+      raci: { responsible: ROLES.vertrieb },
+    },
+  });
+}
+
+/**
  * Kreditantrag einer Bank mit ausgelagerter Bonitätsprüfung: die Lane
  * „Kreditentscheidung" wird von einem Dienstleister mit Sitz in den USA
  * betrieben. Damit überschreitet der Antrag — mit Bonitätsdaten — eine
@@ -432,6 +518,26 @@ export function bankPrivacyData(): GrcOverlayData {
         role: ROLES.sachbearbeitung,
         orgUnit: { id: "ou-1", title: "Kreditbearbeitung Inland" },
         trainingRatio: 0.92,
+        // [ARCTOS-FULL-2026-08-31 · OP-010] Die Aufschlüsselung: die
+        // Trägerrolle liegt bei 92 % (23 von 25), die Rolle, die nur in der
+        // Lane arbeitet, bei 3 von 8. Genau der Fall, in dem die Lane-Quote
+        // gut aussieht und die eigentliche Lücke woanders liegt.
+        qualification: [
+          {
+            role: ROLES.sachbearbeitung,
+            memberCount: 25,
+            trainedCount: 23,
+            acknowledgedCount: 25,
+            isLaneRole: true,
+          },
+          {
+            role: ROLES.buchhaltung,
+            memberCount: 8,
+            trainedCount: 3,
+            acknowledgedCount: 8,
+            isLaneRole: false,
+          },
+        ],
       },
       Lane_Genehmigung: {
         name: "Kreditentscheidung",

@@ -33,7 +33,16 @@ import {
 } from "../../src/verify/property";
 import type { Operation } from "../../src/verify/operations";
 
-const ref = (n: number) => ({ kind: "index" as const, index: n });
+// [ARCTOS-FULL-2026-08-31 · OP-011] `kind: "index"` gibt es nicht.
+// `CandidateKind` (src/verify/operations.ts) führt fünf Werte — `container`,
+// `activity`, `flowNode`, `lane`, `removable` —, und keiner davon heißt so.
+// Der Typprüfer hat das gemeldet, seit die Datei entstand (Welle 2, c635a97);
+// `npx tsc --noEmit` war in diesem Paket dadurch dauerhaft rot, und damit war
+// das Tor für jeden folgenden Fehler blind. Behoben ist der DEFEKT, nicht die
+// Erwartung: `flowNode` ist die Kategorie, in der ein `move` tatsächlich
+// auflöst. Am Verhalten des Tests ändert das nichts — `shrinkSequence` sieht
+// die Kategorie nie an —, an seiner Aussagekraft schon.
+const ref = (n: number) => ({ kind: "flowNode" as const, index: n });
 
 const move = (n: number, dx: number, dy: number): Operation => ({
   kind: "move",
@@ -137,7 +146,7 @@ describe("shrinkSequence — der Minimalfall", () => {
     expect(result.ops[0]).toMatchObject({
       kind: "rename",
       name: "boom",
-      target: { kind: "index", index: 1 },
+      target: { kind: "flowNode", index: 1 },
     });
   });
 

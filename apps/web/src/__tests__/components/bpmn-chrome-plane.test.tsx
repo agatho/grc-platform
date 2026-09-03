@@ -315,9 +315,27 @@ describe("OP-026 — GRC-Sichtwahl auf lesenden Flächen", () => {
 
     const select = screen.getByLabelText("bpmn.grcView.label");
     expect(select).toBeDefined();
-    // Vorgabe „aus": ohne Wahl wird der Endpunkt gar nicht erst befragt.
+    // Vorgabe „aus": ohne Wahl wird der OVERLAY-Endpunkt gar nicht erst
+    // befragt — die 23 Abfragen laufen nicht.
     expect((select as HTMLSelectElement).value).toBe("");
-    expect(fetchMock).not.toHaveBeenCalled();
+    const overlayAufrufe = () =>
+      fetchMock.mock.calls.filter(
+        (call) =>
+          String(call[0]).includes("/diagram-overlay") &&
+          !String(call[0]).includes("/preference"),
+      );
+    expect(overlayAufrufe()).toHaveLength(0);
+    // [ARCTOS-FULL-2026-08-31 · OP-003] Die VOREINSTELLUNG wird sehr wohl
+    // geholt, und zwar sofort: ohne sie könnte die Fläche die zuletzt
+    // gewählte Sicht nicht wiederherstellen. Eine Zeile, ein Index — das ist
+    // der Preis dafür, dass die Wahl den Seitenwechsel überlebt.
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some((call) =>
+          String(call[0]).includes("/diagram-overlay/preference"),
+        ),
+      ).toBe(true);
+    });
   }, 20_000);
 
   it("lässt sie weg, wo es keinen Prozess zu fragen gibt", async () => {
@@ -351,11 +369,20 @@ describe("OP-026 — GRC-Sichtwahl auf lesenden Flächen", () => {
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
+    // Der Overlay-Aufruf, nicht der Voreinstellungsaufruf: seit OP-003 holt
+    // die Sichtwahl beim Aufbau ihre gespeicherte Wahl, und die steht in der
+    // Aufrufliste vor der Auswahl.
+    const overlayAufruf = () =>
+      fetchMock.mock.calls.find(
+        (call) =>
+          String(call[0]).includes("/diagram-overlay") &&
+          !String(call[0]).includes("/preference"),
+      );
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalled();
+      expect(overlayAufruf()).toBeDefined();
     });
     // Die Version geht mit — sonst läge über einer alten Fassung der Stand
     // von heute.
-    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("version=v-3");
+    expect(String(overlayAufruf()?.[0])).toContain("version=v-3");
   }, 20_000);
 });

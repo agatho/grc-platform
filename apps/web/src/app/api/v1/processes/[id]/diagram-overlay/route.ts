@@ -48,8 +48,11 @@ import {
   type DmnRow,
   type DocumentRow,
   type FindingRow,
+  type IncidentRow,
+  type KriRow,
   type FrameworkRow,
   type LaneRatioRow,
+  type LaneRoleRow,
   type LaneRow,
   type RaciRow,
   type RecipientRow,
@@ -60,6 +63,8 @@ import {
   type SimulationRow,
   type SodRuleRow,
   type StepRow,
+  type TransitionRow,
+  type WorkItemRow,
 } from "@/lib/grc-overlay";
 
 /**
@@ -93,6 +98,15 @@ const GROUPS = [
   "bia",
   "document",
   "conformance",
+  // --- Welle 3b: die beiden Layer, die 0454 möglich gemacht hat -----------
+  // [ARCTOS-FULL-2026-08-31 · OP-004/OP-005] Der Elementbezug steht seit
+  // Migration 0454; gefehlt haben die Abfragen und die Layer, nicht die
+  // Daten. Vorher wäre `?layers=incident` eine Zusage ohne Deckung gewesen.
+  "incident",
+  "work-item",
+  // [ARCTOS-FULL-2026-08-31 · OP-008] F15. Die Richtungsaussage, die
+  // STUFE2-A2-GRC.md §6 vermisst hat, steht seit Sprint 2 in `kri.direction`.
+  "kri",
 ] as const;
 type Group = (typeof GROUPS)[number];
 
@@ -127,6 +141,20 @@ const querySchema = z.object({
    */
   outage: z.string().uuid().optional(),
   outageElapsed: z.coerce.number().int().min(0).max(525_600).optional(),
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-016] Rahmenwerkauswahl der Sicht F8.
+   *
+   * Wie `outage` ein **Auswahlparameter** und keine hinterlegte Tatsache —
+   * mit einem Unterschied: die Wahl eines Rahmenwerks ist eine dauerhafte
+   * Arbeitseinstellung („ich prüfe gerade gegen ISO 27001"), keine Frage, die
+   * man je Aufruf neu stellt. Deshalb gibt es beides: dieser Parameter
+   * gewinnt, und ohne ihn greift die gespeicherte Wahl des aufrufenden
+   * Nutzers aus `user_diagram_preference.framework_code` (0475).
+   *
+   * Der Wert ist ein `framework_code`, kein Schlüssel — genau die Größe, gegen
+   * die `computeFrameworkElement` vergleicht.
+   */
+  framework: z.string().max(40).optional(),
 });
 
 function isGroup(value: string): value is Group {
@@ -408,6 +436,42 @@ export const GET = withErrorHandler(async function GET(
         ),
       );
 
+  // --- Rollen je Lane (F17-Aufschlüsselung, OP-010) ------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-010] In einer Lane arbeitet in aller Regel
+  // mehr als ihre Trägerrolle. Welche, sagt seit Migration 0445 die Spalte
+  // `process_step.lane_step_id` zusammen mit `process_step_raci` — vorher
+  // hätte man die Lane-Zugehörigkeit geometrisch raten müssen, und eine
+  // geratene Zuordnung ist als Grundlage einer Qualifikationsaussage
+  // unbrauchbar.
+  //
+  // Nur, wenn die Lane-Gruppe auch gewollt ist: sonst kostete `?layers=raci`
+  // eine Abfrage für eine Angabe, die in der Antwort nicht vorkommt.
+  const laneRoles: LaneRoleRow[] =
+    // Ohne Schritte gibt es keine RACI-Zeilen, die an einer Lane hängen
+    // könnten — dann entfällt die Abfrage ganz, statt eine leere Menge zu
+    // verbinden.
+    empty || lanes.length === 0
+      ? []
+      : rowsOf<LaneRoleRow>(
+          await db.execute(
+            sql`SELECT pl.bpmn_element_id AS "bpmnElementId",
+                       psr.role_id        AS "roleId"
+                FROM process_lane pl
+                JOIN process_step ps
+                     ON ps.lane_step_id = pl.id
+                    AND ps.org_id = ${ctx.orgId}
+                    AND ps.deleted_at IS NULL
+                JOIN process_step_raci psr
+                     ON psr.process_step_id = ps.id
+                    AND psr.org_id = ${ctx.orgId}
+                WHERE pl.org_id = ${ctx.orgId}
+                  AND pl.process_id = ${processId}
+                GROUP BY pl.bpmn_element_id, psr.role_id
+                ORDER BY pl.bpmn_element_id, psr.role_id`,
+          ),
+        );
+
   // --- SoD-Regeln (0446) ---------------------------------------------------
   //
   // Mandantenweit, nicht prozessbezogen: eine Aufgabentrennungsregel gilt
@@ -442,6 +506,10 @@ export const GET = withErrorHandler(async function GET(
           : []),
         ...raci.map((row) => row.roleId),
         ...lanes.map((row) => row.roleId),
+        // [OP-010] Auch die Rollen, die IN der Lane arbeiten — sonst stünde
+        // in der Aufschlüsselung eine UUID statt eines Rollennamens, und die
+        // Abbildung verwürfe die Zeile.
+        ...laneRoles.map((row) => row.roleId),
         ...sodRules.flatMap((row) => [row.roleAId, row.roleBId]),
         ...controls.map((row) => row.ownerRoleId ?? null),
       ].filter((value): value is string => typeof value === "string"),
@@ -466,11 +534,16 @@ export const GET = withErrorHandler(async function GET(
   // Mandant ohne Pflichtschulung ununterscheidbar von einem, in dem niemand
   // sie absolviert hat, und die Fläche zeigte „0 %" als Befund. Die Auswertung
   // dieser Unterscheidung steht in `ratio()` in lib/grc-overlay.ts.
+  // [ARCTOS-FULL-2026-08-31 · OP-010] Die Quotenabfrage deckt jetzt beide
+  // Rollenmengen ab: die Trägerrollen der Lanes UND die Rollen, die in ihnen
+  // arbeiten. Ohne die zweite Menge hätte die Aufschlüsselung genau für die
+  // Rollen keine Zahlen, wegen denen sie gebaut wurde.
   const laneRoleIds = [
     ...new Set(
-      lanes
-        .map((row) => row.roleId)
-        .filter((value): value is string => typeof value === "string"),
+      [
+        ...lanes.map((row) => row.roleId),
+        ...laneRoles.map((row) => row.roleId),
+      ].filter((value): value is string => typeof value === "string"),
     ),
   ];
   const laneRatios: LaneRatioRow[] =
@@ -732,6 +805,37 @@ export const GET = withErrorHandler(async function GET(
         ),
       )[0];
 
+  // --- Beobachtete Übergänge (F7/B4, Migration 0476) -----------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-012] Aus demselben Ereignisprotokoll wie die
+  // Zusammenfassung darüber — dem zuletzt importierten. Zwei Protokolle
+  // nebeneinander zu addieren wäre eine Häufigkeit über zwei verschiedene
+  // Zeiträume unter einem Namen.
+  //
+  // Ohne die Gruppe `conformance` wird gar nicht gefragt: die Kantenkennzahl
+  // ist Teil derselben Aussage, und `?layers=` soll wirklich weniger abfragen
+  // und nicht nur weniger ausliefern.
+  const transitions: TransitionRow[] = !want("conformance")
+    ? []
+    : rowsOf<TransitionRow>(
+        await db.execute(
+          sql`WITH log AS (
+                SELECT id FROM process_event_log
+                 WHERE org_id = ${ctx.orgId} AND process_id = ${processId}
+                 ORDER BY imported_at DESC, id DESC LIMIT 1
+              )
+              SELECT t.from_element_id AS "fromElementId",
+                     t.to_element_id   AS "toElementId",
+                     t.frequency       AS "frequency",
+                     t.probability::float8 AS "probability",
+                     t.is_modelled     AS "isModelled"
+                FROM process_event_transition_map t
+                JOIN log ON log.id = t.event_log_id
+               WHERE t.org_id = ${ctx.orgId}
+               ORDER BY t.frequency DESC, t.from_element_id, t.to_element_id`,
+        ),
+      );
+
   // --- Kommentare je Schritt ----------------------------------------------
   const comments: CommentRow[] =
     empty || !want("comments")
@@ -765,19 +869,67 @@ export const GET = withErrorHandler(async function GET(
       ? []
       : rowsOf<FrameworkRow>(
           await db.execute(
-            sql`SELECT process_step_id AS "processStepId",
-                       id,
-                       framework_code   AS "frameworkCode",
-                       entry_code       AS "entryCode",
-                       entry_title      AS "entryTitle",
-                       mapping_strength AS "mappingStrength"
-                FROM process_framework_mapping
-                WHERE org_id = ${ctx.orgId}
-                  AND process_id = ${processId}
-                  AND process_step_id = ANY(${stepIds}::uuid[])
-                ORDER BY process_step_id, framework_code, entry_code, id`,
+            // [ARCTOS-FULL-2026-08-31 · OP-015] `catalog.name` ist der
+            // Anzeigename, den `frameworkName` meint. Er stand die ganze Zeit
+            // bereit — die Zuordnungstabelle trägt `catalog_id` seit jeher —,
+            // nur hat ihn niemand gelesen, und der Chip zeigte den Code.
+            // LEFT JOIN, weil die Spalte nullable ist: eine Zuordnung ohne
+            // Katalogbezug behält den Code und verliert nichts.
+            // `catalog` ist plattformweit (kein `org_id`), deshalb keine
+            // Mandantenbedingung — eine hier wäre eine Bedingung auf eine
+            // Spalte, die es nicht gibt.
+            sql`SELECT pfm.process_step_id AS "processStepId",
+                       pfm.id,
+                       pfm.framework_code   AS "frameworkCode",
+                       pfm.entry_code       AS "entryCode",
+                       pfm.entry_title      AS "entryTitle",
+                       pfm.mapping_strength AS "mappingStrength",
+                       cat.name             AS "frameworkName"
+                FROM process_framework_mapping pfm
+                LEFT JOIN catalog cat ON cat.id = pfm.catalog_id
+                WHERE pfm.org_id = ${ctx.orgId}
+                  AND pfm.process_id = ${processId}
+                  AND pfm.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY pfm.process_step_id, pfm.framework_code,
+                         pfm.entry_code, pfm.id`,
           ),
         );
+
+  // --- Rahmenwerkauswahl der Sicht F8 (OP-016) -----------------------------
+  //
+  // Reihenfolge: ausdrücklicher Parameter vor gespeicherter Wahl. Der
+  // Parameter ist die Frage eines einzelnen Aufrufs, die Voreinstellung die
+  // Arbeitsweise eines Nutzers — eine Voreinstellung, die eine ausdrückliche
+  // Angabe überstimmt, wäre ein Werkzeug, das nicht tut, was man ihm sagt.
+  //
+  // Die Voreinstellung wird nur gelesen, wenn die Gruppe `framework`
+  // überhaupt gewollt ist: ein `?layers=lane` soll drei Abfragen machen und
+  // nicht vier (der Zähltest in `process-diagram-overlay.test.ts` hält das
+  // fest).
+  let frameworkSelection: string | undefined = parsed.data.framework;
+  if (frameworkSelection === undefined && want("framework")) {
+    const stored = firstRowOf<{ frameworkCode: string | null }>(
+      await db.execute(
+        sql`SELECT framework_code AS "frameworkCode"
+              FROM user_diagram_preference
+             WHERE org_id = ${ctx.orgId}
+               AND user_id = ${ctx.userId}
+               AND scope = 'default'
+             LIMIT 1`,
+      ),
+    );
+    frameworkSelection = stored?.frameworkCode ?? undefined;
+  }
+  // Der Anzeigename kommt aus denselben Zeilen, die ohnehin geladen sind —
+  // eine zweite Abfrage gegen `catalog` wäre eine Abfrage für ein Wort. Findet
+  // sich der Code an keinem Schritt dieses Prozesses, bleibt der Name weg:
+  // `summarizeFramework` fällt dann auf den Code zurück, und die Kopfzeile
+  // nennt ehrlich „0 Anforderungen" statt eines Namens ohne Deckung.
+  const frameworkName = frameworkSelection
+    ? frameworks.find(
+        (row) => row.frameworkCode === frameworkSelection && row.frameworkName,
+      )?.frameworkName
+    : undefined;
 
   // --- Simulationsparameter ------------------------------------------------
   //
@@ -801,6 +953,121 @@ export const GET = withErrorHandler(async function GET(
               ORDER BY sap.activity_id`,
         ),
       );
+
+  // --- Risikoindikatoren am Schritt (F15) ----------------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-008] Der Bezug zum Schritt läuft über das
+  // RISIKO, nicht über eine eigene Spalte: ein KRI ist das Frühwarnsignal
+  // eines Risikos (`kri.risk_id`), und welche Risiken an einem Schritt hängen,
+  // sagt `process_step_risk`. Eine zusätzliche Spalte `kri.process_step_id`
+  // wäre eine zweite Zuordnung neben einer vorhandenen — und die erste
+  // Anwendung, die nur eine der beiden pflegt, ließe die Ampel am falschen
+  // Schritt stehen.
+  //
+  // `hasThresholds` wird hier gebildet, weil nur diese eine Aussage gebraucht
+  // wird; die drei Schwellenwerte selbst wandern nicht durch die Antwort.
+  const kris: KriRow[] =
+    empty || !want("kri")
+      ? []
+      : rowsOf<KriRow>(
+          await db.execute(
+            sql`SELECT psr.process_step_id  AS "processStepId",
+                       k.id,
+                       k.name,
+                       k.unit,
+                       k.direction::text    AS "direction",
+                       k.current_value::float8 AS "value",
+                       k.current_alert_status::text AS "alertStatus",
+                       k.trend::text        AS "trend",
+                       ${TS("k.last_measured_at")} AS "measuredAt",
+                       k.measurement_frequency::text AS "frequency",
+                       (k.threshold_green IS NOT NULL
+                        AND k.threshold_yellow IS NOT NULL
+                        AND k.threshold_red IS NOT NULL) AS "hasThresholds",
+                       k.risk_id            AS "riskId"
+                FROM process_step_risk psr
+                JOIN kri k ON k.risk_id = psr.risk_id
+                          AND k.org_id = ${ctx.orgId}
+                          AND k.deleted_at IS NULL
+                WHERE psr.org_id = ${ctx.orgId}
+                  AND psr.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY psr.process_step_id, k.name, k.id`,
+          ),
+        );
+
+  // --- Vorfälle am Schritt (F14, Migration 0454) ---------------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-004] `isOpen` wird HIER entschieden, nicht in
+  // der Zeichenschicht: `incident_status` hat sieben Stufen, und welche davon
+  // als abgeschlossen gilt, ist eine fachliche Festlegung. Sie lautet: der
+  // Vorfall ist abgeschlossen, wenn `closed_at` steht UND der Status `closed`
+  // ist. Beide Bedingungen zusammen, weil ein Status ohne Zeitstempel (und
+  // umgekehrt) vorkommt — und ein solcher Widerspruch zählt als **offen**.
+  // Fehlende Daten sind keine Entwarnung; dieselbe Regel wie bei F1 für ein
+  // Risiko ohne Kontrollverknüpfung (STUFE2-A2-GRC.md §7.4).
+  //
+  // Abgeschlossene Vorfälle werden mitgeliefert, nicht weggefiltert: der
+  // Schritt, an dem im Frühjahr etwas passiert ist, sieht sonst aus wie der,
+  // an dem nie etwas war. Die Begrenzung liegt bei der Zeit, nicht beim
+  // Status — ein Vorfall von vor drei Jahren sagt über den heutigen Prozess
+  // wenig, und eine unbegrenzte Liste macht aus dem Badge einen Zähler der
+  // Firmengeschichte.
+  const incidents: IncidentRow[] =
+    empty || !want("incident")
+      ? []
+      : rowsOf<IncidentRow>(
+          await db.execute(
+            sql`SELECT process_step_id AS "processStepId",
+                       id,
+                       title,
+                       severity::text  AS "severity",
+                       status::text    AS "status",
+                       (closed_at IS NULL OR status <> 'closed') AS "isOpen",
+                       ${TS("detected_at")} AS "detectedAt",
+                       is_data_breach  AS "isDataBreach"
+                FROM security_incident
+                WHERE org_id = ${ctx.orgId}
+                  AND deleted_at IS NULL
+                  AND process_step_id = ANY(${stepIds}::uuid[])
+                  AND (closed_at IS NULL
+                       OR closed_at > now() - interval '24 months')
+                ORDER BY process_step_id, detected_at DESC, id`,
+          ),
+        );
+
+  // --- Offene Maßnahmen am Schritt (F16, Migration 0454) -------------------
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-005] Anders als bei den Vorfällen wird hier
+  // gefiltert: geliefert werden nur die **offenen**. Eine erledigte Maßnahme
+  // ist kein Ereignis am Schritt, sondern eine Aufgabe, die vom Tisch ist —
+  // sie im Diagramm mitzuzählen machte aus „drei offene Maßnahmen" mit der
+  // Zeit „siebzehn Maßnahmen", und die Zahl verlöre ihren Sinn.
+  //
+  // `completed`, `obsolete` und `cancelled` sind die drei Endzustände von
+  // `work_item_status_generic`; `completed_at` deckt den Fall ab, dass jemand
+  // den Abschluss datiert, ohne den Status zu setzen.
+  const workItems: WorkItemRow[] =
+    empty || !want("work-item")
+      ? []
+      : rowsOf<WorkItemRow>(
+          await db.execute(
+            sql`SELECT wi.process_step_id AS "processStepId",
+                       wi.id,
+                       wi.name,
+                       wi.status::text    AS "status",
+                       wi.type_key        AS "typeKey",
+                       ${TS("wi.due_date")} AS "dueAt",
+                       u.name             AS "responsibleName"
+                FROM work_item wi
+                LEFT JOIN "user" u ON u.id = wi.responsible_id
+                WHERE wi.org_id = ${ctx.orgId}
+                  AND wi.deleted_at IS NULL
+                  AND wi.completed_at IS NULL
+                  AND wi.status NOT IN ('completed', 'obsolete', 'cancelled')
+                  AND wi.process_step_id = ANY(${stepIds}::uuid[])
+                ORDER BY wi.process_step_id, wi.due_date NULLS LAST, wi.id`,
+          ),
+        );
 
   // --- DMN-Entscheidungen --------------------------------------------------
   const dmn: DmnRow[] =
@@ -911,8 +1178,12 @@ export const GET = withErrorHandler(async function GET(
       simulation,
       dmn,
       calledProcesses,
+      kris,
+      incidents,
+      workItems,
       lanes,
       laneRatios,
+      laneRoles,
       raci,
       sodRules,
       ropa,
@@ -922,6 +1193,7 @@ export const GET = withErrorHandler(async function GET(
       documents,
       conformanceElements,
       conformanceSummary,
+      transitions,
     },
     {
       computedAt,
@@ -940,6 +1212,16 @@ export const GET = withErrorHandler(async function GET(
             ...(parsed.data.outageElapsed !== undefined
               ? { elapsedMinutes: parsed.data.outageElapsed }
               : {}),
+          }
+        : undefined,
+      // [ARCTOS-FULL-2026-08-31 · OP-016] Ohne Auswahl kein
+      // `diagram.framework` — dann rechnet `summarizeFramework` nichts und
+      // die Kopfzeile schweigt, statt einen Abdeckungsgrad über „alle
+      // Rahmenwerke zusammen" zu zeigen, den kein Prüfer je verlangt hat.
+      framework: frameworkSelection
+        ? {
+            frameworkId: frameworkSelection,
+            ...(frameworkName ? { frameworkName } : {}),
           }
         : undefined,
     },

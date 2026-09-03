@@ -5,20 +5,28 @@ import { describe, expect, it } from "vitest";
 import {
   computeCoverage,
   computeEvidence,
+  computeKri,
+  isKriStale,
+  KRI_STALE_FACTOR,
   computeFindings,
   computeFrameworkElement,
+  computeIncidents,
   computeRetention,
+  computeWorkItems,
   conformanceGate,
   personalDataStage,
   riskLevel,
   rollupRisk,
   summarizeFramework,
 } from "../../src/grc/analysis";
+import { describeQualificationGaps } from "../../src/grc/catalog";
 import { buildGrcGraph } from "../../src/grc/graph";
 import { buildOverlayModel } from "../../src/grc/engine";
 import { viewById } from "../../src/grc/views";
 import {
   AS_OF,
+  iso,
+  bankPrivacyData,
   goodsReceiptRetentionData,
   largeProcessData,
   largeProcessWithoutCoverage,
@@ -27,7 +35,7 @@ import {
   procurementComplianceData,
   salesRiskControlData,
 } from "./fixtures";
-import { corpusScene } from "./helpers";
+import { corpusModel, corpusScene } from "./helpers";
 
 const asOf = new Date(AS_OF);
 
@@ -285,5 +293,360 @@ describe("F8 — Framework-Abdeckung", () => {
       requirementRefs: ["A.8"],
     });
     expect(result.stage).toBe("none");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-004] F14 — Vorfälle am Schritt
+ * ------------------------------------------------------------------ */
+
+describe("F14 — Vorfälle am Schritt", () => {
+  const data = salesRiskControlData();
+
+  it("zählt laufende und abgeschlossene getrennt", () => {
+    const result = computeIncidents(data.elements["Task_offer"]);
+    expect(result.total).toBe(2);
+    expect(result.open).toBe(1);
+    expect(result.stage).toBe("critical");
+  });
+
+  it("lässt einen abgeschlossenen Vorfall NICHT verschwinden", () => {
+    // Der Schritt, an dem aufgeräumt wurde, darf nicht aussehen wie der, an
+    // dem nie etwas war. Er wechselt die Stufe, nicht die Sichtbarkeit.
+    const result = computeIncidents({
+      incidents: [
+        {
+          id: "i1",
+          title: "Datenabfluss",
+          severity: "critical",
+          isOpen: false,
+        },
+      ],
+    });
+    expect(result.stage).toBe("closed");
+    expect(result.total).toBe(1);
+    expect(result.open).toBe(0);
+  });
+
+  it("nimmt den schwersten LAUFENDEN, nicht den schwersten überhaupt", () => {
+    const result = computeIncidents({
+      incidents: [
+        { id: "alt", title: "alt", severity: "critical", isOpen: false },
+        { id: "neu", title: "neu", severity: "medium", isOpen: true },
+      ],
+    });
+    expect(result.worst?.id).toBe("neu");
+    expect(result.stage).toBe("open");
+  });
+
+  it("hebt auf `critical`, sobald ein laufender Vorfall hoch oder kritisch ist", () => {
+    const result = computeIncidents({
+      incidents: [{ id: "i", title: "x", severity: "high", isOpen: true }],
+    });
+    expect(result.stage).toBe("critical");
+  });
+
+  it("zählt meldepflichtige Datenschutzvorfälle mit", () => {
+    const result = computeIncidents(data.elements["Task_offer"]);
+    expect(result.dataBreaches).toBe(1);
+  });
+
+  it("meldet ohne Vorfälle gar nichts", () => {
+    expect(computeIncidents(undefined).stage).toBe("none");
+    expect(computeIncidents({}).stage).toBe("none");
+  });
+
+  it("ist deterministisch bei gleichem Schweregrad", () => {
+    // Sonst hinge das Bild an der Reihenfolge der Datenbankzeilen.
+    const items = [
+      { id: "b", title: "B", severity: "high" as const, isOpen: true },
+      { id: "a", title: "A", severity: "high" as const, isOpen: true },
+    ];
+    expect(computeIncidents({ incidents: items }).worst?.id).toBe("a");
+    expect(
+      computeIncidents({ incidents: [...items].reverse() }).worst?.id,
+    ).toBe("a");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-005] F16 — Offene Maßnahmen
+ * ------------------------------------------------------------------ */
+
+describe("F16 — Offene Maßnahmen mit Fälligkeit", () => {
+  const data = salesRiskControlData();
+
+  it("trennt überfällig, bald fällig und ohne Frist", () => {
+    const result = computeWorkItems(data.elements["Task_offer"], asOf);
+    expect(result.open).toBe(3);
+    expect(result.overdue).toBe(1);
+    expect(result.dueSoon).toBe(1);
+    expect(result.withoutDueDate).toBe(1);
+    expect(result.stage).toBe("overdue");
+  });
+
+  it("nennt die älteste Überfälligkeit in Tagen", () => {
+    const result = computeWorkItems(data.elements["Task_offer"], asOf);
+    expect(Math.round(result.daysUntilDue ?? 0)).toBe(-12);
+  });
+
+  it("zählt eine Maßnahme ohne Frist, statt sie zu verschweigen", () => {
+    // Sie taucht in keiner Fälligkeitsliste auf und sähe in jeder Ampel grün
+    // aus. Genau deshalb wird sie gezählt.
+    const result = computeWorkItems(
+      { workItems: [{ id: "w", title: "ohne Frist" }] },
+      asOf,
+    );
+    expect(result.withoutDueDate).toBe(1);
+    expect(result.stage).toBe("open");
+    expect(result.daysUntilDue).toBeUndefined();
+  });
+
+  it("wertet ein unlesbares Datum als fehlende Frist, nicht als heute fällig", () => {
+    const result = computeWorkItems(
+      { workItems: [{ id: "w", title: "x", dueAt: "irgendwann" }] },
+      asOf,
+    );
+    expect(result.withoutDueDate).toBe(1);
+    expect(result.overdue).toBe(0);
+    expect(result.dueSoon).toBe(0);
+  });
+
+  it("meldet ohne Maßnahmen gar nichts", () => {
+    expect(computeWorkItems(undefined, asOf).stage).toBe("none");
+    expect(computeWorkItems({}, asOf).stage).toBe("none");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-010] F17 — Aufschlüsselung je Rolle
+ * ------------------------------------------------------------------ */
+
+describe("F17 — Aufschlüsselung je Rolle", () => {
+  it("nennt nur die Rollen mit einer Lücke, größte zuerst", () => {
+    const gaps = describeQualificationGaps([
+      {
+        role: { id: "a", name: "Sachbearbeitung" },
+        memberCount: 25,
+        trainedCount: 23,
+        acknowledgedCount: 25,
+        isLaneRole: true,
+      },
+      {
+        role: { id: "b", name: "Buchhaltung" },
+        memberCount: 8,
+        trainedCount: 3,
+        acknowledgedCount: 8,
+        isLaneRole: false,
+      },
+    ]);
+    expect(gaps).toEqual([
+      "Buchhaltung — 5 von 8 ohne Pflichtschulung",
+      "Sachbearbeitung — 2 von 25 ohne Pflichtschulung",
+    ]);
+  });
+
+  it("schweigt über eine vollständig geschulte Rolle", () => {
+    // Eine Aufzählung, in der jede Zeile „12 von 12" sagt, verdeckt die eine,
+    // die es nicht tut.
+    expect(
+      describeQualificationGaps([
+        {
+          role: { id: "a", name: "A" },
+          memberCount: 12,
+          trainedCount: 12,
+          acknowledgedCount: 12,
+          isLaneRole: true,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("macht aus einer fehlenden Pflicht keine Lücke", () => {
+    // Ohne Pflichtschulung fehlt `trainedCount` ganz. Daraus „12 von 12 ohne
+    // Schulung" zu machen wäre ein Befund, den die Daten nicht tragen.
+    expect(
+      describeQualificationGaps([
+        {
+          role: { id: "a", name: "A" },
+          memberCount: 12,
+          isLaneRole: true,
+        },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("nennt beide Lücken einer Rolle in einem Satzteil", () => {
+    expect(
+      describeQualificationGaps([
+        {
+          role: { id: "a", name: "A" },
+          memberCount: 10,
+          trainedCount: 7,
+          acknowledgedCount: 2,
+          isLaneRole: true,
+        },
+      ]),
+    ).toEqual([
+      "A — 3 von 10 ohne Pflichtschulung, 8 von 10 ohne Kenntnisnahme",
+    ]);
+  });
+
+  it("ist unabhängig von der Reihenfolge der Eingabe", () => {
+    const eintraege = [
+      {
+        role: { id: "a", name: "A" },
+        memberCount: 10,
+        trainedCount: 5,
+        isLaneRole: true,
+      },
+      {
+        role: { id: "b", name: "B" },
+        memberCount: 10,
+        trainedCount: 5,
+        isLaneRole: false,
+      },
+    ];
+    expect(describeQualificationGaps(eintraege)).toEqual(
+      describeQualificationGaps([...eintraege].reverse()),
+    );
+  });
+
+  it("landet in der Beschreibung der Lane — dem Panel dieser Schicht", async () => {
+    const { model } = await corpusModel(
+      "synth-collaboration-pools-lanes",
+      bankPrivacyData(),
+      "privacy",
+    );
+    const text = model.elements
+      .get("Lane_Sachbearbeitung")
+      ?.descriptions.join(" ");
+    expect(text).toContain("Buchhaltung — 5 von 8 ohne Pflichtschulung");
+    expect(text).toContain("Sachbearbeitung — 2 von 25 ohne Pflichtschulung");
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-008] F15 — KRI-Schwellenampel
+ * ------------------------------------------------------------------ */
+
+describe("F15 — KRI-Schwellenampel", () => {
+  const kri = (over: Record<string, unknown> = {}) => ({
+    id: "k1",
+    title: "Ausfallquote",
+    direction: "asc" as const,
+    ...over,
+  });
+
+  it("zeigt Rot, wenn ein Indikator über der roten Schwelle liegt", () => {
+    const result = computeKri({ kris: [kri({ alert: "red" })] }, asOf);
+    expect(result.stage).toBe("critical");
+    expect(result.red).toBe(1);
+  });
+
+  it("macht aus einem Indikator OHNE Schwellen kein Grün", () => {
+    // Gemessen am laufenden Schema: `current_alert_status` steht auf `green`,
+    // obwohl keine einzige Schwelle hinterlegt ist (NOT NULL DEFAULT). Ein
+    // grüner Punkt wäre hier eine Entwarnung aus fehlenden Daten.
+    // Frisch gemessen — die Lücke ist ausschliesslich die fehlende Schwelle.
+    const result = computeKri(
+      {
+        kris: [
+          kri({ alert: undefined, frequency: "monthly", measuredAt: iso(-3) }),
+        ],
+      },
+      asOf,
+    );
+    expect(result.stage).toBe("unset");
+    expect(result.withoutThresholds).toBe(1);
+  });
+
+  it("macht aus einer veralteten Messung kein Grün", () => {
+    // Ebenfalls gemessen: ein Indikator mit monatlichem Takt und einer 240
+    // Tage alten Messung steht in der Datenbank auf `green`.
+    const result = computeKri(
+      {
+        kris: [
+          kri({ alert: "green", frequency: "monthly", measuredAt: iso(-240) }),
+        ],
+      },
+      asOf,
+    );
+    expect(result.stage).toBe("stale");
+    expect(result.stale).toBe(1);
+  });
+
+  it("lässt einen verpassten Messtakt durchgehen, zwei nicht", () => {
+    // Ein verpasster Takt ist Betriebsrauschen, zwei sind eine Lücke.
+    const frisch = kri({
+      alert: "green",
+      frequency: "monthly",
+      measuredAt: iso(-45),
+    });
+    const alt = kri({
+      alert: "green",
+      frequency: "monthly",
+      measuredAt: iso(-30 * KRI_STALE_FACTOR - 1),
+    });
+    expect(isKriStale(frisch, asOf)).toBe(false);
+    expect(isKriStale(alt, asOf)).toBe(true);
+  });
+
+  it("nennt einen nie gemessenen Indikator ausdrücklich", () => {
+    const result = computeKri({ kris: [kri({ alert: "green" })] }, asOf);
+    expect(result.neverMeasured).toBe(1);
+    expect(result.stage).toBe("stale");
+  });
+
+  it("sagt ohne bekannten Messtakt NICHT „veraltet“", () => {
+    // Eine Erwartung zu wählen, die niemand vereinbart hat, wäre eine
+    // erfundene Frist.
+    expect(isKriStale(kri({ measuredAt: iso(-5000) }), asOf)).toBe(false);
+  });
+
+  it("lässt Rot vor Ungeklärtem und Ungeklärtes vor Gelb gewinnen", () => {
+    expect(
+      computeKri(
+        {
+          kris: [
+            kri({
+              id: "a",
+              alert: "yellow",
+              frequency: "monthly",
+              measuredAt: iso(-3),
+            }),
+            kri({ id: "b", frequency: "monthly", measuredAt: iso(-3) }),
+          ],
+        },
+        asOf,
+      ).stage,
+    ).toBe("unset");
+    expect(
+      computeKri(
+        {
+          kris: [
+            kri({ id: "a", alert: "yellow" }),
+            kri({ id: "b", alert: "red" }),
+          ],
+        },
+        asOf,
+      ).stage,
+    ).toBe("critical");
+  });
+
+  it("meldet Grün nur, wenn alles gemessen UND beschwellt ist", () => {
+    const result = computeKri(
+      {
+        kris: [
+          kri({ alert: "green", frequency: "monthly", measuredAt: iso(-3) }),
+        ],
+      },
+      asOf,
+    );
+    expect(result.stage).toBe("ok");
+  });
+
+  it("meldet ohne Indikatoren gar nichts", () => {
+    expect(computeKri(undefined, asOf).stage).toBe("none");
   });
 });

@@ -15,9 +15,13 @@ import type {
   GrcFinding,
   GrcFrameworkMapping,
   GrcFrameworkSelection,
+  GrcIncident,
+  GrcKri,
+  GrcObservedTransition,
   GrcOverlayData,
   GrcRisk,
   GrcRopa,
+  GrcWorkItem,
 } from "./contract";
 import { descendants, type GrcGraph } from "./graph";
 
@@ -373,6 +377,519 @@ export function computeFindings(
           : "open";
 
   return { open: items.length, overdue, dueSoon, critical, stage, items };
+}
+
+/* ------------------------------------------------------------------ *
+ * F7/B4 — Kantenkennzahlen aus beobachteten Übergängen (OP-012)
+ * ------------------------------------------------------------------ */
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-012] Beobachtete Übergänge, aufgelöst auf die
+ * Verbindungen der Szene.
+ *
+ * Der Endpunkt liefert Knotenpaare, weil er keine Kantenkennungen kennt
+ * (Begründung an `GrcObservedTransition`). Diese Funktion macht daraus einen
+ * Record über **Kanten-IDs** — dieselbe Form, die `GrcEdgeData` hat, nur
+ * gerechnet statt geliefert.
+ *
+ * **Der Fall, an dem eine naive Auflösung falsch wäre:** zwei Verbindungen
+ * zwischen denselben beiden Knoten (im BPMN erlaubt, etwa eine Rückkopplung
+ * über zwei Wege). Beiden dieselbe Häufigkeit zuzuschreiben verdoppelte die
+ * Zahl im Bild; sie zu teilen wäre geraten. Deshalb: ein Paar, das auf
+ * **mehr als eine** Verbindung passt, wird gar nicht zugeordnet. Es bleibt in
+ * `unresolved` und kann als Geisterkante gezeichnet werden — sichtbar, aber
+ * nicht falsch beziffert.
+ */
+export interface TransitionResolution {
+  /** Kanten-ID → beobachteter Übergang. */
+  readonly byEdge: ReadonlyMap<string, GrcObservedTransition>;
+  /** Übergänge ohne eindeutige Verbindung im Modell. */
+  readonly unresolved: readonly GrcObservedTransition[];
+}
+
+export function resolveTransitions(
+  graph: GrcGraph,
+  transitions: readonly GrcObservedTransition[],
+): TransitionResolution {
+  // Paar → alle Verbindungen, die es verbinden.
+  const byPair = new Map<string, string[]>();
+  for (const connection of graph.scene.connections) {
+    const from = connection.source?.id;
+    const to = connection.target?.id;
+    if (from === undefined || to === undefined) continue;
+    const key = `${from}\u0000${to}`;
+    const list = byPair.get(key) ?? [];
+    list.push(connection.id);
+    byPair.set(key, list);
+  }
+
+  const byEdge = new Map<string, GrcObservedTransition>();
+  const unresolved: GrcObservedTransition[] = [];
+  for (const transition of transitions) {
+    const candidates =
+      byPair.get(
+        `${transition.fromElementId}\u0000${transition.toElementId}`,
+      ) ?? [];
+    if (candidates.length === 1) {
+      byEdge.set(candidates[0]!, transition);
+    } else {
+      unresolved.push(transition);
+    }
+  }
+  return { byEdge, unresolved };
+}
+
+/* ------------------------------------------------------------------ *
+ * F11 — Kostenverteilung je Lane
+ * ------------------------------------------------------------------ */
+
+export interface LaneCostEntry {
+  readonly laneId: string;
+  /** Summe über die Aktivitäten der Lane, in der Währung des Datensatzes. */
+  readonly cost: number;
+  /** Anteil an den Gesamtkosten des Diagramms, 0…1. */
+  readonly share: number;
+  /** Aktivitäten in dieser Lane mit vollständiger Kostenangabe. */
+  readonly activitiesWithCost: number;
+  /** Aktivitäten in dieser Lane insgesamt. */
+  readonly activities: number;
+}
+
+export interface LaneCostResult {
+  readonly byLane: ReadonlyMap<string, LaneCostEntry>;
+  readonly total: number;
+  readonly currency: string | undefined;
+  /** Aktivitäten im ganzen Diagramm mit vollständiger Kostenangabe. */
+  readonly withCost: number;
+  /** Aktivitäten im ganzen Diagramm, die eine Kostenangabe tragen KÖNNTEN. */
+  readonly activities: number;
+  /** Anteil der Aktivitäten mit Kostenangabe, 0…1. */
+  readonly coverage: number;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-006] Kostenanteile je Lane (F11).
+ *
+ * **Die Quelle ist `simulation_activity_param`, nicht `grc_cost_entry` — und
+ * das ist eine gemessene Entscheidung.** `STUFE2-A2-GRC.md` §6 nennt für den
+ * Anteilsbalken `grc_cost_entry`/`grc_time_entry`. Beide Tabellen sind
+ * polymorph (`entity_type`, `entity_id`) und werden im ganzen Produkt von
+ * keinem Pfad mit `entity_type = 'process_step'` beschrieben; in der
+ * gemigrierten und geseedeten Datenbank stehen null Zeilen. Ein Layer über
+ * einer Tabelle, die niemand füllt, ist ein Layer, der immer schweigt — die
+ * teuerste Form von „gebaut". `simulation_activity_param` dagegen trägt die
+ * Angabe, und der Gutter zeigt sie bereits: der Balken kann dem Gutter
+ * darunter damit nicht widersprechen.
+ *
+ * **Warum beide Angaben nötig sind.** Eine Aktivität zählt nur, wenn sie
+ * `costPerExecution` **und** `executions` trägt. Fehlt die zweite, wäre die
+ * Summe eine Mischung aus Kosten je Durchlauf und Gesamtkosten — zwei
+ * verschiedene Größen unter einem Namen. `executions = 1` zu unterstellen wäre
+ * dieselbe Erfindung, nur unauffälliger.
+ *
+ * **`coverage` ist Pflichtangabe, kein Beiwerk.** Ein Anteilsbalken über
+ * Aktivitäten, von denen die Hälfte keine Kosten führt, sagt „34 % der
+ * bekannten Kosten" und nicht „34 % der Kosten". Wer das nicht dazusagt,
+ * erzeugt genau die Zahl, die dieser Audit an anderer Stelle beanstandet.
+ */
+export function computeLaneCosts(
+  graph: GrcGraph,
+  data: GrcOverlayData,
+  laneOfShape: (id: string) => string | undefined,
+): LaneCostResult {
+  const byLane = new Map<
+    string,
+    { cost: number; withCost: number; activities: number }
+  >();
+  let total = 0;
+  let withCost = 0;
+  let activities = 0;
+  let currency: string | undefined;
+
+  for (const shape of graph.shapes.values()) {
+    // Nur Aktivitäten: Ereignisse und Gateways tragen keine Kosten, und ein
+    // Rahmen wäre die Summe seiner Kinder — doppelt gezählt.
+    if (!isCostBearing(shape.type)) continue;
+    const laneId = laneOfShape(shape.id);
+    activities += 1;
+    const bucket = byLane.get(laneId ?? "") ?? {
+      cost: 0,
+      withCost: 0,
+      activities: 0,
+    };
+    bucket.activities += 1;
+
+    const simulation = data.elements[shape.id]?.simulation;
+    const perExecution = simulation?.costPerExecution;
+    const executions = simulation?.executions;
+    if (typeof perExecution === "number" && typeof executions === "number") {
+      const cost = perExecution * executions;
+      bucket.cost += cost;
+      bucket.withCost += 1;
+      total += cost;
+      withCost += 1;
+      currency ??= simulation?.currency;
+    }
+    if (laneId !== undefined) byLane.set(laneId, bucket);
+  }
+
+  const entries = new Map<string, LaneCostEntry>();
+  for (const [laneId, bucket] of byLane) {
+    entries.set(laneId, {
+      laneId,
+      cost: bucket.cost,
+      // Ohne Gesamtsumme keine Quote. `0/0` ist kein Nullanteil.
+      share: total > 0 ? bucket.cost / total : 0,
+      activitiesWithCost: bucket.withCost,
+      activities: bucket.activities,
+    });
+  }
+
+  return {
+    byLane: entries,
+    total,
+    currency,
+    withCost,
+    activities,
+    coverage: activities === 0 ? 0 : withCost / activities,
+  };
+}
+
+const COST_BEARING = new Set([
+  "bpmn:Task",
+  "bpmn:UserTask",
+  "bpmn:ServiceTask",
+  "bpmn:SendTask",
+  "bpmn:ReceiveTask",
+  "bpmn:ManualTask",
+  "bpmn:ScriptTask",
+  "bpmn:BusinessRuleTask",
+  "bpmn:SubProcess",
+  "bpmn:Transaction",
+  "bpmn:AdHocSubProcess",
+  "bpmn:CallActivity",
+]);
+
+function isCostBearing(type: string): boolean {
+  return COST_BEARING.has(type);
+}
+
+/* ------------------------------------------------------------------ *
+ * F14 — Vorfälle am Schritt
+ * ------------------------------------------------------------------ */
+
+export interface IncidentResult {
+  /** Laufende Vorfälle. */
+  readonly open: number;
+  /** Vorfälle insgesamt, auch die abgeschlossenen. */
+  readonly total: number;
+  /** Schwerster laufender Vorfall; ohne laufende der schwerste überhaupt. */
+  readonly worst: GrcIncident | undefined;
+  readonly dataBreaches: number;
+  readonly stage: "none" | "closed" | "open" | "critical";
+  readonly items: readonly GrcIncident[];
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-004] Vorfälle an einem Schritt (F14).
+ *
+ * **Die eine Entscheidung, die diese Funktion trifft: ein abgeschlossener
+ * Vorfall verschwindet nicht.** Er wechselt die Stufe (`closed`) und bleibt
+ * sichtbar. Ein Prüfer, der wissen will, wo in diesem Prozess in den letzten
+ * Monaten etwas passiert ist, bekommt sonst genau an den Schritten nichts
+ * angezeigt, an denen aufgeräumt wurde — und der aufgeräumte Schritt sähe aus
+ * wie der nie betroffene. Die Stufe unterscheidet beides, die Farbe auch.
+ *
+ * Die zweite Entscheidung ist die Rangfolge: ein einzelner **laufender**
+ * kritischer Vorfall schlägt fünf abgeschlossene. `worst` liest deshalb zuerst
+ * unter den laufenden.
+ */
+export function computeIncidents(
+  element: GrcElementData | undefined,
+): IncidentResult {
+  const items = element?.incidents ?? [];
+  if (items.length === 0) {
+    return {
+      open: 0,
+      total: 0,
+      worst: undefined,
+      dataBreaches: 0,
+      stage: "none",
+      items: [],
+    };
+  }
+  const open = items.filter((incident) => incident.isOpen);
+  const rank = (incident: GrcIncident): number =>
+    SEVERITY_RANK[incident.severity];
+  const worstOf = (list: readonly GrcIncident[]): GrcIncident | undefined =>
+    list.length === 0
+      ? undefined
+      : [...list].sort(
+          (a, b) => rank(b) - rank(a) || a.id.localeCompare(b.id),
+        )[0];
+  const worst = worstOf(open) ?? worstOf(items);
+  const dataBreaches = items.filter(
+    (incident) => incident.isDataBreach === true,
+  ).length;
+
+  const stage: IncidentResult["stage"] =
+    open.length === 0
+      ? "closed"
+      : worst !== undefined && rank(worst) >= SEVERITY_RANK.high
+        ? "critical"
+        : "open";
+
+  return {
+    open: open.length,
+    total: items.length,
+    worst,
+    dataBreaches,
+    stage,
+    items,
+  };
+}
+
+const SEVERITY_RANK: Readonly<Record<GrcFinding["severity"], number>> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
+/* ------------------------------------------------------------------ *
+ * F15 — KRI-Schwellenampel
+ * ------------------------------------------------------------------ */
+
+/**
+ * Erwartungsabstand je Messtakt, in Tagen.
+ *
+ * `quarterly` = 91 statt 90: ein Quartal ist im Mittel 91,3 Tage, und eine zu
+ * knapp gesetzte Erwartung meldet jede pünktliche Messung als verspätet.
+ */
+const KRI_INTERVAL_DAYS: Readonly<
+  Record<NonNullable<GrcKri["frequency"]>, number>
+> = {
+  daily: 1,
+  weekly: 7,
+  monthly: 30,
+  quarterly: 91,
+};
+
+/**
+ * Ab dem Wievielfachen des Messtakts eine Messung als veraltet gilt.
+ *
+ * **Zwei, nicht eins — und das ist eine Festlegung, keine Vorsicht.** Ein
+ * verpasster Takt ist Betriebsrauschen: der Messtermin fällt auf einen
+ * Feiertag, der Import läuft einen Tag später. Zwei verpasste Takte sind eine
+ * Lücke, und ab da behauptet die Ampel etwas über einen Zeitraum, den sie
+ * nicht gesehen hat. Der Faktor steht hier einmal und wird mitgeteilt
+ * (`describe`), damit ein Prüfer die Regel nachrechnen kann, statt sie zu
+ * erraten.
+ */
+export const KRI_STALE_FACTOR = 2;
+
+export interface KriResult {
+  readonly stage: "none" | "ok" | "unset" | "stale" | "warn" | "critical";
+  /** Der Indikator, der die Stufe bestimmt. */
+  readonly worst: GrcKri | undefined;
+  readonly red: number;
+  readonly yellow: number;
+  /** Indikatoren ohne vollständige Schwellen — Ampel ohne Bedeutung. */
+  readonly withoutThresholds: number;
+  /** Indikatoren, deren letzte Messung zu alt ist. */
+  readonly stale: number;
+  /** Indikatoren ganz ohne Messung. */
+  readonly neverMeasured: number;
+  readonly items: readonly GrcKri[];
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-008] Die Schwellenampel eines Schritts (F15).
+ *
+ * **Die Rangfolge ist die fachliche Aussage dieser Funktion**, und sie ist
+ * nicht die naheliegende. Rot schlägt alles — aber ein **veralteter** oder
+ * schwellenloser Indikator schlägt Gelb und Grün. Der Grund: „gelb" ist eine
+ * Auskunft, „ich weiß es seit acht Monaten nicht" ist ein Befund über das
+ * Kontrollsystem selbst, und der wiegt schwerer als ein Indikator im
+ * Toleranzband. Ein grüner Punkt an einem Schritt, dessen Indikator seit
+ * einem Jahr niemand gemessen hat, ist die gefährlichste Anzeige dieser
+ * ganzen Schicht.
+ *
+ * Ein Indikator ohne Ampel wird **nicht** grün: `alert` fehlt genau dann,
+ * wenn die Schwellen unvollständig sind (Begründung am Typ).
+ */
+export function computeKri(
+  element: GrcElementData | undefined,
+  asOf: Date,
+): KriResult {
+  const items = element?.kris ?? [];
+  if (items.length === 0) {
+    return {
+      stage: "none",
+      worst: undefined,
+      red: 0,
+      yellow: 0,
+      withoutThresholds: 0,
+      stale: 0,
+      neverMeasured: 0,
+      items: [],
+    };
+  }
+
+  let red = 0;
+  let yellow = 0;
+  let withoutThresholds = 0;
+  let stale = 0;
+  let neverMeasured = 0;
+  let worstRed: GrcKri | undefined;
+  let worstStale: GrcKri | undefined;
+  let worstYellow: GrcKri | undefined;
+
+  for (const kri of items) {
+    if (kri.measuredAt === undefined) {
+      neverMeasured += 1;
+      worstStale ??= kri;
+    } else if (isKriStale(kri, asOf)) {
+      stale += 1;
+      worstStale ??= kri;
+    }
+    if (kri.alert === undefined) {
+      withoutThresholds += 1;
+      worstStale ??= kri;
+      continue;
+    }
+    if (kri.alert === "red") {
+      red += 1;
+      worstRed ??= kri;
+    } else if (kri.alert === "yellow") {
+      yellow += 1;
+      worstYellow ??= kri;
+    }
+  }
+
+  const unklar = withoutThresholds + stale + neverMeasured;
+  const stage: KriResult["stage"] =
+    red > 0
+      ? "critical"
+      : unklar > 0
+        ? withoutThresholds > 0 && stale + neverMeasured === 0
+          ? "unset"
+          : "stale"
+        : yellow > 0
+          ? "warn"
+          : "ok";
+
+  return {
+    stage,
+    worst: worstRed ?? worstStale ?? worstYellow ?? items[0],
+    red,
+    yellow,
+    withoutThresholds,
+    stale,
+    neverMeasured,
+    items,
+  };
+}
+
+/** Ist die letzte Messung älter als {@link KRI_STALE_FACTOR} Messtakte? */
+export function isKriStale(kri: GrcKri, asOf: Date): boolean {
+  if (kri.measuredAt === undefined) return true;
+  // Ohne bekannten Messtakt lässt sich „zu alt" nicht sagen. Eine Vorgabe zu
+  // wählen hieße, eine Erwartung zu erfinden, die niemand vereinbart hat.
+  if (kri.frequency === undefined) return false;
+  // `daysBetween` zählt vom Zeitpunkt bis `asOf`, ist für eine vergangene
+  // Messung also positiv — das ist genau das Alter.
+  const age = daysBetween(kri.measuredAt, asOf);
+  // Ein unlesbares Datum ist kein Stand. Es als frisch zu werten wäre die
+  // Entwarnung, die diese Funktion nicht geben darf.
+  if (!Number.isFinite(age)) return true;
+  return age > KRI_INTERVAL_DAYS[kri.frequency] * KRI_STALE_FACTOR;
+}
+
+/* ------------------------------------------------------------------ *
+ * F16 — Offene Maßnahmen mit Fälligkeit
+ * ------------------------------------------------------------------ */
+
+export interface WorkItemResult {
+  readonly open: number;
+  readonly overdue: number;
+  readonly dueSoon: number;
+  /** Offene Maßnahmen ganz ohne Frist. */
+  readonly withoutDueDate: number;
+  /** Tage bis zur nächsten Frist; negativ = überfällig. */
+  readonly daysUntilDue: number | undefined;
+  readonly stage: "none" | "open" | "due" | "overdue";
+  readonly items: readonly GrcWorkItem[];
+}
+
+/** Dieselbe Vorwarnzeit wie bei Feststellungen — eine Frist ist eine Frist. */
+export const WORK_ITEM_DUE_SOON_DAYS = FINDING_DUE_SOON_DAYS;
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-005] Offene Maßnahmen an einem Schritt (F16).
+ *
+ * **`withoutDueDate` ist der eigentliche Grund dieser Funktion.** Eine offene
+ * Maßnahme ohne Frist ist in einem Prüfungswerkzeug kein neutraler Fall: sie
+ * taucht in keiner Fälligkeitsliste auf, wird von keiner Erinnerung getroffen
+ * und sieht in jeder Ampel grün aus. Sie deshalb aus der Rechnung zu lassen
+ * wäre bequem und falsch; sie als „fällig" zu zählen wäre eine erfundene
+ * Frist. Sie wird gezählt und genannt.
+ *
+ * Welche Zustände als offen gelten, entscheidet der Endpunkt: hier kommen nur
+ * noch die offenen an. Die Zeichenschicht prüft keine Statuszeichenketten.
+ */
+export function computeWorkItems(
+  element: GrcElementData | undefined,
+  asOf: Date,
+): WorkItemResult {
+  const items = element?.workItems ?? [];
+  if (items.length === 0) {
+    return {
+      open: 0,
+      overdue: 0,
+      dueSoon: 0,
+      withoutDueDate: 0,
+      daysUntilDue: undefined,
+      stage: "none",
+      items: [],
+    };
+  }
+  let overdue = 0;
+  let dueSoon = 0;
+  let withoutDueDate = 0;
+  let soonest: number | undefined;
+  for (const item of items) {
+    if (!item.dueAt) {
+      withoutDueDate += 1;
+      continue;
+    }
+    const days = -daysBetween(item.dueAt, asOf);
+    if (!Number.isFinite(days)) {
+      // Ein unlesbares Datum ist keine Frist. Es als „heute fällig" zu werten
+      // wäre eine erfundene Zahl — es zählt wie eine fehlende Frist.
+      withoutDueDate += 1;
+      continue;
+    }
+    if (soonest === undefined || days < soonest) soonest = days;
+    if (days < 0) {
+      overdue += 1;
+    } else if (days <= WORK_ITEM_DUE_SOON_DAYS) {
+      dueSoon += 1;
+    }
+  }
+
+  const stage: WorkItemResult["stage"] =
+    overdue > 0 ? "overdue" : dueSoon > 0 ? "due" : "open";
+
+  return {
+    open: items.length,
+    overdue,
+    dueSoon,
+    withoutDueDate,
+    daysUntilDue: soonest,
+    stage,
+    items,
+  };
 }
 
 /* ------------------------------------------------------------------ *

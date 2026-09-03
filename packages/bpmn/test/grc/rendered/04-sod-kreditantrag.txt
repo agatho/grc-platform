@@ -22,7 +22,7 @@ Der Prozess hat 2 Startereignisse: „Antrag eingegangen“, „Startereignis St
 8. Antrag stellen (Sendeaufgabe)
 9. Bank (Pool)
 10. Sachbearbeitung (Lane)
-    Lane-Träger: Rolle Sachbearbeitung, Organisationseinheit Kreditbearbeitung Inland, Qualifikationsquote 92 %. Qualifikationsquote 92 % der Rollenmitglieder.
+    Lane-Träger: Rolle Sachbearbeitung, Organisationseinheit Kreditbearbeitung Inland, Qualifikationsquote 92 %, offen: Buchhaltung — 5 von 8 ohne Pflichtschulung; Sachbearbeitung — 2 von 25 ohne Pflichtschulung. Qualifikationsquote 92 % der Rollenmitglieder. Offen: Buchhaltung — 5 von 8 ohne Pflichtschulung; Sachbearbeitung — 2 von 25 ohne Pflichtschulung.
 11. Genehmigung (Lane)
     Lane-Träger: Rolle Kreditentscheidung, Dienstleister ScoreWorks Inc. (Risikoklasse hoch), Sitz im Drittland US, Qualifikationsquote 61 %. Qualifikationsquote 61 % der Rollenmitglieder.
 12. Kunde (Pool)

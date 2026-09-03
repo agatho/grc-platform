@@ -50,8 +50,12 @@ export {
   type GrcFrameworkSelection,
   type GrcInteraction,
   type GrcInteractionHandler,
+  type GrcKri,
   type GrcLaneData,
+  type GrcLaneQualification,
   type GrcLineOfDefense,
+  type GrcIncident,
+  type GrcObservedTransition,
   type GrcObjectRef,
   type GrcOutageScenario,
   type GrcOverlayData,
@@ -61,6 +65,9 @@ export {
   type GrcRopa,
   type GrcSimulation,
   type GrcSodRule,
+  type GrcValidationFinding,
+  type GrcValidationSeverity,
+  type GrcWorkItem,
 } from "./contract";
 
 export {
@@ -69,12 +76,18 @@ export {
   computeEvidence,
   computeFindings,
   computeFrameworkElement,
+  computeIncidents,
+  computeKri,
+  computeLaneCosts,
   computeRetention,
+  computeWorkItems,
   conformanceGate,
   daysBetween,
   EVIDENCE_DUE_SOON_DAYS,
   FINDING_DUE_SOON_DAYS,
   HIGH_RISK_SCORE,
+  isKriStale,
+  KRI_STALE_FACTOR,
   MEDIUM_RISK_SCORE,
   personalDataStage,
   riskLevel,
@@ -82,6 +95,7 @@ export {
   rollupRisk,
   SHORT_RETENTION_MONTHS,
   summarizeFramework,
+  WORK_ITEM_DUE_SOON_DAYS,
   type ConformanceGate,
   type CoverageResult,
   type CoverageStage,
@@ -90,10 +104,15 @@ export {
   type FindingResult,
   type FrameworkElementResult,
   type FrameworkSummary,
+  type IncidentResult,
+  type KriResult,
+  type LaneCostEntry,
+  type LaneCostResult,
   type PersonalDataStage,
   type RetentionResult,
   type RetentionStage,
   type RiskProfile,
+  type WorkItemResult,
 } from "./analysis";
 
 export {
@@ -144,6 +163,7 @@ export {
   type GrcElementSignal,
   type GrcGhostEdgeSignal,
   type GrcGutterSignal,
+  type GrcLaneFooterSignal,
   type GrcPinSignal,
   type GrcShapeSignal,
   type GrcSlot,
@@ -173,6 +193,7 @@ export {
   outageFilter,
   PRIORITY,
   shortRetentionFilter,
+  describeQualificationGaps,
 } from "./catalog";
 
 export {

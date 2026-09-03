@@ -224,6 +224,8 @@ export default function ProcessDetailPage() {
 function ProcessDetailContent() {
   const t = useTranslations("process");
   const tDrill = useTranslations("bpmOverhaul");
+  // [ARCTOS-FULL-2026-08-31 · OP-001] Namensraum der GRC-Pflegemasken.
+  const tGrc = useTranslations("processGrc");
   const params = useParams();
   const _router = useRouter();
   const { data: session } = useSession();
@@ -602,6 +604,41 @@ function ProcessDetailContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* [ARCTOS-FULL-2026-08-31 · OP-001] Einstieg in die Pflegemasken der
+          GRC-Diagrammdaten. Ohne diese Zeile waeren die vier Seiten nur ueber
+          eine von Hand eingetippte URL erreichbar — dieselbe Lage, in der
+          `processes/[id]/racm` seit ihrem Bau steht (kein Verweis im ganzen
+          Baum). Eine Pflegeoberflaeche, die niemand findet, pflegt nichts. */}
+      <nav
+        aria-label={tGrc("nav.maintenance")}
+        className="flex flex-wrap items-center gap-3 text-sm"
+      >
+        <Link
+          href={`/processes/${processId}/lanes`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("lanes.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-raci`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("raci.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-bia`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("bia.title")}
+        </Link>
+        <Link
+          href="/processes/sod-rules"
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("sod.title")}
+        </Link>
+      </nav>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

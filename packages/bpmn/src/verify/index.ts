@@ -148,3 +148,14 @@ export {
   type SchemaFinding,
   type SchemaFindingKind,
 } from "./schema";
+
+// [ARCTOS-FULL-2026-08-31 · OP-011] Von Prüfbefund zu Diagrammmarker — die
+// Übersetzung, die die Sicht „Modellierung" scharfschaltet, ohne die
+// Zeichenschicht an ein Prüfwerkzeug zu binden.
+export {
+  INVARIANT_SEVERITY,
+  fromInvariantViolations,
+  fromSchemaFindings,
+  fromVerifyViolations,
+  type ModelingViolationLike,
+} from "./markers";

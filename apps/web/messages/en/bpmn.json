@@ -20,6 +20,8 @@
   "grcView": {
     "label": "GRC view",
     "off": "GRC view: off",
+    "frameworkLabel": "Framework",
+    "frameworkOff": "Framework: all",
     "loading": "Loading GRC data …",
     "error": "GRC data not loaded ({reason})",
     "computedAt": "As of: {timestamp}",

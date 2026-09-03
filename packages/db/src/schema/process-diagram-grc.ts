@@ -442,6 +442,62 @@ export const processEventActivityMap = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
+// process_event_transition_map (0476) — OP-012
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-012] Beobachtete Uebergaenge je
+ * Ereignisprotokoll.
+ *
+ * 0451 ordnet Aktivitaetsnamen einzelnen Elementen zu; ein Uebergang ist ein
+ * PAAR, und aus zwei Knotenzuordnungen laesst sich keins rekonstruieren — die
+ * Reihenfolge innerhalb eines Falls ist danach weg. Gespeichert wird deshalb
+ * das Knotenpaar; Kantenkennungen fuehrt keine Tabelle dieses Schemas (die
+ * ausfuehrliche Begruendung steht im Kopf der Migration).
+ */
+export const processEventTransitionMap = pgTable(
+  "process_event_transition_map",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    eventLogId: uuid("event_log_id")
+      .notNull()
+      .references(() => processEventLog.id, { onDelete: "cascade" }),
+    processId: uuid("process_id").references(() => process.id, {
+      onDelete: "cascade",
+    }),
+    fromElementId: varchar("from_element_id", { length: 100 }).notNull(),
+    toElementId: varchar("to_element_id", { length: 100 }).notNull(),
+    frequency: integer("frequency").notNull().default(0),
+    /**
+     * BEOBACHTETE Quote, keine Modellaussage: `frequency` geteilt durch alle
+     * beobachteten Uebergaenge ab `from_element_id`. Ein nie beobachteter
+     * Zweig kommt in dieser Rechnung nicht vor.
+     */
+    probability: numeric("probability", { precision: 6, scale: 5 }),
+    isModelled: boolean("is_modelled").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("petm_org_idx").on(t.orgId),
+    index("petm_log_idx").on(t.eventLogId),
+    index("petm_process_idx").on(t.processId),
+    uniqueIndex("petm_log_pair_uniq").on(
+      t.eventLogId,
+      t.fromElementId,
+      t.toElementId,
+    ),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // user_diagram_preference (0452)
 // ──────────────────────────────────────────────────────────────
 
@@ -460,6 +516,16 @@ export const userDiagramPreference = pgTable(
     layers: jsonb("layers")
       .notNull()
       .default(sql`'[]'::jsonb`),
+    /**
+     * [ARCTOS-FULL-2026-08-31 · OP-016] Gewaehltes Rahmenwerk der Sicht F8
+     * (Migration 0475).
+     *
+     * Vergleichsgroesse ist `process_framework_mapping.framework_code` — eine
+     * freie Zeichenkette, kein Schluessel. Ein Fremdschluessel auf `catalog`
+     * waere hier eine ANDERE Groesse unter demselben Namen: er liesse sich
+     * speichern und traefe in `computeFrameworkElement` nie eine Zuordnung.
+     */
+    frameworkCode: varchar("framework_code", { length: 40 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

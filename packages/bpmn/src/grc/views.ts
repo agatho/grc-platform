@@ -51,7 +51,12 @@ export const GRC_VIEWS: Readonly<Record<GrcViewId, GrcView>> = {
     title: "Modellierung",
     purpose:
       "Zeichnen ohne Ablenkung. Ein Modellierer will beim Zeichnen keine Heatmap.",
-    layers: ["comments"],
+    // [ARCTOS-FULL-2026-08-31 · OP-011] Der Validierungsmarker ist die eine
+    // Ausnahme von „ohne Ablenkung": ein Modellierungsfehler sieht auf dem
+    // Bildschirm richtig aus und fällt erst auf, wenn ein Fremdwerkzeug die
+    // Datei Monate später nicht mehr liest. Ohne beigelegte Befundliste
+    // schweigt der Layer — die Sicht bleibt dann so leer wie vorher.
+    layers: ["validation", "comments"],
     shapeCodingLayer: undefined,
   },
   "risk-control": {
@@ -66,6 +71,16 @@ export const GRC_VIEWS: Readonly<Record<GrcViewId, GrcView>> = {
       "raci",
       "call-activity",
       "finding",
+      // [ARCTOS-FULL-2026-08-31 · OP-004/OP-005] Der eingetretene Vorfall und
+      // die daraus laufende Maßnahme gehören in die Sicht, die nach Risiko
+      // und Kontrolle fragt: sie sind das Ergebnis, an dem sich beides misst.
+      "incident",
+      "work-item",
+      // [ARCTOS-FULL-2026-08-31 · OP-008] Das Frühwarnsignal gehört neben das
+      // Risiko, dessen Signal es ist. Es steht in der Prioritätsordnung unter
+      // den eingetretenen Befunden und wird deshalb in einer vollen Sicht oft
+      // in den Sammel-Badge verdrängt — genannt wird es dort trotzdem.
+      "kri",
       "comments",
     ],
     shapeCodingLayer: "control-coverage",
@@ -98,7 +113,10 @@ export const GRC_VIEWS: Readonly<Record<GrcViewId, GrcView>> = {
     title: "Kontinuität (BCM)",
     purpose:
       "Was steht still, wenn eine Anwendung ausfällt — und ab wann reißt das MTPD?",
-    layers: ["outage", "bcm", "asset", "comments"],
+    // [ARCTOS-FULL-2026-08-31 · OP-004] Vorfälle auch hier: die
+    // Ausfallsimulation fragt „was wäre, wenn", der Vorfall sagt „was war".
+    // Wer beides nebeneinander sieht, erkennt, ob die Annahme trägt.
+    layers: ["outage", "bcm", "asset", "incident", "comments"],
     shapeCodingLayer: "outage",
   },
   operations: {
@@ -106,7 +124,13 @@ export const GRC_VIEWS: Readonly<Record<GrcViewId, GrcView>> = {
     title: "Betrieb & Effizienz",
     purpose:
       "Modell gegen Wirklichkeit: Durchlaufzeiten, Engpässe, Abweichungen.",
-    layers: ["conformance", "operations", "comments"],
+    // [ARCTOS-FULL-2026-08-31 · OP-006] F11 gehört hierher: die Sicht fragt
+    // „Modell gegen Wirklichkeit", und wo das Geld hingeht, ist die zweite
+    // Hälfte dieser Frage. Der Gutter zeigt die Kosten je Aktivität, der
+    // Balken den Anteil je Rahmen — dieselbe Quelle, zwei Auflösungen.
+    // [OP-008] In dieser Sicht steht der KRI-Badge unbedrängt: hier ist er
+    // die Kennzahl, um die es geht, nicht die Fußnote neben einem Vorfall.
+    layers: ["conformance", "operations", "cost", "kri", "comments"],
     shapeCodingLayer: "conformance",
   },
   organization: {
@@ -129,7 +153,10 @@ export const GRC_VIEWS: Readonly<Record<GrcViewId, GrcView>> = {
     title: "Verantwortung",
     purpose:
       "Die Sicht des Mitarbeiters: was ist mein Schritt, wer ist zuständig, welche Arbeitsanweisung gilt.",
-    layers: ["raci", "document", "line-of-defense", "comments"],
+    // [ARCTOS-FULL-2026-08-31 · OP-005] „Was ist an meinem Schritt offen?" ist
+    // genau die Frage dieser Sicht — bis hierher konnte sie sie nicht
+    // beantworten.
+    layers: ["raci", "document", "line-of-defense", "work-item", "comments"],
     shapeCodingLayer: undefined,
   },
 };

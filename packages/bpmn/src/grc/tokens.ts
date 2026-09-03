@@ -129,6 +129,29 @@ export const PIN = {
   fontSize: 10,
 } as const;
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-006] Die Lane-Fußzeile — Maße des achten Slots.
+ *
+ * Der Balken liegt **innerhalb** der Lane am unteren Rand, nicht darunter:
+ * unterhalb einer Lane beginnt in einem Pool sofort die nächste, und ein
+ * Balken zwischen zwei Rahmen gehörte sichtbar zu keinem von beiden. Die Höhe
+ * ist bewusst kleiner als eine Gutterzeile — er ist ein Vergleich, keine
+ * Kennzahlenzeile, und darf die Aktivitäten in der Lane nicht bedrängen.
+ */
+export const LANE_FOOTER = {
+  /** Höhe des Balkens. */
+  height: 6,
+  /** Abstand zur Unterkante der Lane. */
+  offsetY: 4,
+  /** Höchstbreite als Anteil der Lane-Breite — nie über die Kante hinaus. */
+  maxWidthRatio: 0.6,
+  /** Mindestbreite, damit auch ein Anteil von 1 % sichtbar bleibt. */
+  minWidth: 3,
+  fontSize: 10,
+  /** Abstand zwischen Balken und Beschriftung. */
+  labelGap: 6,
+} as const;
+
 export const LOD_STRIPE = {
   width: 4,
   /** Abstand nach links, damit die Kante die Kontur nicht überdeckt. */

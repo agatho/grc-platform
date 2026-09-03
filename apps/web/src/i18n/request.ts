@@ -40,6 +40,9 @@ async function loadIndividualFiles(locale: string) {
     ["bpm-overhaul", "bpmOverhaul"],
     ["process-portal", "processPortal"],
     ["process-map", "processMap"],
+    // [ARCTOS-FULL-2026-08-31 · OP-001] Die Pflegemasken der GRC-Diagrammdaten
+    // (Lanes, SoD-Regeln, Schritt-RACI, Schritt-BIA).
+    ["process-grc", "processGrc"],
     ["whistleblowing-advanced", "whistleblowingAdvanced"],
     ["platform-advanced", "platformAdvanced"],
     ["eam", "eam"],

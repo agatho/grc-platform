@@ -1,4 +1,8 @@
 import { z } from "zod";
+// [ARCTOS-FULL-2026-08-31 · OP-001] Die Buchstabenliste steht schon in
+// `bpm-derived.ts`; eine zweite Liste hier waere genau die Doppelquelle, die
+// STUFE2-E §1.2 fuer `severity` als Fehlerklasse beschreibt.
+import { raciRoleValues } from "./bpm-derived";
 
 // Sprint 3: BPMN Process Modeling schemas
 
@@ -302,4 +306,115 @@ export const bpmnValidationConfigSchema = z.object({
   missingEndEvent: z.enum(validationRuleLevelValues).default("error"),
   disconnectedElements: z.enum(validationRuleLevelValues).default("error"),
   gatewayMissingDefault: z.enum(validationRuleLevelValues).default("warning"),
+});
+
+// ─── GRC-Diagrammdaten: Pflegeoberfläche ─────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · OP-001] Die zehn Tabellen aus
+// `docs/bpmn-engine/STUFE2-E-SCHEMA.md` §6.4 waren bis hierher **nur per SQL**
+// pflegbar — gemessen: 0 Zeilen in allen zehn, auch in der geseedeten
+// Datenbank. Diese Schemata sind der Vertrag der ersten vier Masken. Die
+// Wertelisten sind wörtlich die CHECK-Bedingungen der Migrationen 0444, 0446,
+// 0447 und 0449; eine zweite, abweichende Liste in der Anwendung wäre genau
+// die Fehlerklasse, die STUFE2-E §1.2 für `severity` beschreibt.
+
+export const laneCarrierKinds = ["lane", "pool"] as const;
+
+/**
+ * Der Träger einer Lane. Name, Art und Reihenfolge stehen bewusst NICHT hier:
+ * die kommen aus dem BPMN-XML und werden vom Import gepflegt (OP-002). Was
+ * eine Maske setzt, ist genau das, was im XML nicht steht.
+ */
+export const updateProcessLaneSchema = z
+  .object({
+    orgUnitId: z.string().uuid().nullable().optional(),
+    customRoleId: z.string().uuid().nullable().optional(),
+    vendorId: z.string().uuid().nullable().optional(),
+    isExternal: z.boolean().optional(),
+    // ISO 3166-1 alpha-2, Grossbuchstaben — `char(2)` in 0444.
+    thirdCountry: z
+      .string()
+      .regex(/^[A-Z]{2}$/)
+      .nullable()
+      .optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "At least one field must be provided",
+  })
+  .refine((v) => !(v.thirdCountry != null && v.isExternal === false), {
+    // Ein Drittland an einer Lane, die ausdrücklich als intern markiert wird,
+    // ist ein Widerspruch — und F5 zöge daraus eine Vertrauensgrenze, die die
+    // Maske gerade verneint hat.
+    message: "thirdCountry requires isExternal",
+    path: ["thirdCountry"],
+  });
+
+export const sodSeverityValues = ["low", "medium", "high", "critical"] as const;
+
+export const createSodRuleSchema = z.object({
+  roleAId: z.string().uuid(),
+  // Die Selbstpaarung ist ausdrücklich zulässig: „dieselbe Rolle verantwortet
+  // beide Aufgaben" ist der Verstoss, den ein IKS-Prüfer sucht
+  // (STUFE2-A2-GRC.md §7.3). Kein `refine` gegen roleAId === roleBId.
+  roleBId: z.string().uuid(),
+  severity: z.enum(sodSeverityValues).default("high"),
+  rationale: z.string().max(4000).optional(),
+  frameworkRef: z.string().max(80).optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const updateSodRuleSchema = z
+  .object({
+    severity: z.enum(sodSeverityValues).optional(),
+    rationale: z.string().max(4000).nullable().optional(),
+    frameworkRef: z.string().max(80).nullable().optional(),
+    isActive: z.boolean().optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, {
+    message: "At least one field must be provided",
+  });
+
+/**
+ * Die RACI-Zuordnungen **eines** Schritts, vollständig ersetzend.
+ *
+ * Ersetzend statt additiv, weil das Entfernen einer Zuordnung sonst keine
+ * Bedienoperation hätte: „Rolle X ist hier nicht mehr zu konsultieren" ist
+ * eine Aussage, die eine Maske treffen können muss.
+ */
+export const putStepRaciSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        roleId: z.string().uuid(),
+        raciRole: z.enum(raciRoleValues),
+        note: z.string().max(1000).nullable().optional(),
+      }),
+    )
+    .max(200),
+});
+
+export const biaCriticalityValues = [
+  "very_high",
+  "high",
+  "medium",
+  "low",
+] as const;
+
+/**
+ * Kontinuitätskennzahlen eines Schritts.
+ *
+ * Minuten, nicht Stunden (STUFE2-E §1.5): ein RPO von 15 Minuten ist in
+ * Stunden nicht darstellbar, und §3.10 rechnet den Reisspunkt als Minimum
+ * über die Schritte. `workaroundMaxDurationMinutes` lässt 0 ausdrücklich zu —
+ * 0 heisst „die Übergangslösung trägt nicht" (§7.4) und ist eine Aussage,
+ * kein fehlender Wert.
+ */
+export const putStepBiaSchema = z.object({
+  criticality: z.enum(biaCriticalityValues),
+  mtpdMinutes: z.number().int().min(0).nullable().optional(),
+  rtoMinutes: z.number().int().min(0).nullable().optional(),
+  rpoMinutes: z.number().int().min(0).nullable().optional(),
+  workaround: z.string().max(4000).nullable().optional(),
+  workaroundMaxDurationMinutes: z.number().int().min(0).nullable().optional(),
+  biaAssessmentId: z.string().uuid().nullable().optional(),
 });

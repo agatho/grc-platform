@@ -17,6 +17,8 @@ import { emitEntityStatusChanged } from "@/lib/entity-events";
 import type { ProcessStatus } from "@grc/shared";
 import { evaluateTransitionGates } from "@/lib/process-gates";
 import { promoteWorkingVersion } from "@/lib/process-working-version";
+// [ARCTOS-FULL-2026-08-31 · OP-002] siehe `../../_lib/bpmn-lanes.ts`.
+import { syncLanesFromCurrentVersion } from "../../_lib/sync-process-lanes";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
@@ -174,6 +176,22 @@ export const PUT = withErrorHandler(async function PUT(
             orgId: ctx.orgId,
             userId: ctx.userId,
           });
+          // [ARCTOS-FULL-2026-08-31 · OP-002] Die Beförderung synchronisiert
+          // `process_step`, aber nicht `process_lane`. Ohne diesen Aufruf
+          // zeigte die Lane-Tabelle nach einer Veröffentlichung den Stand vor
+          // der Arbeitskopie.
+          if (promoted) {
+            try {
+              await syncLanesFromCurrentVersion({
+                tx,
+                processId: id,
+                orgId: ctx.orgId,
+                userId: ctx.userId,
+              });
+            } catch (e) {
+              console.error("process_lane sync after promotion failed", e);
+            }
+          }
         }
 
         if (!promoted) {

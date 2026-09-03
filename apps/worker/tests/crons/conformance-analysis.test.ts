@@ -198,3 +198,93 @@ describe("analyseTraces — die Ränder", () => {
     expect(r.fitnessGaps[0]!.percentage).toBe(33.33);
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-012] Kantenkennzahlen
+ * ------------------------------------------------------------------ */
+
+describe("analyseTraces — beobachtete Übergänge (OP-012)", () => {
+  it("zählt AUCH die modellkonformen Übergänge", () => {
+    // Der Abweichungszähler (OP-014) trägt nur, was das Modell nicht
+    // verbindet. Für eine Kantenhäufigkeit braucht es die anderen ebenso —
+    // sonst hätte jede eingehaltene Kante die Häufigkeit null, und die
+    // Strichstärke im Diagramm sagte das Gegenteil der Wirklichkeit.
+    const r = analyseTraces(KETTE, [
+      spur("c1", "Antrag erfassen", "Antrag prüfen", "Antrag bescheiden"),
+      spur("c2", "Antrag erfassen", "Antrag prüfen", "Antrag bescheiden"),
+    ]);
+    const t12 = r.transitions.find(
+      (t) => t.fromElementId === "Task_1" && t.toElementId === "Task_2",
+    );
+    expect(t12?.frequency).toBe(2);
+    expect(t12?.isModelled).toBe(true);
+    expect(r.deviationEdges).toHaveLength(0);
+  });
+
+  it("rechnet die Verzweigungsquote über die Abgänge desselben Knotens", () => {
+    // Drei Fälle ab Task_1: zweimal zu Task_2, einmal zu Task_3.
+    const r = analyseTraces(KETTE, [
+      spur("c1", "Antrag erfassen", "Antrag prüfen"),
+      spur("c2", "Antrag erfassen", "Antrag prüfen"),
+      spur("c3", "Antrag erfassen", "Antrag bescheiden"),
+    ]);
+    const ab1 = r.transitions.filter((t) => t.fromElementId === "Task_1");
+    const summe = ab1.reduce((a, t) => a + t.probability, 0);
+    // Die Quoten ab einem Knoten summieren sich auf 1 — das ist die
+    // Zusicherung, an der man merkt, dass der Nenner stimmt.
+    expect(Math.round(summe * 100000) / 100000).toBe(1);
+    expect(
+      ab1.find((t) => t.toElementId === "Task_2")?.probability,
+    ).toBeCloseTo(2 / 3, 5);
+  });
+
+  it("führt einen abweichenden Übergang als beobachtet UND als Abweichung", () => {
+    const r = analyseTraces(KETTE, [
+      spur("c1", "Antrag erfassen", "Antrag bescheiden"),
+    ]);
+    const t13 = r.transitions.find(
+      (t) => t.fromElementId === "Task_1" && t.toElementId === "Task_3",
+    );
+    expect(t13?.frequency).toBe(1);
+    expect(t13?.isModelled).toBe(false);
+    expect(r.deviationEdges).toHaveLength(1);
+  });
+
+  it("erzeugt keinen Übergang, wenn ein Ende nicht modelliert ist", () => {
+    // Ein Übergang, dessen eines Ende im Diagramm gar nicht vorkommt, lässt
+    // sich nicht zeichnen. Er ist eine Fitness-Lücke, keine Kante.
+    const r = analyseTraces(KETTE, [
+      spur("c1", "Antrag erfassen", "Rückfrage stellen"),
+    ]);
+    expect(r.transitions).toHaveLength(0);
+    expect(r.fitnessGaps.map((g) => g.activity)).toEqual(["Rückfrage stellen"]);
+  });
+
+  it("zählt zweimal denselben Schritt hintereinander nicht als Übergang", () => {
+    const r = analyseTraces(KETTE, [
+      spur("c1", "Antrag erfassen", "Antrag erfassen", "Antrag prüfen"),
+    ]);
+    expect(
+      r.transitions.filter((t) => t.fromElementId === t.toElementId),
+    ).toHaveLength(0);
+    expect(
+      r.transitions.find((t) => t.toElementId === "Task_2")?.frequency,
+    ).toBe(1);
+  });
+
+  it("ist reihenfolgestabil — gleiche Spuren, gleiche Liste", () => {
+    // Sonst hinge die Strichstärke im Diagramm an der Reihenfolge, in der die
+    // Datenbank die Fälle liefert.
+    const traces = [
+      spur("c1", "Antrag erfassen", "Antrag prüfen"),
+      spur("c2", "Antrag erfassen", "Antrag bescheiden"),
+    ];
+    const a = analyseTraces(KETTE, traces);
+    const b = analyseTraces(KETTE, [...traces].reverse());
+    expect(JSON.stringify(a.transitions)).toBe(JSON.stringify(b.transitions));
+  });
+
+  it("liefert ohne Spuren eine leere Liste statt einer Null-Quote", () => {
+    expect(analyseTraces(KETTE, []).transitions).toEqual([]);
+  });
+});

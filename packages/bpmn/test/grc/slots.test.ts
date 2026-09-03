@@ -354,3 +354,69 @@ describe("Filter blenden ab, statt auszublenden (§3.3.5 Regel 1)", () => {
     expect(model.warnings.join(" ")).toContain("nichts ausgeblendet");
   });
 });
+
+/* ------------------------------------------------------------------ *
+ * [ARCTOS-FULL-2026-08-31 · OP-004/OP-005] F14 und F16 im Slotsystem
+ * ------------------------------------------------------------------ */
+
+describe("F14/F16 — die beiden nachgereichten Layer", () => {
+  it("sind registriert und in den vorgesehenen Sichten aktiv", () => {
+    const registry = defaultRegistry();
+    expect(registry.get("incident")).toBeDefined();
+    expect(registry.get("work-item")).toBeDefined();
+    expect(GRC_VIEWS["risk-control"].layers).toContain("incident");
+    expect(GRC_VIEWS["risk-control"].layers).toContain("work-item");
+    expect(GRC_VIEWS.continuity.layers).toContain("incident");
+    expect(GRC_VIEWS.responsibility.layers).toContain("work-item");
+  });
+
+  it("legt den Vorfall auf TL und lässt damit die Risiko-Ampel stehen", async () => {
+    // Die Entscheidung aus dem Kopfkommentar von `incidentLayer`, als Wächter.
+    // Auf TR verdrängte der Vorfall (92) die Risiko-Ampel (85) an genau den
+    // Schritten, an denen gerade etwas passiert — und die Sicht „Risiko &
+    // Kontrolle" verlöre dort ihre Hauptaussage.
+    const { model } = await corpusModel(
+      "repo-prd-sales-with-gateway",
+      salesRiskControlData(),
+      "risk-control",
+    );
+    const badges = model.elements.get("Task_offer")?.resolution.badges;
+    expect(badges?.get("TL")?.layerId).toBe("incident");
+    expect(badges?.get("TR")?.layerId).toBe("risk");
+    expect(badges?.get("BR")?.layerId).toBe("finding");
+  });
+
+  it("verschweigt den verdrängten Maßnahmen-Badge nicht", () => {
+    // Das Budget lässt an diesem Schritt nur drei Badges zu; die Maßnahmen
+    // fallen heraus. Der Sammel-Badge muss sie dann NENNEN — ein stumm
+    // verdrängtes Signal wäre die schlimmere Hälfte des Budgets.
+    return corpusModel(
+      "repo-prd-sales-with-gateway",
+      salesRiskControlData(),
+      "risk-control",
+    ).then(({ model }) => {
+      const resolution = model.elements.get("Task_offer")?.resolution;
+      expect(resolution?.overflow).toBeDefined();
+      expect(
+        resolution?.overflow?.suppressed.some(
+          (entry) => entry.layerId === "work-item",
+        ),
+      ).toBe(true);
+      expect(resolution?.descriptions.join(" ")).toContain("offene Maßnahmen");
+    });
+  });
+
+  it("zeigt die Maßnahmen dort, wo sie die Hauptaussage sind", async () => {
+    // In der Sicht „Verantwortung" konkurriert F16 nur mit RACI (54),
+    // Dokumenten (48) und der Verteidigungslinie (62) — hier steht der Badge.
+    const { model } = await corpusModel(
+      "repo-prd-sales-with-gateway",
+      salesRiskControlData(),
+      "responsibility",
+    );
+    const badges = model.elements.get("Task_offer")?.resolution.badges;
+    expect(
+      [...(badges?.values() ?? [])].map((owned) => owned.layerId),
+    ).toContain("work-item");
+  });
+});

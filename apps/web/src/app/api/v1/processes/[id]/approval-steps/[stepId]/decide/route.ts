@@ -28,6 +28,8 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { promoteWorkingVersion } from "@/lib/process-working-version";
+// [ARCTOS-FULL-2026-08-31 · OP-002] siehe `../../../../_lib/bpmn-lanes.ts`.
+import { syncLanesFromCurrentVersion } from "../../../../_lib/sync-process-lanes";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
@@ -254,6 +256,21 @@ export const POST = withErrorHandler(async function POST(
           orgId: ctx.orgId,
           userId: ctx.userId,
         });
+
+        // [ARCTOS-FULL-2026-08-31 · OP-002] Die Beförderung synchronisiert
+        // `process_step`, aber nicht `process_lane` — der dritte Schreibpfad
+        // neben Import und Versionsspeicherung. Ohne diesen Aufruf zeigte die
+        // Lane-Tabelle nach einer Freigabe den Stand vor der Arbeitskopie.
+        try {
+          await syncLanesFromCurrentVersion({
+            tx,
+            processId: id,
+            orgId: ctx.orgId,
+            userId: ctx.userId,
+          });
+        } catch (e) {
+          console.error("process_lane sync after promotion failed", e);
+        }
 
         if (proc.status === "draft" || proc.status === "in_review") {
           await tx

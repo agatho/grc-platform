@@ -12,6 +12,12 @@ import { z } from "zod";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-002] Der Import legte bis hierher keine
+// `process_lane`-Zeile an — gemessen 0 Zeilen in `welle1_verify`. F5
+// (Vertrauensgrenze) und F17 (Lane) blieben datenlos, und die
+// Lane-Zugehoerigkeit eines Schritts wurde in `packages/bpmn` geometrisch
+// geraten. Siehe `_lib/bpmn-lanes.ts`.
+import { syncProcessLanes } from "../_lib/sync-process-lanes";
 
 const importSchema = z.object({
   name: z.string().min(3).max(500),
@@ -93,6 +99,24 @@ export const POST = withErrorHandler(async function POST(req: Request) {
         stepIdByBpmnElement.set(row.bpmnElementId, row.id);
       }
 
+      // [ARCTOS-FULL-2026-08-31 · OP-002] Lanes und Pools aus dem Modell.
+      // Nicht blockierend wie die Rehydrierung darunter: der Prozess ist
+      // angelegt, und ein Lane-Fehler darf den Import nicht zuruecknehmen —
+      // aber er wird gemeldet, nicht verschluckt.
+      let laneStats = null;
+      try {
+        laneStats = await syncProcessLanes({
+          tx,
+          processId: newProcess.id,
+          orgId: ctx.orgId,
+          userId: ctx.userId,
+          bpmnXml: parsed.data.bpmnXml,
+          stepIdByBpmnElement,
+        });
+      } catch (e) {
+        console.error("process_lane sync during import failed", e);
+      }
+
       // Rehydrate arctos:* metadata
       let rehydrateStats = null;
       try {
@@ -112,6 +136,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
         process: newProcess,
         version,
         stepCount: parsedSteps.length,
+        laneStats,
         rehydrateStats,
       };
     },

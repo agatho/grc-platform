@@ -2,10 +2,10 @@
   "_comment": "#S13-25 Coverage-Ratsche. Von scripts/coverage-gate.mjs geprüft. Werte dürfen nur STEIGEN. Neu setzen über `node scripts/coverage-gate.mjs --update-baseline` in einem eigenen, begründeten Commit; eine Absenkung verlangt zusätzlich --reason und wird in _history festgehalten.",
   "_updatedAt": "2026-09-03",
   "totals": {
-    "lines": 33.43,
-    "statements": 33.9,
-    "functions": 32.89,
-    "branches": 24.89
+    "lines": 33.79,
+    "statements": 34.25,
+    "functions": 33.04,
+    "branches": 25.3
   },
   "packages": {
     "packages/email": {
@@ -69,10 +69,10 @@
       "branches": 21.58
     },
     "apps/web": {
-      "lines": 18.93,
-      "statements": 20.37,
-      "functions": 20.6,
-      "branches": 12
+      "lines": 19.31,
+      "statements": 20.75,
+      "functions": 20.69,
+      "branches": 12.45
     },
     "packages/db": {
       "lines": 30.97,
@@ -81,10 +81,10 @@
       "branches": 28.04
     },
     "packages/bpmn": {
-      "lines": 89.98,
-      "statements": 87.32,
-      "functions": 90.44,
-      "branches": 73.88
+      "lines": 90,
+      "statements": 87.42,
+      "functions": 90.82,
+      "branches": 73.9
     }
   },
   "_history": [
@@ -179,6 +179,29 @@
         "total functions: 32.22 % → 32.89 %",
         "total lines: 32.64 % → 33.43 %",
         "total statements: 33.13 % → 33.90 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 33.79,
+        "statements": 34.25,
+        "functions": 33.04,
+        "branches": 25.3
+      },
+      "changed": [
+        "apps/web branches: 12.00 % → 12.45 %",
+        "apps/web functions: 20.60 % → 20.69 %",
+        "apps/web lines: 18.93 % → 19.31 %",
+        "apps/web statements: 20.37 % → 20.75 %",
+        "packages/bpmn branches: 73.88 % → 73.90 %",
+        "packages/bpmn functions: 90.44 % → 90.82 %",
+        "packages/bpmn lines: 89.98 % → 90.00 %",
+        "packages/bpmn statements: 87.32 % → 87.42 %",
+        "total branches: 24.89 % → 25.30 %",
+        "total functions: 32.89 % → 33.04 %",
+        "total lines: 33.43 % → 33.79 %",
+        "total statements: 33.90 % → 34.25 %"
       ]
     }
   ]

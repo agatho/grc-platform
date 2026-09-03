@@ -120,6 +120,7 @@ export function BpmnGrcViewer({
     data: grcOverlayData,
     loading,
     error,
+    reload,
   } = useGrcOverlay(processId, {
     enabled: grcView !== null,
     versionId,
@@ -140,6 +141,16 @@ export function BpmnGrcViewer({
           onChange={setGrcView}
           loading={loading}
           error={error}
+          // [ARCTOS-FULL-2026-08-31 · OP-003] Die Prozesskennung ausdrücklich,
+          // statt sie aus der Route raten zu lassen: der Versionsdialog und
+          // die Mitarbeitersicht stehen nicht zwingend unter
+          // `/processes/[id]`.
+          processId={processId}
+          // [ARCTOS-FULL-2026-08-31 · OP-016] Eine Rahmenwerkauswahl ändert
+          // den Datensatz (der Endpunkt legt `diagram.framework` bei), also
+          // muss er neu geholt werden. Hier geht das, weil der Haken dieser
+          // Komponente gehört.
+          onReloadRequest={reload}
           {...(grcOverlayData?.computedAt !== undefined
             ? { computedAt: grcOverlayData.computedAt }
             : {})}

@@ -162,6 +162,92 @@ describe("GET /processes/:id/diagram-overlay", () => {
     expect(res.headers.get("Cache-Control")).toBe("private, max-age=60");
   });
 
+  it("OP-016: nimmt die Rahmenwerkauswahl aus dem Parameter", async () => {
+    const step = {
+      id: "step-1",
+      bpmnElementId: "Task_1",
+      lineOfDefense: null,
+      calledProcessId: null,
+      raciResponsibleRoleId: null,
+      raciAccountableRoleId: null,
+    };
+    queue([
+      [{ id: PROCESS_ID, name: "P" }],
+      [step],
+      [
+        {
+          processStepId: "step-1",
+          id: "fw-1",
+          frameworkCode: "iso-27001",
+          entryCode: "A.5.1",
+          entryTitle: "Richtlinien",
+          mappingStrength: "covers",
+          frameworkName: "ISO/IEC 27001:2022 Annex A",
+        },
+      ],
+    ]);
+    const res = await callRoute(
+      `${URL_BASE}?layers=framework&framework=iso-27001`,
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      data: {
+        diagram: {
+          framework?: { frameworkId: string; frameworkName?: string };
+        };
+      };
+    };
+    expect(body.data.diagram.framework).toEqual({
+      frameworkId: "iso-27001",
+      frameworkName: "ISO/IEC 27001:2022 Annex A",
+    });
+    // Prozess, Schritte, Zuordnungen — die Voreinstellung wird gar nicht
+    // erst gelesen, weil der Parameter sie überstimmt.
+    expect(executeMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("OP-016: greift ohne Parameter auf die gespeicherte Wahl zurück", async () => {
+    const step = {
+      id: "step-1",
+      bpmnElementId: "Task_1",
+      lineOfDefense: null,
+      calledProcessId: null,
+      raciResponsibleRoleId: null,
+      raciAccountableRoleId: null,
+    };
+    queue([
+      [{ id: PROCESS_ID, name: "P" }],
+      [step],
+      [],
+      [{ frameworkCode: "eu-dora" }],
+    ]);
+    const res = await callRoute(`${URL_BASE}?layers=framework`);
+    const body = (await res.json()) as {
+      data: { diagram: { framework?: { frameworkId: string } } };
+    };
+    // Kein Anzeigename: der Code ist an keinem Schritt dieses Prozesses
+    // zugeordnet. Einen Namen zu erfinden waere die Sorte Behauptung, gegen
+    // die dieser Endpunkt gebaut ist.
+    expect(body.data.diagram.framework).toEqual({ frameworkId: "eu-dora" });
+  });
+
+  it("OP-016: ohne Auswahl bleibt diagram.framework weg", async () => {
+    queue([[{ id: PROCESS_ID, name: "P" }], [], [], []]);
+    const res = await callRoute(`${URL_BASE}?layers=framework`);
+    const body = (await res.json()) as {
+      data: { diagram: Record<string, unknown> };
+    };
+    expect(body.data.diagram).not.toHaveProperty("framework");
+  });
+
+  it("OP-016: fragt die Voreinstellung nur, wenn die Gruppe gewollt ist", async () => {
+    // Sonst kostete `?layers=lane` eine Abfrage fuer eine Angabe, die in der
+    // Antwort gar nicht vorkommt — und der Zaehltest unten waere eine Luege.
+    queue([[{ id: PROCESS_ID, name: "P" }], []]);
+    await callRoute(`${URL_BASE}?layers=line-of-defense`);
+    expect(executeMock).toHaveBeenCalledTimes(2);
+  });
+
   it("fragt mit ?layers= wirklich weniger ab, nicht nur weniger aus", async () => {
     const step = {
       id: "step-1",

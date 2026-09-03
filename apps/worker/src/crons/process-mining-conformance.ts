@@ -28,6 +28,7 @@ import {
   db,
   processEventLog,
   processConformanceResult,
+  processEventTransitionMap,
   processStep,
 } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
@@ -70,6 +71,25 @@ export interface ObservedTrace {
   activities: string[];
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-012] Ein beobachteter Uebergang als Knotenpaar.
+ *
+ * `probability` ist eine BEOBACHTETE Quote: dieser Uebergang geteilt durch
+ * alle beobachteten Uebergaenge ab demselben Knoten. Sie sagt NICHT, mit
+ * welcher Wahrscheinlichkeit ein Gateway einen Zweig waehlt — ein nie
+ * beobachteter Zweig kommt in dieser Rechnung ueberhaupt nicht vor. Der
+ * Unterschied steht am Spaltenkommentar und hier, weil er sonst spaetestens
+ * beim zweiten Leser verlorengeht.
+ */
+export interface ObservedTransition {
+  fromElementId: string;
+  toElementId: string;
+  frequency: number;
+  probability: number;
+  /** Ob das Modell die beiden Knoten unmittelbar verbindet. */
+  isModelled: boolean;
+}
+
 export interface TraceAnalysis {
   totalTraces: number;
   conformantTraces: number;
@@ -89,6 +109,8 @@ export interface TraceAnalysis {
     share: number;
   }>;
   reworkLoops: Array<{ activity: string; repeatOccurrences: number }>;
+  /** [OP-012] Alle beobachteten Uebergaenge, modelliert und abweichend. */
+  transitions: ObservedTransition[];
 }
 
 export function analyseTraces(
@@ -117,6 +139,12 @@ export function analyseTraces(
   const reworkCount = new Map<string, number>();
   /** Beobachtete Übergänge, die das Modell nicht kennt: `von\tnach`. */
   const deviationCount = new Map<string, number>();
+  // [ARCTOS-FULL-2026-08-31 · OP-012] ALLE beobachteten Übergänge, auch die
+  // modellkonformen. Der Abweichungszähler oben trägt nur die, die das Modell
+  // nicht verbindet — für die Kantenkennzahl braucht es die anderen ebenso,
+  // sonst hätte jede eingehaltene Kante die Häufigkeit null.
+  const transitionCount = new Map<string, number>();
+  const modelledTransition = new Set<string>();
 
   for (const trace of traces) {
     let conformant = true;
@@ -142,16 +170,18 @@ export function analyseTraces(
         const nach = elementOfActivity.get(a);
         const ovVon = orderOfActivity.get(vorher);
         const ovNach = orderOfActivity.get(a);
-        if (
-          von &&
-          nach &&
-          ovVon !== undefined &&
-          ovNach !== undefined &&
-          ovNach !== ovVon + 1
-        ) {
+        if (von && nach && ovVon !== undefined && ovNach !== undefined) {
           const key = `${von}\t${nach}`;
-          deviationCount.set(key, (deviationCount.get(key) ?? 0) + 1);
-          conformant = false;
+          // [OP-012] Jeder Übergang zwischen zwei modellierten Knoten zählt —
+          // die Frage „modelliert oder nicht" entscheidet nur, wie er
+          // gezeichnet wird, nicht ob er beobachtet wurde.
+          transitionCount.set(key, (transitionCount.get(key) ?? 0) + 1);
+          if (ovNach === ovVon + 1) {
+            modelledTransition.add(key);
+          } else {
+            deviationCount.set(key, (deviationCount.get(key) ?? 0) + 1);
+            conformant = false;
+          }
         }
       }
       seenInTrace.add(a);
@@ -210,6 +240,38 @@ export function analyseTraces(
       };
     });
 
+  // [ARCTOS-FULL-2026-08-31 · OP-012] Die Verzweigungsquote je Ausgangsknoten.
+  //
+  // Nenner ist die Summe der beobachteten Übergänge AB DIESEM KNOTEN, nicht
+  // die Zahl der Spuren und nicht die Zahl der modellierten Zweige. Beides
+  // wäre eine andere Größe: über die Spuren gerechnet ergäbe die Summe über
+  // alle Zweige nicht 1, sobald ein Fall den Knoten zweimal durchläuft; über
+  // die modellierten Zweige gerechnet bekäme ein nie beobachteter Zweig eine
+  // Wahrscheinlichkeit von 0 zugeschrieben, obwohl über ihn nichts bekannt
+  // ist. Die Quote sagt: von allem, was hier beobachtet wurde, ging so viel
+  // dorthin.
+  const abgang = new Map<string, number>();
+  for (const [key, count] of transitionCount) {
+    const von = key.split("\t")[0] ?? "";
+    abgang.set(von, (abgang.get(von) ?? 0) + count);
+  }
+  const transitions: ObservedTransition[] = Array.from(
+    transitionCount.entries(),
+  )
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([key, frequency]) => {
+      const [fromElementId, toElementId] = key.split("\t");
+      const gesamt = abgang.get(fromElementId ?? "") ?? 0;
+      return {
+        fromElementId: fromElementId!,
+        toElementId: toElementId!,
+        frequency,
+        probability:
+          gesamt === 0 ? 0 : Math.round((frequency / gesamt) * 100000) / 100000,
+        isModelled: modelledTransition.has(key),
+      };
+    });
+
   const reworkLoops = Array.from(reworkCount.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 20)
@@ -223,6 +285,7 @@ export function analyseTraces(
     fitnessGaps,
     deviationEdges,
     reworkLoops,
+    transitions,
   };
 }
 
@@ -284,6 +347,7 @@ export const processMiningConformance = withCronInstrumentation(
           fitnessGaps,
           deviationEdges,
           reworkLoops,
+          transitions,
         } = analyse;
 
         const bottlenecks = (await db.execute(sql`
@@ -326,6 +390,33 @@ export const processMiningConformance = withCronInstrumentation(
             reworkLoops,
             bottlenecks: bottlenecks as any,
           });
+          // [ARCTOS-FULL-2026-08-31 · OP-012] Die Uebergangszuordnung. Sie
+          // steht in derselben Transaktion wie das Analyseergebnis: beide
+          // beschreiben denselben Lauf, und eine Kantenhaeufigkeit ohne die
+          // Konformitaetszahl daneben (oder umgekehrt) waere ein Stand, den
+          // niemand erzeugt hat.
+          //
+          // Erst loeschen, dann schreiben — wie beim Ergebnis. Der eindeutige
+          // Index `petm_log_pair_uniq` haelt zusaetzlich fest, dass ein Paar
+          // je Protokoll genau einmal vorkommt; ohne ihn verdoppelte ein
+          // zweiter Lauf jede Haeufigkeit, sollte das Loeschen je ausfallen.
+          await tx
+            .delete(processEventTransitionMap)
+            .where(eq(processEventTransitionMap.eventLogId, log.id));
+          if (transitions.length > 0) {
+            await tx.insert(processEventTransitionMap).values(
+              transitions.map((transition) => ({
+                orgId: log.orgId,
+                eventLogId: log.id,
+                processId: log.processId,
+                fromElementId: transition.fromElementId,
+                toElementId: transition.toElementId,
+                frequency: transition.frequency,
+                probability: transition.probability.toFixed(5),
+                isModelled: transition.isModelled,
+              })),
+            );
+          }
           await tx
             .update(processEventLog)
             .set({ status: "analyzed" })

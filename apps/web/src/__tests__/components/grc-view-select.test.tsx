@@ -19,14 +19,29 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import { GRC_VIEWS } from "@grc/bpmn/grc";
 import {
   GrcViewSelect,
   GRC_VIEW_OPTIONS,
+  GRC_VIEWS_WITH_FRAMEWORK,
   formatStand,
 } from "@/components/bpmn/grc-view-select";
+
+// [ARCTOS-FULL-2026-08-31 · OP-003] Die Komponente liest die Prozesskennung
+// notfalls aus der Route. Ohne Prozessbezug tut sie nichts — genau das ist der
+// Zustand der meisten Tests hier.
+vi.mock("next/navigation", () => ({
+  useParams: () => mockParams,
+}));
+let mockParams: Record<string, string> = {};
 
 // Wie in den übrigen Komponententests: die Übersetzung gibt den Schlüssel
 // zurück. Was der Katalog sagt, prüft Test 2 gegen die Dateien selbst — ein
@@ -41,6 +56,37 @@ vi.mock("next-intl", () => ({
 }));
 
 const LOCALES = ["de", "en"] as const;
+
+/** Antworten des Vorlieben- und des Overlay-Endpunkts, je Test gesetzt. */
+let fetchCalls: { url: string; init?: RequestInit }[] = [];
+let preferenceBody: unknown = {
+  data: { activeView: null, frameworkCode: null },
+};
+let overlayBody: unknown = { data: { elements: {} } };
+
+beforeEach(() => {
+  mockParams = {};
+  fetchCalls = [];
+  preferenceBody = { data: { activeView: null, frameworkCode: null } };
+  overlayBody = { data: { elements: {} } };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string, init?: RequestInit) => {
+      fetchCalls.push({ url, ...(init ? { init } : {}) });
+      const body = url.includes("/preference") ? preferenceBody : overlayBody;
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(body),
+      } as Response);
+    }),
+  );
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 function grcViewMessages(locale: string): Record<string, unknown> {
   const path = join(
@@ -84,6 +130,186 @@ describe("Beschriftungen der Sichten", () => {
       expect(String(messages["computedAt"])).toContain("{timestamp}");
     });
   }
+});
+
+describe("GRC_VIEWS_WITH_FRAMEWORK", () => {
+  it("nennt genau die Sichten, die den Layer `framework` fuehren", () => {
+    // [ARCTOS-FULL-2026-08-31 · OP-016] Der Waechter zur zweiten bewussten
+    // Wiederholung. Ein Rahmenwerk in einer Sicht anzubieten, die den
+    // framework-Layer gar nicht aktiviert, waere ein Bedienelement ohne
+    // Wirkung — und ein Rahmenwerk NICHT anzubieten, wo er aktiv ist, liesse
+    // den Abdeckungsgrad in der Kopfzeile dauerhaft leer.
+    const mitFramework = Object.values(GRC_VIEWS)
+      .filter((view) => view.layers.includes("framework"))
+      .map((view) => view.id)
+      .sort();
+    expect([...GRC_VIEWS_WITH_FRAMEWORK].sort()).toEqual(mitFramework);
+  });
+});
+
+describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
+  it("fragt ohne Prozessbezug niemanden", async () => {
+    render(<GrcViewSelect value={null} onChange={() => undefined} />);
+    await waitFor(() => {
+      expect(screen.getByLabelText("bpmn.grcView.label")).toBeTruthy();
+    });
+    expect(fetchCalls).toHaveLength(0);
+  });
+
+  it("laedt die gespeicherte Sicht und wendet sie an", async () => {
+    mockParams = { id: "p-1" };
+    preferenceBody = {
+      data: { activeView: "privacy", frameworkCode: null },
+    };
+    const onChange = vi.fn();
+    render(<GrcViewSelect value={null} onChange={onChange} />);
+    await waitFor(() => {
+      expect(onChange).toHaveBeenCalledWith("privacy");
+    });
+    expect(fetchCalls[0]?.url).toBe(
+      "/api/v1/processes/p-1/diagram-overlay/preference",
+    );
+  });
+
+  it("ueberschreibt eine bereits getroffene Wahl NICHT", async () => {
+    // Eine Voreinstellung, die die ausdrueckliche Wahl derselben Sitzung
+    // zurueckdreht, waere eine Oberflaeche, die die eigene Eingabe zuruecknimmt.
+    mockParams = { id: "p-1" };
+    preferenceBody = { data: { activeView: "privacy", frameworkCode: null } };
+    const onChange = vi.fn();
+    render(<GrcViewSelect value="continuity" onChange={onChange} />);
+    await waitFor(() => {
+      expect(fetchCalls.length).toBeGreaterThan(0);
+    });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("speichert jede Wahl — auch das Ausschalten", async () => {
+    mockParams = { id: "p-1" };
+    render(<GrcViewSelect value={null} onChange={() => undefined} />);
+    await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(0));
+
+    fireEvent.change(screen.getByLabelText("bpmn.grcView.label"), {
+      target: { value: "compliance" },
+    });
+    await waitFor(() => {
+      expect(fetchCalls.some((c) => c.init?.method === "PUT")).toBe(true);
+    });
+    const put = fetchCalls.find((c) => c.init?.method === "PUT");
+    expect(JSON.parse(String(put?.init?.body))).toEqual({
+      activeView: "compliance",
+      frameworkCode: null,
+    });
+
+    // Ausschalten ist auch eine Wahl. Wuerde sie nicht gespeichert, kaeme die
+    // Sicht bei jedem Seitenaufruf ungefragt zurueck.
+    fireEvent.change(screen.getByLabelText("bpmn.grcView.label"), {
+      target: { value: "" },
+    });
+    await waitFor(() => {
+      const puts = fetchCalls.filter((c) => c.init?.method === "PUT");
+      expect(puts.length).toBe(2);
+      expect(JSON.parse(String(puts[1]?.init?.body))).toEqual({
+        activeView: null,
+        frameworkCode: null,
+      });
+    });
+  });
+
+  it("bleibt bedienbar, wenn der Vorlieben-Endpunkt scheitert", async () => {
+    // Eine Anzeigevoreinstellung ist kein Nachweis (0452). Ein Fehlschlag darf
+    // die Diagrammflaeche nicht anhalten.
+    mockParams = { id: "p-1" };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("netz weg"))),
+    );
+    const onChange = vi.fn();
+    render(<GrcViewSelect value={null} onChange={onChange} />);
+    const select = screen.getByLabelText("bpmn.grcView.label");
+    fireEvent.change(select, { target: { value: "privacy" } });
+    expect(onChange).toHaveBeenCalledWith("privacy");
+  });
+});
+
+describe("Rahmenwerkauswahl (OP-016)", () => {
+  const FRAMEWORKS = {
+    data: {
+      elements: {
+        Task_1: {
+          frameworks: [
+            {
+              frameworkId: "iso-27001",
+              frameworkName: "ISO/IEC 27001:2022 Annex A",
+            },
+            { frameworkId: "eu-dora", frameworkName: "EU DORA" },
+          ],
+        },
+      },
+    },
+  };
+
+  it("zeigt kein Feld in einer Sicht ohne framework-Layer", async () => {
+    mockParams = { id: "p-1" };
+    overlayBody = FRAMEWORKS;
+    render(<GrcViewSelect value="privacy" onChange={() => undefined} />);
+    await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(0));
+    expect(screen.queryByLabelText("bpmn.grcView.frameworkLabel")).toBeNull();
+    // Und holt die Liste gar nicht erst.
+    expect(fetchCalls.some((c) => c.url.includes("layers=framework"))).toBe(
+      false,
+    );
+  });
+
+  it("bietet in der Compliance-Sicht die zugeordneten Rahmenwerke an", async () => {
+    mockParams = { id: "p-1" };
+    overlayBody = FRAMEWORKS;
+    render(<GrcViewSelect value="compliance" onChange={() => undefined} />);
+    const select = await screen.findByLabelText("bpmn.grcView.frameworkLabel");
+    const values = Array.from(select.querySelectorAll("option")).map(
+      (o) => (o as HTMLOptionElement).value,
+    );
+    // Nach Anzeigename sortiert, „alle" zuerst.
+    expect(values).toEqual(["", "eu-dora", "iso-27001"]);
+  });
+
+  it("zeigt kein Feld, wenn der Prozess kein Rahmenwerk zuordnet", async () => {
+    // Eine Auswahlliste, die man nicht belegen kann, ist schlechter als keine.
+    mockParams = { id: "p-1" };
+    overlayBody = { data: { elements: {} } };
+    render(<GrcViewSelect value="compliance" onChange={() => undefined} />);
+    await waitFor(() => {
+      expect(fetchCalls.some((c) => c.url.includes("layers=framework"))).toBe(
+        true,
+      );
+    });
+    expect(screen.queryByLabelText("bpmn.grcView.frameworkLabel")).toBeNull();
+  });
+
+  it("speichert die Wahl und bittet um einen neuen Datensatz", async () => {
+    mockParams = { id: "p-1" };
+    overlayBody = FRAMEWORKS;
+    const onReload = vi.fn();
+    render(
+      <GrcViewSelect
+        value="compliance"
+        onChange={() => undefined}
+        onReloadRequest={onReload}
+      />,
+    );
+    const select = await screen.findByLabelText("bpmn.grcView.frameworkLabel");
+    fireEvent.change(select, { target: { value: "iso-27001" } });
+    await waitFor(() => {
+      expect(fetchCalls.some((c) => c.init?.method === "PUT")).toBe(true);
+    });
+    const put = fetchCalls.find((c) => c.init?.method === "PUT");
+    expect(JSON.parse(String(put?.init?.body))).toEqual({
+      activeView: "compliance",
+      frameworkCode: "iso-27001",
+    });
+    // Ohne erneutes Holen bliebe `diagram.framework` im Datensatz das alte.
+    expect(onReload).toHaveBeenCalled();
+  });
 });
 
 describe("GrcViewSelect", () => {

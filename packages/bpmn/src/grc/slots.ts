@@ -90,6 +90,36 @@ export interface GrcStripeSignal extends SignalBase {
   readonly label: string;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-006] Die Lane-Fußzeile — der achte Slot.
+ *
+ * `STUFE2-A2-GRC.md` §6 hat F11 (Kostenverteilung) zurückgestellt, weil der
+ * Anteilsbalken unter der Lane „ein eigener Slot ist, den §3.3.1 nicht
+ * vorsieht — ihn zu erfinden hätte das Slotsystem aufgeweicht, bevor es sich
+ * bewährt hat". Es hat sich bewährt: 23 Layer, neun Sichten, ein Budget, das
+ * über acht sichtbare Belege hält. Der Slot kommt jetzt, und zwar mit
+ * denselben Zusicherungen wie die sieben anderen:
+ *
+ * - **Nur an Rahmen.** Lane und Pool haben eine Unterkante, an der nichts
+ *   anderes steht; an einer Aktivität läge er auf dem Gutter.
+ * - **Höchstens einer.** Wie die Formkodierung: zwei Anteilsbalken
+ *   übereinander wären zwei Aussagen über dieselbe Fläche.
+ * - **Farbe ist nie der einzige Träger.** Der Balken trägt seinen Anteil als
+ *   Zahl und seine Bezugsgröße im Text (`label`), nicht nur als Länge.
+ *
+ * Warum kein Gutter: der Gutter ist eine Textzeile mit höchstens drei
+ * Kennzahlen. Ein Anteil ist ein Vergleich zwischen Rahmen — er braucht eine
+ * Länge, sonst muss der Leser Prozentzahlen im Kopf sortieren.
+ */
+export interface GrcLaneFooterSignal extends SignalBase {
+  readonly kind: "lane-footer";
+  /** Anteil, 0…1 — die Länge des Balkens. */
+  readonly share: number;
+  readonly tone: GrcTone;
+  /** Der Zahlenwert in Worten, z. B. `18.400 € · 34 %`. */
+  readonly label: string;
+}
+
 /** Dimmen statt Ausblenden (§3.3.5 Regel 1). */
 export interface GrcDimSignal extends SignalBase {
   readonly kind: "dim";
@@ -138,6 +168,7 @@ export type GrcElementSignal =
   | GrcGutterSignal
   | GrcPinSignal
   | GrcStripeSignal
+  | GrcLaneFooterSignal
   | GrcDimSignal;
 
 export type GrcDiagramSignal =
@@ -177,6 +208,8 @@ export interface SlotResolution {
   readonly gutter: readonly OwnedSignal<GrcGutterSignal>[];
   readonly pin: OwnedSignal<GrcPinSignal> | undefined;
   readonly stripe: OwnedSignal<GrcStripeSignal> | undefined;
+  /** [OP-006] Höchstens einer, wie die Formkodierung. */
+  readonly laneFooter: OwnedSignal<GrcLaneFooterSignal> | undefined;
   readonly dimmed: boolean;
   /** Alle Beschreibungen in Anzeigereihenfolge — Grundlage der ARIA-Texte. */
   readonly descriptions: readonly string[];
@@ -209,6 +242,7 @@ export function resolveSlots(
   const gutters: OwnedSignal<GrcGutterSignal>[] = [];
   const pins: OwnedSignal<GrcPinSignal>[] = [];
   const stripes: OwnedSignal<GrcStripeSignal>[] = [];
+  const laneFooters: OwnedSignal<GrcLaneFooterSignal>[] = [];
   let dimmed = false;
 
   for (const owned of signals) {
@@ -231,6 +265,9 @@ export function resolveSlots(
         break;
       case "stripe":
         stripes.push(owned as OwnedSignal<GrcStripeSignal>);
+        break;
+      case "lane-footer":
+        laneFooters.push(owned as OwnedSignal<GrcLaneFooterSignal>);
         break;
       case "dim":
         dimmed = true;
@@ -278,6 +315,17 @@ export function resolveSlots(
     suppressed.push({ layerId: owned.layerId, text: owned.signal.describe });
   }
 
+  // 5. genau eine Lane-Fußzeile (OP-006)
+  //
+  // Vor der Sammel-Badge-Rechnung, nicht danach: ein verdrängtes Signal, das
+  // erst nach dem Zählen entsteht, wäre spurlos weg — und der Sammel-Badge
+  // ist die einzige Zusage, dass nichts stumm verschwindet (§3.3.2).
+  laneFooters.sort(byPriority);
+  const [laneFooter, ...shadowedFooters] = laneFooters;
+  for (const owned of shadowedFooters) {
+    suppressed.push({ layerId: owned.layerId, text: owned.signal.describe });
+  }
+
   const overflowSlot = OVERFLOW_PREFERENCE.find((slot) => !badges.has(slot));
   const overflow =
     suppressed.length > 0 && overflowSlot
@@ -309,6 +357,9 @@ export function resolveSlots(
   if (stripe) {
     descriptions.push(stripe.signal.describe);
   }
+  if (laneFooter) {
+    descriptions.push(laneFooter.signal.describe);
+  }
   const pin = pins[0];
   if (pin) {
     descriptions.push(pin.signal.describe);
@@ -332,6 +383,7 @@ export function resolveSlots(
     gutter: gutters,
     pin,
     stripe,
+    laneFooter,
     dimmed,
     descriptions,
   };

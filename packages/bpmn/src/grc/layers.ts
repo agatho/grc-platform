@@ -17,11 +17,13 @@ import type { BpmnConnection, BpmnShape } from "../draw/types";
 import {
   asOfDate,
   conformanceGate,
+  resolveTransitions,
   summarizeFramework,
   type ConformanceGate,
   type FrameworkSummary,
+  type TransitionResolution,
 } from "./analysis";
-import type { GrcOverlayData } from "./contract";
+import type { GrcOverlayData, GrcValidationFinding } from "./contract";
 import { buildGrcGraph, type GrcGraph } from "./graph";
 import { computeSod, type SodResult } from "./sod";
 import { simulateOutage, type OutageResult } from "./outage";
@@ -59,6 +61,27 @@ export interface GrcLayerContext {
   readonly filter: GrcFilter | undefined;
   /** Ausgewählter SoD-Konflikt (nur dieser Bogen wird gezeichnet). */
   readonly selectedConflictId: string | undefined;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-011] Modellierungsbefunde zum GERADE
+   * bearbeiteten Dokument.
+   *
+   * Sie stehen im Kontext und nicht im Datensatz, weil sie nicht vom Server
+   * kommen: sie entstehen aus dem moddle-Baum im Browser und ändern sich mit
+   * jeder Operation (Begründung am Typ in `contract.ts`). Ohne Beilage ist die
+   * Liste leer und der Layer schweigt — er behauptet dann **nicht**, das
+   * Modell sei fehlerfrei; er sagt gar nichts. Der Unterschied ist der
+   * gesamte Wert dieses Layers: „nicht geprüft" als „geprüft und in Ordnung"
+   * anzuzeigen wäre in einem Modellierungswerkzeug die gefährlichste Auskunft.
+   */
+  readonly validation: readonly GrcValidationFinding[];
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-012] Beobachtete Übergänge, bereits auf die
+   * Verbindungen der Szene aufgelöst.
+   *
+   * Einmal je Zeichenvorgang gerechnet, wie `sod` und `trust`: ein Layer, der
+   * die Auflösung je Kante wiederholte, machte aus einer Rechnung n.
+   */
+  readonly transitions: TransitionResolution;
 }
 
 export interface GrcLegendEntry {
@@ -135,6 +158,8 @@ export function createLayerRegistry(
 export interface BuildContextOptions {
   readonly filter?: GrcFilter;
   readonly selectedConflictId?: string;
+  /** [OP-011] Modellierungsbefunde; ohne sie schweigt der Layer. */
+  readonly validation?: readonly GrcValidationFinding[];
 }
 
 /** Baut den Kontext einmal je Zeichenvorgang (§3.3.6: eine Rechnung, nicht N). */
@@ -156,5 +181,7 @@ export function buildLayerContext(
     framework: summarizeFramework(data, data.diagram?.framework),
     filter: options.filter,
     selectedConflictId: options.selectedConflictId,
+    validation: options.validation ?? [],
+    transitions: resolveTransitions(graph, data.diagram?.transitions ?? []),
   };
 }

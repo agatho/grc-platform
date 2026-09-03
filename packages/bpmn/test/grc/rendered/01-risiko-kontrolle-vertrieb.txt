@@ -17,14 +17,16 @@ Der Prozess beginnt mit „Anfrage eingeht“. Schritt 1: „Anfrage eingeht“ 
     Kontrollabdeckung: Kontrollabdeckung 0 % des Restrisikos; 1 Risiko ohne wirksame Kontrolle: „Fehlklassifikation qualifizierter Anfragen" (Restwert 6).
     Risiken: 1 Risiko, höchster Restwert 6 (niedrig), Summe 6.
 4. Angebot erstellen (Benutzeraufgabe)
+    Vorfälle: 1 laufender Vorfall, 1 abgeschlossen, schwerster: Angebotsdatei an falschen Empfänger versandt (hoch), 1 meldepflichtiger Datenschutzvorfall.
     Kontrollabdeckung: Kontrollabdeckung 36 % des Restrisikos; 1 Risiko ohne wirksame Kontrolle: „Angebot unter Deckungsbeitragsgrenze" (Restwert 16).
     Risiken: 2 Risiken, höchster Restwert 16 (hoch), Summe 25.
     Feststellungen: 2 offene Feststellungen, 1 überfällig, 1 fällig in 14 Tagen, 1 kritisch.
+    Offene Maßnahmen: 3 offene Maßnahmen, 1 überfällig, älteste seit 12 Tagen, 1 ohne Frist.
     Kontrollen: 2 Kontrollen, davon 1 wirksam, 1 Schlüsselkontrolle.
     Verteidigungslinie: 1. Verteidigungslinie.
     Verantwortung (RACI): Durchführung: Vertrieb. Rechenschaft: Bereichsleitung. Beteiligt: Buchhaltung.
     Kommentare: Kommentare: 1 offen von 1, davon 1 blockierend.
-    Weitere Hinweise: Durchführung: Vertrieb. Rechenschaft: Bereichsleitung. Beteiligt: Buchhaltung.
+    Weitere Hinweise: 2 Kontrollen, davon 1 wirksam, 1 Schlüsselkontrolle. Durchführung: Vertrieb. Rechenschaft: Bereichsleitung. Beteiligt: Buchhaltung. 3 offene Maßnahmen, 1 überfällig, älteste seit 12 Tagen, 1 ohne Frist.
 5. Prozess beendet (Endereignis)
 6. Absage senden (Benutzeraufgabe)
     Feststellungen: 1 offene Feststellung.
