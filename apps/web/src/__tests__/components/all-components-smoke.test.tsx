@@ -137,9 +137,17 @@ vi.mock("bpmn-js/lib/Modeler", () => ({
   },
 }));
 
-const componentModules = import.meta.glob<Record<string, unknown>>(
+// [ARCTOS-FULL-2026-08-31 · OP-167] Kein Typargument an `import.meta.glob`.
+//
+// Next 16.3 bringt eine eigene Deklaration von `import.meta.glob` mit, die
+// KEIN Typargument nimmt; Vites Deklaration nimmt eines. Wer eines übergibt,
+// bekommt unter 16.3 `TS2558: Expected 0 type arguments, but got 1` und
+// darunter eine Kaskade von `unknown`. Die Form unten ist unter beiden
+// Deklarationen gültig und sagt dasselbe: ein Verzeichnis von Pfaden auf
+// Lader, die ein Modulobjekt liefern.
+const componentModules = import.meta.glob(
   "../../components/**/*.tsx",
-);
+) as Record<string, () => Promise<Record<string, unknown>>>;
 
 function isComponentLike(v: unknown): boolean {
   if (typeof v === "function") return true;

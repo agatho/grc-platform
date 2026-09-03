@@ -158,9 +158,18 @@ type MutatingMethod = (typeof MUTATING_METHODS)[number];
 type HttpMethod = (typeof ALL_METHODS)[number];
 
 // Vite glob — lazy imports of every route.ts file
-const routeModules = import.meta.glob<Record<string, unknown>>(
-  "../../app/api/**/route.ts",
-);
+// [ARCTOS-FULL-2026-08-31 · OP-167] Kein Typargument an `import.meta.glob`.
+//
+// Next 16.3 bringt eine eigene Deklaration von `import.meta.glob` mit, die
+// KEIN Typargument nimmt; Vites Deklaration nimmt eines. Wer eines übergibt,
+// bekommt unter 16.3 `TS2558: Expected 0 type arguments, but got 1` und
+// darunter eine Kaskade von `unknown`. Die Form unten ist unter beiden
+// Deklarationen gültig und sagt dasselbe: ein Verzeichnis von Pfaden auf
+// Lader, die ein Modulobjekt liefern.
+const routeModules = import.meta.glob("../../app/api/**/route.ts") as Record<
+  string,
+  () => Promise<Record<string, unknown>>
+>;
 
 // A request without a session must produce one of these.
 const REJECTED_STATUS_CODES = [401, 403];

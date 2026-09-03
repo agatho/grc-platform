@@ -30,9 +30,18 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
 import { is } from "drizzle-orm";
 
-const schemaModules = import.meta.glob<Record<string, unknown>>(
-  "../../src/schema/*.ts",
-);
+// [ARCTOS-FULL-2026-08-31 · OP-167] Kein Typargument an `import.meta.glob`.
+//
+// Next 16.3 bringt eine eigene Deklaration von `import.meta.glob` mit, die
+// KEIN Typargument nimmt; Vites Deklaration nimmt eines. Sie gilt für den
+// ganzen Baum, also auch hier, wo gar kein Next im Spiel ist. Wer eines
+// übergibt, bekommt `TS2558: Expected 0 type arguments, but got 1` und
+// darunter eine Kaskade von `unknown`. Die Form unten ist unter beiden
+// Deklarationen gültig und sagt dasselbe.
+const schemaModules = import.meta.glob("../../src/schema/*.ts") as Record<
+  string,
+  () => Promise<Record<string, unknown>>
+>;
 
 interface DiscoveredTable {
   file: string;
