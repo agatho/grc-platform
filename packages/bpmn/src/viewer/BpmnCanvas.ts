@@ -714,51 +714,56 @@ export class BpmnCanvas {
 }
 
 /**
- * Lädt die Modellschicht erst zur Laufzeit.
+ * Lädt die Modellschicht erst beim ersten Gebrauch.
  *
- * Der Modulpfad steht bewusst in einer Variablen: so übersetzt dieses Paket auch
- * dann, wenn `src/model/index.ts` (anderer Arbeitsstrang) noch nicht existiert.
- * Fehlt sie zur Laufzeit, gibt es eine klare Meldung statt eines Auflösefehlers.
+ * [ARCTOS-FULL-2026-08-31 · OP-167] Hier stand der Modulpfad in einer
+ * **Variablen** (`const specifier = "../model/index.js"`) samt
+ * `/* @vite-ignore *\/`, mit der Begründung: „so übersetzt dieses Paket auch
+ * dann, wenn `src/model/index.ts` (anderer Arbeitsstrang) noch nicht
+ * existiert." Der Strang ist gelandet, die Datei steht, und die Krücke hat
+ * sich in einen Defekt verwandelt:
+ *
+ *   * Ein Bezeichner in einer Variablen ist für den Bündler nicht auflösbar.
+ *     Der Produktionsbau meldete `Module not found: Can't resolve
+ *     '../model/index.js'` — vier Warnungen, gemessen am Bau vom 2026-09-03.
+ *   * Die Endung `.js` ist obendrein die Fehlerklasse, die in diesem Audit
+ *     schon einmal 711 Importe in 139 Dateien betraf: der Baum liegt als
+ *     TypeScript vor, `../model/index.js` gibt es nicht.
+ *   * `try/catch` machte daraus keine klare Meldung, sondern verdeckte den
+ *     Auflösefehler hinter „Die Modellschicht ist nicht verfügbar" — der
+ *     Bündler hätte ihn beim Bauen gemeldet, der Code hat ihn zur Laufzeit
+ *     eingefangen.
+ *
+ * Jetzt ein gewöhnlicher dynamischer Import mit literalem Bezeichner: der
+ * Bündler löst ihn auf und legt ein eigenes Stück an, die Trägheit bleibt
+ * also erhalten — sie war der einzige Teil dieser Konstruktion, der einen
+ * Zweck hatte.
  */
 async function loadModelLayer(): Promise<ImportXmlFn> {
-  const specifier = "../model/index.js";
-  try {
-    const loaded: unknown = await import(/* @vite-ignore */ specifier);
-    const importXml = (loaded as { importXml?: unknown }).importXml;
-    if (typeof importXml === "function") {
-      return importXml as ImportXmlFn;
-    }
-    throw new Error("`importXml` fehlt");
-  } catch (error) {
-    throw new Error(
-      `Die Modellschicht (src/model) ist nicht verfügbar: ${String(
-        error,
-      )}. Übergib stattdessen importXml in den Optionen.`,
-    );
+  const loaded = await import("../model/index");
+  if (typeof loaded.importXml === "function") {
+    return loaded.importXml as ImportXmlFn;
   }
+  throw new Error(
+    "Die Modellschicht (src/model) exportiert kein `importXml`. " +
+      "Übergib stattdessen importXml in den Optionen.",
+  );
 }
 
-/** Dieselbe Indirektion für den Rückweg — siehe {@link loadModelLayer}. */
+/** Dieselbe Trägheit für den Rückweg — siehe {@link loadModelLayer}. */
 async function loadModelExport(): Promise<ExportXmlFn> {
-  const specifier = "../model/index.js";
-  try {
-    const loaded: unknown = await import(/* @vite-ignore */ specifier);
-    const exportXml = (loaded as { exportXml?: unknown }).exportXml;
-    if (typeof exportXml === "function") {
-      const serialise = exportXml as (
-        definitions: ModdleElement,
-        options?: { format?: boolean },
-      ) => Promise<string>;
-      return (definitions) => serialise(definitions, { format: true });
-    }
-    throw new Error("`exportXml` fehlt");
-  } catch (error) {
-    throw new Error(
-      `Die Modellschicht (src/model) ist nicht verfügbar: ${String(
-        error,
-      )}. Übergib stattdessen exportXml in den Optionen.`,
-    );
+  const loaded = await import("../model/index");
+  if (typeof loaded.exportXml === "function") {
+    const serialise = loaded.exportXml as (
+      definitions: ModdleElement,
+      options?: { format?: boolean },
+    ) => Promise<string>;
+    return (definitions) => serialise(definitions, { format: true });
   }
+  throw new Error(
+    "Die Modellschicht (src/model) exportiert kein `exportXml`. " +
+      "Übergib stattdessen exportXml in den Optionen.",
+  );
 }
 
 function toMutableShape(shape: BpmnShape): ShapeLike {

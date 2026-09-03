@@ -525,15 +525,61 @@ Dazu kommt: Commit `cea14434` hat den **Turbopack-Produktionsbau ausdrücklich
 gewählt**. Ihn wegen eines Fremdfehlers aufzugeben, ist eine Entscheidung und
 keine Reparatur.
 
-**(b) Anhebung auf Next 16.3.4.** Verfügbar; der Fehler ist für 16.2.6/16.2.10
-gemeldet, ob 16.3.x ihn behebt, steht nirgends. **Nicht gemessen**, und zwar
-bewusst: die Anhebung wechselt die ausgelieferte Rahmenwerksversion, sie lässt
-sich in diesem Container nicht zu Ende prüfen (dort kommt kein Produktionsbau
-durch), und ein Wechsel des Rahmenwerks gehört nicht unbeaufsichtigt in einen
-Zweig, der auf Freigabe wartet.
+**(b) Anhebung auf Next 16.3.4 — gemessen, und sie hilft nicht.** Auf der
+Maschine des Eigentümers installiert und gebaut:
 
-**Vorlage an den Eigentümer.** Der Weg ist zu entscheiden, nicht zu raten:
-16.3.4 anheben und messen (naheliegend, eine `^`-Anhebung innerhalb von 16.x,
-die `npm install` ohnehin ziehen würde), oder auf Webpack wechseln und die
-Routentypen nachziehen. Bis dahin ist der Produktionsbau blockiert und mit ihm
-der Playwright-Lauf.
+- Der Bau kam weiter als je zuvor und meldete `✓ Compiled successfully in 64s`.
+- Danach fünf TypeScript-Fehler in drei Testdateien, alle aus **einer** Ursache:
+  Next 16.3 bringt eine eigene Deklaration von `import.meta.glob` mit, die kein
+  Typargument nimmt, während Vites Deklaration eines nimmt
+  (`TS2558: Expected 0 type arguments, but got 1`).
+- Nach deren Behebung läuft die Erzeugungsphase — **und bricht an derselben
+  Stelle ab**, mit einem anderen digest: `1660660369` statt `3120278025`.
+
+**Ein Fehler in der Beweisführung, offen benannt.** Der Zwischenstand
+„Compiled successfully" wurde einmal als Beleg dafür genommen, der Absturz sei
+weg, und in einem Commit so festgehalten. Er war es nicht: die
+TypeScript-Fehler hatten den Bau **vor** der Erzeugungsphase beendet, in der er
+sonst scheitert. Ein Teilsignal als Ergebnis gelesen — genau die Fehlerform,
+gegen die dieses Register angetreten ist. Der Commit ist berichtigt, die
+Anhebung zurückgenommen.
+
+Die Version bleibt deshalb auf **16.2.11**: eine Anhebung, die den Grund für die
+Anhebung nicht beseitigt, ist Rauschen in einem Zweig, der auf Freigabe wartet.
+Die drei `import.meta.glob`-Aufrufstellen sind trotzdem umgestellt — die
+typargumentfreie Form ist unter beiden Deklarationen gültig und macht eine
+spätere Anhebung um diese fünf Fehler billiger.
+
+### Was daneben aufgefallen ist
+
+Der Bau meldete vier Warnungen `Module not found: Can't resolve
+'../model/index.js'` aus `packages/bpmn/src/viewer/BpmnCanvas.ts`. Der Pfad
+stand dort in einer **Variablen** samt `@vite-ignore`, mit der Begründung „so
+übersetzt dieses Paket auch dann, wenn `src/model/index.ts` (anderer
+Arbeitsstrang) noch nicht existiert". Der Strang ist längst gelandet; die
+Krücke war zum Defekt geworden — ein Bezeichner in einer Variablen ist für den
+Bündler nicht auflösbar, die Endung `.js` ist dieselbe Fehlerklasse, die in
+diesem Audit schon 711 Importe in 139 Dateien betraf, und das `try/catch`
+verdeckte den Auflösefehler hinter einer freundlichen Meldung. Behoben:
+gewöhnlicher dynamischer Import mit literalem Bezeichner, Trägheit erhalten.
+
+### Vorlage an den Eigentümer
+
+Beide gemessenen Wege scheiden aus: `--debug-prerender` darf laut Next-Doku
+nicht deployt werden, `--webpack` erzeugt strengere Routentypen und bräuchte
+Nacharbeit an über tausend Routen, und 16.3.4 behebt den Fehler nicht.
+
+Was bleibt, ist eine Entscheidung des Eigentümers:
+
+1. **Auf einen Fix warten** und den Fehlerbericht mit unseren sechs Messungen
+   anreichern (vercel/next.js#95741 sucht ausdrücklich Reproduktionen „mit der
+   Grösse eines echten Produktionsbaums").
+2. **Auf Webpack wechseln** und die Routentypen nachziehen — bezifferbare
+   Arbeit, aber sie nimmt die Turbopack-Entscheidung aus `cea14434` zurück.
+3. **Eine Canary-Fassung von 16.3.x prüfen**, in der der Fehler möglicherweise
+   behoben ist.
+
+Bis dahin ist der Produktionsbau blockiert und mit ihm der Playwright-Lauf.
+Alles andere — 13 Typprüfungen, 6.680 Tests, 426 Migrationen von Null, die RLS-
+und Integritätssuiten und alle Tore — ist grün und von diesem Punkt nicht
+berührt.
