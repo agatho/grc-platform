@@ -173,6 +173,28 @@ export const DIVERGENCE_RULES: readonly DivergenceRule[] = [
       "had. Neither is wrong, and the corpus documents already carry the attribute.",
   },
   {
+    // [ARCTOS-FULL-2026-08-31 · OP-163] Die einzige Klasse, die nach dem
+    // Einschalten des XML-Vergleichs uebrig bleibt — und ein echter Befund.
+    match: /^xml\/\{[^}]*\}(incoming|outgoing)\//,
+    verdict: "ours-wrong",
+    reason:
+      "OPEN DEFECT, low severity, entdeckt beim Einschalten des XML-Vergleichs (OP-163). ARCTOS " +
+      "schreibt <bpmn:incoming>/<bpmn:outgoing> auf Flussknoten, die das Quelldokument OHNE diese " +
+      "Verweise enthaelt. Gemessen an synth-boundary-events, load+save mit NULL Operationen: gegen " +
+      "die Quelle hat ARCTOS 35 semantische Differenzen, bpmn-js 23; die zwoelf zusaetzlichen sind " +
+      "genau die Verweise, die ARCTOS auf Sub_Start, Sub_Task und Sub_End des Teilprozesses " +
+      "Sub_Pruefung ergaenzt (Sub_Flow_1/Sub_Flow_2). Die uebrigen 23 teilen beide Engines; sie " +
+      "stammen aus bpmn-moddle und sind an anderer Stelle klassifiziert.\n\n" +
+      "Warum das trotz semantischer Gleichwertigkeit ein Befund ist: incoming/outgoing sind laut " +
+      "Metamodell ableitbar, ihr Fehlen ist zulaessig, und beide Dokumente beschreiben denselben " +
+      "Prozess. Aber es ist eine Byte-Aenderung an einem Dokument, das niemand bearbeitet hat — " +
+      "genau das, was Plan §5.1 Z-D (read-preserve-write) ausschliesst. Wer eine Datei oeffnet und " +
+      "wieder schliesst, bekommt einen Diff in seiner Versionsverwaltung. Die Modell-Ebene von " +
+      "ARCTOS macht das NICHT (importXml/exportXml lassen die Knoten unveraendert, gemessen ueber " +
+      "lossySignatures); es entsteht in der Modellierungsschicht beim Zurueckschreiben " +
+      "materialisierter Elemente. Weitergereicht an den Modellierungs-Strang.",
+  },
+  {
     match: /^candidate-set\/container\/more-reference$/,
     verdict: "intentional",
     reason:
@@ -491,7 +513,40 @@ export async function lossySignatures(baseXml: string): Promise<Set<string>> {
       canonicalize(written),
       400,
     );
+
+    // [ARCTOS-FULL-2026-08-31 · OP-163] Nur was WIRKLICH fehlt, nicht was sich
+    // verschoben hat.
+    //
+    // `diffCanonical` ist ein LCS-Diff über Zeilen einer sortierten kanonischen
+    // Form. Fällt ein einziges Attribut weg, ändert sich damit der Sortier-
+    // schlüssel seines Elements, und der GANZE Block wandert an eine andere
+    // Stelle — der Diff meldet ihn als „entfernt" plus „hinzugefügt". Gemessen
+    // an `synth-boundary-events`: der Modell-Round-Trip verliert genau ein
+    // Attribut, `@cancelActivity="true"` (bpmn-moddle schreibt den Vorgabewert
+    // nicht zurück), und produziert daraus **23** Diff-Zeilen, darunter
+    // `<outgoing>`, `text "Flow_Fehler"` und `<errorEventDefinition>`.
+    //
+    // Diese Mitläufer landeten unbesehen in der Verlustmenge, und weil eine
+    // Signatur bewusst inhaltsfrei ist (Elementtyp plus Attributname), passte
+    // `xml/…}outgoing/<…outgoing>` anschliessend auf JEDE `outgoing`-Differenz
+    // irgendeines anderen Dokuments. Das Urteil `both-lossy` — „bpmn-moddle
+    // verliert das ohnehin" — wäre damit an Stellen vergeben worden, an denen
+    // bpmn-moddle gar nichts verliert. Eine Zeile, die vorher UND nachher im
+    // Dokument steht, ist kein Verlust, egal wo der Diff sie einsortiert.
+    const removedCount = new Map<string, number>();
+    const addedCount = new Map<string, number>();
     for (const difference of differences) {
+      const target = difference.kind === "removed" ? removedCount : addedCount;
+      target.set(difference.text, (target.get(difference.text) ?? 0) + 1);
+    }
+    const seen = new Map<string, number>();
+    for (const difference of differences) {
+      if (difference.kind !== "removed") continue;
+      const index = (seen.get(difference.text) ?? 0) + 1;
+      seen.set(difference.text, index);
+      // Die ersten `addedCount` Vorkommen sind wiedergefunden — verschoben,
+      // nicht verloren. Erst der Überschuss ist ein echter Verlust.
+      if (index <= (addedCount.get(difference.text) ?? 0)) continue;
       out.add(`xml/${difference.context}/${attributeOf(difference.text)}`);
     }
   } catch {
@@ -725,6 +780,40 @@ function compareNode(
   }
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-163] Die Ebene, die der XML-Vergleich NICHT
+ * anfasst: die Diagramm-Interchange-Namensräume.
+ *
+ * Nicht aus Bequemlichkeit. `compareSnapshots` vergleicht Bounds und Waypoints
+ * bereits — mit Toleranzen (`BOUNDS_TOLERANCE_PX`, `WAYPOINT_TOLERANCE_PX`) und
+ * mit dem Wissen, welche Knoten textabhängige Geometrie haben. Der XML-Diff
+ * kennt diese Toleranzen nicht: er meldet eine 1-px-Abweichung, die eine Ebene
+ * höher als gleich gilt, als harte Differenz, und dazu jede von der Referenz
+ * frei vergebene DI-Kennung (`BPMNShape_di_1a2b3c`).
+ *
+ * Gemessen am 2026-09-03 über das Korpus: 260 unklassifizierte Differenzen bei
+ * eingeschaltetem XML-Vergleich, davon **254** aus `{…DI}`/`{…DC}` — Bounds,
+ * Waypoints, BPMNShape-/BPMNEdge-Kennungen, BPMNPlane-Präsenz. Es blieben 6
+ * Differenzen mit eigener Aussage übrig. Genau dieses Verhältnis ist der Grund,
+ * aus dem der Schalter überhaupt abgeschaltet wurde („der XML-Diff ist noisy") —
+ * und der Grund, aus dem `both-lossy` seitdem nicht auftreten konnte.
+ *
+ * Was nach dem Filter übrig bleibt, ist die semantische Ebene: genau das, was
+ * die Modellvergleiche NICHT sehen (Verweise, Extensions, Attribute mit
+ * Vorgabewerten, Kommentare, Processing Instructions) — und genau die Ebene,
+ * auf der bpmn-moddle tatsächlich Information verliert.
+ */
+const DI_NAMESPACES = [
+  "http://www.omg.org/spec/BPMN/20100524/DI",
+  "http://www.omg.org/spec/DD/20100524/DI",
+  "http://www.omg.org/spec/DD/20100524/DC",
+] as const;
+
+/** True für eine Differenz, die in der Zeichenebene sitzt. */
+export function isDiagramInterchange(context: string, text: string): boolean {
+  return DI_NAMESPACES.some((ns) => context.includes(ns) || text.includes(ns));
+}
+
 function compareXml(
   ourXml: string,
   referenceXml: string,
@@ -736,6 +825,7 @@ function compareXml(
     200,
   );
   for (const difference of differences) {
+    if (isDiagramInterchange(difference.context, difference.text)) continue;
     out.push({
       kind: "xml",
       signature: `xml/${difference.context}/${attributeOf(difference.text)}`,
@@ -750,9 +840,21 @@ export interface ShadowRunOptions {
   readonly ours: ModelingDriver;
   readonly reference: ModelingDriver;
   /**
-   * Compare the exported XML as well as the model. Off for runs whose purpose
-   * is the model comparison — the XML diff is noisy while either engine still
-   * has an open finding, and its signal is a superset of the model's.
+   * Compare the exported XML as well as the model.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-163] Vorgabe ist jetzt **an**; nur ein
+   * ausdrückliches `false` schaltet ab. Vorher war es umgekehrt, und kein
+   * Aufrufer setzte den Schalter — mit zwei Folgen. Die eine steht im Register:
+   * `lossySignatures()` erzeugt ausschliesslich `xml/…`-Signaturen, also konnte
+   * das Urteil `both-lossy` gar nicht vergeben werden, und die Null in der
+   * Auswertung hiess nicht „bpmn-moddle verliert nichts", sondern „auf dieser
+   * Ebene wird nicht gemessen". Die andere ist grösser: die gesamte semantische
+   * Ebene ausserhalb des Modell-Snapshots — Verweise, Extensions, Kommentare,
+   * Attribute mit Vorgabewerten — war vom Vergleich ausgenommen.
+   *
+   * Die Begründung von damals („noisy") war richtig und ist mit dem
+   * DI-Filter oben erledigt: das Rauschen kam zu 98 % aus der Zeichenebene,
+   * die `compareSnapshots` ohnehin mit Toleranzen vergleicht.
    */
   readonly compareXml?: boolean;
 }
@@ -876,7 +978,8 @@ export async function shadowCompare(
       await snapshotXml(referenceXml),
       divergences,
     );
-    if (options.compareXml === true)
+    // [OP-163] `!== false` statt `=== true` — s. ShadowRunOptions.compareXml.
+    if (options.compareXml !== false)
       compareXml(ourXml, referenceXml, divergences);
   }
 

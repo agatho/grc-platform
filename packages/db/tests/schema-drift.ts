@@ -41,6 +41,49 @@ export interface TableDrift {
   kind: "missing-in-db" | "rls-missing" | "rls-without-policy";
 }
 
+// [ARCTOS-FULL-2026-08-31 · OP-155]
+// Der Drift-Bericht verglich Tabellen, Spalten, Typen, Nullability und RLS —
+// aber nicht den ENABLE-Zustand der Trigger. Warum ausgerechnet der zählt:
+// Welle 1b hat gemessen, dass `ALTER TABLE … ENABLE TRIGGER ALL` nur EINEN
+// Zielzustand kennt, `'O'` (origin). Ein Trigger, der vorher `ENABLE ALWAYS`
+// (`'A'`) war, kommt als origin-only zurück und feuert danach unter
+// `session_replication_role = 'replica'` NICHT mehr:
+//
+//   CREATE TRIGGER _probe …; ALTER TABLE _probe ENABLE ALWAYS TRIGGER _probe;
+//   -- tgenabled = 'A'
+//   ALTER TABLE _probe DISABLE TRIGGER ALL;
+//   ALTER TABLE _probe ENABLE  TRIGGER ALL;   -- tgenabled = 'O'
+//
+// Genau so sind die 17 Wächter des Audit-Trails gebaut. Nach einer solchen
+// Rückstufung steht der Trigger unverändert in `pg_trigger`, mit unveränderter
+// Definition — und ist wirkungslos, sobald jemand als Replikationsrolle
+// schreibt (Seed, Datenmigration, Cleanup-Skript). Ein Bericht, der den
+// ENABLE-Zustand nicht liest, meldet für eine so entschärfte Datenbank
+// `healthy: true`: „Guard vorhanden" ist eben nicht „Guard wirkt".
+//
+// Die vier Befundklassen:
+//   `guard-missing`       — registrierter Wächter fehlt in der Datenbank ganz;
+//   `guard-not-always`    — er steht nicht mehr auf ENABLE ALWAYS (der Fall
+//                           aus Welle 1b);
+//   `trigger-disabled`    — irgendein Trigger steht auf `'D'`; ein
+//                           abgeschalteter Trigger ist ein entfernter Trigger,
+//                           der aussieht, als wäre er da;
+//   `unregistered-always` — ENABLE ALWAYS in der Datenbank, aber nicht im
+//                           Register (siehe ALWAYS_ENABLED_GUARDS).
+export type TriggerDriftKind =
+  | "guard-missing"
+  | "guard-not-always"
+  | "trigger-disabled"
+  | "unregistered-always";
+
+export interface TriggerDrift {
+  table: string;
+  trigger: string;
+  kind: TriggerDriftKind;
+  expected?: string;
+  actual?: string;
+}
+
 export interface DriftReport {
   healthy: boolean;
   expectedTableCount: number;
@@ -49,7 +92,193 @@ export interface DriftReport {
   extraInDb: string[];
   columnDrift: ColumnDrift[];
   rlsDrift: TableDrift[];
+  triggerDrift: TriggerDrift[];
   generatedAt: string;
+}
+
+/** One row of the trigger catalog query, reduced to what we compare. */
+export interface DbTrigger {
+  table_name: string;
+  trigger_name: string;
+  /** `pg_trigger.tgenabled`: 'O' origin, 'A' always, 'R' replica, 'D' disabled. */
+  tgenabled: string;
+}
+
+/**
+ * Die Wächter, die `ENABLE ALWAYS` sein MÜSSEN.
+ *
+ * Warum ein Register im Code und keine Ableitung aus den Migrationen: sechs der
+ * siebzehn werden gar nicht als Literal gesetzt, sondern in einer Schleife —
+ * `0401_audit_chain_assign_and_guards.sql:458` schreibt
+ * `EXECUTE format('ALTER TABLE public.%I ENABLE ALWAYS TRIGGER %I', t, t ||
+ * '_no_truncate')`. Ein Textscan über `drizzle/*.sql` findet deshalb nur 11 von
+ * 17 (gemessen 2026-09-03), und eine Ableitung, die ein Drittel der Wächter
+ * übersieht, ist als Soll-Zustand schlechter als gar keine.
+ *
+ * Das Register bleibt trotzdem nicht sich selbst überlassen: `unregistered-
+ * always` meldet jeden Trigger, der in der Datenbank auf `'A'` steht und hier
+ * fehlt. Ein neuer Wächter macht den Vergleich also rot, bis er eingetragen
+ * ist — die Liste kann nicht stillschweigend hinter dem Schema zurückbleiben.
+ *
+ * Gemessen am 2026-09-03 gegen eine von Null migrierte Datenbank
+ * (426 Migrationen): genau diese 17, und keine weiteren.
+ */
+export const ALWAYS_ENABLED_GUARDS: readonly {
+  readonly table: string;
+  readonly trigger: string;
+  readonly why: string;
+}[] = [
+  {
+    table: "access_log",
+    trigger: "access_log_no_truncate",
+    why: "TRUNCATE auf einer Protokolltabelle ist eine Löschung ohne Spur.",
+  },
+  {
+    table: "audit_anchor",
+    trigger: "audit_anchor_append_only_trg",
+    why: "Der externe Anker darf nach dem Setzen nicht mehr verändert werden.",
+  },
+  {
+    table: "audit_anchor",
+    trigger: "audit_anchor_no_truncate",
+    why: "Wie oben, für den Weg über TRUNCATE.",
+  },
+  {
+    table: "audit_anchor_seal",
+    trigger: "audit_anchor_seal_immutable_trg",
+    why: "Das Siegel des Ankers ist der Beweis; ein änderbarer Beweis ist keiner.",
+  },
+  {
+    table: "audit_anchor_seal",
+    trigger: "audit_anchor_seal_no_truncate",
+    why: "Wie oben, für den Weg über TRUNCATE.",
+  },
+  {
+    table: "audit_chain_verification",
+    trigger: "audit_chain_verification_immutable_trg",
+    why: "Das Prüfprotokoll der Hash-Kette darf nicht nachträglich geglättet werden.",
+  },
+  {
+    table: "audit_log",
+    trigger: "audit_log_chain_assign_trg",
+    why: "Weist Geltungsbereich, previous_hash und entry_hash zu (0401). Feuert er nicht, entstehen Zeilen ausserhalb der Kette.",
+  },
+  {
+    table: "audit_log",
+    trigger: "audit_log_no_truncate",
+    why: "TRUNCATE würde den gesamten Trail spurlos entfernen.",
+  },
+  {
+    table: "audit_log",
+    trigger: "audit_log_redaction_event_trg",
+    why: "Jede Schwärzung ist selbst ein protokollpflichtiges Ereignis.",
+  },
+  {
+    table: "audit_log",
+    trigger: "audit_log_refuse_delete_trg",
+    why: "Append-only. Ohne ihn ist der Audit-Trail löschbar.",
+  },
+  {
+    table: "audit_log",
+    trigger: "audit_log_tombstone_guard",
+    why: "Grenzt die eine erlaubte Ausnahme (Tombstone) gegen freie Änderung ab.",
+  },
+  {
+    table: "audit_log_write_attempt",
+    trigger: "audit_log_write_attempt_no_truncate",
+    why: "Die Tabelle hält die abgewiesenen Schreibversuche — gerade sie.",
+  },
+  {
+    table: "data_export_log",
+    trigger: "data_export_log_no_truncate",
+    why: "Datenexporte sind DSGVO-relevant und müssen nachweisbar bleiben.",
+  },
+  {
+    table: "document_signature",
+    trigger: "document_signature_append_only_trg",
+    why: "Eine getroffene Signaturentscheidung ist ein Kettenglied (0421).",
+  },
+  {
+    table: "document_version",
+    trigger: "document_version_file_immutable_trg",
+    why: "Verhindert den Dateitausch hinter einer freigegebenen Version (0422).",
+  },
+  {
+    table: "whistleblowing_audit_log",
+    trigger: "wb_audit_log_append_only_trg",
+    why: "HinSchG §8: das Hinweisgeberprotokoll ist unveränderlich.",
+  },
+  {
+    table: "whistleblowing_audit_log",
+    trigger: "whistleblowing_audit_log_no_truncate",
+    why: "Wie oben, für den Weg über TRUNCATE.",
+  },
+];
+
+/**
+ * Vergleicht den ENABLE-Zustand der Trigger gegen das Register.
+ *
+ * Vier Befundklassen — siehe `TriggerDriftKind`.
+ */
+export function compareTriggers(dbTriggers: DbTrigger[]): TriggerDrift[] {
+  const byKey = new Map<string, DbTrigger>();
+  for (const t of dbTriggers) {
+    byKey.set(`${t.table_name}.${t.trigger_name}`, t);
+  }
+  const registered = new Set(
+    ALWAYS_ENABLED_GUARDS.map((g) => `${g.table}.${g.trigger}`),
+  );
+
+  const out: TriggerDrift[] = [];
+  for (const guard of ALWAYS_ENABLED_GUARDS) {
+    const key = `${guard.table}.${guard.trigger}`;
+    const found = byKey.get(key);
+    if (!found) {
+      out.push({
+        table: guard.table,
+        trigger: guard.trigger,
+        kind: "guard-missing",
+        expected: "A",
+      });
+      continue;
+    }
+    if (found.tgenabled !== "A") {
+      out.push({
+        table: guard.table,
+        trigger: guard.trigger,
+        kind: "guard-not-always",
+        expected: "A",
+        actual: found.tgenabled,
+      });
+    }
+  }
+
+  for (const t of dbTriggers) {
+    const key = `${t.table_name}.${t.trigger_name}`;
+    if (t.tgenabled === "D") {
+      out.push({
+        table: t.table_name,
+        trigger: t.trigger_name,
+        kind: "trigger-disabled",
+        expected: "O",
+        actual: "D",
+      });
+      continue;
+    }
+    if (t.tgenabled === "A" && !registered.has(key)) {
+      out.push({
+        table: t.table_name,
+        trigger: t.trigger_name,
+        kind: "unregistered-always",
+        actual: "A",
+      });
+    }
+  }
+
+  out.sort((a, b) =>
+    `${a.table}.${a.trigger}` < `${b.table}.${b.trigger}` ? -1 : 1,
+  );
+  return out;
 }
 
 /** One row of `information_schema.columns` reduced to what we compare. */
@@ -180,6 +409,13 @@ export function compareSchema(
   dbTables: string[],
   dbColumns: DbColumn[],
   dbFlags: DbTableFlags[],
+  // [ARCTOS-FULL-2026-08-31 · OP-155] Pflichtparameter, ohne Vorgabewert.
+  // Ein optionales `dbTriggers = []` hätte für jeden Aufrufer, der ihn
+  // vergisst, „17 Wächter fehlen" gemeldet — laut, aber am falschen Ort. Ein
+  // optionales „dann eben nicht vergleichen" wäre die andere Richtung: still,
+  // und genau der Zustand, den OP-155 beschreibt. Jeder Aufrufer entscheidet
+  // deshalb ausdrücklich.
+  dbTriggers: DbTrigger[],
 ): DriftReport {
   const expected = expectedTables(schemaExports);
   const dbTableSet = new Set(dbTables);
@@ -274,22 +510,29 @@ export function compareSchema(
   }
   rlsDrift.sort((a, b) => (a.table < b.table ? -1 : 1));
 
+  // [OP-155] Der ENABLE-Zustand ist Teil der Gesundheit, nicht Beiwerk: ein
+  // zurückgestufter Wächter ist genau der Unterschied zwischen „Guard
+  // vorhanden" und „Guard wirkt", und er ist von aussen nicht sichtbar.
+  const triggerDrift = compareTriggers(dbTriggers);
+
   return {
     healthy:
       missingInDb.length === 0 &&
       columnDrift.length === 0 &&
-      rlsDrift.length === 0,
+      rlsDrift.length === 0 &&
+      triggerDrift.length === 0,
     expectedTableCount: expected.size,
     dbTableCount: dbTableSet.size,
     missingInDb,
     extraInDb,
     columnDrift,
     rlsDrift,
+    triggerDrift,
     generatedAt: new Date().toISOString(),
   };
 }
 
-/** The three queries the comparison needs, as plain SQL text. */
+/** The queries the comparison needs, as plain SQL text. */
 export const DRIFT_QUERIES = {
   tables: `
     SELECT table_name
@@ -313,4 +556,18 @@ export const DRIFT_QUERIES = {
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
     WHERE c.relkind = 'r'`,
+  // [ARCTOS-FULL-2026-08-31 · OP-155] `NOT tgisinternal` schliesst die
+  // RI-Constraint-Trigger aus, die PostgreSQL selbst anlegt (auf `document`
+  // allein 36). Sie tragen denselben `tgenabled`-Zustand, gehören aber der
+  // Fremdschlüsselmechanik und nicht dem Audit-Trail — sie hier zu melden
+  // würde den Bericht mit hunderten Zeilen füllen und die 17 Wächter darin
+  // begraben.
+  triggers: `
+    SELECT c.relname  AS table_name,
+           t.tgname   AS trigger_name,
+           t.tgenabled::text AS tgenabled
+    FROM pg_trigger t
+    JOIN pg_class c ON c.oid = t.tgrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace AND n.nspname = 'public'
+    WHERE NOT t.tgisinternal`,
 } as const;

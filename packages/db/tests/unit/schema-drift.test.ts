@@ -15,11 +15,27 @@ import {
   expectedTables,
   normalizeDbType,
   normalizeType,
+  compareTriggers,
+  ALWAYS_ENABLED_GUARDS,
   type DbColumn,
   type DbTableFlags,
+  type DbTrigger,
 } from "../schema-drift";
 
 const exports_ = schemas as unknown as Record<string, unknown>;
+
+// [ARCTOS-FULL-2026-08-31 · OP-155] `compareSchema` verlangt jetzt den
+// Trigger-Zustand. Die Tests dieser Datei prüfen Spalten und RLS; sie reichen
+// deshalb den Soll-Zustand durch — jeder Wächter vorhanden und auf `'A'` —,
+// damit ihre Aussage unverändert bleibt und nicht heimlich Trigger-Drift
+// mitmisst. Die Trigger-Prüfung selbst steht weiter unten.
+function guardsInOrder(): DbTrigger[] {
+  return ALWAYS_ENABLED_GUARDS.map((g) => ({
+    table_name: g.table,
+    trigger_name: g.trigger,
+    tgenabled: "A",
+  }));
+}
 
 describe("type normalisation", () => {
   it("maps DDL spellings onto the internal names PostgreSQL reports", () => {
@@ -76,13 +92,25 @@ describe("column-level comparison (S09-09)", () => {
   const flags: DbTableFlags[] = [];
 
   it("is clean when the database matches the declaration", () => {
-    const report = compareSchema(exports_, [table], columnsOf(table), flags);
+    const report = compareSchema(
+      exports_,
+      [table],
+      columnsOf(table),
+      flags,
+      guardsInOrder(),
+    );
     expect(report.columnDrift).toEqual([]);
   });
 
   it("reports a column the database does not have", () => {
     const cols = columnsOf(table).filter((c) => c.column_name !== "name");
-    const report = compareSchema(exports_, [table], cols, flags);
+    const report = compareSchema(
+      exports_,
+      [table],
+      cols,
+      flags,
+      guardsInOrder(),
+    );
     expect(
       report.columnDrift.some(
         (d) => d.column === "name" && d.kind === "missing-in-db",
@@ -95,7 +123,13 @@ describe("column-level comparison (S09-09)", () => {
     const cols = columnsOf(table).map((c) =>
       c.column_name === "name" ? { ...c, udt_name: "int4" } : c,
     );
-    const report = compareSchema(exports_, [table], cols, flags);
+    const report = compareSchema(
+      exports_,
+      [table],
+      cols,
+      flags,
+      guardsInOrder(),
+    );
     expect(
       report.columnDrift.some(
         (d) => d.column === "name" && d.kind === "type-mismatch",
@@ -107,7 +141,13 @@ describe("column-level comparison (S09-09)", () => {
     const cols = columnsOf(table).map((c) =>
       c.column_name === "name" ? { ...c, is_nullable: "YES" } : c,
     );
-    const report = compareSchema(exports_, [table], cols, flags);
+    const report = compareSchema(
+      exports_,
+      [table],
+      cols,
+      flags,
+      guardsInOrder(),
+    );
     expect(
       report.columnDrift.some(
         (d) => d.column === "name" && d.kind === "nullability-mismatch",
@@ -131,7 +171,13 @@ describe("column-level comparison (S09-09)", () => {
         is_nullable: "YES",
       },
     ];
-    const report = compareSchema(exports_, [table], cols, flags);
+    const report = compareSchema(
+      exports_,
+      [table],
+      cols,
+      flags,
+      guardsInOrder(),
+    );
     expect(report.columnDrift).toContainEqual({
       table,
       column: "legacy_only_in_db",
@@ -160,6 +206,7 @@ describe("column-level comparison (S09-09)", () => {
         },
       ],
       flags,
+      guardsInOrder(),
     );
     expect(report.columnDrift).toEqual([]);
     expect(report.extraInDb).toContain("some_sql_only_table");
@@ -186,6 +233,7 @@ describe("RLS comparison", () => {
           has_org_id: true,
         },
       ],
+      guardsInOrder(),
     );
     expect(report.rlsDrift).toEqual([
       { table: "control", kind: "rls-without-policy" },
@@ -206,7 +254,133 @@ describe("RLS comparison", () => {
           has_org_id: false,
         },
       ],
+      guardsInOrder(),
     );
     expect(report.rlsDrift).toEqual([]);
+  });
+});
+
+// ───────────────────────────────────────────────────────────────────────────
+// [ARCTOS-FULL-2026-08-31 · OP-155] Der ENABLE-Zustand der Trigger.
+//
+// Der Vergleicher las ihn nicht. Was das bedeutet, ist keine Theorie: Welle 1b
+// hat gegen eine laufende Datenbank gemessen, dass
+// `ALTER TABLE … ENABLE TRIGGER ALL` einen `ENABLE ALWAYS`-Trigger
+// (`tgenabled = 'A'`) auf `'O'` (origin) zurückstuft. Danach feuert er unter
+// `session_replication_role = 'replica'` nicht mehr — und genau so sind die 17
+// Wächter des Audit-Trails gebaut. In `pg_trigger` steht der Trigger weiter,
+// mit unveränderter Definition; jede Prüfung, die nur nach seiner Existenz
+// fragt, ist danach grün und der Trail trotzdem beschreibbar.
+describe("trigger ENABLE state (OP-155)", () => {
+  it("is clean when every guard stands on ENABLE ALWAYS", () => {
+    expect(compareTriggers(guardsInOrder())).toEqual([]);
+  });
+
+  it("catches the downgrade ENABLE TRIGGER ALL produces ('A' → 'O')", () => {
+    const triggers = guardsInOrder().map((t) =>
+      t.trigger_name === "audit_log_refuse_delete_trg"
+        ? { ...t, tgenabled: "O" }
+        : t,
+    );
+    expect(compareTriggers(triggers)).toEqual([
+      {
+        table: "audit_log",
+        trigger: "audit_log_refuse_delete_trg",
+        kind: "guard-not-always",
+        expected: "A",
+        actual: "O",
+      },
+    ]);
+  });
+
+  it("catches a guard that is gone entirely", () => {
+    const triggers = guardsInOrder().filter(
+      (t) => t.trigger_name !== "wb_audit_log_append_only_trg",
+    );
+    expect(compareTriggers(triggers)).toEqual([
+      {
+        table: "whistleblowing_audit_log",
+        trigger: "wb_audit_log_append_only_trg",
+        kind: "guard-missing",
+        expected: "A",
+      },
+    ]);
+  });
+
+  it("catches ANY disabled trigger, guard or not", () => {
+    // Ein `DISABLE TRIGGER`, das jemand nach einer Datenmigration liegen
+    // lässt, ist ein entfernter Trigger, der aussieht, als wäre er da. Der
+    // Befund gilt deshalb für jeden Trigger, nicht nur für die 17 Wächter.
+    const triggers: DbTrigger[] = [
+      ...guardsInOrder(),
+      {
+        table_name: "risk",
+        trigger_name: "risk_audit_trigger",
+        tgenabled: "D",
+      },
+    ];
+    expect(compareTriggers(triggers)).toEqual([
+      {
+        table: "risk",
+        trigger: "risk_audit_trigger",
+        kind: "trigger-disabled",
+        expected: "O",
+        actual: "D",
+      },
+    ]);
+  });
+
+  // Die Gegenrichtung, ohne die das Register still hinter dem Schema
+  // zurückbliebe: ein NEUER `ENABLE ALWAYS`-Wächter aus einer Migration muss
+  // auffallen, solange ihn niemand eingetragen hat. Sonst wäre die Liste ein
+  // Stand von 2026 und nicht der Soll-Zustand.
+  it("catches an ENABLE ALWAYS trigger that is not in the register", () => {
+    const triggers: DbTrigger[] = [
+      ...guardsInOrder(),
+      {
+        table_name: "brandneue_tabelle",
+        trigger_name: "brandneu_append_only_trg",
+        tgenabled: "A",
+      },
+    ];
+    expect(compareTriggers(triggers)).toEqual([
+      {
+        table: "brandneue_tabelle",
+        trigger: "brandneu_append_only_trg",
+        kind: "unregistered-always",
+        actual: "A",
+      },
+    ]);
+  });
+
+  it("makes the whole report unhealthy — a downgraded guard is not cosmetic", () => {
+    const report = compareSchema(
+      exports_,
+      [],
+      [],
+      [],
+      guardsInOrder().map((t) =>
+        t.trigger_name === "audit_log_chain_assign_trg"
+          ? { ...t, tgenabled: "O" }
+          : t,
+      ),
+    );
+    expect(report.healthy).toBe(false);
+    expect(report.triggerDrift).toHaveLength(1);
+  });
+
+  // Das Register ist eine Behauptung über die Datenbank. Diese Zusicherung
+  // hält sie wenigstens in sich konsistent; ob sie mit dem laufenden Schema
+  // übereinstimmt, prüft der Live-Lauf (tests/integration/schema-drift-live).
+  it("registers 17 guards, each with a stated reason and no duplicates", () => {
+    expect(ALWAYS_ENABLED_GUARDS).toHaveLength(17);
+    const keys = ALWAYS_ENABLED_GUARDS.map((g) => `${g.table}.${g.trigger}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    for (const g of ALWAYS_ENABLED_GUARDS) {
+      expect(
+        g.why.length,
+        `${g.trigger} braucht eine Begründung`,
+      ).toBeGreaterThan(20);
+    }
   });
 });

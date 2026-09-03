@@ -171,6 +171,31 @@ jobs:
           # [WP10 · S08-09] Nur hier — turbo ist der einzige Verbraucher.
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
+      # [ARCTOS-FULL-2026-08-31 · OP-093] Der a11y-Lauf, benannt.
+      #
+      # Gemessen am 2026-09-03: er lief bereits — `apps/web/vitest.config.ts`
+      # sammelt `src/__tests__/**/*.test.ts(x)`, und `src/__tests__/a11y/`
+      # steht nicht in `exclude`. Der Schritt darueber fuehrt ihn also mit aus
+      # (4 Dateien, 30 Tests). Der Registereintrag ist insoweit ueberholt.
+      #
+      # Was fehlte, ist trotzdem echt: er lief NAMENLOS. Faellt das Verzeichnis
+      # aus dem Glob — umbenannt, verschoben, oder in `exclude` aufgenommen,
+      # wie es `src/__tests__/rls-route-chain/**` aus gutem Grund ist —, dann
+      # sinkt nur eine Testzahl, und niemand sieht es. Genau so ist
+      # `rls-route-chain` aus dem Standardlauf verschwunden und brauchte
+      # spaeter einen eigenen CI-Schritt.
+      #
+      # Dieser Schritt kann fehlschlagen, und zwar auf beide Arten:
+      #   * ein a11y-Verstoss laesst vitest rot werden;
+      #   * ist das Verzeichnis weg, findet vitest keine Datei und bricht ab
+      #     (kein `--passWithNoTests` — das waere ein Tor, das nicht
+      #     fehlschlagen kann).
+      # Beides am 2026-09-03 nachgestellt und gemessen, siehe
+      # docs/UMSETZUNG-WELLE-4A.md §7.
+      - name: a11y (axe-core + WCAG-Kontrast, jsdom — braucht weder DB noch Browser)
+        working-directory: apps/web
+        run: npx vitest run src/__tests__/a11y
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -268,25 +293,94 @@ jobs:
       # gegen die LAUFENDE Datenbank. Ohne diesen Schritt kann die
       # Remediation ihre eigene Mandantentrennung nicht absichern.
       #
-      # Bewusst NICHT `--check`: dieser Modus vergleicht den erzeugten Report
-      # zeichengenau mit der eingecheckten Fassung, und deren Kopfzeile
-      # enthaelt den DATENBANKNAMEN der Maschine, auf der sie erzeugt wurde
-      # (`wp2_verify`). In CI heisst die Datenbank `grc_platform_test`, der
-      # Vergleich kann also nie aufgehen. Das ist an WP2 gemeldet
-      # (scripts/audit-rls-coverage.mjs, Report-Kopf). Bis dahin wird hier
-      # das geprueft, worauf es ankommt: NULL Luecken gegen die frisch
-      # migrierte Datenbank — ein Ergebnis, das umgebungsunabhaengig gilt.
-      - name: RLS coverage — zero gaps against the freshly migrated DB
+      # ── [ARCTOS-FULL-2026-08-31 · OP-092] Warum dieser Schritt neu ist ──
+      #
+      # Hier stand ein Tor, das nicht fehlschlagen konnte. Der Ablauf war:
+      #
+      #     node scripts/audit-rls-coverage.mjs | tee /tmp/rls-coverage.txt
+      #     GAPS=$(awk … docs/security/rls-coverage-report.csv)
+      #
+      # Zwei Fehler, die zusammen wirken. Erstens setzt GitHub Actions fuer
+      # `run:` ohne `shell:` die Shell `bash -e {0}` — MIT `errexit`, aber OHNE
+      # `pipefail`. Der Exit-Code einer Pipeline ist der des LETZTEN Glieds,
+      # also der von `tee`, und `tee` gelingt immer. Zweitens liest `awk`
+      # danach die EINGECHECKTE CSV. Bricht das Messskript ab (keine
+      # Datenbank, fehlende Abhaengigkeit, SQL-Fehler), bewertet der Schritt
+      # also eine Datei aus dem Repository statt der Datenbank — und die
+      # enthaelt 0 Luecken. Nachgestellt am 2026-09-03:
+      #
+      #     $ bash -e -c 'node -e "process.exit(1)" | tee /tmp/o; \
+      #         GAPS=$(awk … report.csv); [ "$GAPS" -ne 0 ] && exit 1; true'
+      #     RLS-Luecken: 0   → exit 0
+      #
+      # Der Kommentar darueber begruendete den Verzicht auf `--check` damit,
+      # dass dessen Vergleich am Datenbanknamen in der Kopfzeile scheitere.
+      # Das stimmt nicht: `stripGenerated()` in `audit-rls-coverage.mjs`
+      # entfernt die Zeile `Erzeugt mit …` ausdruecklich. Gemessen ist die
+      # EINZIGE Abweichung die Prettier-Formatierung der Tabellen-Trennzeilen
+      # (`| ------ |` gegen `|---|`) — der Vergleich kollabiert Leerraum, aber
+      # nicht die Bindestrichlaenge.
+      #
+      # Deshalb jetzt zwei Schritte mit je EINER Aussage:
+      #   1. hier: NULL Luecken gegen die frisch migrierte Datenbank, geprueft
+      #      vom Exit-Code des Werkzeugs selbst (`--check`), ohne Pipe;
+      #   2. darunter: der eingecheckte Report entspricht dem Gemessenen —
+      #      formatierungsfest, weil vorher prettier darueber laeuft.
+      #
+      # `shell: bash` ist nicht kosmetisch: es schaltet `pipefail` mit ein.
+      - name: RLS-Abdeckung — 0 Luecken gegen die frisch migrierte Datenbank
+        shell: bash
         env:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
         run: |
-          node scripts/audit-rls-coverage.mjs | tee /tmp/rls-coverage.txt
-          # Spalte 7 ist `status`; Spalte 8 (`defects`) ist der letzte Wert.
-          GAPS=$(awk -F, 'NR>1 && $7 != "OK" && $7 != "PLATFORM_EXEMPT" {n++} END{print n+0}' \
-            docs/security/rls-coverage-report.csv)
-          echo "RLS-Luecken: $GAPS"
-          if [ "$GAPS" -ne 0 ]; then
-            echo "::error::$GAPS Objekte ohne wirksame RLS — siehe docs/security/rls-coverage-report.md"
+          set -euo pipefail
+          # Schreibmodus zuerst: `--check` prueft ZWEI Dinge (Luecken UND
+          # Uebereinstimmung mit der Datei auf der Platte). Nach dem Schreiben
+          # ist die zweite Bedingung trivial erfuellt, und der Exit-Code sagt
+          # genau eins: hat die Datenbank eine RLS-Luecke. Die Drift zum
+          # EINGECHECKTEN Stand ist Sache des naechsten Schritts.
+          node scripts/audit-rls-coverage.mjs
+          node scripts/audit-rls-coverage.mjs --check
+
+      # [ARCTOS-FULL-2026-08-31 · OP-092] Die zweite Haelfte: driftet der
+      # eingecheckte Report vom Gemessenen ab? Er ist das Dokument, mit dem
+      # Kunden und Auditoren die Mandantentrennung zugesichert bekommen; ein
+      # Report, der drei Migrationen zurueckliegt, ist eine falsche Zusage.
+      #
+      # `git diff` als Tor hat in diesem Repository schon einmal versagt, weil
+      # die verglichenen Pfade `.gitignore`-ignoriert waren (C-15, OP-066).
+      # Deshalb steht das `git ls-files --error-unmatch` VOR dem Vergleich: es
+      # bricht ab, wenn eine der beiden Dateien nicht verfolgt wird. Ohne das
+      # waere ein leerer Diff kein Ergebnis, sondern die Abwesenheit einer
+      # Messung.
+      - name: RLS-Report entspricht dem gemessenen Ist
+        shell: bash
+        run: |
+          set -euo pipefail
+          git ls-files --error-unmatch \
+            docs/security/rls-coverage-report.md \
+            docs/security/rls-coverage-report.csv > /dev/null
+          # Zwei umgebungsabhaengige Unterschiede werden vor dem Vergleich
+          # neutralisiert — beide sind KEINE Aussage ueber das Schema:
+          #   * die Kopfzeile nennt die Datenbank, gegen die gemessen wurde
+          #     (in CI `grc_platform_test`, auf der Maschine des Eigentuemers
+          #     etwas anderes). `stripGenerated()` im Werkzeug macht dieselbe
+          #     Ausnahme;
+          #   * prettier formatiert die Trennzeilen der Markdown-Tabellen um.
+          #     Der Generator schreibt `|---|`, prettier `| ----- |`; die
+          #     Datei ist eingecheckt und damit prettier-formatiert.
+          # Kein `grep -m1` und kein `head -1`: beide beenden sich vorzeitig,
+          # `git show` bekommt SIGPIPE, und unter `pipefail` bricht der Schritt
+          # mit 141 ab statt zu vergleichen (gemessen 2026-09-03). Die Zeile
+          # kommt genau einmal vor, also liest grep einfach zu Ende.
+          hdr="$(git show HEAD:docs/security/rls-coverage-report.md | grep '^Erzeugt mit ')"
+          esc="$(printf '%s' "$hdr" | sed -e 's/[\/&|]/\\&/g')"
+          sed -i "s|^Erzeugt mit .*$|$esc|" docs/security/rls-coverage-report.md
+          npx prettier --write docs/security/rls-coverage-report.md > /dev/null
+          if ! git diff --exit-code -- \
+                 docs/security/rls-coverage-report.md \
+                 docs/security/rls-coverage-report.csv; then
+            echo "::error::Der eingecheckte RLS-Report weicht vom gemessenen Ist ab. Neu erzeugen: node scripts/audit-rls-coverage.mjs && npx prettier --write docs/security/rls-coverage-report.md"
             exit 1
           fi
 

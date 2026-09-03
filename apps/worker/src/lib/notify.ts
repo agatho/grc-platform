@@ -23,6 +23,7 @@
 // `dedupeKey`; jobs that must always insert pass `dedupeWindow: "none"`.
 
 import { db, notification } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { createHash } from "crypto";
 import { isEmailTemplateKey } from "@grc/email";
 import { reportJobError } from "./job-runtime";
@@ -165,14 +166,12 @@ export async function insertNotification(
     };
   }
 
-  const target = opts.tx ?? db;
-
   // The arbiter is the plain UNIQUE index (org_id, dedupe_key) from
   // migration 0435. It is deliberately NOT partial: a partial index is only
   // inferred when the statement repeats its predicate, which would make the
   // dedup guarantee depend on an ORM detail. A NULL `dedupe_key` never
   // conflicts, so `dedupeWindow: "none"` inserts unconditionally.
-  const inserted =
+  const write = async (target: Pick<typeof db, "insert">) =>
     (await target
       .insert(notification)
       .values(payload)
@@ -180,6 +179,49 @@ export async function insertNotification(
         target: [notification.orgId, notification.dedupeKey],
       })
       .returning({ id: notification.id })) ?? [];
+
+  // [OP-169 · 2026-09-03] Ohne Organisationskontext ist dieser INSERT unter
+  // RLS nicht erlaubt: die Policy `notification_org_isolation` verlangt
+  // `org_id = current_setting('app.current_org_id')`. Gemessen als
+  // `new row violates row-level security policy for table "notification"`,
+  // sobald die Verbindung ueber die produktionsnahe Rolle `grc_app` laeuft.
+  //
+  // Sichtbar wurde das erst, nachdem OP-168 den Fixture-Kanal von
+  // `job-runtime.db.test.ts` auf die privilegierte Verbindung umgestellt
+  // hatte — vorher starb die Suite schon im `beforeAll`.
+  //
+  // 41 der 44 Cron-Jobs setzen keinen Kontext; sie schrieben bisher nur
+  // deshalb erfolgreich, weil die Worker-Rolle BYPASSRLS traegt. Damit war
+  // RLS fuer den gesamten Benachrichtigungspfad wirkungslos UND eine spaetere
+  // Entprivilegierung des Workers (OP-090) haette 41 Jobs auf einen Schlag
+  // brechen lassen.
+  //
+  // Der Kontext wird deshalb hier gesetzt, zentral und genau einmal — so wie
+  // schon die Dedup-Garantie hier zentral sitzt statt 44-fach. Er gilt
+  // transaktionslokal (`set_config(..., true)`), beruehrt also keinen
+  // Sitzungszustand auf einer gepoolten Verbindung (dieselbe Regel wie
+  // `withOrgContext`, S10-14).
+  //
+  // Uebergibt der Aufrufer eine eigene Transaktion, bleibt sie unangetastet:
+  // Dort haelt der Aufrufer den Kontext (drei Jobs tun das ueber
+  // `withOrgContext`), und ein `SET LOCAL` von hier aus wuerde ihn fuer den
+  // Rest SEINER Transaktion ueberschreiben — ein stiller Seiteneffekt, der
+  // schlimmer waere als das Problem.
+  if (opts.tx) return (await write(opts.tx)).length > 0;
+
+  if (!payload.orgId) {
+    // Kein org_id: nichts zu setzen. Der INSERT laeuft wie bisher und
+    // scheitert unter RLS sichtbar, statt einen falschen Kontext zu raten.
+    return (await write(db)).length > 0;
+  }
+
+  const orgId = payload.orgId;
+  const inserted = await db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT set_config('app.current_org_id', ${orgId}, true)`,
+    );
+    return write(tx);
+  });
 
   return inserted.length > 0;
 }

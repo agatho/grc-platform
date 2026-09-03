@@ -16,12 +16,25 @@
 // Requires DATABASE_URL (or APP_DATABASE_URL) to point at a migrated
 // database. CI must set it — see "Bedarf an andere Pakete" in
 // /work/audit/remediation/WP9.md.
+//
+// [OP-168 · 2026-09-03] Der Fixture-Kanal nimmt bewusst die PRIVILEGIERTE
+// Verbindung (DATABASE_URL) und nicht APP_DATABASE_URL. Vorher stand hier
+// `APP_DATABASE_URL ?? DATABASE_URL`, also genau umgekehrt: Sobald eine
+// Umgebung die produktionsnahe Rolle `grc_app` gesetzt hatte — und
+// `deploy/provision-grc-app.sh` setzt zusaetzlich FORCE RLS —, scheiterte
+// schon das Anlegen der Fixture-Organisation an
+// `new row violates row-level security policy for table "organization"`.
+// Der Test lief damit ausschliesslich dort durch, wo APP_DATABASE_URL FEHLTE,
+// also nie unter produktionsnahen Bedingungen. Der PRUEFLING bleibt
+// unveraendert: `job-runtime` und `notify` holen ihre Verbindung weiterhin
+// ueber `@grc/db` (APP_DATABASE_URL ?? DATABASE_URL) — die Zusicherungen
+// werden dadurch staerker, nicht schwaecher.
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import postgres from "postgres";
 import { randomUUID } from "crypto";
 
-const URL = process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL;
+const URL = process.env.DATABASE_URL ?? process.env.APP_DATABASE_URL;
 
 const suite = URL ? describe : describe.skip;
 

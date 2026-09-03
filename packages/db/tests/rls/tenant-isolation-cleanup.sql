@@ -32,7 +32,9 @@ BEGIN
     FOR r IN SELECT tbl, id FROM _wp2_seed_ids WHERE id IS NOT NULL LOOP
       CONTINUE WHEN to_regclass('public.' || r.tbl) IS NULL;
       BEGIN
-        EXECUTE format('DELETE FROM public.%I WHERE id = %L', r.tbl, r.id);
+        -- [OP-088] `id::text`: `_wp2_seed_ids.id` ist Text, damit auch
+        -- bigint-Schluessel erfasst werden.
+        EXECUTE format('DELETE FROM public.%I WHERE id::text = %L', r.tbl, r.id);
       EXCEPTION WHEN OTHERS THEN
         NULL;  -- Tabelle inzwischen weg / Spalte anders: nicht fatal
       END;
@@ -166,5 +168,10 @@ DROP TABLE IF EXISTS _wp2_seed_errors;
 DROP TABLE IF EXISTS _wp2_trigger_state;
 DROP FUNCTION IF EXISTS _wp2_seed_value(text, text, text, "char", "char", oid, int, text);
 DROP FUNCTION IF EXISTS _wp2_check_literal(text, text);
+-- [ARCTOS-FULL-2026-08-31 · OP-088] Die drei Helfer, mit denen der Seed die
+-- fuenf zuvor ungeprueften Tabellen erreicht.
+DROP FUNCTION IF EXISTS _wp2_check_minlen(text, text);
+DROP FUNCTION IF EXISTS _wp2_in_check(text, text);
+DROP FUNCTION IF EXISTS _wp2_unique_nulls_not_distinct(text, text);
 
 SET session_replication_role = 'origin';

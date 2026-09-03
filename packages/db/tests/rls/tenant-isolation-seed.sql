@@ -24,13 +24,24 @@
 SET session_replication_role = 'replica';
 SET client_min_messages = warning;
 
-CREATE TABLE IF NOT EXISTS _wp2_seed_ids (
+-- [ARCTOS-FULL-2026-08-31 · OP-088] `id` ist `text`, nicht `uuid`.
+--
+-- Fünf Tabellen tragen einen `bigint`-Primärschlüssel (`retention_binding`,
+-- `retention_run_log`, `dsr_subject_index`, `pii_redaction_rule`,
+-- `audit_log_write_attempt`). Der Seed hat sie befüllt, konnte ihre Kennung
+-- aber nicht in einer `uuid`-Spalte ablegen: `new_id` blieb NULL, und der
+-- Probe-Teil verlangt `a.id IS NOT NULL` — sie fielen ohne Fehlermeldung aus
+-- der Prüfung. `retention_binding` und `retention_run_log` tragen `org_id` und
+-- RLS, waren also mandantenbezogen UND ungeprüft, ohne irgendwo aufzutauchen.
+-- Als Text gespeichert und mit `id::text` verglichen, ist der Probe-Teil vom
+-- Typ des Schlüssels unabhängig.
+DROP TABLE IF EXISTS _wp2_seed_ids;
+CREATE TABLE _wp2_seed_ids (
   tbl text NOT NULL,
   org text NOT NULL,
-  id  uuid,
+  id  text,
   PRIMARY KEY (tbl, org)
 );
-TRUNCATE _wp2_seed_ids;
 
 CREATE TABLE IF NOT EXISTS _wp2_seed_errors (tbl text, org text, err text);
 TRUNCATE _wp2_seed_errors;
@@ -88,11 +99,104 @@ BEGIN
        AND c.contype = 'c'
   LOOP
     CONTINUE WHEN position(p_col IN def) = 0;
-    CONTINUE WHEN def !~ ('\(\(?"?' || p_col || '"?\)?::text = ANY');
+    -- [ARCTOS-FULL-2026-08-31 · OP-088] `::text` ist OPTIONAL. Der Cast steht
+    -- nur dort, wo die Spalte `varchar` ist; bei einer `text`-Spalte schreibt
+    -- PostgreSQL `CHECK ((strategy = ANY (ARRAY['hard_delete'::text, …])))`
+    -- ohne Cast auf der linken Seite. Das alte Muster verlangte ihn und ging
+    -- deshalb an genau diesen Tabellen vorbei — gemessen an
+    -- `retention_binding.strategy`, das mit `'W1001WP2RLS'` befüllt wurde und
+    -- an seiner eigenen Werteliste scheiterte.
+    CONTINUE WHEN def !~ ('\(\(?"?' || p_col || '"?\)?(::text)? = ANY');
     m := regexp_match(substr(def, position(p_col IN def)), $re$'([^']+)'$re$);
     IF m IS NOT NULL THEN RETURN m[1]; END IF;
   END LOOP;
   RETURN NULL;
+END
+$chk$;
+
+-- [ARCTOS-FULL-2026-08-31 · OP-088] Mindestlänge aus einer CHECK-Constraint.
+--
+-- `asset_classification_override.reason` trägt `CHECK (length(reason) >= 20)`;
+-- der Generator lieferte `'W1042WP2RLS'` (11 Zeichen) und die Zeile wurde
+-- abgelehnt. Die Tabelle stand danach als „nicht per Zeilenprobe geprüft" im
+-- Register (OP-088) — für eine Spalte, deren Begründungspflicht der einzige
+-- Grund der Constraint ist. Statt die Zeichenkette pauschal zu verlängern
+-- (was Tabellen mit Höchstlängen brechen würde) wird die Forderung gelesen.
+CREATE OR REPLACE FUNCTION _wp2_check_minlen(p_tbl text, p_col text)
+RETURNS int LANGUAGE plpgsql STABLE AS $chk$
+DECLARE
+  def text;
+  m   text[];
+  best int := 0;
+BEGIN
+  FOR def IN
+    SELECT pg_get_constraintdef(c.oid)
+      FROM pg_constraint c
+     WHERE c.conrelid = ('public.' || quote_ident(p_tbl))::regclass
+       AND c.contype = 'c'
+  LOOP
+    m := regexp_match(
+           def,
+           '(?:char_)?length\(\(?"?' || p_col || '"?\)?(?:::text)?\)\s*>=?\s*(\d+)');
+    IF m IS NOT NULL AND m[1]::int > best THEN best := m[1]::int; END IF;
+  END LOOP;
+  RETURN best;
+END
+$chk$;
+
+-- [ARCTOS-FULL-2026-08-31 · OP-088] Wird die Spalte von einer CHECK-Constraint
+-- ihrer eigenen Tabelle überhaupt erwähnt?
+--
+-- Der Generator überspringt jede NULLable Spalte — sinnvoll, solange eine
+-- Constraint nur eine Spalte betrifft. `wb_case_evidence` zeigt den Fall, in
+-- dem das falsch ist: `CHECK (is_immutable IS NOT TRUE OR (storage_path IS NOT
+-- NULL AND sha256_hash IS NOT NULL AND stored_at IS NOT NULL))`. `is_immutable`
+-- hat den Default `true`, `stored_at` ist NULLable — übersprungen, Constraint
+-- verletzt, Tabelle ungeprüft. Eine NULLable Spalte, die in einer CHECK
+-- vorkommt, bekommt deshalb einen Wert.
+CREATE OR REPLACE FUNCTION _wp2_in_check(p_tbl text, p_col text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $chk$
+DECLARE
+  def text;
+BEGIN
+  FOR def IN
+    SELECT pg_get_constraintdef(c.oid)
+      FROM pg_constraint c
+     WHERE c.conrelid = ('public.' || quote_ident(p_tbl))::regclass
+       AND c.contype = 'c'
+  LOOP
+    IF def ~ ('\m' || p_col || '\M') THEN RETURN true; END IF;
+  END LOOP;
+  RETURN false;
+END
+$chk$;
+
+-- [ARCTOS-FULL-2026-08-31 · OP-088] Gehört die Spalte zu einem UNIQUE-Index
+-- mit `NULLS NOT DISTINCT`?
+--
+-- `audit_anchor_seal.prev_seal_hash` ist NULLable und trägt
+-- `UNIQUE (prev_seal_hash) NULLS NOT DISTINCT`. Der Generator überspringt sie
+-- für BEIDE Mandanten, beide Zeilen bekommen NULL — und unter NULLS NOT
+-- DISTINCT ist das eine Kollision. Die Zeile von Org B scheiterte, die von
+-- Org A blieb allein zurück, und weil der Probe-Teil beide verlangt, fiel die
+-- Tabelle stillschweigend aus der Prüfung. Sie ist die Siegel-Tabelle des
+-- Audit-Ankers: ausgerechnet dort war die Mandantentrennung ungeprüft.
+CREATE OR REPLACE FUNCTION _wp2_unique_nulls_not_distinct(p_tbl text, p_col text)
+RETURNS boolean LANGUAGE plpgsql STABLE AS $chk$
+DECLARE
+  found boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+      FROM pg_index i
+      JOIN pg_attribute a
+        ON a.attrelid = i.indrelid AND a.attnum = ANY (i.indkey)
+     WHERE i.indrelid = ('public.' || quote_ident(p_tbl))::regclass
+       AND i.indisunique
+       AND i.indnullsnotdistinct
+       AND a.attname = p_col
+  ) INTO found;
+  RETURN found;
 END
 $chk$;
 
@@ -106,12 +210,26 @@ CREATE OR REPLACE FUNCTION _wp2_seed_value(
   p_typcategory "char", p_typoid oid, p_maxlen int, p_uniq text
 ) RETURNS text LANGUAGE plpgsql AS $fn$
 DECLARE
-  lit text;
+  lit    text;
+  minlen int;
+  base   text;
+  dim    int;
 BEGIN
   IF p_ftype LIKE 'character varying%' OR p_ftype LIKE 'character%'
      OR p_ftype IN ('text', 'citext') THEN
     lit := _wp2_check_literal(p_tbl, p_attname);
     IF lit IS NOT NULL THEN RETURN quote_literal(lit); END IF;
+  END IF;
+  -- [ARCTOS-FULL-2026-08-31 · OP-088] pgvector. `control_embedding.embedding`
+  -- ist `vector(1536) NOT NULL`; der Generator fiel in den ELSE-Zweig und
+  -- lieferte `NULL`. Die Dimension steht im Typnamen und wird von dort
+  -- gelesen — ein festes Literal wäre beim nächsten Modellwechsel falsch.
+  -- Kein Nullvektor: die HNSW-Cosinus-Distanz ist für ihn nicht definiert.
+  IF p_ftype LIKE 'vector%' THEN
+    dim := COALESCE((regexp_match(p_ftype, '\((\d+)\)'))[1]::int, 3);
+    RETURN quote_literal(
+             '[' || array_to_string(array_fill(0.1::float8, ARRAY[dim]), ',') || ']')
+           || '::' || p_ftype;
   END IF;
   IF p_typcategory = 'A' THEN
     RETURN quote_literal('{}') || '::' || p_ftype;
@@ -123,10 +241,19 @@ BEGIN
     RETURN 'gen_random_uuid()';
   ELSIF p_ftype LIKE 'character varying%' OR p_ftype LIKE 'character%'
      OR p_ftype IN ('text', 'citext') THEN
-    IF p_maxlen > 0 THEN
-      RETURN quote_literal(left('W' || p_uniq || 'WP2RLS', p_maxlen));
+    base := 'W' || p_uniq || 'WP2RLS';
+    -- Nur so lang wie gefordert: eine pauschal verlängerte Zeichenkette
+    -- verletzte die Höchstlängen anderer Tabellen (`left()` schneidet dann
+    -- unter die geforderte Mindestlänge zurück und die Zeile scheitert
+    -- trotzdem — nur an einer schwerer zu lesenden Stelle).
+    minlen := _wp2_check_minlen(p_tbl, p_attname);
+    IF minlen > length(base) THEN
+      base := rpad(base, minlen, 'X');
     END IF;
-    RETURN quote_literal('W' || p_uniq || 'WP2RLS');
+    IF p_maxlen > 0 THEN
+      RETURN quote_literal(left(base, p_maxlen));
+    END IF;
+    RETURN quote_literal(base);
   ELSIF p_ftype IN ('integer', 'bigint', 'smallint', 'real', 'double precision')
      OR p_ftype LIKE 'numeric%' THEN
     RETURN '1';
@@ -160,7 +287,8 @@ DECLARE
   vals     text;
   v        text;
   stmt     text;
-  new_id   uuid;
+  -- [OP-088] text statt uuid — s. den Kommentar an `_wp2_seed_ids`.
+  new_id   text;
   progress boolean;
   fk_val   uuid;
   uniq_no  bigint := 1000;
@@ -241,8 +369,15 @@ BEGIN
         cols := ''; vals := '';
 
         IF NOT t.has_org THEN
-          SELECT s.id INTO fk_val FROM _wp2_seed_ids s
-           WHERE s.tbl = fk_parent AND s.org = o.tag;
+          -- Die Abstammung geht immer über einen uuid-Fremdschlüssel; eine
+          -- Elternzeile mit bigint-Schlüssel kommt als Ziel nicht in Frage
+          -- und wird hier verworfen statt einen Cast-Fehler zu erzeugen.
+          BEGIN
+            SELECT s.id::uuid INTO fk_val FROM _wp2_seed_ids s
+             WHERE s.tbl = fk_parent AND s.org = o.tag;
+          EXCEPTION WHEN OTHERS THEN
+            fk_val := NULL;
+          END;
           CONTINUE WHEN fk_val IS NULL;
         END IF;
 
@@ -264,6 +399,24 @@ BEGIN
                  || '::uuid';
           ELSIF NOT t.has_org AND c.attname = fk_col THEN
             v := quote_literal(fk_val::text) || '::uuid';
+          -- [ARCTOS-FULL-2026-08-31 · OP-088] Zwei Ausnahmen von „NULLable
+          -- oder Default → überspringen". Beide sind gemessene Ursachen dafür,
+          -- dass eine Tabelle stillschweigend aus der Zeilenprobe fiel:
+          --   * die Spalte steht in einer CHECK-Constraint ihrer Tabelle
+          --     (`wb_case_evidence.stored_at`),
+          --   * sie gehört zu einem UNIQUE-Index mit NULLS NOT DISTINCT, unter
+          --     dem die beiden Mandantenzeilen sonst mit NULL kollidieren
+          --     (`audit_anchor_seal.prev_seal_hash`).
+          -- Eine Spalte MIT Default bleibt in beiden Fällen unangetastet: der
+          -- Default ist eine Aussage des Schemas, und ihn zu überschreiben
+          -- würde genau die Konstellation wegprüfen, die in Produktion gilt.
+          ELSIF NOT c.attnotnull AND NOT c.atthasdef
+                AND (_wp2_in_check(t.tbl, c.attname)
+                  OR _wp2_unique_nulls_not_distinct(t.tbl, c.attname)) THEN
+            uniq_no := uniq_no + 1;
+            v := _wp2_seed_value(t.tbl, c.attname, c.ftype, c.typtype,
+                                 c.typcategory, c.atttypid, c.maxlen,
+                                 uniq_no::text);
           ELSIF c.atthasdef OR NOT c.attnotnull THEN
             CONTINUE;
           ELSE
@@ -277,12 +430,18 @@ BEGIN
         END LOOP;
 
         BEGIN
+          -- [ARCTOS-FULL-2026-08-31 · OP-088] Die Bedingung war
+          -- `AND col.data_type = 'uuid'`. Tabellen mit `bigint`-Schlüssel
+          -- landeten deshalb im ELSE-Zweig, ihre Kennung ging verloren, und
+          -- der Probe-Teil übersprang sie schweigend. Jetzt zählt nur, DASS es
+          -- eine `id`-Spalte gibt; der Typ wird in Text überführt.
           IF EXISTS (SELECT 1 FROM information_schema.columns col
                       WHERE col.table_schema = 'public' AND col.table_name = t.tbl
-                        AND col.column_name = 'id' AND col.data_type = 'uuid')
+                        AND col.column_name = 'id')
           THEN
-            stmt := format('INSERT INTO public.%I (%s) VALUES (%s) RETURNING id',
-                           t.tbl, cols, vals);
+            stmt := format(
+                      'INSERT INTO public.%I (%s) VALUES (%s) RETURNING id::text',
+                      t.tbl, cols, vals);
             EXECUTE stmt INTO new_id;
           ELSE
             stmt := format('INSERT INTO public.%I (%s) VALUES (%s)', t.tbl, cols, vals);

@@ -24,6 +24,7 @@ import {
   DRIFT_QUERIES,
   type DbColumn,
   type DbTableFlags,
+  type DbTrigger,
 } from "./schema-drift";
 
 async function main() {
@@ -40,12 +41,15 @@ async function main() {
     ).map((r) => r.table_name);
     const columns = await client.unsafe<DbColumn[]>(DRIFT_QUERIES.columns);
     const flags = await client.unsafe<DbTableFlags[]>(DRIFT_QUERIES.flags);
+    // [ARCTOS-FULL-2026-08-31 · OP-155] Der ENABLE-Zustand der Trigger.
+    const triggers = await client.unsafe<DbTrigger[]>(DRIFT_QUERIES.triggers);
 
     const report = compareSchema(
       schemas as unknown as Record<string, unknown>,
       tables,
       columns,
       flags,
+      triggers,
     );
     const duplicates = duplicateTableDefinitions(
       schemas as unknown as Record<string, unknown>,
@@ -67,6 +71,7 @@ async function main() {
           ` (thereof ${extraCols} only-in-DB columns)`,
       );
       console.log(`RLS drift     : ${report.rlsDrift.length}`);
+      console.log(`trigger drift : ${report.triggerDrift.length}`);
       console.log(`duplicate defs: ${duplicates.length}`);
 
       for (const t of report.missingInDb) console.log(`  MISSING TABLE  ${t}`);
@@ -80,6 +85,13 @@ async function main() {
       for (const r of report.rlsDrift) {
         console.log(`  ${r.kind.toUpperCase().padEnd(22)} ${r.table}`);
       }
+      for (const t of report.triggerDrift) {
+        console.log(
+          `  ${t.kind.toUpperCase().padEnd(22)} ${t.table}.${t.trigger}` +
+            (t.expected ? `  expected=${t.expected}` : "") +
+            (t.actual ? ` actual=${t.actual}` : ""),
+        );
+      }
       for (const d of duplicates) {
         console.log(
           `  DUPLICATE pgTable      ${d.table} declared by ${d.exports.join(", ")}`,
@@ -92,9 +104,16 @@ async function main() {
     // belong to WP2 (Mandantentrennung/RLS). Pass --fail-on-rls once that
     // package has landed — this is a named hand-over, not a frozen baseline.
     const failOnRls = process.argv.includes("--fail-on-rls");
+    // [ARCTOS-FULL-2026-08-31 · OP-155] Trigger-Drift lässt den Lauf
+    // fehlschlagen — ohne Schalter und ohne Übergabefrist. Anders als bei der
+    // RLS-Drift von damals gibt es hier keinen bekannten Restbestand, den ein
+    // anderes Arbeitspaket erst abbauen müsste: gegen eine von Null migrierte
+    // Datenbank ist die Liste leer (gemessen 2026-09-03). Ein Befund heisst
+    // deshalb immer, dass jemand einen Wächter entschärft hat.
     const bad =
       report.missingInDb.length > 0 ||
       report.columnDrift.length > 0 ||
+      report.triggerDrift.length > 0 ||
       duplicates.length > 0 ||
       (failOnRls && report.rlsDrift.length > 0);
     if (failOnDrift && bad) {

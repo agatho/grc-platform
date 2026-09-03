@@ -162,22 +162,47 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
       "risk", // S01-02
       "organization", // S01-02
       "grc_budget", // S01-08 (Basistabelle von v_budget_usage)
+      // [ARCTOS-FULL-2026-08-31 · OP-088] Die fünf Tabellen, die WP2 §2 (Ende)
+      // ausdrücklich als „nicht per Zeilenprobe geprüft" ausgewiesen hat.
+      // Namentlich, nicht als Zahl: eine Zahl erlaubt es, eine Tabelle gegen
+      // eine andere zu tauschen, ohne dass etwas rot wird — und genau das ist
+      // zwischen WP2 und heute passiert (siehe UMSETZUNG-WELLE-4A.md §4).
+      "asset_classification_override", // CHECK length(reason) >= 20
+      "control_embedding", // vector(1536) NOT NULL
+      "retention_binding", // Werteliste ohne ::text-Cast
+      "wb_case_evidence", // spaltenübergreifende CHECK
+      "audit_anchor_seal", // UNIQUE … NULLS NOT DISTINCT
+      "notification_preference", // war schon vor OP-088 wieder erreichbar
     ]) {
       expect(names, `seed must cover ${required}`).toContain(required);
     }
   });
 
-  it("reports which objects could not be seeded (visible, not silent)", () => {
-    // Kein Fehlschlag — aber die Liste steht im Testprotokoll, damit "nicht
-    // geprüft" nie mit "geprüft und in Ordnung" verwechselt wird.
-    if (seedErrors.length > 0) {
-      console.warn(
-        `[WP2] ${seedErrors.length} Objekt(e) nicht seedbar und daher nicht ` +
-          `per Zeilenprobe geprüft:\n` +
-          seedErrors.map((e) => `  - ${e.tbl}: ${e.err}`).join("\n"),
-      );
-    }
-    expect(seedErrors.length).toBeLessThan(20);
+  it("no object is left unseeded — the list must be EMPTY, not short", () => {
+    // [ARCTOS-FULL-2026-08-31 · OP-088] Hier stand `toBeLessThan(20)`, und
+    // daneben die Liste als `console.warn`. Vitest zeigt die Ausgabe eines
+    // grünen Tests nicht an — die fünf ungeprüften Tabellen waren damit
+    // nirgends sichtbar ausser im Bericht, und der Bericht ist nicht
+    // mitgewachsen: gemessen am 2026-09-03 waren es andere fünf als die dort
+    // genannten. Ein Budget von 20, das nie ausgeschöpft wird, ist keine
+    // Grenze, sondern eine Einladung.
+    //
+    // Die Zusicherung ist jetzt „keiner". Wer eine Tabelle wirklich nicht
+    // generisch befüllen kann, trägt sie hier mit Begründung ein — und muss
+    // dabei sagen, warum die Mandantentrennung dieser Tabelle anders
+    // nachgewiesen wird.
+    const AKZEPTIERT_UNSEEDBAR: Record<string, string> = {};
+    const unerwartet = seedErrors.filter((e) => !AKZEPTIERT_UNSEEDBAR[e.tbl]);
+    expect(
+      unerwartet.map((e) => `${e.tbl}: ${e.err}`),
+      "nicht seedbare Objekte sind nicht per Zeilenprobe geprüft",
+    ).toEqual([]);
+    // Ein Eintrag, der nicht mehr zutrifft, ist ebenfalls ein Fehler: eine
+    // Ausnahmeliste, die nicht schrumpfen muss, ist keine.
+    const ueberholt = Object.keys(AKZEPTIERT_UNSEEDBAR).filter(
+      (t) => !seedErrors.some((e) => e.tbl === t),
+    );
+    expect(ueberholt, "überholte Einträge in AKZEPTIERT_UNSEEDBAR").toEqual([]);
   });
 
   // #WP8-S07-09 — Objekte, deren Lesepolicy zusätzlich zur Mandantengrenze
@@ -202,11 +227,11 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
       let foreign: { n: number };
       try {
         [own] = await app.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id = $1`,
+          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
           [s.a],
         );
         [foreign] = await app.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id = $1`,
+          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
           [s.b],
         );
       } catch (err) {
@@ -236,12 +261,12 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
       await app.client.unsafe("BEGIN");
       try {
         const upd = await app.client.unsafe(
-          `UPDATE public."${s.tbl}" SET id = id WHERE id = $1`,
+          `UPDATE public."${s.tbl}" SET id = id WHERE id::text = $1`,
           [s.b],
         );
         if (upd.count > 0) writeLeaks.push(`${s.tbl}: UPDATE ${upd.count}`);
         const del = await app.client.unsafe(
-          `DELETE FROM public."${s.tbl}" WHERE id = $1`,
+          `DELETE FROM public."${s.tbl}" WHERE id::text = $1`,
           [s.b],
         );
         if (del.count > 0) writeLeaks.push(`${s.tbl}: DELETE ${del.count}`);

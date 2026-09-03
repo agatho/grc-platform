@@ -563,6 +563,100 @@ diesem Audit schon 711 Importe in 139 Dateien betraf, und das `try/catch`
 verdeckte den Auflösefehler hinter einer freundlichen Meldung. Behoben:
 gewöhnlicher dynamischer Import mit literalem Bezeichner, Trägheit erhalten.
 
+### Nachtrag 2026-09-03 — zwei neue Punkte aus der Abnahme von Welle 4a
+
+Bei der Wiederholung der Abnahme gegen eine **von Null migrierte** Datenbank
+(426/426 Migrationen, 614 Tabellen) mit der produktionsnahen Rolle `grc_app`
+und `FORCE ROW LEVEL SECURITY` — so, wie `deploy/provision-grc-app.sh` sie
+einrichtet — sind zwei Punkte aufgefallen, die vorher nicht sichtbar sein
+konnten. Sie gehoeren zusammen: der erste hat den zweiten verdeckt.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                     | Art     | Stand   |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------- | ------- |
+| OP-168 | **Ein Datenbanktest konnte unter produktionsnahen Bedingungen nie laufen.** `apps/worker/tests/lib/job-runtime.db.test.ts` nahm fuer seinen **Fixture**-Kanal `APP_DATABASE_URL ?? DATABASE_URL`, also bevorzugt die RLS-gebundene Rolle. Schon das Anlegen der Fixture-Organisation scheiterte damit an `new row violates row-level security policy for table "organization"` — im `beforeAll`, weshalb alle sechs Zusicherungen als _skipped_ endeten statt als _failed_. Der Test lief ausschliesslich dort durch, wo `APP_DATABASE_URL` FEHLTE. | Eigene Messung 2026-09-03 | Test    | behoben |
+| OP-169 | **Der gesamte Benachrichtigungspfad des Workers haengt an BYPASSRLS.** `insertNotification` schrieb ohne Organisationskontext; die Policy `notification_org_isolation` verlangt `org_id = current_setting('app.current_org_id')`. **41 der 44 Cron-Jobs** setzen keinen Kontext (nur `calendar-digest`, `calendar-overdue-check` und `overdue-tasks` tun es ueber `withOrgContext`). Sie schrieben bisher nur deshalb erfolgreich, weil die Worker-Rolle BYPASSRLS traegt.                                                                          | Eigene Messung 2026-09-03 | Produkt | behoben |
+
+**Warum das zusammengehoert.** OP-169 war messbar, sobald OP-168 behoben war
+— vorher starb die Suite eine Ebene zu frueh. Es ist dasselbe Muster, das
+dieses Audit schon dreimal gefunden hat: **die Wache ueber der Sache war
+kaputt, nicht die Sache** — nur diesmal war die Sache es auch.
+
+**Die Tragweite von OP-169.** Zwei Folgen, beide unangenehm:
+
+1. RLS war fuer den Benachrichtigungspfad **wirkungslos**. Die Mandanten-
+   trennung dieser Tabelle beruhte allein darauf, dass jeder Job die richtige
+   `org_id` in die Zeile schreibt — nicht auf der Policy.
+2. Die Entprivilegierung des Workers (OP-090, der einzige unmittelbar
+   deploy-relevante Punkt des Registers) haette **41 Jobs auf einen Schlag**
+   brechen lassen. Ein Punkt, an dem 41 andere haengen, war als
+   Rollen-Konfiguration gefuehrt und war in Wirklichkeit Anwendungscode.
+
+**Behebung — zentral, nicht 41-fach.** `notify.ts` ist ausweislich seines
+eigenen Kopfes „der einzige Schreibpfad fuer Benachrichtigungen"; dort sitzt
+schon die Dedup-Garantie zentral statt 44-fach. Der Organisationskontext sitzt
+jetzt daneben: Ohne uebergebene Transaktion oeffnet `insertNotification` eine
+eigene und setzt `app.current_org_id` **transaktionslokal**
+(`set_config(..., true)`) aus der `org_id` der Zeile — dieselbe Regel wie
+`withOrgContext` (S10-14), also kein Sitzungszustand auf einer gepoolten
+Verbindung. Uebergibt der Aufrufer eine Transaktion, bleibt sie unangetastet:
+dort haelt der Aufrufer den Kontext, und ein `SET LOCAL` von hier aus wuerde
+ihn fuer den Rest SEINER Transaktion ueberschreiben.
+
+**Nachweis.** `job-runtime.db.test.ts` laeuft jetzt in beiden Umgebungen
+(6/6 mit und ohne `APP_DATABASE_URL`); die gesamte Worker-Suite ist in beiden
+Faellen gruen (134 Dateien, 397 Tests). Dazu ein neuer, **datenbankfreier**
+Test `notify-org-context.test.ts`: Der Datenbanktest deckt denselben Fall ab,
+aber nur wenn die Umgebung `APP_DATABASE_URL` setzt — genau daran ist der
+Befund vorbeigelaufen, und ein Tor, das nur unter einer ungenannten Bedingung
+ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
+Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
+alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
+
+### Nachtrag 2026-09-03 — die Canary, und was sie widerlegt hat
+
+Auf Weisung des Eigentümers („probiere erst mal die canary") wurde
+**Next 16.4.0-canary.15** gemessen. Vier weitere Bauläufe, diesmal mit einer
+Vorsichtsmassnahme aus dem eigenen Fehler von gestern: die Typprüfung wurde
+über den bestehenden, umgebungsgeschützten Schalter
+`ARCTOS_BUILD_IGNORE_TS_ERRORS=1` übersprungen — nicht um Fehler zu
+verstecken, sondern damit der Bau die **Erzeugungsphase überhaupt erreicht**,
+in der der Absturz sitzt. Genau daran war die Messung zu 16.3.4 gescheitert.
+
+**(1) Die Canary hilft nicht.** `✓ Compiled successfully in 63s`, dann
+`Collecting page data`, dann `Generating static pages (516/688)` und derselbe
+Abbruch: `Error occurred prerendering page "/_global-error"` ·
+`TypeError: Cannot read properties of null (reading 'useContext')` ·
+`STANDALONE_SERVER_JS=MISSING`. Diesmal ist die Erzeugungsphase nachweislich
+erreicht worden; die Messung ist vollständig.
+
+**(2) Ein Arbeiter statt 31 — und damit fällt die bisherige Erklärung.**
+Mit `experimental.cpus: 1` bricht der Bau bei **`(0/688)`** ab, also an der
+allerersten Seite. Damit ist die bisherige Zuordnung zu
+vercel/next.js#95741 („route batching during static generation")
+**widerlegt**: Der Fehler hängt weder an der Zahl der Seiten noch an der
+Stapelbildung. Er ist deterministisch und trifft `/_global-error` als Erstes.
+Der beobachtete Umschlag bei 685→688 Seiten war ein Zufall der
+Arbeiterverteilung, nicht die Ursache. Diese Korrektur betrifft eine Aussage,
+die dieses Register selbst aufgestellt hat — sie wird hier nicht
+stillschweigend ersetzt, sondern benannt.
+
+**(3) Ohne unsere `global-error.tsx` — derselbe Absturz.** Die Datei wurde für
+einen Baulauf beiseitegelegt, so dass Next seine **eigene** Vorgabeseite
+erzeugt. Ergebnis: identischer Fehler an identischer Stelle. Damit liegt der
+Defekt beweisbar **nicht** in unserem Code. Die Datei ist wiederhergestellt.
+
+**(4) Ohne das next-intl-Plugin — derselbe Absturz.** `withNextIntl` wurde für
+einen Baulauf umgangen. Identischer Fehler. Damit scheidet auch eine
+Wechselwirkung mit der Übersetzungsschicht aus. Die Konfiguration ist
+wiederhergestellt.
+
+**Was daraus folgt.** Der Absturz ist ein Fehler in Turbopacks
+Produktions-Erzeugung der synthetischen Route `/_global-error` — ohne Zutun
+unseres Codes, unserer Konfiguration und unserer Abhängigkeiten, und in
+16.2.11, 16.3.4 und 16.4.0-canary.15 gleichermassen. Der Fehlerbericht kann
+jetzt mit vier trennscharfen Messungen statt einer Korrelation angereichert
+werden; die Zuordnung zu #95741 ist zurückzunehmen.
+
 ### Vorlage an den Eigentümer
 
 Beide gemessenen Wege scheiden aus: `--debug-prerender` darf laut Next-Doku
