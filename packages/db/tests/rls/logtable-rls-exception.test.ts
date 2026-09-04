@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from "vitest";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireAt } from "../helpers";
 import { TENANT_TABLE_RLS_EXCEPTIONS } from "../../src/rls-audit";
 
 /**
@@ -98,8 +98,8 @@ describe("Log-table RLS (S01-06)", () => {
        WHERE n.nspname = 'public' AND p.proname = 'app_current_org_scope'
     `;
     expect(rows.length).toBe(1);
-    expect(rows[0].prosecdef).toBe(true);
-    expect(rows[0].hasconfig).toBe(true);
-    expect(rows[0].publicexec).toBe(false);
+    expect(requireAt(rows, 0, "rows").prosecdef).toBe(true);
+    expect(requireAt(rows, 0, "rows").hasconfig).toBe(true);
+    expect(requireAt(rows, 0, "rows").publicexec).toBe(false);
   });
 });

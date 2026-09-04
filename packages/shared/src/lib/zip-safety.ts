@@ -74,18 +74,48 @@ export class ZipBombError extends Error {
   }
 }
 
+// [OP-065] Diese beiden Leser waren die Stelle, an der der Wächter zu wenig
+// gesehen hat. `buf[off]` ist ausserhalb des Puffers `undefined`, und
+// JavaScript macht daraus im Bit-Ausdruck stillschweigend eine 0
+// (`ToInt32(undefined) === 0`). Ein Lesen über das Dateiende hinaus ergab
+// also weder eine Ausnahme noch NaN, sondern die Zahl **null** — und null ist
+// bei einem Dekompressionswächter die gefährlichste aller Antworten: „diese
+// Datei entpackt sich zu nichts."
+//
+// Gemessen am 2026-09-03 gegen 01d0e4cc (Regressionstest „liest ein
+// ZIP64-Zusatzfeld nicht über das Dateiende hinaus" in
+// tests/zip-safety-s04-04.test.ts): ein Archiv, dessen Zusatzfeld laut
+// `extraLen` zwölf Bytes lang ist, von denen nur vier im Puffer liegen, wurde
+// mit `uncompressedSize = 0` gemeldet — obwohl der Eintrag sich über
+// `0xffffffff` ausdrücklich als ZIP64-gross (≥ 4 GiB) deklariert hatte. Die
+// Schranke `field + 8 <= exEnd` prüft gegen die DEKLARIERTE Feldlänge, nicht
+// gegen die vorhandene Datei; das Loch dazwischen war genau acht Bytes breit.
+//
+// `readByte` macht aus dem Grenzfall das, was der Modulkopf für ihn ohnehin
+// vorsieht: „cannot inspect ⇒ do not inflate". Ein Vorgabewert (`?? 0`) wäre
+// derselbe Defekt mit einer Zeile mehr gewesen.
+function readByte(buf: Uint8Array, off: number): number {
+  const b = buf[off];
+  if (b === undefined) {
+    throw new ZipBombError(
+      `ZIP structure points past the end of the file (offset ${off} of ${buf.length}) — refusing to parse.`,
+    );
+  }
+  return b;
+}
+
 function readUInt32LE(buf: Uint8Array, off: number): number {
   return (
-    (buf[off] |
-      (buf[off + 1] << 8) |
-      (buf[off + 2] << 16) |
-      (buf[off + 3] << 24)) >>>
+    (readByte(buf, off) |
+      (readByte(buf, off + 1) << 8) |
+      (readByte(buf, off + 2) << 16) |
+      (readByte(buf, off + 3) << 24)) >>>
     0
   );
 }
 
 function readUInt16LE(buf: Uint8Array, off: number): number {
-  return buf[off] | (buf[off + 1] << 8);
+  return readByte(buf, off) | (readByte(buf, off + 1) << 8);
 }
 
 function readUInt64LE(buf: Uint8Array, off: number): number {
@@ -242,9 +272,16 @@ export function assertZipWithinLimits(
     );
   }
 
-  const biggest = info.entries.reduce(
-    (a, b) => (b.uncompressedSize > a.uncompressedSize ? b : a),
-    info.entries[0],
+  // [OP-065] Der Startwert `info.entries[0]` war `ZipEntryInfo | undefined`,
+  // und `biggest.uncompressedSize` hätte bei einem leeren Archiv geworfen.
+  // Erreichbar ist das nicht — `inspectZipArchive` lehnt eine leere
+  // Zentralverzeichnisliste oben ausdrücklich ab —, und genau diese
+  // Invariante steht jetzt im Code statt im Kommentar: `reduce` OHNE
+  // Startwert hat den Rückgabetyp `ZipEntryInfo` und wirft von sich aus bei
+  // einer leeren Liste. Ein `!` hätte dieselbe Annahme behauptet, ohne sie
+  // durchzusetzen.
+  const biggest = info.entries.reduce((a, b) =>
+    b.uncompressedSize > a.uncompressedSize ? b : a,
   );
   if (biggest.uncompressedSize > limits.maxEntryUncompressedBytes) {
     throw new ZipBombError(

@@ -82,7 +82,10 @@ export function decodeJwt(token: string): IdTokenClaims {
   if (parts.length !== 3) {
     throw new Error("Invalid JWT format: expected 3 parts");
   }
-  const payload = Buffer.from(parts[1], "base64url").toString("utf-8");
+  // [OP-065] `parts.length !== 3` ist direkt darüber ausgeschlossen; `?? ""`
+  // schreibt das auf. Ein leerer Abschnitt liefe ohnehin in den JSON.parse-
+  // Fehler, den der Aufrufer bereits behandelt.
+  const payload = Buffer.from(parts[1] ?? "", "base64url").toString("utf-8");
   return JSON.parse(payload) as IdTokenClaims;
 }
 

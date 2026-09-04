@@ -39,6 +39,25 @@ export interface XliffImportResult {
 
 // ── Export ────────────────────────────────────────────────────────
 
+// [OP-065] Zwei Helfer statt dreissig Indexzugriffe.
+//
+// `group1` liefert die erste Fanggruppe eines GEGLÜCKTEN Treffers. Dass sie
+// vorhanden ist, folgt aus dem jeweiligen Muster (`([^"]+)`, `(\w+)` — alle
+// verlangen mindestens ein Zeichen), aber der Compiler kann das nicht sehen;
+// er kennt nur `string | undefined`. Der Ersatzwert "" ist derselbe leere
+// Inhalt, den die Weiterverarbeitung ohnehin für ein leeres Feld annimmt —
+// und er steht an EINER Stelle statt an dreissig.
+//
+// `column` tut dasselbe für eine CSV-Zeile, deren Spaltenzahl direkt darüber
+// geprüft wird.
+function group1(m: RegExpMatchArray | RegExpExecArray): string {
+  return m[1] ?? "";
+}
+
+function column(cols: readonly string[], i: number): string {
+  return cols[i] ?? "";
+}
+
 /**
  * Generate XLIFF 2.0 XML string from translation units.
  */
@@ -85,8 +104,8 @@ export function parseXliff(xml: string): XliffDocument {
     throw new Error("Invalid XLIFF: missing srcLang or trgLang attributes");
   }
 
-  const sourceLanguage = srcLangMatch[1];
-  const targetLanguage = trgLangMatch[1];
+  const sourceLanguage = group1(srcLangMatch);
+  const targetLanguage = group1(trgLangMatch);
 
   // Extract units
   const unitRegex = /<unit id="([^"]+)">([\s\S]*?)<\/unit>/g;
@@ -94,8 +113,8 @@ export function parseXliff(xml: string): XliffDocument {
 
   let unitMatch: RegExpExecArray | null;
   while ((unitMatch = unitRegex.exec(xml)) !== null) {
-    const unitId = unescapeXml(unitMatch[1]);
-    const unitContent = unitMatch[2];
+    const unitId = unescapeXml(group1(unitMatch));
+    const unitContent = unitMatch[2] ?? "";
 
     // Extract metadata
     const entityTypeMatch = unitContent.match(
@@ -116,12 +135,12 @@ export function parseXliff(xml: string): XliffDocument {
 
     units.push({
       id: unitId,
-      entityType: unescapeXml(entityTypeMatch[1]),
-      entityId: unescapeXml(entityIdMatch[1]),
-      field: unescapeXml(fieldMatch[1]),
-      source: unescapeXml(sourceMatch[1]),
+      entityType: unescapeXml(group1(entityTypeMatch)),
+      entityId: unescapeXml(group1(entityIdMatch)),
+      field: unescapeXml(group1(fieldMatch)),
+      source: unescapeXml(group1(sourceMatch)),
       target: targetMatch
-        ? escapeHtmlEntities(unescapeXml(targetMatch[1]))
+        ? escapeHtmlEntities(unescapeXml(group1(targetMatch)))
         : "",
     });
   }
@@ -169,7 +188,9 @@ export function parseCsv(csv: string): {
     throw new Error("Invalid CSV: requires header and at least one data row");
   }
 
-  const header = lines[0];
+  // `lines.length < 2` ist direkt darüber geprüft; `?? ""` schreibt das für
+  // den Compiler auf, ohne einen erreichbaren Zweig hinzuzufügen.
+  const header = lines[0] ?? "";
   // Extract languages from header: source_de,target_en
   const sourceMatch = header.match(/source_(\w+)/);
   const targetMatch = header.match(/target_(\w+)/);
@@ -182,22 +203,22 @@ export function parseCsv(csv: string): {
 
   const rows: CsvRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const cols = csvParseLine(lines[i]);
+    const cols = csvParseLine(lines[i] ?? "");
     if (cols.length < 6) continue;
 
     rows.push({
-      id: cols[0],
-      entityType: cols[1],
-      entityId: cols[2],
-      field: cols[3],
-      source: cols[4],
-      target: escapeHtmlEntities(cols[5]),
+      id: column(cols, 0),
+      entityType: column(cols, 1),
+      entityId: column(cols, 2),
+      field: column(cols, 3),
+      source: column(cols, 4),
+      target: escapeHtmlEntities(column(cols, 5)),
     });
   }
 
   return {
-    sourceLanguage: sourceMatch[1],
-    targetLanguage: targetMatch[1],
+    sourceLanguage: group1(sourceMatch),
+    targetLanguage: group1(targetMatch),
     rows,
   };
 }

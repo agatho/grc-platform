@@ -23,6 +23,17 @@ import {
   type FileStorage,
 } from "../src/lib/file-storage";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const ORG_A = "aaaaaaaa-0000-4000-8000-000000000001";
 const ORG_B = "bbbbbbbb-0000-4000-8000-000000000002";
 
@@ -146,7 +157,7 @@ describe("S3 server-side encryption header (S06-11)", () => {
     await s3.put("org/doc/x.pdf", Buffer.from("x"), {
       contentType: "application/pdf",
     });
-    expect(Object.keys(seen[0]).map((h) => h.toLowerCase())).not.toContain(
+    expect(Object.keys(at(seen, 0)).map((h) => h.toLowerCase())).not.toContain(
       "x-amz-server-side-encryption",
     );
   });
@@ -170,7 +181,7 @@ describe("S3 server-side encryption header (S06-11)", () => {
       contentType: "application/pdf",
     });
     const headers = Object.fromEntries(
-      Object.entries(seen[0]).map(([k, v]) => [k.toLowerCase(), v]),
+      Object.entries(at(seen, 0)).map(([k, v]) => [k.toLowerCase(), v]),
     );
     expect(headers["x-amz-server-side-encryption"]).toBe("AES256");
     // An x-amz-* header that is not in SignedHeaders is rejected by S3,
@@ -194,7 +205,7 @@ describe("S3 server-side encryption header (S06-11)", () => {
       }) as unknown as typeof fetch,
     });
     await s3.get("org/doc/x.pdf");
-    expect(Object.keys(seen[0]).map((h) => h.toLowerCase())).not.toContain(
+    expect(Object.keys(at(seen, 0)).map((h) => h.toLowerCase())).not.toContain(
       "x-amz-server-side-encryption",
     );
   });

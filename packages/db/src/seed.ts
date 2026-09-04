@@ -7,6 +7,7 @@ import { sql } from "drizzle-orm";
 import { hash } from "bcryptjs";
 import { randomBytes } from "crypto";
 import { organization, user, userOrganizationRole } from "./schema/platform";
+import { requireRow } from "./sql-result";
 
 // ════════════════════════════════════════════════════════════════════
 // #WP3-S02-01 (Critical) — Environment-Guard und Erstpasswortzwang
@@ -140,7 +141,7 @@ async function seed() {
       holdingId = existingHolding[0].id;
       console.log(`  Holding:    ${holdingId} (exists)`);
     } else {
-      const [holding] = await tx
+      const holdingRows = await tx
         .insert(organization)
         .values({
           name: "Meridian Holdings GmbH",
@@ -152,6 +153,7 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const holding = requireRow(holdingRows, "Holding anlegen");
       holdingId = holding.id;
       console.log(`  Holding:    ${holdingId}`);
     }
@@ -170,7 +172,7 @@ async function seed() {
       subsidiaryId = existingSub[0].id;
       console.log(`  Subsidiary: ${subsidiaryId} (exists)`);
     } else {
-      const [subsidiary] = await tx
+      const subsidiaryRows = await tx
         .insert(organization)
         .values({
           name: "NovaTec Services GmbH",
@@ -185,6 +187,10 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const subsidiary = requireRow(
+        subsidiaryRows,
+        "Tochtergesellschaft anlegen",
+      );
       subsidiaryId = subsidiary.id;
       console.log(`  Subsidiary: ${subsidiaryId}`);
     }
@@ -258,7 +264,7 @@ async function seed() {
       groupHoldingId = existingGroup[0].id;
       console.log(`  Arctis Group Holding already exists: ${groupHoldingId}`);
     } else {
-      const [groupHolding] = await tx
+      const groupHoldingRows = await tx
         .insert(organization)
         .values({
           name: "Arctis Group GmbH",
@@ -275,6 +281,10 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const groupHolding = requireRow(
+        groupHoldingRows,
+        "Gruppen-Holding anlegen",
+      );
 
       groupHoldingId = groupHolding.id;
       console.log(`  Arctis Group Holding: ${groupHoldingId}`);
@@ -304,7 +314,7 @@ async function seed() {
       }
 
       // Create subsidiary
-      const [subOrg] = await tx
+      const subOrgRows = await tx
         .insert(organization)
         .values({
           name: sub.name,
@@ -324,6 +334,7 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const subOrg = requireRow(subOrgRows, "Tochterorganisation anlegen");
 
       console.log(`  Subsidiary ${sub.orgCode}: ${subOrg.id}`);
 

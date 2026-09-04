@@ -14,6 +14,17 @@ import {
   type NIS2RequirementResult,
 } from "../src/nis2-compliance";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 // ──────────────────────────────────────────────────────────────
 // computeRequirementStatus
 // ──────────────────────────────────────────────────────────────
@@ -91,7 +102,7 @@ describe("findMissingControls", () => {
 // ──────────────────────────────────────────────────────────────
 
 describe("computeSingleRequirement", () => {
-  const reqDef = NIS2_ART21_REQUIREMENTS[0]; // 21.2a
+  const reqDef = at(NIS2_ART21_REQUIREMENTS, 0); // 21.2a
 
   it("computes requirement with full controls", () => {
     const controls: ControlWithCES[] = [

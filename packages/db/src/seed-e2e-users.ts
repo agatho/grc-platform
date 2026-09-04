@@ -103,6 +103,7 @@
 
 import postgres from "postgres";
 import { hash } from "bcryptjs";
+import { requireRow } from "./sql-result";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -242,7 +243,7 @@ async function main(): Promise<void> {
       ).toLowerCase();
       const passwordHash = await hash(passwordFor(account), 12);
 
-      const [row] = await sql<{ id: string }[]>`
+      const rowResult = await sql<{ id: string }[]>`
         INSERT INTO "user" (email, name, password_hash, email_verified,
                             is_active, language, must_change_password)
         VALUES (${email}, ${account.name}, ${passwordHash}, now(), true, 'de',
@@ -257,6 +258,7 @@ async function main(): Promise<void> {
               deleted_at           = NULL
         RETURNING id
       `;
+      const row = requireRow(rowResult, `E2E-Benutzer ${email} anlegen`);
 
       // Exactly one organisation — see the header. Memberships anywhere else
       // are removed rather than left to decide `roles[0]` by accident.
@@ -309,13 +311,19 @@ async function main(): Promise<void> {
 
       // Say what the account will actually resolve to, rather than what it was
       // asked to be: this is the number that made the tenant split invisible.
-      const [check] = await sql<{ memberships: string; first_org: string }[]>`
+      const checkResult = await sql<
+        { memberships: string; first_org: string }[]
+      >`
         SELECT count(*)::text AS memberships,
                (ARRAY_AGG(org_id::text ORDER BY created_at, org_id))[1]
                  AS first_org
         FROM user_organization_role
         WHERE user_id = ${row.id}::uuid AND deleted_at IS NULL
       `;
+      const check = requireRow(
+        checkResult,
+        `Mitgliedschaften von ${email} pruefen`,
+      );
       if (check.first_org !== orgId) {
         throw new Error(
           `${email} would resolve to organisation ${check.first_org}, not ` +

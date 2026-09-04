@@ -252,15 +252,37 @@ describe("OP-001 · Teil C — die beiden Umrechnungen", () => {
   });
 
   it("biaValuesFrom laesst 0 durch: 0 heisst 'traegt nicht', nicht 'leer'", () => {
-    const v = biaValuesFrom({
-      criticality: "high",
+    const eingabe = {
+      criticality: "high" as const,
       workaroundMaxDurationMinutes: 0,
       rpoMinutes: 0,
-    });
+    };
+    const v = biaValuesFrom(eingabe);
     expect(v.workaroundMaxDurationMinutes).toBe(0);
     expect(v.rpoMinutes).toBe(0);
-    // Der Gegenbeweis: ein `|| null` an derselben Stelle ergäbe null.
-    expect(0 || null).toBeNull();
+
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b-5 · OP-173] Der Gegenbeweis — an
+    // derselben Eingabe statt an einem Literal.
+    //
+    // Hier stand `expect(0 || null).toBeNull()`. Das war eine Aussage ueber
+    // JavaScript, nicht ueber `biaValuesFrom`: die Zeile waere auch dann gruen
+    // geblieben, wenn die Funktion `|| null` benutzt haette, ja sogar dann,
+    // wenn es sie gar nicht mehr gaebe. ESLint hat genau das als
+    // `no-constant-binary-expression` gemeldet („Unexpected constant truthiness
+    // on the left-hand side of a `||` expression") — die Regel benennt eine
+    // Zusicherung, die nicht fallen kann.
+    //
+    // Jetzt laeuft dieselbe Eingabe durch die falsche Normalisierung, und der
+    // Test behauptet den UNTERSCHIED. Faellt `biaValuesFrom` auf `|| null`
+    // zurueck, wird aus dem Unterschied Gleichheit und die beiden letzten
+    // Zusicherungen reissen.
+    const mitOderNull = (n: number | undefined) => n || null;
+    expect(mitOderNull(eingabe.rpoMinutes)).toBeNull();
+    expect(mitOderNull(eingabe.workaroundMaxDurationMinutes)).toBeNull();
+    expect(v.rpoMinutes).not.toBe(mitOderNull(eingabe.rpoMinutes));
+    expect(v.workaroundMaxDurationMinutes).not.toBe(
+      mitOderNull(eingabe.workaroundMaxDurationMinutes),
+    );
   });
 
   it("biaValuesFrom macht aus fehlenden Angaben null, nicht undefined", () => {

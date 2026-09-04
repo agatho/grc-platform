@@ -470,13 +470,20 @@ export function verifySamlResponse(
           `signature must cover exactly one reference, found ${refs.length}`,
         );
       }
-      const uri = refs[0].uri ?? "";
+      // [OP-065] `refs.length !== 1` ist direkt darüber ausgeschlossen. Die
+      // Referenz wird einmal entnommen statt zweimal indiziert; damit steht
+      // die Invariante im Code und nicht nur zwei Zeilen darüber.
+      const ref = refs[0];
+      if (ref === undefined) {
+        throw new Error("signature reference could not be read");
+      }
+      const uri = ref.uri ?? "";
       if (uri !== `#${signedId}`) {
         throw new Error(
           `signature reference "${uri}" does not cover the ${candidate.scope} element (#${signedId})`,
         );
       }
-      const enveloped = (refs[0].transforms ?? []).some((t) =>
+      const enveloped = (ref.transforms ?? []).some((t) =>
         String(t).includes("enveloped-signature"),
       );
       if (!enveloped) {
@@ -665,14 +672,15 @@ export function extractSAMLAttributes(
     /<(?:[A-Za-z0-9_.-]+:)?Attribute\s+[^>]*?Name="([^"]*)"[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?Attribute>/gi;
   let match: RegExpExecArray | null;
   while ((match = attrRegex.exec(assertionXml)) !== null) {
-    const name = match[1];
-    const valueBlock = match[2];
+    // [OP-065] Fanggruppen eines geglückten Treffers; `?? ""` statt `!`.
+    const name = match[1] ?? "";
+    const valueBlock = match[2] ?? "";
     const values: string[] = [];
     const valueRegex =
       /<(?:[A-Za-z0-9_.-]+:)?AttributeValue[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?AttributeValue>/gi;
     let vm: RegExpExecArray | null;
     while ((vm = valueRegex.exec(valueBlock)) !== null) {
-      values.push(vm[1].trim());
+      values.push((vm[1] ?? "").trim());
     }
     attrMap.set(name, values);
   }

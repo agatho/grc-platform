@@ -1,7 +1,7 @@
 import { describe, it, expect, afterAll } from "vitest";
 import { execFileSync } from "node:child_process";
 import { resolve } from "node:path";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-139] `account`, `session`, `verification_token`
@@ -68,19 +68,25 @@ describe("OP-139 — Auth.js-Adaptertabellen sind bewusst tot", () => {
 
   it("die Laufzeitrolle grc_app hat auf keiner von ihnen ein Recht", async () => {
     for (const t of TABLES) {
-      const [row] = await admin.client<{ any_priv: boolean }[]>`
+      const row = requireRow(
+        await admin.client<{ any_priv: boolean }[]>`
         SELECT (has_table_privilege('grc_app', ${`public.${t}`}, 'SELECT')
              OR has_table_privilege('grc_app', ${`public.${t}`}, 'INSERT')
              OR has_table_privilege('grc_app', ${`public.${t}`}, 'UPDATE')
-             OR has_table_privilege('grc_app', ${`public.${t}`}, 'DELETE')) AS any_priv`;
+             OR has_table_privilege('grc_app', ${`public.${t}`}, 'DELETE')) AS any_priv`,
+        "row",
+      );
       expect(row.any_priv, `${t}: grc_app hat ein Recht`).toBe(false);
     }
   });
 
   it("sind leer — 'unbenutzt' ist eine Tatsachenbehauptung, also wird sie gemessen", async () => {
     for (const t of TABLES) {
-      const [row] = await admin.client.unsafe<{ n: number }[]>(
-        `SELECT count(*)::int AS n FROM public."${t}"`,
+      const row = requireRow(
+        await admin.client.unsafe<{ n: number }[]>(
+          `SELECT count(*)::int AS n FROM public."${t}"`,
+        ),
+        "row",
       );
       expect(row.n, `${t}: Zeilen`).toBe(0);
     }

@@ -44,7 +44,9 @@ export function pickAttributableOrgId(
   orgIds: readonly (string | null | undefined)[],
 ): string | null {
   const distinct = [...new Set(orgIds.filter((o): o is string => !!o))];
-  return distinct.length === 1 ? distinct[0] : null;
+  // [OP-065] Bei `length === 1` gibt es das Element; `?? null` ist derselbe
+  // Rückgabewert wie der andere Zweig.
+  return distinct.length === 1 ? (distinct[0] ?? null) : null;
 }
 
 // ════════════════════════════════════════════════════════════════════

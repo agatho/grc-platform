@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createAppDb, createTestDb } from "../helpers";
+import { createAppDb, createTestDb, requireAt } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 / Welle 4c · OP-089] Die zwei Nutzungs-Sichten
@@ -116,8 +116,10 @@ describe("OP-089 — keine mandantenübergreifende Materialisierung", () => {
           JOIN pg_namespace n ON n.oid = c.relnamespace
          WHERE n.nspname = 'public' AND c.relname = ${view}`;
       expect(rows).toHaveLength(1);
-      expect(rows[0].relkind).toBe("v");
-      expect(rows[0].options ?? []).toContain("security_invoker=true");
+      expect(requireAt(rows, 0, "rows").relkind).toBe("v");
+      expect(requireAt(rows, 0, "rows").options ?? []).toContain(
+        "security_invoker=true",
+      );
     },
   );
 });
@@ -128,15 +130,15 @@ describe("OP-089 — jede Organisation sieht ausschliesslich ihre eigene Aggrega
     const a = await app.client<{ org_id: string; total_tokens: string }[]>`
       SELECT org_id, total_tokens FROM copilot_usage_stats`;
     expect(a).toHaveLength(1);
-    expect(a[0].org_id).toBe(ORG_A);
-    expect(Number(a[0].total_tokens)).toBe(100);
+    expect(requireAt(a, 0, "a").org_id).toBe(ORG_A);
+    expect(Number(requireAt(a, 0, "a").total_tokens)).toBe(100);
 
     await setOrg(ORG_B);
     const b = await app.client<{ org_id: string; total_tokens: string }[]>`
       SELECT org_id, total_tokens FROM copilot_usage_stats`;
     expect(b).toHaveLength(1);
-    expect(b[0].org_id).toBe(ORG_B);
-    expect(Number(b[0].total_tokens)).toBe(900);
+    expect(requireAt(b, 0, "b").org_id).toBe(ORG_B);
+    expect(Number(requireAt(b, 0, "b").total_tokens)).toBe(900);
   });
 
   it("evidence_review_summary liefert je Kontext genau eine Zeile mit den eigenen Zahlen", async () => {
@@ -145,16 +147,16 @@ describe("OP-089 — jede Organisation sieht ausschliesslich ihre eigene Aggrega
       { org_id: string; total_artifacts_reviewed: string }[]
     >`SELECT org_id, total_artifacts_reviewed FROM evidence_review_summary`;
     expect(a).toHaveLength(1);
-    expect(a[0].org_id).toBe(ORG_A);
-    expect(Number(a[0].total_artifacts_reviewed)).toBe(10);
+    expect(requireAt(a, 0, "a").org_id).toBe(ORG_A);
+    expect(Number(requireAt(a, 0, "a").total_artifacts_reviewed)).toBe(10);
 
     await setOrg(ORG_B);
     const b = await app.client<
       { org_id: string; total_artifacts_reviewed: string }[]
     >`SELECT org_id, total_artifacts_reviewed FROM evidence_review_summary`;
     expect(b).toHaveLength(1);
-    expect(b[0].org_id).toBe(ORG_B);
-    expect(Number(b[0].total_artifacts_reviewed)).toBe(20);
+    expect(requireAt(b, 0, "b").org_id).toBe(ORG_B);
+    expect(Number(requireAt(b, 0, "b").total_artifacts_reviewed)).toBe(20);
   });
 
   it("der Eigentümer sieht beide Organisationen — sonst wäre der Test oben wertlos", async () => {
@@ -172,6 +174,6 @@ describe("OP-089 — jede Organisation sieht ausschliesslich ihre eigene Aggrega
     const rows = await app.client.unsafe(
       `SELECT count(*)::int AS n FROM ${view}`,
     );
-    expect((rows as unknown as { n: number }[])[0].n).toBe(0);
+    expect(requireAt(rows as unknown as { n: number }[], 0, view).n).toBe(0);
   });
 });

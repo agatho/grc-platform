@@ -22,9 +22,30 @@
 // stammen aus einem echten Migrationslauf von Null, nicht aus einer
 // Schätzung. Unterschreitung um mehr als die dokumentierte Toleranz = Fehler.
 //
+// ── [ARCTOS-FULL-2026-08-31 / Welle 4b-5 · OP-064 auch hier] ────────────
+//
+// `--update-baseline` konnte bis Welle 4b-5 JEDE Zahl kommentarlos
+// verschieben — auch die zwei Kennzahlen, deren Sinn gerade darin besteht,
+// nach OBEN aufzufallen (`direction: "both"`: securityDefinerFns,
+// tamperGuardsNotEnabledAlways). Die einzige Spur davon wäre ein geändertes
+// Datum gewesen. Für die Lint-Ratsche ist das mit OP-064 abgestellt worden;
+// hier stand es noch offen, und es ist genau die Stelle, an der die
+// bequemste Antwort auf ein rotes Tor („Baseline hochsetzen") keinen
+// Widerstand fand.
+//
+// Jetzt gilt dieselbe Regel wie dort:
+//
+//   * Eine VERSCHÄRFUNG (eine Untergrenze steigt, eine „darf nicht
+//     wachsen"-Zahl sinkt) geht ohne Begründung durch.
+//   * Eine LOCKERUNG (eine Untergrenze sinkt, eine „darf nicht wachsen"-Zahl
+//     steigt) verlangt `--reason "…"`, und die Begründung landet mitsamt den
+//     Deltas in `_history` — in der Datei, im Diff, im Review.
+//
 // Aufruf:
 //   DATABASE_URL=… node scripts/verify-db-integrity.mjs
 //   DATABASE_URL=… node scripts/verify-db-integrity.mjs --update-baseline
+//   DATABASE_URL=… node scripts/verify-db-integrity.mjs --update-baseline \
+//     --reason "warum das jetzt so ist"
 // ============================================================================
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -143,6 +164,67 @@ const measured = {};
 for (const [name, def] of Object.entries(METRICS)) measured[name] = q(def.sql);
 
 if (UPDATE) {
+  const previous = existsSync(BASELINE)
+    ? JSON.parse(readFileSync(BASELINE, "utf8"))
+    : { counts: {}, _history: [] };
+  const prevCounts = previous.counts ?? {};
+
+  // Welche Richtung ist bei welcher Kennzahl die LOCKERUNG?
+  //   direction "both"  — die Zahl soll nicht wachsen: steigen ist Lockerung.
+  //   sonst (Untergrenze) — die Zahl soll nicht fallen: sinken ist Lockerung.
+  const deltas = [];
+  const lockerungen = [];
+  for (const name of new Set([
+    ...Object.keys(prevCounts),
+    ...Object.keys(measured),
+  ])) {
+    const before = prevCounts[name];
+    const after = measured[name];
+    if (before === after) continue;
+    const beideRichtungen = METRICS[name]?.direction === "both";
+    const istLockerung =
+      before === undefined
+        ? false
+        : beideRichtungen
+          ? after > before
+          : after < before;
+    const zeile = `${name}: ${before ?? "(neu)"} → ${after}${
+      istLockerung ? "  ← LOCKERUNG" : ""
+    }`;
+    deltas.push(zeile);
+    if (istLockerung) lockerungen.push(zeile);
+  }
+
+  const reasonIdx = process.argv.indexOf("--reason");
+  const reason =
+    reasonIdx !== -1 ? (process.argv[reasonIdx + 1] ?? "").trim() : "";
+
+  if (lockerungen.length > 0 && !reason) {
+    console.error(
+      `✗ ${lockerungen.length} Kennzahl(en) werden gelockert, ohne Begründung:`,
+    );
+    for (const d of lockerungen) console.error(`    ${d}`);
+    console.error(
+      "\n  Eine Lockerung braucht eine Begründung in der Datei:\n" +
+        '    … --update-baseline --reason "warum das jetzt so ist"\n' +
+        "  Bei securityDefinerFns heisst das: jede neue Funktion einzeln\n" +
+        "  benennen und sagen, warum sie RLS umgehen DARF. Eine\n" +
+        "  SECURITY-DEFINER-Funktion laeuft mit den Rechten ihres\n" +
+        "  Eigentuemers; das ist bei Waechtern und Audit-Funktionen richtig\n" +
+        "  und bei allem anderen ein Befund.",
+    );
+    process.exit(1);
+  }
+
+  const history = Array.isArray(previous._history) ? previous._history : [];
+  if (deltas.length > 0) {
+    history.push({
+      date: new Date().toISOString().slice(0, 10),
+      changed: deltas.sort(),
+      ...(reason ? { reason } : {}),
+    });
+  }
+
   writeFileSync(
     BASELINE,
     JSON.stringify(
@@ -151,10 +233,13 @@ if (UPDATE) {
           "#S13-02 Untergrenzen der DB-Integritäts-Gates. Aus einem echten " +
           "Migrationslauf von Null gemessen, nicht geschätzt. Neu setzen: " +
           "DATABASE_URL=… node scripts/verify-db-integrity.mjs --update-baseline. " +
-          "Eine Absenkung ist im Diff sichtbar und begründungspflichtig.",
+          "Eine LOCKERUNG (Untergrenze sinkt, oder eine der beiden " +
+          "'darf nicht wachsen'-Kennzahlen steigt) verlangt zusätzlich " +
+          "--reason und wird in _history festgehalten (OP-064-Muster).",
         _updatedAt: new Date().toISOString().slice(0, 10),
-        _tolerancePercent: 2,
+        _tolerancePercent: previous._tolerancePercent ?? 2,
         counts: measured,
+        _history: history,
       },
       null,
       2,
@@ -162,7 +247,11 @@ if (UPDATE) {
   );
   console.log(`Baseline geschrieben: ${BASELINE}`);
   for (const [k, v] of Object.entries(measured))
-    console.log(`  ${k.padEnd(20)} ${v}`);
+    console.log(`  ${k.padEnd(28)} ${v}`);
+  if (deltas.length > 0) {
+    console.log("  Änderungen gegenüber der bisherigen Baseline:");
+    for (const d of deltas.sort()) console.log(`    ${d}`);
+  }
   process.exit(0);
 }
 

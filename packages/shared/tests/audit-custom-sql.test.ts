@@ -16,11 +16,13 @@
 // als Regressionsfälle formuliert, damit eine spätere „Vereinfachung" der
 // Regeln an ihnen scheitert und nicht erst an einem Vorfall.
 //
-// Ein Befund aus dieser Arbeit ist NICHT hier abgebildet, weil er ein
-// ungelöster Defekt ist und ein Test ihn sonst festschreiben würde:
-// `SELECT "pg_sleep"(3600)` — der Funktionsname in doppelten
-// Anführungszeichen — passiert die Ausnahmeliste. Siehe
-// docs/UMSETZUNG-WELLE-4C.md §6, Befund F-3.
+// Drei Befunde aus jener Arbeit blieben zunächst ohne Test, weil ein Test sie
+// festgeschrieben statt behoben hätte: F-3 (`SELECT "pg_sleep"(3600)`
+// passierte die Ausnahmeliste), F-4 (`isValidWpTransition` warf bei
+// Prototyp-Schlüsseln) und F-5 (`computeQaScore` lieferte NaN). Alle drei sind
+// in Welle 4b, Strang 6 behoben; die Tests dazu stehen am Ende dieser Datei
+// und halten das gemessene ALTE Verhalten je im Kommentar fest. Siehe
+// docs/UMSETZUNG-WELLE-4C.md §6 und docs/UMSETZUNG-WELLE-4B-6.md §2.
 
 import { describe, it, expect } from "vitest";
 import {
@@ -309,5 +311,148 @@ describe("generateWpReference — fortlaufende Arbeitspapier-Nummer je Ordner", 
 
   it("ignoriert fremde und unvollständige Einträge des Ordners", () => {
     expect(generateWpReference("B", ["A.9", "B", "B.x", "B.2"])).toBe("B.3");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// [Welle 4b, Strang 6] Die drei Defekte, die Welle 4c als F-3, F-4 und F-5
+// benannt und belegt liegen gelassen hat. Bis hierher stand über ihnen
+// „ein Test würde den Zustand festschreiben" — jetzt schreiben sie den
+// BEHOBENEN Zustand fest.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("validateCustomAuditSql — F-3: der doppelt zitierte Funktionsname", () => {
+  // Gemessen am 2026-09-03 gegen 01d0e4cc: `SELECT pg_sleep(3600)` wurde
+  // abgelehnt, `SELECT "pg_sleep"(3600)` DURCHGELASSEN. Das Muster
+  // `\b(name)\s*\(` verlangt die Klammer unmittelbar hinter dem Namen; das
+  // schliessende `"` bricht es. Die Stichwortliste war nicht betroffen, weil
+  // ihre Alternativen auf `\b` enden.
+  it.each([
+    ["pg_sleep (DoS)", `SELECT "pg_sleep"(3600)`],
+    ["pg_read_file (Dateizugriff)", `SELECT "pg_read_file"('/etc/passwd')`],
+    ["current_setting (Sitzungsgeheimnisse)", `SELECT "current_setting"('x')`],
+    ["dblink (ausgehende Verbindung)", `SELECT "dblink"('a','b')`],
+    ["gemischt zitiert", `SELECT pg_catalog."pg_sleep"(1)`],
+    ["mit Leerraum", `SELECT "pg_sleep" (1)`],
+  ])("lehnt %s ab", (_name, query) => {
+    const res = validateCustomAuditSql(query);
+    expect(res.ok).toBe(false);
+    expect(res.sql).toBeUndefined();
+  });
+
+  it("nennt den doppelten Anführungsstrich als Grund, nicht die Funktion", () => {
+    // Die Behebung ist lexikalisch: `"` ist verboten, weil es der einzige
+    // Weg ist, einen Namen vor dem Muster zu verstecken. Wer die Regel
+    // stattdessen um `"?` erweitert, verschiebt dieselbe Lücke nur auf die
+    // nächste Schreibweise.
+    expect(validateCustomAuditSql(`SELECT "pg_sleep"(1)`).reason).toMatch(
+      /double-quoted/i,
+    );
+  });
+
+  it("lässt eine Abfrage ohne Anführungsstriche unverändert durch", () => {
+    const res = validateCustomAuditSql(
+      "SELECT count(*) FROM risk WHERE status = 'open'",
+    );
+    expect(res.ok).toBe(true);
+  });
+});
+
+describe("isValidWpTransition — F-4: Schlüssel aus der Prototypenkette", () => {
+  // Gemessen am 2026-09-03 gegen 01d0e4cc: jeder dieser Schlüssel warf
+  // `TypeError: WP_STATUS_TRANSITIONS[current]?.includes is not a function`.
+  // `?.` schützt gegen `undefined`, nicht gegen eine geerbte Funktion — der
+  // `?? false`-Zweig wurde nie erreicht.
+  it.each([
+    "toString",
+    "constructor",
+    "valueOf",
+    "hasOwnProperty",
+    "__proto__",
+    "isPrototypeOf",
+    "propertyIsEnumerable",
+  ])("gibt für %s false zurück, statt zu werfen", (key) => {
+    expect(() => isValidWpTransition(key, "in_review")).not.toThrow();
+    expect(isValidWpTransition(key, "in_review")).toBe(false);
+  });
+
+  it("lässt einen Prototyp-Schlüssel auch als ZIEL nicht durch", () => {
+    expect(isValidWpTransition("draft", "toString")).toBe(false);
+  });
+});
+
+describe("computeQaScore — F-5: Bewertungen ohne Zahl", () => {
+  // Gemessen am 2026-09-03 gegen 01d0e4cc:
+  //   [{compliant, 0}]                 → score=NaN  (in JSON: null)
+  //   [{compliant,-1},{compliant,1}]   → score=NaN
+  //   [{compliant,-1},{non_compliant,1}] → score=-Infinity
+  //   [{compliant,5},{non_compliant,-1}] → score=125
+  // Die Wache prüfte `applicable.length === 0`, also ob es POSITIONEN gibt —
+  // nicht, ob es GEWICHT gibt.
+  it("gibt 0/red statt NaN, wenn alle Gewichte 0 sind", () => {
+    const res = computeQaScore([
+      { compliance: "compliant", weight: 0 },
+      { compliance: "non_compliant", weight: 0 },
+    ]);
+    expect(Number.isNaN(res.score)).toBe(false);
+    expect(res).toEqual({ score: 0, rating: "red" });
+  });
+
+  it("gibt 0/red bei einer einzigen Position mit Gewicht 0", () => {
+    expect(computeQaScore([{ compliance: "compliant", weight: 0 }])).toEqual({
+      score: 0,
+      rating: "red",
+    });
+  });
+
+  it("liefert nie ±Infinity, wenn sich die Gewichte zu 0 aufheben", () => {
+    // `Number.isNaN` fängt diesen Fall NICHT — ein Aufrufer, der nur auf NaN
+    // prüft, hätte -Infinity an die Oberfläche gereicht.
+    const res = computeQaScore([
+      { compliance: "compliant", weight: -1 },
+      { compliance: "non_compliant", weight: 1 },
+    ]);
+    expect(Number.isFinite(res.score)).toBe(true);
+    expect(res).toEqual({ score: 0, rating: "red" });
+  });
+
+  it("erzeugt aus einem negativen Gewicht kein grünes Ergebnis", () => {
+    // Vorher: [{compliant,-2},{compliant,1}] → 100/green, und
+    // [{compliant,5},{non_compliant,-1}] → 125/green. Ein negatives Gewicht
+    // war ein Hebel, um eine QA-Bewertung zu erfinden.
+    expect(
+      computeQaScore([
+        { compliance: "compliant", weight: -2 },
+        { compliance: "compliant", weight: 1 },
+      ]),
+    ).toEqual({ score: 100, rating: "green" });
+    const gedreht = computeQaScore([
+      { compliance: "compliant", weight: 5 },
+      { compliance: "non_compliant", weight: -1 },
+    ]);
+    expect(gedreht.score).toBeLessThanOrEqual(100);
+    expect(gedreht).toEqual({ score: 100, rating: "green" });
+  });
+
+  it("hält die Bewertung in jedem Fall zwischen 0 und 100", () => {
+    const faelle: Array<Array<{ compliance: string | null; weight: number }>> =
+      [
+        [{ compliance: "compliant", weight: Number.POSITIVE_INFINITY }],
+        [{ compliance: "non_compliant", weight: Number.NaN }],
+        [
+          { compliance: "compliant", weight: -1 },
+          { compliance: "non_compliant", weight: -1 },
+        ],
+        [
+          { compliance: "partially_compliant", weight: 2 },
+          { compliance: "not_applicable", weight: 99 },
+        ],
+      ];
+    for (const items of faelle) {
+      const { score } = computeQaScore(items);
+      expect(Number.isInteger(score)).toBe(true);
+      expect(score).toBeGreaterThanOrEqual(0);
+      expect(score).toBeLessThanOrEqual(100);
+    }
   });
 });

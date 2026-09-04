@@ -208,7 +208,11 @@ export function evaluateApprovalDecision(
     return { stepUpdates, processOutcome: "approved", nextStepId: null };
   }
 
+  // [OP-065] `openGateSteps.length === 0` ist direkt darüber abgefangen.
   const next = openGateSteps[0];
+  if (next === undefined) {
+    return { stepUpdates, processOutcome: "approved", nextStepId: null };
+  }
   if (next.status === "pending") {
     stepUpdates.push({ id: next.id, status: "in_progress" });
   }

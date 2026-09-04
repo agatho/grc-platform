@@ -118,6 +118,11 @@ describe("encrypt / decrypt", () => {
       : ct;
     const decoded = Buffer.from(payload, "base64").toString("utf8");
     const [iv, tag, ciphertext] = decoded.split(":");
+    // [OP-065] Das Format ist `iv:tag:ciphertext`. Fehlt ein Teil, prüft der
+    // Test etwas anderes als er behauptet — und soll das sagen.
+    if (iv === undefined || tag === undefined || ciphertext === undefined) {
+      throw new Error(`unerwartetes Chiffratformat: ${decoded.slice(0, 40)}`);
+    }
     const tamperedHex =
       ciphertext.slice(0, -1) + (ciphertext.slice(-1) === "0" ? "1" : "0");
     const tampered = Buffer.from(`${iv}:${tag}:${tamperedHex}`).toString(

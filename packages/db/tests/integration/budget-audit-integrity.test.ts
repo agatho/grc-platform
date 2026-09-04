@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb, schema } from "../helpers";
+import { createTestDb, schema, requireRow, requireAt } from "../helpers";
 
 /**
  * Budget & Catalog Audit Trail Integrity Tests
@@ -22,11 +22,14 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     testDb = createTestDb();
 
     // Create a test user (FK required by audit trigger)
-    const [testUser] = await testDb.client`
+    const testUser = requireRow(
+      await testDb.client`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${testEmail}, 'Budget Audit Tester', 'x')
       RETURNING id
-    `;
+    `,
+      "testUser",
+    );
     testUserId = testUser.id;
 
     // Create a test organization
@@ -35,14 +38,17 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     await testDb.client`SELECT set_config('app.current_user_name', 'Budget Audit Tester', false)`;
     await testDb.client`SELECT set_config('app.current_org_id', '', false)`;
 
-    const [org] = await testDb.db
-      .insert(schema.organization)
-      .values({
-        name: "Budget Audit Test Org",
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning();
+    const org = requireRow(
+      await testDb.db
+        .insert(schema.organization)
+        .values({
+          name: "Budget Audit Test Org",
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning(),
+      "org",
+    );
     testOrgId = org.id;
 
     // Set org context for subsequent operations
@@ -153,7 +159,9 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
       return;
     }
 
-    expect(triggers[0].table_name).toBe("org_active_catalog");
+    expect(requireAt(triggers, 0, "triggers").table_name).toBe(
+      "org_active_catalog",
+    );
   });
 
   // ──────────────────────────────────────────────────────────────
@@ -161,11 +169,14 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
   // ──────────────────────────────────────────────────────────────
 
   it("INSERT on grc_budget creates an audit_log entry with action 'create'", async () => {
-    const [budget] = await testDb.client`
+    const budget = requireRow(
+      await testDb.client`
       INSERT INTO grc_budget (org_id, name, year, total_amount, currency, status, created_by)
       VALUES (${testOrgId}, 'ISMS Budget 2026', 2026, 150000.00, 'EUR', 'draft', ${testUserId})
       RETURNING id
-    `;
+    `,
+      "budget",
+    );
     testBudgetId = budget.id;
 
     const logs = await testDb.client`
@@ -241,8 +252,8 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
 
     // Second+ entries should have a non-null previous_hash
     for (let i = 1; i < entries.length; i++) {
-      expect(entries[i].previous_hash).toBeDefined();
-      expect(entries[i].previous_hash).not.toBeNull();
+      expect(requireAt(entries, i, "entries").previous_hash).toBeDefined();
+      expect(requireAt(entries, i, "entries").previous_hash).not.toBeNull();
     }
 
     // Verify each previous_hash actually references an existing entry's entry_hash
@@ -306,7 +317,9 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     // INSERT + UPDATE(name/amount) + UPDATE(status/approved) = 3 budget
     // entries minimum. The walk reaches at least these because they're
     // created in tight succession with nothing else running in between.
-    expect(chainResult[0].chain_length).toBeGreaterThanOrEqual(3);
+    expect(
+      requireAt(chainResult, 0, "chainResult").chain_length,
+    ).toBeGreaterThanOrEqual(3);
 
     // Sanity: every budget entry for this entity has a valid previous_hash
     // pointer (to *some* audit_log row, not necessarily budget). This is
@@ -321,6 +334,6 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
           SELECT 1 FROM audit_log b WHERE b.entry_hash = a.previous_hash
         )
     `;
-    expect(orphanCheck[0].orphans).toBe(0);
+    expect(requireAt(orphanCheck, 0, "orphanCheck").orphans).toBe(0);
   });
 });

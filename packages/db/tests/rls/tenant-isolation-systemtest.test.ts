@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import postgres from "postgres";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow } from "../helpers";
 import { runRlsAudit, TENANT_TABLE_RLS_EXCEPTIONS } from "../../src/rls-audit";
 
 /**
@@ -131,10 +131,13 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
 
   // ── 0. Der Test muss selbst aussagekräftig sein ─────────────────────────
   it("runs as a role that can neither bypass RLS nor own the tables", async () => {
-    const [row] = await app.client.unsafe<
-      { rolname: string; rolsuper: boolean; rolbypassrls: boolean }[]
-    >(`SELECT rolname, rolsuper, rolbypassrls
-         FROM pg_roles WHERE rolname = current_user`);
+    const row = requireRow(
+      await app.client.unsafe<
+        { rolname: string; rolsuper: boolean; rolbypassrls: boolean }[]
+      >(`SELECT rolname, rolsuper, rolbypassrls
+         FROM pg_roles WHERE rolname = current_user`),
+      "row",
+    );
     expect(row.rolname).toBe("grc_app");
     expect(row.rolsuper).toBe(false);
     expect(row.rolbypassrls).toBe(false);
@@ -226,13 +229,19 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
       let own: { n: number };
       let foreign: { n: number };
       try {
-        [own] = await app.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
-          [s.a],
+        own = requireRow(
+          await app.client.unsafe<{ n: number }[]>(
+            `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
+            [s.a],
+          ),
+          `${s.tbl}: eigener Datensatz`,
         );
-        [foreign] = await app.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
-          [s.b],
+        foreign = requireRow(
+          await app.client.unsafe<{ n: number }[]>(
+            `SELECT count(*)::int AS n FROM public."${s.tbl}" WHERE id::text = $1`,
+            [s.b],
+          ),
+          `${s.tbl}: fremder Datensatz`,
         );
       } catch (err) {
         // "permission denied" ist die härteste Form von "verboten" — das gilt
@@ -299,9 +308,12 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     expect(views.length).toBeGreaterThan(0);
     const leaks: string[] = [];
     for (const v of views) {
-      const [row] = await app.client.unsafe<{ n: number }[]>(
-        `SELECT count(*)::int AS n FROM public."${v.relname}" WHERE org_id = $1`,
-        [ORG_B],
+      const row = requireRow(
+        await app.client.unsafe<{ n: number }[]>(
+          `SELECT count(*)::int AS n FROM public."${v.relname}" WHERE org_id = $1`,
+          [ORG_B],
+        ),
+        "row",
       );
       if (row.n > 0) leaks.push(`${v.relname}: ${row.n} foreign rows`);
     }
@@ -353,9 +365,12 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     try {
       for (const tbl of ["risk", "document", "evidence", "organization"]) {
         const col = tbl === "organization" ? "id" : "org_id";
-        const [row] = await app.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${tbl}" WHERE ${col} = $1`,
-          [ORG_B],
+        const row = requireRow(
+          await app.client.unsafe<{ n: number }[]>(
+            `SELECT count(*)::int AS n FROM public."${tbl}" WHERE ${col} = $1`,
+            [ORG_B],
+          ),
+          "row",
         );
         expect(row.n, `${tbl} leaked under app.bypass_rls`).toBe(0);
       }
@@ -370,12 +385,15 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
   });
 
   it("no policy in the schema references app.bypass_rls", async () => {
-    const [row] = await admin.client.unsafe<{ n: number }[]>(`
+    const row = requireRow(
+      await admin.client.unsafe<{ n: number }[]>(`
       SELECT count(*)::int AS n FROM pg_policies
        WHERE schemaname = 'public'
          AND (COALESCE(qual, '') LIKE '%app.bypass_rls%'
            OR COALESCE(with_check, '') LIKE '%app.bypass_rls%')
-    `);
+    `),
+      "row",
+    );
     expect(row.n).toBe(0);
   });
 
@@ -431,14 +449,20 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
   });
 
   it("user rows of another tenant are invisible from a tenant context", async () => {
-    const [foreign] = await app.client.unsafe<{ n: number }[]>(
-      `SELECT count(*)::int AS n FROM public."user" WHERE id = $1`,
-      ["bb000000-0000-4000-8000-0000000000b1"],
+    const foreign = requireRow(
+      await app.client.unsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM public."user" WHERE id = $1`,
+        ["bb000000-0000-4000-8000-0000000000b1"],
+      ),
+      "foreign",
     );
     expect(foreign.n).toBe(0);
-    const [own] = await app.client.unsafe<{ n: number }[]>(
-      `SELECT count(*)::int AS n FROM public."user" WHERE id = $1`,
-      [USER_A],
+    const own = requireRow(
+      await app.client.unsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM public."user" WHERE id = $1`,
+        [USER_A],
+      ),
+      "own",
     );
     expect(own.n).toBe(1);
   });
@@ -533,8 +557,11 @@ describe("WP2 — tenant isolation system test (S01 acceptance)", () => {
     try {
       await probe.client.unsafe(`SET app.current_org_id = ''`);
       for (const tbl of ["risk", "module_config", "control", "document"]) {
-        const [row] = await probe.client.unsafe<{ n: number }[]>(
-          `SELECT count(*)::int AS n FROM public."${tbl}"`,
+        const row = requireRow(
+          await probe.client.unsafe<{ n: number }[]>(
+            `SELECT count(*)::int AS n FROM public."${tbl}"`,
+          ),
+          "row",
         );
         expect(row.n).toBe(0);
       }

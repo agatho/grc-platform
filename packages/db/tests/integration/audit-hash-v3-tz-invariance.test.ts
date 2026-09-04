@@ -12,6 +12,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import postgres from "postgres";
+import { requireAt } from "../helpers";
 
 const DB_URL = process.env.INTEGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
 
@@ -84,7 +85,7 @@ describe("audit-hash v3 TZ-invariance (Wave-23.2)", () => {
           ${fixed.scope}
         ) AS h
       `;
-      return r[0].h;
+      return requireAt(r, 0, "r").h;
     });
 
     const hashBerlin = await client.begin(async (tx) => {
@@ -104,7 +105,7 @@ describe("audit-hash v3 TZ-invariance (Wave-23.2)", () => {
           ${fixed.scope}
         ) AS h
       `;
-      return r[0].h;
+      return requireAt(r, 0, "r").h;
     });
 
     expect(hashUtc).toBe(hashBerlin);
@@ -148,7 +149,7 @@ describe("audit-hash v3 TZ-invariance (Wave-23.2)", () => {
           ${fixed.scope}
         ) AS h
       `;
-      return r[0].h;
+      return requireAt(r, 0, "r").h;
     });
 
     const hashBerlin = await client.begin(async (tx) => {
@@ -168,7 +169,7 @@ describe("audit-hash v3 TZ-invariance (Wave-23.2)", () => {
           ${fixed.scope}
         ) AS h
       `;
-      return r[0].h;
+      return requireAt(r, 0, "r").h;
     });
 
     // Documents the v0-oscillation root cause. v3 was added to fix

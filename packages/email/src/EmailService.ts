@@ -146,7 +146,10 @@ function redactEmail(address: string): string {
 }
 
 const RETRY_DELAYS = [1_000, 5_000, 30_000];
-const MAX_ATTEMPTS = 3;
+// [OP-065] Abgeleitet statt daneben geschrieben: die Zahl der Versuche IST
+// die Länge der Wartezeitenliste. Vorher standen `3` und eine dreielementige
+// Liste unabhängig voneinander da.
+const MAX_ATTEMPTS = RETRY_DELAYS.length;
 
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-066] Ein Betreff ist eine SMTP-Kopfzeile und
@@ -231,7 +234,19 @@ export class EmailService {
 
     let lastError: unknown;
 
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    // [OP-065] Die Schleife lief über `attempt` und schlug die Wartezeit
+    // danach in `RETRY_DELAYS[attempt]` nach — `number | undefined`, und
+    // `setTimeout(fn, undefined)` wartet 0 ms. Erreichbar war das nur, wenn
+    // `MAX_ATTEMPTS` (Zeile 149) und `RETRY_DELAYS.length` (Zeile 148)
+    // auseinanderliefen; die beiden Konstanten standen unabhängig
+    // voneinander da, und wer die eine erhöht hätte, hätte statt eines
+    // Fehlers eine Wiederholung OHNE Wartezeit bekommen.
+    //
+    // `entries()` reicht Versuchsnummer UND Wartezeit gemeinsam heraus. Damit
+    // verschwindet der Indexzugriff, die beiden Konstanten können nicht mehr
+    // auseinanderlaufen (die Zahl der Versuche IST die Länge der Liste), und
+    // es entsteht kein zusätzlicher Zweig, der nie durchlaufen wird.
+    for (const [attempt, retryDelayMs] of RETRY_DELAYS.entries()) {
       try {
         const result = await this.resend.emails.send({
           from,
@@ -272,7 +287,7 @@ export class EmailService {
       } catch (err) {
         lastError = err;
         if (attempt < MAX_ATTEMPTS - 1) {
-          await this.delay(RETRY_DELAYS[attempt]);
+          await this.delay(retryDelayMs);
         }
       }
     }

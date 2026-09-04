@@ -63,3 +63,32 @@ export function firstRow<T = Record<string, unknown>>(
 export function rowCount(result: SqlExecuteResult): number {
   return toRows(result).length;
 }
+
+/**
+ * Genau eine Zeile aus einem Abfrageergebnis entnehmen.
+ *
+ * [ARCTOS-FULL-2026-08-31 / Welle 4b, Strang 6 · OP-065]
+ *
+ * `noUncheckedIndexedAccess` macht aus `const [row] = await sql\`… RETURNING
+ * id\`` ein `row: T | undefined`. In den Seed- und Betriebsskripten dieses
+ * Pakets ist das kein Formalismus: sie legen Organisationen, Benutzer,
+ * Kataloge und Vorlagen an und tragen die zurückgegebenen Kennungen durch den
+ * ganzen Lauf. Bleibt eine Zeile aus, lief der Seed bisher WEITER — mit
+ * `undefined` als UUID in der nächsten Anweisung — und meldete am Ende
+ * trotzdem „12 Vorlagen angelegt".
+ *
+ * Diese Funktion macht daraus einen Abbruch mit Namen, an der Stelle, an der
+ * er entsteht. Sie steht hier und nicht achtmal kopiert in den einzelnen
+ * Skripten, damit es EINE Stelle gibt, an der die Entscheidung „kein
+ * Datensatz ⇒ Abbruch" getroffen wird.
+ *
+ * Ein `!` an den Fundstellen hätte das Gegenteil bewirkt: dieselbe Annahme,
+ * nur ohne Prüfung und ohne Meldung.
+ */
+export function requireRow<T>(rows: readonly T[], what: string): T {
+  const row = rows[0];
+  if (row === undefined) {
+    throw new Error(`${what}: Abfrage lieferte keine Zeile`);
+  }
+  return row;
+}

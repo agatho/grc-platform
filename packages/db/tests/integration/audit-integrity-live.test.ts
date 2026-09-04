@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import postgres from "postgres";
+import { requireRow, requireAt } from "../helpers";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
@@ -11,11 +12,14 @@ let orgId: string;
 describe("Audit integrity endpoint logic (live DB)", () => {
   beforeAll(async () => {
     client = postgres(DATABASE_URL, { max: 1 });
-    const [org] = await client<{ id: string }[]>`
+    const org = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES ('integrity-live-test', 'subsidiary', 'DE', true, true)
       RETURNING id
-    `;
+    `,
+      "org",
+    );
     orgId = org.id;
     await client`UPDATE organization SET name = 'v2' WHERE id = ${orgId}`;
     await client`UPDATE organization SET name = 'v3' WHERE id = ${orgId}`;
@@ -94,7 +98,10 @@ describe("Audit integrity endpoint logic (live DB)", () => {
       SELECT count(*)::int AS count FROM audit_log
       WHERE previous_hash_scope = ${scope}
     `;
-    expect(auditCountAfter[0].count - auditCountBefore[0].count).toBe(5);
+    expect(
+      requireAt(auditCountAfter, 0, "auditCountAfter").count -
+        requireAt(auditCountBefore, 0, "auditCountBefore").count,
+    ).toBe(5);
 
     // Walk in chain_seq order — no chain mismatches expected.
     const mismatches = await client<

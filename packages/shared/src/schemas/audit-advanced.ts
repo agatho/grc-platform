@@ -37,8 +37,24 @@ export const WP_STATUS_TRANSITIONS: Record<string, string[]> = {
   approved: [],
 };
 
+// [Welle 4b, Strang 6 · F-4] `WP_STATUS_TRANSITIONS[current]?.includes(next)`
+// war hier falsch, und nicht nur knapp: `?.` schützt gegen `undefined`, nicht
+// gegen die Prototypenkette. Für `current = "toString"` liefert der Zugriff
+// eine geerbte FUNKTION — also keinen `undefined`-Kurzschluss, sondern den
+// Aufruf von `.includes` auf `Function.prototype.toString`, und damit
+// `TypeError: WP_STATUS_TRANSITIONS[current]?.includes is not a function`.
+// Der `?? false`-Zweig war für diese Schlüssel unerreichbar. Gemessen am
+// 2026-09-03 für `toString`, `constructor`, `valueOf`, `hasOwnProperty` und
+// `__proto__`.
+//
+// `Object.hasOwn` fragt genau das, was gemeint war: steht dieser Status in
+// DIESER Tabelle. Ein `!` hinter dem Zugriff wäre dieselbe Annahme in neuer
+// Schreibweise gewesen und hätte den Fehler nur vor dem Compiler versteckt —
+// deshalb wird der Wert geprüft statt behauptet.
 export function isValidWpTransition(current: string, next: string): boolean {
-  return WP_STATUS_TRANSITIONS[current]?.includes(next) ?? false;
+  if (!Object.hasOwn(WP_STATUS_TRANSITIONS, current)) return false;
+  const allowed = WP_STATUS_TRANSITIONS[current];
+  return allowed !== undefined && allowed.includes(next);
 }
 
 export const wpTransitionSchema = z.object({
@@ -162,13 +178,48 @@ export const updateQaChecklistSchema = z.object({
 });
 
 // ─── QA Score Computation ───────────────────────────────────
+//
+// [Welle 4b, Strang 6 · F-5] Die Wache hiess bis hierher
+// `if (applicable.length === 0)` und prüfte damit, ob es POSITIONEN gibt —
+// nicht, ob es GEWICHT gibt. Das ist ein Unterschied, sobald ein Gewicht 0
+// oder negativ ist, und `audit_qa_checklist_item.weight` ist
+// `integer NOT NULL DEFAULT 3` OHNE CHECK-Constraint
+// (`packages/db/src/schema/audit-advanced.ts:388`), beides ist also
+// speicherbar. Gemessen am 2026-09-03 gegen 01d0e4cc:
+//
+//   [{compliant, 0}]                    → score = NaN        (in JSON: null)
+//   [{compliant,-1},{compliant,1}]      → score = NaN
+//   [{compliant,-1},{non_compliant,1}]  → score = -Infinity
+//   [{compliant, 5},{non_compliant,-1}] → score = 125, rating "green"
+//
+// Die ersten drei sind eine Bewertung ohne Zahl — der Aufrufer bekommt
+// `rating: "red"` neben `score: null`. Der vierte ist der schwerere Fall: ein
+// negatives Gewicht war ein Hebel, mit dem sich eine grüne QA-Bewertung
+// erzeugen liess, obwohl eine Position nicht konform ist. `Number.isNaN` beim
+// Aufrufer hätte weder -Infinity noch 125 gefangen.
+//
+// Zwei Änderungen, und beide sagen dasselbe: ein Gewicht ≤ 0 ist kein
+// Gewicht.
+//   1. Positionen ohne verwertbares Gewicht fallen aus `applicable` heraus —
+//      genau wie `not_applicable`, denn fachlich sagen sie dasselbe.
+//      `Number.isFinite` fängt zusätzlich NaN und ±Infinity ab, die über die
+//      öffentliche Signatur (`weight: number`) hereinkommen können.
+//   2. Die Wache fragt danach, ob am Ende Gewicht übrig ist (`totalWeight
+//      <= 0`), nicht danach, ob Positionen übrig sind.
+//
+// Damit gilt die Invariante: alle `w_i > 0` und alle `s_i ∈ {0, 50, 100}`,
+// also 0 ≤ Σ(s_i·w_i) ≤ 100·Σw_i = totalWeight, und der Quotient liegt
+// beweisbar in [0, 1] — `score` ist immer eine ganze Zahl in [0, 100].
 export function computeQaScore(
   items: Array<{ compliance: string | null; weight: number }>,
 ): { score: number; rating: string } {
   const applicable = items.filter(
-    (i) => i.compliance !== "not_applicable" && i.compliance !== null,
+    (i) =>
+      i.compliance !== "not_applicable" &&
+      i.compliance !== null &&
+      Number.isFinite(i.weight) &&
+      i.weight > 0,
   );
-  if (applicable.length === 0) return { score: 0, rating: "red" };
 
   let weightedSum = 0;
   let totalWeight = 0;
@@ -182,6 +233,11 @@ export function computeQaScore(
     weightedSum += complianceScore * item.weight;
     totalWeight += item.weight * 100;
   }
+
+  // Kein Gewicht heisst: es gibt nichts zu bewerten. Das ist derselbe
+  // Zustand wie eine leere Liste oder eine reine `not_applicable`-Liste und
+  // wird auch so beantwortet — 0/red, nicht NaN/red.
+  if (totalWeight <= 0) return { score: 0, rating: "red" };
 
   const score = Math.round((weightedSum / totalWeight) * 100);
   const rating = score >= 80 ? "green" : score >= 60 ? "yellow" : "red";
@@ -208,7 +264,11 @@ export function generateWpReference(
   for (const ref of existingReferencesInFolder) {
     const match = ref.match(pattern);
     if (match) {
-      const idx = parseInt(match[1], 10);
+      // [OP-065] `pattern` hat genau eine Fanggruppe `(\d+)`; bei einem
+      // Treffer ist sie da. `?? ""` ergibt `NaN`, und `NaN > maxIndex` ist
+      // falsch — der Eintrag würde also übersprungen statt eine Referenz
+      // "A.NaN" zu erzeugen.
+      const idx = parseInt(match[1] ?? "", 10);
       if (idx > maxIndex) maxIndex = idx;
     }
   }
@@ -330,6 +390,48 @@ export function validateCustomAuditSql(query: unknown): CustomSqlValidation {
     return { ok: false, reason: "Dollar-quoted strings are not allowed." };
   }
 
+  // [Welle 4b, Strang 6 · F-3] Doppelte Anführungszeichen sind hier
+  // lexikalisch verboten, und das ist die Behebung einer gemessenen
+  // Umgehung, nicht eine zusätzliche Strenge.
+  //
+  // `FORBIDDEN_FUNCTIONS` verlangt `\bname\s*\(`, also die Klammer
+  // unmittelbar hinter dem Namen. Ein zitierter Bezeichner schiebt ein `"`
+  // dazwischen und bricht das Muster. Gemessen am 2026-09-03 gegen 01d0e4cc:
+  //
+  //   abgelehnt      SELECT pg_sleep(3600)
+  //   DURCHGELASSEN  SELECT "pg_sleep"(3600)
+  //   DURCHGELASSEN  SELECT "pg_read_file"('/etc/passwd')
+  //   DURCHGELASSEN  SELECT "current_setting"('x')
+  //   DURCHGELASSEN  SELECT "dblink"('a','b')
+  //
+  // Die Stichwortliste `FORBIDDEN_TOKENS` war NICHT betroffen: ihre
+  // Alternativen enden auf `\b`, und `"` ist eine Wortgrenze —
+  // `SELECT "DELETE"` wurde also schon vorher abgelehnt.
+  //
+  // Warum nicht das Muster um `"?` erweitern: das nimmt genau eine
+  // Schreibweise heraus und lässt die nächste stehen. PostgreSQL erlaubt in
+  // einem zitierten Bezeichner auch das verdoppelte `""` (`"pg_""sleep"` ist
+  // NICHT `pg_sleep`, aber `"pg_sleep"` mit beliebigem Leerraum davor und
+  // dahinter ist es), und mit `U&"..."` kommt eine weitere Kodierung dazu.
+  // Wer eine Sperrliste über zitierte Namen laufen lässt, muss die
+  // Zitierregeln der Datenbank nachbauen — genau das, was der Kopf dieses
+  // Moduls ausdrücklich nicht tun will („we do not attempt to tokenize
+  // SQL").
+  //
+  // Der `"` wird deshalb verboten statt entschärft. Das kostet nichts: alle
+  // Bezeichner dieses Schemas sind kleingeschriebenes snake_case und
+  // brauchen keine Zitierung, und ein `"` in einem Zeichenkettenliteral ist
+  // in einer Prüfregel ohne Anwendung. Die Regel steht bei den anderen
+  // lexikalischen Prüfungen (Kommentare, Dollar-Quoting) und damit VOR der
+  // Musterprüfung — sie kann von ihr also nicht umgangen werden.
+  if (trimmed.includes('"')) {
+    return {
+      ok: false,
+      reason:
+        'Double-quoted identifiers are not allowed in custom audit SQL (a quoted name hides it from the function blocklist; e.g. "pg_sleep"(…)).',
+    };
+  }
+
   // Must be a plain SELECT. `WITH` is deliberately NOT allowed because a
   // data-modifying CTE (`WITH x AS (INSERT … RETURNING …) SELECT …`) is
   // a write disguised as a SELECT.
@@ -344,7 +446,7 @@ export function validateCustomAuditSql(query: unknown): CustomSqlValidation {
   if (forbidden) {
     return {
       ok: false,
-      reason: `Keyword '${forbidden[1].toUpperCase()}' is not allowed in custom audit SQL.`,
+      reason: `Keyword '${(forbidden[1] ?? forbidden[0]).toUpperCase()}' is not allowed in custom audit SQL.`,
     };
   }
 

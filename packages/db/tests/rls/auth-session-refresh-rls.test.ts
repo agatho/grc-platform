@@ -4,7 +4,7 @@ import { hash } from "bcryptjs";
 // The REAL login-path function (packages/auth). @grc/auth depends on @grc/db,
 // so this direction is non-circular; vitest resolves the workspace symlink.
 import { loadRoles } from "@grc/auth/providers";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 import {
   db,
   organization,
@@ -82,35 +82,44 @@ describe("#SEC-AUTH-BOOTSTRAP session refresh under grc_app (real loadRoles + wi
       END $revoke_mv$;
     `);
 
-    const [org] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Session Refresh Org ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
+    const org = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Session Refresh Org ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "org",
+    );
     orgId = org.id;
 
     const passwordHash = await hash("session-refresh-secret", 10);
-    const [u] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `session-refresh-u-${suffix}@test.dev`,
-        name: "Session Refresh User",
-        passwordHash,
-      })
-      .returning({ id: user.id });
+    const u = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `session-refresh-u-${suffix}@test.dev`,
+          name: "Session Refresh User",
+          passwordHash,
+        })
+        .returning({ id: user.id }),
+      "u",
+    );
     userId = u.id;
 
-    const [uOther] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `session-refresh-other-${suffix}@test.dev`,
-        name: "Session Refresh Other",
-        passwordHash: "x",
-      })
-      .returning({ id: user.id });
+    const uOther = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `session-refresh-other-${suffix}@test.dev`,
+          name: "Session Refresh Other",
+          passwordHash: "x",
+        })
+        .returning({ id: user.id }),
+      "uOther",
+    );
     otherUserId = uOther.id;
 
     await adminDb.db
@@ -167,15 +176,15 @@ describe("#SEC-AUTH-BOOTSTRAP session refresh under grc_app (real loadRoles + wi
         ),
     );
     expect(rows.length).toBe(1);
-    expect(rows[0].orgId).toBe(orgId);
-    expect(rows[0].role).toBe("risk_manager");
+    expect(requireAt(rows, 0, "rows").orgId).toBe(orgId);
+    expect(requireAt(rows, 0, "rows").role).toBe("risk_manager");
   });
 
   it("LOGIN PATH: real loadRoles(userId) returns non-empty roles under grc_app", async () => {
     const roles = await loadRoles(userId);
     expect(roles.length).toBe(1);
-    expect(roles[0].orgId).toBe(orgId);
-    expect(roles[0].role).toBe("risk_manager");
+    expect(requireAt(roles, 0, "roles").orgId).toBe(orgId);
+    expect(requireAt(roles, 0, "roles").role).toBe("risk_manager");
   });
 
   it("self-read is user-scoped: another user's context never exposes U's rows", async () => {

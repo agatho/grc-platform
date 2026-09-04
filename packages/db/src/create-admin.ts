@@ -20,6 +20,7 @@
 import postgres from "postgres";
 import { hash } from "bcryptjs";
 import { randomBytes } from "crypto";
+import { requireRow } from "./sql-result";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -37,7 +38,14 @@ async function main() {
     );
     process.exit(1);
   }
-  const name = arg("name") ?? email.split("@")[0];
+  // [OP-065] `email.split("@")[0]` war `string | undefined`, und damit war
+  // `name` es auch. Weiter unten geht `name` als Parameter in ein
+  // `sql`-Template; `undefined` ist dort kein gültiger Parameter, weshalb der
+  // ganze Aufruf für den Compiler zu einem Fehlertyp wurde (TS1320 am
+  // `await`). Die E-Mail ist oben auf ein nichtleeres, `@`-haltiges Muster
+  // geprüft — `?? email` ist der Rückfall, der nie greift und trotzdem einen
+  // brauchbaren Anzeigenamen liefert.
+  const name = arg("name") ?? email.split("@")[0] ?? email;
   const orgArg = arg("org");
 
   const url = process.env.DATABASE_URL;
@@ -73,8 +81,9 @@ async function main() {
         );
         process.exit(1);
       }
-      orgId = orgs[0].id;
-      console.log(`Organization: ${orgs[0].name} (${orgId})`);
+      const org = requireRow(orgs, "Organisation suchen");
+      orgId = org.id;
+      console.log(`Organization: ${org.name} (${orgId})`);
     }
 
     const [row] = await sql<{ id: string }[]>`
@@ -89,6 +98,13 @@ async function main() {
             locked_until = NULL
       RETURNING id
     `;
+    // [OP-065] Ein `RETURNING id` nach `INSERT … ON CONFLICT DO UPDATE`
+    // liefert immer eine Zeile. Geprüft wird sie trotzdem: ohne Zeile gibt es
+    // keine Benutzerkennung, und die folgenden Anweisungen würden mit
+    // `undefined` als UUID gegen die Datenbank laufen.
+    if (row === undefined) {
+      throw new Error(`Administrator ${email} anlegen: keine Zeile zurück`);
+    }
 
     await sql`
       INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)

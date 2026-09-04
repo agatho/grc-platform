@@ -102,6 +102,10 @@ describe("index names are unique schema-wide (S09-01 / 42P07)", () => {
       const sql = read(f).replace(/--[^\n]*/g, "");
       for (const m of sql.matchAll(re)) {
         const [, ifNotExists, name, table] = m;
+        // [OP-065] Die Gruppen 2 und 3 des Musters sind bei einem Treffer
+        // vorhanden — sie sind nicht optional. `continue` statt `!`: ohne
+        // Namen oder Tabelle gäbe es nichts zu vergleichen.
+        if (name === undefined || table === undefined) continue;
         const prev = seen.get(name);
         if (prev === undefined) seen.set(name, table);
         else if (prev !== table && !ifNotExists) {

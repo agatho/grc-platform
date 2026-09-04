@@ -27,7 +27,7 @@
  * vereinigt; er ist die billigere Hälfte und die, die sofort beisst.
  */
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -101,8 +101,21 @@ describe("OP-038 — die beiden bpmn-moddle-Deklarationen", () => {
 
 /** Alle `.d.ts` unter `dir`, die `declare module "bpmn-moddle"` enthalten. */
 function declarationsUnder(dir: string): string[] {
-  const { readdirSync, statSync } =
-    require("node:fs") as typeof import("node:fs");
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-5 · OP-173] Hier stand bis zur
+  // Aufnahme von `apps/web` in die Lint-Ratsche
+  //
+  //     const { readdirSync, statSync } = require("node:fs") as typeof import("node:fs");
+  //
+  // — ein `require()` in einer Datei, die drei Zeilen weiter oben dasselbe
+  // Modul bereits statisch importiert und mit `import.meta.dirname` arbeitet,
+  // also unzweifelhaft ein ES-Modul ist. Gemessen:
+  // `node --input-type=module -e 'require("node:fs")'` -> `ReferenceError:
+  // require is not defined in ES module scope`. Getragen hat es
+  // ausschliesslich der CJS-Interop des Vitest-Laeufers; unter jedem nativen
+  // ESM-Lader waere die Funktion beim ersten Aufruf gestorben. Dazu war
+  // `as typeof import("node:fs")` eine Zusicherung ueber einen Wert, den
+  // TypeScript hier gar nicht kennt — sie haette jeden Tippfehler im
+  // Modulnamen gedeckt. Beides faellt mit dem statischen Import weg.
   const out: string[] = [];
   const walk = (current: string): void => {
     for (const entry of readdirSync(current)) {

@@ -55,7 +55,9 @@ describe("S02-14 — one source of truth for the role model", () => {
     const ts = new Set<string>(USER_ROLES);
 
     const missingInMigration = [...ts].filter((r) => !declared.has(r));
-    const extraInMigration = [...declared].filter((r) => !ts.has(r));
+    const extraInMigration = [...declared].filter(
+      (r) => r !== undefined && !ts.has(r),
+    );
 
     expect(missingInMigration).toEqual([]);
     expect(extraInMigration).toEqual([]);
@@ -66,7 +68,9 @@ describe("S02-14 — one source of truth for the role model", () => {
     for (const file of walk(API_ROOT)) {
       const src = stripComments(readFileSync(file, "utf8"));
       for (const m of src.matchAll(/withAuth\(([^)]*)\)/g)) {
-        for (const r of m[1].matchAll(/"([a-z_]+)"/g)) used.add(r[1]);
+        for (const r of (m[1] ?? "").matchAll(/"([a-z_]+)"/g)) {
+          used.add(r[1] ?? "");
+        }
       }
     }
     // The audit counted 17 distinct guard roles, 8 of which were not

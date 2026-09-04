@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow, requireAt } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-083] Die `user`-Tabelle ohne Request-Kontext.
@@ -44,26 +44,41 @@ const emailB = `op083.b.${suffix}@example.test`;
 let isNonSuperuser = false;
 
 beforeAll(async () => {
-  const [role] = await app.client<
-    { rolsuper: boolean; rolbypassrls: boolean }[]
-  >`SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user`;
+  const role = requireRow(
+    await app.client<
+      { rolsuper: boolean; rolbypassrls: boolean }[]
+    >`SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = current_user`,
+    "role",
+  );
   isNonSuperuser = !!role && !role.rolsuper && !role.rolbypassrls;
 
-  const [orgA] = await admin.client<{ id: string }[]>`
-    INSERT INTO organization (name) VALUES (${`OP083 A ${suffix}`}) RETURNING id`;
-  const [orgB] = await admin.client<{ id: string }[]>`
-    INSERT INTO organization (name) VALUES (${`OP083 B ${suffix}`}) RETURNING id`;
+  const orgA = requireRow(
+    await admin.client<{ id: string }[]>`
+    INSERT INTO organization (name) VALUES (${`OP083 A ${suffix}`}) RETURNING id`,
+    "orgA",
+  );
+  const orgB = requireRow(
+    await admin.client<{ id: string }[]>`
+    INSERT INTO organization (name) VALUES (${`OP083 B ${suffix}`}) RETURNING id`,
+    "orgB",
+  );
   orgAId = orgA.id;
   orgBId = orgB.id;
 
-  const [uA] = await admin.client<{ id: string }[]>`
+  const uA = requireRow(
+    await admin.client<{ id: string }[]>`
     INSERT INTO "user" (email, name, password_hash, is_active)
     VALUES (${emailA}, 'OP083 A', '$2b$10$notarealhashnotarealhashnotarealha', true)
-    RETURNING id`;
-  const [uB] = await admin.client<{ id: string }[]>`
+    RETURNING id`,
+    "uA",
+  );
+  const uB = requireRow(
+    await admin.client<{ id: string }[]>`
     INSERT INTO "user" (email, name, password_hash, is_active)
     VALUES (${emailB}, 'OP083 B', '$2b$10$notarealhashnotarealhashnotarealha', true)
-    RETURNING id`;
+    RETURNING id`,
+    "uB",
+  );
   userAId = uA.id;
   userBId = uB.id;
 
@@ -120,7 +135,7 @@ describe("OP-083 — `user` ohne Request-Kontext", () => {
     const rows = await app.client<{ n: number }[]>`
       SELECT count(*)::int AS n FROM "user"`;
     // Vor 0456 stand hier die Gesamtzahl aller Nutzer aller Mandanten.
-    expect(rows[0].n).toBe(0);
+    expect(requireAt(rows, 0, "rows").n).toBe(0);
   });
 
   it("ohne Kontext ist auch kein Passwort-Hash lesbar", async () => {
@@ -135,7 +150,7 @@ describe("OP-083 — `user` ohne Request-Kontext", () => {
     const rows = await app.client<{ id: string; email: string }[]>`
       SELECT id, email FROM public.auth_lookup_user_by_email(${emailA})`;
     expect(rows.length).toBe(1);
-    expect(rows[0].id).toBe(userAId);
+    expect(requireAt(rows, 0, "rows").id).toBe(userAId);
   });
 
   it("die Kapsel ist kein Verzeichnis: unbekannte Adresse -> 0 Zeilen, kein Praefix-Zugriff", async () => {

@@ -47,7 +47,8 @@ function extractPathKeys(yaml: string): string[] {
     if (inPaths) {
       // Match `  "/api/v1/...":` (2-space indent, quoted path, ends with colon)
       const m = line.match(/^ {2}"(\/[^"]+)":/);
-      if (m) paths.push(m[1]);
+      // Die Fanggruppe ist bei einem Treffer vorhanden; `?? ""` statt `!`.
+      if (m) paths.push(m[1] ?? "");
     }
   }
   return paths;

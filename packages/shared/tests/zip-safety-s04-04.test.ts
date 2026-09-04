@@ -19,6 +19,17 @@ import {
   SPREADSHEET_ZIP_LIMITS,
 } from "../src/lib/zip-safety";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 /**
  * Build a minimal but structurally valid ZIP whose central directory
  * DECLARES the given uncompressed sizes. That is exactly the attacker's
@@ -189,7 +200,83 @@ describe("#S04-04 — ZIP/XLSX decompression-bomb pre-flight", () => {
     ]);
     const info = inspectZipArchive(zip);
     expect(info.entries.map((e) => e.name)).toEqual(["a.xml", "b.xml"]);
-    expect(info.entries[0].uncompressedSize).toBe(11);
+    expect(at(info.entries, 0).uncompressedSize).toBe(11);
     expect(info.totalUncompressed).toBe(11 + 12);
+  });
+  // ────────────────────────────────────────────────────────────────────
+  // [Welle 4b, Strang 6 · OP-065] Der Lesevorgang, der über das Dateiende
+  // hinauslief.
+  //
+  // `readUInt32LE`/`readUInt16LE` lasen `buf[off]` ohne Bereichsprüfung.
+  // Ausserhalb des Puffers ist das `undefined`, und JavaScript macht daraus
+  // im Bit-Ausdruck eine 0 — nicht NaN, nicht eine Ausnahme. Ein
+  // ZIP64-Zusatzfeld, das laut `extraLen` zwölf Bytes lang ist, von denen
+  // nur vier im Puffer liegen, lieferte deshalb `uncompressedSize = 0` für
+  // einen Eintrag, der sich über `0xffffffff` ausdrücklich als ≥ 4 GiB
+  // deklariert hatte. Der Wächter meldete „entpackt sich zu nichts".
+  //
+  // Gemessen am 2026-09-03 gegen 01d0e4cc:
+  //   entries=1  uncompressedSize=0  totalUncompressed=0  ratio=0
+  // ────────────────────────────────────────────────────────────────────
+  it("liest ein ZIP64-Zusatzfeld nicht über das Dateiende hinaus", () => {
+    // Aufbau (L = 300 Bytes):
+    //   0..21    EOCD, entryCount = 1, cdOffset = 100
+    //   100..145 Zentralverzeichnis-Kopf, uncompressedSize = 0xffffffff
+    //   146..295 Dateiname (150 Bytes)
+    //   296..299 Zusatzfeld-Kopf (headerId 0x0001, dataSize 8)
+    //   deklariertes extraLen = 12 → exEnd = 308, der Puffer endet bei 300
+    const L = 300;
+    const buf = Buffer.alloc(L);
+    buf.writeUInt32LE(0x06054b50, 0); // EOCD
+    buf.writeUInt16LE(1, 8);
+    buf.writeUInt16LE(1, 10);
+    buf.writeUInt32LE(200, 12);
+    buf.writeUInt32LE(100, 16); // cdOffset
+    buf.writeUInt16LE(0, 20);
+
+    buf.writeUInt32LE(0x02014b50, 100); // Zentralverzeichnis-Kopf
+    buf.writeUInt32LE(4096, 100 + 20); // compressedSize
+    buf.writeUInt32LE(0xffffffff, 100 + 24); // uncompressedSize → ZIP64
+    buf.writeUInt16LE(150, 100 + 28); // nameLen
+    buf.writeUInt16LE(12, 100 + 30); // extraLen — reicht über das Ende
+    buf.writeUInt16LE(0, 100 + 32); // commentLen
+    buf.fill(0x41, 146, 296); // Name
+
+    buf.writeUInt16LE(0x0001, 296); // ZIP64-Zusatzfeld-Kopf
+    buf.writeUInt16LE(8, 298);
+
+    // Die Behebung refüsiert, statt eine erfundene Null zu melden.
+    expect(() => inspectZipArchive(buf)).toThrow(ZipBombError);
+    expect(() => inspectZipArchive(buf)).toThrow(/past the end of the file/i);
+    expect(() => assertZipWithinLimits(buf)).toThrow(ZipBombError);
+  });
+
+  it("meldet für ein abgeschnittenes Archiv keine Grösse von 0", () => {
+    // Die eigentliche Aussage des Befunds, unabhängig von der Fehlermeldung:
+    // ein Archiv, das sich nicht vollständig vermessen lässt, darf NIEMALS
+    // mit `totalUncompressed === 0` durchgereicht werden.
+    const L = 300;
+    const buf = Buffer.alloc(L);
+    buf.writeUInt32LE(0x06054b50, 0);
+    buf.writeUInt16LE(1, 8);
+    buf.writeUInt16LE(1, 10);
+    buf.writeUInt32LE(200, 12);
+    buf.writeUInt32LE(100, 16);
+    buf.writeUInt32LE(0x02014b50, 100);
+    buf.writeUInt32LE(4096, 100 + 20);
+    buf.writeUInt32LE(0xffffffff, 100 + 24);
+    buf.writeUInt16LE(150, 100 + 28);
+    buf.writeUInt16LE(12, 100 + 30);
+    buf.fill(0x41, 146, 296);
+    buf.writeUInt16LE(0x0001, 296);
+    buf.writeUInt16LE(8, 298);
+
+    let gemessen: number | null = null;
+    try {
+      gemessen = inspectZipArchive(buf).totalUncompressed;
+    } catch {
+      gemessen = null; // abgelehnt — das ist die richtige Antwort
+    }
+    expect(gemessen).not.toBe(0);
   });
 });

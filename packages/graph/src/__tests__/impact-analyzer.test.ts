@@ -54,8 +54,9 @@ describe("Impact scoring simulation", () => {
 
   it("impact decreases monotonically with distance", () => {
     const scores = [1, 2, 3, 4, 5].map((d) => computeImpactScore(90, d));
-    for (let i = 1; i < scores.length; i++) {
-      expect(scores[i]).toBeLessThan(scores[i - 1]);
+    for (const [i, score] of scores.entries()) {
+      if (i === 0) continue;
+      expect(score).toBeLessThan(scores[i - 1] ?? Number.POSITIVE_INFINITY);
     }
   });
 
@@ -79,12 +80,17 @@ describe("Impact scoring simulation", () => {
 // ─── What-If multipliers ───────────────────────────────────
 
 describe("What-If scenario multipliers", () => {
-  const SCENARIO_MULTIPLIERS: Record<string, number> = {
+  // [OP-065] `Record<string, number>` liefert unter
+  // `noUncheckedIndexedAccess` an jedem Zugriff `number | undefined`. Die
+  // Schlüssel sind hier bekannt und fest — `as const` sagt das, statt es an
+  // jeder Fundstelle mit `!` zu behaupten. Die Kopie spiegelt
+  // `packages/graph/src/what-if.ts:18`.
+  const SCENARIO_MULTIPLIERS = {
     control_disabled: 1.5,
     vendor_terminated: 1.3,
     asset_compromised: 2.0,
     process_stopped: 1.4,
-  };
+  } as const;
 
   it("asset_compromised has highest multiplier", () => {
     const max = Math.max(...Object.values(SCENARIO_MULTIPLIERS));

@@ -70,6 +70,17 @@ import {
   sanitizeWebhookData,
 } from "../src/webhook-enqueue";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const ORG_A = "11111111-1111-1111-1111-111111111111";
 const ENTITY_ID = "33333333-3333-3333-3333-333333333333";
 
@@ -138,7 +149,7 @@ describe("webhook enqueue handler (fan-out)", () => {
 
     const rows = deliveryInserts(setup);
     expect(rows).toHaveLength(1);
-    const row = rows[0];
+    const row = at(rows, 0);
     expect(row.webhookId).toBe("22222222-2222-2222-2222-222222222222");
     expect(row.status).toBe("pending");
     expect(row.retryCount).toBe(0);
@@ -220,7 +231,7 @@ describe("webhook enqueue handler (fan-out)", () => {
     const rows = deliveryInserts(setup);
     expect(rows).toHaveLength(1);
     const after = (
-      rows[0].payload as { payload: { after: Record<string, unknown> } }
+      at(rows, 0).payload as { payload: { after: Record<string, unknown> } }
     ).payload.after;
     expect(after.title).toBe("Doc");
     expect(after).not.toHaveProperty("fileSha256");

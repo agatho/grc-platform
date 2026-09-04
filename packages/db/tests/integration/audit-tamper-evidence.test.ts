@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { requireRow, requireAt } from "../helpers";
 
 /**
  * ARCTOS-FULL-2026-08-31 · WP4 · S03-01, S03-02, S03-03, S03-05, S03-06,
@@ -54,9 +55,12 @@ interface ChainReport {
 }
 
 async function verify(): Promise<ChainReport> {
-  const [row] = await sql<{ report: ChainReport }[]>`
+  const row = requireRow(
+    await sql<{ report: ChainReport }[]>`
     SELECT audit_chain_verify(${scope}) AS report
-  `;
+  `,
+    "row",
+  );
   return row.report;
 }
 
@@ -81,10 +85,13 @@ async function withGuardsDisabled(fn: () => Promise<void>): Promise<void> {
 }
 
 async function newestId(): Promise<string> {
-  const [r] = await sql<{ id: string }[]>`
+  const r = requireRow(
+    await sql<{ id: string }[]>`
     SELECT id FROM audit_log WHERE previous_hash_scope = ${scope}
     ORDER BY chain_seq DESC LIMIT 1
-  `;
+  `,
+    "r",
+  );
   return r.id;
 }
 
@@ -96,11 +103,14 @@ beforeAll(async () => {
   await sql`SELECT set_config('app.current_user_email', 'alice@kunde.example', false)`;
   await sql`SELECT set_config('app.current_user_name', 'Alice Admin', false)`;
 
-  const [org] = await sql<{ id: string }[]>`
+  const org = requireRow(
+    await sql<{ id: string }[]>`
     INSERT INTO organization (name, type, country, is_eu, is_data_controller)
     VALUES (${"wp4-tamper-" + Date.now()}, 'subsidiary', 'DE', true, true)
     RETURNING id
-  `;
+  `,
+    "org",
+  );
   orgId = org.id;
   scope = `org:${orgId}`;
   await sql`SELECT set_config('app.current_org_id', ${orgId}, false)`;
@@ -178,9 +188,12 @@ describe("S03-02 — the hash_version escape hatch", () => {
 
   it("detects the content change itself, with hash_version left alone", async () => {
     const id = await newestId();
-    const [orig] = await sql<{ changes: unknown }[]>`
+    const orig = requireRow(
+      await sql<{ changes: unknown }[]>`
       SELECT changes FROM audit_log WHERE id = ${id}
-    `;
+    `,
+      "orig",
+    );
 
     await withGuardsDisabled(async () => {
       await sql`UPDATE audit_log
@@ -212,9 +225,12 @@ describe("S03-03 — the actor fields", () => {
 
   it("detects a reassigned actor when a superuser forces it through", async () => {
     const id = await newestId();
-    const [orig] = await sql<{ user_email: string; user_name: string }[]>`
+    const orig = requireRow(
+      await sql<{ user_email: string; user_name: string }[]>`
       SELECT user_email, user_name FROM audit_log WHERE id = ${id}
-    `;
+    `,
+      "orig",
+    );
 
     await withGuardsDisabled(async () => {
       await sql`UPDATE audit_log
@@ -242,9 +258,12 @@ describe("S03-03 — the actor fields", () => {
 describe("S03-01 — full chain rewrite and anchor overwrite", () => {
   it("detects a recomputed chain: the rewritten row no longer matches its commitment", async () => {
     const id = await newestId();
-    const [orig] = await sql<{ changes: unknown; entry_hash: string }[]>`
+    const orig = requireRow(
+      await sql<{ changes: unknown; entry_hash: string }[]>`
       SELECT changes, entry_hash FROM audit_log WHERE id = ${id}
-    `;
+    `,
+      "orig",
+    );
 
     // evidence/S03_full_rewrite2.sql, condensed: replica role + content
     // rewrite + chain recomputation. The recomputation is what used to
@@ -281,14 +300,17 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
   });
 
   it("refuses to rewrite the Merkle root of a completed anchor, replica role included", async () => {
-    const [anchor] = await sql<{ id: string }[]>`
+    const anchor = requireRow(
+      await sql<{ id: string }[]>`
       INSERT INTO audit_anchor (org_id, anchor_date, provider, merkle_root,
                                 leaf_count, proof, proof_status, merkle_version,
                                 anchored_at, hash_version)
       VALUES (${orgId}, CURRENT_DATE, 'freetsa', ${"a".repeat(64)}, 6,
               'QUFB', 'complete', 2, now(), 4)
       RETURNING id
-    `;
+    `,
+      "anchor",
+    );
     await sql`SELECT audit_anchor_seal_record(${anchor.id}::uuid)`;
 
     expect(
@@ -306,11 +328,14 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
   });
 
   it("detects an anchor overwritten by a superuser who disabled the guard", async () => {
-    const [anchor] = await sql<{ id: string }[]>`
+    const anchor = requireRow(
+      await sql<{ id: string }[]>`
       SELECT id FROM audit_anchor
       WHERE org_id = ${orgId} AND provider = 'freetsa' AND proof_status = 'complete'
       LIMIT 1
-    `;
+    `,
+      "anchor",
+    );
 
     await sql.unsafe(
       `ALTER TABLE audit_anchor DISABLE TRIGGER audit_anchor_append_only_trg`,
@@ -337,10 +362,13 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
   });
 
   it("detects a deleted anchor", async () => {
-    const [anchor] = await sql<{ id: string; merkle_root: string }[]>`
+    const anchor = requireRow(
+      await sql<{ id: string; merkle_root: string }[]>`
       SELECT id, merkle_root FROM audit_anchor
       WHERE org_id = ${orgId} AND provider = 'freetsa' LIMIT 1
-    `;
+    `,
+      "anchor",
+    );
     await sql.unsafe(
       `ALTER TABLE audit_anchor DISABLE TRIGGER audit_anchor_append_only_trg`,
     );
@@ -359,14 +387,17 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
 
   it("detects a seal ledger with a row spliced out", async () => {
     // Re-create an anchor + seal so there are at least two seals.
-    const [a2] = await sql<{ id: string }[]>`
+    const a2 = requireRow(
+      await sql<{ id: string }[]>`
       INSERT INTO audit_anchor (org_id, anchor_date, provider, merkle_root,
                                 leaf_count, proof, proof_status, merkle_version,
                                 anchored_at, hash_version)
       VALUES (${orgId}, CURRENT_DATE - 1, 'freetsa', ${"b".repeat(64)}, 3,
               'QkJC', 'complete', 2, now(), 4)
       RETURNING id
-    `;
+    `,
+      "a2",
+    );
     await sql`SELECT audit_anchor_seal_record(${a2.id}::uuid)`;
 
     const seals = await sql<{ id: string }[]>`
@@ -379,9 +410,12 @@ describe("S03-01 — full chain rewrite and anchor overwrite", () => {
     );
     let removed: Record<string, unknown> | undefined;
     try {
-      const [row] = await sql<Record<string, unknown>[]>`
-        DELETE FROM audit_anchor_seal WHERE id = ${seals[0].id} RETURNING *
-      `;
+      const row = requireRow(
+        await sql<Record<string, unknown>[]>`
+        DELETE FROM audit_anchor_seal WHERE id = ${requireAt(seals, 0, "seals").id} RETURNING *
+      `,
+        "row",
+      );
       removed = row;
       const issues = await sql<{ issue: string }[]>`
         SELECT issue FROM audit_anchor_verify(NULL)
@@ -431,16 +465,25 @@ describe("S03-16 — DELETE and TRUNCATE", () => {
 
   it("records a refused DELETE instead of silently reporting success", async () => {
     const id = await newestId();
-    const [{ before }] = await sql<{ before: number }[]>`
+    const { before } = requireRow(
+      await sql<{ before: number }[]>`
       SELECT count(*)::int AS before FROM audit_log_write_attempt WHERE operation = 'DELETE'
-    `;
+    `,
+      "before",
+    );
     await sql`DELETE FROM audit_log WHERE id = ${id}`;
-    const [{ still }] = await sql<{ still: number }[]>`
+    const { still } = requireRow(
+      await sql<{ still: number }[]>`
       SELECT count(*)::int AS still FROM audit_log WHERE id = ${id}
-    `;
-    const [{ after }] = await sql<{ after: number }[]>`
+    `,
+      "still",
+    );
+    const { after } = requireRow(
+      await sql<{ after: number }[]>`
       SELECT count(*)::int AS after FROM audit_log_write_attempt WHERE operation = 'DELETE'
-    `;
+    `,
+      "after",
+    );
     // The row survives, as before — but the attempt is now on record.
     // Previously the RULE reported "DELETE 0", i.e. success, and left no
     // trace for the caller or for monitoring.
@@ -455,14 +498,15 @@ describe("S03-05 — writes that used to bypass the chain", () => {
     // retention hard-delete record, which used to land with entry_hash
     // NULL, previous_hash_scope NULL and hash_version 1, outside every
     // integrity check and outside every anchor.
-    const [row] = await sql<
-      {
-        entry_hash: string | null;
-        previous_hash_scope: string | null;
-        hash_version: number;
-        content_commitment: string | null;
-      }[]
-    >`
+    const row = requireRow(
+      await sql<
+        {
+          entry_hash: string | null;
+          previous_hash_scope: string | null;
+          hash_version: number;
+          content_commitment: string | null;
+        }[]
+      >`
       INSERT INTO audit_log
         (org_id, user_id, user_email, user_name,
          entity_type, entity_id, entity_title,
@@ -472,7 +516,9 @@ describe("S03-05 — writes that used to bypass the chain", () => {
          'document', gen_random_uuid(), 'Vertrag 2026',
          'delete', 'retention_purge', '{"reason":"retention elapsed"}'::jsonb)
       RETURNING entry_hash, previous_hash_scope, hash_version, content_commitment
-    `;
+    `,
+      "row",
+    );
 
     expect(row.entry_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(row.previous_hash_scope).toBe(scope);
@@ -485,13 +531,14 @@ describe("S03-05 — writes that used to bypass the chain", () => {
   });
 
   it("ignores caller-supplied chain values instead of trusting them", async () => {
-    const [row] = await sql<
-      {
-        entry_hash: string;
-        previous_hash_scope: string;
-        hash_version: number;
-      }[]
-    >`
+    const row = requireRow(
+      await sql<
+        {
+          entry_hash: string;
+          previous_hash_scope: string;
+          hash_version: number;
+        }[]
+      >`
       INSERT INTO audit_log
         (org_id, entity_type, entity_id, action,
          entry_hash, previous_hash, previous_hash_scope, hash_version)
@@ -499,7 +546,9 @@ describe("S03-05 — writes that used to bypass the chain", () => {
         (${orgId}, 'document', gen_random_uuid(), 'export',
          ${"f".repeat(64)}, ${"e".repeat(64)}, 'org:somebody-else', 1)
       RETURNING entry_hash, previous_hash_scope, hash_version
-    `;
+    `,
+      "row",
+    );
     // A forged scope would have parked the row in another tenant's chain.
     expect(row.previous_hash_scope).toBe(scope);
     expect(row.entry_hash).not.toBe("f".repeat(64));
@@ -519,6 +568,11 @@ describe("S03-14 — credentials must not enter the immutable log", () => {
       } as never)})
       RETURNING changes
     `;
+    // [OP-065] `RETURNING changes` liefert genau eine Zeile; fehlt sie, hat
+    // der INSERT nicht stattgefunden und der Test prüft nichts.
+    if (row === undefined) {
+      throw new Error("audit_log RETURNING changes: keine Zeile");
+    }
     const c = row.changes as Record<string, unknown>;
     expect(JSON.stringify(c)).not.toContain("ALTERHASH");
     expect(JSON.stringify(c)).not.toContain("NEUERHASH");
@@ -536,9 +590,12 @@ describe("S03-06 — GDPR Art. 17 redaction keeps the chain verifiable", () => {
     const id = await newestId();
     await sql`SELECT tombstone_audit_entry(${id}::uuid, 'GDPR Art.17 Loeschantrag')`;
 
-    const [row] = await sql<{ user_email: string; pii: string | null }[]>`
+    const row = requireRow(
+      await sql<{ user_email: string; pii: string | null }[]>`
       SELECT user_email, pii_tombstoned_at::text AS pii FROM audit_log WHERE id = ${id}
-    `;
+    `,
+      "row",
+    );
     expect(row.user_email).toMatch(/^__tombstoned__:/);
     expect(row.pii).not.toBeNull();
 
@@ -548,11 +605,14 @@ describe("S03-06 — GDPR Art. 17 redaction keeps the chain verifiable", () => {
     expect(r.healthy).toBe(true);
     expect(r.redactionUnproven).toBe(0);
 
-    const [{ n }] = await sql<{ n: number }[]>`
+    const { n } = requireRow(
+      await sql<{ n: number }[]>`
       SELECT count(*)::int AS n FROM audit_log
       WHERE entity_type = 'audit_log' AND entity_id = ${id}
         AND action_detail = 'pii_tombstone'
-    `;
+    `,
+      "n",
+    );
     expect(n).toBe(1);
   });
 
@@ -569,11 +629,14 @@ describe("S03-09 — the chain cannot fork, whatever the isolation level", () =>
     // An ALREADY-CLAIMED predecessor: the newest row points at it, so a
     // second row claiming it is exactly the fork a stale-snapshot writer
     // under REPEATABLE READ produces.
-    const [tip] = await sql<{ previous_hash: string }[]>`
+    const tip = requireRow(
+      await sql<{ previous_hash: string }[]>`
       SELECT previous_hash FROM audit_log
       WHERE previous_hash_scope = ${scope} AND previous_hash IS NOT NULL
       ORDER BY chain_seq DESC LIMIT 1
-    `;
+    `,
+      "tip",
+    );
     // Simulate what a REPEATABLE READ writer with a stale snapshot would
     // produce: two rows pointing at the same predecessor. The advisory
     // lock cannot prevent this; the UNIQUE constraint can, and does —
@@ -727,7 +790,9 @@ describe("S03-07 — the offline verification path", () => {
       [...script.matchAll(/r(?:ow)?\.get\("([A-Za-z]+)"/g)].map((m) => m[1]),
     );
     const jsonl = await exportJsonl();
-    const first = JSON.parse(jsonl.split("\n")[0]) as Record<string, unknown>;
+    const first = JSON.parse(
+      requireAt(jsonl.split("\n"), 0, "JSONL-Export"),
+    ) as Record<string, unknown>;
     for (const key of needed) {
       expect(Object.keys(first)).toContain(key);
     }
@@ -744,7 +809,10 @@ describe("S03-07 — the offline verification path", () => {
       return typeof r.changes === "string" && r.changes.includes("wp4-tamper");
     });
     expect(idx).toBeGreaterThanOrEqual(0);
-    const target = JSON.parse(lines[idx]) as Record<string, unknown>;
+    const target = JSON.parse(requireAt(lines, idx, "JSONL-Zeile")) as Record<
+      string,
+      unknown
+    >;
     target.changes = String(target.changes).replace(
       "wp4-tamper",
       "alles-in-ordn",
@@ -785,12 +853,15 @@ describe("S03-13 / S03-18 — the sign-off chains are guarded by the database, n
 
   for (const [table, col] of chains) {
     it(`${table} rejects a second sign-off claiming the same predecessor`, async () => {
-      const [{ def }] = await sql<{ def: string }[]>`
+      const { def } = requireRow(
+        await sql<{ def: string }[]>`
         SELECT pg_get_constraintdef(c.oid) AS def
         FROM pg_constraint c
         WHERE c.conrelid = ${table}::regclass
           AND c.conname  = ${table + "_chain_uq"}
-      `;
+      `,
+        "def",
+      );
       // NULLS NOT DISTINCT is the part that matters: without it, any
       // number of rows may claim "no predecessor", i.e. any number of
       // chain heads, and the fork the constraint exists to prevent is
@@ -802,12 +873,15 @@ describe("S03-13 / S03-18 — the sign-off chains are guarded by the database, n
   }
 
   it("audit_log carries the same DB-enforced guard (0402)", async () => {
-    const [{ def }] = await sql<{ def: string }[]>`
+    const { def } = requireRow(
+      await sql<{ def: string }[]>`
       SELECT pg_get_constraintdef(c.oid) AS def
       FROM pg_constraint c
       WHERE c.conrelid = 'audit_log'::regclass
         AND c.conname  = 'audit_log_scope_prev_uniq'
-    `;
+    `,
+      "def",
+    );
     expect(def).toContain("UNIQUE NULLS NOT DISTINCT");
     expect(def).toContain("previous_hash_scope");
     expect(def).toContain("previous_hash");
@@ -870,7 +944,8 @@ describe("S03-15 — the whistleblowing chain", () => {
 
     // The formula must not depend on the session timezone — the exact
     // defect ADR-026 fixed for audit_log and the WB chain never received.
-    const [{ berlin, utc }] = await sql<{ berlin: string; utc: string }[]>`
+    const { berlin, utc } = requireRow(
+      await sql<{ berlin: string; utc: string }[]>`
       SELECT
         (SELECT compute_wb_audit_hash_v2(NULL, '00000000-0000-0000-0000-000000000001',
            'actor', 'wb_case', NULL, 'create', '{}'::jsonb,
@@ -879,13 +954,18 @@ describe("S03-15 — the whistleblowing chain", () => {
         (SELECT compute_wb_audit_hash_v2(NULL, '00000000-0000-0000-0000-000000000001',
            'actor', 'wb_case', NULL, 'create', '{}'::jsonb,
            '2026-08-31 12:00:00+00'::timestamptz)) AS berlin
-    `;
+    `,
+      "berlin",
+    );
     expect(berlin).toBe(utc);
     await sql`SELECT set_config('TimeZone','UTC',false)`;
 
-    const [{ report }] = await sql<{ report: { healthy: boolean } }[]>`
+    const { report } = requireRow(
+      await sql<{ report: { healthy: boolean } }[]>`
       SELECT wb_audit_chain_verify(NULL) AS report
-    `;
+    `,
+      "report",
+    );
     expect(report.healthy).toBe(true);
   });
 });

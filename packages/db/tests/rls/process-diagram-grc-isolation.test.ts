@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import postgres from "postgres";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow, requireAt } from "../helpers";
 
 /**
  * [STUFE2-E] Mandantentrennung und Layer-Daten der zehn neuen Tabellen.
@@ -82,7 +82,7 @@ async function seedTenant(
       sqlText,
       params as never,
     );
-    return rows[0].id;
+    return requireAt(rows, 0, "rows").id;
   };
 
   const process = await one(
@@ -355,21 +355,33 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
       END $$;
     `);
 
-    const [a] = await admin.client<{ id: string }[]>`
+    const a = requireRow(
+      await admin.client<{ id: string }[]>`
       INSERT INTO organization (name, type, country)
-      VALUES (${`STUFE2E A ${suffix}`}, 'subsidiary', 'DEU') RETURNING id`;
-    const [b] = await admin.client<{ id: string }[]>`
+      VALUES (${`STUFE2E A ${suffix}`}, 'subsidiary', 'DEU') RETURNING id`,
+      "a",
+    );
+    const b = requireRow(
+      await admin.client<{ id: string }[]>`
       INSERT INTO organization (name, type, country)
-      VALUES (${`STUFE2E B ${suffix}`}, 'subsidiary', 'AUT') RETURNING id`;
+      VALUES (${`STUFE2E B ${suffix}`}, 'subsidiary', 'AUT') RETURNING id`,
+      "b",
+    );
     orgA = a.id;
     orgB = b.id;
 
-    const [ua] = await admin.client<{ id: string }[]>`
+    const ua = requireRow(
+      await admin.client<{ id: string }[]>`
       INSERT INTO "user" (email, name, password_hash)
-      VALUES (${`stufe2e-a-${suffix}@test.dev`}, 'S2E A', 'x') RETURNING id`;
-    const [ub] = await admin.client<{ id: string }[]>`
+      VALUES (${`stufe2e-a-${suffix}@test.dev`}, 'S2E A', 'x') RETURNING id`,
+      "ua",
+    );
+    const ub = requireRow(
+      await admin.client<{ id: string }[]>`
       INSERT INTO "user" (email, name, password_hash)
-      VALUES (${`stufe2e-b-${suffix}@test.dev`}, 'S2E B', 'x') RETURNING id`;
+      VALUES (${`stufe2e-b-${suffix}@test.dev`}, 'S2E B', 'x') RETURNING id`,
+      "ub",
+    );
     userA = ua.id;
     userB = ub.id;
 
@@ -380,22 +392,38 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
     const seedA = await seedTenant(admin.client, orgA, "A", true);
     const seedB = await seedTenant(admin.client, orgB, "B", false);
 
+    // [OP-065] `seedTenant` liefert `Record<string, string>`; jeder Zugriff
+    // darauf ist `string | undefined`. Diese Kennungen sind die Fixtures des
+    // ganzen Laufs — fehlt eine, prüft der Test danach die Isolation gegen
+    // `undefined` und kann dabei grün werden. `pick` macht daraus einen
+    // benannten Fehlschlag an der Stelle, an der die Kennung fehlt.
+    const pick = (seed: Record<string, string>, key: string, tag: string) => {
+      const value = seed[key];
+      if (value === undefined) {
+        throw new Error(`Fixture ${tag}.${key} wurde nicht angelegt`);
+      }
+      return value;
+    };
+
     for (const table of TABLES) {
-      ids.set(table, { a: seedA[table], b: seedB[table] });
+      ids.set(table, {
+        a: pick(seedA, table, "A"),
+        b: pick(seedB, table, "B"),
+      });
     }
-    fixture.processA = seedA.process;
-    fixture.step1 = seedA.step1;
-    fixture.step2 = seedA.step2;
-    fixture.roleEinkauf = seedA.roleEinkauf;
-    fixture.roleBuchhaltung = seedA.roleBuchhaltung;
-    fixture.orgUnit = seedA.orgUnit;
-    fixture.vendor = seedA.vendor;
-    fixture.dpia = seedA.dpia;
-    fixture.ropaEntry = seedA.ropaEntry;
-    fixture.dataCategory = seedA.dataCategory;
-    fixture.document = seedA.document;
-    fixture.control = seedA.control;
-    fixture.eventLog = seedA.eventLog;
+    fixture.processA = pick(seedA, "process", "A");
+    fixture.step1 = pick(seedA, "step1", "A");
+    fixture.step2 = pick(seedA, "step2", "A");
+    fixture.roleEinkauf = pick(seedA, "roleEinkauf", "A");
+    fixture.roleBuchhaltung = pick(seedA, "roleBuchhaltung", "A");
+    fixture.orgUnit = pick(seedA, "orgUnit", "A");
+    fixture.vendor = pick(seedA, "vendor", "A");
+    fixture.dpia = pick(seedA, "dpia", "A");
+    fixture.ropaEntry = pick(seedA, "ropaEntry", "A");
+    fixture.dataCategory = pick(seedA, "dataCategory", "A");
+    fixture.document = pick(seedA, "document", "A");
+    fixture.control = pick(seedA, "control", "A");
+    fixture.eventLog = pick(seedA, "eventLog", "A");
     void seedB;
 
     app = createAppDb();
@@ -544,11 +572,13 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
         "Lane_1",
         "Pool_Ext",
       ]);
-      expect(rows[0].orgUnitName).toContain("Zentraleinkauf");
-      expect(rows[1].vendorName).toContain("CloudCo");
-      expect(rows[1].vendorRiskClass).toBe("critical");
-      expect(rows[1].isExternal).toBe(true);
-      expect(rows[1].thirdCountry).toBe("US");
+      expect(requireAt(rows, 0, "rows").orgUnitName).toContain(
+        "Zentraleinkauf",
+      );
+      expect(requireAt(rows, 1, "rows").vendorName).toContain("CloudCo");
+      expect(requireAt(rows, 1, "rows").vendorRiskClass).toBe("critical");
+      expect(requireAt(rows, 1, "rows").isExternal).toBe(true);
+      expect(requireAt(rows, 1, "rows").thirdCountry).toBe("US");
     });
 
     it("sod (F3): die Selbstpaarung ist erlaubt und wird gefunden", async () => {
@@ -560,8 +590,10 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
         [orgA] as never,
       );
       expect(rows).toHaveLength(1);
-      expect(rows[0].roleAId).toBe(rows[0].roleBId);
-      expect(rows[0].severity).toBe("critical");
+      expect(requireAt(rows, 0, "rows").roleAId).toBe(
+        requireAt(rows, 0, "rows").roleBId,
+      );
+      expect(requireAt(rows, 0, "rows").severity).toBe("critical");
     });
 
     it("sod: das ungeordnete Paar ist eindeutig — (B,A) neben (A,B) scheitert", async () => {
@@ -595,16 +627,17 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
     });
 
     it("privacy / dpia / retention: ROPA samt Kategorie und Empfänger", async () => {
-      const [ropa] = await app.client.unsafe<
-        {
-          isProcessingActivity: boolean;
-          retentionMonths: number;
-          requiresDpia: boolean;
-          dpiaStatus: string | null;
-          transferCountry: string | null;
-        }[]
-      >(
-        `SELECT r.is_processing_activity AS "isProcessingActivity",
+      const ropa = requireRow(
+        await app.client.unsafe<
+          {
+            isProcessingActivity: boolean;
+            retentionMonths: number;
+            requiresDpia: boolean;
+            dpiaStatus: string | null;
+            transferCountry: string | null;
+          }[]
+        >(
+          `SELECT r.is_processing_activity AS "isProcessingActivity",
                 r.retention_months AS "retentionMonths",
                 r.requires_dpia AS "requiresDpia",
                 d.status::text AS "dpiaStatus",
@@ -613,7 +646,9 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
            LEFT JOIN dpia d ON d.id = r.dpia_id AND d.org_id = $1
                            AND d.deleted_at IS NULL
           WHERE r.org_id = $1 AND r.process_step_id = $2`,
-        [orgA, fixture.step1] as never,
+          [orgA, fixture.step1] as never,
+        ),
+        "ropa",
       );
       expect(ropa.isProcessingActivity).toBe(true);
       expect(ropa.retentionMonths).toBe(6);
@@ -644,7 +679,7 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
           WHERE psr.org_id = $1 AND psr.process_step_id = $2`,
         [orgA, fixture.step1] as never,
       );
-      expect(recipients[0].title).toContain("CloudCo");
+      expect(requireAt(recipients, 0, "recipients").title).toContain("CloudCo");
     });
 
     it("bcm / outage: MTPD in Minuten, Reißpunkt als Minimum über die Schritte", async () => {
@@ -661,12 +696,12 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
         [orgA] as never,
       );
       expect(rows).toHaveLength(2);
-      expect(rows[0].criticality).toBe("very_high");
+      expect(requireAt(rows, 0, "rows").criticality).toBe("very_high");
       // Der Reißpunkt des Prozesses ist das kleinste MTPD seiner Schritte —
       // gerechnet, nicht geschätzt. `bia_process_impact` kennt nur Stunden
       // und hätte 105 Minuten gar nicht darstellen können.
-      expect(rows[0].mtpdMinutes).toBe(105);
-      expect(rows[1].workaroundMaxDurationMinutes).toBe(120);
+      expect(requireAt(rows, 0, "rows").mtpdMinutes).toBe(105);
+      expect(requireAt(rows, 1, "rows").workaroundMaxDurationMinutes).toBe(120);
     });
 
     it("document: die Anweisung hängt am Schritt, nicht am Prozess", async () => {
@@ -677,7 +712,7 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
         [orgA, fixture.step1] as never,
       );
       expect(rows).toHaveLength(1);
-      expect(rows[0].title).toContain("AA-01");
+      expect(requireAt(rows, 0, "rows").title).toContain("AA-01");
       // Und am zweiten Schritt hängt sie nicht — genau das ist der Unterschied
       // zu `process_document(process_id)`.
       const other = await app.client.unsafe<{ title: string }[]>(
@@ -690,15 +725,16 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
     });
 
     it("conformance (F7): Abdeckungsquote 0,75 und ein Rework-Fall", async () => {
-      const [summary] = await app.client.unsafe<
-        {
-          coverageRatio: number | null;
-          unmappedActivities: string[];
-          totalTraces: number | null;
-          conformantTraces: number | null;
-        }[]
-      >(
-        `WITH log AS (
+      const summary = requireRow(
+        await app.client.unsafe<
+          {
+            coverageRatio: number | null;
+            unmappedActivities: string[];
+            totalTraces: number | null;
+            conformantTraces: number | null;
+          }[]
+        >(
+          `WITH log AS (
            SELECT id FROM process_event_log
             WHERE org_id = $1 AND process_id = $2
             ORDER BY imported_at DESC, id DESC LIMIT 1),
@@ -727,7 +763,9 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
                   WHERE r.org_id = $1 ORDER BY r.computed_at DESC LIMIT 1)
                   AS "conformantTraces"
            FROM totals, matched, unmapped`,
-        [orgA, fixture.processA] as never,
+          [orgA, fixture.processA] as never,
+        ),
+        "summary",
       );
       // 4 Ereignisse, 3 davon zugeordnet.
       expect(summary.coverageRatio).toBeCloseTo(0.75, 6);
@@ -762,22 +800,29 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
         [orgA, fixture.processA] as never,
       );
       expect(perStep).toHaveLength(1);
-      expect(perStep[0].matchKind).toBe("exact");
-      expect(perStep[0].observedCases).toBe(2);
+      expect(requireAt(perStep, 0, "perStep").matchKind).toBe("exact");
+      expect(requireAt(perStep, 0, "perStep").observedCases).toBe(2);
       // C1 führt „Bestellung erfassen" zweimal aus — genau ein Rework-Fall.
-      expect(perStep[0].reworkLoops).toBe(1);
+      expect(requireAt(perStep, 0, "perStep").reworkLoops).toBe(1);
     });
 
     it("controls[].isKey und .ownerRole kommen aus der Datenbank", async () => {
-      const [row] = await app.client.unsafe<
-        { isKey: boolean; ownerRoleId: string; evidenceDueAt: string | null }[]
-      >(
-        `SELECT c.is_key AS "isKey", c.owner_role_id AS "ownerRoleId",
+      const row = requireRow(
+        await app.client.unsafe<
+          {
+            isKey: boolean;
+            ownerRoleId: string;
+            evidenceDueAt: string | null;
+          }[]
+        >(
+          `SELECT c.is_key AS "isKey", c.owner_role_id AS "ownerRoleId",
                 c.evidence_due_at AS "evidenceDueAt"
            FROM process_step_control psc
            JOIN control c ON c.id = psc.control_id AND c.deleted_at IS NULL
           WHERE psc.org_id = $1 AND psc.process_step_id = $2`,
-        [orgA, fixture.step1] as never,
+          [orgA, fixture.step1] as never,
+        ),
+        "row",
       );
       expect(row.isKey).toBe(true);
       expect(row.ownerRoleId).toBe(fixture.roleEinkauf);
@@ -820,26 +865,33 @@ describe("STUFE2-E — Mandantentrennung und Layer-Daten der neuen Tabellen", ()
     it("ein geloeschter Schritt macht die Aktivitaet unzugeordnet, statt die Zeile mitzunehmen", async () => {
       // ON DELETE SET NULL: die Zuordnung bleibt stehen und sagt die Wahrheit
       // („nicht zugeordnet"), statt still zu verschwinden.
-      const [row] = await admin.client.unsafe<{ id: string }[]>(
-        `INSERT INTO process_step (process_id, org_id, bpmn_element_id, name, step_type, sequence_order)
+      const row = requireRow(
+        await admin.client.unsafe<{ id: string }[]>(
+          `INSERT INTO process_step (process_id, org_id, bpmn_element_id, name, step_type, sequence_order)
          VALUES ($1, $2, 'Task_Tmp', 'Temporaer', 'task', 9) RETURNING id`,
-        [fixture.processA, orgA] as never,
+          [fixture.processA, orgA] as never,
+        ),
+        "row",
       );
-      const [map] = await admin.client.unsafe<{ id: string }[]>(
-        `INSERT INTO process_event_activity_map
+      const map = requireRow(
+        await admin.client.unsafe<{ id: string }[]>(
+          `INSERT INTO process_event_activity_map
            (org_id, event_log_id, activity_name, process_step_id, match_kind)
          VALUES ($1, $2, 'Temporaer', $3, 'manual') RETURNING id`,
-        [orgA, fixture.eventLog, row.id] as never,
+          [orgA, fixture.eventLog, row.id] as never,
+        ),
+        "map",
       );
       await admin.client.unsafe(`DELETE FROM process_step WHERE id = $1`, [
         row.id,
       ] as never);
-      const [after] = await admin.client.unsafe<
-        { processStepId: string | null }[]
-      >(
-        `SELECT process_step_id AS "processStepId"
+      const after = requireRow(
+        await admin.client.unsafe<{ processStepId: string | null }[]>(
+          `SELECT process_step_id AS "processStepId"
            FROM process_event_activity_map WHERE id = $1`,
-        [map.id] as never,
+          [map.id] as never,
+        ),
+        "after",
       );
       expect(after).toBeDefined();
       expect(after.processStepId).toBeNull();

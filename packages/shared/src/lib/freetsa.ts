@@ -137,6 +137,34 @@ export class TimestampValidationError extends Error {
   }
 }
 
+// [OP-065] Ein DER-Baum aus fremder Hand hat keine garantierte Form. Bis
+// hierher wurden seine Elemente direkt indiziert — `tst[2]`,
+// `readChildren(imprintSeq[0])[0]`, `readChildren(readChildren(mdAttr)[1])[0]`
+// — und fehlte eines davon, war das Ergebnis nicht etwa eine Ablehnung,
+// sondern ein `TypeError: Cannot read properties of undefined (reading
+// 'value')`. Der fliegt an dem gesamten Fehlermodell dieses Moduls vorbei:
+// jeder andere Ablehnungsgrund kommt als `TimestampValidationError` mit einem
+// benannten `reason` heraus, dieser als roher Programmierfehler. Im
+// Wiederholungslauf (`apps/worker/src/crons/audit-chain-verify.ts`) landete
+// er als `last_error` an einem Anker — eine Meldung, mit der ein Betreiber
+// nichts anfangen kann, für einen Zustand, der schlicht „die Antwort ist
+// verstümmelt" heisst.
+//
+// `requireChild` macht daraus die Ablehnung, die es immer war. Der Grund
+// `malformed` ist derselbe, den die benachbarten Längenprüfungen von Hand
+// werfen; diese Funktion ersetzt sie an rund 25 Stellen durch dieselbe
+// Aussage, ohne dass an jeder einzelnen eine eigene `if`-Zeile stehen muss.
+function requireChild(nodes: DerNode[], index: number, what: string): DerNode {
+  const node = nodes[index];
+  if (node === undefined) {
+    throw new TimestampValidationError(
+      "malformed",
+      `${what}: element ${index} is missing (${nodes.length} present)`,
+    );
+  }
+  return node;
+}
+
 /**
  * Build a DER-encoded TimeStampReq for a SHA-256 hash.
  */
@@ -234,15 +262,17 @@ export function verifyTimestampResponse(
     throw new TimestampValidationError("malformed", "TimeStampResp is empty");
   }
 
-  const statusInfo = readChildren(children[0]);
+  const statusInfo = readChildren(requireChild(children, 0, "TimeStampResp"));
   if (statusInfo.length === 0) {
     throw new TimestampValidationError(
       "malformed",
       "TimeStampResp: PKIStatusInfo is empty",
     );
   }
+  // `value[0]` ist bei einem leeren INTEGER `undefined`; `?? -1` liefert
+  // denselben Ersatzwert wie die frühere Längenabfrage, in einem Ausdruck.
   const statusCode =
-    statusInfo[0].value.length > 0 ? statusInfo[0].value[0] : -1;
+    requireChild(statusInfo, 0, "PKIStatusInfo").value[0] ?? -1;
 
   if (statusCode !== 0) {
     throw new TimestampValidationError(
@@ -262,8 +292,11 @@ export function verifyTimestampResponse(
   }
 
   // ── ContentInfo → SignedData ────────────────────────────────────────
-  const contentInfo = readChildren(children[1]);
-  if (contentInfo.length < 2 || decodeOid(contentInfo[0]) !== OID_SIGNED_DATA) {
+  const contentInfo = readChildren(requireChild(children, 1, "TimeStampResp"));
+  if (
+    contentInfo.length < 2 ||
+    decodeOid(requireChild(contentInfo, 0, "ContentInfo")) !== OID_SIGNED_DATA
+  ) {
     throw new TimestampValidationError(
       "malformed",
       "timeStampToken is not a CMS SignedData",
@@ -271,7 +304,7 @@ export function verifyTimestampResponse(
   }
   // contentInfo[1] is [0] EXPLICIT; its single child is the SignedData
   // SEQUENCE, whose children are the SignedData fields.
-  const sdSeq = readChildren(contentInfo[1])[0];
+  const sdSeq = readChildren(requireChild(contentInfo, 1, "ContentInfo"))[0];
   if (!sdSeq || sdSeq.tag !== 0x30) {
     throw new TimestampValidationError(
       "malformed",
@@ -287,7 +320,7 @@ export function verifyTimestampResponse(
       "SignedData has no EncapsulatedContentInfo carrying a TSTInfo",
     );
   }
-  const encap = readChildren(sd[encapIdx]);
+  const encap = readChildren(requireChild(sd, encapIdx, "SignedData"));
   if (encap.length < 2) {
     throw new TimestampValidationError(
       "malformed",
@@ -295,7 +328,10 @@ export function verifyTimestampResponse(
     );
   }
   // eContent is [0] EXPLICIT OCTET STRING
-  const eContentOctets = readNode(encap[1].value, 0);
+  const eContentOctets = readNode(
+    requireChild(encap, 1, "EncapsulatedContentInfo").value,
+    0,
+  );
   const tstInfoDer = eContentOctets.value;
 
   // ── TSTInfo ─────────────────────────────────────────────────────────
@@ -303,9 +339,15 @@ export function verifyTimestampResponse(
   // version, policy, messageImprint, serialNumber, genTime, [accuracy],
   // [ordering], [nonce], [tsa], [extensions]
   const policyOid = tst[1] ? decodeOid(tst[1]) : undefined;
-  const imprintSeq = readChildren(tst[2]);
-  const imprintAlgOid = decodeOid(readChildren(imprintSeq[0])[0]);
-  const imprintValue = imprintSeq[1].value;
+  const imprintSeq = readChildren(requireChild(tst, 2, "TSTInfo"));
+  const imprintAlgOid = decodeOid(
+    requireChild(
+      readChildren(requireChild(imprintSeq, 0, "messageImprint")),
+      0,
+      "messageImprint.hashAlgorithm",
+    ),
+  );
+  const imprintValue = requireChild(imprintSeq, 1, "messageImprint").value;
 
   if (DIGEST_BY_OID[imprintAlgOid] !== "sha256") {
     throw new TimestampValidationError(
@@ -359,14 +401,22 @@ export function verifyTimestampResponse(
       "SignedData carries no SignerInfo",
     );
   }
-  const si = readChildren(readChildren(signerInfos)[0]);
+  const si = readChildren(
+    requireChild(readChildren(signerInfos), 0, "signerInfos"),
+  );
 
   // SignerInfo ::= SEQUENCE { version, sid, digestAlgorithm,
   //   [0] signedAttrs OPTIONAL, signatureAlgorithm, signature, ... }
-  if (si.length < 6 || si[2].tag !== 0x30) {
+  if (si.length < 6 || requireChild(si, 2, "SignerInfo").tag !== 0x30) {
     throw new TimestampValidationError("malformed", "SignerInfo is malformed");
   }
-  const digestAlgOid = decodeOid(readChildren(si[2])[0]);
+  const digestAlgOid = decodeOid(
+    requireChild(
+      readChildren(requireChild(si, 2, "SignerInfo")),
+      0,
+      "SignerInfo.digestAlgorithm",
+    ),
+  );
   const digestAlg = DIGEST_BY_OID[digestAlgOid] ?? "sha256";
 
   const attrIdx = si.findIndex((n) => n.tag === 0xa0);
@@ -379,7 +429,6 @@ export function verifyTimestampResponse(
       "SignerInfo has no signedAttrs — the signature is not bound to the TSTInfo",
     );
   }
-  const signedAttrsNode = si[attrIdx];
   const sigAlgNode = si[attrIdx + 1];
   const signatureNode = si[attrIdx + 2];
 
@@ -396,10 +445,14 @@ export function verifyTimestampResponse(
   }
 
   // message-digest signed attribute must equal digest(eContent)
-  const attrs = readChildren(signedAttrsNode);
+  const attrs = readChildren(requireChild(si, attrIdx, "SignerInfo"));
   const mdAttr = attrs.find((a) => {
     const parts = readChildren(a);
-    return parts.length > 0 && decodeOid(parts[0]) === OID_ATTR_MESSAGE_DIGEST;
+    return (
+      parts.length > 0 &&
+      decodeOid(requireChild(parts, 0, "signedAttr")) ===
+        OID_ATTR_MESSAGE_DIGEST
+    );
   });
   if (!mdAttr) {
     throw new TimestampValidationError(
@@ -407,7 +460,13 @@ export function verifyTimestampResponse(
       "signedAttrs carry no message-digest attribute",
     );
   }
-  const mdValue = readChildren(readChildren(mdAttr)[1])[0].value;
+  const mdValue = requireChild(
+    readChildren(
+      requireChild(readChildren(mdAttr), 1, "message-digest attribute"),
+    ),
+    0,
+    "message-digest attribute value",
+  ).value;
   const eContentDigest = createHash(digestAlg).update(tstInfoDer).digest();
   if (!timingSafeEqualBuffers(mdValue, eContentDigest)) {
     throw new TimestampValidationError(
@@ -418,10 +477,21 @@ export function verifyTimestampResponse(
 
   const ctAttr = attrs.find((a) => {
     const parts = readChildren(a);
-    return parts.length > 0 && decodeOid(parts[0]) === OID_ATTR_CONTENT_TYPE;
+    return (
+      parts.length > 0 &&
+      decodeOid(requireChild(parts, 0, "signedAttr")) === OID_ATTR_CONTENT_TYPE
+    );
   });
   if (ctAttr) {
-    const ctOid = decodeOid(readChildren(readChildren(ctAttr)[1])[0]);
+    const ctOid = decodeOid(
+      requireChild(
+        readChildren(
+          requireChild(readChildren(ctAttr), 1, "content-type attribute"),
+        ),
+        0,
+        "content-type attribute value",
+      ),
+    );
     if (ctOid !== OID_CT_TST_INFO) {
       throw new TimestampValidationError(
         "content_type",
@@ -432,8 +502,13 @@ export function verifyTimestampResponse(
 
   // The signature covers the DER SET OF signedAttrs: the implicit [0]
   // tag (0xA0) is replaced by the universal SET tag (0x31).
-  const signedAttrsDer = reencode({ ...signedAttrsNode, tag: 0x31 });
-  const sigAlgOid = decodeOid(readChildren(sigAlgNode)[0]);
+  const signedAttrsDer = reencode({
+    ...requireChild(si, attrIdx, "SignerInfo"),
+    tag: 0x31,
+  });
+  const sigAlgOid = decodeOid(
+    requireChild(readChildren(sigAlgNode), 0, "signatureAlgorithm"),
+  );
   const sigAlg = SIG_ALG_BY_OID[sigAlgOid];
   if (!sigAlg) {
     throw new TimestampValidationError(
@@ -555,16 +630,17 @@ export function parseTimestampResponse(resp: Buffer): {
   if (children.length === 0) {
     throw new Error("TimeStampResp is empty");
   }
-  const statusInfo = readChildren(children[0]);
-  if (statusInfo.length === 0) {
+  const statusInfo = readChildren(requireChild(children, 0, "TimeStampResp"));
+  const statusNode = statusInfo[0];
+  if (statusNode === undefined) {
     throw new Error("TimeStampResp: PKIStatusInfo is empty");
   }
-  const statusCode =
-    statusInfo[0].value.length > 0 ? statusInfo[0].value[0] : -1;
+  const statusCode = statusNode.value[0] ?? -1;
 
   let genTime: Date | undefined;
-  if (children.length > 1) {
-    genTime = findGeneralizedTime(children[1].value);
+  const tokenNode = children[1];
+  if (tokenNode !== undefined) {
+    genTime = findGeneralizedTime(tokenNode.value);
   }
   return { statusCode, genTime };
 }
@@ -576,10 +652,11 @@ export function parseTimestampResponse(resp: Buffer): {
 function looksLikeEncap(node: DerNode): boolean {
   try {
     const kids = readChildren(node);
+    const head = kids[0];
     return (
-      kids.length >= 1 &&
-      kids[0].tag === 0x06 &&
-      decodeOid(kids[0]) === OID_CT_TST_INFO
+      head !== undefined &&
+      head.tag === 0x06 &&
+      decodeOid(head) === OID_CT_TST_INFO
     );
   } catch {
     return false;
@@ -588,12 +665,17 @@ function looksLikeEncap(node: DerNode): boolean {
 
 function decodeOid(node: DerNode): string {
   const b = node.value;
-  if (b.length === 0) return "";
-  const parts: number[] = [Math.floor(b[0] / 40), b[0] % 40];
+  // [OP-065] `b[0]` und `b[i]` stehen hinter Schranken, die der Compiler
+  // nicht mit dem Indexzugriff verbindet. Die Zerlegung in erstes Byte und
+  // Rest sagt dasselbe in einer Form, die er nachvollzieht — und ersetzt die
+  // Längenabfrage, statt einen Zweig hinzuzufügen.
+  const [head, ...rest] = b;
+  if (head === undefined) return "";
+  const parts: number[] = [Math.floor(head / 40), head % 40];
   let acc = 0;
-  for (let i = 1; i < b.length; i++) {
-    acc = acc * 128 + (b[i] & 0x7f);
-    if ((b[i] & 0x80) === 0) {
+  for (const byte of rest) {
+    acc = acc * 128 + (byte & 0x7f);
+    if ((byte & 0x80) === 0) {
       parts.push(acc);
       acc = 0;
     }
@@ -621,8 +703,13 @@ function reencode(node: DerNode): Buffer {
 
 function timingSafeEqualBuffers(a: Buffer, b: Buffer): boolean {
   if (a.length !== b.length) return false;
+  // [OP-065] Über den Wert statt über den Index: `a[i] ^ b[i]` war unter
+  // `noUncheckedIndexedAccess` `undefined ^ undefined`, und das ist in
+  // JavaScript 0 — ein Vergleich, der bei einem Lesefehler „gleich" gesagt
+  // hätte. Die Längen sind oben geprüft, `entries()` macht die Invariante
+  // für den Compiler sichtbar, und die Laufzeit bleibt konstant.
   let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  for (const [i, byte] of a.entries()) diff |= byte ^ (b[i] ?? 0);
   return diff === 0;
 }
 

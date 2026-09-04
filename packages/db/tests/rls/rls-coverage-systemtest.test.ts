@@ -6,6 +6,7 @@ import {
   setRlsContext,
   clearRlsContext,
   schema,
+  requireRow,
 } from "../helpers";
 import { runRlsAudit } from "../../src/rls-audit";
 
@@ -85,41 +86,53 @@ describe("RLS Coverage System Test (ADR-001)", () => {
 
     appDb = createAppDb();
 
-    const [orgA] = await adminDb.db
-      .insert(schema.organization)
-      .values({
-        name: `RLS-SysTest A ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: schema.organization.id });
-    const [orgB] = await adminDb.db
-      .insert(schema.organization)
-      .values({
-        name: `RLS-SysTest B ${suffix}`,
-        type: "subsidiary",
-        country: "AUT",
-      })
-      .returning({ id: schema.organization.id });
+    const orgA = requireRow(
+      await adminDb.db
+        .insert(schema.organization)
+        .values({
+          name: `RLS-SysTest A ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: schema.organization.id }),
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.db
+        .insert(schema.organization)
+        .values({
+          name: `RLS-SysTest B ${suffix}`,
+          type: "subsidiary",
+          country: "AUT",
+        })
+        .returning({ id: schema.organization.id }),
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
-    const [uA] = await adminDb.db
-      .insert(schema.user)
-      .values({
-        email: `rls-sys-a-${suffix}@test.dev`,
-        name: "RLS User A",
-        passwordHash: "x",
-      })
-      .returning({ id: schema.user.id });
-    const [uB] = await adminDb.db
-      .insert(schema.user)
-      .values({
-        email: `rls-sys-b-${suffix}@test.dev`,
-        name: "RLS User B",
-        passwordHash: "x",
-      })
-      .returning({ id: schema.user.id });
+    const uA = requireRow(
+      await adminDb.db
+        .insert(schema.user)
+        .values({
+          email: `rls-sys-a-${suffix}@test.dev`,
+          name: "RLS User A",
+          passwordHash: "x",
+        })
+        .returning({ id: schema.user.id }),
+      "uA",
+    );
+    const uB = requireRow(
+      await adminDb.db
+        .insert(schema.user)
+        .values({
+          email: `rls-sys-b-${suffix}@test.dev`,
+          name: "RLS User B",
+          passwordHash: "x",
+        })
+        .returning({ id: schema.user.id }),
+      "uB",
+    );
     userAId = uA.id;
     userBId = uB.id;
   });
@@ -208,11 +221,14 @@ describe("RLS Coverage System Test (ADR-001)", () => {
     // Insert a risk under tenant A (as superuser, so the test doesn't
     // depend on the INSERT policy being correct — the SELECT policy is
     // what we're proving here).
-    const [aRisk] = await adminDb.client<{ id: string }[]>`
+    const aRisk = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO risk (org_id, title, risk_category, risk_source, status)
       VALUES (${orgAId}::uuid, ${"A-only risk " + suffix}, 'operational', 'erm', 'identified')
       RETURNING id
-    `;
+    `,
+      "aRisk",
+    );
 
     await setRlsContext(appDb.client, orgBId, userBId);
     const visibleToB = await appDb.client<{ id: string }[]>`

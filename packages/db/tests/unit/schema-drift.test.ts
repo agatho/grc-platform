@@ -21,6 +21,7 @@ import {
   type DbTableFlags,
   type DbTrigger,
 } from "../schema-drift";
+import { requireAt } from "../helpers";
 
 const exports_ = schemas as unknown as Record<string, unknown>;
 
@@ -69,7 +70,7 @@ describe("duplicate pgTable definitions (S09-08)", () => {
     };
     const dupes = duplicateTableDefinitions(both);
     expect(dupes).toHaveLength(1);
-    expect(dupes[0].exports).toEqual(["a", "b"]);
+    expect(requireAt(dupes, 0, "dupes").exports).toEqual(["a", "b"]);
   });
 });
 

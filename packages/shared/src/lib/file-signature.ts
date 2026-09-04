@@ -196,8 +196,14 @@ export function looksLikeText(buffer: Uint8Array, sampleSize = 4096): boolean {
   const limit = Math.min(buffer.length, sampleSize);
   if (limit === 0) return true;
   let suspicious = 0;
-  for (let i = 0; i < limit; i++) {
-    const b = buffer[i];
+  // [OP-065] `for (const b of buffer.subarray(0, limit))` statt `buffer[i]`:
+  // der Wert kommt aus der Iteration und ist deshalb kein `number | undefined`
+  // mehr. Ohne das war `b` als `number` deklariert und konnte `undefined`
+  // sein — und `undefined >= 0x20` ist falsch, `undefined < 0x80` ebenfalls,
+  // ein solches Byte wäre also weder als druckbar noch als verdächtig gezählt
+  // worden. Die Schranke `limit` macht das unerreichbar, aber sichtbar war
+  // das nirgends.
+  for (const b of buffer.subarray(0, limit)) {
     // NUL is the strongest binary indicator.
     if (b === 0x00) return false;
     const isPrintable =

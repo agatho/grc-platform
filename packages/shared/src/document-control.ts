@@ -87,7 +87,9 @@ export function resolveVersionAt<T extends EffectiveDatedVersion>(
         (v.validUntil == null || ts < toTime(v.validUntil)),
     )
     .sort((a, b) => toTime(a.validFrom!) - toTime(b.validFrom!));
-  if (hits.length > 0) return hits[hits.length - 1];
+  // [OP-065] `hits.length > 0` sichert den Zugriff; `?? null` ist derselbe
+  // Rückgabewert, den die Funktion für „nichts gefunden" ohnehin liefert.
+  if (hits.length > 0) return hits[hits.length - 1] ?? null;
 
   // Fallback: createdAt window
   const sorted = [...versions].sort(

@@ -93,6 +93,11 @@ describe("S02-24 — OIDC ID token signature verification", () => {
       aud: AUD,
     });
     const [h, p, s] = token.split(".");
+    // [OP-065] Ein JWT hat drei Abschnitte. Fehlt einer, ist der Test kaputt
+    // und soll das sagen — nicht mit `!` behaupten, alles sei in Ordnung.
+    if (h === undefined || p === undefined || s === undefined) {
+      throw new Error("erzeugtes Token hat nicht drei Abschnitte");
+    }
     const payload = JSON.parse(Buffer.from(p, "base64url").toString("utf8"));
     payload.email = "admin@victim-org.test";
     const tampered = `${h}.${Buffer.from(JSON.stringify(payload)).toString(

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq } from "drizzle-orm";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 import {
   db,
   organization,
@@ -97,24 +97,30 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
       })
       .onConflictDoNothing();
 
-    const [org] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Ctxless Org ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
+    const org = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Ctxless Org ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "org",
+    );
     orgId = org.id;
 
-    const [other] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Ctxless Other ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
+    const other = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Ctxless Other ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "other",
+    );
     otherOrgId = other.id;
 
     // Primary org: erm ENABLED. Other org: erm ENABLED too (for isolation test).
@@ -170,8 +176,8 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
         .where(eq(moduleConfig.orgId, orgId)),
     );
     expect(rows).toHaveLength(1);
-    expect(rows[0].k).toBe("erm");
-    expect(rows[0].s).toBe("enabled");
+    expect(requireAt(rows, 0, "rows").k).toBe("erm");
+    expect(requireAt(rows, 0, "rows").s).toBe("enabled");
   });
 
   it("requireModule ALLOWS an enabled module (no bogus 404) — fails without the fix", async () => {
@@ -198,14 +204,17 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
 
   it("requireModule 404s when no config row exists for the org", async () => {
     // A brand-new org with no module_config at all.
-    const [ghost] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Ctxless Ghost ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
+    const ghost = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Ctxless Ghost ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "ghost",
+    );
     moduleConfigCache.clearAll();
     const res = await requireModule("erm", ghost.id, "GET");
     expect(res?.status).toBe(404);
@@ -228,7 +237,7 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
     );
     // Under otherOrg's context only otherOrg's row is visible.
     expect(rows).toHaveLength(1);
-    expect(rows[0].org).toBe(otherOrgId);
+    expect(requireAt(rows, 0, "rows").org).toBe(otherOrgId);
   });
 
   it("withOrgContext delegation (runWithRequestContext) yields org-scoped rows under grc_app", async () => {
@@ -242,6 +251,6 @@ describe("#SEC-CTXLESS-ORG module-guard under grc_app (real requireModule + with
         .where(eq(moduleConfig.orgId, orgId)),
     );
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows[0].k).toBe("erm");
+    expect(requireAt(rows, 0, "rows").k).toBe("erm");
   });
 });

@@ -58,6 +58,17 @@ import {
   buildEamSuggestionsPrompt,
 } from "../src/prompts/platform";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 // Bidi-Override (Trojan Source), Zero-Width-Space und ein C0-Steuerzeichen.
 // Bewusst ueber String.fromCharCode statt als Literal - ein unsichtbares
 // Zeichen im Quelltext waere genau der Fehler, den der Test prueft.
@@ -87,9 +98,9 @@ const PAYLOADS = [
 describe("sanitizeForPrompt ist keine Blocklist mehr", () => {
   it("veraendert die Injection-Nutzlasten inhaltlich nicht mehr", () => {
     // Absicht: Loeschen war Datenverfaelschung ohne Schutzwirkung.
-    expect(sanitizeForPrompt(PAYLOADS[0])).toBe(PAYLOADS[0]);
-    expect(sanitizeForPrompt(PAYLOADS[1])).toBe(PAYLOADS[1]);
-    expect(sanitizeForPrompt(PAYLOADS[3])).toBe(PAYLOADS[3]);
+    for (const i of [0, 1, 3]) {
+      expect(sanitizeForPrompt(at(PAYLOADS, i))).toBe(at(PAYLOADS, i));
+    }
   });
 
   it("zerstoert keine legitimen Fachtexte mehr", () => {
@@ -131,7 +142,7 @@ describe("Der Datenumschlag laesst sich nicht verlassen", () => {
           data: { riskTitle: "A", riskDescription: payload },
         });
 
-        const user = messages[1].content;
+        const user = at(messages, 1).content;
         const open = '<grc_data nonce="' + nonce + '">';
         const close = '</grc_data nonce="' + nonce + '">';
 
@@ -151,9 +162,9 @@ describe("Der Datenumschlag laesst sich nicht verlassen", () => {
         expect(user.slice(user.indexOf(close) + close.length).trim()).toBe("");
 
         // Der Instruktionskanal enthaelt keinen Angreifertext.
-        expect(messages[0].content).not.toContain("Zusaetzliche Anweisung");
-        expect(messages[0].content).not.toContain("Disregard");
-        expect(messages[0].content).not.toContain("Ignoriere");
+        expect(at(messages, 0).content).not.toContain("Zusaetzliche Anweisung");
+        expect(at(messages, 0).content).not.toContain("Disregard");
+        expect(at(messages, 0).content).not.toContain("Ignoriere");
       },
     );
   }
@@ -164,7 +175,7 @@ describe("Der Datenumschlag laesst sich nicht verlassen", () => {
       instruction: "I",
       data: { text: 'Zeile1\nZeile2 "quoted" \\backslash' },
     });
-    const body = messages[1].content;
+    const body = at(messages, 1).content;
     // Der Rohumbruch aus den Daten steht nicht im Umschlag; JSON escaped ihn.
     expect(body).toContain("\\n");
     expect(body).toContain('\\"quoted\\"');
@@ -191,8 +202,8 @@ describe("Der Datenumschlag laesst sich nicht verlassen", () => {
       instruction: "I",
       data: {},
     });
-    expect(messages[0].content).toContain(nonce);
-    expect(messages[0].content).toContain("UNTRUSTED DATA");
+    expect(at(messages, 0).content).toContain(nonce);
+    expect(at(messages, 0).content).toContain("UNTRUSTED DATA");
   });
 });
 
@@ -527,6 +538,9 @@ describe("Alle Prompt-Builder nutzen den Datenumschlag", () => {
       const messages = build();
       expect(messages).toHaveLength(2);
       const [system, user] = messages;
+      if (system === undefined || user === undefined) {
+        throw new Error(`${name}: erwartet zwei Nachrichten`);
+      }
 
       // Der Instruktionskanal enthaelt den Angreifertext nicht.
       expect(system.content).not.toContain("IGNORIERE ALLES");

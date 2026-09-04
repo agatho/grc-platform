@@ -40,7 +40,9 @@ async function callResolver(
   const rows = Array.isArray(result)
     ? result
     : ((result as { rows?: Row[] }).rows ?? []);
-  return rows.length ? rows[0] : null;
+  // [OP-065] `rows[0]` ist bei nichtleerem Feld vorhanden; `?? null` sagt
+  // dasselbe wie die Längenabfrage und passt zum Rückgabetyp.
+  return rows[0] ?? null;
 }
 
 export interface ResolvedInvitation {

@@ -100,7 +100,9 @@ export async function convertExcelToBPMN(
     };
   }
 
-  const columns = Object.keys(rawData[0]);
+  // [OP-065] `rawData.length === 0` ist direkt darüber abgefangen; `?? {}`
+  // schreibt das auf, ohne einen erreichbaren Zweig hinzuzufügen.
+  const columns = Object.keys(rawData[0] ?? {});
   for (const required of REQUIRED_COLUMNS) {
     if (!columns.includes(required)) {
       errors.push(`Missing required column: ${required}`);
@@ -113,8 +115,11 @@ export async function convertExcelToBPMN(
 
   // Parse rows
   const rows: ExcelRow[] = [];
-  for (let i = 0; i < rawData.length; i++) {
-    const raw = rawData[i];
+  // [OP-065] Über die Werte statt über den Index: `raw` war als
+  // `Record<string, unknown>` deklariert und konnte `undefined` sein, womit
+  // `raw["Step Number"]` geworfen hätte. `entries()` liefert Zeilennummer und
+  // Zeile gemeinsam und kennt kein `undefined`.
+  for (const [i, raw] of rawData.entries()) {
     const stepNumber = parseInt(String(raw["Step Number"] ?? ""), 10);
     if (isNaN(stepNumber)) {
       warnings.push(`Row ${i + 2}: Invalid step number, skipping`);
@@ -243,8 +248,16 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
   let flowIdx = 1;
 
   // Start event -> first step
-  if (rows.length > 0) {
-    const firstNodeId = nodeIds.get(rows[0].stepNumber)!;
+  // [OP-065] Vorher: `nodeIds.get(rows[0].stepNumber)!`. Zwei Annahmen in
+  // einer Zeile — dass es eine erste Zeile gibt und dass ihre Nummer in der
+  // Karte steht. Beide stimmen, aber `!` hätte im Fehlerfall das Wort
+  // „undefined" in das erzeugte BPMN-XML geschrieben statt den Fluss
+  // wegzulassen. Jetzt wird die erste Zeile entnommen und der Fluss nur
+  // erzeugt, wenn es ein Ziel dafür gibt.
+  const firstRow = rows[0];
+  const firstNodeId =
+    firstRow === undefined ? undefined : nodeIds.get(firstRow.stepNumber);
+  if (firstNodeId !== undefined) {
     flowLines.push(
       `      <bpmn:sequenceFlow id="Flow_${flowIdx++}" sourceRef="${startEventId}" targetRef="${firstNodeId}" />`,
     );
@@ -268,8 +281,8 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
 
     const options = row.decisionOptions.split(",").map((o) => o.trim());
 
-    for (let i = 0; i < nextSteps.length; i++) {
-      const targetNum = parseInt(nextSteps[i], 10);
+    for (const [i, nextStep] of nextSteps.entries()) {
+      const targetNum = parseInt(nextStep, 10);
       const targetId = nodeIds.get(targetNum);
       if (targetId) {
         const label = options[i] ?? "";

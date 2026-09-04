@@ -128,6 +128,11 @@ export function applyRACIOverrides(
         e.activityId === override.activityBpmnId &&
         e.participantId === override.participantBpmnId,
     );
+    // [OP-065] Dreimal stand `updatedEntries[existingIdx]` hinter derselben
+    // Bedingung `existingIdx >= 0`. Einmal entnehmen statt dreimal indizieren
+    // macht aus Bedingung und Zugriff eine Aussage; `?.`/`?? []` liefern
+    // denselben Ersatzwert wie die bisherigen `: []`-Zweige.
+    const existing = existingIdx >= 0 ? updatedEntries[existingIdx] : undefined;
 
     const entry: RACIEntry = {
       activityId: override.activityBpmnId,
@@ -140,10 +145,9 @@ export function applyRACIOverrides(
           ?.name ?? "",
       role: override.raciRole as "R" | "A" | "C" | "I",
       isOverride: true,
-      documents: existingIdx >= 0 ? updatedEntries[existingIdx].documents : [],
-      applications:
-        existingIdx >= 0 ? updatedEntries[existingIdx].applications : [],
-      risks: existingIdx >= 0 ? updatedEntries[existingIdx].risks : [],
+      documents: existing?.documents ?? [],
+      applications: existing?.applications ?? [],
+      risks: existing?.risks ?? [],
     };
 
     if (existingIdx >= 0) {

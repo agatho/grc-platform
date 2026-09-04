@@ -11,6 +11,17 @@ import {
   MERKLE_VERSION_RFC6962,
 } from "../src/lib/merkle-tree";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 /** 64-char hex leaves, deterministic. */
 const L = (n: number) => n.toString(16).padStart(2, "0").repeat(32);
 
@@ -76,7 +87,7 @@ describe("inclusion proofs", () => {
       const root = merkleRootV2(leaves)!;
       for (let i = 0; i < n; i++) {
         const proof = merkleProofV2(leaves, i)!;
-        expect(verifyMerkleProofV2(leaves[i], proof, root, n)).toBe(true);
+        expect(verifyMerkleProofV2(at(leaves, i), proof, root, n)).toBe(true);
       }
     });
   }
@@ -85,8 +96,8 @@ describe("inclusion proofs", () => {
     const leaves = [L(1), L(2), L(3), L(4)];
     const root = merkleRootV2(leaves)!;
     const proof = merkleProofV2(leaves, 2)!;
-    expect(verifyMerkleProofV2(leaves[2], proof, root, 4)).toBe(true);
-    expect(verifyMerkleProofV2(leaves[2], proof, root, 5)).toBe(false);
+    expect(verifyMerkleProofV2(at(leaves, 2), proof, root, 4)).toBe(true);
+    expect(verifyMerkleProofV2(at(leaves, 2), proof, root, 5)).toBe(false);
   });
 
   it("v2 proof is rejected for a leaf that is not in the tree", () => {
@@ -100,9 +111,9 @@ describe("inclusion proofs", () => {
     const leaves = [L(1), L(2), L(3), L(4), L(5)];
     const root = merkleRoot(leaves)!;
     for (let i = 0; i < leaves.length; i++) {
-      expect(verifyMerkleProof(leaves[i], merkleProof(leaves, i)!, root)).toBe(
-        true,
-      );
+      expect(
+        verifyMerkleProof(at(leaves, i), merkleProof(leaves, i)!, root),
+      ).toBe(true);
     }
   });
 });

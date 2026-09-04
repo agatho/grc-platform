@@ -18,7 +18,7 @@
 // vitest unit tests can't see.
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 
 describe("Schema drift — required FK columns + tables (Wave-21-W22-A1A2)", () => {
   let dbCtx: ReturnType<typeof createTestDb>;
@@ -119,11 +119,14 @@ describe("Schema drift — required FK columns + tables (Wave-21-W22-A1A2)", () 
   // exists. A green run of this test therefore means something.
   it("finding.control_id round-trips through a raw INSERT/SELECT", async () => {
     const suffix = Date.now();
-    const [org] = await dbCtx.client<{ id: string }[]>`
+    const org = requireRow(
+      await dbCtx.client<{ id: string }[]>`
       INSERT INTO organization (name, type, country)
       VALUES (${`A1-diag Org ${suffix}`}, 'holding', 'DEU')
       RETURNING id
-    `;
+    `,
+      "org",
+    );
     const orgId = org.id;
     const ctlId = "00000000-0000-0000-0000-0000000000aa";
     const fid = "00000000-0000-0000-0000-0000000000bb";
@@ -153,14 +156,14 @@ describe("Schema drift — required FK columns + tables (Wave-21-W22-A1A2)", () 
       `;
       expect(rows.length).toBe(1);
       expect(
-        rows[0].control_id,
+        requireAt(rows, 0, "rows").control_id,
         "finding.control_id is NULL after raw INSERT — schema accepts the column but doesn't store it. Investigate triggers.",
       ).toBe(ctlId);
 
       // The trigger's work_item must exist and carry the catalog type — this
       // is the assertion the swallowed FK error used to hide.
       const wi = await dbCtx.client<{ type_key: string }[]>`
-        SELECT type_key FROM work_item WHERE id = ${rows[0].work_item_id}::uuid
+        SELECT type_key FROM work_item WHERE id = ${requireAt(rows, 0, "rows").work_item_id}::uuid
       `;
       expect(wi.map((r) => r.type_key)).toEqual(["finding"]);
     } finally {

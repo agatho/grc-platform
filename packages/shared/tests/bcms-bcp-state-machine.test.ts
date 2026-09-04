@@ -9,6 +9,17 @@ import {
   type PublishContext,
 } from "../src/state-machines/bcms-bcp";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const LONG_SCOPE = "x".repeat(80);
 const LONG_ACTIVATION = "y".repeat(50);
 
@@ -161,7 +172,7 @@ describe("validateBcpTransition", () => {
       snapshot: validSnapshot,
     });
     expect(result.allowed).toBe(false);
-    expect(result.blockers[0].code).toBe("invalid_transition");
+    expect(at(result.blockers, 0).code).toBe("invalid_transition");
   });
   it("runs B3 on draft -> in_review", () => {
     const result = validateBcpTransition({

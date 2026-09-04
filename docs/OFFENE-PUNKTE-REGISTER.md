@@ -612,6 +612,84 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-04 — OP-173, OP-065 und sechzehn Defekte aus einem Compiler-Schalter
+
+Zwei Stränge, beide abgeschlossen. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-5.md` und `-4B-6.md`.
+
+**OP-173 — `apps/web` ist jetzt in der Ratsche**, und zwar als **eigener
+Bereich**, nicht im selben Topf: Ein Rückgang in `apps/worker` hätte sonst
+einen Anstieg in `apps/web` gedeckt. Zwei ESLint-Läufe mit je eigenem `cwd`,
+weil Flat Config vom Arbeitsverzeichnis aus sucht — aus der Wurzel gelintet
+fiele `apps/web` unter die Wurzelkonfiguration, die es ausdrücklich ignoriert,
+und heraus käme eine **plausible falsche Null**. Stand: `root` 283,
+`apps/web` 0. In sechs Lagen gegengeprüft, jede rot.
+
+Die beiden Altfehler waren keine Formalie:
+
+- `grc-maintenance-surface.test.ts:263` behauptete `expect(0 || null).toBeNull()`
+  unter der Überschrift „Der Gegenbeweis" — eine Aussage über JavaScript, nicht
+  über die geprüfte Funktion. Sie wäre auch grün geblieben, wenn es die
+  Funktion gar nicht mehr gäbe.
+- `bpmn-moddle-declaration.test.ts:105` benutzte `require("node:fs")` in einer
+  ESM-Datei, die drei Zeilen höher aus **demselben** Modul statisch importiert.
+  Gemessen: `node --input-type=module -e 'require("node:fs")'` →
+  `ReferenceError: require is not defined in ES module scope`. Getragen hat es
+  allein der CJS-Interop von Vitest; unter jedem nativen ESM-Lader wäre der
+  einzige Aufrufer des geprüften Wächters beim ersten Aufruf gestorben.
+
+**Die SECURITY-DEFINER-Frage ist beantwortet.** 54 gegen Baseline 45: neun
+Funktionen aus den Migrationen 0440, 0455, 0457 und 0477, alle nach dem
+Baseline-Stand `f11c5895` entstanden, **alle gerechtfertigt** — ein
+RLS-Policy-Helfer, der Anmeldepfad ohne Request-Kontext (er _ersetzt_ die
+kontextlose Disjunktion der `user`-Policy; die Zahl stieg, weil die Fläche
+sank), die Session-Invalidierung und die vier Wächter des RLS-Dauerschutzes.
+Gegen `pg_proc` nachgemessen: alle neun mit festem `search_path`, kein
+`EXECUTE` für PUBLIC. Baseline mit Begründung nachgezogen — und dabei fiel auf,
+dass `--update-baseline` genau die Bequemlichkeit zuliess, die OP-064 für die
+Lint-Ratsche abgestellt hat: Jede **Lockerung** verlangt jetzt ein `--reason`
+mit `_history`-Eintrag.
+
+**OP-065 — die Option ist in allen zehn Paketen an.** Die geerbten Zahlen
+(shared 502, db 641, auth 321, email 542) stimmten nicht mehr; sie zählten zwei
+Schalter zusammen und bei `email` überwiegend JSX-Syntaxfehler. Nachgemessen,
+nur `noUncheckedIndexedAccess`, je Paket die **eigenen** Dateien: db 452,
+shared 278, ai 80, auth 30, automation 17, events 8, email 8, reporting 4,
+graph 3, ui 0 — **880**. Alle abgetragen, **kein `!`, kein `as`**.
+
+**Sechzehn Produktdefekte hat dieser eine Compiler-Schalter ans Licht
+gebracht.** Die schwersten:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Art     | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| OP-184 | **Der DER-Parser lässt sich mit sechs Bytes zum Stillstand bringen.** `length = (length << 8) \| …` rechnet vorzeichenbehaftet; vier Längenbytes ergeben eine **negative** Länge, `readChildren` setzt `off = child.end` und läuft rückwärts. Eigene Nachmessung gegen den alten Stand: `30 84 ff 00 00 00` → `end = -16777210`, **kein Wurf**; der neue Stand lehnt dieselben Bytes präzise ab („declares 4278190080 content bytes but only 0 are present"). Der Parser liest RFC-3161-Antworten **und gespeicherte `audit_anchor.proof`**. | Produkt | behoben |
+| OP-185 | **Der ZIP-Bombenwächter meldete „entpackt sich zu nichts".** `buf[off]` jenseits des Puffers ist `undefined` und im Bit-Ausdruck **0**; ein Eintrag, der sich über `0xffffffff` als ≥ 4 GiB deklariert, wurde mit `uncompressedSize = 0` durchgewinkt. Erreichbar über `POST /api/v1/import/upload`.                                                                                                                                                                                                                                         | Produkt | behoben |
+| OP-186 | **`freetsa.ts` warf am eigenen Fehlermodell vorbei** — rund 25 ungeprüfte Zugriffe; eine verstümmelte Antwort ergab einen rohen `TypeError` statt `TimestampValidationError` und landete so als `last_error` am Anker.                                                                                                                                                                                                                                                                                                                       | Produkt | behoben |
+
+Dazu der Prototypen-Durchgriff aus OP-171s Nachbarschaft gleich **dreifach**:
+`isValidWpTransition` wirft bei `toString`; `resolveField` gibt für
+`userLang="constructor"` eine **Funktion** zurück, wo `string` deklariert ist;
+und `getNestedValue` — im Kopf als „Safely resolve nested property" bezeichnet
+— rendert `{{org.constructor}}` als `function Object() { [native code] }` in
+einen Bericht. In `UserInvited.tsx` verweigert React daraufhin das Rendern.
+
+**Und ein Hebel für eine erfundene grüne Bewertung:** `computeQaScore` lieferte
+nicht nur `NaN` bei Gewicht 0 und `-Infinity` bei negativem Gewicht, sondern
+für `[{compliant, 5}, {non_compliant, -1}]` **125/green**. Behoben mit
+Gewichtsfilter; die Invariante `score ∈ [0,100]` ist jetzt bewiesen.
+
+**Die Quoting-Umgehung ist geschlossen** — und zwar durch **lexikalisches
+Verbot** des `"` vor der Musterprüfung, nicht durch ein `"?` in der Regex: Das
+nähme genau eine Schreibweise heraus und liesse `""` und `U&"…"` stehen.
+Gemessen war: `SELECT pg_sleep(3600)` abgelehnt, `SELECT "pg_sleep"(3600)`
+**durchgelassen**, ebenso `"current_setting"`, `"pg_read_file"`, `"dblink"`.
+
+**Drei Punkte bleiben offen und sind aufgenommen:** ein fehlender
+CHECK-Constraint auf `weight` (die richtige Stelle, denn `weight` steht in
+keinem Zod-Schema), der Rest von `noUnusedLocals` (rund 75), und — der
+unangenehmste — **der QA-Bewertungspfad ist gar nicht verdrahtet**:
+`computeQaScore` hat keinen Aufrufer, `overall_score` bleibt leer.
+
 ### Nachtrag 2026-09-03 — Welle 4c: die Kennzahlen, und was hinter ihnen stand
 
 OP-074, OP-075, OP-073, OP-089 und ein Teil von OP-069 sind abgearbeitet.

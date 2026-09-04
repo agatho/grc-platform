@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql, and, eq, isNull } from "drizzle-orm";
 import { hash } from "bcryptjs";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 import {
   db,
   risk,
@@ -110,46 +110,58 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
       END $revoke_mv$;
     `);
 
-    const [orgA] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Bootstrap Org A ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
-    const [orgB] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Bootstrap Org B ${suffix}`,
-        type: "subsidiary",
-        country: "AUT",
-      })
-      .returning({ id: organization.id });
+    const orgA = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Bootstrap Org A ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Bootstrap Org B ${suffix}`,
+          type: "subsidiary",
+          country: "AUT",
+        })
+        .returning({ id: organization.id }),
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
     // User U — a real bcrypt password hash, like a provisioned login user.
     const passwordHash = await hash("bootstrap-secret", 10);
-    const [uA] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `bootstrap-u-${suffix}@test.dev`,
-        name: "Bootstrap User U",
-        passwordHash,
-      })
-      .returning({ id: user.id });
+    const uA = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `bootstrap-u-${suffix}@test.dev`,
+          name: "Bootstrap User U",
+          passwordHash,
+        })
+        .returning({ id: user.id }),
+      "uA",
+    );
     userAId = uA.id;
 
     // A second, unrelated user — used to prove no foreign read.
-    const [uOther] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `bootstrap-other-${suffix}@test.dev`,
-        name: "Bootstrap Other",
-        passwordHash: "x",
-      })
-      .returning({ id: user.id });
+    const uOther = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `bootstrap-other-${suffix}@test.dev`,
+          name: "Bootstrap Other",
+          passwordHash: "x",
+        })
+        .returning({ id: user.id }),
+      "uOther",
+    );
     otherUserId = uOther.id;
 
     // U has exactly one role: admin in Org A.
@@ -157,24 +169,30 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
       .insert(userOrganizationRole)
       .values({ userId: userAId, orgId: orgAId, role: "admin" });
 
-    const [rA] = await adminDb.db
-      .insert(risk)
-      .values({
-        orgId: orgAId,
-        title: `Bootstrap Risk A ${suffix}`,
-        riskCategory: "operational",
-        riskSource: "erm",
-      })
-      .returning({ id: risk.id });
-    const [rB] = await adminDb.db
-      .insert(risk)
-      .values({
-        orgId: orgBId,
-        title: `Bootstrap Risk B ${suffix}`,
-        riskCategory: "operational",
-        riskSource: "erm",
-      })
-      .returning({ id: risk.id });
+    const rA = requireRow(
+      await adminDb.db
+        .insert(risk)
+        .values({
+          orgId: orgAId,
+          title: `Bootstrap Risk A ${suffix}`,
+          riskCategory: "operational",
+          riskSource: "erm",
+        })
+        .returning({ id: risk.id }),
+      "rA",
+    );
+    const rB = requireRow(
+      await adminDb.db
+        .insert(risk)
+        .values({
+          orgId: orgBId,
+          title: `Bootstrap Risk B ${suffix}`,
+          riskCategory: "operational",
+          riskSource: "erm",
+        })
+        .returning({ id: risk.id }),
+      "rB",
+    );
     riskAId = rA.id;
     riskBId = rB.id;
   });
@@ -219,8 +237,8 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
     const roles = await loadRolesLikeAuth(userAId);
     // The whole bug was this being empty. It must NOT be empty now.
     expect(roles.length).toBe(1);
-    expect(roles[0].orgId).toBe(orgAId);
-    expect(roles[0].role).toBe("admin");
+    expect(requireAt(roles, 0, "roles").orgId).toBe(orgAId);
+    expect(requireAt(roles, 0, "roles").role).toBe("admin");
   });
 
   it("self-read policy is user-scoped: a different user's context never exposes U's rows", async () => {
@@ -238,7 +256,7 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
 
   it("DATA READS: with the resolved org context, reads return Org A's risk and NOT Org B's", async () => {
     const roles = await loadRolesLikeAuth(userAId);
-    const resolvedOrgId = roles[0].orgId;
+    const resolvedOrgId = requireAt(roles, 0, "roles").orgId;
 
     const rows = await runWithRequestContext(
       { orgId: resolvedOrgId, userId: userAId },
@@ -251,8 +269,8 @@ describe("#SEC-AUTH-BOOTSTRAP fresh login under grc_app (loadRoles + reads)", ()
     // Reads WORK (not empty) …
     expect(rows.length).toBe(1);
     // … and are ISOLATED to Org A (Org B's risk never leaks).
-    expect(rows[0].id).toBe(riskAId);
-    expect(rows[0].orgId).toBe(orgAId);
+    expect(requireAt(rows, 0, "rows").id).toBe(riskAId);
+    expect(requireAt(rows, 0, "rows").orgId).toBe(orgAId);
     expect(rows.some((r) => r.id === riskBId)).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow, requireAt } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-086] `includeDescendants` im Audit-Log.
@@ -39,9 +39,12 @@ let grandchildId: string;
 let strangerId: string;
 
 async function mkOrg(name: string, parent?: string): Promise<string> {
-  const [o] = await admin.client<{ id: string }[]>`
+  const o = requireRow(
+    await admin.client<{ id: string }[]>`
     INSERT INTO organization (name, parent_org_id)
-    VALUES (${`${name} ${suffix}`}, ${parent ?? null}) RETURNING id`;
+    VALUES (${`${name} ${suffix}`}, ${parent ?? null}) RETURNING id`,
+    "o",
+  );
   return o.id;
 }
 
@@ -118,6 +121,6 @@ describe("OP-086 — Nachfahren-Sicht im Audit-Log", () => {
     const rows = await app.client<{ n: number }[]>`
       SELECT count(*)::int AS n FROM audit_log
        WHERE entity_type = 'op086_probe'`;
-    expect(rows[0].n).toBe(1); // nur die eigene
+    expect(requireAt(rows, 0, "rows").n).toBe(1); // nur die eigene
   });
 });

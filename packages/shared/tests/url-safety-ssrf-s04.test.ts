@@ -20,6 +20,17 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { checkOutboundUrl, normalizeNumericIPv4 } from "../src/url-safety";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const lookupMock = vi.hoisted(() => vi.fn());
 vi.mock("node:dns/promises", () => ({ lookup: lookupMock }));
 
@@ -189,7 +200,7 @@ describe("#S04-02/03 — safeFetch re-validates every redirect hop", () => {
 
       // The first hop was fetched, the private hop never was.
       expect(fetchMock).toHaveBeenCalledTimes(1);
-      expect(fetchMock.mock.calls[0][0]).toBe(
+      expect(at(fetchMock.mock.calls, 0)[0]).toBe(
         "https://idp.partner.example.com/metadata",
       );
     });
@@ -217,7 +228,9 @@ describe("#S04-02/03 — safeFetch re-validates every redirect hop", () => {
   it("never lets fetch follow redirects on its own", async () => {
     fetchMock.mockResolvedValueOnce(ok());
     await safeFetch("https://idp.partner.example.com/metadata");
-    expect(fetchMock.mock.calls[0][1]).toMatchObject({ redirect: "manual" });
+    expect(at(fetchMock.mock.calls, 0)[1]).toMatchObject({
+      redirect: "manual",
+    });
   });
 
   it("caps the redirect chain", async () => {

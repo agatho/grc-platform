@@ -145,15 +145,18 @@ function resolveDecisionTargets(
     if (step.type === "decision" && step.decisionOptions) {
       const outFlows = flows.filter((f) => f.sourceRef === step.bpmnId);
 
-      for (
-        let i = 0;
-        i < step.decisionOptions.length && i < outFlows.length;
-        i++
-      ) {
-        const targetId = outFlows[i].targetRef;
-        const targetStep = steps.find((s) => s.bpmnId === targetId);
+      // [OP-065] Zwei Felder wurden über denselben Index gelesen und
+      // beschrieben; die Schranke `i < …length && i < …length` sicherte
+      // beides, war für den Compiler aber nicht mit den Zugriffen verbunden.
+      // `entries()` über die kürzere der beiden Listen reicht Wert UND Index
+      // heraus, und der zweite Zugriff wird ausdrücklich geprüft, statt
+      // behauptet zu werden.
+      for (const [i, option] of step.decisionOptions.entries()) {
+        const flow = outFlows[i];
+        if (flow === undefined) break;
+        const targetStep = steps.find((s) => s.bpmnId === flow.targetRef);
         if (targetStep) {
-          step.decisionOptions[i].targetStepNumber = targetStep.stepNumber;
+          option.targetStepNumber = targetStep.stepNumber;
         }
       }
     }

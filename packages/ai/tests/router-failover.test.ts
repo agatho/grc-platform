@@ -26,6 +26,17 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const callOllamaMock = vi.fn();
 const callLmStudioMock = vi.fn();
 const callOpenAIMock = vi.fn();
@@ -175,10 +186,10 @@ describe("aiCompleteWithFailover (Wave-19-N2)", () => {
     } catch (err) {
       const e = err as InstanceType<typeof AllProvidersFailedError>;
       expect(e.attempts).toHaveLength(3);
-      expect(e.attempts[0].provider).toBe("openai");
-      expect(e.attempts[0].error).toContain("rate limited");
-      expect(e.attempts[1].provider).toBe("gemini");
-      expect(e.attempts[2].provider).toBe("claude_cli");
+      expect(at(e.attempts, 0).provider).toBe("openai");
+      expect(at(e.attempts, 0).error).toContain("rate limited");
+      expect(at(e.attempts, 1).provider).toBe("gemini");
+      expect(at(e.attempts, 2).provider).toBe("claude_cli");
     }
   });
 

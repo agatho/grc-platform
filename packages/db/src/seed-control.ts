@@ -5,6 +5,7 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -37,7 +38,7 @@ async function seed() {
     console.log("No organizations found. Run db:seed first.");
     process.exit(1);
   }
-  const orgId = orgs[0].id;
+  const orgId = requireRow(orgs, "Organisation suchen").id;
 
   // Get admin user
   const users = await db.execute(
@@ -47,13 +48,13 @@ async function seed() {
     console.log("No users found. Run db:seed first.");
     process.exit(1);
   }
-  const userId = users[0].id;
+  const userId = requireRow(users, "Benutzer suchen").id;
 
   // ─── Check idempotency ─────────────────────────────────────
   const existingControls = await db.execute(
     sql`SELECT COUNT(*) as cnt FROM control WHERE org_id = ${orgId}`,
   );
-  if (Number(existingControls[0].cnt) > 0) {
+  if (Number(requireRow(existingControls, "Kontrollen zaehlen").cnt) > 0) {
     console.log("Control data already exists, skipping seed.");
     await client.end();
     return;

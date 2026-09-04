@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { eq, desc } from "drizzle-orm";
-import { createTestDb, schema } from "../helpers";
+import { createTestDb, schema, requireRow, requireAt } from "../helpers";
 
 /**
  * Audit Trigger Integration Tests
@@ -35,10 +35,13 @@ describe("Audit Trigger & Hash Chain", () => {
     await testDb.client.unsafe(`SET session_replication_role = 'origin'`);
 
     // Create a real test user so the audit trigger FK is satisfied
-    const [testUser] = await testDb.db
-      .insert(schema.user)
-      .values({ email: testEmail, name: "Audit Tester", passwordHash: "x" })
-      .returning({ id: schema.user.id });
+    const testUser = requireRow(
+      await testDb.db
+        .insert(schema.user)
+        .values({ email: testEmail, name: "Audit Tester", passwordHash: "x" })
+        .returning({ id: schema.user.id }),
+      "testUser",
+    );
     testUserId = testUser.id;
 
     // Set session variables so audit trigger can read user context
@@ -90,10 +93,13 @@ describe("Audit Trigger & Hash Chain", () => {
   });
 
   it("INSERT on organization creates an audit_log entry with action 'create'", async () => {
-    const [org] = await testDb.db
-      .insert(schema.organization)
-      .values({ name: "Audit Test Corp", type: "holding", country: "DEU" })
-      .returning();
+    const org = requireRow(
+      await testDb.db
+        .insert(schema.organization)
+        .values({ name: "Audit Test Corp", type: "holding", country: "DEU" })
+        .returning(),
+      "org",
+    );
     testOrgId = org.id;
 
     // Set org context for subsequent operations
@@ -162,8 +168,8 @@ describe("Audit Trigger & Hash Chain", () => {
 
     for (let i = 1; i < entries.length; i++) {
       // Each entry's previous_hash should reference some earlier entry's entry_hash
-      expect(entries[i].previous_hash).toBeDefined();
-      expect(entries[i].previous_hash).not.toBeNull();
+      expect(requireAt(entries, i, "entries").previous_hash).toBeDefined();
+      expect(requireAt(entries, i, "entries").previous_hash).not.toBeNull();
     }
 
     // Additionally verify the global chain is not broken for recent entries
@@ -210,7 +216,7 @@ describe("Audit Trigger & Hash Chain", () => {
       // `entity_type` is a free-form varchar and not whitelisted → must throw.
       await expect(
         testDb.client`
-          UPDATE audit_log SET entity_type = 'tampered' WHERE id = ${logs[0].id}
+          UPDATE audit_log SET entity_type = 'tampered' WHERE id = ${requireAt(logs, 0, "logs").id}
         `,
       ).rejects.toThrow(/append-only|cannot be updated/);
     }

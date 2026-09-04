@@ -5,6 +5,7 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -24,7 +25,8 @@ async function seed() {
   let riskCatalogId: string;
 
   if (existingRiskCatalog.length > 0) {
-    riskCatalogId = existingRiskCatalog[0].id as string;
+    riskCatalogId = requireRow(existingRiskCatalog, "Risikokatalog suchen")
+      .id as string;
     console.log(
       "  Cambridge v2 risk catalog already exists, skipping catalog insert.",
     );
@@ -43,7 +45,7 @@ async function seed() {
       )
       RETURNING id
     `);
-    riskCatalogId = inserted[0].id as string;
+    riskCatalogId = requireRow(inserted, "Risikokatalog anlegen").id as string;
     console.log("  Created Cambridge v2 risk catalog.");
   }
 
@@ -160,11 +162,11 @@ async function seed() {
     SELECT COUNT(*) as cnt FROM risk_catalog_entry WHERE catalog_id = ${riskCatalogId}
   `);
   await db.execute(sql`
-    UPDATE risk_catalog SET entry_count = ${Number(riskEntryCount[0].cnt)} WHERE id = ${riskCatalogId}
+    UPDATE risk_catalog SET entry_count = ${Number(requireRow(riskEntryCount, "Risikoeintraege zaehlen").cnt)} WHERE id = ${riskCatalogId}
   `);
 
   console.log(
-    `  Cambridge v2 risk catalog: ${riskEntryCount[0].cnt} entries (5 L1, 15 L2, 30 L3)`,
+    `  Cambridge v2 risk catalog: ${requireRow(riskEntryCount, "Risikoeintraege zaehlen").cnt} entries (5 L1, 15 L2, 30 L3)`,
   );
 
   // ══════════════════════════════════════════════════════════════
@@ -178,7 +180,10 @@ async function seed() {
   let controlCatalogId: string;
 
   if (existingControlCatalog.length > 0) {
-    controlCatalogId = existingControlCatalog[0].id as string;
+    controlCatalogId = requireRow(
+      existingControlCatalog,
+      "Kontrollkatalog suchen",
+    ).id as string;
     console.log(
       "  ISO 27002:2022 control catalog already exists, skipping catalog insert.",
     );
@@ -197,7 +202,8 @@ async function seed() {
       )
       RETURNING id
     `);
-    controlCatalogId = inserted[0].id as string;
+    controlCatalogId = requireRow(inserted, "Kontrollkatalog anlegen")
+      .id as string;
     console.log("  Created ISO 27002:2022 control catalog.");
   }
 
@@ -254,11 +260,11 @@ async function seed() {
     SELECT COUNT(*) as cnt FROM control_catalog_entry WHERE catalog_id = ${controlCatalogId}
   `);
   await db.execute(sql`
-    UPDATE control_catalog SET entry_count = ${Number(ctrlEntryCount[0].cnt)} WHERE id = ${controlCatalogId}
+    UPDATE control_catalog SET entry_count = ${Number(requireRow(ctrlEntryCount, "Kontrolleintraege zaehlen").cnt)} WHERE id = ${controlCatalogId}
   `);
 
   console.log(
-    `  ISO 27002:2022 control catalog: ${ctrlEntryCount[0].cnt} entries (4 L1, 20 L2)`,
+    `  ISO 27002:2022 control catalog: ${requireRow(ctrlEntryCount, "Kontrolleintraege zaehlen").cnt} entries (4 L1, 20 L2)`,
   );
 
   // ══════════════════════════════════════════════════════════════

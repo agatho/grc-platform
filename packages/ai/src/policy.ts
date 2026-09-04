@@ -529,10 +529,20 @@ export function selectProvider(args: SelectProviderArgs): ProviderSelection {
 
   // Kein Default gesetzt: lokale Modelle gehen vor — die Reihenfolge ist
   // die Produktzusage, nicht der Zufall der Env-Reihenfolge.
-  const chosen = pool.find((p) => placements[p].kind === "local") ?? pool[0];
+  // [OP-065] `pool[0]` war `AiProvider | undefined` und wurde sowohl als
+  // `provider` zurückgegeben als auch als Schlüssel in `placements` benutzt.
+  // Ein leerer Pool ist an dieser Stelle ausgeschlossen — die Zweige darüber
+  // behandeln ihn —, aber ausgesprochen war das nirgends.
+  const chosen = pool.find((p) => placements[p]?.kind === "local") ?? pool[0];
+  const chosenPlacement = chosen === undefined ? undefined : placements[chosen];
+  if (chosen === undefined || chosenPlacement === undefined) {
+    throw new Error(
+      "AI provider policy: no permitted provider left after filtering",
+    );
+  }
   return {
     provider: chosen,
-    placement: placements[chosen],
+    placement: chosenPlacement,
     permitted: pool,
     warnings,
     reason: "only_permitted",

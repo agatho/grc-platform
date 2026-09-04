@@ -26,6 +26,17 @@ import {
   type BreachSnapshot,
 } from "../src/state-machines/dpms-breach";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("Incident state-machine — NIST 7-state walk (Wave-19-W5)", () => {
   // The canonical 7-state ARCTOS matrix (mirrors NIST SP 800-61):
   //   detected → triaged → contained → eradicated → recovered →
@@ -44,8 +55,8 @@ describe("Incident state-machine — NIST 7-state walk (Wave-19-W5)", () => {
     ] as const;
 
     for (let i = 0; i < path.length - 1; i++) {
-      const from = path[i];
-      const to = path[i + 1];
+      const from = at(path, i);
+      const to = at(path, i + 1);
       expect(
         isValidIncidentTransition(from, to),
         `transition ${from} → ${to} must be valid`,

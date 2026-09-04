@@ -77,11 +77,31 @@ export function resolveField(
   if (typeof field === "string") return field; // backwards compat
   if (typeof field !== "object") return "";
 
+  // [OP-065] Drei Zugriffe auf ein aus JSONB gelesenes Objekt, alle über
+  // `[]` und ohne Rücksicht auf die Prototypenkette. Das ist dieselbe
+  // Fehlerklasse wie F-4 in `audit-advanced.ts`, und sie ist hier gemessen:
+  //
+  //   resolveField({de,en}, "constructor", "de") → typeof "function"
+  //   resolveField({de,en}, "toString",    "de") → typeof "function"
+  //   resolveField({de,en}, "__proto__",   "de") → typeof "object"
+  //
+  // Die Signatur sagt `string`. Zurück kam der Object-Konstruktor. Über die
+  // heutigen Routen ist das nicht erreichbar — `translationExportQuerySchema`
+  // und `aiTranslateSchema` engen die Sprachkennung auf `z.enum(...)` ein —,
+  // aber die Zusicherung liegt damit beim AUFRUFER, nicht bei dieser
+  // Funktion, und der nächste Aufrufer erbt sie nicht mit.
+  //
+  // `pick` fragt über `Object.hasOwn` und prüft, dass tatsächlich eine
+  // Zeichenkette dasteht: ein JSONB-Wert kann auch eine Zahl oder ein
+  // Objekt sein, und auch dann darf hier kein Nicht-String herausfallen.
+  const pick = (key: string | undefined): string | undefined => {
+    if (key === undefined || !Object.hasOwn(field, key)) return undefined;
+    const value = field[key];
+    return typeof value === "string" ? value : undefined;
+  };
+
   return (
-    field[userLang] ??
-    field[orgDefaultLang] ??
-    field[Object.keys(field)[0]] ??
-    ""
+    pick(userLang) ?? pick(orgDefaultLang) ?? pick(Object.keys(field)[0]) ?? ""
   );
 }
 

@@ -118,17 +118,21 @@ export function pertDistribution(
  * Compute a percentile from a sorted array using linear interpolation.
  */
 export function percentile(sortedArr: number[], p: number): number {
+  // [OP-065] Alle vier Zugriffe liegen im Feld: die Leerprüfung steht oben,
+  // `p` ist auf (0, 100) eingeengt, und `idx ∈ [0, len-1]`. `?? 0` kodiert
+  // das an einer Stelle je Zugriff, statt es viermal mit `!` zu behaupten.
   if (sortedArr.length === 0) return 0;
-  if (p <= 0) return sortedArr[0];
-  if (p >= 100) return sortedArr[sortedArr.length - 1];
+  if (p <= 0) return sortedArr[0] ?? 0;
+  if (p >= 100) return sortedArr[sortedArr.length - 1] ?? 0;
 
   const idx = (p / 100) * (sortedArr.length - 1);
   const lower = Math.floor(idx);
   const upper = Math.ceil(idx);
-  if (lower === upper) return sortedArr[lower];
+  const loValue = sortedArr[lower] ?? 0;
+  if (lower === upper) return loValue;
 
   const weight = idx - lower;
-  return sortedArr[lower] * (1 - weight) + sortedArr[upper] * weight;
+  return loValue * (1 - weight) + (sortedArr[upper] ?? loValue) * weight;
 }
 
 /**
@@ -137,9 +141,7 @@ export function percentile(sortedArr: number[], p: number): number {
 export function mean(values: number[]): number {
   if (values.length === 0) return 0;
   let sum = 0;
-  for (let i = 0; i < values.length; i++) {
-    sum += values[i];
-  }
+  for (const value of values) sum += value;
   return sum / values.length;
 }
 
@@ -150,8 +152,8 @@ export function stdDev(values: number[]): number {
   if (values.length === 0) return 0;
   const avg = mean(values);
   let sumSqDiff = 0;
-  for (let i = 0; i < values.length; i++) {
-    const diff = values[i] - avg;
+  for (const value of values) {
+    const diff = value - avg;
     sumSqDiff += diff * diff;
   }
   return Math.sqrt(sumSqDiff / values.length);

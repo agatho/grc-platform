@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createAppDb, createTestDb } from "../helpers";
+import { createAppDb, createTestDb, requireRow } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-087] Dauerschutz der
@@ -45,7 +45,11 @@ async function state(table: string) {
       JOIN pg_namespace n ON n.oid = c.relnamespace
      WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relname = ${table}
   `;
-  return rows[0];
+  // [OP-065] Die Abfrage liefert für eine existierende Tabelle genau eine
+  // Zeile. Fehlt sie, hat der Test seine eigene Vorbedingung verloren — und
+  // genau das soll er dann sagen, statt an `s.rls` mit `undefined` zu
+  // scheitern und wie ein Sachfehler auszusehen.
+  return requireRow(rows, `Katalogzustand von ${table}`);
 }
 
 async function log(table: string) {

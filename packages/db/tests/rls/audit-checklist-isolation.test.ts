@@ -4,6 +4,7 @@ import {
   createAppDb,
   setRlsContext,
   clearRlsContext,
+  requireRow,
 } from "../helpers";
 
 /**
@@ -62,29 +63,41 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
     appDb = createAppDb();
 
     // Zwei Test-Orgs + User
-    const [orgA] = await adminDb.client<{ id: string }[]>`
+    const orgA = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Audit Org A " + suffix}, 'subsidiary', 'DEU')
       RETURNING id
-    `;
-    const [orgB] = await adminDb.client<{ id: string }[]>`
+    `,
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Audit Org B " + suffix}, 'subsidiary', 'AUT')
       RETURNING id
-    `;
+    `,
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
-    const [uA] = await adminDb.client<{ id: string }[]>`
+    const uA = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-audit-a-" + suffix + "@test.dev"}, 'Audit User A', 'x')
       RETURNING id
-    `;
-    const [uB] = await adminDb.client<{ id: string }[]>`
+    `,
+      "uA",
+    );
+    const uB = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-audit-b-" + suffix + "@test.dev"}, 'Audit User B', 'x')
       RETURNING id
-    `;
+    `,
+      "uB",
+    );
     userAId = uA.id;
     userBId = uB.id;
 
@@ -95,19 +108,25 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
     `;
 
     // Audit für Org A
-    const [audit] = await adminDb.client<{ id: string }[]>`
+    const audit = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO audit (org_id, title, audit_type, status)
       VALUES (${orgAId}, ${"RLS Audit " + suffix}, 'internal', 'fieldwork')
       RETURNING id
-    `;
+    `,
+      "audit",
+    );
     auditAId = audit.id;
 
     // Checklist für Org A
-    const [cl] = await adminDb.client<{ id: string }[]>`
+    const cl = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO audit_checklist (org_id, audit_id, name, source_type)
       VALUES (${orgAId}, ${auditAId}, ${"RLS Checklist " + suffix}, 'custom')
       RETURNING id
-    `;
+    `,
+      "cl",
+    );
     checklistAId = cl.id;
 
     // Checklist-Item für Org A mit method_entries (sensible Details)
@@ -126,7 +145,8 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
         sampleIds: ["SECRET-001", "SECRET-002"],
       },
     ]);
-    const [item] = await adminDb.client<{ id: string }[]>`
+    const item = requireRow(
+      await adminDb.client<{ id: string }[]>`
       INSERT INTO audit_checklist_item (
         org_id, checklist_id, question, result, method_entries
       )
@@ -138,7 +158,9 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
         ${methodEntriesJson}::jsonb
       )
       RETURNING id
-    `;
+    `,
+      "item",
+    );
     itemAId = item.id;
   });
 

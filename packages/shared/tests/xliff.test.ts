@@ -10,6 +10,17 @@ import {
   type CsvRow,
 } from "../src/utils/xliff";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("generateXliff", () => {
   it("should generate valid XLIFF 2.0 XML", () => {
     const doc: XliffDocument = {
@@ -105,11 +116,11 @@ describe("parseXliff", () => {
     expect(doc.sourceLanguage).toBe("de");
     expect(doc.targetLanguage).toBe("en");
     expect(doc.units).toHaveLength(1);
-    expect(doc.units[0].entityType).toBe("risk");
-    expect(doc.units[0].entityId).toBe("abc");
-    expect(doc.units[0].field).toBe("title");
-    expect(doc.units[0].source).toBe("Lieferkettenrisiko");
-    expect(doc.units[0].target).toBe("Supply Chain Risk");
+    expect(at(doc.units, 0).entityType).toBe("risk");
+    expect(at(doc.units, 0).entityId).toBe("abc");
+    expect(at(doc.units, 0).field).toBe("title");
+    expect(at(doc.units, 0).source).toBe("Lieferkettenrisiko");
+    expect(at(doc.units, 0).target).toBe("Supply Chain Risk");
   });
 
   it("should throw for missing language attributes", () => {
@@ -139,7 +150,7 @@ describe("parseXliff", () => {
 
     const doc = parseXliff(xml);
     // The target should have HTML entities escaped
-    expect(doc.units[0].target).not.toContain("<script>");
+    expect(at(doc.units, 0).target).not.toContain("<script>");
   });
 
   it("should round-trip: generate then parse", () => {
@@ -172,9 +183,9 @@ describe("parseXliff", () => {
     expect(parsed.sourceLanguage).toBe("de");
     expect(parsed.targetLanguage).toBe("en");
     expect(parsed.units).toHaveLength(2);
-    expect(parsed.units[0].source).toBe("Risiko A");
-    expect(parsed.units[0].target).toBe("Risk A");
-    expect(parsed.units[1].field).toBe("description");
+    expect(at(parsed.units, 0).source).toBe("Risiko A");
+    expect(at(parsed.units, 0).target).toBe("Risk A");
+    expect(at(parsed.units, 1).field).toBe("description");
   });
 });
 
@@ -223,8 +234,8 @@ risk:1:desc,risk,1,description,Beschreibung,Description`;
     expect(result.sourceLanguage).toBe("de");
     expect(result.targetLanguage).toBe("en");
     expect(result.rows).toHaveLength(2);
-    expect(result.rows[0].source).toBe("Risiko");
-    expect(result.rows[0].target).toBe("Risk");
+    expect(at(result.rows, 0).source).toBe("Risiko");
+    expect(at(result.rows, 0).target).toBe("Risk");
   });
 
   it("should throw for invalid header", () => {
@@ -244,6 +255,6 @@ risk:1:desc,risk,1,description,Beschreibung,Description`;
 test:1:title,risk,1,title,"Text, with commas",Normal`;
 
     const result = parseCsv(csv);
-    expect(result.rows[0].source).toBe("Text, with commas");
+    expect(at(result.rows, 0).source).toBe("Text, with commas");
   });
 });

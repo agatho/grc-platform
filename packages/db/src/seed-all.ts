@@ -6,6 +6,7 @@
 import postgres from "postgres";
 import { readFileSync } from "fs";
 import { join } from "path";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!);
 const SQL_DIR = join(__dirname, "../sql");
@@ -274,8 +275,11 @@ async function main() {
     sql = sql.replace(/^BEGIN;/gm, "-- BEGIN;");
     sql = sql.replace(/^COMMIT;/gm, "-- COMMIT;");
     await client.unsafe(sql);
-    const [{ n }] = await client.unsafe(
-      `SELECT count(*)::int AS n FROM programme_journey WHERE org_id = '${newOrgId}'`,
+    const { n } = requireRow(
+      await client.unsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM programme_journey WHERE org_id = '${newOrgId}'`,
+      ),
+      "Programme-Journeys zaehlen",
     );
     console.log(`  ✓ ${n} programme journeys for Meridian`);
   } catch (err) {

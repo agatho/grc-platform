@@ -137,15 +137,19 @@ export function parseBatchTranslateResponse(
   const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
     try {
-      const fenced = collect(JSON.parse(jsonMatch[1].trim()));
+      // Die Fanggruppe ist bei einem Treffer vorhanden; `?? ""` lässt
+      // andernfalls `JSON.parse` scheitern und der `catch`-Zweig darunter
+      // greift — dasselbe Verhalten wie bei jedem anderen unlesbaren Block.
+      const fenced = collect(JSON.parse((jsonMatch[1] ?? "").trim()));
       if (fenced) return fenced;
     } catch {
       // fall through
     }
   }
 
-  if (opts.allowRawFallback && expectedFields.length === 1) {
-    return { [expectedFields[0]]: response.trim() };
+  const soleField = expectedFields[0];
+  if (opts.allowRawFallback && expectedFields.length === 1 && soleField) {
+    return { [soleField]: response.trim() };
   }
 
   throw new Error("Failed to parse AI translation response as JSON");

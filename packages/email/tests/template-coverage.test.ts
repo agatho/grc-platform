@@ -81,7 +81,10 @@ function usedTemplateKeys(): Map<string, string[]> {
       const src = readFileSync(file, "utf8");
       let m: RegExpExecArray | null;
       while ((m = assignment.exec(src))) {
-        let span = m[1];
+        // [OP-065] Die Fanggruppen sind bei einem Treffer vorhanden;
+        // `?? ""` schreibt das auf, statt es mit `!` zu behaupten. Ein
+        // leerer Ausdruck fällt danach ohnehin durch alle Filter.
+        let span = m[1] ?? "";
         // A Drizzle column definition (`templateKey: varchar("template_key",
         // …)`) is not a value assignment — skip it.
         if (/^[A-Za-z_$][\w$]*\s*\(/.test(span.trim())) continue;
@@ -93,7 +96,7 @@ function usedTemplateKeys(): Map<string, string[]> {
         let l: RegExpExecArray | null;
         literal.lastIndex = 0;
         while ((l = literal.exec(span))) {
-          const key = l[1];
+          const key = l[1] ?? "";
           const list = found.get(key) ?? [];
           list.push(file.slice(REPO_ROOT.length + 1));
           found.set(key, list);

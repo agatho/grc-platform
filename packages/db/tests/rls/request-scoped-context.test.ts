@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql, eq } from "drizzle-orm";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 import {
   db,
   risk,
@@ -73,56 +73,71 @@ describe("#SEC-F01b request-scoped RLS context (global db proxy)", () => {
       END $revoke_mv$;
     `);
 
-    const [orgA] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `F01b Org A ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
-    const [orgB] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `F01b Org B ${suffix}`,
-        type: "subsidiary",
-        country: "AUT",
-      })
-      .returning({ id: organization.id });
+    const orgA = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `F01b Org A ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `F01b Org B ${suffix}`,
+          type: "subsidiary",
+          country: "AUT",
+        })
+        .returning({ id: organization.id }),
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
-    const [uA] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `f01b-a-${suffix}@test.dev`,
-        name: "F01b User A",
-        passwordHash: "x",
-      })
-      .returning({ id: user.id });
+    const uA = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `f01b-a-${suffix}@test.dev`,
+          name: "F01b User A",
+          passwordHash: "x",
+        })
+        .returning({ id: user.id }),
+      "uA",
+    );
     userAId = uA.id;
     await adminDb.db
       .insert(userOrganizationRole)
       .values({ userId: userAId, orgId: orgAId, role: "admin" });
 
-    const [rA] = await adminDb.db
-      .insert(risk)
-      .values({
-        orgId: orgAId,
-        title: `F01b Risk A ${suffix}`,
-        riskCategory: "operational",
-        riskSource: "erm",
-      })
-      .returning({ id: risk.id });
-    const [rB] = await adminDb.db
-      .insert(risk)
-      .values({
-        orgId: orgBId,
-        title: `F01b Risk B ${suffix}`,
-        riskCategory: "operational",
-        riskSource: "erm",
-      })
-      .returning({ id: risk.id });
+    const rA = requireRow(
+      await adminDb.db
+        .insert(risk)
+        .values({
+          orgId: orgAId,
+          title: `F01b Risk A ${suffix}`,
+          riskCategory: "operational",
+          riskSource: "erm",
+        })
+        .returning({ id: risk.id }),
+      "rA",
+    );
+    const rB = requireRow(
+      await adminDb.db
+        .insert(risk)
+        .values({
+          orgId: orgBId,
+          title: `F01b Risk B ${suffix}`,
+          riskCategory: "operational",
+          riskSource: "erm",
+        })
+        .returning({ id: risk.id }),
+      "rB",
+    );
     riskAId = rA.id;
     riskBId = rB.id;
   });
@@ -174,8 +189,8 @@ describe("#SEC-F01b request-scoped RLS context (global db proxy)", () => {
     // Reads WORK (not empty) …
     expect(rows.length).toBe(1);
     // … and are ISOLATED to Org A (never leak Org B).
-    expect(rows[0].id).toBe(riskAId);
-    expect(rows[0].orgId).toBe(orgAId);
+    expect(requireAt(rows, 0, "rows").id).toBe(riskAId);
+    expect(requireAt(rows, 0, "rows").orgId).toBe(orgAId);
     expect(rows.some((r) => r.id === riskBId)).toBe(false);
   });
 

@@ -294,8 +294,11 @@ export async function aiCompleteWithFailover(
   const order: AiProvider[] = [primary, ...permittedFallbacks];
   const attempts: Array<{ provider: AiProvider; error: string }> = [];
 
-  for (let i = 0; i < order.length; i++) {
-    const provider = order[i];
+  // [OP-065] `order[i]` war `AiProvider | undefined` und wurde als Schlüssel
+  // in `PROVIDER_FNS` benutzt sowie in jeden `attempts`-Eintrag geschrieben.
+  // `entries()` reicht Rang und Anbieter gemeinsam heraus und kennt kein
+  // `undefined` — der Zugriff verschwindet, statt abgesichert zu werden.
+  for (const [i, provider] of order.entries()) {
     const fn = PROVIDER_FNS[provider];
     if (!fn) {
       attempts.push({ provider, error: "unknown_provider" });

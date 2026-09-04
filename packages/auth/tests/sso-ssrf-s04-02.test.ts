@@ -150,7 +150,7 @@ describe("#S04-02 — OIDC discovery fetch is SSRF-guarded", () => {
       "https://accounts.partner.example.com",
     );
     expect(doc.issuer).toBe("https://accounts.partner.example.com");
-    expect(fetchMock.mock.calls[0][0]).toBe(
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "https://accounts.partner.example.com/.well-known/openid-configuration",
     );
   });

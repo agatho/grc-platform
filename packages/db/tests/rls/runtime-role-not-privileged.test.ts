@@ -25,7 +25,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db, checkRuntimeRoleIsolation } from "../../src/index";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow } from "../helpers";
 
 // Frische Kennungen je Lauf, keine festen. Eine feste UUID macht den Test
 // zustandsbehaftet: bleibt nach einem Abbruch eine Audit-Zeile auf dieser
@@ -82,9 +82,12 @@ describe("OP-092 · der Laufzeit-Pool dieser Suite darf RLS nicht umgehen", () =
     // unter `origin` ist keine Alternative: die RI-Abfrage läuft dann gegen
     // `access_log`, das RLS mit FORCE trägt, und scheitert mit
     // „referential integrity query … gave unexpected result" — gemessen.)
-    const [{ n }] = await admin.client.unsafe<{ n: number }[]>(
-      `SELECT count(*)::int AS n FROM audit_log WHERE org_id = $1`,
-      [ORG],
+    const { n } = requireRow(
+      await admin.client.unsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM audit_log WHERE org_id = $1`,
+        [ORG],
+      ),
+      "n",
     );
     if (n === 0) {
       await admin.client.unsafe(`DELETE FROM access_log WHERE org_id = $1`, [
@@ -133,9 +136,12 @@ describe("OP-092 · der Laufzeit-Pool dieser Suite darf RLS nicht umgehen", () =
   // Zeile existiert nachweislich (der Admin sieht sie), und der Laufzeit-Pool
   // sieht sie ohne Mandantenkontext trotzdem nicht.
   it("sieht ohne Mandantenkontext keine Zeilen, die es nachweislich gibt", async () => {
-    const [seenByAdmin] = await admin.client.unsafe<{ n: number }[]>(
-      `SELECT count(*)::int AS n FROM risk WHERE id = $1`,
-      [RISK],
+    const seenByAdmin = requireRow(
+      await admin.client.unsafe<{ n: number }[]>(
+        `SELECT count(*)::int AS n FROM risk WHERE id = $1`,
+        [RISK],
+      ),
+      "seenByAdmin",
     );
     expect(seenByAdmin.n, "Die Prüfzeile muss existieren").toBe(1);
 

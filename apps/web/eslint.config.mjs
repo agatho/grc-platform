@@ -129,8 +129,14 @@ export default tseslint.config(
   // Bis Welle 4b kannte diese Konfiguration `no-console` ueberhaupt nicht —
   // fuer den groessten Workspace des Repositories gab es zu dieser
   // Defektklasse gar keine Regel, auch keine als `warn`. Die Lint-Ratsche
-  // zaehlt `apps/web` nicht (`.eslint-ratchet.json._targets`), also war der
-  // Bestand auch nicht gedeckelt.
+  // zaehlte `apps/web` ausserdem nicht, also war der Bestand auch nicht
+  // gedeckelt.
+  //
+  // [Welle 4b-5 · OP-173] Der zweite Halbsatz gilt nicht mehr: seit Welle
+  // 4b-5 fuehrt `.eslint-ratchet.json` einen eigenen Bereich `apps/web`
+  // (gemessen mit `cwd: apps/web`, also gegen GENAU DIESE Datei), und sein
+  // Bestand steht bei 0. Jeder neue Befund — Fehler wie Warnung — laesst
+  // `scripts/lint-ratchet.mjs` fallen.
   //
   // Der Geltungsbereich ist bewusst genau der SERVERSEITIGE Code, denn nur
   // dort trifft die Begruendung aus ADR-017 zu:

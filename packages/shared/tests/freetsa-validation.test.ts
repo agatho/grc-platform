@@ -88,7 +88,11 @@ describe("verifyTimestampResponse — forged and mismatched responses", () => {
 
   it("rejects a response whose signature was tampered with", () => {
     const forged = Buffer.from(response);
-    forged[forged.length - 20] ^= 0xff;
+    // [OP-065] `buf[i] ^= x` liest über den Index; `writeUInt8`/`readUInt8`
+    // prüfen den Bereich selbst und werfen bei einem Fehlgriff, statt still
+    // eine 0 zu verrechnen.
+    const pos = forged.length - 20;
+    forged.writeUInt8(forged.readUInt8(pos) ^ 0xff, pos);
     expect(() =>
       verifyTimestampResponse(forged, imprint, nonce, { caPem: fx.caPem }),
     ).toThrowError(
@@ -137,7 +141,7 @@ describe("verifyTimestampResponse — forged and mismatched responses", () => {
     const idx = response.indexOf(Buffer.from(fx.messageImprintHex, "hex"));
     expect(idx).toBeGreaterThanOrEqual(0);
     const mangled = Buffer.from(response);
-    mangled[idx + 5] ^= 0x01;
+    mangled.writeUInt8(mangled.readUInt8(idx + 5) ^ 0x01, idx + 5);
     expect(() =>
       verifyTimestampResponse(mangled, imprint, nonce, { caPem: fx.caPem }),
     ).toThrow(TimestampValidationError);

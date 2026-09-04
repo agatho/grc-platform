@@ -48,6 +48,7 @@ import postgres from "postgres";
 import { createHash } from "crypto";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!, {
   max: 1,
@@ -318,7 +319,10 @@ async function runPass(
     } catch (err) {
       fail.push({
         file,
-        error: err instanceof Error ? err.message.split("\n")[0] : String(err),
+        error:
+          err instanceof Error
+            ? (err.message.split("\n")[0] ?? err.message)
+            : String(err),
       });
     }
   }
@@ -382,8 +386,11 @@ async function main() {
   // INSERT). Carry the pass-1 error along so the summary names the cause.
   const firstError = new Map(pass1.fail.map((f) => [f.file, f.error]));
 
-  const [{ count }] = await client.unsafe<{ count: number }[]>(
-    `SELECT count(*)::int as count FROM information_schema.tables WHERE table_schema = 'public'`,
+  const { count } = requireRow(
+    await client.unsafe<{ count: number }[]>(
+      `SELECT count(*)::int as count FROM information_schema.tables WHERE table_schema = 'public'`,
+    ),
+    "Tabellen zaehlen",
   );
   console.log(`\n✓ ${count} tables created`);
   console.log(

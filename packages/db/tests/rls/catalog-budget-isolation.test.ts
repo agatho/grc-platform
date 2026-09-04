@@ -5,6 +5,8 @@ import {
   setRlsContext,
   clearRlsContext,
   schema,
+  requireRow,
+  requireAt,
 } from "../helpers";
 
 /**
@@ -66,30 +68,42 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     appDb = createAppDb();
 
     // Create two test organizations
-    const [orgA] = await adminDb.client`
+    const orgA = requireRow(
+      await adminDb.client`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Catalog Org A " + suffix}, 'subsidiary', 'DEU')
       RETURNING id
-    `;
-    const [orgB] = await adminDb.client`
+    `,
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.client`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Catalog Org B " + suffix}, 'subsidiary', 'AUT')
       RETURNING id
-    `;
+    `,
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
     // Create two test users
-    const [uA] = await adminDb.client`
+    const uA = requireRow(
+      await adminDb.client`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-cat-a-" + suffix + "@test.dev"}, 'Cat User A', 'x')
       RETURNING id
-    `;
-    const [uB] = await adminDb.client`
+    `,
+      "uA",
+    );
+    const uB = requireRow(
+      await adminDb.client`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-cat-b-" + suffix + "@test.dev"}, 'Cat User B', 'x')
       RETURNING id
-    `;
+    `,
+      "uB",
+    );
     userAId = uA.id;
     userBId = uB.id;
 
@@ -106,40 +120,52 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       SELECT id FROM catalog LIMIT 1
     `;
     if (existing.length > 0) {
-      catalogId = existing[0].id;
+      catalogId = requireAt(existing, 0, "existing").id;
     } else {
-      const [cat] = await adminDb.client<{ id: string }[]>`
+      const cat = requireRow(
+        await adminDb.client<{ id: string }[]>`
         INSERT INTO catalog (name, catalog_type, source, scope, version)
         VALUES (${"RLS Test Catalog " + suffix}, 'control', 'rls-test', 'platform', '1.0.0')
         RETURNING id
-      `;
+      `,
+        "cat",
+      );
       catalogId = cat.id;
     }
 
     // --- Seed test data for Org A ---
 
     // Activate a catalog for Org A
-    const [ac] = await adminDb.client`
+    const ac = requireRow(
+      await adminDb.client`
       INSERT INTO org_active_catalog (org_id, catalog_type, catalog_id, enforcement_level)
       VALUES (${orgAId}, 'control', ${catalogId}, 'mandatory')
       RETURNING id
-    `;
+    `,
+      "ac",
+    );
     activeCatalogId = ac.id;
 
     // Create a budget for Org A
-    const [b] = await adminDb.client`
+    const b = requireRow(
+      await adminDb.client`
       INSERT INTO grc_budget (org_id, year, total_amount, currency, status, name, created_by)
       VALUES (${orgAId}, 2026, 50000.00, 'EUR', 'draft', ${"RLS Test Budget " + suffix}, ${userAId})
       RETURNING id
-    `;
+    `,
+      "b",
+    );
     budgetId = b.id;
 
     // Create a cost entry for Org A
-    const [ce] = await adminDb.client`
+    const ce = requireRow(
+      await adminDb.client`
       INSERT INTO grc_cost_entry (org_id, entity_type, entity_id, cost_category, cost_type, amount, currency, period_start, period_end, created_by)
       VALUES (${orgAId}, 'budget', ${budgetId}, 'tools', 'actual', 12500.00, 'EUR', '2026-01-01', '2026-12-31', ${userAId})
       RETURNING id
-    `;
+    `,
+      "ce",
+    );
     costEntryId = ce.id;
   });
 
@@ -232,7 +258,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM org_active_catalog
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -242,9 +268,11 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, catalog_type, enforcement_level FROM org_active_catalog
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(activeCatalogId);
-      expect(result[0].catalog_type).toBe("control");
-      expect(result[0].enforcement_level).toBe("mandatory");
+      expect(requireAt(result, 0, "result").id).toBe(activeCatalogId);
+      expect(requireAt(result, 0, "result").catalog_type).toBe("control");
+      expect(requireAt(result, 0, "result").enforcement_level).toBe(
+        "mandatory",
+      );
       await clearRlsContext(appDb.client);
     });
 
@@ -265,7 +293,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
       const result =
         await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -286,7 +314,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM grc_budget
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -296,9 +324,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, year, total_amount, status, name FROM grc_budget
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(budgetId);
-      expect(result[0].year).toBe(2026);
-      expect(result[0].status).toBe("draft");
+      expect(requireAt(result, 0, "result").id).toBe(budgetId);
+      expect(requireAt(result, 0, "result").year).toBe(2026);
+      expect(requireAt(result, 0, "result").status).toBe("draft");
       await clearRlsContext(appDb.client);
     });
 
@@ -307,7 +335,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
       const result =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -328,7 +356,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM grc_cost_entry
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -338,10 +366,10 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, entity_type, cost_category, cost_type, amount FROM grc_cost_entry
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(costEntryId);
-      expect(result[0].entity_type).toBe("budget");
-      expect(result[0].cost_category).toBe("tools");
-      expect(result[0].cost_type).toBe("actual");
+      expect(requireAt(result, 0, "result").id).toBe(costEntryId);
+      expect(requireAt(result, 0, "result").entity_type).toBe("budget");
+      expect(requireAt(result, 0, "result").cost_category).toBe("tools");
+      expect(requireAt(result, 0, "result").cost_type).toBe("actual");
       await clearRlsContext(appDb.client);
     });
 
@@ -350,7 +378,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       await clearRlsContext(appDb.client);
       const result =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -367,9 +395,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const costs =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
-      expect(catalogs[0].cnt).toBe(1);
-      expect(budgets[0].cnt).toBe(1);
-      expect(costs[0].cnt).toBe(1);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(1);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(1);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(1);
 
       await clearRlsContext(appDb.client);
     });
@@ -384,9 +412,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const costs =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
-      expect(catalogs[0].cnt).toBe(0);
-      expect(budgets[0].cnt).toBe(0);
-      expect(costs[0].cnt).toBe(0);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(0);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(0);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(0);
 
       await clearRlsContext(appDb.client);
     });
@@ -402,9 +430,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT count(*)::int AS cnt FROM grc_cost_entry WHERE id = ${costEntryId}
       `;
 
-      expect(catalogs[0].cnt).toBe(1);
-      expect(budgets[0].cnt).toBe(1);
-      expect(costs[0].cnt).toBe(1);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(1);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(1);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(1);
     });
   });
 });

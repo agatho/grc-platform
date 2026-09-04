@@ -59,6 +59,10 @@ jobs:
           npm ci --ignore-scripts
           npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
+      # Bleibt als schnelle, unabhaengige Messung stehen: dieser Schritt faellt
+      # bei jedem ESLint-ERROR in apps/web, ohne dass eine Baselinedatei
+      # gelesen wird. Die Ratsche darunter deckelt zusaetzlich die WARNUNGEN
+      # (die hier nicht failen) und meldet jede neue Regelklasse.
       - name: ESLint (apps/web)
         working-directory: apps/web
         run: npx eslint . --no-error-on-unmatched-pattern
@@ -72,7 +76,26 @@ jobs:
       # Bindungen, 121 console.*, 33 any) ist in .eslint-ratchet.json
       # eingefroren statt per `off` unsichtbar gemacht — die Zahlen duerfen
       # nur sinken, jede NEUE Regelverletzung failt.
-      - name: ESLint ratchet (apps/worker, packages/*, scripts/*)
+      #
+      # [Welle 4b-5 · OP-173] Seit Welle 4b-5 zaehlt die Ratsche auch
+      # `apps/web` — den groessten Workspace (2.277 Dateien), dessen Bestand
+      # als einziger nicht gedeckelt war. Sie misst dafuer in ZWEI Laeufen mit
+      # je eigenem Arbeitsverzeichnis, weil ESLint seine Flat Config vom
+      # Arbeitsverzeichnis aus sucht: aus der Wurzel gelintet fiele `apps/web`
+      # unter die Wurzelkonfiguration, und die ignoriert es ausdruecklich —
+      # herausgekommen waere die Zahl 0, und zwar eine falsche. Die beiden
+      # Zahlenwerke bleiben getrennt, damit ein Rueckgang im einen keinen
+      # Anstieg im anderen deckt.
+      #
+      # Gegengeprueft am 2026-09-03 in sechs Lagen, jede rot: ein neuer Befund
+      # in apps/web; ein Befund unter einer Regel, die es NUR in
+      # apps/web/eslint.config.mjs gibt (Nachweis, dass wirklich die strengere
+      # Konfiguration greift — die Wurzelkonfiguration meldet fuer denselben
+      # Code nichts); ein zusaetzlicher Befund im Bereich root; das Entfernen
+      # von apps/web aus SCOPES; eine Baseline im alten, bereichslosen Format;
+      # ein `--update`, das eine Zahl ohne `--reason` anhebt. Siehe
+      # docs/UMSETZUNG-WELLE-4B-5.md §1.
+      - name: ESLint ratchet (alle zwoelf Workspaces, OP-173)
         run: node scripts/lint-ratchet.mjs
 
       # [ARCTOS-FULL-2026-08-31 · OP-074/OP-075] Die vierte Ratsche.
@@ -781,6 +804,18 @@ jobs:
       # werden. Zusaetzlich geprueft: FORCE-RLS je Tabelle (S01-20) und die
       # Zahl der SECURITY-DEFINER-Funktionen, die auch nach OBEN auffaellt
       # (S01-13 — jede neue umgeht RLS).
+      #
+      # [Welle 4b-5] `--update-baseline` konnte bis dahin jede Zahl
+      # kommentarlos verschieben — auch die zwei, deren Sinn das Auffallen
+      # nach oben ist. Seit Welle 4b-5 verlangt jede LOCKERUNG ein
+      # `--reason`, das mit den Deltas in `_history` der Baselinedatei
+      # landet; eine Verschaerfung geht weiter ohne. Gegengeprueft am
+      # 2026-09-03 in vier Lagen, jede rot: eine zusaetzliche
+      # SECURITY-DEFINER-Funktion in der Datenbank; ein
+      # Manipulationsschutz-Trigger, der aus ENABLE ALWAYS faellt; eine
+      # unterschrittene Untergrenze; ein `--update-baseline`, das eine
+      # Untergrenze ohne Begruendung senkt. Siehe
+      # docs/UMSETZUNG-WELLE-4B-5.md §2.
       # ────────────────────────────────────────────────────────────────
       - name: Verify DB integrity against measured baseline
         run: node scripts/verify-db-integrity.mjs

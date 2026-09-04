@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb, createAppDb } from "../helpers";
+import { createTestDb, createAppDb, requireRow } from "../helpers";
 
 /**
  * [ARCTOS-FULL-2026-08-31 · OP-085] Sitzungs-Invalidierung beim Rollenentzug.
@@ -36,18 +36,27 @@ let strangerId: string; // Nutzer ausschliesslich in Org B
 let victimRoleId: string;
 
 beforeAll(async () => {
-  const [oA] = await admin.client<{ id: string }[]>`
-    INSERT INTO organization (name) VALUES (${`OP085 A ${suffix}`}) RETURNING id`;
-  const [oB] = await admin.client<{ id: string }[]>`
-    INSERT INTO organization (name) VALUES (${`OP085 B ${suffix}`}) RETURNING id`;
+  const oA = requireRow(
+    await admin.client<{ id: string }[]>`
+    INSERT INTO organization (name) VALUES (${`OP085 A ${suffix}`}) RETURNING id`,
+    "oA",
+  );
+  const oB = requireRow(
+    await admin.client<{ id: string }[]>`
+    INSERT INTO organization (name) VALUES (${`OP085 B ${suffix}`}) RETURNING id`,
+    "oB",
+  );
   orgAId = oA.id;
   orgBId = oB.id;
 
   const mkUser = async (label: string) => {
-    const [u] = await admin.client<{ id: string }[]>`
+    const u = requireRow(
+      await admin.client<{ id: string }[]>`
       INSERT INTO "user" (email, name, is_active)
       VALUES (${`op085.${label}.${suffix}@example.test`}, ${`OP085 ${label}`}, true)
-      RETURNING id`;
+      RETURNING id`,
+      "u",
+    );
     return u.id;
   };
   adminAId = await mkUser("admin");
@@ -57,9 +66,12 @@ beforeAll(async () => {
   await admin.client`
     INSERT INTO user_organization_role (user_id, org_id, role)
     VALUES (${adminAId}, ${orgAId}, 'admin')`;
-  const [vr] = await admin.client<{ id: string }[]>`
+  const vr = requireRow(
+    await admin.client<{ id: string }[]>`
     INSERT INTO user_organization_role (user_id, org_id, role)
-    VALUES (${victimId}, ${orgAId}, 'process_owner') RETURNING id`;
+    VALUES (${victimId}, ${orgAId}, 'process_owner') RETURNING id`,
+    "vr",
+  );
   victimRoleId = vr.id;
   await admin.client`
     INSERT INTO user_organization_role (user_id, org_id, role)
@@ -89,8 +101,11 @@ afterAll(async () => {
 });
 
 async function epochOf(userId: string): Promise<Date | null> {
-  const [row] = await admin.client<{ v: string | Date | null }[]>`
-    SELECT sessions_valid_from AS v FROM "user" WHERE id = ${userId}`;
+  const row = requireRow(
+    await admin.client<{ v: string | Date | null }[]>`
+    SELECT sessions_valid_from AS v FROM "user" WHERE id = ${userId}`,
+    "row",
+  );
   if (!row?.v) return null;
   return row.v instanceof Date ? row.v : new Date(row.v);
 }
@@ -167,10 +182,13 @@ describe("OP-085 — Sitzungs-Epoche", () => {
   });
 
   it("die Kapsel ist PUBLIC entzogen und nur grc_app erteilt (S01-13)", async () => {
-    const [row] = await admin.client<{ acl: string }[]>`
+    const row = requireRow(
+      await admin.client<{ acl: string }[]>`
       SELECT coalesce(array_to_string(p.proacl, ','), '') AS acl
         FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-       WHERE n.nspname = 'public' AND p.proname = 'auth_invalidate_user_sessions'`;
+       WHERE n.nspname = 'public' AND p.proname = 'auth_invalidate_user_sessions'`,
+      "row",
+    );
     expect(row.acl).not.toMatch(/(^|,)=X\//);
     expect(row.acl).toMatch(/grc_app=X\//);
   });

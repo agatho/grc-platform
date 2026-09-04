@@ -10,6 +10,17 @@ import {
   type AiIncidentSource,
 } from "../src/state-machines/cross-risk-sync";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("mapDpiaRiskToErm", () => {
   const src: DpiaRiskSource = {
     id: "dr-1",
@@ -200,7 +211,7 @@ describe("buildSyncBatch", () => {
     expect(result.totalCandidates).toBe(2);
     expect(result.eligibleForSync).toBe(1);
     expect(result.filteredByThreshold).toBe(1);
-    expect(result.drafts[0].catalogEntryId).toBe("2");
+    expect(at(result.drafts, 0).catalogEntryId).toBe("2");
   });
 
   it("processes all three source types", () => {

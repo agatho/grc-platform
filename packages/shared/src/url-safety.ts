@@ -98,17 +98,29 @@ export function normalizeNumericIPv4(host: string): string | null {
 
   // All but the last part must be a single octet; the last part absorbs the
   // remaining 32 - 8*(n-1) bits.
-  for (let i = 0; i < nums.length - 1; i++) {
-    if (nums[i] > 255n) return null;
-  }
-  const lastMaxExclusive = 1n << BigInt(32 - 8 * (nums.length - 1));
-  if (nums[nums.length - 1] >= lastMaxExclusive) return null;
+  //
+  // [OP-065] Die drei Schleifen liefen über `nums[i]`, und unter
+  // `noUncheckedIndexedAccess` ist das `bigint | undefined`. Die Invariante
+  // stimmt — `parts.length` ist oben auf 1..4 geprüft und die Schleife
+  // darüber legt je Teil GENAU einen Eintrag ab oder verlässt die Funktion,
+  // also gilt `nums.length === parts.length` — aber sie stand nur im Kopf des
+  // Lesers. `nums.entries()` liefert den Wert statt des Index, damit ist die
+  // Invariante nicht mehr nötig; zugleich fallen drei Durchläufe auf einen
+  // zusammen. Die Prüfreihenfolge (erst alle Kopf-Oktette, dann der Rest)
+  // ändert sich dabei, das Ergebnis nicht: beide Zweige geben `null` zurück.
+  const lastIndex = nums.length - 1;
+  const lastMaxExclusive = 1n << BigInt(32 - 8 * lastIndex);
 
   let acc = 0n;
-  for (let i = 0; i < nums.length - 1; i++) {
-    acc |= nums[i] << BigInt(32 - 8 * (i + 1));
+  for (const [i, n] of nums.entries()) {
+    if (i < lastIndex) {
+      if (n > 255n) return null;
+      acc |= n << BigInt(32 - 8 * (i + 1));
+    } else {
+      if (n >= lastMaxExclusive) return null;
+      acc |= n;
+    }
   }
-  acc |= nums[nums.length - 1];
 
   return [
     (acc >> 24n) & 0xffn,
@@ -143,13 +155,25 @@ function expandIPv6(raw: string): number[] | null {
   if (h.length === 0 || !h.includes(":")) return null;
 
   // Trailing embedded IPv4 ("::ffff:127.0.0.1") → two hex groups.
-  const v4tail = h.match(/(\d{1,3}(?:\.\d{1,3}){3})$/);
+  // [OP-065] Die Gruppe 1 umspannte hier die GANZE Übereinstimmung; sie
+  // entfällt, denn `RegExpMatchArray[0]` ist typisiert `string`, `[1]` dagegen
+  // `string | undefined`. Und die vier Oktette werden zusammengefaltet statt
+  // einzeln indiziert: `reduce` über ein `number[]` kennt kein `undefined`,
+  // und `((a<<8|b)<<8|c)<<8|d` ist derselbe 32-Bit-Wert, den die beiden
+  // Ausdrücke vorher stückweise gebildet haben. Die Längenprüfung ist neu
+  // und nicht bloss Zierde: `split(".")` auf drei Punkten liefert vier Teile,
+  // aber ohne die Prüfung wäre das eine Annahme, und eine falsche hätte hier
+  // still eine falsche Adresse erzeugt statt abzulehnen.
+  const v4tail = h.match(/\d{1,3}(?:\.\d{1,3}){3}$/);
   if (v4tail) {
-    const quad = v4tail[1].split(".").map(Number);
+    const v4 = v4tail[0];
+    const quad = v4.split(".").map(Number);
+    if (quad.length !== 4) return null;
     if (quad.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
-    const hi = ((quad[0] << 8) | quad[1]).toString(16);
-    const lo = ((quad[2] << 8) | quad[3]).toString(16);
-    h = h.slice(0, h.length - v4tail[1].length) + `${hi}:${lo}`;
+    const packed = quad.reduce((a, n) => (a << 8) | n, 0);
+    const hi = ((packed >>> 16) & 0xffff).toString(16);
+    const lo = (packed & 0xffff).toString(16);
+    h = h.slice(0, h.length - v4.length) + `${hi}:${lo}`;
   }
 
   const halves = h.split("::");
@@ -170,8 +194,15 @@ function expandIPv6(raw: string): number[] | null {
     return groups && groups.length === 8 ? groups : null;
   }
 
-  const head = toGroups(halves[0]);
-  const tail = toGroups(halves[1]);
+  // [OP-065] `halves` hat hier genau zwei Elemente (`> 2` ist oben
+  // ausgeschlossen, `=== 1` im Zweig darüber behandelt). Die Vorgabe `""`
+  // kodiert genau das, was ein fehlender Halbteil im IPv6-Sinn bedeutet —
+  // `toGroups("")` gibt `[]`, und eine leere Seite von `::` ist der
+  // Normalfall (`::1`, `fe80::`). Ein `!` hätte hier nur die Prüfung
+  // abgeschaltet.
+  const [headPart = "", tailPart = ""] = halves;
+  const head = toGroups(headPart);
+  const tail = toGroups(tailPart);
   if (!head || !tail) return null;
   const fill = 8 - head.length - tail.length;
   if (fill < 0) return null;
@@ -194,7 +225,15 @@ function isPrivateIPv6Literal(host: string): boolean {
     );
   }
 
-  const first = groups[0];
+  // [OP-065] `expandIPv6` liefert per Konstruktion genau acht Gruppen: der
+  // einteilige Zweig prüft `length === 8`, der `::`-Zweig füllt auf acht auf.
+  // Die Vorgabe 0 kodiert diese Invariante — und sie zeigt in die sichere
+  // Richtung: eine fehlende Gruppe als 0 zu lesen macht eine Adresse eher
+  // privat (`::/128`, `::ffff:0:0/96`) und nie eher öffentlich. Genau
+  // umgekehrt wäre ein `!` gewesen: es hätte bei einer verkürzten Liste
+  // `NaN`-Vergleiche erzeugt, die alle `false` ergeben — also „öffentlich",
+  // die falsche Antwort für einen SSRF-Schutz.
+  const [first = 0, g1 = 0, , , , g5 = 0, g6 = 0, g7 = 0] = groups;
 
   // Unspecified :: and loopback ::1
   if (groups.every((g, i) => (i === 7 ? g <= 1 : g === 0))) return true;
@@ -204,20 +243,15 @@ function isPrivateIPv6Literal(host: string): boolean {
   if ((first & 0xff00) === 0xff00) return true; // multicast ff00::/8
 
   const embeddedV4 = () =>
-    [
-      (groups[6] >> 8) & 0xff,
-      groups[6] & 0xff,
-      (groups[7] >> 8) & 0xff,
-      groups[7] & 0xff,
-    ].join(".");
+    [(g6 >> 8) & 0xff, g6 & 0xff, (g7 >> 8) & 0xff, g7 & 0xff].join(".");
 
   // IPv4-mapped ::ffff:0:0/96 and IPv4-compatible ::a.b.c.d
   const headIsZero = groups.slice(0, 5).every((g) => g === 0);
-  if (headIsZero && (groups[5] === 0xffff || groups[5] === 0)) {
+  if (headIsZero && (g5 === 0xffff || g5 === 0)) {
     if (isPrivateIPv4(embeddedV4())) return true;
   }
   // NAT64 well-known prefix 64:ff9b::/96 wrapping a private v4.
-  if (first === 0x64 && groups[1] === 0xff9b) {
+  if (first === 0x64 && g1 === 0xff9b) {
     if (isPrivateIPv4(embeddedV4())) return true;
   }
 
