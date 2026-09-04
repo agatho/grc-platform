@@ -11,6 +11,7 @@ import {
   lookupUserByEmail,
 } from "@grc/auth/providers";
 import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/auth/admin-login — Break-glass admin login
 //
@@ -31,7 +32,7 @@ import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 // LIMITS.AUTH = 10 attempts/60s per IP — generous enough that a
 // fat-fingered admin doesn't get locked out, tight enough to stop
 // online brute force.
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ip = getClientIp(req);
   const limit = await rateLimit({
     key: `admin-login:${ip}`,
@@ -189,4 +190,4 @@ export async function POST(req: Request) {
       mustChangePassword: found.mustChangePassword === true,
     },
   });
-}
+});

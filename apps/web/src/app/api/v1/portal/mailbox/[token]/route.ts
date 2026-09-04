@@ -33,6 +33,7 @@ import { replyToMailboxSchema } from "@grc/shared";
 import { encrypt, decrypt, isWbCryptoConfigured } from "@grc/shared";
 import { eq, asc, sql } from "drizzle-orm";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -68,7 +69,10 @@ function cryptoUnavailable(): Response {
 }
 
 // GET — Mailbox view: status, messages, evidence
-export async function GET(_req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  _req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
 
   // Reihenfolge: erst der Token, dann die Konfiguration. Ein unbekannter
@@ -179,10 +183,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
       });
     },
   );
-}
+});
 
 // POST — Whistleblower reply
-export async function POST(req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
 
   const mailbox = await resolveMailbox(token);
@@ -259,4 +266,4 @@ export async function POST(req: Request, { params }: RouteParams) {
       );
     },
   );
-}
+});

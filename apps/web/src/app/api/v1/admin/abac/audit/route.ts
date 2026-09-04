@@ -5,6 +5,12 @@ import { withAuth } from "@/lib/api";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import {
+  toDateParam,
+  invalidDateParam,
+  isUuidParam,
+  invalidUuidParam,
+} from "@/lib/query-schema";
 
 // GET /api/v1/admin/abac/audit — ABAC access audit log
 export const GET = withErrorHandler(async function GET(req: Request) {
@@ -22,11 +28,22 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
   const conditions = [eq(abacAccessLog.orgId, ctx.orgId)];
 
-  if (userId) conditions.push(eq(abacAccessLog.userId, userId));
   if (entityType) conditions.push(eq(abacAccessLog.entityType, entityType));
   if (decision) conditions.push(eq(abacAccessLog.decision, decision));
-  if (from) conditions.push(gte(abacAccessLog.createdAt, new Date(from)));
-  if (to) conditions.push(lte(abacAccessLog.createdAt, new Date(to)));
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
+  if (userId && !isUuidParam(userId)) return invalidUuidParam(req, "userId");
+  if (userId) conditions.push(eq(abacAccessLog.userId, userId));
+  if (from) {
+    const d = toDateParam(from);
+    if (!d) return invalidDateParam(req, "from");
+    conditions.push(gte(abacAccessLog.createdAt, d));
+  }
+  if (to) {
+    const d = toDateParam(to);
+    if (!d) return invalidDateParam(req, "to");
+    conditions.push(lte(abacAccessLog.createdAt, d));
+  }
 
   const logs = await db
     .select()

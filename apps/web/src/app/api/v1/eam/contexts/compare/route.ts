@@ -6,6 +6,7 @@ import { withAuth } from "@/lib/api";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // GET /api/v1/eam/contexts/compare?a=ctx1&b=ctx2 — Compare two contexts
 export const GET = withErrorHandler(async function GET(req: Request) {
@@ -23,6 +24,10 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       { error: "Both context IDs (a and b) required" },
       { status: 400 },
     );
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
+  if (!isUuidParam(ctxA)) return invalidUuidParam(req, "a");
+  if (!isUuidParam(ctxB)) return invalidUuidParam(req, "b");
 
   const overridesA = await db
     .select()

@@ -29,15 +29,17 @@ import { validateScimToken } from "@grc/auth/scim";
 import { arctosToScimUser, buildScimError } from "@grc/auth/scim";
 import { scimPatchOpSchema, scimReplaceUserSchema } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
-
-const SCIM_CONTENT_TYPE = "application/scim+json";
-
-function scimResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": SCIM_CONTENT_TYPE },
-  });
-}
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079/OP-084] Keiner der vier
+// Handler dieser Datei hatte ein `try`. Eine Kennung, die keine UUID ist —
+// beim Anschluss eines neuen Verzeichnisses der Normalfall, weil der
+// Bereitsteller zunaechst seine EIGENE Kennung schickt — traf in der ersten
+// Abfrage auf `u.id = $1` gegen eine `uuid`-Spalte und ergab
+// `invalid input syntax for type uuid`. Ohne Fehlerpfad antwortete Next.js
+// mit 500 und LEEREM Rumpf; der Bereitsteller protokollierte „unknown error"
+// und wiederholte. Der SCIM-Wickel macht daraus ein 400 mit Begruendung.
+// Siehe `apps/web/src/lib/api-scim.ts`, auch dazu, warum hier nicht
+// `withErrorHandler` steht.
+import { scimResponse, withScimErrorHandler } from "@/lib/api-scim";
 
 // GET /api/v1/scim/v2/Users/:id — Get single user
 // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenformen der rohen
@@ -54,7 +56,7 @@ type ScimUserRow = {
   updated_at: Date | string;
 };
 
-export async function GET(
+export const GET = withScimErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -104,10 +106,10 @@ export async function GET(
       );
     },
   );
-}
+}, "GET /api/v1/scim/v2/Users/[id]");
 
 // PUT /api/v1/scim/v2/Users/:id — Replace user
-export async function PUT(
+export const PUT = withScimErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -192,10 +194,10 @@ export async function PUT(
       );
     },
   );
-}
+}, "PUT /api/v1/scim/v2/Users/[id]");
 
 // PATCH /api/v1/scim/v2/Users/:id — Partial update (PatchOp)
-export async function PATCH(
+export const PATCH = withScimErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -313,10 +315,10 @@ export async function PATCH(
       );
     },
   );
-}
+}, "PATCH /api/v1/scim/v2/Users/[id]");
 
 // DELETE /api/v1/scim/v2/Users/:id — Deactivate user (soft-delete, NOT hard delete)
-export async function DELETE(
+export const DELETE = withScimErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -365,4 +367,4 @@ export async function DELETE(
       return new Response(null, { status: 204 });
     },
   );
-}
+}, "DELETE /api/v1/scim/v2/Users/[id]");

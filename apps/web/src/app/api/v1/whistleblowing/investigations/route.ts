@@ -16,6 +16,7 @@ import {
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // #WAVE13-RBAC-03: risk_manager removed from all three handlers — HinSchG
 // case files contain protected reporter identities (§§16, 32 HinSchG) and
@@ -126,6 +127,9 @@ export const PATCH = withErrorHandler(async function PATCH(req: Request) {
   const investigationId = url.searchParams.get("id");
   if (!investigationId)
     return Response.json({ error: "id required" }, { status: 400 });
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
+  if (!isUuidParam(investigationId)) return invalidUuidParam(req, "id");
 
   const body = advanceInvestigationPhaseSchema.safeParse(await req.json());
   if (!body.success)

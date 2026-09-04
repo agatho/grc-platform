@@ -13,6 +13,7 @@ import type { SQL } from "drizzle-orm";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // POST /api/v1/bcms/strategies — Create strategy
 export const POST = withErrorHandler(async function POST(req: Request) {
@@ -65,8 +66,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
   const conditions: SQL[] = [eq(continuityStrategy.orgId, ctx.orgId)];
 
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
   const processId = searchParams.get("processId");
   if (processId) {
+    if (!isUuidParam(processId)) return invalidUuidParam(req, "processId");
     conditions.push(eq(continuityStrategy.processId, processId));
   }
 

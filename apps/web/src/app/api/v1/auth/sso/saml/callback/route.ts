@@ -18,10 +18,35 @@ import type { SamlAttributeMapping, GroupRoleMapping } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
 import { isEnumValue } from "../../../../_lib/enum-filter";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/auth/sso/saml/callback — SAML ACS (Assertion Consumer Service)
-export async function POST(req: Request) {
-  const formData = await req.formData();
+export const POST = withErrorHandler(async function POST(req: Request) {
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] `req.formData()` stand hier
+  // ungeschuetzt. Ein POST mit einem anderen Content-Type — und das ist der
+  // Normalfall, wenn ein Bereitsteller falsch konfiguriert ist oder jemand die
+  // ACS-URL von Hand ausprobiert — wirft in undici
+  //
+  //     TypeError: Content-Type was not one of "multipart/form-data" or
+  //                "application/x-www-form-urlencoded".
+  //
+  // Ungewickelt war das ein 500er mit leerem Rumpf; `all-routes-auth-smoke`
+  // hat den Wurf mit `allowThrow: true` durchgelassen, statt ihn als Befund zu
+  // fuehren. Der SAML-ACS-Endpunkt beschreibt seinen Eingang selbst (SAML HTTP
+  // POST Binding, §3.5 der SAML-2.0-Bindings): ein falsch kodierter Rumpf ist
+  // eine Aussage ueber die ANFRAGE, also 400.
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch {
+    return Response.json(
+      {
+        error:
+          "Expected an application/x-www-form-urlencoded or multipart/form-data body (SAML HTTP POST Binding).",
+      },
+      { status: 400 },
+    );
+  }
   const samlResponse = formData.get("SAMLResponse") as string;
   const relayStateB64 = formData.get("RelayState") as string;
 
@@ -256,4 +281,4 @@ export async function POST(req: Request) {
       { status: 401 },
     );
   }
-}
+});

@@ -40,6 +40,7 @@ import { eq } from "drizzle-orm";
 import { createHash, randomUUID } from "crypto";
 import { extname } from "path";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -90,7 +91,10 @@ function buildStorageKey(
   return `wb/${orgId}/${caseId}/${Date.now()}-${randomUUID()}${safeExt}`;
 }
 
-export async function POST(req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
 
   if (!token || token.length < 32) {
@@ -237,4 +241,4 @@ export async function POST(req: Request, { params }: RouteParams) {
       }
     },
   );
-}
+});

@@ -612,6 +612,76 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-04 — OP-079/OP-116, und der schwerste Befund des Audits
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-4B-7.md`.
+
+**Die Registerzahlen stimmten in beiden Fällen nicht.** Selbst nachgemessen:
+OP-079 nannte „107 von 1.362" — tatsächlich **1.372 Routendateien, 2.039
+exportierte Handler, 94 ungewickelt in 49 Dateien** (mit Auflösung der
+Alias-Exporte; ohne sie zählt man fälschlich 97). Nachher: **62 in 25
+Dateien**, ausnahmslos konstante Weiterleitungen, Discovery/405-Antworten und
+zwei Health-Sonden — ohne `await`, ohne Datenbank, ohne Wurfpfad, namentlich in
+einem Strukturtest festgehalten. Fehlerantworten, die den Aufrufer als
+`{error}` erreichten: **75 → 0**.
+
+OP-116 nannte „23 von 276" — tatsächlich **284 lesende GET-Dateien, 29 mit
+Schema (10,2 %)**. Nebenbei: Der Registertitel („Fehlerbehandlung in
+Handlern") beschreibt etwas anderes als seine Quelle S04-09 („GET-Handler ohne
+Query-Schema"). Die Defektklasse dahinter ist geschlossen: 12 UUID-Flüsse in 8
+Dateien und 12 Datumsflüsse in 6 Dateien → je 0.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Beleg                                                                                    | Art            | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------- | ------- |
+| OP-187 | **Der zentrale Fehlerwickel gab Treibertext an den Aufrufer — für alle 1.945 gewickelten Handler.** `withErrorHandler` setzte für die Verstossklassen 23xxx/22xxx `detail: e.detail ?? e.message` und denselben Text noch einmal in `errors[0].message` — dreissig Zeilen über der eigenen WAVE11-Regel „NEVER returned in the response body", die ausgerechnet nur für den unbekannten 500er galt. **Eigene Nachmessung gegen das laufende Schema:** `INSERT INTO "user" (email) …` → `DETAIL: Failing row contains (…)` mit der **vollständigen Zeile**; 30 weitere Tabellen führen NOT-NULL-Spalten mit `hash`/`secret`/`token`. Und `user_email_unique` ist **`ON public."user" USING btree (email)`**, also global statt je Organisation — ein Verstoss dagegen bestätigt die Existenz einer Adresse **über Mandantengrenzen hinweg**. | Eigene Messung 2026-09-04; alter Code `9504a98a:apps/web/src/lib/api-wrapper.ts:482-483` | **Sicherheit** | behoben |
+
+`sanitiseDbError` behält jetzt die Spalte und die Art des Verstosses und lässt
+Werte, Constraint- und Relationsnamen weg; der volle Text steht unverändert im
+Log unter derselben `requestId`. Das ist der Unterschied, um den es geht: Die
+Diagnose bleibt, sie steht nur nicht mehr in der Antwort.
+
+**Zwölf weitere Produktdefekte**, die schwersten zuerst:
+
+- **`GET /api/v1/health` gab `err.message` an unauthentifizierte Aufrufer** —
+  Rollenname, Host, Port, Datenbankname — direkt unter der Zusage „prevent info
+  leaks to unauthenticated callers". `/api/health` machte es seit jeher richtig.
+- **SCIM-Gruppen stehen auf einer Tabelle, die es nicht gibt.** `user_group`
+  kommt in keiner Migration und keinem Schema vor, nur in diesen zwei Dateien.
+  Vier Unwahrheiten nebeneinander: `GET /Groups` → 200 mit `totalResults: 0`,
+  `GET /Groups/:id` → 404 „not found", `POST`/`PATCH` → 500 mit
+  `relation "user_group" does not exist`. Der `catch` schluckte zusätzlich einen
+  **Deadlock** (gemessen: 200 mit leerer Liste).
+- **SCIM `POST /Users`** gab `err.message` zurück — dasselbe
+  Cross-Tenant-Orakel: Die RLS-gefilterte Vorprüfung sieht die fremde Person
+  nicht, das INSERT schon.
+- **SCIM `/Users/[id]`: vier Handler ohne jedes `try`** — eine nicht-UUID-
+  Kennung ergab einen 500er mit leerem Rumpf.
+- **SAML-ACS: `await req.formData()` ungeschützt**, Wurf bei falschem
+  Content-Type. **Die Smoke-Suite hatte diesen Wurf per `allowThrow: true`
+  ausdrücklich erlaubt** — mit zutreffender technischer Beschreibung. Ein Befund,
+  als Konfiguration gelesen. Die Ausnahme ist gestrichen und wird von keinem
+  Eintrag mehr gesetzt.
+- **`auth/sso/config?orgId=<keine uuid>`** → 500 mit leerem Rumpf,
+  unauthentifiziert, bei **jedem Besuch der Anmeldeseite**; `branding/css/…`
+  ebenso.
+- **12 Datumsfilter**: `new Date("garbage")` ergibt `Invalid Date`, der Treiber
+  wirft einen `RangeError` **ohne SQLSTATE**, und der Wickel ordnet nach Code
+  zu — also **500** statt 422. Betraf unter anderem die
+  ABAC-Zugriffsprotokollansicht.
+
+**Was begründet offen bleibt:** die 255 rohen Query-Leser (jede
+Schemaumstellung ist eine unverifizierbare Verhaltensänderung pro Route; die
+Defektklasse ist geschlossen, gemessen mit zwei benannten Suchmustern — andere
+Formen wie `sql`-Interpolation sind damit ausdrücklich **nicht**
+ausgeschlossen), die `user_group`-Migration (fremde Dateihoheit), das
+mandantenübergreifende Verknüpfen eines bestehenden SCIM-Kontos
+(Produktentscheidung), und die 62 konstanten Handler.
+
+**Und ein achter Fall der bekannten Art.** Die Smoke-Suite hat den SAML-Wurf
+nicht übersehen — sie hat ihn **erlaubt**, mit einer korrekten Begründung
+daneben. Damit ist die Liste um eine Variante reicher: Ein Tor kann nicht nur
+falsch zielen, es kann den Befund auch ausdrücklich als zulässig führen.
+
 ### Nachtrag 2026-09-04 — OP-173, OP-065 und sechzehn Defekte aus einem Compiler-Schalter
 
 Zwei Stränge, beide abgeschlossen. Einzelheiten in

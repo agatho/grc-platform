@@ -20,6 +20,7 @@ import {
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
+import { toDateParam, invalidDateParam } from "@/lib/query-schema";
 
 // POST /api/v1/tasks — Create task
 export const POST = withErrorHandler(async function POST(req: Request) {
@@ -181,14 +182,20 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   }
 
   // Due date range filters
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
   const dueBefore = searchParams.get("due_before");
   if (dueBefore) {
-    conditions.push(lte(task.dueDate, new Date(dueBefore)));
+    const d = toDateParam(dueBefore);
+    if (!d) return invalidDateParam(req, "due_before");
+    conditions.push(lte(task.dueDate, d));
   }
 
   const dueAfter = searchParams.get("due_after");
   if (dueAfter) {
-    conditions.push(gte(task.dueDate, new Date(dueAfter)));
+    const d = toDateParam(dueAfter);
+    if (!d) return invalidDateParam(req, "due_after");
+    conditions.push(gte(task.dueDate, d));
   }
 
   // Overdue filter

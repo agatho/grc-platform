@@ -1,6 +1,20 @@
 import { orgBranding, organization, withOrgReadContext } from "@grc/db";
 import { eq } from "drizzle-orm";
 import { computeContrastForeground, computeDarkModeColor } from "@grc/shared";
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { problem, getRequestId } from "@/lib/api-errors";
+
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-116] Das Pfadsegment ging
+// ungeprueft in `withOrgReadContext(orgId, …)` und von dort in
+// `eq(orgBranding.orgId, orgId)` gegen eine `uuid`-Spalte. Ein Aufruf von
+// `/api/v1/branding/css/foo` — und die ANMELDESEITE baut diese URL aus einem
+// Abfrageparameter, den der Aufrufer setzt — endete in
+// `invalid input syntax for type uuid: "foo"`, ohne Fehlerpfad, also als
+// 500er mit leerem Rumpf. Ein 404 ist hier die richtige Antwort: es gibt
+// keine Organisation mit dieser Kennung, und mehr darf ein
+// unauthentifizierter Aufrufer an dieser Stelle ohnehin nicht erfahren.
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const DEFAULT_COLORS = {
   primaryColor: "#2563eb",
@@ -13,11 +27,19 @@ const DEFAULT_COLORS = {
 };
 
 // GET /api/v1/branding/css/:orgId -- Public CSS custom properties endpoint (cached 1h)
-export async function GET(
-  _req: Request,
+export const GET = withErrorHandler(async function GET(
+  req: Request,
   { params }: { params: Promise<{ orgId: string }> },
 ) {
   const { orgId } = await params;
+
+  if (!UUID_RE.test(orgId)) {
+    return problem.notFound({
+      requestId: getRequestId(req),
+      instance: req.url,
+      detail: "No branding exists for this organization.",
+    });
+  }
 
   // #WP3-S02-05 — `org_branding` and `organization` are FORCE-RLS. This route
   // is loaded by the LOGIN page, i.e. before any session exists, so no request
@@ -152,4 +174,4 @@ export async function GET(
       },
     });
   });
-}
+});

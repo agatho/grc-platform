@@ -108,8 +108,102 @@ describe("withErrorHandler — Postgres constraint errors → 422", () => {
     });
     const res = await wrapped(req(), undefined);
     expect(res.status).toBe(422);
-    const body = (await res.json()) as { detail: string };
-    expect(body.detail).toContain("demo detail");
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079]
+  //
+  // Bis zum 2026-09-04 stand hier `expect(body.detail).toContain("demo
+  // detail")` — der Test SICHERTE ZU, dass der Treibertext in der Antwort
+  // steht. Dreissig Zeilen tiefer steht in derselben Datei die Gegenregel
+  // ("the error message MUST NOT appear in the response body"), und sie galt
+  // ausgerechnet nur fuer den unbekannten Fehler.
+  //
+  // Die drei folgenden Faelle sind WOERTLICH das, was der `postgres`-Treiber
+  // dieses Repositories am 2026-09-04 gegen die laufende Datenbank `grc_v4c`
+  // geliefert hat. Die Erwartung ist umgedreht: der Text darf NICHT
+  // hinausgehen, die betroffene SPALTE schon.
+  // ─────────────────────────────────────────────────────────────────────
+
+  it("23502: gibt die 'Failing row contains (…)'-Zeile NICHT heraus", async () => {
+    const wrapped = withErrorHandler(async () => {
+      throw Object.assign(
+        new Error(
+          'null value in column "email" of relation "user" violates not-null constraint',
+        ),
+        {
+          code: "23502",
+          detail:
+            "Failing row contains (313defd8-bcc4-4090-b823-f4b7fa43744a, null, null, null, null, de, t, null, 2026-09-04 21:34:35.526799+00, …, local, …).",
+        },
+      );
+    });
+    const res = await wrapped(req(), undefined);
+    expect(res.status).toBe(422);
+    const raw = await res.text();
+    expect(raw).not.toContain("Failing row contains");
+    expect(raw).not.toContain("313defd8-bcc4-4090-b823-f4b7fa43744a");
+    expect(raw).not.toContain('relation "user"');
+    // Die Spalte bleibt — sie ist die einzige handlungsleitende Angabe.
+    const body = JSON.parse(raw) as {
+      detail: string;
+      errors: Array<{ path: string; message: string }>;
+    };
+    expect(body.errors[0]!.path).toBe("email");
+    expect(body.detail).toBe("A required field was empty.");
+  });
+
+  it("23505: gibt weder den Constraint-Namen noch den fremden Wert heraus", async () => {
+    const wrapped = withErrorHandler(async () => {
+      throw Object.assign(
+        new Error(
+          'duplicate key value violates unique constraint "user_email_unique"',
+        ),
+        {
+          code: "23505",
+          detail: "Key (email)=(ciso@arctos.dev) already exists.",
+        },
+      );
+    });
+    const res = await wrapped(req(), undefined);
+    expect(res.status).toBe(422);
+    const raw = await res.text();
+    // `user_email_unique` ist eine GLOBALE Eindeutigkeit: der Wert gehoert
+    // moeglicherweise einer FREMDEN Organisation.
+    expect(raw).not.toContain("ciso@arctos.dev");
+    expect(raw).not.toContain("user_email_unique");
+    const body = JSON.parse(raw) as {
+      errors: Array<{ path: string; message: string }>;
+    };
+    expect(body.errors[0]!.path).toBe("email");
+    expect(body.errors[0]!.message).toBe("must be unique");
+  });
+
+  it("23503: gibt weder Relationsname noch Schluesselwert heraus", async () => {
+    const wrapped = withErrorHandler(async () => {
+      throw Object.assign(
+        new Error(
+          'insert or update on table "work_item" violates foreign key constraint "work_item_org_id_organization_id_fk"',
+        ),
+        {
+          code: "23503",
+          detail:
+            'Key (org_id)=(00000000-0000-0000-0000-000000000001) is not present in table "organization".',
+        },
+      );
+    });
+    const res = await wrapped(req(), undefined);
+    const raw = await res.text();
+    expect(raw).not.toContain("work_item");
+    // `organization` als Wort steht im ersetzten Text („not visible to this
+    // organization") — gemeint ist der RELATIONSNAME aus der Treibermeldung.
+    expect(raw).not.toContain('in table "organization"');
+    expect(raw).not.toContain("work_item_org_id_organization_id_fk");
+    expect(raw).not.toContain("00000000-0000-0000-0000-000000000001");
+    const body = JSON.parse(raw) as {
+      errors: Array<{ path: string; message: string }>;
+    };
+    expect(body.errors[0]!.path).toBe("org_id");
   });
 });
 
@@ -125,6 +219,35 @@ describe("withErrorHandler — Postgres invalid input → 422", () => {
     });
     const res = await wrapped(req(), undefined);
     expect(res.status).toBe(422);
+  });
+
+  // [Welle 4b-7 · OP-079] Auch dieser Zweig setzte `detail: e.message`. Der
+  // 22P02-Text enthaelt den EINGEREICHTEN Wert; der stammt nicht immer vom
+  // Aufrufer, sondern oft aus einer serverseitig gebildeten Zwischengroesse.
+  it("22P02: nennt den Typ, nicht den Wert", async () => {
+    const wrapped = withErrorHandler(async () => {
+      throw Object.assign(
+        new Error('invalid input syntax for type uuid: "geheimes-praefix-42"'),
+        { code: "22P02" },
+      );
+    });
+    const res = await wrapped(req(), undefined);
+    const raw = await res.text();
+    expect(raw).not.toContain("geheimes-praefix-42");
+    expect(raw).toContain("uuid");
+  });
+
+  it("22P02 (Enum): nennt den Enum-Typ, nicht den Wert", async () => {
+    const wrapped = withErrorHandler(async () => {
+      throw Object.assign(
+        new Error('invalid input value for enum risk_status: "bogus"'),
+        { code: "22P02" },
+      );
+    });
+    const res = await wrapped(req(), undefined);
+    const raw = await res.text();
+    expect(raw).not.toContain('"bogus"');
+    expect(raw).toContain("risk_status");
   });
 });
 

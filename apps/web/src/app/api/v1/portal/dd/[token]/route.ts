@@ -10,13 +10,17 @@ import {
 } from "@grc/db";
 import { eq, asc } from "drizzle-orm";
 import { validateDdToken } from "@/lib/portal-auth";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
 }
 
 // GET /api/v1/portal/dd/:token — Load questionnaire + existing responses
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
   const result = await validateDdToken(token, req);
   if (result instanceof Response) return result;
@@ -139,4 +143,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       });
     },
   );
-}
+});

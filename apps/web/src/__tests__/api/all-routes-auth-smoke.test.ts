@@ -186,6 +186,10 @@ interface AllowlistEntry {
    * multipart/form-data). Only for routes whose anonymity is otherwise
    * verified — never use this to hide a missing auth guard.
    */
+  // [Welle 4b-7 · OP-079] Seit dem SAML-ACS-Fix setzt KEIN Eintrag mehr
+  // dieses Feld: kein Handler wirft noch statt zu antworten. Die Mechanik
+  // bleibt stehen, damit ein künftiger Fall sich begründen MUSS, statt
+  // stillschweigend als Wurf durchzugehen.
   allowThrow?: boolean;
   /**
    * [WP11 · S11-02] The route must not touch the database at all. Used for the
@@ -216,15 +220,17 @@ const PUBLIC_ALLOWLIST: Record<string, AllowlistEntry> = {
   },
   // SAML IdP callback (ACS) — the browser POSTs the IdP response here
   // before a session exists. Guarded by SAML signature validation inside
-  // the handler. allowThrow: the handler starts with req.formData(); our
-  // generic application/json smoke body makes that throw before any logic
-  // runs — with a real form body it returns 400 on missing/invalid
-  // SAMLResponse.
+  // the handler.
   "/api/v1/auth/sso/saml/callback": {
     methods: ["POST"],
     statuses: [302, 400, 404, 422],
     reason: "SSO callback; validated via SAML assertion, not session",
-    allowThrow: true,
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] `allowThrow: true` ist
+    // hier weg. Die Ausnahme deckte einen echten Befund: der Handler rief
+    // `await req.formData()` ungeschuetzt auf und warf bei jedem anderen
+    // Content-Type. Der Handler antwortet jetzt mit 400 — die Nachsicht wird
+    // nicht mehr gebraucht, und ohne sie faellt dieser Test, falls sie es
+    // wieder wuerde.
   },
   // Invitation acceptance — recipient has no account/session yet. Guarded
   // by single-use invitation token in the path (unknown token → 404).

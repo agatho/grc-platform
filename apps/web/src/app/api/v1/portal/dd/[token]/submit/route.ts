@@ -2,13 +2,17 @@ import { db, ddSession, ddResponse, runWithRequestContext } from "@grc/db";
 import { portalSubmitSchema } from "@grc/shared";
 import { eq, sql } from "drizzle-orm";
 import { validateDdToken } from "@/lib/portal-auth";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
 }
 
 // POST /api/v1/portal/dd/:token/submit — Finalize submission
-export async function POST(req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
   const result = await validateDdToken(token, req);
   if (result instanceof Response) return result;
@@ -116,4 +120,4 @@ export async function POST(req: Request, { params }: RouteParams) {
       });
     },
   );
-}
+});

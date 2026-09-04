@@ -19,6 +19,7 @@ import type { SQL } from "drizzle-orm";
 // frame that withAuth needs to bind the org-pinned connection; without it the
 // handler queries the context-less pool and RLS filters every row (api.ts:184).
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { toDateParam, invalidDateParam } from "@/lib/query-schema";
 
 /** Compute alert status from value and thresholds, respecting direction. */
 function computeAlertStatus(
@@ -263,14 +264,20 @@ export const GET = withErrorHandler(async function GET(
   ];
 
   // Filter by date range
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
   const from = searchParams.get("from");
   if (from) {
-    conditions.push(gte(kriMeasurement.measuredAt, new Date(from)));
+    const d = toDateParam(from);
+    if (!d) return invalidDateParam(req, "from");
+    conditions.push(gte(kriMeasurement.measuredAt, d));
   }
 
   const to = searchParams.get("to");
   if (to) {
-    conditions.push(lte(kriMeasurement.measuredAt, new Date(to)));
+    const d = toDateParam(to);
+    if (!d) return invalidDateParam(req, "to");
+    conditions.push(lte(kriMeasurement.measuredAt, d));
   }
 
   const where = and(...conditions);

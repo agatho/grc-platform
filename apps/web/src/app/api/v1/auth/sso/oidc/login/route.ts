@@ -5,9 +5,10 @@ import { generatePKCE } from "@grc/auth/oidc";
 import { cookies } from "next/headers";
 import { getBaseUrl } from "@/lib/base-url";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/auth/sso/oidc/login?orgId=... — SP-initiated OIDC login
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const url = new URL(req.url);
   const orgId = url.searchParams.get("orgId");
 
@@ -94,4 +95,4 @@ export async function GET(req: Request) {
       { status: 500 },
     );
   }
-}
+});

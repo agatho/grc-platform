@@ -9,6 +9,7 @@ import {
 import { portalSaveResponsesSchema } from "@grc/shared";
 import { eq, and, count, inArray, sql } from "drizzle-orm";
 import { validateDdToken } from "@/lib/portal-auth";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -31,7 +32,10 @@ interface RouteParams {
 // `ddr_session_question_idx` unique constraint
 // (session_id, question_id) is the upsert target.
 
-export async function PUT(req: Request, { params }: RouteParams) {
+export const PUT = withErrorHandler(async function PUT(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
   const result = await validateDdToken(token, req);
   if (result instanceof Response) return result;
@@ -209,4 +213,4 @@ export async function PUT(req: Request, { params }: RouteParams) {
       });
     },
   );
-}
+});

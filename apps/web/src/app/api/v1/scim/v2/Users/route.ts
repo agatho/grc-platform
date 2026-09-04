@@ -41,15 +41,12 @@ import {
 import { parseScimFilter } from "@grc/auth/scim";
 import { getBaseUrl } from "@/lib/base-url";
 import { scimCreateUserSchema } from "@grc/shared";
-
-const SCIM_CONTENT_TYPE = "application/scim+json";
-
-function scimResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": SCIM_CONTENT_TYPE },
-  });
-}
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079/OP-084] Siehe
+// `apps/web/src/lib/api-scim.ts`: `withErrorHandler` waere hier falsch, weil
+// er auf `application/problem+json` normalisiert und ein SCIM-Bereitsteller
+// `application/scim+json` erwartet. Der SCIM-Wickel hat dieselbe Aufgabe in
+// der richtigen Form.
+import { scimResponse, scimError, withScimErrorHandler } from "@/lib/api-scim";
 
 // GET /api/v1/scim/v2/Users — List users (SCIM)
 // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform der rohen
@@ -66,7 +63,7 @@ type ScimUserRow = {
   updated_at: Date | string;
 };
 
-export async function GET(req: Request) {
+export const GET = withScimErrorHandler(async function GET(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
     return scimResponse(buildScimError("Unauthorized", 401), 401);
@@ -157,10 +154,10 @@ export async function GET(req: Request) {
       );
     },
   );
-}
+}, "GET /api/v1/scim/v2/Users");
 
 // POST /api/v1/scim/v2/Users — Create user (SCIM)
-export async function POST(req: Request) {
+export const POST = withScimErrorHandler(async function POST(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
     return scimResponse(buildScimError("Unauthorized", 401), 401);
@@ -332,8 +329,31 @@ export async function POST(req: Request) {
           tokenId: authCtx.tokenId,
         });
 
-        return scimResponse(buildScimError(message, 500), 500);
+        // [Welle 4b-7 · OP-079] Hier stand `buildScimError(message, 500)` —
+        // der Treibertext woertlich. Der haeufigste Fehler an dieser Stelle
+        // ist die GLOBALE Eindeutigkeit `user_email_unique`: die Vorpruefung
+        // oben liest unter RLS und sieht eine Person aus einer FREMDEN
+        // Organisation nicht, das INSERT sieht sie. Gemessen am 2026-09-04
+        // gegen `grc_v4c`: message `duplicate key value violates unique
+        // constraint "user_email_unique"`, detail `Key (email)=(ciso@…)
+        // already exists.` — die Antwort war damit ein Existenz-Orakel ueber
+        // Mandantengrenzen hinweg. `scim_sync_log.error_message` behaelt den
+        // vollen Text; er ist org-gebunden und genau dafuer da.
+        //
+        // 409 statt 500 fuer den Eindeutigkeitsfall: RFC 7644 §3.3 schreibt
+        // fuer „resource already exists" `uniqueness` vor, und ein SCIM-
+        // Bereitsteller behandelt 409 als endgueltig statt es ewig zu
+        // wiederholen.
+        const code = (err as { code?: string }).code;
+        if (code === "23505") {
+          return scimError(
+            "A user with this userName already exists.",
+            409,
+            "uniqueness",
+          );
+        }
+        throw err;
       }
     },
   );
-}
+}, "POST /api/v1/scim/v2/Users");

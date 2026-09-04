@@ -19,9 +19,10 @@ import type { GroupRoleMapping } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
 import { isEnumValue } from "../../../../_lib/enum-filter";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/auth/sso/oidc/callback — OIDC authorization callback
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const stateParam = url.searchParams.get("state");
@@ -287,4 +288,4 @@ export async function GET(req: Request) {
       { status: 401 },
     );
   }
-}
+});

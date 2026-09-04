@@ -6,9 +6,10 @@ import {
 } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { resolveInvitationToken } from "@grc/auth/anonymous-token";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/invitations/:token/accept — Accept invitation (public endpoint)
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ token: string }> },
 ) {
@@ -150,4 +151,4 @@ export async function POST(
   );
 
   return Response.json({ data: result });
-}
+});

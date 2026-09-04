@@ -2,10 +2,11 @@ import { auth } from "@/auth";
 import { setCurrentOrgId } from "@grc/auth/context";
 import { getAccessibleOrgIds } from "@grc/auth";
 import { z } from "zod";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const switchOrgSchema = z.object({ orgId: z.string().uuid() });
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -29,4 +30,4 @@ export async function POST(req: Request) {
   await setCurrentOrgId(orgId);
 
   return Response.json({ ok: true, orgId });
-}
+});

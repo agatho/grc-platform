@@ -1,42 +1,45 @@
 // ════════════════════════════════════════════════════════════════════
-// [ARCTOS-FULL-2026-08-31 · OP-083] Org-Kontext fuer die SCIM-Endpunkte
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Die Gruppen-Tabelle gibt
+// es nicht — siehe `../route.ts` für die Messung
 // ════════════════════════════════════════════════════════════════════
 //
-// SCIM authentifiziert sich mit einem Maschinentoken, nicht mit einer Sitzung.
-// Es gab hier deshalb nie einen Request-Kontext, und jede Abfrage lief ueber
-// den kontextlosen Basis-Pool. Das hatte zwei Folgen, und die zweite ist die
-// schwerere:
+// Beide Handler dieser Datei standen auf derselben nicht existierenden
+// Tabelle `user_group`:
 //
-//   * Lesend war der Endpunkt tot: der JOIN auf `user_organization_role` traf
-//     unter `grc_app` KEINE Zeile (org-skalierte Policy, kein Org-GUC).
-//     Gemessen auf einer frisch migrierten Datenbank: 0 statt 1 Nutzer. SCIM
-//     listete also nie jemanden, und das Deprovisioning Ausgeschiedener —
-//     der eigentliche Zweck der Schnittstelle — lief ins Leere.
-//   * Auf `user` trug die Policy bis Migration 0456 eine kontextlose
-//     Disjunktion. Dieser Pfad sah damit das Nutzerverzeichnis ALLER
-//     Mandanten (gemessen 36 Zeilen mit Passwort-Hashes gegenueber 1).
+//   * `GET /Groups/:id` beantwortete `relation "user_group" does not exist`
+//     mit `404 "Group not found"`. Ein `catch`, der einen Schemafehler in
+//     eine fachliche Aussage übersetzt, ist kein Fehlerpfad, sondern eine
+//     Behauptung: die Route sagte „diese Gruppe gibt es nicht", ohne je
+//     nachgesehen zu haben.
+//   * `PATCH /Groups/:id` gab denselben Treibertext als `detail` eines
+//     500ers zurück.
 //
-// Jeder Handler laeuft jetzt in `runWithRequestContext`: eine eigene
-// reservierte Verbindung, `app.current_org_id` auf die Org DES TOKENS, und der
-// globale `db`-Proxy zeigt fuer die Dauer des Aufrufs darauf. `userId: ""` ist
-// die etablierte Form fuer maschinelle Kontexte (portal/*, wb-Mailbox): SCIM
-// handelt als Dienst, nicht als Person, und der Audit-Trigger schreibt
-// entsprechend keinen Akteur statt einen erfundenen.
+// Beide melden jetzt 501, solange `42P01` kommt — und arbeiten unverändert
+// weiter, sobald die Migration für `user_group` existiert.
 
 import { db, scimSyncLog, runWithRequestContext } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
 import { buildScimError } from "@grc/auth/scim";
 import { scimPatchOpSchema } from "@grc/shared";
+import {
+  scimResponse,
+  scimError,
+  withScimErrorHandler,
+  GROUPS_UNSUPPORTED_DETAIL,
+} from "@/lib/api-scim";
+import { log } from "@/lib/logger";
 
-const SCIM_CONTENT_TYPE = "application/scim+json";
 const SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 
-function scimResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": SCIM_CONTENT_TYPE },
+/** Siehe `../route.ts`: `42P01` heisst hier „Gruppenablage fehlt", nicht „Störung". */
+function groupStorageMissing(err: unknown, route: string): Response | null {
+  if ((err as { code?: string }).code !== "42P01") return null;
+  log.warn("scim groups: storage not provisioned", {
+    route,
+    message: (err as { message?: string }).message,
   });
+  return scimError(GROUPS_UNSUPPORTED_DETAIL, 501);
 }
 
 // GET /api/v1/scim/v2/Groups/:id — Get single group
@@ -49,7 +52,7 @@ type GroupRow = {
   updated_at: Date | string | null;
 };
 
-export async function GET(
+export const GET = withScimErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -93,15 +96,22 @@ export async function GET(
             lastModified: group.updated_at,
           },
         });
-      } catch {
-        return scimResponse(buildScimError("Group not found", 404), 404);
+      } catch (err) {
+        // [Welle 4b-7 · OP-079] Hier stand `catch { … "Group not found", 404 }`
+        // — ein 404 über etwas, das nie nachgesehen wurde.
+        const missing = groupStorageMissing(
+          err,
+          "GET /api/v1/scim/v2/Groups/[id]",
+        );
+        if (missing) return missing;
+        throw err;
       }
     },
   );
-}
+}, "GET /api/v1/scim/v2/Groups/[id]");
 
 // PATCH /api/v1/scim/v2/Groups/:id — Update group membership
-export async function PATCH(
+export const PATCH = withScimErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -187,10 +197,14 @@ export async function PATCH(
           },
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Group update failed";
-        return scimResponse(buildScimError(message, 500), 500);
+        // [Welle 4b-7 · OP-079] Hier stand `buildScimError(err.message, 500)`.
+        const missing = groupStorageMissing(
+          err,
+          "PATCH /api/v1/scim/v2/Groups/[id]",
+        );
+        if (missing) return missing;
+        throw err;
       }
     },
   );
-}
+}, "PATCH /api/v1/scim/v2/Groups/[id]");

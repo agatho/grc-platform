@@ -359,3 +359,177 @@ export async function normaliseErrorResponse(
   if (!headers.has("x-request-id")) headers.set("x-request-id", opts.requestId);
   return new Response(JSON.stringify(problem), { status: res.status, headers });
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Treibertext gehört ins Log,
+// nicht in die Antwort
+// ─────────────────────────────────────────────────────────────────────────
+//
+// `api-wrapper.ts` schreibt seit WAVE11 an seinem 500er-Pfad:
+//
+//     full message + stack are logged for operators … but NEVER returned in
+//     the response body … error messages can leak schema names, table names,
+//     query fragments
+//
+// Drei Zweige darüber tat genau dieselbe Datei das Gegenteil: die
+// Zweige für die SQLSTATE-Klassen 23 (Constraint) und 22 (Eingabeformat)
+// setzten `detail: e.detail ?? e.message` und legten denselben Text noch
+// einmal in `errors[0].message`. Nachgemessen am 2026-09-04 gegen die
+// laufende Datenbank (`grc_v4c`, 617 Tabellen), über den `postgres`-Treiber
+// des Repositories:
+//
+//   23505 message  duplicate key value violates unique constraint "user_email_unique"
+//   23505 detail   Key (email)=(ciso@arctos.dev) already exists.
+//   23503 message  insert or update on table "work_item" violates foreign key
+//                  constraint "work_item_org_id_organization_id_fk"
+//   23503 detail   Key (org_id)=(00000000-…-0001) is not present in table "organization".
+//   23502 message  null value in column "email" of relation "user" violates
+//                  not-null constraint
+//   23502 detail   Failing row contains (313defd8-…, null, null, …, local, …).
+//   22P02 message  invalid input value for enum risk_status: "bogus"
+//
+// Die dritte Zeile ist die schwerste: `Failing row contains (…)` ist die
+// VOLLSTÄNDIGE Zeile, Spalte für Spalte. Auf `user` steht in dieser Liste
+// `password_hash`; 30 weitere Tabellen haben eine NOT-NULL-Spalte mit
+// `hash`, `secret` oder `token` im Namen (`api_key.key_hash`,
+// `invitation.token`, `dd_session.access_token`, `scim_token.token_hash`,
+// `developer_app.client_secret_hash` …). Die zweite ist ein
+// mandantenübergreifendes Orakel: `user_email_unique` ist eine GLOBALE
+// Eindeutigkeit, ihr `detail` nennt also die E-Mail-Adresse einer Person aus
+// einer FREMDEN Organisation.
+//
+// Diese Funktion trennt das Nützliche vom Verräterischen. Was der Aufrufer
+// braucht, ist die betroffene SPALTE und die Art des Verstosses — nicht der
+// Wert, nicht der Constraint-Name, nicht der Relationsname. Der volle Text
+// steht unverändert im Log, korreliert über dieselbe `requestId`.
+
+/** Spaltenliste aus `Key (a, b)=(…)` — ohne die Werte. */
+function columnsFromKeyDetail(detail: string | undefined): string[] {
+  if (!detail) return [];
+  const m = /^Key \(([^)]*)\)=/.exec(detail);
+  if (!m?.[1]) return [];
+  return m[1]
+    .split(",")
+    .map((c) => c.trim())
+    .filter((c) => /^[a-z_][a-z0-9_]*$/i.test(c));
+}
+
+/** Spaltenname aus `null value in column "x" of relation "y"`. */
+function columnFromNotNullMessage(message: string | undefined): string[] {
+  if (!message) return [];
+  const m = /null value in column "([^"]+)"/.exec(message);
+  return m?.[1] ? [m[1]] : [];
+}
+
+// Nicht exportiert: der Rückgabetyp von `sanitiseDbError` wird nirgends
+// benannt, und ein Export ohne Import ist genau das, was die
+// Dead-Exports-Ratsche zählt.
+interface SanitisedDbError {
+  detail: string;
+  errors: Array<{ path: string; message: string }>;
+}
+
+/**
+ * Baut aus einem Postgres-Fehler die Angaben für ein 422, ohne Werte,
+ * Relations- oder Constraint-Namen weiterzureichen.
+ *
+ * `code` ist der SQLSTATE, `message`/`detail` sind die Felder des
+ * `postgres`-Treibers. Ist nichts erkennbar, bleibt es bei einer stabilen
+ * Aussage — lieber unspezifisch als verräterisch.
+ */
+export function sanitiseDbError(e: {
+  code?: string;
+  message?: string;
+  detail?: string;
+}): SanitisedDbError {
+  const cols =
+    columnsFromKeyDetail(e.detail).length > 0
+      ? columnsFromKeyDetail(e.detail)
+      : columnFromNotNullMessage(e.message);
+
+  const asErrors = (msg: string) =>
+    cols.length > 0
+      ? cols.map((path) => ({ path, message: msg }))
+      : [{ path: "", message: msg }];
+
+  switch (e.code) {
+    case "23505":
+      return {
+        detail:
+          "A record with these values already exists. Change the conflicting field and retry.",
+        errors: asErrors("must be unique"),
+      };
+    case "23503":
+      return {
+        detail:
+          "A referenced record does not exist or is not visible to this organization.",
+        errors: asErrors("references a record that does not exist"),
+      };
+    case "23502":
+      return {
+        detail: "A required field was empty.",
+        errors: asErrors("is required"),
+      };
+    case "23514":
+      return {
+        detail: "A field value is outside the range this resource allows.",
+        errors: asErrors("violates a value constraint"),
+      };
+    case "23P01":
+      return {
+        detail: "This record overlaps an existing one.",
+        errors: asErrors("conflicts with an existing record"),
+      };
+    case "22P02": {
+      // Zwei Formen, beide ohne den Wert. Der TYPNAME bleibt stehen: er ist
+      // die einzige handlungsleitende Angabe, die der Aufrufer aus einem
+      // 22P02 ziehen kann, und `uuid` / `risk_status` sind Vokabular, das
+      // in jeder Erfolgsantwort derselben Route ohnehin sichtbar ist.
+      const enumType = /invalid input value for enum ([a-z0-9_]+):/i.exec(
+        e.message ?? "",
+      )?.[1];
+      if (enumType) {
+        return {
+          detail: `A field was set to a value the enumeration '${enumType}' does not contain.`,
+          errors: [{ path: "", message: `not a valid ${enumType} value` }],
+        };
+      }
+      const pgType = /invalid input syntax for type ([a-z0-9_ ]+):/i.exec(
+        e.message ?? "",
+      )?.[1];
+      return {
+        detail: pgType
+          ? `A field was set to a value that is not a valid ${pgType.trim()}.`
+          : "A field was set to a value of the wrong format.",
+        errors: [
+          {
+            path: "",
+            message: pgType
+              ? `expected a valid ${pgType.trim()}`
+              : "wrong format",
+          },
+        ],
+      };
+    }
+    case "22001":
+      return {
+        detail: "A field value is longer than the column allows.",
+        errors: asErrors("is too long"),
+      };
+    case "22008":
+      return {
+        detail: "A date or timestamp field is out of range.",
+        errors: asErrors("is not a valid date"),
+      };
+    case "22023":
+      return {
+        detail: "A parameter value is not valid for this operation.",
+        errors: asErrors("is not a valid parameter value"),
+      };
+    default:
+      return {
+        detail: "The request could not be processed with these values.",
+        errors: [{ path: "", message: "invalid value" }],
+      };
+  }
+}

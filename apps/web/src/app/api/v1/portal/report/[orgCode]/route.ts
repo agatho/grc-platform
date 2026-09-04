@@ -17,13 +17,17 @@ import {
 } from "@grc/shared";
 import { sql } from "drizzle-orm";
 import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ orgCode: string }>;
 }
 
 // GET — Org info for report form
-export async function GET(_req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  _req: Request,
+  { params }: RouteParams,
+) {
   const { orgCode } = await params;
 
   // #WP3-S02-05 — `organization` is FORCE-RLS and this endpoint is anonymous by
@@ -53,10 +57,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
       ],
     },
   });
-}
+});
 
 // POST — Submit report
-export async function POST(req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { orgCode } = await params;
 
   // #WP3-S02-05 — see GET above: the org must be resolved before any RLS
@@ -191,4 +198,4 @@ export async function POST(req: Request, { params }: RouteParams) {
     },
     { status: 201 },
   );
-}
+});

@@ -4,6 +4,7 @@ import {
   resolveIcalTokenHash,
 } from "@grc/auth/anonymous-token";
 import { generateICalFeed } from "@/lib/services/ical-generator";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
@@ -33,7 +34,10 @@ interface RouteParams {
 // Now: the token resolves through the narrow SECURITY DEFINER helper, and the
 // aggregation runs inside `runWithRequestContext`, which reserves its OWN
 // connection, pins the GUCs on THAT connection and releases it afterwards.
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
 
   if (!token || token.length < 32) {
@@ -58,4 +62,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   });
-}
+});

@@ -29,6 +29,7 @@ import type { WorkItemStatus } from "@grc/shared";
 // queries run on the context-less base pool, and RLS filters every row — the
 // route answers 200 with an EMPTY list instead of the tenant's data.
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { toDateParam, invalidDateParam } from "@/lib/query-schema";
 
 // GET /api/v1/work-items — Unified work items list (paginated, filterable)
 export const GET = withErrorHandler(async function GET(req: Request) {
@@ -86,14 +87,20 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   }
 
   // Created date range filters
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
   const createdFrom = searchParams.get("created_from");
   if (createdFrom) {
-    conditions.push(gte(workItem.createdAt, new Date(createdFrom)));
+    const d = toDateParam(createdFrom);
+    if (!d) return invalidDateParam(req, "created_from");
+    conditions.push(gte(workItem.createdAt, d));
   }
 
   const createdTo = searchParams.get("created_to");
   if (createdTo) {
-    conditions.push(lte(workItem.createdAt, new Date(createdTo)));
+    const d = toDateParam(createdTo);
+    if (!d) return invalidDateParam(req, "created_to");
+    conditions.push(lte(workItem.createdAt, d));
   }
 
   const where = and(...conditions);

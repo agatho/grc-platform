@@ -1,42 +1,78 @@
 // ════════════════════════════════════════════════════════════════════
-// [ARCTOS-FULL-2026-08-31 · OP-083] Org-Kontext fuer die SCIM-Endpunkte
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Die Gruppen-Tabelle gibt
+// es nicht — und bis hierher sagte es niemand
 // ════════════════════════════════════════════════════════════════════
 //
-// SCIM authentifiziert sich mit einem Maschinentoken, nicht mit einer Sitzung.
-// Es gab hier deshalb nie einen Request-Kontext, und jede Abfrage lief ueber
-// den kontextlosen Basis-Pool. Das hatte zwei Folgen, und die zweite ist die
-// schwerere:
+// Alles unter `/scim/v2/Groups` steht auf einer Tabelle `user_group` (und
+// `user_group_member`). Nachgemessen am 2026-09-04 gegen die laufende
+// Datenbank `grc_v4c` (617 Tabellen) und gegen das gesamte Repository:
 //
-//   * Lesend war der Endpunkt tot: der JOIN auf `user_organization_role` traf
-//     unter `grc_app` KEINE Zeile (org-skalierte Policy, kein Org-GUC).
-//     Gemessen auf einer frisch migrierten Datenbank: 0 statt 1 Nutzer. SCIM
-//     listete also nie jemanden, und das Deprovisioning Ausgeschiedener —
-//     der eigentliche Zweck der Schnittstelle — lief ins Leere.
-//   * Auf `user` trug die Policy bis Migration 0456 eine kontextlose
-//     Disjunktion. Dieser Pfad sah damit das Nutzerverzeichnis ALLER
-//     Mandanten (gemessen 36 Zeilen mit Passwort-Hashes gegenueber 1).
+//     psql> select id from user_group limit 1;
+//     ERROR:  relation "user_group" does not exist
 //
-// Jeder Handler laeuft jetzt in `runWithRequestContext`: eine eigene
-// reservierte Verbindung, `app.current_org_id` auf die Org DES TOKENS, und der
-// globale `db`-Proxy zeigt fuer die Dauer des Aufrufs darauf. `userId: ""` ist
-// die etablierte Form fuer maschinelle Kontexte (portal/*, wb-Mailbox): SCIM
-// handelt als Dienst, nicht als Person, und der Audit-Trigger schreibt
-// entsprechend keinen Akteur statt einen erfundenen.
+//     $ grep -rn "user_group" --include=*.sql --include=*.ts .
+//     (ausser den beiden Groups-Routendateien: nichts)
+//
+// Keine Migration, kein Drizzle-Schema, kein Entwurf. Die Wirkung war nicht
+// „ein Fehler", sondern VIER verschiedene Unwahrheiten:
+//
+//   GET  /Groups      → 200 mit `totalResults: 0`. Ein `catch`, dessen
+//                       Kommentar „user_group table may not exist yet"
+//                       lautete — er beschrieb keinen Übergang, sondern den
+//                       Dauerzustand. Das ist die gefährlichste der vier:
+//                       Entra ID und Okta lesen eine leere Liste als
+//                       Bestandsauskunft, nicht als „kann ich nicht".
+//   GET  /Groups/:id  → 404 „Group not found" aus demselben `catch`: eine
+//                       fachliche Aussage über etwas, das nie geprüft wurde.
+//   POST /Groups      → 500 mit `relation "user_group" does not exist`
+//                       WÖRTLICH im Rumpf (dieselbe Klasse wie OP-174).
+//   PATCH /Groups/:id → dito.
+//
+// Was hier NICHT passiert ist: die Implementierung wegzuwerfen. Sie ist
+// richtig für den Tag, an dem die Migration kommt. Was passiert ist: die drei
+// lügenden `catch` sind durch EINEN Zweig ersetzt, der den gemessenen Zustand
+// benennt — `42P01` (undefined_table) auf diesen Routen heisst „dieser Dienst
+// führt keine Gruppen", und das ist **501 Not Implemented**. Ein
+// Bereitsteller trägt 501 in seinen Sync-Bericht ein, statt es wie die leere
+// Liste als Bestand zu verbuchen. Jeder andere Fehler geht an
+// `withScimErrorHandler` weiter — ohne Treibertext.
+//
+// Sobald `user_group` existiert, arbeiten diese Handler ohne weitere
+// Änderung; der 501-Zweig wird dann nie mehr betreten. Die Migration selbst
+// liegt in `packages/db` und damit ausserhalb der Dateihoheit dieser Welle.
 
 import { db, scimSyncLog, runWithRequestContext } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
 import { buildScimError } from "@grc/auth/scim";
 import { scimCreateGroupSchema } from "@grc/shared";
+// Siehe `apps/web/src/lib/api-scim.ts`: `withErrorHandler` waere hier falsch,
+// weil er auf `application/problem+json` normalisiert und ein
+// SCIM-Bereitsteller nach RFC 7644 §3.12 `application/scim+json` erwartet.
+import {
+  scimResponse,
+  scimError,
+  withScimErrorHandler,
+  GROUPS_UNSUPPORTED_DETAIL,
+} from "@/lib/api-scim";
+import { log } from "@/lib/logger";
 
-const SCIM_CONTENT_TYPE = "application/scim+json";
 const SCIM_GROUP_SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:Group";
 
-function scimResponse(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { "Content-Type": SCIM_CONTENT_TYPE },
+/**
+ * SCIM-Antwort für den gemessenen Zustand „Gruppenablage fehlt".
+ *
+ * `42P01` ist Postgres' `undefined_table`. Auf DIESEN Routen kann er nur eine
+ * Ursache haben, und die ist keine Störung, sondern eine fehlende Funktion —
+ * deshalb 501 und nicht 500. Der Relationsname steht im Log, nicht im Rumpf.
+ */
+function groupStorageMissing(err: unknown, route: string): Response | null {
+  if ((err as { code?: string }).code !== "42P01") return null;
+  log.warn("scim groups: storage not provisioned", {
+    route,
+    message: (err as { message?: string }).message,
   });
+  return scimError(GROUPS_UNSUPPORTED_DETAIL, 501);
 }
 
 // GET /api/v1/scim/v2/Groups — List groups
@@ -49,7 +85,7 @@ type GroupRow = {
   updated_at: Date | string | null;
 };
 
-export async function GET(req: Request) {
+export const GET = withScimErrorHandler(async function GET(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
     return scimResponse(buildScimError("Unauthorized", 401), 401);
@@ -104,22 +140,19 @@ export async function GET(req: Request) {
           itemsPerPage: count,
           Resources: resources,
         });
-      } catch {
-        // user_group table may not exist yet — return empty
-        return scimResponse({
-          schemas: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
-          totalResults: 0,
-          startIndex: 1,
-          itemsPerPage: count,
-          Resources: [],
-        });
+      } catch (err) {
+        // [Welle 4b-7 · OP-079] Hier stand `catch { … Resources: [] }` — eine
+        // leere Liste als Antwort auf einen Schemafehler.
+        const missing = groupStorageMissing(err, "GET /api/v1/scim/v2/Groups");
+        if (missing) return missing;
+        throw err;
       }
     },
   );
-}
+}, "GET /api/v1/scim/v2/Groups");
 
 // POST /api/v1/scim/v2/Groups — Create group
-export async function POST(req: Request) {
+export const POST = withScimErrorHandler(async function POST(req: Request) {
   const authCtx = await validateScimToken(req.headers.get("Authorization"));
   if (!authCtx) {
     return scimResponse(buildScimError("Unauthorized", 401), 401);
@@ -183,10 +216,11 @@ export async function POST(req: Request) {
           201,
         );
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Group creation failed";
-        return scimResponse(buildScimError(message, 500), 500);
+        // [Welle 4b-7 · OP-079] Hier stand `buildScimError(err.message, 500)`.
+        const missing = groupStorageMissing(err, "POST /api/v1/scim/v2/Groups");
+        if (missing) return missing;
+        throw err;
       }
     },
   );
-}
+}, "POST /api/v1/scim/v2/Groups");

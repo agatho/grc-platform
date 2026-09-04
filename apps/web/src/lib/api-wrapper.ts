@@ -37,6 +37,8 @@ import {
   getRequestId,
   // [WP12 · S14-16] legacy `{ error: … }` → RFC 7807 on the way out
   normaliseErrorResponse,
+  // [Welle 4b-7 · OP-079] Treibertext gehört ins Log, nicht in die Antwort
+  sanitiseDbError,
 } from "@/lib/api-errors";
 import { log } from "@/lib/logger";
 import { PaginationError } from "@/lib/api";
@@ -474,23 +476,41 @@ export function withErrorHandler<TCtx = unknown>(
         });
       }
 
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Beide Zweige gaben den
+      // Treibertext WÖRTLICH an den Aufrufer zurück — `detail: e.detail ??
+      // e.message`, und denselben Text noch einmal in `errors[0].message`.
+      // Dreissig Zeilen tiefer steht seit WAVE11 die Gegenregel für den
+      // 500er ("NEVER returned in the response body"); sie galt für den
+      // unbekannten Fehler und ausgerechnet nicht für die beiden Klassen,
+      // in denen Postgres die Nutzdaten mitschickt. Gemessen am 2026-09-04:
+      // `23502` liefert in `detail` die VOLLSTÄNDIGE Zeile ("Failing row
+      // contains (…)"), `23505` auf der globalen Eindeutigkeit
+      // `user_email_unique` die E-Mail-Adresse aus einer FREMDEN
+      // Organisation. `sanitiseDbError` behält die Spalte und die Art des
+      // Verstosses und lässt Werte, Constraint- und Relationsnamen weg; der
+      // volle Text steht unverändert im Log unter derselben `requestId`.
       if (e.code && CONSTRAINT_VIOLATION_CODES.has(e.code)) {
-        logger.warn("constraint violation", { message: e.message });
+        logger.warn("constraint violation", {
+          message: e.message,
+          detail: e.detail,
+        });
+        const safe = sanitiseDbError(e);
         return problem.validation({
           requestId,
           instance: req.url,
-          detail: e.detail ?? e.message ?? "Database constraint violated",
-          errors: [{ path: "", message: e.detail ?? e.message ?? e.code }],
+          detail: safe.detail,
+          errors: safe.errors,
         });
       }
 
       if (e.code && INVALID_INPUT_CODES.has(e.code)) {
-        logger.warn("invalid input", { message: e.message });
+        logger.warn("invalid input", { message: e.message, detail: e.detail });
+        const safe = sanitiseDbError(e);
         return problem.validation({
           requestId,
           instance: req.url,
-          detail: e.message ?? "Invalid input format",
-          errors: [{ path: "", message: e.message ?? e.code }],
+          detail: safe.detail,
+          errors: safe.errors,
         });
       }
 
