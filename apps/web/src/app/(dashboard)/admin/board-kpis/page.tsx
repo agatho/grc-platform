@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface ThresholdRow {
   id: string;

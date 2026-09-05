@@ -71,7 +71,8 @@ export function IncidentRatingTab({
       </h3>
 
       {!isEditable && (
-        <div className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2">
+        // [ARCTOS-FULL-2026-08-31 · OP-049] amber-600 auf amber-50 = 3,08:1 bei 12 px.
+        <div className="text-xs text-amber-700 bg-amber-50 rounded-md px-3 py-2">
           {labels?.lockedMessage ??
             "Rating is only available when incident is resolved or closed."}
         </div>

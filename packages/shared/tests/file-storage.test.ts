@@ -19,6 +19,17 @@ import {
 } from "../src/lib/file-storage";
 import { sha256Hex } from "../src/lib/sigv4";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("LocalFsStorage", () => {
   let dir: string;
   let storage: LocalFsStorage;
@@ -147,7 +158,7 @@ describe("S3Storage", () => {
     await s3.put("org/doc/a.pdf", data, { contentType: "application/pdf" });
 
     expect(requests).toHaveLength(1);
-    const req = requests[0];
+    const req = at(requests, 0);
     expect(req.method).toBe("PUT");
     expect(req.url).toBe("http://127.0.0.1:9000/arctos-docs/org/doc/a.pdf");
     expect(req.headers["x-amz-content-sha256"]).toBe(sha256Hex(data));

@@ -1,8 +1,12 @@
-import { db, dataExportLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { exportEntities } from "@/lib/import-export/export-engine";
+import {
+  clientIpForAudit,
+  logExportOrThrow,
+  ExportNotLoggedError,
+} from "@/lib/export-audit";
 
 // GET /api/v1/dpms/ropa/export?format=csv|xlsx
 //
@@ -14,7 +18,16 @@ import { exportEntities } from "@/lib/import-export/export-engine";
 // surface as RFC 7807 problem+json with a requestId.
 
 export const GET = withErrorHandler(async function GET(req: Request) {
-  const ctx = await withAuth();
+  // #WP8-S07-14 — vorher `withAuth()` ohne Rollenliste: das vollständige
+  // Verarbeitungsverzeichnis nach Art. 30 war für jeden angemeldeten
+  // Nutzer exportierbar, einschliesslich der Verantwortlichen-Kontakte.
+  const ctx = await withAuth(
+    "admin",
+    "dpo",
+    "compliance_officer",
+    "auditor",
+    "external_auditor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("dpms", ctx.orgId, req.method);
@@ -38,11 +51,12 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
   const result = await exportEntities("ropa_entry", format, filters, ctx.orgId);
 
-  // Compliance audit-trail entry — RoPA exports leave the system, so
-  // ADR-018 §3.2 requires a recorded entry per call. Inner try/catch
-  // so a logging failure doesn't break the actual download.
+  // #WP8-S07-14 — der Nachweis steht vor der Auslieferung. Vorher wurde
+  // ein Fehlschlag nur auf die Konsole geschrieben und der Export
+  // trotzdem geliefert: ADR-018 §3.2 verlangt einen Eintrag je Aufruf,
+  // und ein Eintrag, der ausbleiben darf, ist keiner.
   try {
-    await db.insert(dataExportLog).values({
+    await logExportOrThrow({
       orgId: ctx.orgId,
       userId: ctx.userId,
       exportType: format === "xlsx" ? "excel_export" : "csv_export",
@@ -51,12 +65,25 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       recordCount: result.rowCount,
       containsPersonalData: true,
       fileName: result.fileName,
+      ipAddress: clientIpForAudit(req),
     });
-  } catch (logErr) {
-    console.error(
-      "[ropa-export] Failed to log:",
-      logErr instanceof Error ? logErr.message : String(logErr),
-    );
+  } catch (err) {
+    if (err instanceof ExportNotLoggedError) {
+      return Response.json(
+        {
+          type: "https://arctos.charliehund.de/errors/export-not-recorded",
+          title: "Export not recorded",
+          status: 503,
+          detail:
+            "The export could not be recorded in the tamper-evident export log and was therefore not delivered.",
+        },
+        {
+          status: 503,
+          headers: { "Content-Type": "application/problem+json" },
+        },
+      );
+    }
+    throw err;
   }
 
   return new Response(new Uint8Array(result.data), {

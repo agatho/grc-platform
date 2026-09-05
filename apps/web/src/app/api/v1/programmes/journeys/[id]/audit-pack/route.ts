@@ -26,6 +26,10 @@ import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { eq, and, isNull, asc, desc, gte, inArray } from "drizzle-orm";
 import { createHash } from "crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function escapeHtml(s: string | null | undefined): string {
   if (s == null) return "";
@@ -37,7 +41,7 @@ function escapeHtml(s: string | null | undefined): string {
     .replace(/'/g, "&#039;");
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -400,8 +404,7 @@ export async function GET(
       "Content-Disposition": `inline; filename="audit-pack-${journey.id.slice(0, 8)}.html"`,
     },
   });
-}
-
+});
 function completedCountOf(subs: Array<{ status: string }>): number {
   return subs.filter((s) => s.status === "completed").length;
 }

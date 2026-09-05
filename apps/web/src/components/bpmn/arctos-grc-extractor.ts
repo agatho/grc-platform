@@ -1,3 +1,4 @@
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 // BPM Overhaul Phase 5: GRC attribute extractor + injector for BPMN XML.
 //
 // Reads/writes `arctos:*` extension elements on BPMN activity nodes. Works
@@ -82,7 +83,7 @@ function escapeAttr(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function renderRefs<T extends Record<string, any>>(
+function renderRefs<T extends Record<string, UnvalidatedJson>>(
   tag: string,
   items: T[],
 ): string {
@@ -258,7 +259,7 @@ export function extractGrcMetadata(
     "documentType",
   ]);
   const raciMatch = root[2].match(/<arctos:raci\b([^/]*)\/>/);
-  if (raciMatch) meta.raci = parseAttrs(raciMatch[1]) as any;
+  if (raciMatch) meta.raci = parseAttrs(raciMatch[1]) as UnvalidatedJson;
   const bcmMatch = root[2].match(/<arctos:bcmKpi\b([^/]*)\/>/);
   if (bcmMatch) {
     const a = parseAttrs(bcmMatch[1]);
@@ -308,7 +309,7 @@ function parseAttrs(s: string): Record<string, string> {
   return out;
 }
 
-function parseRefs<T extends Record<string, any>>(
+function parseRefs<T extends Record<string, UnvalidatedJson>>(
   inner: string,
   tag: string,
   fields: string[],
@@ -318,7 +319,7 @@ function parseRefs<T extends Record<string, any>>(
   let m: RegExpExecArray | null;
   while ((m = re.exec(inner)) !== null) {
     const a = parseAttrs(m[1]);
-    const obj: any = {};
+    const obj: UnvalidatedJson = {};
     for (const f of fields) {
       if (a[f] !== undefined) {
         const n = Number(a[f]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, X, Loader2 } from "lucide-react";
@@ -43,6 +43,11 @@ export default function DpiaNewPage() {
 }
 
 function DpiaNewInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("dpms");
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -142,10 +147,14 @@ function DpiaNewInner() {
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-6">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-titel-der-dsfa`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Titel der DSFA *
           </label>
           <input
+            id={`${a11yId}-titel-der-dsfa`}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="z.B. DSFA — KI-gestuetzte Kundenanalyse"
@@ -155,10 +164,14 @@ function DpiaNewInner() {
 
         {/* Systematic Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-field`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Systematische Beschreibung (Art. 35(7)(a))
           </label>
           <textarea
+            id={`${a11yId}-field`}
             value={systematicDescription}
             onChange={(e) => setSystematicDescription(e.target.value)}
             rows={4}
@@ -169,10 +182,14 @@ function DpiaNewInner() {
 
         {/* Processing Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-verarbeitungsbeschreibung`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Verarbeitungsbeschreibung
           </label>
           <textarea
+            id={`${a11yId}-verarbeitungsbeschreibung`}
             value={processingDescription}
             onChange={(e) => setProcessingDescription(e.target.value)}
             rows={3}
@@ -183,10 +200,14 @@ function DpiaNewInner() {
 
         {/* Legal Basis */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-rechtsgrundlage`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Rechtsgrundlage
           </label>
           <select
+            id={`${a11yId}-rechtsgrundlage`}
             value={legalBasis}
             onChange={(e) => setLegalBasis(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -202,10 +223,14 @@ function DpiaNewInner() {
 
         {/* Necessity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-field-2`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Notwendigkeit & Verhaeltnismaessigkeit
           </label>
           <textarea
+            id={`${a11yId}-field-2`}
             value={necessityAssessment}
             onChange={(e) => setNecessityAssessment(e.target.value)}
             rows={3}
@@ -342,10 +367,14 @@ function DpiaNewInner() {
 
         {/* Retention Period */}
         <div className="border-t border-gray-100 pt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor={`${a11yId}-aufbewahrungsfrist`}
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Aufbewahrungsfrist
           </label>
           <input
+            id={`${a11yId}-aufbewahrungsfrist`}
             value={retentionPeriod}
             onChange={(e) => setRetentionPeriod(e.target.value)}
             placeholder="z.B. 3 Jahre nach Austritt des Mitarbeiters"

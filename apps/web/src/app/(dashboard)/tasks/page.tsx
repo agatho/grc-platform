@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -338,11 +339,15 @@ export default function TasksPage() {
     setLoading(true);
     setError(false);
     try {
-      const params = new URLSearchParams({ view, limit: "200" });
-      const res = await fetch(`/api/v1/tasks?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch tasks");
-      const json = await res.json();
-      setTasks(json.data ?? []);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422 ⇒ die
+      // Aufgabenliste war für jeden Mandanten leer. Der `catch` unten hat den
+      // Fehlerzustand zwar gesetzt, aber nur als „Failed to fetch tasks" —
+      // die Ursache stand nirgends. Jetzt geblättert; der Helfer wirft mit
+      // Status und Detail aus dem problem+json.
+      const rows = await fetchAllPages<Task>("/api/v1/tasks", {
+        params: { view },
+      });
+      setTasks(rows);
     } catch {
       setError(true);
       setTasks([]);
@@ -353,21 +358,19 @@ export default function TasksPage() {
 
   // Fetch org users
   useEffect(() => {
-    fetch("/api/v1/users?limit=200")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
+    // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Zuweisungsauswahl.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
+        setOrgUsers(
+          rows.map((u) => ({
+            id: u.id as string,
+            name: (u.name as string) || (u.email as string),
+            email: u.email as string,
+          })),
+        );
       })
-      .then((json) => {
-        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
-          id: u.id as string,
-          name: (u.name as string) || (u.email as string),
-          email: u.email as string,
-        }));
-        setOrgUsers(users);
-      })
-      .catch(() => {
-        // Non-critical
+      .catch((err) => {
+        console.error("tasks: Nutzerliste nicht geladen", err);
       });
   }, []);
 

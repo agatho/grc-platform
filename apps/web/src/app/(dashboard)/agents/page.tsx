@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Bot, Play, Settings, AlertTriangle } from "lucide-react";
+import { Play, Settings, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +120,7 @@ export default function AgentDashboardPage() {
                   {agent.name}
                 </CardTitle>
                 <Badge className={STATUS_COLORS[agent.status] ?? ""}>
-                  {t(`status.${agent.status}` as any)}
+                  {t(`status.${agent.status}` as Parameters<typeof t>[0])}
                 </Badge>
               </div>
             </CardHeader>

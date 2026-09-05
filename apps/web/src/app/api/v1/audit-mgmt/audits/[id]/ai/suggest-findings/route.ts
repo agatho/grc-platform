@@ -1,25 +1,43 @@
 // Audit Overhaul Phase 3: AI finding-suggester from nonconforming checklist items.
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
+// Diese Route war laut Audit die einzige der 23, die WEDER Request-Body
+// NOCH Modellausgabe validierte. Beides ist jetzt vorhanden: ein
+// Zod-Body-Schema und `findingSuggestionsSchema` für die Ausgabe. Der
+// Prompt enthält die Prüfernotizen — freier Nutzertext, deshalb der
+// Datenumschlag.
 
 import { db, audit } from "@grc/db";
 import {
-  aiComplete,
+  aiCompleteGoverned,
   buildFindingSuggestionPrompt,
+  findingSuggestionsSchema,
   safeJsonParse,
 } from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+import { z } from "zod";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../../../ai/_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-interface Suggestion {
+const schema = z.object({ locale: z.enum(["de", "en"]).optional() });
+
+interface NonconformingRow {
   title: string;
-  description?: string;
-  severity?: "critical" | "high" | "medium" | "low";
-  evidenceSummary?: string;
-  remediationPlan?: string;
-  remediationDueDateRelativeDays?: number;
+  description: string | null;
+  result: string | null;
+  notes: string | null;
 }
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -27,6 +45,18 @@ export async function POST(
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("audit", ctx.orgId, req.method);
   if (m) return m;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
+  const body = schema.safeParse(await req.json().catch(() => ({})));
+  if (!body.success) {
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
+  }
+  const locale = body.data.locale ?? "de";
 
   const { id } = await params;
   const [existing] = await db
@@ -46,17 +76,17 @@ export async function POST(
   if (!existing)
     return Response.json({ error: "Audit not found" }, { status: 404 });
 
-  const noncon = await withReadContext(ctx, async (tx) => {
-    return tx.execute(sql`
+  const noncon = (await withReadContext(ctx, async (tx) =>
+    tx.execute(sql`
       SELECT ci.title, ci.description, ci.result, ci.notes
       FROM audit_checklist ck
       JOIN audit_checklist_item ci ON ci.audit_checklist_id = ck.id
       WHERE ck.audit_id = ${id}
         AND ci.result IN ('minor_nonconformity', 'major_nonconformity', 'observation')
-    `);
-  });
+    `),
+  )) as unknown as NonconformingRow[];
 
-  if ((noncon as any[]).length === 0) {
+  if (noncon.length === 0) {
     return Response.json({
       data: {
         suggestions: [],
@@ -65,32 +95,34 @@ export async function POST(
     });
   }
 
-  const prompt = buildFindingSuggestionPrompt({
-    auditTitle: existing.title,
-    scopeFrameworks: existing.scopeFrameworks ?? [],
-    nonconformingItems: noncon as any[],
-  });
-
-  let resp;
   try {
-    resp = await aiComplete({
-      messages: prompt,
+    const result = await aiCompleteGoverned({
+      feature: "audit.suggest_findings",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "audit",
+      entityId: existing.id,
+      messages: buildFindingSuggestionPrompt({
+        auditTitle: existing.title,
+        scopeFrameworks: existing.scopeFrameworks ?? [],
+        nonconformingItems: noncon,
+        locale,
+      }),
       maxTokens: 2500,
       temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: findingSuggestionsSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  const parsed = safeJsonParse<{ findings?: Suggestion[] }>(resp.text);
-  return Response.json({
-    data: {
-      suggestions: parsed?.findings ?? [],
-      provider: resp.provider,
-      model: resp.model,
-    },
-  });
-}
+    return aiJson(
+      {
+        suggestions: result.data.findings,
+        provider: result.provider,
+        model: result.model,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+});

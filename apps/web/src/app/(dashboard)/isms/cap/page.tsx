@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Search as SearchIcon,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -34,6 +33,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface Nonconformity {
   id: string;
@@ -334,6 +336,11 @@ function CapInner() {
               key={nc.id}
               className="rounded-lg border p-4 hover:bg-accent/50 transition-colors cursor-pointer"
               onClick={() => router.push(`/isms/cap/${nc.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () => router.push(`/isms/cap/${nc.id}`))
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

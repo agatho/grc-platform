@@ -5,6 +5,8 @@
 import { db, riskTreatment, risk, notification } from "@grc/db";
 import { and, isNull, isNotNull, notInArray, lt, sql, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface TreatmentOverdueResult {
   processed: number;
@@ -59,30 +61,37 @@ export const processTreatmentOverdueReminders = withCronInstrumentation(
             (treatment.description.length > 80 ? "..." : "")
           : "Unnamed treatment";
 
-        await db.insert(notification).values({
-          userId: treatment.responsibleId!,
-          orgId: treatment.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "risk_treatment",
-          entityId: treatment.id,
-          title: `Treatment overdue: ${treatmentLabel}`,
-          message: `Treatment action for risk "${treatment.riskTitle ?? "Unknown"}" is ${daysOverdue} day(s) overdue (due: ${treatment.dueDate}).`,
-          channel: "both" as const,
-          templateKey: "treatment_overdue_reminder",
-          templateData: {
-            treatmentDescription: treatment.description,
-            riskTitle: treatment.riskTitle,
-            dueDate: treatment.dueDate,
-            daysOverdue,
-            status: treatment.status,
+        await insertNotification(
+          {
+            userId: treatment.responsibleId!,
+            orgId: treatment.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "risk_treatment",
+            entityId: treatment.id,
+            title: `Treatment overdue: ${treatmentLabel}`,
+            message: `Treatment action for risk "${treatment.riskTitle ?? "Unknown"}" is ${daysOverdue} day(s) overdue (due: ${treatment.dueDate}).`,
+            channel: "both" as const,
+            templateKey: "treatment_overdue_reminder",
+            templateData: {
+              treatmentDescription: treatment.description,
+              riskTitle: treatment.riskTitle,
+              dueDate: treatment.dueDate,
+              daysOverdue,
+              status: treatment.status,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "treatment-overdue-reminder" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "treatment-overdue-reminder", scope: "treatment" },
+          err,
+        );
       }
     }
 

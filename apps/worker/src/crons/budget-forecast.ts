@@ -11,6 +11,7 @@ import {
 import { eq, and, isNull, sql, lte, gte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface BudgetForecastResult {
   processed: number;
   orgsProcessed: number;
@@ -105,10 +106,10 @@ export const processBudgetForecast = withCronInstrumentation(
         }
       } catch (err) {
         errors++;
-        console.error(
-          `[cron:budget-forecast] Error for org ${org.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
+        log.error("[cron:budget-forecast] Error for org", {
+          orgId: org.id,
+          err,
+        });
       }
     }
 

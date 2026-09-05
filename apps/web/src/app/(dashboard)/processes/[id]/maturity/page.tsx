@@ -152,8 +152,8 @@ export default function MaturityPage() {
         {!loading && !result && (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No maturity assessment yet. Click "Compute now" to derive one from
-              live data.
+              No maturity assessment yet. Click &quot;Compute now&quot; to
+              derive one from live data.
             </CardContent>
           </Card>
         )}

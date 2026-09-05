@@ -4,9 +4,15 @@ import { runSimulationSchema, runFAIRMonteCarlo } from "@grc/shared";
 import type { FAIRParams } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { problem, getRequestId } from "@/lib/api-errors";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/erm/risks/:id/fair/simulate — Run Monte Carlo simulation
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -127,9 +133,21 @@ export async function POST(
       })
       .where(eq(fairSimulationResult.id, simRecord.id));
 
-    return Response.json(
-      { error: "Simulation failed", message: errorMessage },
-      { status: 500 },
-    );
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Hier stand
+    // `message: errorMessage`, also der Treibertext des `withAuditContext`-
+    // Blocks direkt darüber. Er bleibt in `fair_simulation_result.
+    // error_message` stehen — dort gehört er hin, dort liest ihn ein
+    // Betreiber mit Org-Kontext — und verlässt die Antwort nicht mehr.
+    log.error("[erm/fair/simulate] simulation failed", {
+      simulationId: simRecord.id,
+      riskId,
+      error: errorMessage,
+    });
+    return problem.internal({
+      requestId: getRequestId(req),
+      instance: req.url,
+      detail:
+        "The simulation could not be completed and has been recorded as failed. The full error has been logged server-side; include the requestId when reporting.",
+    });
   }
-}
+});

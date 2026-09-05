@@ -16,7 +16,7 @@ import {
   numeric,
   date,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
@@ -64,6 +64,25 @@ export const aiSystem = pgTable(
       .notNull()
       .defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdBy: uuid("created_by"),
+    documentationExpiryDate: date("documentation_expiry_date"),
+    documentationRetentionYears: integer(
+      "documentation_retention_years",
+    ).default(sql`10`),
+    euDatabaseRegistered: boolean("eu_database_registered").default(sql`false`),
+    euDatabaseRegisteredAt: timestamp("eu_database_registered_at", {
+      withTimezone: true,
+    }),
+    euDatabaseRegistrationId: varchar("eu_database_registration_id", {
+      length: 200,
+    }),
+    euDatabaseUrl: varchar("eu_database_url", { length: 1000 }),
+    lastDocumentationReview: date("last_documentation_review"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    updatedBy: uuid("updated_by"),
   },
   (table) => ({
     orgIdx: index("ai_sys_org_idx").on(table.orgId),
@@ -118,6 +137,11 @@ export const aiConformityAssessment = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    assessorOrganization: varchar("assessor_organization", { length: 500 }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => ({
     orgIdx: index("ai_ca_org_idx").on(table.orgId),
@@ -168,6 +192,10 @@ export const aiHumanOversightLog = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => ({
     orgIdx: index("ai_hol_org_idx").on(table.orgId),
@@ -223,6 +251,11 @@ export const aiTransparencyEntry = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    audience: varchar("audience", { length: 100 }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => ({
     orgIdx: index("ai_te_org_idx").on(table.orgId),
@@ -279,6 +312,11 @@ export const aiFria = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    createdBy: uuid("created_by"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => ({
     orgIdx: index("ai_fria_org_idx").on(table.orgId),
@@ -329,6 +367,10 @@ export const aiFrameworkMapping = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => ({
     orgIdx: index("ai_fm_org_idx").on(table.orgId),

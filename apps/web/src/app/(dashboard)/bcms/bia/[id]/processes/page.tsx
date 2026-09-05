@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface ImpactRow {
   id?: string;
@@ -49,7 +50,7 @@ export default function BiaProcessesPage() {
     const resp = await fetch(`/api/v1/bcms/bia/${biaId}/impacts`);
     if (resp.ok) {
       const j = await resp.json();
-      const data = (j.data ?? []).map((d: any) => ({
+      const data = (j.data ?? []).map((d: UnvalidatedJson) => ({
         id: d.id,
         processId: d.processId,
         processName: d.processName ?? "(unbenannt)",

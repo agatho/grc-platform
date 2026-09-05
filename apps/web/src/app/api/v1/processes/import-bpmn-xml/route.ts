@@ -1,13 +1,23 @@
 // BPM Overhaul Phase 5: dedicated standalone import endpoint.
 // Creates a new process from a BPMN XML payload + rehydrates arctos:* metadata.
 
-import { db, process, processVersion, processStep } from "@grc/db";
+import { process, processVersion, processStep } from "@grc/db";
 import { parseBpmnXml } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-002] Der Import legte bis hierher keine
+// `process_lane`-Zeile an — gemessen 0 Zeilen in `welle1_verify`. F5
+// (Vertrauensgrenze) und F17 (Lane) blieben datenlos, und die
+// Lane-Zugehoerigkeit eines Schritts wurde in `packages/bpmn` geometrisch
+// geraten. Siehe `_lib/bpmn-lanes.ts`.
+import { syncProcessLanes } from "../_lib/sync-process-lanes";
+import { log } from "@/lib/logger";
 
 const importSchema = z.object({
   name: z.string().min(3).max(500),
@@ -17,7 +27,7 @@ const importSchema = z.object({
   bpmnXml: z.string().min(50),
 });
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
@@ -89,6 +99,26 @@ export async function POST(req: Request) {
         stepIdByBpmnElement.set(row.bpmnElementId, row.id);
       }
 
+      // [ARCTOS-FULL-2026-08-31 · OP-002] Lanes und Pools aus dem Modell.
+      // Nicht blockierend wie die Rehydrierung darunter: der Prozess ist
+      // angelegt, und ein Lane-Fehler darf den Import nicht zuruecknehmen —
+      // aber er wird gemeldet, nicht verschluckt.
+      let laneStats = null;
+      try {
+        laneStats = await syncProcessLanes({
+          tx,
+          processId: newProcess.id,
+          orgId: ctx.orgId,
+          userId: ctx.userId,
+          bpmnXml: parsed.data.bpmnXml,
+          stepIdByBpmnElement,
+        });
+      } catch (e) {
+        log.error("[processes/import-bpmn-xml] process_lane sync failed", {
+          err: e,
+        });
+      }
+
       // Rehydrate arctos:* metadata
       let rehydrateStats = null;
       try {
@@ -101,13 +131,16 @@ export async function POST(req: Request) {
           stepIdByBpmnElement,
         });
       } catch (e) {
-        console.error("arctos rehydrate during import failed", e);
+        log.error("[processes/import-bpmn-xml] arctos rehydrate failed", {
+          err: e,
+        });
       }
 
       return {
         process: newProcess,
         version,
         stepCount: parsedSteps.length,
+        laneStats,
         rehydrateStats,
       };
     },
@@ -115,4 +148,4 @@ export async function POST(req: Request) {
   );
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

@@ -19,6 +19,10 @@ import {
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { eq, and, isNull, sql, or } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface Suggestion {
   kind: "document" | "control" | "risk";
@@ -76,7 +80,7 @@ function score(haystack: string, needle: string[]): number {
   }, 0);
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string; stepId: string }> },
 ) {
@@ -238,4 +242,4 @@ export async function GET(
       suggestions: top,
     },
   });
-}
+});

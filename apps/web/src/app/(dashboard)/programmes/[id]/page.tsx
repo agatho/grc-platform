@@ -162,7 +162,7 @@ export default function ProgrammeCockpitPage({
               {t(`msType.${j.msType}`)} • {j.templateCode}@{j.templateVersion}
             </p>
             {j.description && (
-              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-500">
                 {j.description}
               </p>
             )}

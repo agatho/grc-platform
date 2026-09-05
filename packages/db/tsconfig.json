@@ -1,0 +1,73 @@
+{
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] This package had no tsconfig.json
+  // at all, so `tsc --noEmit -p tsconfig.json` failed with TS5058 and CI
+  // (.github/workflows/ci.yml) type-checked only apps/web and apps/worker.
+  // The six unchecked packages were exactly the ones carrying the data model,
+  // the Zod schemas and the RBAC/OIDC/SAML/SCIM logic — verified only as far
+  // as apps/web and apps/worker happened to import them.
+  //
+  // No `rootDir`: several packages legitimately import a sibling's source
+  // (packages/db/tests/rls pulls in packages/auth/src/cache), and a rootDir
+  // rejects that with TS6059 without saying anything about type correctness.
+  // `noEmit` makes the output layout irrelevant anyway.
+  //
+  // `noUncheckedIndexedAccess` and `noUnusedLocals` are inherited from
+  // tsconfig.base.json and are switched OFF here, with the count measured on
+  // 2026-09-01:
+  //
+  //   package    errors with both ON    errors with both OFF (this config)
+  //   shared               502                      0
+  //   db                   641                      0
+  //   auth                 321                      0
+  //   ai                     0                      0
+  //   email                542*                     0   (*jsx was unset)
+  //   ui                     0                      0
+  //
+  // Those ~1.400 findings are real — they are what four years of writing
+  // against an unchecked project accumulates — but they belong to the packages
+  // WP2/WP3/WP6/WP8 own, not to WP12, and burying them in this package's diff
+  // would make neither reviewable. Getting the type-check to RUN at all is the
+  // finding; raising these two flags is the ratchet, and it is handed over in
+  // /work/audit/remediation/WP12.md.
+
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b, Strang 6 · OP-065] Die Messung oben
+  // stammt vom 2026-09-01 und war NICHT die Zahl dieses Pakets: sie zählte
+  // beide Schalter zusammen und, weil beim Einschalten in einem Paket auch
+  // die Quellen seiner Geschwisterpakete in das Programm geraten, dieselben
+  // Fundstellen in `shared` und `db` in jedem Paket erneut mit. Neu gemessen
+  // am 2026-09-03, nur `noUncheckedIndexedAccess`, je Paket die EIGENEN
+  // Dateien:
+  //
+  //   Paket        eigene Fehler   davon src   davon tests
+  //   shared            278            172         106
+  //   db                452             57         395
+  //   ai                 80              9          71
+  //   auth               30             28           2
+  //   automation         17             17           0
+  //   events              8              0           8
+  //   email               8              2           6
+  //   reporting           4              4           0
+  //   graph               3              3           0
+  //   ui                  0              0           0
+  //
+  // Alle abgetragen; `noUncheckedIndexedAccess` steht deshalb wieder auf dem
+  // ererbten `true` aus tsconfig.base.json. `noUnusedLocals` bleibt vorerst
+  // aus — das ist eine andere Fehlerklasse und ein eigener Punkt.
+  // Belege und die dabei gefundenen Produktdefekte: docs/UMSETZUNG-WELLE-4B-6.md
+
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `vite/client` deklariert
+    // `ImportMeta.glob`. Ohne den Eintrag scheiterte
+    // tests/unit/all-schemas-smoke.test.ts (WP11 · S11-10) mit TS2339/TS18046 —
+    // unter Vitest laeuft der Test korrekt, nur der Typcheck kannte die
+    // Vite-Erweiterung von `import.meta` nicht.
+    "types": ["node", "vite/client"],
+    "module": "preserve",
+    "noUnusedLocals": false
+  },
+  "include": ["src", "tests"]
+}

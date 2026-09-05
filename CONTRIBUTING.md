@@ -90,6 +90,39 @@ Module:
 - Bei Security-PRs: zusaetzlich Code-Owner-Review aus `@arctos-security`
 - Squash-Merge bevorzugt; bei Multi-Commit-Features Merge-Commit erlaubt
 
+### Was ein Review ablehnt, ohne zu diskutieren
+
+> **[Welle 5b · OP-159, 2026-09-05]** Drei Abkuerzungen, die ein gruenes
+> Ergebnis erzeugen, ohne dass etwas gemessen wurde. Sie sind alle drei
+> waehrend des Audits ARCTOS-FULL-2026-08-31 im Code gefunden worden, und alle
+> drei kosteten Wochen, bis jemand merkte, dass das Tor nicht mehr zusteht.
+
+1. **`ARCTOS_BUILD_IGNORE_TS_ERRORS=1`, um Typfehler loszuwerden.** Der
+   Schalter (`apps/web/next.config.ts:67`) existiert fuer genau einen Fall:
+   einen Notfall-Hotfix-Build, wenn die Produktion steht. Er ist **kein**
+   Weg, einen roten Typecheck zu umgehen. Vorher stand dort ein bedingungsloses
+   `ignoreBuildErrors: true`, und `next build` meldete jahrelang Erfolg,
+   waehrend der Typecheck fiel (S12-16). Wer den Schalter in einer Pipeline,
+   einem Dockerfile oder einem `package.json`-Skript setzt, aendert die
+   Bedeutung von „der Build ist gruen" fuer alle danach. Ein PR, der ihn
+   setzt, braucht die Begruendung im PR-Body und ein Ablaufdatum.
+
+2. **Ein Tor mit `|| true` oder `continue-on-error: true` versehen.** Ein Tor,
+   das nicht ausloesen kann, ist schlechter als gar keins: es erzeugt den
+   Eindruck einer Pruefung. Dieser Audit hat neun davon gefunden — eines
+   verdeckte zwei Wellen lang eine echte Regression
+   (`.github/workflows/secret-scanning.yml`, siehe dortigen Kommentar). Wenn
+   ein Schritt wirklich nur informativ sein soll, gehoert das in den Namen des
+   Schritts, nicht in eine verschluckte Fehlerbehandlung.
+
+3. **Eine Ratsche anheben, weil sie reisst.** `.eslint-ratchet.json`, die
+   Coverage-Baseline und die i18n-Budgets duerfen sich nur nach unten bewegen.
+   Eine Anhebung braucht eine Begruendung **in der Datei** und einen zweiten
+   Reviewer. Eine Ratsche, die man beim Reissen hochstellt, ist keine Ratsche.
+
+Dasselbe gilt sinngemaess fuer ein `it.fails`, ein `describe.skip` und ein
+`expect(…).toBeDefined()` auf einem Wert, der nie undefined sein kann.
+
 ## Security-Issues
 
 **Nicht** in oeffentliche Issues posten — siehe [SECURITY.md](./SECURITY.md).

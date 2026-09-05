@@ -1,9 +1,13 @@
 import { db, extensionMarketplace, plugin } from "@grc/db";
-import { eq, desc, sql, ilike } from "drizzle-orm";
+import { eq, desc, sql, or, ilike } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/plugins/marketplace — Browse marketplace
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -18,6 +22,21 @@ export async function GET(req: Request) {
     conditions.push(eq(extensionMarketplace.pricingModel, pricingModel));
   if (featured === "true")
     conditions.push(eq(extensionMarketplace.isFeatured, true));
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-176] `search` wurde gelesen und
+  // nie in eine Bedingung uebersetzt: die Marktplatzsuche filterte nichts.
+  // Gesucht wird ueber die beiden Spalten, die die Kachel anzeigt (`title`,
+  // `short_description`) — beide liegen auf `extension_marketplace`, damit
+  // die Zaehlabfrage weiter ohne den Verbund auf `plugin` auskommt und
+  // Liste und `total` dieselbe Bedingung sehen.
+  const term = search?.trim();
+  if (term) {
+    const pattern = `%${term}%`;
+    const match = or(
+      ilike(extensionMarketplace.title, pattern),
+      ilike(extensionMarketplace.shortDescription, pattern),
+    );
+    if (match) conditions.push(match);
+  }
 
   const whereClause =
     conditions.length > 0
@@ -51,4 +70,4 @@ export async function GET(req: Request) {
     .where(whereClause);
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
-}
+});

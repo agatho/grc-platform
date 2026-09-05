@@ -11,9 +11,6 @@ import {
   Code2,
   AppWindow,
   Loader2,
-  Copy,
-  Eye,
-  EyeOff,
   Trash2,
 } from "lucide-react";
 

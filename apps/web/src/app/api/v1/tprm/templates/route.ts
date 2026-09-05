@@ -2,13 +2,17 @@ import { db, catalog, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const VALID_SOURCES = ["vda_isa_tisax", "eu_dora"] as const;
 
 type TemplateSource = (typeof VALID_SOURCES)[number];
 
 // GET /api/v1/tprm/templates?source=vda_isa_tisax|eu_dora
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "process_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -79,4 +83,4 @@ export async function GET(req: Request) {
       level: e.level,
     })),
   });
-}
+});

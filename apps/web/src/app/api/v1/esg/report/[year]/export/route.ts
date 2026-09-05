@@ -11,6 +11,10 @@ import {
 import { requireModule } from "@grc/auth";
 import { eq, and, gte, lte } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // /api/v1/esg/report/[year]/export — JSON export for the annual
 // report.
@@ -28,14 +32,18 @@ interface RouteCtx {
   params: Promise<{ year: string }>;
 }
 
-export async function POST(req: Request, routeCtx: RouteCtx) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  routeCtx: RouteCtx,
+) {
   return handleExport(req, routeCtx, /* recordExport */ true);
-}
-
-export async function GET(req: Request, routeCtx: RouteCtx) {
+});
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  routeCtx: RouteCtx,
+) {
   return handleExport(req, routeCtx, /* recordExport */ false);
-}
-
+});
 async function handleExport(
   req: Request,
   { params }: RouteCtx,

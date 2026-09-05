@@ -1,0 +1,33 @@
+Kreditantrag — Datenschutz
+
+Sicht: Datenschutz — Wo entstehen personenbezogene Daten, wohin fließen sie, wann werden sie gelöscht?
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+Kante Flow_B2: Vertrauensgrenze: Übergang von Sachbearbeitung nach ScoreWorks Inc. (Drittland, US). Es werden besondere Kategorien personenbezogener Daten übertragen. Keine Übermittlungsgarantie hinterlegt.
+Kante MessageFlow_1: Vertrauensgrenze: Übergang von Kunde nach Sachbearbeitung (externe Stelle). Es werden personenbezogene Daten übertragen.
+Kante MessageFlow_2: Vertrauensgrenze: Übergang von ScoreWorks Inc. nach Kunde (externe Stelle, US). Es werden besondere Kategorien personenbezogener Daten übertragen. Keine Übermittlungsgarantie hinterlegt.
+
+Der Prozess hat 2 Startereignisse: „Antrag eingegangen“, „Startereignis Start_Kunde“. Schritt 1: „Antrag eingegangen“ (Sachbearbeitung) führt zu „Antrag pruefen“. Schritt 2: „Antrag pruefen“ (Sachbearbeitung) führt zu „Entscheiden“. Schritt 3: „Entscheiden“ (Genehmigung) verzweigt in 2 Pfade: nach „Bearbeitet“, bei „Bescheid“ nach „Bescheid empfangen“. Schritt 4: „Bearbeitet“ (Genehmigung) endet hier. Schritt 5: „Bescheid empfangen“ (Kunde) führt zu „Endereignis End_Kunde“. Schritt 6: „Endereignis End_Kunde“ (Kunde) endet hier. Schritt 7: „Startereignis Start_Kunde“ (Kunde) führt zu „Antrag stellen“. Schritt 8: „Antrag stellen“ (Kunde) verzweigt in 2 Pfade: nach „Bescheid empfangen“, bei „Antrag“ nach „Antrag pruefen“. 5 Elemente tragen GRC-Hinweise in der Sicht „Datenschutz".
+
+1. Antrag eingegangen (Startereignis)
+2. Antrag pruefen (Aufgabe)
+    Personenbezug: Verarbeitet personenbezogene Daten: Antragsdaten, Bonitätsdaten. Zweck: Prüfung der Kreditwürdigkeit. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung).
+    Aufbewahrung: Aufbewahrung 120 Monate (§ 147 AO).
+    Kommentare: Kommentare: 1 offen von 2.
+3. Entscheiden (Benutzeraufgabe)
+    Personenbezug: Verarbeitet personenbezogene Daten einschließlich besonderer Kategorien: Bonitätsdaten, Gesundheitsdaten (Restschuldversicherung) (besondere Kategorie). Zweck: Kreditentscheidung einschließlich Scoring. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO. Besondere Kategorien personenbezogener Daten (Art. 9 DSGVO): Gesundheitsdaten (Restschuldversicherung).
+    Datenschutz-Folgenabschätzung: Datenschutz-Folgenabschätzung erforderlich, aber keine verknüpft — Compliance-Befund.
+    Aufbewahrung: Aufbewahrung 6 Monate (Löschkonzept Ziffer 4.2), kürzer als 12 Monate — Löschung ist zeitnah zu steuern, besondere Kategorien betroffen.
+    Weitere Hinweise: Aufbewahrung 6 Monate (Löschkonzept Ziffer 4.2), kürzer als 12 Monate — Löschung ist zeitnah zu steuern, besondere Kategorien betroffen.
+4. Bearbeitet (Endereignis)
+5. Bescheid empfangen (Empfangsaufgabe)
+6. End_Kunde (Endereignis)
+7. Start_Kunde (Startereignis)
+8. Antrag stellen (Sendeaufgabe)
+    Personenbezug: Verarbeitet personenbezogene Daten: Antragsdaten. Zweck: Antragstellung.
+    Aufbewahrung: Aufbewahrung 24 Monate.
+9. Bank (Pool)
+10. Sachbearbeitung (Lane)
+    Lane-Träger: Rolle Sachbearbeitung, Organisationseinheit Kreditbearbeitung Inland, Qualifikationsquote 92 %, offen: Buchhaltung — 5 von 8 ohne Pflichtschulung; Sachbearbeitung — 2 von 25 ohne Pflichtschulung. Qualifikationsquote 92 % der Rollenmitglieder. Offen: Buchhaltung — 5 von 8 ohne Pflichtschulung; Sachbearbeitung — 2 von 25 ohne Pflichtschulung.
+11. Genehmigung (Lane)
+    Lane-Träger: Rolle Kreditentscheidung, Dienstleister ScoreWorks Inc. (Risikoklasse hoch), Sitz im Drittland US, Qualifikationsquote 61 %. Qualifikationsquote 61 % der Rollenmitglieder.
+12. Kunde (Pool)

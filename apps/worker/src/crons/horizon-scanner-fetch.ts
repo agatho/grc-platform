@@ -15,7 +15,7 @@ export const processHorizonScannerFetch = withCronInstrumentation(
   "horizon-scanner-fetch",
   async (): Promise<HorizonFetchResult> => {
     const now = new Date();
-    let itemsFetched = 0;
+    const itemsFetched = 0;
     let errors = 0;
 
     // Find sources due for fetching

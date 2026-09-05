@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Zweite, abweichende bc_exercise-Definition entfernt (0015 ist kanonisch) und Index bce_date_idx von scheduled_date auf die reale Spalte planned_date umgestellt (42703).
 -- Sprint 41: BCMS Advanced — Crisis Communication, Exercise Management, Recovery Procedures, Resilience Score
 -- Migrations 566–588
 
@@ -100,31 +105,22 @@ CREATE TABLE IF NOT EXISTS bc_exercise_scenario (
 -- ═══════════════════════════════════════════════════════════
 -- bc_exercise
 -- ═══════════════════════════════════════════════════════════
-CREATE TABLE IF NOT EXISTS bc_exercise (
-  id                          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id                      UUID NOT NULL REFERENCES organization(id),
-  title                       VARCHAR(500) NOT NULL,
-  description                 TEXT,
-  exercise_type               bc_exercise_type NOT NULL,
-  scenario_id                 UUID REFERENCES bc_exercise_scenario(id),
-  custom_scenario_description TEXT,
-  scope_bcp_ids               JSONB DEFAULT '[]',
-  scope_team_ids              JSONB DEFAULT '[]',
-  participant_ids             JSONB DEFAULT '[]',
-  scheduled_date              DATE NOT NULL,
-  actual_start                TIMESTAMPTZ,
-  actual_end                  TIMESTAMPTZ,
-  status                      VARCHAR(20) NOT NULL DEFAULT 'planned',
-  objectives                  JSONB DEFAULT '[]',
-  facilitator_id              UUID REFERENCES "user"(id),
-  overall_score               INTEGER,
-  created_by                  UUID REFERENCES "user"(id),
-  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Die widersprüchliche zweite Definition
+-- von bc_exercise wurde entfernt: 0015_sprint6_bcms.sql legt die Tabelle
+-- bereits mit planned_date/actual_date an, das CREATE TABLE IF NOT EXISTS
+-- hier no-oppte, und der folgende Index auf `scheduled_date` brach die
+-- Datei ab (42703). Fehlende Spalten werden jetzt additiv nachgezogen.
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS scenario_id UUID REFERENCES bc_exercise_scenario(id);
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS custom_scenario_description TEXT;
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS scope_bcp_ids JSONB DEFAULT '[]';
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS scope_team_ids JSONB DEFAULT '[]';
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS participant_ids JSONB DEFAULT '[]';
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS objectives JSONB DEFAULT '[]';
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS facilitator_id UUID REFERENCES "user"(id);
+ALTER TABLE bc_exercise ADD COLUMN IF NOT EXISTS overall_score INTEGER;
 CREATE INDEX IF NOT EXISTS bce_org_idx ON bc_exercise(org_id);
 CREATE INDEX IF NOT EXISTS bce_status_idx ON bc_exercise(org_id, status);
-CREATE INDEX IF NOT EXISTS bce_date_idx ON bc_exercise(org_id, scheduled_date);
+CREATE INDEX IF NOT EXISTS bce_date_idx ON bc_exercise(org_id, planned_date);
 
 -- ═══════════════════════════════════════════════════════════
 -- bc_exercise_inject_log

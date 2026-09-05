@@ -1,51 +1,58 @@
-import { db, user } from "@grc/db";
-import { eq, and, isNotNull } from "drizzle-orm";
-import { sql } from "drizzle-orm";
+import { runWithRequestContext } from "@grc/db";
+import {
+  hashOpaqueToken,
+  resolveIcalTokenHash,
+} from "@grc/auth/anonymous-token";
 import { generateICalFeed } from "@/lib/services/ical-generator";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface RouteParams {
   params: Promise<{ token: string }>;
 }
 
 // GET /api/v1/calendar/ical/:token — Public iCal feed (token-based auth, no session)
-export async function GET(req: Request, { params }: RouteParams) {
+//
+// #WP3-S02-08 (High) — the previous implementation did:
+//
+//   await db.execute(sql`SELECT set_config('app.current_org_id', ${orgId}, false)`);
+//
+// The third argument `false` means `is_local = false`, i.e. a SESSION-level
+// GUC. Because this handler uses no `withAuth`, the `db` proxy resolves to the
+// shared BASE pool — the pool the code itself documents as "never pinned to an
+// org context … so the base pool always stays clean". The connection returned
+// to the pool still carrying `app.current_org_id = <org A>`, and every later
+// context-free query on that same connection (login bootstrap, event bus,
+// webhook dispatch, worker jobs) then saw org A's rows where it expected none.
+//
+// #WP3-S02-05 — the token lookup itself could not work under `grc_app` either:
+// `user` is FORCE-RLS, so a context-free read returned 0 rows and every valid
+// feed URL answered 401.
+//
+// #WP3-S02-20 — the feed token was stored in PLAINTEXT and compared directly.
+// It is matched by SHA-256 hash now (migration 0411).
+//
+// Now: the token resolves through the narrow SECURITY DEFINER helper, and the
+// aggregation runs inside `runWithRequestContext`, which reserves its OWN
+// connection, pins the GUCs on THAT connection and releases it afterwards.
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { token } = await params;
 
   if (!token || token.length < 32) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Look up user by iCal token
-  const [tokenUser] = await db
-    .select({
-      id: user.id,
-      email: user.email,
-    })
-    .from(user)
-    .where(and(eq(user.icalToken, token), isNotNull(user.icalToken)));
-
-  if (!tokenUser) {
+  const resolved = await resolveIcalTokenHash(hashOpaqueToken(token));
+  if (!resolved) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Get user's primary org
-  const orgResult = await db.execute(
-    sql`SELECT org_id FROM user_organization_role WHERE user_id = ${tokenUser.id} LIMIT 1`,
+  const icalContent = await runWithRequestContext(
+    { orgId: resolved.orgId, userId: resolved.userId },
+    () => generateICalFeed(resolved.orgId),
   );
-
-  const orgRows = orgResult as unknown as Array<Record<string, unknown>>;
-  if (!orgRows || orgRows.length === 0) {
-    return new Response("No organization found", { status: 404 });
-  }
-
-  const orgId = String(orgRows[0]!.org_id);
-
-  // Set RLS context for the aggregation queries
-  await db.execute(
-    sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
-  );
-
-  const icalContent = await generateICalFeed(orgId);
 
   return new Response(icalContent, {
     status: 200,
@@ -55,4 +62,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       "Cache-Control": "no-cache, no-store, must-revalidate",
     },
   });
-}
+});

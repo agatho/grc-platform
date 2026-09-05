@@ -12,8 +12,13 @@ import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { computeNextBestActions, type StepCandidate } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -122,11 +127,22 @@ export async function GET(
 
     return Response.json({ data: actions });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[programmes/next-actions/GET] failed:", message, err);
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-174] `reason: message` gab den
+    // rohen Treibertext an den Aufrufer zurueck — genau der Befund, den
+    // E2E-TRIAGE-2026-09-02 in der Schwesterroute `journeys/route.ts`
+    // (POST) behoben hat: ein fehlschlagendes Statement liefert dort den
+    // vollstaendigen SQL-Text samt gebundener Werte (`org_id`, `owner_id`,
+    // `created_by`), also Schema- und Bezeichnerpreisgabe an jeden, der
+    // einen 500er provozieren kann. Die Behebung hat diese Datei nicht
+    // erfasst. Der Grund gehoert in den Serverlog, nicht in die Antwort.
+    log.error("[programmes/next-actions/GET] failed", { err });
     return Response.json(
-      { error: "Failed to compute next actions", reason: message },
+      {
+        error: "Failed to compute next actions",
+        detail:
+          "The next best actions could not be computed. The cause was logged server-side.",
+      },
       { status: 500 },
     );
   }
-}
+});

@@ -22,6 +22,7 @@ import {
   timestamp,
   jsonb,
   AnyPgColumn,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { document } from "./document";
@@ -142,6 +143,7 @@ export const consolidationGroup = pgTable("consolidation_group", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  ownershipPct: numeric("ownership_pct", { precision: 5, scale: 2 }),
 });
 
 export const consolidationEntry = pgTable("consolidation_entry", {
@@ -172,6 +174,9 @@ export const consolidationEntry = pgTable("consolidation_entry", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  amount: numeric("amount", { precision: 18, scale: 2 }),
+  amountEur: numeric("amount_eur", { precision: 18, scale: 2 }),
+  fxRate: numeric("fx_rate", { precision: 12, scale: 6 }),
 });
 
 // ─────────── EU Taxonomy (VO 2020/852) ───────────
@@ -207,4 +212,8 @@ export const euTaxonomyAssessment = pgTable("eu_taxonomy_assessment", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  capexAmount: numeric("capex_amount", { precision: 15, scale: 2 }),
+  evidenceIds: uuid("evidence_ids").array(),
+  opexAmount: numeric("opex_amount", { precision: 15, scale: 2 }),
+  turnoverAmount: numeric("turnover_amount", { precision: 15, scale: 2 }),
 });

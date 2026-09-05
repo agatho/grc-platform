@@ -178,3 +178,50 @@ describe("Email template render-smoke", () => {
     });
   }
 });
+
+// [Welle 4b, Strang 6 · OP-065] `UserInvited` und die Prototypenkette.
+//
+// `roleLabels[lang][roleName]` schlug die Rollenbezeichnung mit einer
+// Zeichenkette aus dem Aufrufer in einem `Record<string, string>` nach.
+// Gemessen am 2026-09-03 gegen 01d0e4cc: für `roleName = "constructor"` kam
+// der Object-Konstruktor zurück, also eine FUNKTION. `|| roleName` greift
+// darauf nicht — eine Funktion ist wahr —, und React lehnt eine Funktion als
+// Kind mit „Functions are not valid as a React child" ab. Aus einer
+// unbekannten Rolle wurde damit keine unbekannte Rolle, sondern eine
+// unbrauchbare E-Mail.
+describe("UserInvited — Rollenbezeichnung", () => {
+  const props = {
+    lang: "de" as const,
+    orgName: "ACME GmbH",
+    inviterName: "Ada Lovelace",
+    acceptUrl: "https://example.org/invite/abc",
+  };
+
+  it("übersetzt eine bekannte Rolle", async () => {
+    const html = await render(
+      React.createElement(UserInvited, { ...props, roleName: "risk_manager" }),
+    );
+    expect(html).toContain("Risikomanager");
+  });
+
+  it.each(["constructor", "toString", "valueOf", "hasOwnProperty"])(
+    "zeigt für den Prototyp-Schlüssel %s den Rohwert, nicht eine Funktion",
+    async (roleName) => {
+      const html = await render(
+        React.createElement(UserInvited, { ...props, roleName }),
+      );
+      expect(html).not.toContain("native code");
+      expect(html).toContain(roleName);
+    },
+  );
+
+  it("zeigt eine unbekannte Rolle unverändert an", async () => {
+    const html = await render(
+      React.createElement(UserInvited, {
+        ...props,
+        roleName: "erfundene_rolle",
+      }),
+    );
+    expect(html).toContain("erfundene_rolle");
+  });
+});

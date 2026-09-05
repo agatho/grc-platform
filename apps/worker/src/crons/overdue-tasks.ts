@@ -5,16 +5,20 @@
 import { db, task, notification, user } from "@grc/db";
 import { eq, and, lt, isNull, notInArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
+import { withOrgContext, reportJobError } from "../lib/job-runtime";
 
 interface OverdueTaskResult {
   processed: number;
   errors: string[];
+  ok: boolean;
 }
 
 export const processOverdueTasks = withCronInstrumentation(
   "overdue-tasks",
   async (): Promise<OverdueTaskResult> => {
     const errors: string[] = [];
+    let processed = 0;
     const now = new Date();
 
     // Find all tasks where due_date < NOW() and status is not terminal/overdue
@@ -38,34 +42,25 @@ export const processOverdueTasks = withCronInstrumentation(
       );
 
     if (overdueTasks.length === 0) {
-      return { processed: 0, errors: [] };
+      return { processed: 0, errors: [], ok: true };
     }
 
-    // Batch update all found tasks to status='overdue'
-    const taskIds = overdueTasks.map((t) => t.id);
-
-    try {
-      await db
-        .update(task)
-        .set({
-          status: "overdue",
-          updatedAt: now,
-        })
-        .where(
-          and(
-            sql`${task.id} = ANY(${taskIds}::uuid[])`,
-            isNull(task.deletedAt),
-          ),
-        );
-    } catch (err) {
-      // In-result error counter kept for downstream callers; the wrapper
-      // also logs a structured 'error' phase entry.
-      const message = err instanceof Error ? err.message : String(err);
-      errors.push(`Batch status update failed: ${message}`);
-      return { processed: 0, errors };
-    }
-
-    // Create notifications for each overdue task
+    // ── [WP9 · S10-13] Atomicity ────────────────────────────────────
+    //
+    // The bulk status change and the notification loop used to be two
+    // unconnected operations. The audit's scenario: 5.000 overdue tasks,
+    // the worker is stopped between them (deploy, OOM, container restart —
+    // a realistic window at that size). All 5.000 are already `overdue`,
+    // some have no notification, and the next run cannot find them again
+    // because the selection excludes `status = 'overdue'`. The
+    // notification is permanently lost and the state is not reconstructible
+    // from the data model.
+    //
+    // Now: one transaction per task. The task flips to `overdue` in the
+    // SAME transaction that writes its notifications, so a task is either
+    // marked and notified or neither. A guarded UPDATE (`AND status <> …`)
+    // makes it idempotent, and `RETURNING` tells us whether we actually won
+    // the row — a concurrent run cannot double-notify.
     for (const overdueTask of overdueTasks) {
       try {
         const daysOverdue = overdueTask.dueDate
@@ -94,30 +89,51 @@ export const processOverdueTasks = withCronInstrumentation(
           updatedAt: now,
         };
 
-        // Notify the assignee (if one exists)
-        if (overdueTask.assigneeId) {
-          await db.insert(notification).values({
-            ...notificationBase,
-            userId: overdueTask.assigneeId,
-          });
-        }
+        await withOrgContext(overdueTask.orgId, async (tx) => {
+          const claimed = await tx
+            .update(task)
+            .set({ status: "overdue", updatedAt: now })
+            .where(
+              and(
+                eq(task.id, overdueTask.id),
+                notInArray(task.status, ["done", "cancelled", "overdue"]),
+                isNull(task.deletedAt),
+              ),
+            )
+            .returning({ id: task.id });
+          if (claimed.length === 0) return; // another run got there first
 
-        // Notify the task creator (if different from assignee)
-        if (
-          overdueTask.createdBy &&
-          overdueTask.createdBy !== overdueTask.assigneeId
-        ) {
-          await db.insert(notification).values({
-            ...notificationBase,
-            userId: overdueTask.createdBy,
-          });
-        }
+          // Notify the assignee (if one exists)
+          if (overdueTask.assigneeId) {
+            await insertNotification(
+              { ...notificationBase, userId: overdueTask.assigneeId },
+              { job: "overdue-tasks", tx },
+            );
+          }
+
+          // Notify the task creator (if different from the assignee)
+          if (
+            overdueTask.createdBy &&
+            overdueTask.createdBy !== overdueTask.assigneeId
+          ) {
+            await insertNotification(
+              { ...notificationBase, userId: overdueTask.createdBy },
+              { job: "overdue-tasks", tx },
+            );
+          }
+          processed++;
+        });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        errors.push(`Notification for task ${overdueTask.id}: ${message}`);
+        reportJobError(
+          { job: "overdue-tasks", scope: `task ${overdueTask.id}` },
+          err,
+        );
+        errors.push(
+          `Task ${overdueTask.id}: ${err instanceof Error ? err.constructor.name : "Error"}`,
+        );
       }
     }
 
-    return { processed: overdueTasks.length, errors };
+    return { processed, errors, ok: errors.length === 0 };
   },
 );

@@ -3,15 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import {
   ArrowLeft,
   Webhook,
   Loader2,
   Check,
-  X as XIcon,
   RefreshCw,
-  AlertTriangle,
   Clock,
   CheckCircle2,
   XCircle,

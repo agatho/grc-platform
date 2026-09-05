@@ -6,6 +6,8 @@ import {
   setRlsContext,
   clearRlsContext,
   schema,
+  requireRow,
+  requireAt,
 } from "../helpers";
 
 /**
@@ -38,39 +40,74 @@ describe("RLS Cross-Tenant Isolation", () => {
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
     appDb = createAppDb();
 
     // Create two test organizations
-    const [orgA] = await adminDb.db
-      .insert(schema.organization)
-      .values({ name: "Test Org A (RLS)", type: "subsidiary", country: "DEU" })
-      .returning({ id: schema.organization.id });
-    const [orgB] = await adminDb.db
-      .insert(schema.organization)
-      .values({ name: "Test Org B (RLS)", type: "subsidiary", country: "AUT" })
-      .returning({ id: schema.organization.id });
+    const orgA = requireRow(
+      await adminDb.db
+        .insert(schema.organization)
+        .values({
+          name: "Test Org A (RLS)",
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: schema.organization.id }),
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.db
+        .insert(schema.organization)
+        .values({
+          name: "Test Org B (RLS)",
+          type: "subsidiary",
+          country: "AUT",
+        })
+        .returning({ id: schema.organization.id }),
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
     // Create two test users (unique per run)
-    const [uA] = await adminDb.db
-      .insert(schema.user)
-      .values({
-        email: `rls-a-${suffix}@test.dev`,
-        name: "User A",
-        passwordHash: "x",
-      })
-      .returning({ id: schema.user.id });
-    const [uB] = await adminDb.db
-      .insert(schema.user)
-      .values({
-        email: `rls-b-${suffix}@test.dev`,
-        name: "User B",
-        passwordHash: "x",
-      })
-      .returning({ id: schema.user.id });
+    const uA = requireRow(
+      await adminDb.db
+        .insert(schema.user)
+        .values({
+          email: `rls-a-${suffix}@test.dev`,
+          name: "User A",
+          passwordHash: "x",
+        })
+        .returning({ id: schema.user.id }),
+      "uA",
+    );
+    const uB = requireRow(
+      await adminDb.db
+        .insert(schema.user)
+        .values({
+          email: `rls-b-${suffix}@test.dev`,
+          name: "User B",
+          passwordHash: "x",
+        })
+        .returning({ id: schema.user.id }),
+      "uB",
+    );
     userAId = uA.id;
     userBId = uB.id;
 
@@ -136,21 +173,21 @@ describe("RLS Cross-Tenant Isolation", () => {
   it("non-superuser sees 0 organizations without RLS context", async () => {
     const result =
       await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
-    expect(result[0].cnt).toBe(0);
+    expect(requireAt(result, 0, "result").cnt).toBe(0);
   });
 
   it("non-superuser sees 0 user_organization_role without RLS context", async () => {
     const result =
       await appDb.client`SELECT count(*)::int AS cnt FROM user_organization_role`;
-    expect(result[0].cnt).toBe(0);
+    expect(requireAt(result, 0, "result").cnt).toBe(0);
   });
 
   it("user A with Org A context sees only Org A data", async () => {
     await setRlsContext(appDb.client, orgAId, userAId);
     const result = await appDb.client`SELECT id, name FROM organization`;
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(orgAId);
-    expect(result[0].name).toBe("Test Org A (RLS)");
+    expect(requireAt(result, 0, "result").id).toBe(orgAId);
+    expect(requireAt(result, 0, "result").name).toBe("Test Org A (RLS)");
     await clearRlsContext(appDb.client);
   });
 
@@ -167,7 +204,7 @@ describe("RLS Cross-Tenant Isolation", () => {
     await setRlsContext(appDb.client, orgBId, userBId);
     const result = await appDb.client`SELECT id, name FROM organization`;
     expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(orgBId);
+    expect(requireAt(result, 0, "result").id).toBe(orgBId);
     await clearRlsContext(appDb.client);
   });
 
@@ -176,8 +213,8 @@ describe("RLS Cross-Tenant Isolation", () => {
     const roles =
       await appDb.client`SELECT user_id, role FROM user_organization_role`;
     expect(roles).toHaveLength(1);
-    expect(roles[0].user_id).toBe(userAId);
-    expect(roles[0].role).toBe("admin");
+    expect(requireAt(roles, 0, "roles").user_id).toBe(userAId);
+    expect(requireAt(roles, 0, "roles").role).toBe("admin");
     await clearRlsContext(appDb.client);
   });
 
@@ -185,18 +222,18 @@ describe("RLS Cross-Tenant Isolation", () => {
     await setRlsContext(appDb.client, orgAId, userAId);
     const orgAResult =
       await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
-    expect(orgAResult[0].cnt).toBe(1);
+    expect(requireAt(orgAResult, 0, "orgAResult").cnt).toBe(1);
 
     await setRlsContext(appDb.client, orgBId, userBId);
     const orgBResult = await appDb.client`SELECT id FROM organization`;
     expect(orgBResult).toHaveLength(1);
-    expect(orgBResult[0].id).toBe(orgBId);
+    expect(requireAt(orgBResult, 0, "orgBResult").id).toBe(orgBId);
     await clearRlsContext(appDb.client);
   });
 
   it("superuser (grc) can see all organizations regardless of RLS", async () => {
     const result =
       await adminDb.client`SELECT count(*)::int AS cnt FROM organization`;
-    expect(result[0].cnt).toBeGreaterThanOrEqual(2);
+    expect(requireAt(result, 0, "result").cnt).toBeGreaterThanOrEqual(2);
   });
 });

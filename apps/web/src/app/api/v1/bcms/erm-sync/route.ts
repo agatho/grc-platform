@@ -1,7 +1,11 @@
-import { db } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 /**
  * POST /api/v1/bcms/erm-sync
@@ -10,7 +14,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
  * - Creates risk entries for crisis_scenarios where risk_score >= threshold and erm_risk_id IS NULL
  * - Updates crisis_scenario.erm_risk_id and erm_synced_at
  */
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -24,7 +28,7 @@ export async function POST(req: Request) {
           WHERE org_id = ${ctx.orgId} AND module_key = 'bcms'
           LIMIT 1`,
     );
-    const threshold = configResult.rows?.[0]?.score_threshold ?? 12;
+    const threshold = firstRow(configResult)?.score_threshold ?? 12;
 
     // 2. Find crisis scenarios eligible for sync
     const candidates = await tx.execute(
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
             AND deleted_at IS NULL`,
     );
 
-    if (!candidates.rows?.length) {
+    if (!toRows(candidates).length) {
       return [];
     }
 
@@ -45,7 +49,7 @@ export async function POST(req: Request) {
       [];
 
     // 3. For each candidate, create a risk entry and link back
-    for (const row of candidates.rows) {
+    for (const row of toRows(candidates)) {
       const title = `BC-Risiko: ${row.name}`;
       const riskResult = await tx.execute(
         sql`INSERT INTO risk (
@@ -63,7 +67,7 @@ export async function POST(req: Request) {
             RETURNING id`,
       );
 
-      const riskId = riskResult.rows?.[0]?.id as string;
+      const riskId = firstRow(riskResult)?.id as string;
 
       // 4. Update crisis_scenario with erm_risk_id
       await tx.execute(
@@ -90,4 +94,4 @@ export async function POST(req: Request) {
       items: synced,
     },
   });
-}
+});

@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
+import { awaitAppReady } from "./fixtures/wait";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("Catalog Browser", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("generic catalogs API returns seeded data", async ({ request }) => {
     const res = await request.get("/api/v1/catalogs?limit=50");
@@ -36,8 +38,7 @@ test.describe("Catalog Browser", () => {
 
   test("catalog browser page loads", async ({ page }) => {
     await page.goto("/catalogs");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
 
     // Should show catalog heading
     await expect(page.getByText(/katalog|catalog/i).first()).toBeVisible();
@@ -45,8 +46,7 @@ test.describe("Catalog Browser", () => {
 
   test("framework coverage page loads", async ({ page }) => {
     await page.goto("/catalogs/mappings");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(8000);
+    await awaitAppReady(page);
 
     // Page should load without error
     const body = await page.locator("body").innerText();

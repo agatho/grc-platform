@@ -11,6 +11,7 @@ import {
 import { eq, and, lte, sql } from "drizzle-orm";
 import { reportGenerator } from "@grc/reporting";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface ReportSchedulerResult {
   checked: number;
@@ -130,7 +131,15 @@ export const processReportScheduler = withCronInstrumentation(
           .where(eq(reportSchedule.id, schedule.id));
 
         triggered++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "report-scheduler",
+            scope: "Update schedule: last_run_at and next_run_at",
+          },
+          err,
+        );
         errors++;
       }
     }

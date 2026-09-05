@@ -16,6 +16,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { AssessmentRun, EvalResult, RiskDecision } from "@grc/shared";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface AssetItem {
   id: string;
@@ -57,6 +58,9 @@ function WizardInner() {
   const [assessment, setAssessment] = useState<AssessmentRun | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>("assets");
   const [loading, setLoading] = useState(true);
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Ein Assistent, dessen Stammdaten nicht
+  // geladen sind, darf nicht mit leeren Listen weiterlaufen.
+  const [loadError, setLoadError] = useState(false);
 
   // Step 1: Assets
   const [assets, setAssets] = useState<AssetItem[]>([]);
@@ -82,29 +86,29 @@ function WizardInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [aRes, assetRes, ctrlRes, rsRes] = await Promise.all([
+      // [ARCTOS-FULL-2026-08-31 · OP-050] Drei von vier Aufrufen standen auf
+      // `limit=200` und liefen in 422; die `if (…Res.ok)`-Kaskade hat alle drei
+      // verschluckt. Der Assistent zeigte danach Schritt für Schritt leere
+      // Auswahllisten — keine Assets, keine Kontrollen, keine Szenarien — und
+      // liess sich trotzdem abschliessen. Eine Schutzbedarfsfeststellung über
+      // null Assets ist eine Aussage, die dieses Modul nicht machen darf.
+      const [assessmentRes, assets, controls, scenarios] = await Promise.all([
         fetch(`/api/v1/isms/assessments/${id}`),
-        fetch("/api/v1/assets?limit=200"),
-        fetch("/api/v1/controls?limit=200"),
-        fetch("/api/v1/isms/risk-scenarios?limit=200"),
+        fetchAllPages<AssetItem>("/api/v1/assets"),
+        fetchAllPages<ControlItem>("/api/v1/controls"),
+        fetchAllPages<RiskScenarioItem>("/api/v1/isms/risk-scenarios"),
       ]);
-      if (aRes.ok) {
-        const j = await aRes.json();
+      if (assessmentRes.ok) {
+        const j = await assessmentRes.json();
         setAssessment(j.data);
       }
-      if (assetRes.ok) {
-        const j = await assetRes.json();
-        setAssets(j.data ?? []);
-        setSelectedAssets(new Set((j.data ?? []).map((a: AssetItem) => a.id)));
-      }
-      if (ctrlRes.ok) {
-        const j = await ctrlRes.json();
-        setControls(j.data ?? []);
-      }
-      if (rsRes.ok) {
-        const j = await rsRes.json();
-        setRiskScenarios(j.data ?? []);
-      }
+      setAssets(assets);
+      setSelectedAssets(new Set(assets.map((a) => a.id)));
+      setControls(controls);
+      setRiskScenarios(scenarios);
+    } catch (err) {
+      console.error("isms/assessments: Stammdaten nicht geladen", err);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -181,6 +185,18 @@ function WizardInner() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div
+        role="alert"
+        className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+      >
+        Assets, Kontrollen oder Risikoszenarien konnten nicht geladen werden.
+        Der Assistent würde sonst über leeren Listen bewertet.
       </div>
     );
   }

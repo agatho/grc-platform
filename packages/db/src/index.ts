@@ -1,3 +1,67 @@
+// ════════════════════════════════════════════════════════════════════
+// #OP-081 — Server-Guard: dieses Modul gehoert nicht in ein Client-Bundle
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund. Dieser Barrel exportiert `db` — den postgres-js-Pool samt
+// Verbindungszeichenfolge aus `DATABASE_URL` — und den kompletten
+// Drizzle-Schemabaum. Importierte eine Datei mit `"use client"` ihn
+// (direkt oder ueber eine Kette), erzeugte der Bundler bisher ein
+// Browser-Bundle daraus: `postgres` wird auf einen Shim gelegt, und
+// alles, was der Bundler als Konstante ansieht, landet im ausgelieferten
+// JavaScript. Es gab keinen Fehler, nur ein groesseres Bundle.
+//
+// Mittel. Der Marker `server-only` (React/Next). Next.js bildet den
+// Spezifikator je Bundle-Schicht ab
+// (node_modules/next/dist/build/create-compiler-aliases.js:185-197):
+//
+//   Server-Schichten : "server-only$" -> next/dist/compiled/server-only/empty
+//   alle uebrigen    : "server-only$" -> next/dist/compiled/server-only/index
+//
+// und laesst auf die zweite Aufloesung den `next-invalid-import-error-loader`
+// los (webpack-config.js:1143-1158), der den Build mit
+// "'server-only' cannot be imported from a Client Component module"
+// abbricht (Fehlercode E394). Ein Import aus einer Client-Datei ist damit
+// ein BUILDFEHLER statt eines stillen Shims.
+//
+// Warum hier KEIN `import "server-only";` steht — gemessen, nicht vermutet.
+// Das npm-Paket `server-only` liefert seinen Wurf ueber die
+// `default`-Condition aus (`exports: { ".": { "react-server": "./empty.js",
+// "default": "./index.js" } }`, index.js ist ein blosses `throw`). Nur
+// Next.js setzt die Condition `react-server`; Node setzt sie nicht. Dieser
+// Barrel hat aber ausserhalb von Next drei weitere Konsumenten:
+// apps/worker (137 Dateien), die tsx-Skripte in packages/db (migrate-all,
+// seed) und saemtliche vitest-Suiten. Ein statisches `import "server-only"`
+// wurde am 2026-09-03 ausprobiert und ergab:
+//
+//   packages/db  vitest run   1 Suite rot  (schema-drift.test.ts)
+//   packages/auth vitest run  4 Suiten rot
+//   apps/worker  vitest run   4 Suiten + 2 Tests rot
+//   `import("@grc/db")` unter tsx   -> Error: This module cannot be
+//                                      imported from a Client Component
+//
+// Deshalb der dynamische Import: der Bundler nimmt die Abhaengigkeit
+// unbedingt in den Modulgraphen auf (ein `import()` laesst sich nicht
+// wegoptimieren), also greifen Alias und Loader unveraendert. Unter Node
+// wird derselbe Wurf zu einer abgelehnten Zusage und hier abgefangen — ein
+// Compilerfehler laesst sich durch ein `catch` NICHT unterdruecken, denn er
+// entsteht beim Uebersetzen, nicht beim Ausfuehren.
+// Die Typen: `server-only` liefert keine mit (index.js ist ein blosses
+// `throw`). apps/web typprueft mit `allowJs`, packages/db und packages/auth
+// mit `module: "preserve"` — dort faellt das nicht auf; apps/worker hat
+// beides nicht und meldete TS7016 an genau dieser Zeile. Die
+// Umgebungsdeklaration steht in server-only.d.ts; sie muss ueber eine
+// Dreifach-Schraegstrich-Referenz kommen, weil apps/worker nur sein eigenes
+// `src/**` einliest und eine freistehende .d.ts eines fremden Pakets sonst
+// nicht in sein Programm gelangt.
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- siehe oben
+/// <reference path="./server-only.d.ts" />
+void import("server-only").catch(() => {
+  // Erwartet unter Node (Worker, tsx, vitest): das Paket wirft ueber seine
+  // `default`-Condition. Ebenso erwartet, wenn das Paket im Produktionsbaum
+  // fehlt. Beides ist hier folgenlos; die Wirkung dieses Guards liegt
+  // ausschliesslich im Bundler.
+});
+
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 // #SEC-F01b — request-scoped RLS context. Imported here so the `db` proxy can
@@ -7,6 +71,7 @@ import postgres from "postgres";
 // module-eval time.
 import { requestDbStorage } from "./request-context";
 import * as platform from "./schema/platform";
+import * as auditChain from "./schema/audit-chain";
 import * as risk from "./schema/risk";
 import * as processSchema from "./schema/process";
 import * as taskSchema from "./schema/task";
@@ -72,6 +137,7 @@ import * as incidentTimelineSchema from "./schema/incident-timeline";
 import * as processRaciSchema from "./schema/process-raci";
 import * as processGrcSchema from "./schema/process-grc";
 import * as processApprovalSchema from "./schema/process-approval";
+import * as processDiagramGrcSchema from "./schema/process-diagram-grc";
 import * as apiPlatformSchema from "./schema/api-platform";
 import * as extensionSchema from "./schema/extension";
 import * as onboardingSchema from "./schema/onboarding";
@@ -153,13 +219,104 @@ import * as entityCommentSchema from "./schema/entity-comment";
 // every read/write the app performs. When APP_DATABASE_URL is unset we fall
 // back to DATABASE_URL so dev/CI (which only set DATABASE_URL = superuser
 // `grc`) keep working unchanged. Migrations, seeds and provisioning use a
-// SEPARATE client bound to DATABASE_URL (superuser) — see migrate-all.ts,
-// create-missing-tables.ts and the docker entrypoint — so schema changes and
-// GRANTs still run with the privileges they need. withReadContext /
-// withAuditContext run their set_config('app.current_org_id', …) on THIS
-// runtime pool, which is exactly where RLS now becomes effective.
+// SEPARATE client bound to DATABASE_URL (superuser) — see migrate-all.ts and
+// the docker entrypoint — so schema changes and GRANTs still run with the
+// privileges they need. withReadContext / withAuditContext run their
+// set_config('app.current_org_id', …) on THIS runtime pool, which is exactly
+// where RLS now becomes effective.
 const RUNTIME_DATABASE_URL =
   process.env.APP_DATABASE_URL ?? process.env.DATABASE_URL!;
+
+// [ARCTOS-FULL-2026-08-31 / WP2 · S01-10, abgestimmt mit WP10 · S13-10]
+//
+// Der `??`-Fallback oben ist bequem und lautlos: fehlt APP_DATABASE_URL in
+// einer Umgebung (neuer Deploy-Pfad, Kubernetes-Manifest statt Compose,
+// lokales `.env` — im Repo ist die Zeile in `.env:19` auskommentiert),
+// verbindet die gesamte Web-App als SUPERUSER `grc`. Superuser umgehen RLS
+// UNABHÄNGIG von FORCE — sämtliche Policies dieses Schemas sind dann
+// wirkungslos, und jede Route, die sich auf RLS statt auf ein explizites
+// `WHERE org_id` verlässt, wird zum Cross-Tenant-IDOR. Nichts im Code prüfte
+// das bisher; die App startete ohne eine einzige Meldung.
+//
+// Zwei Dinge sind hier zu trennen:
+//  * Die WEB-APP darf in Produktion NIEMALS privilegiert verbinden. Für sie
+//    ist ein Superuser-/BYPASSRLS-Pool ein Sicherheitsdefekt, kein
+//    Betriebsdetail — sie startet dann nicht.
+//  * Der WORKER verbindet bewusst privilegiert (S01-09: org-übergreifende
+//    Systemjobs; docker-compose.production.yml setzt APP_DATABASE_URL dort
+//    absichtlich nicht). Diese Entscheidung bleibt zulässig, muss aber
+//    EXPLIZIT erklärt werden — `ARCTOS_ALLOW_PRIVILEGED_DB=true`. Damit ist
+//    sie im Deployment sichtbar, greppbar und einzeln widerrufbar, statt
+//    still aus einer fehlenden Variablen zu folgen.
+//
+// Die Prüfung läuft asynchron beim Modul-Load (der Pool ist zu diesem
+// Zeitpunkt gerade erst gebaut) und ist exportiert, damit Tests und ein
+// Health-Endpunkt sie direkt aufrufen können.
+export interface RuntimeRoleCheck {
+  role: string;
+  isSuperuser: boolean;
+  canBypassRls: boolean;
+  appDatabaseUrlSet: boolean;
+  privilegedAllowed: boolean;
+  ok: boolean;
+}
+
+export async function checkRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
+  const rows = await client<
+    { rolname: string; rolsuper: boolean; rolbypassrls: boolean }[]
+  >`SELECT rolname, rolsuper, rolbypassrls
+      FROM pg_roles WHERE rolname = current_user`;
+  const row = rows[0] ?? {
+    rolname: "unknown",
+    rolsuper: false,
+    rolbypassrls: false,
+  };
+  const privilegedAllowed = process.env.ARCTOS_ALLOW_PRIVILEGED_DB === "true";
+  const privileged = row.rolsuper || row.rolbypassrls;
+  return {
+    role: row.rolname,
+    isSuperuser: row.rolsuper,
+    canBypassRls: row.rolbypassrls,
+    appDatabaseUrlSet: Boolean(process.env.APP_DATABASE_URL),
+    privilegedAllowed,
+    ok: !privileged || privilegedAllowed,
+  };
+}
+
+/**
+ * Startup assertion. Returns the check result; in production a violation is
+ * fatal (the process exits) so a misconfigured deploy fails loudly instead of
+ * serving every tenant's data to every tenant.
+ */
+export async function assertRuntimeRoleIsolation(): Promise<RuntimeRoleCheck> {
+  const check = await checkRuntimeRoleIsolation();
+  if (check.ok) return check;
+  const detail =
+    `[db] FATAL: the runtime pool connects as "${check.role}" ` +
+    `(rolsuper=${check.isSuperuser}, rolbypassrls=${check.canBypassRls}). ` +
+    `Such a role BYPASSES Row Level Security, which disables tenant ` +
+    `isolation for every query this process makes. ` +
+    `APP_DATABASE_URL is ${check.appDatabaseUrlSet ? "set" : "NOT set"}. ` +
+    `Point APP_DATABASE_URL at the non-superuser role grc_app ` +
+    `(deploy/provision-grc-app.sh), or — for the worker, which needs ` +
+    `cross-org access on purpose — set ARCTOS_ALLOW_PRIVILEGED_DB=true.`;
+  if (process.env.NODE_ENV === "production") {
+    console.error(detail);
+    // `process.exit` exists only in the Node.js runtime. This module is reached
+    // from the Edge middleware via @grc/auth, and Turbopack rejects the bare
+    // call at build time ("A Node.js API is used (process.exit) which is not
+    // supported in the Edge Runtime") — it fails the production build even
+    // though this branch never executes there. Resolve it dynamically and fall
+    // back to throwing, which is fatal at startup all the same.
+    const exit = (
+      globalThis as { process?: { exit?: (code: number) => never } }
+    ).process?.exit;
+    if (typeof exit === "function") exit(1);
+    throw new Error(detail);
+  }
+  console.warn(detail.replace("FATAL", "WARNING"));
+  return check;
+}
 
 // Base pool — used by ALL non-request code paths: the worker's 128 cron files,
 // the event-bus / webhook-dispatch, seeds, and any web query that runs OUTSIDE
@@ -207,17 +364,22 @@ export const requestClient = postgres(RUNTIME_DATABASE_URL, {
 });
 
 if (process.env.NODE_ENV === "production" && RUNTIME_DATABASE_URL) {
-  void client`SELECT 1`.catch((err) => {
-    // Cold-start prewarm failed — log but don't block module import. The next
-    // real request will retry and surface the error through api-wrapper.
-    console.error("[db] connection prewarm failed:", err?.message ?? err);
-  });
+  void client`SELECT 1`
+    .then(() => assertRuntimeRoleIsolation())
+    .catch((err) => {
+      // Cold-start prewarm failed — log but don't block module import. The next
+      // real request will retry and surface the error through api-wrapper.
+      // NOTE: a FAILED role assertion does not land here — it calls
+      // process.exit(1) itself (S01-10). Only connection errors do.
+      console.error("[db] connection prewarm failed:", err?.message ?? err);
+    });
 }
 
 // The full Drizzle schema, exported so request-context.ts can build a drizzle
 // client over a reserved connection with the identical schema.
 export const schema = {
   ...platform,
+  ...auditChain,
   ...risk,
   ...processSchema,
   ...taskSchema,
@@ -283,6 +445,7 @@ export const schema = {
   ...processRaciSchema,
   ...processGrcSchema,
   ...processApprovalSchema,
+  ...processDiagramGrcSchema,
   ...apiPlatformSchema,
   ...extensionSchema,
   ...onboardingSchema,
@@ -365,7 +528,14 @@ export const db = new Proxy(baseDb, {
 }) as typeof baseDb;
 
 export type Database = typeof baseDb;
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] treiberunabhängige Normalisierung
+// von `execute()`-Ergebnissen — siehe ./sql-result.ts
+export * from "./sql-result";
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Grenzwandler numeric/timestamp
+export * from "./column-input";
 export * from "./schema/platform";
+// ADR-011 rev.4 audit-chain integrity tables (WP4 / S03-01, -12, -14, -16)
+export * from "./schema/audit-chain";
 export * from "./schema/risk";
 export * from "./schema/process";
 export * from "./schema/task";
@@ -431,6 +601,7 @@ export * from "./schema/incident-timeline";
 export * from "./schema/process-raci";
 export * from "./schema/process-grc";
 export * from "./schema/process-approval";
+export * from "./schema/process-diagram-grc";
 export * from "./schema/api-platform";
 export * from "./schema/extension";
 export * from "./schema/onboarding";

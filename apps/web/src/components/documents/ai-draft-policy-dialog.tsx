@@ -30,6 +30,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AiDisclosureNotice,
+  readAiDisclosure,
+  type AiDisclosureData,
+} from "@/components/ai/ai-disclosure";
 
 const MAX_ENTRIES = 20;
 
@@ -74,6 +79,9 @@ export function AiDraftPolicyDialog() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftResult | null>(null);
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S05-12, handed over by WP6] See
+  // components/ai/ai-disclosure.tsx.
+  const [disclosure, setDisclosure] = useState<AiDisclosureData | null>(null);
   const [entrySearch, setEntrySearch] = useState("");
 
   // Load control frameworks when the dialog opens.
@@ -151,6 +159,7 @@ export function AiDraftPolicyDialog() {
         return;
       }
       setDraft(json.data);
+      setDisclosure(readAiDisclosure(json.data));
     } catch {
       setError(t("draftPolicy.error"));
     } finally {
@@ -236,7 +245,9 @@ export function AiDraftPolicyDialog() {
               <Sparkles size={16} className="text-violet-600" />
               {t("draftPolicy.title")}
             </DialogTitle>
-            <DialogDescription>{t("common.aiDisclaimer")}</DialogDescription>
+            {/* [WP12 · S05-12] The notice moves below the result — see
+                ai-disclosure.tsx. */}
+            <DialogDescription>{t("draftPolicy.subtitle")}</DialogDescription>
           </DialogHeader>
 
           {error && (
@@ -442,6 +453,8 @@ export function AiDraftPolicyDialog() {
               </DialogFooter>
             </div>
           )}
+          {/* [WP12 · S05-12] AI Act Art. 50 notice from the response. */}
+          <AiDisclosureNotice disclosure={disclosure} className="mt-4" />
         </DialogContent>
       </Dialog>
     </>

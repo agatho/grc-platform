@@ -28,7 +28,7 @@ import { useDateFormat } from "@/lib/format-date";
 
 export default function MyPoliciesPage() {
   const t = useTranslations("policies");
-  const router = useRouter();
+  const _router = useRouter();
   const [policies, setPolicies] = useState<MyPendingPolicy[]>([]);
   const [loading, setLoading] = useState(true);
 

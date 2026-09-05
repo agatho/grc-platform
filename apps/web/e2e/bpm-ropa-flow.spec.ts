@@ -9,9 +9,10 @@
  *   5. Export org-wide ROPA PDF
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("BPM — ROPA profile + DPIA auto-create + export", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("high-risk ROPA save → DPIA created → CSV export downloads", async ({
     request,

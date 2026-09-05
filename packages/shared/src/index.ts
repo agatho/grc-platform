@@ -30,10 +30,37 @@ export {
 } from "./secret-crypto";
 export {
   checkWebhookUrl,
+  checkOutboundUrl,
+  normalizeNumericIPv4,
   webhookUrlRefine,
   webhookUrlRefineMessage,
   type WebhookUrlCheckResult,
+  type OutboundUrlCheckOptions,
 } from "./url-safety";
+// #S04-04: ZIP/XLSX decompression-bomb pre-flight. Pure (no node:
+// built-ins), so it is safe in the client bundle too.
+export {
+  inspectZipArchive,
+  assertZipWithinLimits,
+  ZipBombError,
+  SPREADSHEET_ZIP_LIMITS,
+  type ZipEntryInfo,
+  type ZipInspection,
+  type ZipLimits,
+} from "./lib/zip-safety";
+// #S04-09: the per-route query-parameter primitives deliberately live in
+// apps/web/src/lib/query-schema.ts, NOT here. This package pins zod 3.x
+// while apps/web resolves zod 4.x; schema OBJECTS built here cannot be
+// embedded in a z.object() built there (v3 instances inside a v4 schema
+// break at runtime). Only version-agnostic code belongs in @grc/shared.
+// #S04-06: magic-byte content-type verification for uploads.
+export {
+  sniffFileType,
+  verifyUploadSignature,
+  MAGIC_BYTE_SIGNATURES,
+  type SniffedFileType,
+  type UploadSignatureResult,
+} from "./lib/file-signature";
 // NOTE: `checkResolvedHostIsPublic` (DNS-rebind defense) is server-only
 // — import via `@grc/shared/lib/url-safety-server` from server code.
 // Not re-exported here because pulling Node's `dns` into the client

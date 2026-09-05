@@ -23,6 +23,7 @@ import {
 } from "@grc/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface SoaBackfillResult {
   orgsScanned: number;
@@ -72,7 +73,15 @@ export const processSoaProgrammeBackfill = withCronInstrumentation(
         created += r.created;
         updated += r.updated;
         skipped += r.skipped;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "soa-programme-backfill",
+            scope: "Skip orgs without any SoA entries  saves a s",
+          },
+          err,
+        );
         errors++;
       }
     }

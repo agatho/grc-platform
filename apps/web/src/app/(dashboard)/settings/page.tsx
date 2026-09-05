@@ -17,7 +17,6 @@ import {
   Puzzle,
   Scale,
   Settings as SettingsIcon,
-  Shield,
   ShieldCheck,
   Sparkles,
   Target,

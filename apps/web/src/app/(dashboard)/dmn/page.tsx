@@ -77,7 +77,7 @@ function DmnListInner() {
                   </p>
                 </div>
                 <Badge className={STATUS_COLORS[d.status] ?? ""}>
-                  {t(`dmn.${d.status}` as any)}
+                  {t(`dmn.${d.status}` as Parameters<typeof t>[0])}
                 </Badge>
               </CardContent>
             </Card>

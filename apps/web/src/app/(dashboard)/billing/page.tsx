@@ -6,10 +6,8 @@ import Link from "next/link";
 import {
   CreditCard,
   Receipt,
-  BarChart3,
   Loader2,
   ArrowUpRight,
-  Check,
   Gauge,
 } from "lucide-react";
 

@@ -40,11 +40,16 @@ const ropaProfileSchema = z.object({
   processorVendorIds: z.array(z.string().uuid()).optional(),
 });
 
+// #WP8-S07-10 — spiegelt die Route (apps/web/src/app/api/v1/processes/
+// [id]/ropa-profile/route.ts). Vorher stand hier
+// `return input.requiresDpia ?? highRisk;` — dieselbe Zeile wie in der
+// Route, und damit derselbe Defekt: `??` greift nur bei `undefined`, ein
+// explizites `false` gewann gegen die Hochrisiko-Indikatoren.
 function autoDpiaFlag(input: z.infer<typeof ropaProfileSchema>): boolean {
   const highRisk =
     (input.specialCategories?.length ?? 0) > 0 ||
     input.thirdCountryTransfers === true;
-  return input.requiresDpia ?? highRisk;
+  return highRisk || input.requiresDpia === true;
 }
 
 describe("ropa profile validation", () => {
@@ -127,13 +132,37 @@ describe("auto-DPIA trigger logic", () => {
     ).toBe(true);
   });
 
-  it("respects explicit requiresDpia=false override even for high-risk", () => {
+  // #WP8-S07-10 — dieser Test stand vorher hier:
+  //
+  //   it("respects explicit requiresDpia=false override even for high-risk")
+  //     … specialCategories: ["health"], requiresDpia: false → toBe(false)
+  //
+  // Er hat den Defekt nicht gefunden, sondern als gewolltes Verhalten
+  // festgeschrieben: eine Fachrolle konnte die Pflichtprüfung nach
+  // Art. 35 DSGVO im selben Request abwählen, in dem sie besondere
+  // Kategorien erklärt. Er ist durch sein Gegenteil ersetzt.
+  it("ignores requiresDpia=false when high-risk indicators are present", () => {
     expect(
       autoDpiaFlag({
         isProcessingActivity: true,
         specialCategories: ["health"],
         requiresDpia: false,
       }),
+    ).toBe(true);
+    expect(
+      autoDpiaFlag({
+        isProcessingActivity: true,
+        thirdCountryTransfers: true,
+        requiresDpia: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("still allows requiresDpia=false when no indicator is present", () => {
+    // Art. 35 verlangt eine DSFA nur bei voraussichtlich hohem Risiko —
+    // ohne Indikator bleibt die Entscheidung beim Verantwortlichen.
+    expect(
+      autoDpiaFlag({ isProcessingActivity: true, requiresDpia: false }),
     ).toBe(false);
   });
 });

@@ -53,11 +53,55 @@ describe("encrypt / decrypt", () => {
     expect(a).not.toBe(b); // unterschiedliche IVs garantieren das
   });
 
-  it("ciphertext is base64 encoded", async () => {
+  it("ciphertext carries the v2 envelope (key id + AAD binding)", async () => {
     const { encrypt } = await load();
-    const ct = encrypt("test");
-    // base64 = nur A-Z a-z 0-9 + / =
-    expect(ct).toMatch(/^[A-Za-z0-9+/]+=*$/);
+    // #WP8-S07-19: Chiffrate tragen jetzt `v2:<keyId>:<aad>:<base64>`.
+    // Die Schluesselkennung ist die Voraussetzung fuer Rotation, die
+    // AAD-Bindung verhindert, dass ein Chiffrat zwischen Zeilen
+    // verschoben werden kann.
+    expect(encrypt("test")).toMatch(/^v2:default::[A-Za-z0-9+/]+=*$/);
+    expect(encrypt("test", "wb_case_message:abc")).toMatch(
+      /^v2:default:[A-Za-z0-9_-]+:[A-Za-z0-9+/]+=*$/,
+    );
+  });
+
+  it("still decrypts ciphertext written in the pre-WP8 format", async () => {
+    const { decrypt } = await load();
+    const { createCipheriv, randomBytes } = await import("crypto");
+    const iv = randomBytes(16);
+    const c = createCipheriv("aes-256-gcm", Buffer.from(TEST_KEY, "hex"), iv);
+    let enc = c.update("Bestandsmeldung", "utf8", "hex");
+    enc += c.final("hex");
+    const legacy = Buffer.from(
+      `${iv.toString("hex")}:${c.getAuthTag().toString("hex")}:${enc}`,
+    ).toString("base64");
+    expect(decrypt(legacy)).toBe("Bestandsmeldung");
+  });
+
+  it("refuses a ciphertext that belongs to a different record (AAD)", async () => {
+    const { encrypt, decrypt } = await load();
+    // S07-19.3: ohne AAD-Bindung konnte das Chiffrat von Meldung A nach
+    // Meldung B kopiert werden und die Entschluesselung gelang unbemerkt.
+    const ct = encrypt("Hinweis A", "wb_case_message:aaaa");
+    expect(decrypt(ct, "wb_case_message:aaaa")).toBe("Hinweis A");
+    expect(() => decrypt(ct, "wb_case_message:bbbb")).toThrow(/AAD mismatch/);
+  });
+
+  it("decrypts with the previous key after a rotation", async () => {
+    const { encrypt, decrypt } = await load();
+    const OLD = process.env.WB_ENCRYPTION_KEY!;
+    const NEW = "f".repeat(64);
+    const ct = encrypt("vor der Rotation");
+    process.env.WB_ENCRYPTION_KEY = NEW;
+    process.env.WB_ENCRYPTION_KEY_PREVIOUS = OLD;
+    try {
+      // S07-19.2: vorher gab es keinen Rotationspfad — ein
+      // Schluesselwechsel machte alle Bestandsmeldungen unlesbar.
+      expect(decrypt(ct)).toBe("vor der Rotation");
+    } finally {
+      process.env.WB_ENCRYPTION_KEY = OLD;
+      delete process.env.WB_ENCRYPTION_KEY_PREVIOUS;
+    }
   });
 
   it("decrypt fails for invalid format", async () => {
@@ -69,8 +113,16 @@ describe("encrypt / decrypt", () => {
     const { encrypt, decrypt } = await load();
     const ct = encrypt("Original-Hinweis");
     // Decode, flip last byte of the ciphertext part, re-encode
-    const decoded = Buffer.from(ct, "base64").toString("utf8");
+    const payload = ct.startsWith("v2:")
+      ? ct.split(":").slice(3).join(":")
+      : ct;
+    const decoded = Buffer.from(payload, "base64").toString("utf8");
     const [iv, tag, ciphertext] = decoded.split(":");
+    // [OP-065] Das Format ist `iv:tag:ciphertext`. Fehlt ein Teil, prüft der
+    // Test etwas anderes als er behauptet — und soll das sagen.
+    if (iv === undefined || tag === undefined || ciphertext === undefined) {
+      throw new Error(`unerwartetes Chiffratformat: ${decoded.slice(0, 40)}`);
+    }
     const tamperedHex =
       ciphertext.slice(0, -1) + (ciphertext.slice(-1) === "0" ? "1" : "0");
     const tampered = Buffer.from(`${iv}:${tag}:${tamperedHex}`).toString(
@@ -137,12 +189,54 @@ describe("hashIp", () => {
     expect(h).toHaveLength(64);
   });
 
-  it("matches SHA-256 reference for a known input", async () => {
+  // #WP8-S07-02 — dieser Test stand vorher hier:
+  //
+  //   it("matches SHA-256 reference for a known input", ...)
+  //     expect(hashIp("127.0.0.1")).toBe("12ca17b4…")   // sha256("127.0.0.1")
+  //
+  // Er hat den Defekt nicht gefunden, sondern festgeschrieben: die
+  // Uebereinstimmung mit dem ungesalzenen SHA-256 einer bekannten Eingabe
+  // IST die Rueckrechenbarkeit. Er ist durch die drei folgenden ersetzt.
+  it("is not the unsalted SHA-256 of the address (dictionary attack)", async () => {
     const { hashIp } = await load();
-    // SHA-256 of "127.0.0.1"
-    expect(hashIp("127.0.0.1")).toBe(
-      "12ca17b49af2289436f303e0166030a21e525d266e209267433801a8fd4071a0",
+    const { createHash } = await import("crypto");
+    for (const ip of ["127.0.0.1", "10.20.30.44", "203.0.113.9"]) {
+      expect(hashIp(ip)).not.toBe(
+        createHash("sha256").update(ip).digest("hex"),
+      );
+    }
+  });
+
+  it("resists a dictionary attack over a whole /24 network", async () => {
+    const { hashIp } = await load();
+    const { createHash } = await import("crypto");
+    // Genau der Angriff aus dem Auditbericht: 256 Hashes reichten, um die
+    // Adresse der hinweisgebenden Person zu benennen.
+    const target = hashIp("10.20.30.44");
+    const guesses = new Set<string>();
+    for (let i = 0; i < 256; i++) {
+      guesses.add(createHash("sha256").update(`10.20.30.${i}`).digest("hex"));
+    }
+    expect(guesses.has(target)).toBe(false);
+  });
+
+  it("does not link the same address across tenants", async () => {
+    const { hashIp } = await load();
+    const a = hashIp("203.0.113.42", "11111111-1111-1111-1111-111111111111");
+    const b = hashIp("203.0.113.42", "22222222-2222-2222-2222-222222222222");
+    expect(a).not.toBe(b);
+    // innerhalb eines Mandanten bleibt die Duplikaterkennung erhalten
+    expect(a).toBe(
+      hashIp("203.0.113.42", "11111111-1111-1111-1111-111111111111"),
     );
+  });
+
+  it("verifies a candidate address only with the key", async () => {
+    const { hashIp, ipMatchesHash } = await load();
+    const h = hashIp("198.51.100.7", "org-a");
+    expect(ipMatchesHash("198.51.100.7", h, "org-a")).toBe(true);
+    expect(ipMatchesHash("198.51.100.8", h, "org-a")).toBe(false);
+    expect(ipMatchesHash("198.51.100.7", h, "org-b")).toBe(false);
   });
 });
 

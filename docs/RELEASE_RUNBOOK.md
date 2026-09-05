@@ -38,6 +38,26 @@ cd apps/web && npm run build  # muss ohne Fehler durchgehen
 npx playwright test e2e/ci-smoke.spec.ts  # muss grün sein (braucht laufenden Dev-Stack)
 ```
 
+> **Wenn `npm run build` hängt oder mit Exit 137 stirbt — nicht die Zahl
+> erhöhen.** `--max-old-space-size` begrenzt den **V8-Heap**; der Speicher
+> eines Turbopack-Builds liegt Rust-seitig **ausserhalb** davon. Eine höhere
+> Zahl behebt einen Build-OOM deshalb nicht, sie verwandelt ihn in eine
+> Verklemmung: der Prozess läuft weiter, hält den Speicher und kommt nie an.
+>
+> Belegt am 2026-09-01 (WP12, fünf Läufe auf 2 vCPU / 7 GB): bei
+> `--max-old-space-size=3072` erreichte der Prozess 5.287.380 kB RSS — der
+> Speicher lag also nachweislich nicht im begrenzten Heap. Signatur der
+> Verklemmung: Ausgabe bleibt bei „Creating an optimized production build",
+> `.next` bleibt bei 1,7 MB, die Lese-Syscalls (`syscr` in
+> `/proc/<pid>/io`) stehen still, der Node-Hauptthread hat unter 1 s CPU,
+> zwei tokio-Threads laufen dauerhaft.
+>
+> **Nächster Diagnoseschritt ist `NEXT_TURBOPACK_TRACING=1` und die Analyse
+> von `.next/trace-turbopack`, nicht eine grössere Zahl.** Der Befund ist
+> reproduzierbar auch mit unverändert eingecheckter `next.config.ts`, hängt
+> also nicht an lokalen Änderungen. Vollständige Messreihe:
+> `/work/audit/remediation/WP12.md` §4.3.
+
 ---
 
 ## 2. Tag schneiden
@@ -83,20 +103,39 @@ trivy image --severity CRITICAL,HIGH ghcr.io/agatho/grc-platform/grc-web@sha256:
 ssh arctos@<hetzner-ip>
 cd /opt/arctos
 
-# DB-Backup vor dem Deploy (manueller Zeitstempel zusätzlich zum Cron)
-./deploy/db-backup.sh  # legt /opt/arctos/backups/db-<timestamp>.sql.gz an
+# Der komplette Deploy — Pre-Deploy-Backup, CI-Status-Pruefung des
+# Ziel-Commits, Migration ueber den Ledger-Runner, health-gesteuerter
+# Neustart und automatischer Rollback bei rotem Health-Gate.
+sudo bash /opt/arctos/deploy/update-all.sh
+```
 
-# Image-Tag bumpen
-sed -i 's|grc-web@sha256:.*|grc-web@sha256:<new-digest>|' docker-compose.yml
+> **Was hier bis 2026-08-31 stand — und warum es weg ist (S13-04, S13-05d).**
+>
+> ```bash
+> ./deploy/db-backup.sh  # legt /opt/arctos/backups/db-<timestamp>.sql.gz an
+> sed -i 's|grc-web@sha256:.*|grc-web@sha256:<new-digest>|' docker-compose.yml
+> docker compose pull && docker compose up -d --no-build
+> ```
+>
+> - `db-backup.sh` legt **nicht** `db-<timestamp>.sql.gz` an, sondern
+>   `<db>-<YYYYMMDD-HHMMSS>[-label].dump` je Datenbank (seit 2026-09-01
+>   `.dump.gpg`). Der Pfad im Runbook existierte nie.
+> - Der `sed`-Aufruf editierte `docker-compose.yml`. Die Produktions-Compose
+>   heisst `docker-compose.production.yml` **und enthaelt keinen
+>   `@sha256:`-Digest** — das Kommando fand nichts zu ersetzen und meldete
+>   das nicht (S13-05d).
+> - `docker compose pull` allein zieht das Image, provisioniert aber weder
+>   `grc_app`/`grc_worker` noch prueft es den Gesundheitszustand danach.
+>
+> `update-all.sh` macht die Schritte in der richtigen Reihenfolge und bricht
+> ab, wo es abbrechen muss. Was es im Einzelnen tut, steht in seinem
+> Kopfkommentar.
 
-# Down → Up mit expliziter Dependency-Ordnung
-docker compose pull
-docker compose up -d --no-build
-# „--no-build" erzwingt das Pull-Image; verhindert accidentally local rebuilds.
+**Verlauf mitlesen:**
 
-# Migrations & Seeds laufen via Entrypoint beim Container-Start.
-docker compose logs -f web | head -200
-# Warten bis "Ready on http://0.0.0.0:3000" sichtbar ist.
+```bash
+docker compose -f docker-compose.production.yml logs -f web | head -200
+tail -3 /opt/arctos/deploy-history.jsonl      # Deploy-Protokoll (S13-19)
 ```
 
 ---
@@ -156,25 +195,59 @@ Dann im Team-Channel / Mail die Release-Notes posten.
 
 ## 7. Rollback (wenn Post-Deploy-Smoke fehlschlägt)
 
+> **[ARCTOS-FULL-2026-08-31 / WP10 · S13-05]** Die drei Kommandos, die hier
+> standen, waren **alle drei falsch** — und das Image-Rollback lief still
+> durch, ohne etwas zu tun. Der Abschnitt ist ersetzt; der alte Wortlaut
+> steht am Ende dieses Kapitels als Beleg, damit klar bleibt, wonach im
+> Zweifel NICHT gesucht werden soll.
+
 ```bash
 ssh arctos@<hetzner-ip>
-cd /opt/arctos
 
-# 7.1 App-Rollback: altes Image wieder rein
-sed -i 's|grc-web@sha256:<new-digest>|grc-web@sha256:<prev-digest>|' docker-compose.yml
-docker compose pull
-docker compose up -d --no-build
+# 7.0 Bestandsaufnahme: welche Images und Backups gibt es ueberhaupt?
+sudo bash /opt/arctos/deploy/rollback.sh --list
 
-# 7.2 DB-Rollback nur wenn die Migration selbst das Problem war:
-#     dann über das Backup aus Schritt 4.
-docker compose down
-psql -U grc -d grc_platform -f /opt/arctos/backups/db-<timestamp>.sql
-docker compose up -d
+# 7.1 App-Rollback — der Normalfall. Die Datenbank bleibt vorwaerts
+#     migriert (ADR-023, Expand/Contract). Das Skript prueft, ob das
+#     Zielimage existiert, BEVOR es die laufenden Container anfasst, und
+#     wartet danach auf "healthy".
+sudo bash /opt/arctos/deploy/rollback.sh --image <vorheriger-commit-sha>
+
+# 7.2 DB-Rollback — NUR wenn die Migration selbst das Problem war.
+#     DROP + CREATE + pg_restore aus dem Pre-Deploy-Backup, mit getippter
+#     Bestaetigung. DATENVERLUST ab dem Backup-Zeitpunkt; der
+#     Objektspeicher wird NICHT zurueckgerollt.
+sudo bash /opt/arctos/deploy/rollback.sh --db grc_platform-<zeitstempel>-pre-migration.dump.gpg
 
 # 7.3 Tag nicht zurückziehen — er dokumentiert, dass v0.1.0-alpha
 #     "in den Smoke gelaufen ist und abgebrochen wurde". Next: v0.1.1-alpha
 #     mit Fix + Post-Mortem-Link im Changelog.
 ```
+
+<details>
+<summary>Alter Wortlaut (falsch — nicht verwenden)</summary>
+
+```bash
+# 7.1 sed -i 's|grc-web@sha256:<new>|grc-web@sha256:<prev>|' docker-compose.yml
+#     -> falsche Datei (Produktion ist docker-compose.production.yml) und
+#        dort steht kein @sha256:-Digest. Das sed traf nichts (S13-05d).
+# 7.2 psql -U grc -d grc_platform -f /opt/arctos/backups/db-<timestamp>.sql
+#     -> Diese Datei gibt es nicht: falsches Praefix, falsche Endung. Und
+#        ein `psql -f` eines Plain-Dumps UEBER eine bestehende Datenbank ist
+#        kein Rollback, sondern erzeugt hunderte `duplicate key`-Fehler;
+#        korrekt ist DROP + pg_restore (S13-05c).
+# Ebenso im DR-Playbook: ARCTOS_IMAGE_TAG=… docker compose up -d
+#     -> Die Compose liest IMAGE_TAG. Das Kommando lief ohne Fehler durch
+#        und startete erneut :latest, also das defekte Image (S13-05a).
+```
+
+</details>
+
+**Grenze, die bestehen bleibt:** Die im Zeitbudget unten genannten 5 min
+Wall-Clock für einen Rollback gelten für 7.1. Ein DB-Rollback (7.2) dauert
+so lange wie ein `pg_restore` der grössten Datenbank plus der Neustart —
+auf einem befüllten System deutlich länger. Die im DR-Playbook zugesagte
+RTO von 15 min bezieht sich auf 7.1.
 
 ---
 

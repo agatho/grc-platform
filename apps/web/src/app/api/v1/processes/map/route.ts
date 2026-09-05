@@ -8,6 +8,10 @@ import {
   resolveInheritedCategory,
 } from "@/lib/process-map";
 import type { ProcessMapCategory } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const mapQuerySchema = z.object({
   parentId: z.string().uuid().optional(),
@@ -24,7 +28,7 @@ interface AncestorRow {
 // level grouped into value-chain bands (management / core / support /
 // unassigned) with child counts and diagram flags. Single aggregated
 // query per level — no N+1.
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -105,14 +109,35 @@ export async function GET(req: Request) {
       status: process.status,
       level: process.level,
       mapCategory: process.mapCategory,
+      // [E2E-TRIAGE-3 · 2026-09-02] The correlated reference must be QUALIFIED.
+      //
+      // These two subqueries used `${process.id}`. In a select-list position
+      // Drizzle renders a column as a bare `"id"` (it only qualifies columns in
+      // WHERE/ORDER BY), so the emitted SQL was
+      //
+      //   SELECT count(*)::int FROM process c WHERE c.parent_process_id = "id"
+      //   EXISTS (SELECT 1 FROM process_version v WHERE v.process_id = "id" …)
+      //
+      // and inside those subqueries `"id"` binds to the INNER relation — `c.id`
+      // and `v.id` — because an inner scope wins over the outer one. The
+      // conditions therefore read "a process whose parent is itself" and "a
+      // version whose id is its own process id": both are unsatisfiable, so
+      // `childCount` was ALWAYS 0 and `hasDiagram` ALWAYS false on the process
+      // map, for every tenant. Measured against the running instance: a parent
+      // with one child reported `childCount: 0`, and a process with a stored
+      // BPMN diagram reported `hasDiagram: false`.
+      //
+      // The user-visible effect is that the Prozesslandkarte shows no
+      // drill-in affordance and no diagram badge on any tile. The same
+      // mistake is in `processes/tree/route.ts` and is fixed there too.
       childCount: sql<number>`(
         SELECT count(*)::int FROM process c
-        WHERE c.parent_process_id = ${process.id}
+        WHERE c.parent_process_id = "process"."id"
           AND c.deleted_at IS NULL
       )`,
       hasDiagram: sql<boolean>`EXISTS (
         SELECT 1 FROM process_version v
-        WHERE v.process_id = ${process.id}
+        WHERE v.process_id = "process"."id"
           AND v.bpmn_xml IS NOT NULL
           AND length(v.bpmn_xml) > 0
       )`,
@@ -132,4 +157,4 @@ export async function GET(req: Request) {
   const groups = groupProcessesForMap(nodes, parentCategory);
 
   return Response.json({ data: { parent, groups } });
-}
+});

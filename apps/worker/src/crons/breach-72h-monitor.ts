@@ -5,7 +5,9 @@
 import { db, dataBreach, notification } from "@grc/db";
 import { and, isNull, sql, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface Breach72hResult {
   processed: number;
   notified: number;
@@ -40,7 +42,7 @@ export const processBreach72hMonitor = withCronInstrumentation(
       );
 
     if (activeBreaches.length === 0) {
-      console.log(
+      log.info(
         "[cron:breach-72h-monitor] No active breaches requiring DPA notification",
       );
       return { processed: 0, notified: 0 };
@@ -82,38 +84,41 @@ export const processBreach72hMonitor = withCronInstrumentation(
               ? "CRITICAL"
               : "WARNING";
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: breach.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "data_breach",
-          entityId: breach.id,
-          title: `[${urgencyLevel}] Breach 72h deadline: ${breach.title}`,
-          message:
-            hoursRemaining <= 0
-              ? `OVERDUE: The 72h Art. 33 GDPR notification deadline for breach "${breach.title}" has expired!`
-              : `Breach "${breach.title}" has ${hoursRemaining} hour(s) remaining until the 72h DPA notification deadline.`,
-          channel: "both" as const,
-          templateKey: "breach_72h_warning",
-          templateData: {
-            breachId: breach.id,
-            breachTitle: breach.title,
-            severity: breach.severity,
-            hoursRemaining: Math.max(0, hoursRemaining),
-            deadline: deadline72h.toISOString(),
-            urgencyLevel,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: breach.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "data_breach",
+            entityId: breach.id,
+            title: `[${urgencyLevel}] Breach 72h deadline: ${breach.title}`,
+            message:
+              hoursRemaining <= 0
+                ? `OVERDUE: The 72h Art. 33 GDPR notification deadline for breach "${breach.title}" has expired!`
+                : `Breach "${breach.title}" has ${hoursRemaining} hour(s) remaining until the 72h DPA notification deadline.`,
+            channel: "both" as const,
+            templateKey: "breach_72h_warning",
+            templateData: {
+              breachId: breach.id,
+              breachTitle: breach.title,
+              severity: breach.severity,
+              hoursRemaining: Math.max(0, hoursRemaining),
+              deadline: deadline72h.toISOString(),
+              urgencyLevel,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "breach-72h-monitor" },
+        );
 
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:breach-72h-monitor] Failed for breach ${breach.id}:`,
-          message,
-        );
+        log.error("[cron:breach-72h-monitor] Failed for breach", {
+          breachId: breach.id,
+          err: message,
+        });
       }
     }
 

@@ -58,8 +58,32 @@ export function isClamAvConfigured(): boolean {
   return Boolean(process.env.CLAMAV_HOST);
 }
 
+// #S04-06 (ARCTOS-FULL-2026-08-31): the scan policy was fail-OPEN by
+// default, in production too. A clamd that was down, unreachable or
+// timing out therefore silently waved every upload through — the control
+// the DMS documentation claims did not exist in the deployed default.
+//
+// The default is now environment-dependent: fail-CLOSED in production,
+// fail-open elsewhere so a dev box without a clamd container still works.
+// `CLAMAV_FAIL_CLOSED=1` forces closed, `CLAMAV_FAIL_CLOSED=0` explicitly
+// opts a production deployment back out (documented, deliberate, and
+// visible in the deployment config rather than implicit).
 export function isClamAvFailClosed(): boolean {
-  return process.env.CLAMAV_FAIL_CLOSED === "1";
+  const explicit = process.env.CLAMAV_FAIL_CLOSED;
+  if (explicit === "1" || explicit === "true") return true;
+  if (explicit === "0" || explicit === "false") return false;
+  return process.env.NODE_ENV === "production";
+}
+
+/**
+ * #S04-06: in production, an upload path that silently skips scanning
+ * because CLAMAV_HOST was never configured is the same hole as a
+ * fail-open error. Callers use this to turn `status: "skipped"` into a
+ * refusal. Opt out with `CLAMAV_OPTIONAL=1`.
+ */
+export function isClamAvRequired(): boolean {
+  if (process.env.CLAMAV_OPTIONAL === "1") return false;
+  return process.env.NODE_ENV === "production";
 }
 
 /** Parse a raw clamd INSTREAM response line into a scan result. */

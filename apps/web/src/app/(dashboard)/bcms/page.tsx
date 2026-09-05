@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BcmsDashboard, CrisisScenario, BcExercise } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 export default function BcmsPage() {
   return (
@@ -73,13 +74,14 @@ function BcmsDashboardInner() {
 
       // Fetch BC risk stats
       try {
-        const riskRes = await fetch("/api/v1/bcms/crisis?limit=200");
-        if (riskRes.ok) {
-          const riskJson = await riskRes.json();
-          const scenarios = (riskJson.data ?? []) as Array<{
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ alle vier
+        // Zähler standen auf 0. Eine BCMS-Kachel, die „0 kritische Szenarien"
+        // zeigt, ist eine Aussage über das Notfallmanagement, kein Ladefehler.
+        {
+          const scenarios = await fetchAllPages<{
             riskScore?: number | null;
             ermRiskId?: string | null;
-          }>;
+          }>("/api/v1/bcms/crisis");
           let critical = 0,
             high = 0,
             medium = 0,
@@ -102,8 +104,8 @@ function BcmsDashboardInner() {
             syncedToErm,
           });
         }
-      } catch {
-        // non-critical
+      } catch (err) {
+        console.error("bcms: Krisenszenarien nicht geladen", err);
       }
     } finally {
       setLoading(false);

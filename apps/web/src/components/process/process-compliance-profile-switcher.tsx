@@ -40,7 +40,6 @@ export function ProcessComplianceProfileSwitcher({
     if (initialProfile && initialProfile !== profile)
       setProfile(initialProfile);
     // Only react to initialProfile changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProfile]);
 
   const change = useCallback(

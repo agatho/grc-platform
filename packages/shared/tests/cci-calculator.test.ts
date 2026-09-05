@@ -21,6 +21,17 @@ import type {
   CCIRawMetrics,
 } from "../src/types/compliance-culture";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("CCICalculator", () => {
   const defaultFactors: CCIFactorScores = {
     task_compliance: 80,
@@ -224,10 +235,10 @@ describe("getTopImprovementAreas", () => {
       self_assessment_participation: 85,
     });
     expect(areas).toHaveLength(3);
-    expect(areas[0].key).toBe("incident_response_time");
-    expect(areas[0].score).toBe(60);
-    expect(areas[1].key).toBe("policy_ack_rate");
-    expect(areas[2].key).toBe("audit_finding_closure");
+    expect(at(areas, 0).key).toBe("incident_response_time");
+    expect(at(areas, 0).score).toBe(60);
+    expect(at(areas, 1).key).toBe("policy_ack_rate");
+    expect(at(areas, 2).key).toBe("audit_finding_closure");
   });
 
   it("should return fewer than 3 when requested", () => {

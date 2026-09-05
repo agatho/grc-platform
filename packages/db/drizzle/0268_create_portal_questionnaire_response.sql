@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Indexnamen pqr_* kollidierten schemaweit mit 0026 (42P07); umbenannt auf portal_qr_* und idempotent gemacht.
 -- Sprint 83: External Stakeholder Portals
 -- Migration 1049: Create portal_questionnaire_response table
 
@@ -22,9 +27,14 @@ CREATE TABLE IF NOT EXISTS portal_questionnaire_response (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX pqr_org_idx ON portal_questionnaire_response(org_id);
-CREATE INDEX pqr_session_idx ON portal_questionnaire_response(session_id);
-CREATE INDEX pqr_status_idx ON portal_questionnaire_response(org_id, status);
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Indexnamen sind in PostgreSQL
+-- schemaweit eindeutig; pqr_org_idx war bereits durch
+-- 0026_sprint15_policy_acknowledgment.sql fuer policy_quiz_response belegt
+-- (42P07) und brach die gesamte Datei ab. Namen praefixiert und
+-- IF NOT EXISTS ergaenzt, damit die Datei idempotent bleibt.
+CREATE INDEX IF NOT EXISTS portal_qr_org_idx ON portal_questionnaire_response(org_id);
+CREATE INDEX IF NOT EXISTS portal_qr_session_idx ON portal_questionnaire_response(session_id);
+CREATE INDEX IF NOT EXISTS portal_qr_status_idx ON portal_questionnaire_response(org_id, status);
 
 ALTER TABLE portal_questionnaire_response ENABLE ROW LEVEL SECURITY;
 CREATE POLICY portal_questionnaire_response_org_isolation ON portal_questionnaire_response

@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Der Seed auf die nirgends existierende Tabelle notification_template (42P01) ist mit einem to_regclass-Guard versehen; die vier RCSA-Tabellen der Datei entstehen dadurch wieder.
 -- Sprint 14: Risk & Control Self-Assessment (RCSA)
 -- Migration 243-252: Tables, RLS, Audit triggers, Seeds, Indices
 
@@ -25,8 +30,12 @@ CREATE TABLE IF NOT EXISTS "rcsa_campaign" (
   "updated_at" timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS "rc_org_idx" ON "rcsa_campaign"("org_id");
-CREATE INDEX IF NOT EXISTS "rc_status_idx" ON "rcsa_campaign"("org_id", "status");
+-- [ARCTOS-FULL-2026-08-31 / S09-01] rc_org_idx/rc_status_idx kollidieren
+-- schemaweit mit 0200_create_regulatory_change.sql, das die Namen ohne
+-- IF NOT EXISTS vergibt und in allen Umgebungen gelaufen ist. Solange 0025
+-- scheiterte, fiel das nicht auf. Umbenannt auf rcsa_campaign_*.
+CREATE INDEX IF NOT EXISTS "rcsa_campaign_org_idx" ON "rcsa_campaign"("org_id");
+CREATE INDEX IF NOT EXISTS "rcsa_campaign_status_idx" ON "rcsa_campaign"("org_id", "status");
 
 -- ──────────────────────────────────────────────────────────────
 -- 244: Create rcsa_assignment
@@ -171,21 +180,42 @@ END $$;
 -- 249: Seed email templates for RCSA
 -- ──────────────────────────────────────────────────────────────
 
-INSERT INTO "notification_template" ("key", "name", "subject", "body", "channel")
-VALUES
-  ('rcsa_invitation', 'RCSA Campaign Invitation', 'RCSA Assessment: {{campaignName}}', 'You have been assigned {{assignmentCount}} item(s) to assess in the "{{campaignName}}" campaign. Deadline: {{deadline}}. Please complete your assessments at {{link}}.', 'both'),
-  ('rcsa_reminder', 'RCSA Assessment Reminder', 'Reminder: RCSA "{{campaignName}}" due in {{daysRemaining}} day(s)', 'You have {{pendingCount}} pending assessment(s) for "{{campaignName}}". The deadline is {{deadline}}. Please complete your assessments at {{link}}.', 'both'),
-  ('rcsa_escalation', 'RCSA Overdue Escalation', 'Overdue: RCSA "{{campaignName}}" has {{overdueCount}} overdue', '{{overdueCount}} assessment(s) in campaign "{{campaignName}}" are overdue. Participants: {{overdueParticipants}}. Please take action.', 'both')
-ON CONFLICT ("key") DO NOTHING;
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Die Tabelle notification_template wird
+-- von keiner der 354 Migrationen und keiner pgTable-Definition angelegt;
+-- der INSERT lief in 42P01 und riss die vier RCSA-Tabellen dieser Datei
+-- mit. Der Seed laeuft jetzt nur, wenn die Tabelle vorhanden ist.
+DO $seed$
+BEGIN
+  IF to_regclass('public.notification_template') IS NULL THEN
+    RAISE NOTICE '0025: notification_template nicht vorhanden - E-Mail-Vorlagen uebersprungen';
+  ELSE
+    INSERT INTO "notification_template" ("key", "name", "subject", "body", "channel")
+    VALUES
+      ('rcsa_invitation', 'RCSA Campaign Invitation', 'RCSA Assessment: {{campaignName}}', 'You have been assigned {{assignmentCount}} item(s) to assess in the "{{campaignName}}" campaign. Deadline: {{deadline}}. Please complete your assessments at {{link}}.', 'both'),
+      ('rcsa_reminder', 'RCSA Assessment Reminder', 'Reminder: RCSA "{{campaignName}}" due in {{daysRemaining}} day(s)', 'You have {{pendingCount}} pending assessment(s) for "{{campaignName}}". The deadline is {{deadline}}. Please complete your assessments at {{link}}.', 'both'),
+      ('rcsa_escalation', 'RCSA Overdue Escalation', 'Overdue: RCSA "{{campaignName}}" has {{overdueCount}} overdue', '{{overdueCount}} assessment(s) in campaign "{{campaignName}}" are overdue. Participants: {{overdueParticipants}}. Please take action.', 'both')
+    ON CONFLICT ("key") DO NOTHING;
+  END IF;
+END
+$seed$;
 
 -- ──────────────────────────────────────────────────────────────
 -- 250: Seed work item type for RCSA
 -- ──────────────────────────────────────────────────────────────
 
-INSERT INTO "work_item_type" ("key", "label", "prefix", "module_key", "description")
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Die Spaltenliste entsprach nicht der
+-- realen Tabelle (42703): work_item_type hat type_key/display_name_de/
+-- display_name_en/element_id_prefix/primary_module/nav_order und weder
+-- "key" noch "label", "prefix", "module_key" oder "description".
+INSERT INTO "work_item_type" (
+  "type_key", "display_name_de", "display_name_en",
+  "element_id_prefix", "primary_module", "nav_order",
+  "has_due_date", "has_responsible_user"
+)
 VALUES
-  ('rcsa_campaign', 'RCSA Campaign', 'RCSA', 'erm', 'Risk & Control Self-Assessment campaign')
-ON CONFLICT ("key") DO NOTHING;
+  ('rcsa_campaign', 'RCSA-Kampagne', 'RCSA Campaign',
+   'RCS', 'erm', 90, true, true)
+ON CONFLICT ("type_key") DO NOTHING;
 
 -- ──────────────────────────────────────────────────────────────
 -- 251: Composite indices for aggregation queries

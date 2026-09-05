@@ -184,7 +184,7 @@ export function CreateRemediationButton({
                 </option>
               </select>
               <p className="text-xs text-slate-500">
-                Auto-gemappt von Finding-Severity „{findingSeverity}".
+                Auto-gemappt von Finding-Severity „{findingSeverity}&quot;.
                 Anpassbar.
               </p>
             </div>

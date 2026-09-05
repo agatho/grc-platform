@@ -13,6 +13,8 @@ import {
 } from "@grc/db";
 import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface FAIRAppetiteCheckResult {
   orgsProcessed: number;
@@ -104,29 +106,47 @@ export const processFairAppetiteCheck = withCronInstrumentation(
               // Create notification for risk owner or admin
               const recipientId = row.owner_id;
               if (recipientId) {
-                await db.insert(notification).values({
-                  userId: recipientId,
-                  orgId: org.id,
-                  type: "escalation",
-                  entityType: "risk",
-                  entityId: row.risk_id,
-                  title: `FAIR ALE Breach: ${row.risk_title}`,
-                  message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
-                  channel: "in_app",
-                  templateData: {
-                    link: `/erm/risks/${row.risk_id}/fair/results`,
+                await insertNotification(
+                  {
+                    userId: recipientId,
+                    orgId: org.id,
+                    type: "escalation",
+                    entityType: "risk",
+                    entityId: row.risk_id,
+                    title: `FAIR ALE Breach: ${row.risk_title}`,
+                    message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
+                    channel: "in_app",
+                    templateData: {
+                      link: `/erm/risks/${row.risk_id}/fair/results`,
+                    },
                   },
-                });
+                  { job: "fair-appetite-check" },
+                );
                 notificationsCreated++;
               }
             }
           }
-        } catch {
+        } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            {
+              job: "fair-appetite-check",
+              scope: "Create notification for risk owner or admin",
+            },
+            err,
+          );
           errors++;
-          // Wrapper logs structured error; loop continues to next org.
         }
       }
-    } catch {
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        {
+          job: "fair-appetite-check",
+          scope: "Wrapper logs structured error loop continues",
+        },
+        err,
+      );
       errors++;
       // Wrapper logs structured fatal error.
     }

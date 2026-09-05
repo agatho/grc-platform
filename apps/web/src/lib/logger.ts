@@ -1,88 +1,24 @@
-// Minimal structured-logger.
+// Strukturierter Logger für `apps/web` — Server- und Edge-Laufzeit.
 //
-// Use for server-side logging that should be pipeable to Loki/Datadog/ELK.
-// Browser-side code should continue using console.log -- this is for
-// Node.js route handlers + worker jobs only.
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152]
 //
-// Each log entry is JSON-per-line (NDJSON) on stdout so it survives the
-// Docker log driver without needing a sidecar.
+// Bis Welle 4b stand die vollständige Implementierung samt Field-Scrubbing
+// (WP10 · S13-15) HIER. Damit war sie für `apps/worker` unerreichbar: der
+// Worker hängt nicht von `@grc/web` ab und hatte deshalb 85 `console.*`-
+// Aufrufe statt eines Loggers. Die Regeln liegen jetzt in
+// `packages/shared/src/logger.ts` und werden von beiden Prozessen benutzt —
+// eine Quelle, keine zwei Listen, die auseinanderlaufen können.
 //
-// Levels follow the RFC-5424-ish syslog mapping:
-//   trace=0, debug=10, info=20, warn=30, error=40, fatal=50
-// Set via env ARCTOS_LOG_LEVEL (default "info").
+// Diese Datei bleibt bestehen, weil `@/lib/logger` der eingeführte
+// Importpfad in `apps/web` ist (Routen, `auth.ts`, `api-wrapper.ts`,
+// `pdf.ts`) und weil der Vorgabewert für `service` hier "arctos-web" ist.
+//
+// Browserseitiger Code benutzt weiterhin `console.*`: dort gibt es keinen
+// Log-Empfänger, an dem etwas vorbeigehen könnte, und `process.stdout` gibt
+// es nicht. Siehe docs/UMSETZUNG-WELLE-4B-2.md §2.
+import { createLogger } from "@grc/shared/logger";
 
-type Level = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
+export type { LogLevel, LogFields, Logger } from "@grc/shared/logger";
+export { scrubLogFields, __scrubForTest } from "@grc/shared/logger";
 
-const LEVEL_RANK: Record<Level, number> = {
-  trace: 0,
-  debug: 10,
-  info: 20,
-  warn: 30,
-  error: 40,
-  fatal: 50,
-};
-
-const ACTIVE_LEVEL: number =
-  LEVEL_RANK[(process.env.ARCTOS_LOG_LEVEL as Level | undefined) ?? "info"] ??
-  20;
-
-const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-web";
-
-interface LogFields {
-  requestId?: string;
-  userId?: string;
-  orgId?: string;
-  [k: string]: unknown;
-}
-
-function emit(level: Level, message: string, fields: LogFields = {}) {
-  if (LEVEL_RANK[level] < ACTIVE_LEVEL) return;
-  const entry = {
-    ts: new Date().toISOString(),
-    level,
-    service: SERVICE,
-    message,
-    ...fields,
-  };
-  // Single-line JSON on stdout. Docker's log driver picks it up without
-  // a sidecar. Stderr only on error/fatal so stdout stays parseable.
-  const line = JSON.stringify(entry);
-  if (level === "error" || level === "fatal") {
-    process.stderr.write(line + "\n");
-  } else {
-    process.stdout.write(line + "\n");
-  }
-}
-
-export const log = {
-  trace: (message: string, fields?: LogFields) =>
-    emit("trace", message, fields),
-  debug: (message: string, fields?: LogFields) =>
-    emit("debug", message, fields),
-  info: (message: string, fields?: LogFields) => emit("info", message, fields),
-  warn: (message: string, fields?: LogFields) => emit("warn", message, fields),
-  error: (message: string, fields?: LogFields) =>
-    emit("error", message, fields),
-  fatal: (message: string, fields?: LogFields) =>
-    emit("fatal", message, fields),
-  /**
-   * Derive a logger with pre-bound context. Useful at the top of a route
-   * handler:
-   *   const logger = log.withContext({ requestId, userId, orgId });
-   *   logger.info("audit created", { auditId });
-   */
-  withContext: (context: LogFields) => ({
-    trace: (message: string, fields?: LogFields) =>
-      emit("trace", message, { ...context, ...fields }),
-    debug: (message: string, fields?: LogFields) =>
-      emit("debug", message, { ...context, ...fields }),
-    info: (message: string, fields?: LogFields) =>
-      emit("info", message, { ...context, ...fields }),
-    warn: (message: string, fields?: LogFields) =>
-      emit("warn", message, { ...context, ...fields }),
-    error: (message: string, fields?: LogFields) =>
-      emit("error", message, { ...context, ...fields }),
-    fatal: (message: string, fields?: LogFields) =>
-      emit("fatal", message, { ...context, ...fields }),
-  }),
-};
+export const log = createLogger("arctos-web");

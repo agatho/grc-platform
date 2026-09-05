@@ -1,0 +1,18 @@
+Wareneingang — Aufbewahrung und Löschung
+
+Sicht: Datenschutz — Wo entstehen personenbezogene Daten, wohin fließen sie, wann werden sie gelöscht?
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+
+Der Prozess beginnt mit „Lieferung eingetroffen“. Schritt 1: „Lieferung eingetroffen“ führt zu „Wareneingang erfassen“. Schritt 2: „Wareneingang erfassen“ führt zu „Nach Behandlungsklassen sortieren“. Schritt 3: „Nach Behandlungsklassen sortieren“ führt zu „Charge gebildet“. Schritt 4: „Charge gebildet“ endet hier. 4 Elemente tragen GRC-Hinweise in der Sicht „Datenschutz".
+
+1. Lieferung eingetroffen (Startereignis)
+    Filter: vom Filter nicht erfasst
+2. Wareneingang erfassen (Aufgabe)
+    Personenbezug: Verarbeitet personenbezogene Daten: Fahrerdaten, Lieferscheindaten. Zweck: Wareneingangserfassung mit Fahrerdaten. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.
+    Aufbewahrung: Aufbewahrung 3 Monate (Löschkonzept Ziffer 7.1), kürzer als 12 Monate — Löschung ist zeitnah zu steuern.
+    Kommentare: Kommentare: 1 offen von 1.
+3. Nach Behandlungsklassen sortieren (Aufgabe)
+    Aufbewahrung: Aufbewahrung 132 Monate (§ 257 HGB).
+    Filter: vom Filter nicht erfasst
+4. Charge gebildet (Endereignis)
+    Filter: vom Filter nicht erfasst

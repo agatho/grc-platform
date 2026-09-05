@@ -15,6 +15,19 @@ coverage/
 # /compliance/coverage path; we generalize to any /api/v1/**/coverage/
 # so future routes (e.g. processes/[id]/coverage) are tracked too.
 !apps/web/src/app/api/v1/**/coverage/
+# [ARCTOS-FULL-2026-08-31 · OP-066] Hier standen vier Zeilen, die
+# `coverage/coverage-baseline.json` wieder einschliessen sollten:
+#
+#   !coverage/
+#   coverage/*
+#   !coverage/coverage-baseline.json
+#
+# Sie haben nie gewirkt. Weiter unten (Zeile 78/79) schliessen `coverage/` und
+# `**/coverage/` das Verzeichnis erneut aus, die zuletzt passende Regel
+# gewinnt, und eine Datei laesst sich nicht einschliessen, wenn ihr
+# Verzeichnis ausgeschlossen ist — dieselbe Mechanik wie bei C-15. Die
+# Coverage-Ratsche liegt deshalb jetzt als `.coverage-ratchet.json` in der
+# Wurzel, neben `.eslint-ratchet.json`, und braucht diese Ausnahme nicht mehr.
 *.tsbuildinfo
 .vercel/
 
@@ -40,3 +53,59 @@ uploads/
 # Helper verification scripts (Cowork sandbox couldn't delete; canonical tests in tests/)
 packages/*/run-*.ts
 packages/*/run-*.mjs
+
+# #S08-25 (WP10): apps/worker/tsconfig.tsbuildinfo war trotz der Regel oben
+# getrackt (vor Einführung der Regel committet). Aus dem Index entfernt mit
+# `git rm --cached apps/worker/tsconfig.tsbuildinfo`.
+
+# #S08-01 / #S13-28 (WP10): generierte Angriffskarten gehören als
+# CI-Artefakt erzeugt, nicht in den Baum committet. Siehe WP10.md,
+# "Offene Punkte für den Betreiber".
+
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-15, Befund WP11 2026-09-01]
+# Playwright-Storage-State. `auth.setup.ts` schreibt hier den Zustand einer
+# angemeldeten Sitzung hinein — Cookies inklusive `authjs.session-token`.
+# Die Datei war getrackt und in KEINER .gitignore; im Index lag ein
+# 1523 Zeichen langes Session-Token des Seed-Admins, und jeder E2E-Lauf
+# schrieb ein frisches hinein. In einem oeffentlichen Repository (S08-01)
+# ist das eine committete Zugangsberechtigung.
+#
+# Entschaerfend, aber nicht entlastend: das Token lautet auf `localhost`
+# und war am 2026-04-06 abgelaufen, das Konto ist ein CI-Seed-Konto.
+# Aus dem Index entfernt mit
+# `git rm --cached apps/web/e2e/.auth/admin.json`.
+# Das Verzeichnis bleibt via .gitkeep bestehen, weil Playwright es erwartet.
+apps/web/e2e/.auth/*
+!apps/web/e2e/.auth/.gitkeep
+**/.auth/*.json
+**/playwright/.auth/
+storage-state*.json
+
+# Audit-Remediation ARCTOS-FULL-2026-08-31: Testartefakte gehoeren nicht ins Repository
+coverage/
+**/coverage/
+playwright-report/
+test-results/
+.turbo/
+
+# [E2E-TRIAGE-2026-09-02 · C-15] Diese Ausnahme MUSS nach `**/coverage/`
+# stehen. In .gitignore gewinnt die ZULETZT passende Regel, und `**/coverage/`
+# (Zeile 79, aus der Audit-Remediation) hat die weiter oben stehende Ausnahme
+# `!apps/web/src/app/api/v1/**/coverage/` (Zeile 17, #WAVE14-CROSS-05) wieder
+# aufgehoben. Folge: DREI API-Routen sind aus dem Repository verschwunden —
+#
+#   apps/web/src/app/api/v1/compliance/coverage/route.ts
+#   apps/web/src/app/api/v1/audit-mgmt/universe/coverage/route.ts
+#   apps/web/src/app/api/v1/processes/[id]/coverage/route.ts
+#
+# Sie liegen auf den Entwicklerrechnern, in denen sie entstanden sind, aber in
+# keinem frischen Klon. Gemessen am Produktionsbau des Eigentuemers: keine der
+# drei steht in `app-paths-manifest.json`, und
+# `POST /api/v1/processes/<id>/coverage` antwortet dort mit der HTML-404-Seite.
+# `bpm-approval-pipeline` scheitert genau daran (Framework-Mapping ist das
+# harte Gatter fuer approved -> published).
+#
+# Das Verzeichnis selbst muss ausgenommen werden, nicht die Datei darin: eine
+# Datei laesst sich nicht wieder einschliessen, wenn ihr Verzeichnis
+# ausgeschlossen ist.
+!apps/web/src/app/api/v1/**/coverage/

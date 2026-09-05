@@ -41,7 +41,7 @@ interface GpaiModel {
 }
 
 function GpaiPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const [rows, setRows] = useState<GpaiModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);

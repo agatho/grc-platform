@@ -32,13 +32,7 @@ import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDateFormat } from "@/lib/format-date";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -47,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@grc/ui";
 import type {
@@ -64,15 +57,15 @@ import {
   EMPTY_BPMN_XML,
 } from "@grc/shared";
 
-import type {
-  BpmnEditorRef,
-  RiskOverlayData,
-  CallActivityOverlayData,
-} from "@/components/bpmn/bpmn-editor";
+import type { CallActivityOverlayData } from "@/components/bpmn/bpmn-editor";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
+import { useGrcOverlay } from "@/hooks/use-grc-overlay";
+import { GrcViewSelect } from "@/components/bpmn/grc-view-select";
+import type { GrcViewId } from "@grc/bpmn/grc";
 import { ProcessComments } from "@/components/process/process-comments";
 import { ProcessReviewConfig } from "@/components/process/process-review-config";
 import { ProcessControlsTab } from "@/components/process/process-controls-tab";
@@ -98,6 +91,24 @@ const BpmnEditorDynamic = dynamic(
     loading: () => (
       <div className="flex items-center justify-center min-h-[500px]">
         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    ),
+  },
+);
+// [ARCTOS-FULL-2026-08-31 · OP-026] Der Versionsdialog bekommt die Sichtwahl.
+// Eigene dynamische Einbindung, damit die vier Sichten und der Overlay-Haken
+// nicht in das Bündel jeder Prozessseite geraten, sondern erst beim Öffnen des
+// Dialogs geladen werden.
+const BpmnGrcViewerDynamic = dynamic(
+  () =>
+    import("@/components/bpmn/bpmn-viewer").then((m) => ({
+      default: m.BpmnGrcViewer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     ),
   },
@@ -213,8 +224,10 @@ export default function ProcessDetailPage() {
 function ProcessDetailContent() {
   const t = useTranslations("process");
   const tDrill = useTranslations("bpmOverhaul");
+  // [ARCTOS-FULL-2026-08-31 · OP-001] Namensraum der GRC-Pflegemasken.
+  const tGrc = useTranslations("processGrc");
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const { data: session } = useSession();
   const processId = params.id as string;
 
@@ -463,7 +476,7 @@ function ProcessDetailContent() {
               <ProcessComplianceProfileSwitcher
                 processId={processId}
                 initialProfile={
-                  (process as any).complianceProfile ?? "standard"
+                  (process as UnvalidatedJson).complianceProfile ?? "standard"
                 }
                 onChange={() => fetchProcess()}
               />
@@ -591,6 +604,41 @@ function ProcessDetailContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* [ARCTOS-FULL-2026-08-31 · OP-001] Einstieg in die Pflegemasken der
+          GRC-Diagrammdaten. Ohne diese Zeile waeren die vier Seiten nur ueber
+          eine von Hand eingetippte URL erreichbar — dieselbe Lage, in der
+          `processes/[id]/racm` seit ihrem Bau steht (kein Verweis im ganzen
+          Baum). Eine Pflegeoberflaeche, die niemand findet, pflegt nichts. */}
+      <nav
+        aria-label={tGrc("nav.maintenance")}
+        className="flex flex-wrap items-center gap-3 text-sm"
+      >
+        <Link
+          href={`/processes/${processId}/lanes`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("lanes.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-raci`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("raci.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-bia`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("bia.title")}
+        </Link>
+        <Link
+          href="/processes/sod-rules"
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("sod.title")}
+        </Link>
+      </nav>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -751,7 +799,7 @@ function OverviewTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
-  const tGov = useTranslations("processGovernance");
+  const _tGov = useTranslations("processGovernance");
   const tDrill = useTranslations("bpmOverhaul");
   const tMap = useTranslations("processMap");
   const router = useRouter();
@@ -769,6 +817,17 @@ function OverviewTab({
     calls: CallLinkCall[];
     calledBy: CallLinkCaller[];
   } | null>(null);
+
+  // GRC-Sicht der Vorschau. Eigener Zustand statt eines geteilten mit dem
+  // Editor-Reiter: die beiden Reiter werden nie gleichzeitig gerendert, ein
+  // gemeinsamer Zustand hätte also nur die Elternkomponente vergrößert.
+  // `null` = aus; dann läuft der Overlay-Endpunkt gar nicht erst an.
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(process.id, { enabled: grcView !== null });
 
   useEffect(() => {
     fetch(`/api/v1/processes/${process.id}/call-links`)
@@ -929,6 +988,21 @@ function OverviewTab({
           {process.versions?.some((v) => v.bpmnXml) ||
           Boolean(process.currentVersionData?.bpmnXml) ? (
             <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
+              {/*
+                Dieselbe Sichtwahl wie über der Bearbeitungsfläche — sie teilt
+                sich den Zustand mit ihr, weil beide dasselbe Diagramm zeigen
+                und ein Leser, der die Sicht einmal gewählt hat, sie nicht in
+                jedem Reiter erneut wählen will.
+              */}
+              <div className="flex justify-end border-b border-gray-100 px-2 py-1">
+                <GrcViewSelect
+                  value={grcView}
+                  onChange={setGrcView}
+                  computedAt={grcOverlayData?.computedAt}
+                  loading={grcLoading}
+                  error={grcError}
+                />
+              </div>
               <BpmnViewerDynamic
                 xml={
                   process.versions?.find((v) => v.isCurrent)?.bpmnXml ??
@@ -942,6 +1016,9 @@ function OverviewTab({
                 }
                 className="h-full"
                 minHeight={400}
+                {...(grcView !== null && grcOverlayData !== undefined
+                  ? { grcOverlayData, grcView }
+                  : {})}
               />
             </div>
           ) : (
@@ -1213,9 +1290,22 @@ function EditorTab({
   const [showLodOverlay, setShowLodOverlay] = useState(false);
   const [showFindingsOverlay, setShowFindingsOverlay] = useState(false);
 
-  const [coverageOverlay, setCoverageOverlay] = useState<any[]>([]);
-  const [lodOverlay, setLodOverlay] = useState<any[]>([]);
-  const [findingsOverlay, setFindingsOverlay] = useState<any[]>([]);
+  const [coverageOverlay, setCoverageOverlay] = useState<UnvalidatedJson[]>([]);
+  const [lodOverlay, setLodOverlay] = useState<UnvalidatedJson[]>([]);
+  const [findingsOverlay, setFindingsOverlay] = useState<UnvalidatedJson[]>([]);
+
+  // Die GRC-Diagrammschicht (23 Layer, 9 Sichten aus Plan §3.3.3). `null` =
+  // aus; dann wird der Overlay-Endpunkt gar nicht erst befragt und die vier
+  // Badge-Kanäle darüber arbeiten wie bisher. Ist eine Sicht gewählt, lassen
+  // die Kanäle die Fläche in Ruhe — dieselbe Aussage zweimal am selben Element
+  // wäre kein Mehrwert, sondern ein Widerspruch in spe
+  // (STUFE2-C-ABSCHLUSS.md §1.3).
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(processId, { enabled: grcView !== null });
 
   useEffect(() => {
     if (!showCoverageOverlay) return;
@@ -1223,7 +1313,7 @@ function EditorTab({
       .then((r) => (r.ok ? r.json() : { data: { activities: [] } }))
       .then((j) =>
         setCoverageOverlay(
-          (j.data?.activities ?? []).map((a: any) => ({
+          (j.data?.activities ?? []).map((a: UnvalidatedJson) => ({
             bpmnElementId: a.bpmnElementId,
             controlCount: a.controlCount ?? 0,
             effectiveCount: a.effectiveCount ?? 0,
@@ -1237,7 +1327,7 @@ function EditorTab({
     if (!showLodOverlay) return;
     // process.steps already carries lineOfDefense per step
     setLodOverlay(
-      (process.steps ?? []).map((s: any) => ({
+      (process.steps ?? []).map((s: UnvalidatedJson) => ({
         bpmnElementId: s.bpmnElementId,
         lineOfDefense: s.lineOfDefense ?? null,
       })),
@@ -1253,7 +1343,9 @@ function EditorTab({
         for (const f of j.data ?? []) {
           const stepId = f.process_step_id;
           if (!stepId) continue;
-          const step = (process.steps ?? []).find((s: any) => s.id === stepId);
+          const step = (process.steps ?? []).find(
+            (s: UnvalidatedJson) => s.id === stepId,
+          );
           if (!step) continue;
           const k = step.bpmnElementId;
           const agg = byStep.get(k) ?? { open: 0, critical: 0 };
@@ -1318,7 +1410,7 @@ function EditorTab({
 
   // Handle save via BPMN XML
   const handleSave = useCallback(
-    async (xml: string) => {
+    async (_xml: string) => {
       // Save via the hook which posts to /versions
       await save();
     },
@@ -1445,6 +1537,13 @@ function EditorTab({
             >
               Findings
             </button>
+            <GrcViewSelect
+              value={grcView}
+              onChange={setGrcView}
+              computedAt={grcOverlayData?.computedAt}
+              loading={grcLoading}
+              error={grcError}
+            />
           </div>
 
           <BpmnEditorDynamic
@@ -1463,6 +1562,9 @@ function EditorTab({
             callActivityOverlayData={callActivityOverlay}
             onNavigateToProcess={navigateToChildProcess}
             className="h-full"
+            {...(grcView !== null && grcOverlayData !== undefined
+              ? { grcOverlayData, grcView }
+              : {})}
           />
         </div>
 
@@ -1685,8 +1787,17 @@ function VersionsTab({
             style={{ height: "60vh" }}
           >
             {viewingVersion?.bpmnXml ? (
-              <BpmnViewerDynamic
+              /*
+               * [ARCTOS-FULL-2026-08-31 · OP-026] Dieselbe Fläche, jetzt mit
+               * GRC-Sichtwahl. `versionId` gehört dazu: der Dialog zeigt eine
+               * bestimmte Fassung, und der Overlay-Endpunkt kennt den
+               * Parameter (`useGrcOverlay`, `?version=`). Ohne ihn läge über
+               * einer alten Fassung der Stand von heute.
+               */
+              <BpmnGrcViewerDynamic
                 xml={viewingVersion.bpmnXml}
+                processId={process.id}
+                versionId={viewingVersion.id}
                 className="h-full"
                 minHeight={400}
               />
@@ -1966,7 +2077,9 @@ function RisksTab({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("risks.searchRisk")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              autoFocus
+              // [WP12 · S14-09] `autoFocus` removed: Radix Dialog already moves
+              // focus into the panel on open, and a second, competing focus
+              // jump is what WCAG 3.2.1 (On Focus) warns about.
             />
             {searching && (
               <div className="flex items-center justify-center py-4">

@@ -17,6 +17,10 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { emitEntityStatusChanged } from "@/lib/entity-events";
 import { log } from "@/lib/logger";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // Map risk status to work item status
 const RISK_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -32,7 +36,7 @@ const RISK_TO_WORK_ITEM_STATUS: Record<string, string> = {
 };
 
 // PUT /api/v1/risks/:id/status — Status transition
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -353,8 +357,7 @@ export async function PUT(
   });
 
   return Response.json({ data: updated });
-}
-
+});
 // The risk-list bulk-status-change UI dispatches `PATCH /api/v1/risks/{id}/status`
 // (see apps/web/src/app/(dashboard)/risks/page.tsx). The dedicated route used
 // to expose only PUT, so those bulk calls were silently 405-ing. Re-export

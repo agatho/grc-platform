@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,7 +30,7 @@ interface DashboardWidgetFrameProps {
 }
 
 export function DashboardWidgetFrame({
-  widgetId,
+  widgetId: _widgetId,
   definitionKey,
   widgetType,
   title,
@@ -42,6 +43,12 @@ export function DashboardWidgetFrame({
   onRemove,
   onRetry,
 }: DashboardWidgetFrameProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Rahmen jeder Kachel des
+  // Startbildschirms. Seine drei Werkzeugknoepfe tragen nur ein Symbol; ihr
+  // `title` war zugleich der einzige zugaengliche Name und stand fest auf
+  // Deutsch. Die Fehlermeldung schrieb ausserdem „verfuegbar" statt
+  // „verfügbar".
+  const t = useTranslations("dashboard.widget");
   const WidgetRenderer = getWidgetRenderer(definitionKey, widgetType);
   const displayTitle = config?.displayOptions?.title ?? title;
 
@@ -63,9 +70,10 @@ export function DashboardWidgetFrame({
               size="icon"
               className="h-6 w-6"
               onClick={onRetry}
-              title="Erneut versuchen"
+              title={t("retry")}
+              aria-label={t("retry")}
             >
-              <RefreshCcw className="h-3 w-3" />
+              <RefreshCcw className="h-3 w-3" aria-hidden="true" />
             </Button>
           )}
           {isEditMode && (
@@ -75,18 +83,20 @@ export function DashboardWidgetFrame({
                 size="icon"
                 className="h-6 w-6"
                 onClick={onConfigure}
-                title="Konfigurieren"
+                title={t("configure")}
+                aria-label={t("configure")}
               >
-                <Settings className="h-3 w-3" />
+                <Settings className="h-3 w-3" aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6 text-destructive hover:text-destructive"
                 onClick={onRemove}
-                title="Entfernen"
+                title={t("remove")}
+                aria-label={t("remove")}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3 w-3" aria-hidden="true" />
               </Button>
             </>
           )}
@@ -95,11 +105,11 @@ export function DashboardWidgetFrame({
       <CardContent className="flex-1 overflow-hidden px-3 pb-3 pt-0">
         {error && !isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-            <AlertCircle className="h-5 w-5" />
+            <AlertCircle className="h-5 w-5" aria-hidden="true" />
             <span>
               {error === "Module not activated"
-                ? "Modul nicht verfuegbar"
-                : "Daten nicht verfuegbar"}
+                ? t("moduleUnavailable")
+                : t("dataUnavailable")}
             </span>
           </div>
         ) : (

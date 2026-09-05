@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -76,7 +75,7 @@ export default function ImportHistoryPage() {
 
   const [jobs, setJobs] = useState<ImportJobRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
+  const [_total, setTotal] = useState(0);
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { TestTube, FileCheck, ListChecks, Brain, Sparkles } from "lucide-react";
+import { TestTube, ListChecks } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,13 +56,13 @@ export default function ControlTestingDashboardPage() {
           <Link href="/control-testing/scripts">
             <Button variant="outline">
               <TestTube className="h-4 w-4 mr-2" />
-              {t("scripts")}
+              {t("scripts.title")}
             </Button>
           </Link>
           <Link href="/control-testing/checklists">
             <Button variant="outline">
               <ListChecks className="h-4 w-4 mr-2" />
-              {t("checklists")}
+              {t("checklists.title")}
             </Button>
           </Link>
         </div>

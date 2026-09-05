@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -10,7 +11,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { ApplicationWithPortfolio } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const LIFECYCLE_COLORS: Record<string, string> = {
   planned: "bg-blue-100 text-blue-900",
@@ -37,18 +38,35 @@ export default function ApplicationsPage() {
 }
 
 function ApplicationsInner() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Betraege standen fest im deutschen
+  // Zahlenformat, obwohl die Seite uebersetzt ist.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("eam");
-  const [apps, setApps] = useState<any[]>([]);
+  const [apps, setApps] = useState<UnvalidatedJson[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "quadrant" | "timeline">("list");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` steht hier bewusst
+      // stehen und ist trotzdem ein Befund: `GET /api/v1/eam/applications`
+      // benutzt `paginate()` NICHT, sondern klemmt selbst
+      // (`Math.min(parseInt(limit ?? "100"), 500)`) und kennt kein `page`.
+      // Diese Aufrufstelle läuft heute also — sie bricht in dem Moment, in dem
+      // die Route auf den Vertrag umgestellt wird. Der Wächter in
+      // `src/__tests__/lib/client-pagination-contract.test.ts` prüft genau
+      // diese Paarung und wird rot, sobald die Route `paginate()` benutzt.
+      // Die Umstellung der Route gehört Strang 1a (siehe UMSETZUNG-WELLE-1B.md).
       const res = await fetch("/api/v1/eam/applications?limit=200");
       if (res.ok) {
         const json = await res.json();
         setApps(json.data ?? []);
+      } else {
+        console.error(
+          "eam/applications: Anwendungsliste nicht geladen",
+          res.status,
+        );
       }
     } finally {
       setLoading(false);
@@ -135,14 +153,16 @@ function ApplicationsInner() {
                       }
                     >
                       {t(
-                        `portfolio.${app.portfolio.timeClassification}` as any,
+                        `portfolio.${app.portfolio.timeClassification}` as Parameters<
+                          typeof t
+                        >[0],
                       )}
                     </Badge>
                   )}
                   {app.portfolio?.annualCost && (
                     <span className="text-sm font-medium">
                       {Number(app.portfolio.annualCost).toLocaleString(
-                        "de-DE",
+                        numberLocale,
                         { style: "currency", currency: "EUR" },
                       )}
                     </span>

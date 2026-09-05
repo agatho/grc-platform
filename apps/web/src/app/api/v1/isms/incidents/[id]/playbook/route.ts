@@ -9,12 +9,17 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { activatePlaybookSchema } from "@grc/shared";
-import { eq, and, isNull, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { eq, and, isNull, desc } from "drizzle-orm";
+import { withAuth } from "@/lib/api";
 import { activatePlaybook } from "@/lib/playbook-engine";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/isms/incidents/[id]/playbook — Activate playbook for incident
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -62,7 +67,7 @@ export async function POST(
     // (it's a structured signal from activatePlaybook for the
     // already-activated case), but stop reflecting arbitrary
     // err.message values to the client. Other failures land as a
-    // generic 400; the engine's full detail goes to console.error.
+    // generic 400; the engine's full detail goes to the structured log.
     const message = err instanceof Error ? err.message : String(err);
     if (message.startsWith("CONFLICT")) {
       return Response.json(
@@ -70,16 +75,15 @@ export async function POST(
         { status: 409 },
       );
     }
-    console.error("[isms/incidents/playbook] activation failed", err);
+    log.error("[isms/incidents/playbook] activation failed", { err });
     return Response.json(
       { error: "Playbook activation failed" },
       { status: 400 },
     );
   }
-}
-
+});
 // GET /api/v1/isms/incidents/[id]/playbook — Get playbook status
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -230,4 +234,4 @@ export async function GET(
       timeline,
     },
   });
-}
+});

@@ -55,9 +55,9 @@ function PostureInner() {
   const [overallScore, setOverallScore] = useState(0);
   const [factors, setFactors] = useState<PostureFactors | null>(null);
   const [trend, setTrend] = useState<string>("stable");
-  const [previousScore, setPreviousScore] = useState<number | null>(null);
+  const [_previousScore, setPreviousScore] = useState<number | null>(null);
   const [domains, setDomains] = useState<DomainScores | null>(null);
-  const [trendData, setTrendData] = useState<TrendPoint[]>([]);
+  const [_trendData, setTrendData] = useState<TrendPoint[]>([]);
   const [hasEnoughTrendData, setHasEnoughTrendData] = useState(false);
   const [quarterlyDelta, setQuarterlyDelta] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);

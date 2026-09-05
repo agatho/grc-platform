@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { ProgrammeStepStatusBadge } from "@/components/programme/programme-status-badge";
 import { PROGRAMME_STEP_STATUSES, type ProgrammeStepStatus } from "@grc/shared";
+// [WP12 · S12-06] Scheme allow-list for URLs that come out of the database.
+import { safeExternalHref } from "@grc/ui";
 
 const SUBTASK_STATUSES = [
   "pending",
@@ -270,7 +272,6 @@ export default function StepDetailPage({
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, stepId]);
 
   async function saveHeader() {
@@ -629,7 +630,7 @@ export default function StepDetailPage({
             <ProgrammeStepStatusBadge status={step.status} />
           </div>
           {step.description && (
-            <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+            <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-500">
               {step.description}
             </p>
           )}
@@ -1205,9 +1206,14 @@ export default function StepDetailPage({
                 </Badge>
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">
-                    {l.targetUrl ? (
+                    {/* [WP12 · S12-06] `href={l.targetUrl}` rendered whatever
+                        the database held. Rows written before the schema fix
+                        can still carry `javascript:`, so the guard has to sit
+                        here too; a non-http(s) value degrades to plain text
+                        rather than a live link. */}
+                    {safeExternalHref(l.targetUrl) ? (
                       <a
-                        href={l.targetUrl}
+                        href={safeExternalHref(l.targetUrl)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-blue-600 hover:underline"

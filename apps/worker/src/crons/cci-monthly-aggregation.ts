@@ -30,7 +30,9 @@ import type {
   CCIRawMetrics,
   CCIRawMetricDetail,
 } from "@grc/shared";
+import { reportJobError } from "../lib/job-runtime";
 
+import { log } from "../lib/logger";
 interface AggregationResult {
   orgsProcessed: number;
   snapshotsCreated: number;
@@ -45,9 +47,7 @@ export const processCCIMonthlyAggregation = withCronInstrumentation(
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const period = getPeriodString(prevMonth);
 
-    console.log(
-      `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
-    );
+    log.info("[cron:cci-monthly] Starting CCI aggregation", { period });
 
     let orgsProcessed = 0;
     let snapshotsCreated = 0;
@@ -64,9 +64,9 @@ export const processCCIMonthlyAggregation = withCronInstrumentation(
         if (result) snapshotsCreated++;
         orgsProcessed++;
       } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "cci-monthly-aggregation", scope: "org" }, err);
         errors++;
-        // Wrapper logs structured error; bump per-org counter.
-        void err;
       }
     }
 

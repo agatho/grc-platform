@@ -3,6 +3,10 @@ import { requireModule } from "@grc/auth";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { reorderProcessMapSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/processes/map/reorder — Prozesslandkarte: persist the
 // manual tile order of one band. Body { category, orderedIds } →
@@ -12,7 +16,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // uncategorized children that merely inherit the band stay sortable.
 //
 // Roles mirror the process PUT route (admin, process_owner).
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -75,4 +79,4 @@ export async function PUT(req: Request) {
   return Response.json({
     data: { category, updated: orderedIds.length },
   });
-}
+});

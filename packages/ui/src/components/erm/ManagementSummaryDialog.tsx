@@ -102,7 +102,8 @@ export function ManagementSummaryDialog({
               })
             }
             disabled={isLoading || !periodStart || !periodEnd}
-            className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:opacity-50"
+            // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf teal-600 = 3,66:1.
+            className="px-4 py-2 text-sm font-medium text-white bg-teal-700 rounded-md hover:bg-teal-800 disabled:opacity-50"
           >
             {isLoading
               ? (labels?.generating ?? "Generating...")

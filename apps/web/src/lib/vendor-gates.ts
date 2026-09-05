@@ -2,6 +2,32 @@
 // prospect → onboarding → active → under_review → suspended → terminated
 
 import { sql } from "drizzle-orm";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
+// the `any` that stood on every `tx` parameter here.
+import type { DbTransaction } from "@/lib/db-types";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] Row shape for the raw-SQL reads
+ * below, which were cast `as any[]`. `any` meant a renamed column silently
+ * produced `undefined` and a gate that passed instead of blocking — in
+ * modules whose entire purpose is to refuse a release. `Record<string,
+ * unknown>` keeps the property access explicit while restoring the check that
+ * the value is used as something.
+ */
+type SqlRow = Record<string, unknown>;
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `count(*)` arrives from raw SQL as
+ * a string (Postgres returns bigint as text) or as a number, depending on the
+ * column. Under the previous `as any[]` the comparison `row.x > 0` silently
+ * relied on JavaScript coercion; with a typed row it has to say what it means.
+ * `null`/`undefined` become 0 — a gate must not pass because a count was
+ * missing.
+ */
+function count(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value ?? 0);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export interface VendorGateBlocker {
   code: string;
@@ -19,7 +45,8 @@ export type VendorStatus =
   | "terminated";
 
 interface Args {
-  tx: any;
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction;
   vendorId: string;
   orgId: string;
   target: VendorStatus;
@@ -48,7 +75,7 @@ export async function evaluateVendorGates({
               WHERE vendor_id = v.id AND status IN ('approved','activated'))::int AS exit_plans
     FROM vendor v
     WHERE v.id = ${vendorId} AND v.org_id = ${orgId} AND v.deleted_at IS NULL
-  `)) as any[];
+  `)) as SqlRow[];
 
   if (!v) {
     return [
@@ -113,7 +140,7 @@ export async function evaluateVendorGates({
 
   // → terminated
   if (target === "terminated") {
-    if (v.active_contracts > 0) {
+    if (count(v.active_contracts) > 0) {
       blockers.push({
         code: "active_contracts_remain",
         gate: "active_to_terminated",

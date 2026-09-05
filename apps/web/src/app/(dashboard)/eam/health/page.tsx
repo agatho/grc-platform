@@ -8,6 +8,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ArchHealthScore } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export default function ArchitectureHealthPage() {
   return (
@@ -20,7 +21,7 @@ export default function ArchitectureHealthPage() {
 function HealthInner() {
   const t = useTranslations("eam");
   const [score, setScore] = useState<ArchHealthScore | null>(null);
-  const [trend, setTrend] = useState<any[]>([]);
+  const [trend, setTrend] = useState<UnvalidatedJson[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -95,7 +96,7 @@ function HealthInner() {
             <CardContent className="p-4 flex items-center gap-4">
               <div className="flex-1">
                 <p className="text-sm font-medium">
-                  {t(`health.${f.key}` as any)}
+                  {t(`health.${f.key}` as Parameters<typeof t>[0])}
                 </p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                   <div
@@ -121,7 +122,7 @@ function HealthInner() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2 h-32">
-              {trend.map((s: any, i: number) => (
+              {trend.map((s: UnvalidatedJson, i: number) => (
                 <div
                   key={i}
                   className="flex-1 bg-primary/80 rounded-t"

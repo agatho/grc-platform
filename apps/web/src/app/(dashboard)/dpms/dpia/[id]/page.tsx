@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -128,7 +128,7 @@ function DpiaDetailInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const { formatDate } = useDateFormat();
+  const { formatDate: _formatDate } = useDateFormat();
   const [data, setData] = useState<DpiaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<WizardStep>("prescreen");
@@ -983,6 +983,14 @@ function MeasuresStep({
   dpiaId: string;
   onUpdated: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Kosten der Massnahmen standen fest im
+  // deutschen Zahlenformat.
+  const { locale: numberLocale } = useDateFormat();
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [showForm, setShowForm] = useState(false);
   const [desc, setDesc] = useState("");
   const [riskId, setRiskId] = useState("");
@@ -1062,10 +1070,14 @@ function MeasuresStep({
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-field`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Verknuepftes Risiko (optional)
               </label>
               <select
+                id={`${a11yId}-field`}
                 value={riskId}
                 onChange={(e) => setRiskId(e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
@@ -1079,10 +1091,14 @@ function MeasuresStep({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-umsetzungszeitraum`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Umsetzungszeitraum
               </label>
               <input
+                id={`${a11yId}-umsetzungszeitraum`}
                 value={timeline}
                 onChange={(e) => setTimeline(e.target.value)}
                 placeholder="z.B. Q2 2026"
@@ -1092,10 +1108,14 @@ function MeasuresStep({
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-einmalkosten-eur`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Einmalkosten (EUR)
               </label>
               <input
+                id={`${a11yId}-einmalkosten-eur`}
                 type="number"
                 value={costOnetime}
                 onChange={(e) => setCostOnetime(e.target.value)}
@@ -1104,10 +1124,14 @@ function MeasuresStep({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-jaehrliche-kosten-eur`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Jaehrliche Kosten (EUR)
               </label>
               <input
+                id={`${a11yId}-jaehrliche-kosten-eur`}
                 type="number"
                 value={costAnnual}
                 onChange={(e) => setCostAnnual(e.target.value)}
@@ -1116,10 +1140,14 @@ function MeasuresStep({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-aufwand-stunden`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Aufwand (Stunden)
               </label>
               <input
+                id={`${a11yId}-aufwand-stunden`}
                 type="number"
                 value={effortHours}
                 onChange={(e) => setEffortHours(e.target.value)}
@@ -1184,13 +1212,14 @@ function MeasuresStep({
                   {m.costOnetime && Number(m.costOnetime) > 0 && (
                     <Badge variant="outline" className="text-[10px]">
                       Einmalkosten:{" "}
-                      {Number(m.costOnetime).toLocaleString("de-DE")}{" "}
+                      {Number(m.costOnetime).toLocaleString(numberLocale)}{" "}
                       {m.costCurrency ?? "EUR"}
                     </Badge>
                   )}
                   {m.costAnnual && Number(m.costAnnual) > 0 && (
                     <Badge variant="outline" className="text-[10px]">
-                      Jaehrlich: {Number(m.costAnnual).toLocaleString("de-DE")}{" "}
+                      Jaehrlich:{" "}
+                      {Number(m.costAnnual).toLocaleString(numberLocale)}{" "}
                       {m.costCurrency ?? "EUR"}
                     </Badge>
                   )}
@@ -1435,6 +1464,10 @@ function DpiaRiskStep({
   dpiaId: string;
   onUpdated: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const [edits, setEdits] = useState<
     Record<string, { likelihood: number; impact: number }>
   >({});
@@ -1529,10 +1562,14 @@ function DpiaRiskStep({
           />
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-schweregrad`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Schweregrad
               </label>
               <select
+                id={`${a11yId}-schweregrad`}
                 value={newSeverity}
                 onChange={(e) => setNewSeverity(e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
@@ -1545,10 +1582,14 @@ function DpiaRiskStep({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-eintrittswahrscheinlichkeit`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Eintrittswahrscheinlichkeit
               </label>
               <select
+                id={`${a11yId}-eintrittswahrscheinlichkeit`}
                 value={newLikelihood}
                 onChange={(e) => setNewLikelihood(e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
@@ -1561,10 +1602,14 @@ function DpiaRiskStep({
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-auswirkung`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Auswirkung
               </label>
               <select
+                id={`${a11yId}-auswirkung`}
                 value={newImpact}
                 onChange={(e) => setNewImpact(e.target.value)}
                 className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
@@ -1646,10 +1691,19 @@ function DpiaRiskStep({
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Inside
+                          risks.map(): the id root must vary per row, so it is
+                          derived from risk.id and not from a component-level
+                          useId(), which every row would share (duplicate ids
+                          bind every label to the first row's control). */}
+                      <label
+                        htmlFor={`dpia-likelihood-${risk.id}`}
+                        className="block text-xs font-medium text-gray-600 mb-1"
+                      >
                         Eintrittswahrscheinlichkeit (1-5)
                       </label>
                       <select
+                        id={`dpia-likelihood-${risk.id}`}
                         value={edit.likelihood}
                         onChange={(e) =>
                           setEdits((p) => ({
@@ -1671,10 +1725,15 @@ function DpiaRiskStep({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {/* [WP12 · S14-09] Per-row id root — see above. */}
+                      <label
+                        htmlFor={`dpia-impact-${risk.id}`}
+                        className="block text-xs font-medium text-gray-600 mb-1"
+                      >
                         Auswirkung (1-5)
                       </label>
                       <select
+                        id={`dpia-impact-${risk.id}`}
                         value={edit.impact}
                         onChange={(e) =>
                           setEdits((p) => ({
@@ -1696,9 +1755,11 @@ function DpiaRiskStep({
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      {/* [WP12 · S14-09] Derived read-only value, not a
+                          control: a <label> here names nothing. */}
+                      <span className="block text-xs font-medium text-gray-600 mb-1">
                         Risiko-Score
-                      </label>
+                      </span>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span
                           className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-bold min-w-[3rem] ${riskScoreColor(computedScore)}`}

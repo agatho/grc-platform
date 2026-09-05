@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL">
+  <bpmn:process id="Process_1">
+    <bpmn:startEvent id="StartEvent_1" />
+    <bpmn:exclusiveGateway id="Gw_1" />
+    <bpmn:task id="Task_A" />
+    <bpmn:task id="Task_B" />
+    <bpmn:endEvent id="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Gw_1" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Gw_1" targetRef="Task_A">
+      <bpmn:conditionExpression>x == 1</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gw_1" targetRef="Task_B" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_A" targetRef="EndEvent_1" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_B" targetRef="EndEvent_1" />
+  </bpmn:process>
+</bpmn:definitions>

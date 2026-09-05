@@ -21,8 +21,27 @@ db_engine    = "lmdb"
 replication_factor = 1
 
 rpc_bind_addr   = "[::]:3901"
+# #S06-25 (ARCTOS-FULL-2026-08-31, Info): fuer den beabsichtigten
+# Single-Node-Betrieb (replication_factor = 1) ist die Loopback-Adresse
+# funktionsfaehig — der Knoten spricht nur mit sich selbst. Sobald ein
+# ZWEITER Knoten dazukommt, kuendigt dieser Knoten eine Adresse an, unter
+# der ihn niemand erreicht, und der Cluster bildet sich nicht.
+#
+# BEIM SKALIEREN ZWINGEND AENDERN auf die im Cluster-Netz erreichbare
+# Adresse dieses Knotens, z. B. "10.0.0.11:3901" oder den DNS-Namen des
+# Compose-Service ("garage:3901"), UND replication_factor auf 3 anheben.
+# Garage liest den Wert alternativ aus GARAGE_RPC_PUBLIC_ADDR; die
+# Umgebungsvariable ueberschreibt diese Zeile, ohne die Datei zu aendern.
 rpc_public_addr = "127.0.0.1:3901"
 # rpc_secret injected via GARAGE_RPC_SECRET (32-byte hex).
+
+# ── Verschluesselung at rest (#S06-11) ──────────────────────────────
+# Garage bietet KEINE serverseitige Verschlüsselung per Default. Die App
+# setzt `x-amz-server-side-encryption` nur, wenn S3_SSE gesetzt ist — auf
+# Garage bleibt das wirkungslos. Der Dokumentenspeicher liegt damit im
+# Klartext auf dem Volume; die Verschlüsselung ist eine Betreibermaßnahme
+# (LUKS/dm-crypt auf dem Datenträger). Der Trust-Portal-Text wurde
+# entsprechend korrigiert und behauptet keine Produktzusage mehr.
 
 [s3_api]
 # MUST equal the region the app signs requests with (S3_REGION). The app

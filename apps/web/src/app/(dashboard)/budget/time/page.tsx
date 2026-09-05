@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +15,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import type { GrcTimeEntry, GrcArea } from "@grc/shared";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
@@ -50,6 +50,10 @@ interface DeptAnalysisRow {
 }
 
 export default function TimeTrackingPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
   const [entries, setEntries] = useState<GrcTimeEntry[]>([]);
@@ -462,7 +466,7 @@ export default function TimeTrackingPage() {
                       {row.totalHours.toFixed(1)}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
-                      {row.calculatedCost.toLocaleString("de-DE", {
+                      {row.calculatedCost.toLocaleString(numberLocale, {
                         minimumFractionDigits: 2,
                       })}
                     </td>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -509,14 +509,22 @@ export default function TemplateBuilderPage() {
                     "{{period.end}}",
                     "{{period.label}}",
                     "{{author.name}}",
+                    // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] The rows below
+                    // were click-only <code> elements: no keyboard path, no
+                    // announced role. A real <button> keeps the monospace
+                    // styling and gains focus, Enter/Space and a name for
+                    // free, instead of simulating all three with ARIA on a
+                    // non-interactive element.
                   ].map((v) => (
-                    <code
+                    <button
                       key={v}
-                      className="block bg-muted px-2 py-1 rounded text-xs font-mono cursor-pointer hover:bg-muted/80"
+                      type="button"
+                      aria-label={t("copyVariable", { variable: v })}
+                      className="block w-full text-left bg-muted px-2 py-1 rounded text-xs font-mono cursor-pointer hover:bg-muted/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
                       onClick={() => navigator.clipboard.writeText(v)}
                     >
-                      {v}
-                    </code>
+                      <code>{v}</code>
+                    </button>
                   ))}
                 </div>
               </CardContent>

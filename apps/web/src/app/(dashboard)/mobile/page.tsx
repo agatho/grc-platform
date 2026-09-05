@@ -5,8 +5,6 @@ import { useTranslations } from "next-intl";
 import {
   Smartphone,
   Bell,
-  Wifi,
-  WifiOff,
   QrCode,
   Fingerprint,
   Loader2,

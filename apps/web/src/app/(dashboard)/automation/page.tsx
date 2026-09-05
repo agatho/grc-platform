@@ -12,7 +12,6 @@ import {
   RefreshCcw,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Activity,
   ToggleLeft,
   ToggleRight,
@@ -21,6 +20,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface DashboardStats {
   activeRules: number;
@@ -229,6 +231,13 @@ export default function AutomationOverviewPage() {
                 key={rule.id}
                 className="flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors cursor-pointer"
                 onClick={() => router.push(`/automation/rules/${rule.id}/edit`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  activateOnKey(e, () =>
+                    router.push(`/automation/rules/${rule.id}/edit`),
+                  )
+                }
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <button

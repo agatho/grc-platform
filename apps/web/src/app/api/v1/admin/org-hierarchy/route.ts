@@ -1,10 +1,14 @@
 import { db, organization } from "@grc/db";
-import { eq, isNull, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { setParentOrgSchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/org-hierarchy — Get org tree
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -33,10 +37,9 @@ export async function GET(req: Request) {
   }
 
   return Response.json({ data: roots });
-}
-
+});
 // PUT /api/v1/admin/org-hierarchy — Set parent org for current org
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -95,4 +98,4 @@ export async function PUT(req: Request) {
   });
 
   return Response.json({ data: updated });
-}
+});

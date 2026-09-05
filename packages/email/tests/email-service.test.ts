@@ -48,10 +48,16 @@ describe("EmailService", () => {
     service = new EmailService("re_test_key");
     mockResendSend.mockReset();
 
-    // Always mock delay to avoid real setTimeout waits in tests
-    vi.spyOn(service as never, "delay" as never).mockResolvedValue(
-      undefined as never,
-    );
+    // Always mock delay to avoid real setTimeout waits in tests.
+    // [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] `service as never` collapses
+    // the spy's return type to `never`, so `.mockResolvedValue` did not exist
+    // on it — invisible until packages/email got a tsconfig.json. `delay` is a
+    // private method, so the cast has to say that specifically rather than
+    // erase the type completely.
+    vi.spyOn(
+      service as unknown as { delay: (ms: number) => Promise<void> },
+      "delay",
+    ).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -75,29 +81,39 @@ describe("EmailService", () => {
   // EMAIL_ENABLED=false returns null
   // ---------------------------------------------------------------------------
   describe("when EMAIL_ENABLED is not true", () => {
+    // [Welle 4b · OP-152] Beobachtet wird `process.stdout.write` statt
+    // `console.log`: Die Zeile geht seither über den strukturierten Logger.
+    // Die Zusicherung ist dieselbe geblieben — dass der Vorgabepfad das
+    // Überspringen überhaupt MELDET —, nur auf den Text angepasst, den der
+    // Logger schreibt. Bliebe der Spy auf `console.log`, prüfte er eine
+    // leere Konsole und bestünde immer.
     it("should return null and skip sending", async () => {
       process.env.EMAIL_ENABLED = "false";
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const outSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
 
       const result = await service.send(baseParams);
 
       expect(result).toBeNull();
       expect(mockResendSend).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("[EmailService] disabled"),
+      expect(outSpy).toHaveBeenCalledWith(
+        expect.stringContaining("e-mail disabled, skipping"),
       );
-      consoleSpy.mockRestore();
+      outSpy.mockRestore();
     });
 
     it("should return null when EMAIL_ENABLED is undefined", async () => {
       delete process.env.EMAIL_ENABLED;
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+      const outSpy = vi
+        .spyOn(process.stdout, "write")
+        .mockImplementation(() => true);
 
       const result = await service.send(baseParams);
 
       expect(result).toBeNull();
       expect(mockResendSend).not.toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      outSpy.mockRestore();
     });
   });
 
@@ -444,26 +460,37 @@ describe("EmailService", () => {
       process.env.EMAIL_ENABLED = "true";
     });
 
-    it("should return empty string messageId when data.id is null", async () => {
-      mockResendSend.mockResolvedValueOnce({
-        data: { id: null },
-        error: null,
-      });
+    // [ARCTOS-FULL-2026-08-31 / WP9 · S10-04] These two cases used to assert
+    // `{ messageId: "" }` — i.e. they PINNED the defect. The Resend SDK never
+    // throws: it returns `{ data: null, error }` for HTTP errors and network
+    // failures alike, so a 422 ("domain not verified"), a 429, a wrong API key
+    // or a DNS outage all produced an empty message id that the caller
+    // recorded as a successful delivery, complete with `email_sent_at`. In a
+    // platform where that column is the evidence that a statutory deadline
+    // was communicated, "delivered" must mean the provider accepted the
+    // message. A missing id now raises, and the three retries — previously
+    // unreachable dead code — actually run.
+    it("throws when the provider returns no message id", async () => {
+      mockResendSend.mockResolvedValue({ data: { id: null }, error: null });
 
-      const result = await service.send(baseParams);
-
-      expect(result).toEqual({ messageId: "" });
+      await expect(service.send(baseParams)).rejects.toThrow(/not delivered/);
     });
 
-    it("should return empty string messageId when data is null", async () => {
-      mockResendSend.mockResolvedValueOnce({
+    it("throws when the provider returns no data at all", async () => {
+      mockResendSend.mockResolvedValue({ data: null, error: null });
+
+      await expect(service.send(baseParams)).rejects.toThrow(/not delivered/);
+    });
+
+    it("throws with the provider's message when it reports an error", async () => {
+      mockResendSend.mockResolvedValue({
         data: null,
-        error: null,
+        error: { name: "validation_error", message: "domain not verified" },
       });
 
-      const result = await service.send(baseParams);
-
-      expect(result).toEqual({ messageId: "" });
+      await expect(service.send(baseParams)).rejects.toThrow(
+        /domain not verified/,
+      );
     });
   });
 });

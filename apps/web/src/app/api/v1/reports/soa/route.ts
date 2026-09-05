@@ -160,6 +160,20 @@ export const GET = withErrorHandler(async function GET(req: Request) {
           value: implemented,
           tone: "ok",
         },
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077] Diese Kachel fehlte.
+        // `partiallyImplemented` wurde gezaehlt, die Beschriftung
+        // `soaPartially` liegt seit jeher in BEIDEN Sprachen vor — nur
+        // ausgegeben wurde der Wert nie. Folge: `anwendbar` = `umgesetzt` +
+        // `teilweise` + `offen`, gezeigt wurden aber nur `umgesetzt` und
+        // `offen`; die Kachelzeile ging nicht auf, und die teilweise
+        // umgesetzten Massnahmen verschwanden aus dem SoA-Bericht.
+        // Sichtbar wurde es als tote Bindung, nachdem `no-unused-vars` in
+        // diesem Verzeichnis eingeschaltet war.
+        {
+          label: reportLabel(locale, "soaPartially"),
+          value: partiallyImplemented,
+          tone: partiallyImplemented > 0 ? "warn" : "ok",
+        },
         {
           label: reportLabel(locale, "soaOpen"),
           value: open,

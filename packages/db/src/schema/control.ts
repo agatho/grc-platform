@@ -15,9 +15,10 @@ import {
   pgEnum,
   index,
   unique,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organization, user } from "./platform";
+import { customRole, organization, user } from "./platform";
 import { risk } from "./risk";
 import { workItem } from "./work-item";
 import { task } from "./task";
@@ -173,6 +174,15 @@ export const control = pgTable(
     // Catalog & Framework Layer hook (Sprint 4b)
     // FK to control_catalog_entry added via migration SQL
     catalogEntryId: uuid("catalog_entry_id"),
+    // [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+    // `control.source_library_ref` existiert in der Datenbank (varchar(50),
+    // nullable) und wird von
+    // apps/web/src/app/api/v1/ics/control-library/adopt/route.ts geschrieben,
+    // war hier aber nie deklariert. Der Drift-Check aus WP1 (S09-09) sieht das
+    // nicht: er meldet Spalten, die in der DB FEHLEN, nicht solche, die dort
+    // ZUSAETZLICH stehen. Ohne die Deklaration war das Feld typseitig unbekannt
+    // und der Adopt-Insert nicht typisierbar.
+    sourceLibraryRef: varchar("source_library_ref", { length: 50 }),
     // Cost tracking
     costOnetime: numeric("cost_onetime", { precision: 15, scale: 2 }),
     costAnnual: numeric("cost_annual", { precision: 15, scale: 2 }),
@@ -191,11 +201,39 @@ export const control = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    lineOfDefense: varchar("line_of_defense", { length: 10 }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    // ── STUFE2-E (0453) ────────────────────────────────────────
+    // `GrcControl.isKey`. Ausdruecklich gesetzt, nicht aus der Beschreibung
+    // erraten: eine uebersehene Schluesselkontrolle ist ein Testloch, das
+    // erst in der Jahresabschlusspruefung auffaellt.
+    isKey: boolean("is_key").notNull().default(false),
+    // Verantwortliche ROLLE der Kontrolle — Grundlage der
+    // Selbstkontroll-Pruefung (§3.4/A4). `ownerId` zeigt auf einen BENUTZER
+    // und beantwortet diese Frage nicht. ON DELETE SET NULL: faellt die Rolle
+    // weg, ist die Pruefung nicht durchfuehrbar, und die Diagrammschicht
+    // meldet dann nichts, statt etwas zu behaupten.
+    ownerRoleId: uuid("owner_role_id").references(() => customRole.id, {
+      onDelete: "set null",
+    }),
+    // Naechste Faelligkeit des Nachweises (F4). Gepflegt, nicht aus
+    // `frequency` hochgerechnet. `last_test_result`/`last_evidence_at` kommen
+    // bewusst NICHT als Spalten — sie sind aus `control_test` bzw. `evidence`
+    // ableitbar, und eine ungepflegte Kopie waere eine zweite Wahrheit
+    // (Begruendung im Kopfkommentar von Migration 0453).
+    evidenceDueAt: timestamp("evidence_due_at", { withTimezone: true }),
   },
   (table) => [
     index("control_org_status_idx").on(table.orgId, table.status),
     index("control_owner_idx").on(table.ownerId),
     index("control_type_idx").on(table.orgId, table.controlType),
+    index("control_owner_role_idx").on(table.ownerRoleId),
+    index("control_evidence_due_idx").on(table.orgId, table.evidenceDueAt),
+    index("control_is_key_idx").on(table.orgId, table.isKey),
   ],
 );
 
@@ -357,6 +395,14 @@ export const finding = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    aggregationNotes: text("aggregation_notes"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    deficiencyLevel: varchar("deficiency_level", { length: 30 }),
+    isMaterialWeakness: boolean("is_material_weakness").default(sql`false`),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("finding_org_status_idx").on(table.orgId, table.status),

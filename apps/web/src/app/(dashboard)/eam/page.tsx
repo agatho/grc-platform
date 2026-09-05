@@ -3,20 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {
-  Layers,
-  AppWindow,
-  AlertTriangle,
-  ShieldAlert,
-  Plus,
-  Upload,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Layers, AppWindow, Plus, Upload, FileSpreadsheet } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface EamDashboardData {
   totalElements: number;
@@ -58,11 +51,15 @@ function EamDashboardInner() {
       setData({
         totalElements: elements.length,
         byLayer: {
-          business: elements.filter((e: any) => e.layer === "business").length,
-          application: elements.filter((e: any) => e.layer === "application")
-            .length,
-          technology: elements.filter((e: any) => e.layer === "technology")
-            .length,
+          business: elements.filter(
+            (e: UnvalidatedJson) => e.layer === "business",
+          ).length,
+          application: elements.filter(
+            (e: UnvalidatedJson) => e.layer === "application",
+          ).length,
+          technology: elements.filter(
+            (e: UnvalidatedJson) => e.layer === "technology",
+          ).length,
         },
         approachingEol: eolApps.length,
         spofCount: spofs.length,

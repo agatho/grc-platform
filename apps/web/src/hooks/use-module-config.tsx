@@ -126,8 +126,10 @@ export function useModuleConfig(moduleKey: ModuleKey) {
   // the initial render before the configs fetch resolves.
   if (!loading && !config && !warnedMissingKeys.has(moduleKey)) {
     warnedMissingKeys.add(moduleKey);
-    // eslint-disable-next-line no-console -- intentional: surface a
-    // provisioning gap that would otherwise default-disable the page.
+    // Intentional console.warn: surfaces a provisioning gap that would
+    // otherwise silently default-disable the page. (`no-console` is not
+    // enabled in apps/web/eslint.config.mjs, so no disable directive is
+    // needed — one was here and ESLint reported it as unused.)
     console.warn(
       `[useModuleConfig] No module_definition row found for moduleKey="${moduleKey}". ` +
         `Defaulting to status="disabled". Add a row via migration or seed_platform_baseline.sql.`,

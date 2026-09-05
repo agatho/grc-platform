@@ -1,7 +1,40 @@
 // Sprint 3: BPMN XML Parser
 // Extracts ProcessStep records from BPMN 2.0 XML for syncing to process_step table
+//
+// [ARCTOS-FULL-2026-08-31 · OP-037] **Diese Datei parste BPMN selbst.**
+//
+// Sie war eine von sechs in `packages/shared` (zusammen 1.529 Zeilen), die
+// `fast-xml-parser` und Zeichenkettenvergleiche benutzten, während
+// `packages/bpmn` dasselbe Format ein zweites Mal liest. Zwei Antworten auf
+// dieselbe Frage — und die zweite war messbar falsch:
+//
+//   parseBpmnXml(<bpmn:definitions …>)     → 3 Schritte
+//   parseBpmnXml(<definitions …>)          → 3 Schritte
+//   parseBpmnXml(<ns0:definitions …>)      → Fehler „missing <bpmn:definitions>"
+//   parseBpmnXml(<semantic:definitions …>) → Fehler „missing <bpmn:definitions>"
+//
+// Die alte Fassung verglich **Präfixe** (`parsed["bpmn:definitions"] ||
+// parsed["definitions"]`) statt Namensräume. `ns0:` schreiben Werkzeuge auf
+// JAXB-Basis, `semantic:` schreibt Signavio — beide Dateien sind gültiges
+// BPMN 2.0. Im Betrieb hiess das: `POST /api/v1/processes/import-bpmn-xml`
+// lehnte sie mit „Invalid BPMN XML" ab, und beim Speichern einer Version
+// (`versions/route.ts`) entstand **keine einzige** `process_step`-Zeile — ohne
+// Fehlermeldung, weil der Aufrufer den Wurf abfängt.
+//
+// Gelesen wird jetzt mit `parseXml` aus `@grc/bpmn/util`: derselbe Leser, den
+// die Engine für ihren Kanonisierer benutzt, synchron, ohne Abhängigkeit und
+// **präfixunabhängig** — entschieden wird über den Namensraum-URI.
+//
+// Zwei Verhaltensunterschiede, beide beabsichtigt und beide im Protokoll
+// (`docs/UMSETZUNG-WELLE-2B.md`) begründet:
+//
+//  1. **Dokumentreihenfolge statt Gruppierung nach Typ.** `fast-xml-parser`
+//     bündelt gleiche Tags; `sequenceOrder` folgte damit der Reihenfolge der
+//     Tag-*Namen*, nicht der der Elemente. Ein Diagramm Start → Aufgabe →
+//     Ende → Aufgabe bekam die Reihenfolge Start, Aufgabe, Aufgabe, Ende.
+//  2. **Präfixe spielen keine Rolle mehr.** Siehe oben.
 
-import { XMLParser } from "fast-xml-parser";
+import { parseXml, XmlParseError, type XmlElement } from "@grc/bpmn/util";
 import type { StepType } from "./types";
 
 // ──────────────────────────────────────────────────────────────
@@ -17,18 +50,14 @@ export interface ParsedProcessStep {
 
 // ──────────────────────────────────────────────────────────────
 // BPMN element type to step_type mapping
+//
+// Lokale Namen, nicht Präfixe: der Namensraum wird getrennt geprüft.
 // ──────────────────────────────────────────────────────────────
 
-const BPMN_TASK_TYPES = [
-  "bpmn:task",
-  "bpmn:userTask",
-  "bpmn:serviceTask",
-  "bpmn:sendTask",
-  "bpmn:receiveTask",
-  "bpmn:manualTask",
-  "bpmn:businessRuleTask",
-  "bpmn:scriptTask",
-  // Unprefixed variants (some parsers strip namespace)
+/** Der Namensraum des BPMN-Metamodells (OMG formal/2011-01-03). */
+const BPMN_MODEL_NS = "http://www.omg.org/spec/BPMN/20100524/MODEL";
+
+const BPMN_TASK_TYPES = new Set([
   "task",
   "userTask",
   "serviceTask",
@@ -37,59 +66,38 @@ const BPMN_TASK_TYPES = [
   "manualTask",
   "businessRuleTask",
   "scriptTask",
-];
+]);
 
-const BPMN_GATEWAY_TYPES = [
-  "bpmn:exclusiveGateway",
-  "bpmn:parallelGateway",
-  "bpmn:inclusiveGateway",
-  "bpmn:eventBasedGateway",
-  "bpmn:complexGateway",
+const BPMN_GATEWAY_TYPES = new Set([
   "exclusiveGateway",
   "parallelGateway",
   "inclusiveGateway",
   "eventBasedGateway",
   "complexGateway",
-];
+]);
 
-const BPMN_EVENT_TYPES = [
-  "bpmn:startEvent",
-  "bpmn:endEvent",
-  "bpmn:intermediateCatchEvent",
-  "bpmn:intermediateThrowEvent",
-  "bpmn:boundaryEvent",
+const BPMN_EVENT_TYPES = new Set([
   "startEvent",
   "endEvent",
   "intermediateCatchEvent",
   "intermediateThrowEvent",
   "boundaryEvent",
-];
+]);
 
-const BPMN_SUBPROCESS_TYPES = [
-  "bpmn:subProcess",
-  "bpmn:adHocSubProcess",
-  "bpmn:transaction",
+const BPMN_SUBPROCESS_TYPES = new Set([
   "subProcess",
   "adHocSubProcess",
   "transaction",
-];
+]);
 
-const BPMN_CALL_ACTIVITY_TYPES = ["bpmn:callActivity", "callActivity"];
+const BPMN_CALL_ACTIVITY_TYPES = new Set(["callActivity"]);
 
-const ALL_BPMN_ELEMENT_TAGS = [
-  ...BPMN_TASK_TYPES,
-  ...BPMN_GATEWAY_TYPES,
-  ...BPMN_EVENT_TYPES,
-  ...BPMN_SUBPROCESS_TYPES,
-  ...BPMN_CALL_ACTIVITY_TYPES,
-];
-
-function getStepType(elementTag: string): StepType | null {
-  if (BPMN_TASK_TYPES.includes(elementTag)) return "task";
-  if (BPMN_GATEWAY_TYPES.includes(elementTag)) return "gateway";
-  if (BPMN_EVENT_TYPES.includes(elementTag)) return "event";
-  if (BPMN_SUBPROCESS_TYPES.includes(elementTag)) return "subprocess";
-  if (BPMN_CALL_ACTIVITY_TYPES.includes(elementTag)) return "call_activity";
+function getStepType(localName: string): StepType | null {
+  if (BPMN_TASK_TYPES.has(localName)) return "task";
+  if (BPMN_GATEWAY_TYPES.has(localName)) return "gateway";
+  if (BPMN_EVENT_TYPES.has(localName)) return "event";
+  if (BPMN_SUBPROCESS_TYPES.has(localName)) return "subprocess";
+  if (BPMN_CALL_ACTIVITY_TYPES.has(localName)) return "call_activity";
   return null;
 }
 
@@ -97,86 +105,129 @@ function getStepType(elementTag: string): StepType | null {
 // Parser
 // ──────────────────────────────────────────────────────────────
 
+/**
+ * Auflösung Präfix → Namensraum-URI, eine Ebene tiefer fortgeschrieben.
+ *
+ * Genau das ist der Teil, den die alte Fassung nicht hatte. `xmlns:x="…"`
+ * bindet `x`, `xmlns="…"` bindet den leeren Präfix, und beide gelten für den
+ * Teilbaum darunter.
+ */
+type NsScope = ReadonlyMap<string, string>;
+
+function extendScope(element: XmlElement, parent: NsScope): NsScope {
+  let scope: Map<string, string> | undefined;
+  for (const attribute of element.attributes) {
+    if (attribute.qname === "xmlns") {
+      scope ??= new Map(parent);
+      scope.set("", attribute.value);
+    } else if (attribute.prefix === "xmlns") {
+      scope ??= new Map(parent);
+      scope.set(attribute.local, attribute.value);
+    }
+  }
+  return scope ?? parent;
+}
+
+/**
+ * Gehört dieses Element zum BPMN-Metamodell?
+ *
+ * Deklariert das Dokument **gar keinen** Namensraum, wird der lokale Name
+ * genommen. Solche Dateien kommen im Bestand vor (der Excel-Import erzeugt
+ * sie) und sind kein Grund, sie abzulehnen — aber sie sind auch der einzige
+ * Fall, in dem geraten wird.
+ */
+function isBpmn(element: XmlElement, scope: NsScope): boolean {
+  const uri = scope.get(element.prefix);
+  if (uri === undefined) return scope.size === 0;
+  return uri === BPMN_MODEL_NS;
+}
+
+function attribute(element: XmlElement, name: string): string | undefined {
+  for (const candidate of element.attributes) {
+    // Unpräfigierte Attribute; `bpmn:id` gibt es nicht, und ein präfigiertes
+    // `id` wäre ein Fremdattribut.
+    if (candidate.prefix === "" && candidate.local === name) {
+      return candidate.value;
+    }
+  }
+  return undefined;
+}
+
 export function parseBpmnXml(xml: string): ParsedProcessStep[] {
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: "@_",
-    isArray: (name) => {
-      return ALL_BPMN_ELEMENT_TAGS.some((tag) => {
-        const localName = tag.includes(":") ? tag.split(":")[1] : tag;
-        return name === tag || name === localName;
-      });
-    },
-  });
+  let root: XmlElement;
+  try {
+    root = parseXml(xml).root;
+  } catch (error) {
+    // Die Meldung des Lesers ist genauer als „invalid XML" — sie nennt den
+    // Versatz. Der Aufrufer (`validateBpmnXml`) reicht sie weiter.
+    throw error instanceof XmlParseError
+      ? new Error(`Invalid BPMN XML: ${error.message}`)
+      : error;
+  }
 
-  const parsed = parser.parse(xml);
-  const steps: ParsedProcessStep[] = [];
-
-  // Navigate to the process element
-  const definitions = parsed["bpmn:definitions"] || parsed["definitions"];
-  if (!definitions) {
+  const rootScope = extendScope(root, new Map<string, string>());
+  if (root.local !== "definitions" || !isBpmn(root, rootScope)) {
     throw new Error(
       "Invalid BPMN XML: missing <bpmn:definitions> root element",
     );
   }
 
-  // Support both single-process and multi-pool collaboration diagrams
-  // Collaboration diagrams have <bpmn:collaboration> with <bpmn:participant> elements
-  // that reference multiple <bpmn:process> elements
-  const processEl = definitions["bpmn:process"] || definitions["process"];
-
-  if (!processEl) {
+  const processes: XmlElement[] = [];
+  for (const child of root.children) {
+    if (child.kind !== "element") continue;
+    const scope = extendScope(child, rootScope);
+    if (child.local === "process" && isBpmn(child, scope)) {
+      processes.push(child);
+    }
+  }
+  if (processes.length === 0) {
     throw new Error("Invalid BPMN XML: missing <bpmn:process> element");
   }
 
-  // Handle single process or array of processes (collaboration = multiple pools)
-  const processElements = Array.isArray(processEl) ? processEl : [processEl];
-
-  for (const proc of processElements) {
-    extractStepsFromProcess(proc, steps, 0);
+  const steps: ParsedProcessStep[] = [];
+  for (const process of processes) {
+    collectSteps(process, extendScope(process, rootScope), steps);
   }
 
-  // Re-number sequence order
-  steps.forEach((step, idx) => {
-    step.sequenceOrder = idx + 1;
+  // Nummerierung erst am Ende — über alle Pools hinweg fortlaufend, wie bisher.
+  steps.forEach((step, index) => {
+    step.sequenceOrder = index + 1;
   });
-
   return steps;
 }
 
-function extractStepsFromProcess(
-  processObj: Record<string, unknown>,
+/**
+ * Die Schritte eines Containers, in **Dokumentreihenfolge**.
+ *
+ * Ein Subprozess zählt selbst als Schritt und wird danach betreten — dieselbe
+ * Ordnung wie bisher, nur ohne die Gruppierung nach Tag-Namen.
+ */
+function collectSteps(
+  container: XmlElement,
+  scope: NsScope,
   steps: ParsedProcessStep[],
-  startOrder: number,
 ): void {
-  let order = startOrder;
+  for (const child of container.children) {
+    if (child.kind !== "element") continue;
+    const childScope = extendScope(child, scope);
+    if (!isBpmn(child, childScope)) continue;
 
-  for (const [key, value] of Object.entries(processObj)) {
-    const stepType = getStepType(key);
-    if (!stepType) continue;
+    const stepType = getStepType(child.local);
+    if (stepType === null) continue;
 
-    const elements = Array.isArray(value) ? value : [value];
-    for (const element of elements) {
-      if (typeof element !== "object" || element === null) continue;
+    const id = attribute(child, "id");
+    if (!id) continue;
 
-      const el = element as Record<string, unknown>;
-      const id = el["@_id"] as string;
-      const name = (el["@_name"] as string) || null;
+    steps.push({
+      bpmnElementId: id,
+      name: attribute(child, "name") ?? null,
+      stepType,
+      // Wird am Ende von `parseBpmnXml` neu vergeben.
+      sequenceOrder: steps.length + 1,
+    });
 
-      if (!id) continue;
-
-      steps.push({
-        bpmnElementId: id,
-        name,
-        stepType,
-        sequenceOrder: ++order,
-      });
-
-      // Recursively extract from subprocesses
-      if (stepType === "subprocess") {
-        extractStepsFromProcess(el, steps, order);
-        order = steps.length;
-      }
+    if (stepType === "subprocess") {
+      collectSteps(child, childScope, steps);
     }
   }
 }

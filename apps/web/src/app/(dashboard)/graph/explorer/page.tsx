@@ -9,12 +9,8 @@ import {
   Search,
   Loader2,
   RefreshCcw,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
   Filter,
   Target,
-  AlertTriangle,
   ExternalLink,
   ChevronRight,
   X,
@@ -26,12 +22,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -53,6 +43,9 @@ import {
   GRAPH_ENTITY_TYPES,
   GRAPH_RELATIONSHIP_TYPES,
 } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ─── D3 Graph Canvas Component ─────────────────────────────
 
@@ -82,13 +75,13 @@ function GraphCanvas({
   svgRef,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const simulationRef = useRef<unknown>(null);
+  const _simulationRef = useRef<unknown>(null);
   const [positions, setPositions] = useState<
     Map<string, { x: number; y: number }>
   >(new Map());
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [dragging, setDragging] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [_dragStart, _setDragStart] = useState({ x: 0, y: 0 });
   const [panning, setPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const t = useTranslations("graph");
@@ -127,7 +120,7 @@ function GraphCanvas({
     });
 
     // Build adjacency for edge force
-    const edgeSet = new Set(edges.map((e) => `${e.sourceId}:${e.targetId}`));
+    const _edgeSet = new Set(edges.map((e) => `${e.sourceId}:${e.targetId}`));
 
     // Run simulation iterations
     let iteration = 0;
@@ -469,7 +462,7 @@ function ImpactPanel({
 
   if (!impactData) return null;
 
-  const getSeverityLabel = (score: number): string => {
+  const _getSeverityLabel = (score: number): string => {
     if (score >= 70) return t("impact.severity.critical");
     if (score >= 50) return t("impact.severity.high");
     if (score >= 30) return t("impact.severity.medium");
@@ -632,7 +625,7 @@ export default function GraphExplorerPage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<EntitySearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [_searchLoading, setSearchLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
   const [blastRadiusNode, setBlastRadiusNode] = useState<string | null>(null);
   const [impactData, setImpactData] = useState<ImpactAnalysisResponse | null>(
@@ -1095,6 +1088,9 @@ export default function GraphExplorerPage() {
           <div
             className="fixed inset-0 z-40"
             onClick={() => setContextMenu(null)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => activateOnKey(e, () => setContextMenu(null))}
           />
         )}
       </div>

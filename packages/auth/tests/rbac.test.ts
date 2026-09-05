@@ -29,6 +29,11 @@ function makeSession(overrides?: Partial<Session["user"]>): Session {
         { orgId: "org-3", role: "auditor", lineOfDefense: "third" },
         { orgId: "org-3", role: "dpo", lineOfDefense: "second" },
       ],
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `currentOrgId` and `disabled`
+      // are required members of Session["user"]; the fixture omitted them and
+      // only compiled because packages/auth was never type-checked (S14-25).
+      currentOrgId: "org-1",
+      disabled: false,
       ...overrides,
     },
     expires: new Date(Date.now() + 86400000).toISOString(),

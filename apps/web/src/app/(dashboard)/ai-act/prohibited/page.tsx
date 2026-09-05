@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Plus, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ const PROHIBITED_LABELS: Record<string, string> = {
 };
 
 function ProhibitedPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<ProhibitedScreening[]>([]);
   const [loading, setLoading] = useState(true);

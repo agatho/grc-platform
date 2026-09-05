@@ -1,9 +1,13 @@
-import { db, orgBranding } from "@grc/db";
+import { orgBranding } from "@grc/db";
 import { uploadLogoSchema } from "@grc/shared";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import { join } from "path";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "branding");
 
@@ -21,7 +25,7 @@ const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "branding");
 // XSS against anyone who later views that branding. Dropping SVG
 // outright; the only safe inline-served SVG would need DOMPurify-grade
 // sanitisation, which we don't currently do.
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -115,13 +119,12 @@ export async function POST(
 
   const logoUrl = `/uploads/${storagePath}`;
   return Response.json({ data: { logoUrl, storagePath } }, { status: 201 });
-}
-
+});
 // DELETE /api/v1/organizations/:id/branding/logo -- Remove logo
 //
 // Same cross-tenant guard as POST — DELETE on another org's branding
 // row was also previously possible.
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -170,4 +173,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { logoUrl: null } });
-}
+});

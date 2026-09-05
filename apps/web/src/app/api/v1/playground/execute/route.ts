@@ -1,6 +1,10 @@
 import { db, apiUsageLog } from "@grc/db";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #SEC-HIGH-SSRF: the `path` is fed into `new URL(path, base)`. When
 // `path` is itself an absolute URL (starts with "http://" or
@@ -29,13 +33,34 @@ const executeSchema = z.object({
           "protocol-relative URLs and backslash escapes are blocked (SSRF prevention)",
       },
     ),
-  headers: z.record(z.string(), z.string()).default({}),
+  headers: z
+    .record(z.string(), z.string())
+    // #S04-08: bound the map so the allowlist loop below cannot be used
+    // as a CPU sink.
+    .refine((h) => Object.keys(h).length <= 20, {
+      message: "At most 20 headers are allowed",
+    })
+    .default({}),
   queryParams: z.record(z.string(), z.string()).default({}),
   body: z.string().max(50000).optional(),
 });
 
+// #S04-08: headers the playground may forward to same-origin API routes.
+// Deliberately excludes every header the platform itself trusts:
+// authorization, cookie, x-forwarded-*, x-real-ip, host, origin, referer,
+// and the internal x-org-id / x-user-id style signals.
+const FORWARDABLE_HEADERS = new Set([
+  "content-type",
+  "accept",
+  "accept-language",
+  "if-match",
+  "if-none-match",
+  "x-request-id",
+  "x-idempotency-key",
+]);
+
 // POST /api/v1/playground/execute — Execute API request from playground
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -68,11 +93,32 @@ export async function POST(req: Request) {
       targetUrl.searchParams.set(k, v);
     });
 
+    // #S04-08 (ARCTOS-FULL-2026-08-31, Low): the proxy forwarded ANY
+    // caller-supplied header to the app's own API routes. That let an admin
+    // inject `X-Forwarded-For` (spoofing the client IP seen by rate limiting
+    // and IP allowlists), `Authorization` / `Cookie` (acting as another
+    // principal against internal routes), or `Host`. Not SSRF — the
+    // same-origin gate above already closed that — but a real header-
+    // injection primitive against the platform's own trust signals.
+    //
+    // Allowlist instead of blocklist: only headers a playground user
+    // legitimately needs to vary survive. Everything else is dropped, and
+    // the caller is told which ones so the UI can explain it.
+    const forwarded: Record<string, string> = {};
+    const rejectedHeaders: string[] = [];
+    for (const [name, value] of Object.entries(body.data.headers)) {
+      if (FORWARDABLE_HEADERS.has(name.toLowerCase())) {
+        forwarded[name] = value;
+      } else {
+        rejectedHeaders.push(name);
+      }
+    }
+
     const fetchOpts: RequestInit = {
       method: body.data.method,
       headers: {
         "Content-Type": "application/json",
-        ...body.data.headers,
+        ...forwarded,
       },
     };
 
@@ -101,6 +147,8 @@ export async function POST(req: Request) {
         headers: Object.fromEntries(response.headers.entries()),
         body: responseBody,
         responseTimeMs,
+        // #S04-08: make the drop visible instead of silently ignoring it.
+        ...(rejectedHeaders.length > 0 ? { rejectedHeaders } : {}),
       },
     });
   } catch (error) {
@@ -117,4 +165,4 @@ export async function POST(req: Request) {
       { status: 200 },
     );
   }
-}
+});

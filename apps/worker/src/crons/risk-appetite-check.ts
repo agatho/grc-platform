@@ -15,6 +15,8 @@ import { eq, and, isNull, isNotNull, gt, sql } from "drizzle-orm";
 import { isAppetiteBreach, computeBreachDelta } from "@grc/shared";
 import type { RiskCategory, UserRole } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface AppetiteCheckResult {
   orgsProcessed: number;
@@ -108,7 +110,15 @@ export const processRiskAppetiteCheck = withCronInstrumentation(
                   createdBy: r.ownerId,
                 });
                 tasksCreated++;
-              } catch {
+              } catch (err) {
+                // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+                reportJobError(
+                  {
+                    job: "risk-appetite-check",
+                    scope: "Create escalation task if owner exists and no",
+                  },
+                  err,
+                );
                 // Task may already exist
               }
 
@@ -117,26 +127,41 @@ export const processRiskAppetiteCheck = withCronInstrumentation(
               const roleHolders = await db
                 .select({ userId: userOrganizationRole.userId })
                 .from(userOrganizationRole)
+                .innerJoin(user, eq(user.id, userOrganizationRole.userId))
                 .where(
                   and(
                     eq(userOrganizationRole.orgId, org.id),
                     eq(userOrganizationRole.role, escalationRole as UserRole),
+                    // [WP9 · S10-07] A revoked org role is a soft delete;
+                    // without this filter appetite-breach escalations went
+                    // to people who had left the organisation.
+                    isNull(userOrganizationRole.deletedAt),
+                    eq(user.isActive, true),
+                    isNull(user.deletedAt),
                   ),
                 );
 
               for (const holder of roleHolders) {
                 try {
-                  await db.insert(notification).values({
-                    orgId: org.id,
-                    userId: holder.userId,
-                    type: "escalation",
-                    entityType: "risk",
-                    entityId: r.id,
-                    title: `Risikoappetit überschritten: ${r.riskCategory}`,
-                    message: `"${r.title}" überschreitet den Schwellenwert um ${delta} Punkte.`,
-                    channel: "in_app",
-                  });
-                } catch {
+                  await insertNotification(
+                    {
+                      orgId: org.id,
+                      userId: holder.userId,
+                      type: "escalation",
+                      entityType: "risk",
+                      entityId: r.id,
+                      title: `Risikoappetit überschritten: ${r.riskCategory}`,
+                      message: `"${r.title}" überschreitet den Schwellenwert um ${delta} Punkte.`,
+                      channel: "in_app",
+                    },
+                    { job: "risk-appetite-check" },
+                  );
+                } catch (err) {
+                  // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+                  reportJobError(
+                    { job: "risk-appetite-check", scope: "holder" },
+                    err,
+                  );
                   // Notification may fail
                 }
               }
@@ -162,9 +187,16 @@ export const processRiskAppetiteCheck = withCronInstrumentation(
         }
 
         orgsProcessed++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "risk-appetite-check",
+            scope: "Also reset flag for risks now within appetite",
+          },
+          err,
+        );
         errors++;
-        // Wrapper logs structured error; loop continues.
       }
     }
 

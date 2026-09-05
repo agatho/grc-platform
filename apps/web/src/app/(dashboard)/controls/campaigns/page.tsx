@@ -60,7 +60,7 @@ export default function CampaignsPage() {
 function CampaignsPageInner() {
   const t = useTranslations("controls");
   const { formatDate } = useDateFormat();
-  const router = useRouter();
+  const _router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);
 

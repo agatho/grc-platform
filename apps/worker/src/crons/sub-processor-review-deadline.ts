@@ -4,6 +4,8 @@
 import { db, vendorSubProcessorNotification, notification } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface SubProcessorDeadlineResult {
   processed: number;
@@ -26,18 +28,26 @@ export const processSubProcessorReviewDeadline = withCronInstrumentation(
 
     for (const row of approaching as any[]) {
       try {
-        await db.insert(notification).values({
-          userId: null as any, // DPO lookup needed
-          orgId: row.org_id,
-          type: "deadline_approaching" as const,
-          entityType: "vendor_sub_processor_notification",
-          entityId: row.id,
-          title: `Sub-processor review deadline approaching: ${row.sub_processor_name}`,
-          message: `Review deadline for sub-processor "${row.sub_processor_name}" is ${row.review_deadline}. GDPR Art. 28(2) requires timely review.`,
-          channel: "both" as const,
-        });
+        await insertNotification(
+          {
+            userId: null as any, // DPO lookup needed
+            orgId: row.org_id,
+            type: "deadline_approaching" as const,
+            entityType: "vendor_sub_processor_notification",
+            entityId: row.id,
+            title: `Sub-processor review deadline approaching: ${row.sub_processor_name}`,
+            message: `Review deadline for sub-processor "${row.sub_processor_name}" is ${row.review_deadline}. GDPR Art. 28(2) requires timely review.`,
+            channel: "both" as const,
+          },
+          { job: "sub-processor-review-deadline" },
+        );
         warnings++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "sub-processor-review-deadline", scope: "row" },
+          err,
+        );
         /* skip if notification insert fails */
       }
     }

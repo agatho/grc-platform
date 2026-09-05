@@ -113,8 +113,18 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-semibold">4. Hosting</h2>
         <p>
           Die Anwendung wird gehostet bei: <strong>{p.hostingLocation}</strong>.
-          Die Server stehen ausschließlich in der EU. Es findet kein
-          Drittland-Transfer statt — keine US-Cloud-Abhängigkeit.
+          Die Server der Anwendung selbst stehen ausschließlich in der EU;
+          Datenbank, Authentifizierung, Objektspeicher und Secrets verlassen
+          diese Umgebung nicht.
+        </p>
+        <p>
+          Ein Drittland-Transfer findet <strong>nur</strong> statt, wenn die
+          betreibende Organisation optionale KI-Funktionen mit einem
+          Cloud-Anbieter ausdrücklich freischaltet. Ohne diese Freischaltung
+          ruft die Anwendung keinen externen KI-Anbieter auf und KI-Funktionen
+          scheitern sichtbar, statt still auszuweichen. Welche Anbieter für Ihre
+          Organisation zulässig sind und ob überhaupt einer konfiguriert ist,
+          zeigt die Einstellung „KI-Richtlinie&quot; (Abschnitt 6).
         </p>
         <p>
           Mit dem Hoster wurde ein Auftragsverarbeitungsvertrag (AVV) nach Art.
@@ -157,9 +167,28 @@ export default function PrivacyPage() {
             (sofern aktiviert; AVV vorhanden)
           </li>
           <li>
-            <strong>KI-Anbieter</strong> (Anthropic, OpenAI) — nur für die
-            optional aktivierten KI-Features. Bei Nutzung wird eine separate
-            Information eingeblendet.
+            <strong>KI-Anbieter</strong> — nur, wenn die betreibende
+            Organisation KI-Funktionen mit einem Cloud-Anbieter freischaltet.
+            Unterstützt werden Anthropic (Claude API und Claude CLI, USA),
+            OpenAI (USA), Google Gemini (USA) sowie die lokal betriebenen
+            Modelle Ollama und LM Studio, bei denen die Inhalte die Installation
+            nicht verlassen.
+            <br />
+            Die Auswahl steuert die Organisation über die KI-Richtlinie (
+            <code>ai_org_policy</code>): Betriebsart „nur lokal&quot;, „nur
+            EU/EWR&quot; oder „alle freigeschalteten Anbieter&quot;, zusätzlich
+            eine Anbieter-Positivliste. Ist für die Organisation eine
+            EU-Datenresidenz hinterlegt, gilt automatisch „nur EU/EWR&quot;, bis
+            ausdrücklich etwas anderes eingestellt wird. Anfragen mit
+            personenbezogenen Daten werden ausschließlich an lokale Modelle
+            gegeben; ist keines konfiguriert, wird die Anfrage abgebrochen und
+            <strong> nicht</strong> an einen Cloud-Anbieter weitergereicht.
+            <br />
+            Jede KI-Antwort wird mit einem Transparenzhinweis ausgeliefert, der
+            Anbieter, Modell und Verarbeitungsland nennt. Jeder Aufruf — auch
+            jeder abgelehnte — wird mit Anbieter, Jurisdiktion und Zeitpunkt in{" "}
+            <code>ai_egress_log</code> protokolliert; der Prompt-Text selbst
+            wird nicht gespeichert, nur sein Hashwert.
           </li>
           <li>Bei rechtlicher Verpflichtung: Behörden auf Anordnung</li>
         </ul>
@@ -177,7 +206,8 @@ export default function PrivacyPage() {
             <strong>Berichtigung</strong> unrichtiger Daten (Art. 16)
           </li>
           <li>
-            <strong>Löschung</strong> („Recht auf Vergessenwerden", Art. 17)
+            <strong>Löschung</strong> („Recht auf Vergessenwerden&quot;, Art.
+            17)
           </li>
           <li>
             <strong>Einschränkung</strong> der Verarbeitung (Art. 18)
@@ -227,13 +257,46 @@ export default function PrivacyPage() {
           <li>Mandanten-Isolation auf Datenbank-Ebene (Row Level Security)</li>
           <li>Audit-Trail für alle datenverändernden Aktionen</li>
           <li>Verschlüsselte Backups, regelmäßige Restore-Tests</li>
-          <li>Self-hosted in EU, kein US-Cloud-Anbieter</li>
+          <li>
+            Self-hosted in der EU für Anwendung, Datenbank, Authentifizierung
+            und Objektspeicher — ohne Cloud-Abhängigkeit
+          </li>
+          <li>
+            KI-Funktionen sind ohne ausdrückliche Freischaltung durch die
+            betreibende Organisation deaktiviert; die Anbieterwahl ist
+            mandantenweise steuerbar und wird protokolliert
+          </li>
         </ul>
+      </section>
+
+      <section className="space-y-3 rounded-md border border-slate-200 p-6 text-sm dark:border-slate-800">
+        <h2 className="text-lg font-semibold">
+          11. Einsatz von KI (EU AI Act, Art. 50)
+        </h2>
+        <p>
+          Die Anwendung enthält KI-gestützte Funktionen, die Vorschläge für
+          Fachpersonal erzeugen — etwa Kontroll- und Risikovorschläge,
+          Dokumentenentwürfe, Prüfchecklisten und Übersetzungen. Sie treffen
+          keine automatisierten Entscheidungen mit Rechtswirkung im Sinne von
+          Art. 22 DSGVO; die Übernahme eines Vorschlags erfordert stets eine
+          gesonderte Handlung einer Person.
+        </p>
+        <p>
+          Eine Ausnahme ist ausdrücklich benannt: die automatische
+          Relevanzbewertung regulatorischer Meldungen läuft ohne menschliche
+          Zwischenstufe. Ihre Ergebnisse sind als KI-erzeugt und
+          „unreviewed&quot; gekennzeichnet.
+        </p>
+        <p>
+          Das vollständige Verzeichnis der KI-Funktionen mit Zweck, Risikoklasse
+          nach AI Act und Angabe, ob eine Person zwischengeschaltet ist, ist in
+          der Anwendung unter <code>/api/v1/ai/features</code> abrufbar.
+        </p>
       </section>
 
       {p.additionalText && (
         <section className="space-y-3 rounded-md border border-slate-200 p-6 text-sm dark:border-slate-800">
-          <h2 className="text-lg font-semibold">11. Weitere Hinweise</h2>
+          <h2 className="text-lg font-semibold">12. Weitere Hinweise</h2>
           <p className="whitespace-pre-wrap">{p.additionalText}</p>
         </section>
       )}

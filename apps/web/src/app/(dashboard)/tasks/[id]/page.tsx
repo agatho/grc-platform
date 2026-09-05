@@ -138,7 +138,7 @@ function dueDateClass(dueDate: string | null): string {
 
 export default function TaskDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const taskId = params.id as string;
   const t = useTranslations("tasks");
   const { data: session } = useSession();

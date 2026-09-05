@@ -2,6 +2,10 @@ import { db, finding, control, audit, workItem } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -15,7 +19,10 @@ type RouteParams = { params: Promise<{ id: string }> };
 // Provides a suggested maturity adjustment (integer delta on the CMM 1–5
 // scale) so the downstream assessment run has a concrete recommendation
 // rather than a vague warning.
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { id } = await params;
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -118,4 +125,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       suggestedMaturityDelta,
     },
   });
-}
+});

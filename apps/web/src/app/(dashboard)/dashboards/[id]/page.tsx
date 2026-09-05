@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import {
   Pencil,
-  Eye,
   Star,
   StarOff,
   FileDown,

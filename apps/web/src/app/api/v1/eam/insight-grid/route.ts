@@ -6,8 +6,12 @@ import {
   businessCapability,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, lte, or, gt, isNull } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function computeLifecyclePhaseAtTime(
   app: Record<string, unknown>,
@@ -34,7 +38,7 @@ function computeLifecyclePhaseAtTime(
 }
 
 // GET /api/v1/eam/insight-grid — Matrix data with time-travel
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -154,4 +158,4 @@ export async function GET(req: Request) {
       coloringMode,
     },
   });
-}
+});

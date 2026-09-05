@@ -2,11 +2,18 @@ import { db, auditChecklistItem, auditChecklist } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string; checklistId: string }> };
 
 // GET /api/v1/audit-mgmt/audits/[id]/checklists/[checklistId]/items
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { id, checklistId } = await params;
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -42,4 +49,4 @@ export async function GET(req: Request, { params }: RouteParams) {
     .orderBy(asc(auditChecklistItem.sortOrder));
 
   return Response.json({ data: items, checklist });
-}
+});

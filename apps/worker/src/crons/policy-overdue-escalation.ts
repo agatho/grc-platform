@@ -10,6 +10,7 @@ import {
 } from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface PolicyOverdueResult {
   processed: number;
@@ -78,47 +79,53 @@ export const processPolicyOverdueEscalation = withCronInstrumentation(
 
         if (overdueCount > 0 && dist.distributedBy) {
           // Send escalation to distribution creator
-          await db.insert(notification).values({
-            userId: dist.distributedBy,
-            orgId: dist.orgId,
-            type: "deadline_approaching",
-            entityType: "policy_distribution",
-            entityId: dist.id,
-            title: `Escalation: ${overdueCount} overdue acknowledgment(s) for "${dist.title}"`,
-            message: `The following employees have not acknowledged the policy: ${(overdueNames ?? []).slice(0, 10).join(", ")}${overdueCount > 10 ? ` and ${overdueCount - 10} more` : ""}.`,
-            channel: "both",
-            templateKey: "policy_escalation",
-            templateData: {
-              policyTitle: dist.title,
-              overdueCount,
-              overdueUsers: (overdueNames ?? []).slice(0, 20).join(", "),
-              distributionId: dist.id,
+          await insertNotification(
+            {
+              userId: dist.distributedBy,
+              orgId: dist.orgId,
+              type: "deadline_approaching",
+              entityType: "policy_distribution",
+              entityId: dist.id,
+              title: `Escalation: ${overdueCount} overdue acknowledgment(s) for "${dist.title}"`,
+              message: `The following employees have not acknowledged the policy: ${(overdueNames ?? []).slice(0, 10).join(", ")}${overdueCount > 10 ? ` and ${overdueCount - 10} more` : ""}.`,
+              channel: "both",
+              templateKey: "policy_escalation",
+              templateData: {
+                policyTitle: dist.title,
+                overdueCount,
+                overdueUsers: (overdueNames ?? []).slice(0, 20).join(", "),
+                distributionId: dist.id,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "policy-overdue-escalation" },
+          );
 
           // Send overdue notification to each overdue user
           for (const ackRecord of result) {
             try {
-              await db.insert(notification).values({
-                userId: ackRecord.userId,
-                orgId: dist.orgId,
-                type: "deadline_approaching",
-                entityType: "policy_distribution",
-                entityId: dist.id,
-                title: `OVERDUE: Policy acknowledgment past deadline — ${dist.title}`,
-                message: `Your policy acknowledgment is overdue. The deadline was ${new Date(dist.deadline).toLocaleDateString("de-DE")}. Please acknowledge immediately.`,
-                channel: "both",
-                templateKey: "policy_overdue",
-                templateData: {
-                  policyTitle: dist.title,
-                  deadline: dist.deadline,
-                  distributionId: dist.id,
+              await insertNotification(
+                {
+                  userId: ackRecord.userId,
+                  orgId: dist.orgId,
+                  type: "deadline_approaching",
+                  entityType: "policy_distribution",
+                  entityId: dist.id,
+                  title: `OVERDUE: Policy acknowledgment past deadline — ${dist.title}`,
+                  message: `Your policy acknowledgment is overdue. The deadline was ${new Date(dist.deadline).toLocaleDateString("de-DE")}. Please acknowledge immediately.`,
+                  channel: "both",
+                  templateKey: "policy_overdue",
+                  templateData: {
+                    policyTitle: dist.title,
+                    deadline: dist.deadline,
+                    distributionId: dist.id,
+                  },
+                  createdAt: now,
+                  updatedAt: now,
                 },
-                createdAt: now,
-                updatedAt: now,
-              });
+                { job: "policy-overdue-escalation" },
+              );
             } catch (err) {
               const message = err instanceof Error ? err.message : String(err);
               errors.push(

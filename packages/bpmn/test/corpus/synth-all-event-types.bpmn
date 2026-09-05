@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_Events" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:message id="Message_1" name="Bestellung"/>
+  <bpmn:signal id="Signal_1" name="Stornosignal"/>
+  <bpmn:error id="Error_1" name="Fachfehler" errorCode="E-4711"/>
+  <bpmn:escalation id="Escalation_1" name="Eskalation" escalationCode="ESC-1"/>
+  <bpmn:process id="Process_Events" isExecutable="false">
+    <bpmn:startEvent id="E_Start_Message" name="Bestellung eingegangen">
+      <bpmn:outgoing>EF_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MsgDef_Start" messageRef="Message_1"/>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="E_Catch_Timer" name="Warte 1 Tag">
+      <bpmn:incoming>EF_1</bpmn:incoming>
+      <bpmn:outgoing>EF_2</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerDef_Catch">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">P1D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateThrowEvent id="E_Throw_Signal" name="Storno melden">
+      <bpmn:incoming>EF_2</bpmn:incoming>
+      <bpmn:outgoing>EF_3</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="SigDef_Throw" signalRef="Signal_1"/>
+    </bpmn:intermediateThrowEvent>
+    <bpmn:intermediateThrowEvent id="E_Throw_Link" name="Weiter unten">
+      <bpmn:incoming>EF_3</bpmn:incoming>
+      <bpmn:linkEventDefinition id="LinkDef_Throw" name="A"/>
+    </bpmn:intermediateThrowEvent>
+    <bpmn:intermediateCatchEvent id="E_Catch_Link" name="Hier weiter">
+      <bpmn:outgoing>EF_4</bpmn:outgoing>
+      <bpmn:linkEventDefinition id="LinkDef_Catch" name="A"/>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:task id="E_Task" name="Bearbeiten">
+      <bpmn:incoming>EF_4</bpmn:incoming>
+      <bpmn:outgoing>EF_5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="E_End_Error" name="Fachfehler">
+      <bpmn:incoming>EF_5</bpmn:incoming>
+      <bpmn:errorEventDefinition id="ErrDef_End" errorRef="Error_1"/>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="E_End_Terminate" name="Sofort beenden">
+      <bpmn:terminateEventDefinition id="TermDef_End"/>
+    </bpmn:endEvent>
+    <bpmn:subProcess id="E_EventSub" name="Eskalations-Ereignis-Subprozess" triggeredByEvent="true">
+      <bpmn:startEvent id="E_Sub_Start" name="Eskalation" isInterrupting="false">
+        <bpmn:escalationEventDefinition id="EscDef_Sub" escalationRef="Escalation_1"/>
+      </bpmn:startEvent>
+    </bpmn:subProcess>
+    <bpmn:sequenceFlow id="EF_1" sourceRef="E_Start_Message" targetRef="E_Catch_Timer"/>
+    <bpmn:sequenceFlow id="EF_2" sourceRef="E_Catch_Timer" targetRef="E_Throw_Signal"/>
+    <bpmn:sequenceFlow id="EF_3" sourceRef="E_Throw_Signal" targetRef="E_Throw_Link"/>
+    <bpmn:sequenceFlow id="EF_4" sourceRef="E_Catch_Link" targetRef="E_Task"/>
+    <bpmn:sequenceFlow id="EF_5" sourceRef="E_Task" targetRef="E_End_Error"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Events">
+    <bpmndi:BPMNPlane id="Plane_Events" bpmnElement="Process_Events">
+      <bpmndi:BPMNShape id="E_Start_Message_di" bpmnElement="E_Start_Message">
+        <dc:Bounds x="152" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Catch_Timer_di" bpmnElement="E_Catch_Timer">
+        <dc:Bounds x="252" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Throw_Signal_di" bpmnElement="E_Throw_Signal">
+        <dc:Bounds x="352" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Throw_Link_di" bpmnElement="E_Throw_Link">
+        <dc:Bounds x="452" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Catch_Link_di" bpmnElement="E_Catch_Link">
+        <dc:Bounds x="152" y="242" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Task_di" bpmnElement="E_Task">
+        <dc:Bounds x="240" y="220" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_End_Error_di" bpmnElement="E_End_Error">
+        <dc:Bounds x="402" y="242" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_End_Terminate_di" bpmnElement="E_End_Terminate">
+        <dc:Bounds x="502" y="242" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_EventSub_di" bpmnElement="E_EventSub" isExpanded="true">
+        <dc:Bounds x="150" y="340" width="300" height="140"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Sub_Start_di" bpmnElement="E_Sub_Start">
+        <dc:Bounds x="190" y="392" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="EF_1_di" bpmnElement="EF_1">
+        <di:waypoint x="188" y="120"/>
+        <di:waypoint x="252" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="EF_2_di" bpmnElement="EF_2">
+        <di:waypoint x="288" y="120"/>
+        <di:waypoint x="352" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="EF_3_di" bpmnElement="EF_3">
+        <di:waypoint x="388" y="120"/>
+        <di:waypoint x="452" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="EF_4_di" bpmnElement="EF_4">
+        <di:waypoint x="188" y="260"/>
+        <di:waypoint x="240" y="260"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="EF_5_di" bpmnElement="EF_5">
+        <di:waypoint x="340" y="260"/>
+        <di:waypoint x="402" y="260"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

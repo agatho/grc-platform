@@ -7,6 +7,8 @@
 import { db, wbCase, notification, user } from "@grc/db";
 import { and, sql, eq, isNull, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface WbDeadlineResult {
   processed: number;
@@ -37,27 +39,31 @@ export const processWbDeadlineMonitor = withCronInstrumentation(
     for (const row of ackWarningCases as any[]) {
       try {
         if (row.assigned_to) {
-          await db.insert(notification).values({
-            userId: row.assigned_to,
-            orgId: row.org_id,
-            type: "deadline_approaching" as const,
-            entityType: "wb_case",
-            entityId: row.id,
-            title: `Whistleblowing: ${row.case_number} — acknowledgment deadline approaching`,
-            message: `The 7-day acknowledgment deadline for case ${row.case_number} is approaching. Deadline: ${new Date(row.acknowledge_deadline).toISOString()}.`,
-            channel: "both" as const,
-            templateKey: "wb_acknowledge_reminder",
-            templateData: {
-              caseNumber: row.case_number,
-              deadline: row.acknowledge_deadline,
+          await insertNotification(
+            {
+              userId: row.assigned_to,
+              orgId: row.org_id,
+              type: "deadline_approaching" as const,
+              entityType: "wb_case",
+              entityId: row.id,
+              title: `Whistleblowing: ${row.case_number} — acknowledgment deadline approaching`,
+              message: `The 7-day acknowledgment deadline for case ${row.case_number} is approaching. Deadline: ${new Date(row.acknowledge_deadline).toISOString()}.`,
+              channel: "both" as const,
+              templateKey: "wb_acknowledge_reminder",
+              templateData: {
+                caseNumber: row.case_number,
+                deadline: row.acknowledge_deadline,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "wb-deadline-monitor" },
+          );
           warnings++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "wb-deadline-monitor", scope: "row" }, err);
       }
     }
 
@@ -77,27 +83,31 @@ export const processWbDeadlineMonitor = withCronInstrumentation(
     for (const row of respWarningCases as any[]) {
       try {
         if (row.assigned_to) {
-          await db.insert(notification).values({
-            userId: row.assigned_to,
-            orgId: row.org_id,
-            type: "deadline_approaching" as const,
-            entityType: "wb_case",
-            entityId: row.id,
-            title: `Whistleblowing: ${row.case_number} — 3-month response deadline approaching`,
-            message: `The 3-month response deadline for case ${row.case_number} is approaching. Deadline: ${new Date(row.response_deadline).toISOString()}.`,
-            channel: "both" as const,
-            templateKey: "wb_response_reminder",
-            templateData: {
-              caseNumber: row.case_number,
-              deadline: row.response_deadline,
+          await insertNotification(
+            {
+              userId: row.assigned_to,
+              orgId: row.org_id,
+              type: "deadline_approaching" as const,
+              entityType: "wb_case",
+              entityId: row.id,
+              title: `Whistleblowing: ${row.case_number} — 3-month response deadline approaching`,
+              message: `The 3-month response deadline for case ${row.case_number} is approaching. Deadline: ${new Date(row.response_deadline).toISOString()}.`,
+              channel: "both" as const,
+              templateKey: "wb_response_reminder",
+              templateData: {
+                caseNumber: row.case_number,
+                deadline: row.response_deadline,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "wb-deadline-monitor" },
+          );
           warnings++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "wb-deadline-monitor", scope: "row" }, err);
       }
     }
 
@@ -117,31 +127,45 @@ export const processWbDeadlineMonitor = withCronInstrumentation(
       try {
         // Notify all admins in the org
         const admins = await db.execute(
-          sql`SELECT u.id FROM "user" u
+          // [WP9 · S10-07] `uor.deleted_at IS NULL` was missing here, and
+          // this is the query the audit reproduced against the live
+          // database: a user whose admin role had been REVOKED was still
+          // returned, because revocation is a soft delete and `u.is_active`
+          // stays true while the person is a member of any other org. This
+          // job sends whistleblower case numbers and missed-HinSchG-deadline
+          // notices; HinSchG §8 requires strict confidentiality towards
+          // everyone not entrusted with handling the report.
+          sql`SELECT DISTINCT u.id FROM "user" u
             JOIN user_organization_role uor ON uor.user_id = u.id
             WHERE uor.org_id = ${row.org_id} AND uor.role = 'admin'
-            AND u.is_active = true`,
+            AND uor.deleted_at IS NULL
+            AND u.is_active = true
+            AND u.deleted_at IS NULL`,
         );
 
         for (const admin of admins as any[]) {
-          await db.insert(notification).values({
-            userId: admin.id,
-            orgId: row.org_id,
-            type: "escalation" as const,
-            entityType: "wb_case",
-            entityId: row.id,
-            title: `SLA BREACH: ${row.case_number} — 7-day acknowledgment deadline exceeded`,
-            message: `Case ${row.case_number} has exceeded the 7-day acknowledgment deadline required by HinSchG. Immediate action required.`,
-            channel: "both" as const,
-            templateKey: "wb_sla_breach_ack",
-            templateData: { caseNumber: row.case_number },
-            createdAt: now,
-            updatedAt: now,
-          });
+          await insertNotification(
+            {
+              userId: admin.id,
+              orgId: row.org_id,
+              type: "escalation" as const,
+              entityType: "wb_case",
+              entityId: row.id,
+              title: `SLA BREACH: ${row.case_number} — 7-day acknowledgment deadline exceeded`,
+              message: `Case ${row.case_number} has exceeded the 7-day acknowledgment deadline required by HinSchG. Immediate action required.`,
+              channel: "both" as const,
+              templateKey: "wb_sla_breach_ack",
+              templateData: { caseNumber: row.case_number },
+              createdAt: now,
+              updatedAt: now,
+            },
+            { job: "wb-deadline-monitor" },
+          );
         }
         breaches++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "wb-deadline-monitor", scope: "admin" }, err);
       }
     }
 
@@ -160,31 +184,45 @@ export const processWbDeadlineMonitor = withCronInstrumentation(
     for (const row of respBreachCases as any[]) {
       try {
         const admins = await db.execute(
-          sql`SELECT u.id FROM "user" u
+          // [WP9 · S10-07] `uor.deleted_at IS NULL` was missing here, and
+          // this is the query the audit reproduced against the live
+          // database: a user whose admin role had been REVOKED was still
+          // returned, because revocation is a soft delete and `u.is_active`
+          // stays true while the person is a member of any other org. This
+          // job sends whistleblower case numbers and missed-HinSchG-deadline
+          // notices; HinSchG §8 requires strict confidentiality towards
+          // everyone not entrusted with handling the report.
+          sql`SELECT DISTINCT u.id FROM "user" u
             JOIN user_organization_role uor ON uor.user_id = u.id
             WHERE uor.org_id = ${row.org_id} AND uor.role = 'admin'
-            AND u.is_active = true`,
+            AND uor.deleted_at IS NULL
+            AND u.is_active = true
+            AND u.deleted_at IS NULL`,
         );
 
         for (const admin of admins as any[]) {
-          await db.insert(notification).values({
-            userId: admin.id,
-            orgId: row.org_id,
-            type: "escalation" as const,
-            entityType: "wb_case",
-            entityId: row.id,
-            title: `SLA BREACH: ${row.case_number} — 3-month response deadline exceeded`,
-            message: `Case ${row.case_number} has exceeded the 3-month response deadline required by HinSchG. Immediate escalation required.`,
-            channel: "both" as const,
-            templateKey: "wb_sla_breach_response",
-            templateData: { caseNumber: row.case_number },
-            createdAt: now,
-            updatedAt: now,
-          });
+          await insertNotification(
+            {
+              userId: admin.id,
+              orgId: row.org_id,
+              type: "escalation" as const,
+              entityType: "wb_case",
+              entityId: row.id,
+              title: `SLA BREACH: ${row.case_number} — 3-month response deadline exceeded`,
+              message: `Case ${row.case_number} has exceeded the 3-month response deadline required by HinSchG. Immediate escalation required.`,
+              channel: "both" as const,
+              templateKey: "wb_sla_breach_response",
+              templateData: { caseNumber: row.case_number },
+              createdAt: now,
+              updatedAt: now,
+            },
+            { job: "wb-deadline-monitor" },
+          );
         }
         breaches++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "wb-deadline-monitor", scope: "admin" }, err);
       }
     }
 

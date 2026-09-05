@@ -7,7 +7,7 @@ import {
   asset,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, isNull, desc, gte, or } from "drizzle-orm";
+import { eq, and, sql, isNull, desc, or } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import {
   createCertSnapshotSchema,
@@ -15,9 +15,25 @@ import {
   computeCertReadinessScore,
   type CertReadinessCheckResult,
 } from "@grc/shared";
+import { parseQueryParams } from "@/lib/query-schema";
+import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null`.
+const snapshotListQuerySchema = z.object({
+  framework: z
+    .string()
+    .trim()
+    .regex(/^[a-z0-9_.-]{1,64}$/i, "Invalid framework identifier")
+    .optional(),
+});
 
 // GET /api/v1/isms/certification/snapshots — Trend data over time
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -25,7 +41,13 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const framework = searchParams.get("framework") ?? "iso27001";
+  const q = parseQueryParams(snapshotListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const framework = q.data.framework ?? "iso27001";
 
   const snapshots = await db
     .select({
@@ -63,10 +85,9 @@ export async function GET(req: Request) {
     data: snapshots,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
-}
-
+});
 // POST /api/v1/isms/certification/snapshots — Create readiness snapshot
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -242,4 +263,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: { ...result, readiness } }, { status: 201 });
-}
+});

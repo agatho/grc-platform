@@ -1,4 +1,4 @@
-import { db, academyEnrollment } from "@grc/db";
+import { academyEnrollment } from "@grc/db";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { bulkEnrollSchema } from "@grc/shared";

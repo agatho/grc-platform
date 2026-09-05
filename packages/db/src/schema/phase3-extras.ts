@@ -25,7 +25,10 @@ import {
   date,
   jsonb,
   AnyPgColumn,
+  numeric,
+  pgEnum,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { catalogEntry } from "./catalog";
 import { moduleDefinition } from "./module";
@@ -33,6 +36,28 @@ import { control, evidence } from "./control";
 import { audit } from "./audit-mgmt";
 
 // ─────────── Cross-Framework Catalog-Mapping ───────────
+
+// [ARCTOS-FULL-2026-08-31 · OP-137] Die beiden Enum-Typen, die `catalog_entry_mapping`
+// in der Datenbank benutzt. Angelegt wurden sie von Hand geschriebenen
+// Migrationen; hier stehen sie, damit der Code dieselbe Menge kennt.
+export const mappingRelationshipEnum = pgEnum("mapping_relationship", [
+  "equivalent",
+  "partial",
+  "related",
+  "superset",
+  "subset",
+  "partial_overlap",
+  "contains",
+  "contained_by",
+]);
+
+export const mappingSourceEnum = pgEnum("mapping_source", [
+  "official",
+  "nist_olir",
+  "manual",
+  "ai_suggested",
+  "community",
+]);
 
 export const catalogEntryMapping = pgTable("catalog_entry_mapping", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -42,14 +67,20 @@ export const catalogEntryMapping = pgTable("catalog_entry_mapping", {
   targetEntryId: uuid("target_entry_id")
     .notNull()
     .references(() => catalogEntry.id, { onDelete: "cascade" }),
-  // equivalent | subset | superset | related
-  relationship: varchar("relationship", { length: 50 })
+  // [ARCTOS-FULL-2026-08-31 · OP-137] Beide Spalten tragen in der Datenbank
+  // echte Enum-Typen; deklariert war `varchar`. Die Kommentare darüber waren
+  // ausserdem falsch: `related` gibt es, `inferred` NICHT — der Wert heisst
+  // `ai_suggested`, und drei Seed-Dateien übersetzen ihn beim Import extra um
+  // (`WHEN 'inferred' THEN 'ai_suggested'`). Ein `varchar` mit einem falschen
+  // Kommentar ist die schlechteste der drei möglichen Angaben: er lädt zum
+  // Schreiben eines Wertes ein, den die Datenbank mit 22P02 zurückweist.
+  // Die Werte sind aus dem laufenden Schema gelesen, nicht geraten.
+  relationship: mappingRelationshipEnum("relationship")
     .default("equivalent")
     .notNull(),
   // 0-100
   confidence: integer("confidence").default(85).notNull(),
-  // official | community | inferred | manual
-  mappingSource: varchar("mapping_source", { length: 50 })
+  mappingSource: mappingSourceEnum("mapping_source")
     .default("official")
     .notNull(),
   sourceReference: text("source_reference"),
@@ -114,6 +145,9 @@ export const inlineComment = pgTable("inline_comment", {
   createdBy: uuid("created_by")
     .notNull()
     .references(() => user.id),
+  mentionedUsers: uuid("mentioned_users")
+    .array()
+    .default(sql`'{}'::uuid[]`),
 });
 
 // ─────────── Messaging Integration ───────────
@@ -135,6 +169,9 @@ export const messagingIntegration = pgTable("messaging_integration", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  eventTypes: text("event_types")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 // ─────────── Module Navigation ───────────
@@ -153,6 +190,9 @@ export const moduleNavItem = pgTable("module_nav_item", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  requiredRoles: text("required_roles")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 // ─────────── Reminder Rule ───────────
@@ -205,6 +245,11 @@ export const soxScoping = pgTable("sox_scoping", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  coveragePct: numeric("coverage_pct", { precision: 5, scale: 2 }),
+  materialityThreshold: numeric("materiality_threshold", {
+    precision: 15,
+    scale: 2,
+  }),
 });
 
 // ─────────── Tag Definitions ───────────

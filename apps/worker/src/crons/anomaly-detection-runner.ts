@@ -4,6 +4,7 @@
 import { db, riskPredictionModel, riskAnomalyDetection } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processAnomalyDetection = withCronInstrumentation(
   "anomaly-detection-runner",
@@ -23,7 +24,7 @@ export const processAnomalyDetection = withCronInstrumentation(
         ),
       );
 
-    let anomaliesDetected = 0;
+    const anomaliesDetected = 0;
 
     for (const model of models) {
       try {
@@ -32,9 +33,15 @@ export const processAnomalyDetection = withCronInstrumentation(
         // generate anomaly records for deviations.
         void model;
       } catch (err) {
-        // Wrapper logs structured error; bump nothing here (the loop
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "anomaly-detection-runner",
+            scope: "generate anomaly records for deviations.",
+          },
+          err,
+        );
         // continues to the next model).
-        void err;
       }
     }
 

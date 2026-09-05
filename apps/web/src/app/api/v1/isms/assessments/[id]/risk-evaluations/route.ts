@@ -1,6 +1,7 @@
-import { db, assessmentRiskEval } from "@grc/db";
+import { db, assessmentRiskEval, riskDecisionEnum } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { submitRiskEvalSchema } from "@grc/shared";
+import { parseQueryParams } from "@/lib/query-schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import {
   withAuth,
@@ -8,9 +9,14 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/isms/assessments/[id]/risk-evaluations
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -21,8 +27,23 @@ export async function GET(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
+  // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+  // against a schema instead of being read as `string | null` and cast
+  // with `as <enum>`. An unknown filter value used to reach Postgres and
+  // surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+  // and free-text search terms are length-bounded.
+  const riskEvaluationListQuerySchema = z.object({
+    decision: z.enum(riskDecisionEnum.enumValues).optional(),
+  });
+
   const { page, limit, offset, searchParams } = paginate(req);
-  const decisionFilter = searchParams.get("decision");
+  const q = parseQueryParams(riskEvaluationListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const decisionFilter = q.data.decision ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(assessmentRiskEval.orgId, ctx.orgId),
@@ -52,10 +73,9 @@ export async function GET(
     .where(and(...conditions));
 
   return paginatedResponse(rows, total, page, limit);
-}
-
+});
 // POST /api/v1/isms/assessments/[id]/risk-evaluations
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -124,4 +144,4 @@ export async function POST(
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

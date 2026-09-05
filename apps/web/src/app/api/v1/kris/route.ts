@@ -1,6 +1,6 @@
-import { db, kri, risk, notification, userOrganizationRole } from "@grc/db";
+import { db, kri, risk } from "@grc/db";
 import { createKriSchema } from "@grc/shared";
-import { eq, and, isNull, count, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, count, desc } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -12,7 +12,7 @@ import { requireModule } from "@grc/auth";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/kris -- Create KRI
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/kris -- List KRIs (paginated, filterable)
 export const GET = withErrorHandler(async function GET(req: Request) {

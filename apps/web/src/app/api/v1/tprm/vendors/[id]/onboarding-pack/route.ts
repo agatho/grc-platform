@@ -5,15 +5,83 @@ import { db, vendor } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
+// #S04-05 (ARCTOS-FULL-2026-08-31): the local implementation quoted
+// `" , \n ;` but did not neutralize the Excel formula triggers
+// `= + - @`, so free-text fields exported here executed as formulas when
+// the pack was opened. Delegates to the central sanitizer; the extra `;`
+// quoting is preserved so the output stays byte-compatible for German
+// Excel users.
 function csv(s: unknown): string {
-  if (s == null) return "";
-  const str = Array.isArray(s) ? s.join("; ") : String(s);
-  if (/[",\n;]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
-  return str;
+  const cell = toCsvCell(s, ",");
+  if (cell.startsWith('"')) return cell;
+  return cell.includes(";") ? `"${cell.replace(/"/g, '""')}"` : cell;
 }
 
-export async function POST(
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Sechs rohe Abfragen, bis
+// Welle 4b sechsmal `as any[]`. Zeilenformen aus der SELECT-Liste benannt;
+// Spalten, die der Treiber je nach Konfiguration als `Date` oder `string`
+// liefert, sind als Vereinigung genannt statt erfunden.
+
+type DueDiligenceRow = {
+  id: string;
+  title: string | null;
+  status: string | null;
+  start_date: Date | string | null;
+  completed_date: Date | string | null;
+  overall_score: number | string | null;
+};
+
+type ContractRow = {
+  id: string;
+  title: string | null;
+  contract_type: string | null;
+  status: string | null;
+  start_date: Date | string | null;
+  end_date: Date | string | null;
+  value_amount: number | string | null;
+  value_currency: string | null;
+};
+
+type ScorecardRow = {
+  id: string;
+  scoring_period: string | null;
+  overall_score: number | string | null;
+  quality_score: number | string | null;
+  sla_score: number | string | null;
+  security_score: number | string | null;
+  financial_score: number | string | null;
+};
+
+type SubProcessorRow = {
+  id: string;
+  sub_processor_name: string | null;
+  country: string | null;
+  services_provided: string | null;
+  status: string | null;
+};
+
+type LksgRow = {
+  id: string;
+  assessment_date: Date | string | null;
+  status: string | null;
+  risk_categories: string[] | string | null;
+};
+
+type SignOffRow = {
+  signer_role: string;
+  signoff_type: string;
+  signed_at: Date | string | null;
+  comments: string | null;
+  chain_hash: string | null;
+};
+
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -41,13 +109,13 @@ export async function POST(
       FROM vendor_due_diligence dd
       WHERE dd.vendor_id = ${id}
       ORDER BY dd.start_date DESC NULLS LAST
-    `)) as any[];
+    `)) as unknown as DueDiligenceRow[];
 
     const contracts = (await tx.execute(sql`
       SELECT id, title, contract_type, status, start_date, end_date, value_amount, value_currency
       FROM contract
       WHERE vendor_id = ${id} AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as ContractRow[];
 
     const scorecards = (await tx.execute(sql`
       SELECT id, scoring_period, overall_score, quality_score, sla_score, security_score, financial_score
@@ -55,26 +123,26 @@ export async function POST(
       WHERE vendor_id = ${id}
       ORDER BY scoring_period DESC
       LIMIT 12
-    `)) as any[];
+    `)) as unknown as ScorecardRow[];
 
     const subProcessors = (await tx.execute(sql`
       SELECT id, sub_processor_name, country, services_provided, status
       FROM vendor_sub_processor
       WHERE vendor_id = ${id}
-    `)) as any[];
+    `)) as unknown as SubProcessorRow[];
 
     const lksg = (await tx.execute(sql`
       SELECT id, assessment_date, status, risk_categories
       FROM lksg_assessment
       WHERE vendor_id = ${id}
-    `)) as any[];
+    `)) as unknown as LksgRow[];
 
     const signOffs = (await tx.execute(sql`
       SELECT signer_role, signoff_type, signed_at, comments, chain_hash
       FROM vendor_sign_off
       WHERE vendor_id = ${id}
       ORDER BY signed_at
-    `)) as any[];
+    `)) as unknown as SignOffRow[];
 
     return { dd, contracts, scorecards, subProcessors, lksg, signOffs };
   });
@@ -109,7 +177,7 @@ export async function POST(
     "due-diligence.csv",
     [
       "ID,Title,Status,Start,Completed,Score",
-      ...data.dd.map((d: any) =>
+      ...data.dd.map((d) =>
         [
           csv(d.id),
           csv(d.title),
@@ -126,7 +194,7 @@ export async function POST(
     "contracts.csv",
     [
       "ID,Title,Type,Status,Start,End,Value,Currency",
-      ...data.contracts.map((c: any) =>
+      ...data.contracts.map((c) =>
         [
           csv(c.id),
           csv(c.title),
@@ -145,7 +213,7 @@ export async function POST(
     "scorecards.csv",
     [
       "Period,Overall,Quality,SLA,Security,Financial",
-      ...data.scorecards.map((s: any) =>
+      ...data.scorecards.map((s) =>
         [
           csv(s.scoring_period),
           csv(s.overall_score),
@@ -162,7 +230,7 @@ export async function POST(
     "sub-processors.csv",
     [
       "Name,Country,Services,Status",
-      ...data.subProcessors.map((s: any) =>
+      ...data.subProcessors.map((s) =>
         [
           csv(s.sub_processor_name),
           csv(s.country),
@@ -177,7 +245,7 @@ export async function POST(
     "lksg-assessments.csv",
     [
       "AssessmentDate,Status,RiskCategories",
-      ...data.lksg.map((l: any) =>
+      ...data.lksg.map((l) =>
         [csv(l.assessment_date), csv(l.status), csv(l.risk_categories)].join(
           ",",
         ),
@@ -189,7 +257,7 @@ export async function POST(
     "sign-off-chain.txt",
     data.signOffs
       .map(
-        (s: any) =>
+        (s) =>
           `${s.signed_at}  ${s.signoff_type.padEnd(12)} ${s.signer_role.padEnd(20)} chain:${s.chain_hash?.slice(0, 16) ?? ""}\n${s.comments ?? ""}`,
       )
       .join("\n\n"),
@@ -211,4 +279,4 @@ export async function POST(
       },
     },
   );
-}
+});

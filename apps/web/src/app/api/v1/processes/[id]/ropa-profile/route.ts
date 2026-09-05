@@ -12,6 +12,11 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const ropaProfileSchema = z.object({
   isProcessingActivity: z.boolean(),
@@ -60,7 +65,7 @@ async function ensureProcess(ctx: { orgId: string }, id: string) {
   return row;
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -80,9 +85,8 @@ export async function GET(
     .where(eq(processRopaProfile.processId, id));
 
   return Response.json({ data: row ?? null });
-}
-
-export async function PUT(
+});
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -104,11 +108,41 @@ export async function PUT(
     );
   }
 
-  // Auto-mark requires_dpia when high-risk indicators present
+  // ── ARCTOS-FULL-2026-08-31 · WP8 · S07-10 (High) ────────────────────
+  //
+  // Vorher: `const requiresDpia = parsed.data.requiresDpia ?? highRisk;`
+  //
+  // `??` greift nur bei `undefined`. Ein explizites `requiresDpia: false`
+  // im Request-Body gewann also gegen `highRisk` — auch dann, wenn
+  // `specialCategories` besetzt war. Ein `process_owner` (eine breit
+  // vergebene Fachrolle, nicht der DSB) konnte damit ein ROPA-Profil mit
+  // `specialCategories: ["health"]` und `requiresDpia: false` speichern:
+  // keine DSFA, keine DSB-Benachrichtigung, kein Blocker, keine
+  // Begründungspflicht. Die Schwellenwertprüfung nach Art. 35 Abs. 1/3
+  // war damit eine Vorbelegung im Frontend, keine Kontrolle. Ein
+  // Unit-Test hielt das Verhalten ausdrücklich als gewollt fest.
+  //
+  // Ab hier: die Hochrisiko-Indikatoren setzen das Kennzeichen, und der
+  // Aufrufer kann es NICHT nach unten übersteuern. Nach oben (freiwillige
+  // DSFA ohne Indikator) bleibt es möglich — das ist Art. 35 Abs. 10
+  // unschädlich und fachlich sinnvoll.
   const highRisk =
     (parsed.data.specialCategories?.length ?? 0) > 0 ||
     parsed.data.thirdCountryTransfers === true;
-  const requiresDpia = parsed.data.requiresDpia ?? highRisk;
+
+  const requestedOverride = parsed.data.requiresDpia === false && highRisk;
+
+  const requiresDpia = highRisk || parsed.data.requiresDpia === true;
+
+  if (requestedOverride) {
+    // Der Versuch wird nicht still verworfen. Wer die Pflichtprüfung
+    // abwählen will, braucht eine dokumentierte Ausnahme des DSB — die
+    // Route ist dafür nicht der Ort.
+    log.warn(
+      "[ropa-profile] S07-10: requiresDpia=false was requested for a high-risk profile and ignored",
+      { processId: id, userId: ctx.userId, orgId: ctx.orgId },
+    );
+  }
 
   const result = await withAuditContext(
     ctx,
@@ -128,9 +162,12 @@ export async function PUT(
         processId: id,
         updatedAt: new Date(),
         updatedBy: ctx.userId,
-      } as any;
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die Zeilen- und
+        // Einfuegeformen dieser Tabelle leitet Drizzle selbst ab; frueher
+        // stand hier zweimal `any`.
+      } as typeof processRopaProfile.$inferInsert;
 
-      let row: any;
+      let row: typeof processRopaProfile.$inferSelect;
       if (existing) {
         [row] = await tx
           .update(processRopaProfile)
@@ -207,4 +244,4 @@ export async function PUT(
   );
 
   return Response.json({ data: result });
-}
+});

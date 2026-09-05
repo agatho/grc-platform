@@ -21,18 +21,25 @@ import {
 import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 import type { WorkItemStatus } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the
+// `requestDbStorage.run(...)` frame that `withAuth` -> establishRequestScopedContext
+// mutates with the org-pinned connection (apps/web/src/lib/api-wrapper.ts:113).
+// Without it that helper falls back to `requestDbStorage.enterWith(...)`, which
+// Next drops across the `await` in withAuth (api.ts:184-196), the handler's
+// queries run on the context-less base pool, and RLS filters every row — the
+// route answers 200 with an EMPTY list instead of the tenant's data.
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { toDateParam, invalidDateParam } from "@/lib/query-schema";
 
 // GET /api/v1/work-items — Unified work items list (paginated, filterable)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const {
-    page,
-    limit: rawLimit,
-    offset: rawOffset,
-    searchParams,
-  } = paginate(req);
+  // `paginate` liefert auch `limit`/`offset`; beide werden hier durch die
+  // eigene Vorgabe (25 statt der Standardgroesse) ersetzt und deshalb gar
+  // nicht erst entnommen.
+  const { page, searchParams } = paginate(req);
 
   // Override default page size to 25
   const limit = Math.min(
@@ -80,14 +87,20 @@ export async function GET(req: Request) {
   }
 
   // Created date range filters
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
   const createdFrom = searchParams.get("created_from");
   if (createdFrom) {
-    conditions.push(gte(workItem.createdAt, new Date(createdFrom)));
+    const d = toDateParam(createdFrom);
+    if (!d) return invalidDateParam(req, "created_from");
+    conditions.push(gte(workItem.createdAt, d));
   }
 
   const createdTo = searchParams.get("created_to");
   if (createdTo) {
-    conditions.push(lte(workItem.createdAt, new Date(createdTo)));
+    const d = toDateParam(createdTo);
+    if (!d) return invalidDateParam(req, "created_to");
+    conditions.push(lte(workItem.createdAt, d));
   }
 
   const where = and(...conditions);
@@ -128,10 +141,9 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
-
+});
 // POST /api/v1/work-items — Create work item (all roles)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -186,4 +198,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

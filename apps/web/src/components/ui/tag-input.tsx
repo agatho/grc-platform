@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { X, Plus, Tag } from "lucide-react";
 import { Badge } from "./badge";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface TagSuggestion {
   id: string;
@@ -39,10 +41,15 @@ function tagColorClass(color?: string): string {
 export function TagInput({
   value,
   onChange,
-  placeholder = "Tag hinzufügen...",
+  placeholder,
   maxTags = 20,
   disabled = false,
 }: TagInputProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Vier Beschriftungen, alle fest auf
+  // Deutsch: der Platzhalter, der Ladehinweis, das Angebot „… als neues Tag
+  // erstellen" und der Hinweis auf die Suche. Die Komponente haengt an jedem
+  // Formular mit Verschlagwortung.
+  const t = useTranslations();
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<TagSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -60,7 +67,7 @@ export function TagInput({
       if (res.ok) {
         const json = await res.json();
         setSuggestions(
-          (json.data ?? []).map((t: any) => ({
+          (json.data ?? []).map((t: UnvalidatedJson) => ({
             id: t.id,
             name: t.name,
             color: t.color ?? "#6B7280",
@@ -139,13 +146,21 @@ export function TagInput({
   return (
     <div ref={containerRef} className="relative">
       {/* Tag display + input */}
-      <div
+      {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] This wrapper carried
+          `onClick={() => inputRef.current?.focus()}` on a plain <div> — a
+          click handler on a non-interactive element with no keyboard path.
+          It is not a control, so giving it `role="button"` would have been a
+          lie; the JS handler existed only to widen the hit area of the input
+          inside it. A <label> does exactly that natively: clicking anywhere in
+          it focuses the control it wraps, with no handler, no role and no
+          keyboard equivalent needed — and it gives the input a genuine
+          accessible name when the caller passes one (S14-09). */}
+      <label
         className={`flex flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1.5 min-h-[38px] ${
           disabled
             ? "opacity-50 cursor-not-allowed"
             : "cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
         }`}
-        onClick={() => !disabled && inputRef.current?.focus()}
       >
         {value.map((tag) => {
           const suggestion = suggestions.find(
@@ -166,9 +181,15 @@ export function TagInput({
                     e.stopPropagation();
                     removeTag(tag);
                   }}
+                  // [ARCTOS-FULL-2026-08-31 · OP-070] Nebenbefund beim
+                  // Umstellen: dieser Knopf trug NUR ein Kreuz und keinen
+                  // zugaenglichen Namen — dieselbe Fehlerklasse wie C-13 an
+                  // der Seitennummerierung der DataTable. Ein Screenreader
+                  // las „Schaltflaeche" ohne jeden Bezug zum Tag.
+                  aria-label={t("tags.remove", { tag })}
                   className="ml-0.5 rounded-full hover:bg-black/10 p-0.5"
                 >
-                  <X size={10} />
+                  <X size={10} aria-hidden="true" />
                 </button>
               )}
             </Badge>
@@ -186,18 +207,24 @@ export function TagInput({
             }}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
-            placeholder={value.length === 0 ? placeholder : ""}
+            placeholder={
+              value.length === 0
+                ? (placeholder ?? t("tags.addPlaceholder"))
+                : ""
+            }
             className="flex-1 min-w-[100px] border-0 bg-transparent p-0 text-sm focus:outline-none focus:ring-0 placeholder:text-gray-400"
             disabled={disabled}
           />
         )}
-      </div>
+      </label>
 
       {/* Suggestions dropdown */}
       {showSuggestions && !disabled && (
         <div className="absolute z-50 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
           {loading ? (
-            <p className="px-3 py-2 text-xs text-gray-400">Laden...</p>
+            <p className="px-3 py-2 text-xs text-gray-400">
+              {t("common.loading")}
+            </p>
           ) : filteredSuggestions.length === 0 ? (
             <div className="px-3 py-2">
               {input.trim() ? (
@@ -207,12 +234,10 @@ export function TagInput({
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 w-full text-left"
                 >
                   <Plus size={14} />
-                  &quot;{input.trim()}&quot; als neues Tag erstellen
+                  {t("tags.createNew", { input: input.trim() })}
                 </button>
               ) : (
-                <p className="text-xs text-gray-400">
-                  Tippen Sie um Tags zu suchen oder zu erstellen
-                </p>
+                <p className="text-xs text-gray-400">{t("tags.searchHint")}</p>
               )}
             </div>
           ) : (
@@ -234,7 +259,7 @@ export function TagInput({
                       {s.category}
                     </span>
                   )}
-                  <span className="text-[10px] text-gray-300">
+                  <span className="text-[10px] text-gray-500">
                     {s.usageCount}×
                   </span>
                 </button>

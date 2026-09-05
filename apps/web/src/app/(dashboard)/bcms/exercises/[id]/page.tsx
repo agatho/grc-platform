@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, CheckCircle } from "lucide-react";
@@ -36,6 +36,11 @@ export default function ExerciseDetailPage() {
 }
 
 function ExerciseDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("bcms");
   const params = useParams();
   const router = useRouter();
@@ -229,10 +234,14 @@ function ExerciseDetailInner() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-result`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Result
               </label>
               <select
+                id={`${a11yId}-result`}
                 value={completeResult}
                 onChange={(e) =>
                   setCompleteResult(e.target.value as ExerciseResult)
@@ -364,7 +373,7 @@ function ExerciseDetailInner() {
                 className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4"
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}
                 >
                   {obj.met ? (
                     <CheckCircle size={14} />

@@ -230,7 +230,7 @@ function ReportYearInner() {
                           ? "bg-green-100 text-green-900"
                           : isActive
                             ? "bg-blue-100 text-blue-900 ring-2 ring-blue-300"
-                            : "bg-gray-100 text-gray-400"
+                            : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {isPast ? <CheckCircle size={14} /> : idx + 1}

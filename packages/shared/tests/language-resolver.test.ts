@@ -15,6 +15,17 @@ import {
   SUPPORTED_LANGUAGES,
 } from "../src/utils/language-resolver";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("resolveField", () => {
   it("should return empty string for null/undefined", () => {
     expect(resolveField(null, "en", "de")).toBe("");
@@ -118,9 +129,9 @@ describe("resolveEntities", () => {
     const resolved = resolveEntities(entities, ["title"], "en", "de");
 
     expect(resolved).toHaveLength(2);
-    expect(resolved[0].title).toBe("B");
-    expect(resolved[1].title).toBe("C"); // fallback
-    expect(resolved[1]._fallback).toEqual(["title"]);
+    expect(at(resolved, 0).title).toBe("B");
+    expect(at(resolved, 1).title).toBe("C"); // fallback
+    expect(at(resolved, 1)._fallback).toEqual(["title"]);
   });
 });
 
@@ -246,14 +257,31 @@ describe("computeSourceHash", () => {
 });
 
 describe("sanitizeTranslation", () => {
-  it("should escape HTML entities", () => {
+  // [ARCTOS-FULL-2026-08-31 / WP6 · S05-18]
+  // `sanitizeTranslation` escaped HTML-Entities IN DEN BESTAND. Eine
+  // Kontrolle "Vier-Augen-Prinzip bei Betraegen > 10.000 EUR" wurde als
+  // "... &gt; 10.000 EUR" gespeichert und erschien so in CSV-, XLSX- und
+  // PDF-Exporten sowie in nachgelagerten Prompts. Escaping gehoert an
+  // die Ausgabe (React tut es von selbst), nicht in die Datenbank —
+  // zumal an dieser Stelle gar kein XSS-Pfad besteht (S05-21).
+  it("escaped NICHT mehr — der Bestand bleibt roher Text", () => {
     expect(sanitizeTranslation('<script>alert("xss")</script>')).toBe(
-      "&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;",
+      '<script>alert("xss")</script>',
+    );
+    expect(sanitizeTranslation("Betraege > 10.000 EUR")).toBe(
+      "Betraege > 10.000 EUR",
     );
   });
 
-  it("should escape ampersand", () => {
-    expect(sanitizeTranslation("A & B")).toBe("A &amp; B");
+  it("laesst kaufmaennisches Und unveraendert", () => {
+    expect(sanitizeTranslation("A & B")).toBe("A & B");
+  });
+
+  it("entfernt Steuerzeichen und unsichtbare Zeichen", () => {
+    const rlo = String.fromCharCode(0x202e);
+    const bell = String.fromCharCode(0x07);
+    expect(sanitizeTranslation("a" + rlo + "b")).toBe("ab");
+    expect(sanitizeTranslation("a" + bell + "b")).toBe("a b");
   });
 
   it("should leave plain text unchanged (except &)", () => {
@@ -303,5 +331,79 @@ describe("SUPPORTED_LANGUAGES", () => {
 
   it("should have 8 supported languages", () => {
     expect(SUPPORTED_LANGUAGES).toHaveLength(8);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// [Welle 4b, Strang 6 · OP-065] `resolveField` und die Prototypenkette.
+//
+// `noUncheckedIndexedAccess` hat an `field[Object.keys(field)[0]]` einen
+// Typfehler gemeldet; dahinter lag dieselbe Fehlerklasse wie in F-4
+// (`isValidWpTransition`). `field[userLang]` griff auf ein aus JSONB
+// gelesenes Objekt zu, ohne nach eigenen Schlüsseln zu fragen.
+//
+// Gemessen am 2026-09-03 gegen 01d0e4cc mit `field = { de: "Titel",
+// en: "Title" }`:
+//
+//   userLang="constructor" → typeof "function"  (function Object() …)
+//   userLang="toString"    → typeof "function"
+//   userLang="valueOf"     → typeof "function"
+//   userLang="__proto__"   → typeof "object"
+//
+// Die Signatur sagt `string`. Über die heutigen Routen ist das nicht
+// erreichbar (`translationExportQuerySchema` engt die Sprachkennung auf ein
+// `z.enum` ein) — aber die Zusicherung lag damit beim Aufrufer, nicht bei
+// dieser Funktion.
+// ─────────────────────────────────────────────────────────────────────────
+describe("resolveField — Schlüssel aus der Prototypenkette", () => {
+  const feld = { de: "Titel", en: "Title" };
+
+  it.each([
+    "constructor",
+    "toString",
+    "valueOf",
+    "hasOwnProperty",
+    "__proto__",
+    "isPrototypeOf",
+  ])("gibt für userLang=%s keine geerbte Eigenschaft zurück", (lang) => {
+    const r = resolveField(feld, lang, "de");
+    expect(typeof r).toBe("string");
+    // Fällt auf die Organisationssprache zurück, wie für jede unbekannte
+    // Sprachkennung auch.
+    expect(r).toBe("Titel");
+  });
+
+  it("gibt auch als Organisationssprache keine geerbte Eigenschaft zurück", () => {
+    const r = resolveField(feld, "fr", "constructor");
+    expect(typeof r).toBe("string");
+    // Rückfall auf den ersten vorhandenen Schlüssel.
+    expect(r).toBe("Titel");
+  });
+
+  it("liefert keinen Nicht-String, wenn im JSONB kein String steht", () => {
+    // Ein JSONB-Feld kann alles tragen. Bis hierher lief eine Zahl ungeprüft
+    // durch `??` und wurde als `string` zurückgegeben — gemessen gegen
+    // 01d0e4cc: `resolveField({de: 42, …}, "de", "en")` gab die ZAHL 42.
+    //
+    // Die Rückfallkette selbst bleibt unverändert (Nutzersprache →
+    // Organisationssprache → ERSTER Schlüssel, nicht: erster brauchbarer);
+    // neu ist allein, dass ein Nicht-String als „nicht vorhanden" gilt und
+    // damit "" herauskommt statt eines falsch typisierten Werts.
+    const gemischt = { de: 42, en: { a: 1 }, fr: "Titre" } as unknown as Record<
+      string,
+      string
+    >;
+    expect(typeof resolveField(gemischt, "de", "en")).toBe("string");
+    expect(resolveField(gemischt, "de", "en")).toBe("");
+    // Steht an der Nutzersprache ein String, greift er wie bisher.
+    expect(resolveField(gemischt, "fr", "en")).toBe("Titre");
+  });
+
+  it("verhält sich für gewöhnliche Sprachkennungen unverändert", () => {
+    expect(resolveField(feld, "de", "en")).toBe("Titel");
+    expect(resolveField(feld, "en", "de")).toBe("Title");
+    expect(resolveField(feld, "fr", "en")).toBe("Title");
+    expect(resolveField(feld, "fr", "es")).toBe("Titel");
+    expect(resolveField({}, "de", "en")).toBe("");
   });
 });

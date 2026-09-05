@@ -16,11 +16,12 @@
  * cleanup (soft delete) at the end.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 const BPMN_XML = `<?xml version="1.0"?><bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"><bpmn:process id="p1"><bpmn:startEvent id="s"/><bpmn:task id="t1" name="Portal Task"/><bpmn:endEvent id="e"/></bpmn:process></bpmn:definitions>`;
 
 test.describe("BPM — Process portal (my-processes + acknowledgment)", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("publish flow → portal listing with role → acknowledgment raises compliance", async ({
     request,

@@ -15,6 +15,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AiDisclosureNotice,
+  readAiDisclosure,
+  type AiDisclosureData,
+} from "@/components/ai/ai-disclosure";
 
 interface GapExplanation {
   requirement: { code: string; title: string; framework: string };
@@ -31,6 +36,11 @@ export function AiExplainGapDialog({ soaEntryId }: { soaEntryId: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<GapExplanation | null>(null);
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S05-12, handed over by WP6] The AI Act
+  // Art. 50 notice now travels WITH the response (`data.aiDisclosure`) and
+  // names the provider, the model and the processing country. The hardcoded
+  // `common.aiDisclaimer` string this dialog used to show named none of them.
+  const [disclosure, setDisclosure] = useState<AiDisclosureData | null>(null);
 
   const fetchExplanation = async () => {
     setLoading(true);
@@ -51,6 +61,7 @@ export function AiExplainGapDialog({ soaEntryId }: { soaEntryId: string }) {
         return;
       }
       setResult(json.data);
+      setDisclosure(readAiDisclosure(json.data));
     } catch {
       setError(t("explainGap.error"));
     } finally {
@@ -92,7 +103,11 @@ export function AiExplainGapDialog({ soaEntryId }: { soaEntryId: string }) {
                 </span>
               )}
             </DialogTitle>
-            <DialogDescription>{t("common.aiDisclaimer")}</DialogDescription>
+            {/* [WP12 · S05-12] The generic disclaimer moves out of the
+                header: it is not a description of the dialog, it is a
+                statement about a specific AI call, and it can only be made
+                once that call has happened. Rendered below the result. */}
+            <DialogDescription>{t("explainGap.subtitle")}</DialogDescription>
           </DialogHeader>
 
           {loading && (
@@ -163,6 +178,11 @@ export function AiExplainGapDialog({ soaEntryId }: { soaEntryId: string }) {
               </p>
             </div>
           )}
+          {/* [ARCTOS-FULL-2026-08-31 / WP12 · S05-12] AI Act Art. 50
+              transparency notice, rendered from the response rather than
+              hardcoded — it names the provider, the model and the processing
+              country, and marks a third-country transfer visibly. */}
+          <AiDisclosureNotice disclosure={disclosure} className="mt-4" />
         </DialogContent>
       </Dialog>
     </>

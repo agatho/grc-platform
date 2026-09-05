@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Loader2,
-  Sparkles,
-  FileText,
-  RotateCcw,
-  Check,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Sparkles, RotateCcw, Check } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -35,6 +28,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@grc/ui";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -116,34 +110,42 @@ function NewProcessForm() {
 
   // Fetch users
   useEffect(() => {
-    fetch("/api/v1/users?limit=200")
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((json) => {
+    // [ARCTOS-FULL-2026-08-31 · OP-050] `(r.ok ? r.json() : { data: [] })` ist
+    // die Fehlerbehandlung, die den Befund erst gefährlich macht: sie
+    // übersetzt jeden Statuscode in „es gibt nichts". Mit `limit=200` war der
+    // Statuscode immer 422, also war die Eigentümer-Auswahl immer leer.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
         setOrgUsers(
-          (json.data ?? []).map((u: Record<string, unknown>) => ({
+          rows.map((u) => ({
             id: u.id as string,
             name: (u.name as string) || (u.email as string),
             email: u.email as string,
           })),
         );
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("processes/new: Nutzerliste nicht geladen", err);
+      });
   }, []);
 
   // Fetch parent process options
   useEffect(() => {
-    fetch("/api/v1/processes?limit=200")
-      .then((r) => (r.ok ? r.json() : { data: [] }))
-      .then((json) => {
+    // [ARCTOS-FULL-2026-08-31 · OP-050] dito — ohne Elternprozess-Auswahl
+    // entsteht jeder neue Prozess auf der obersten Ebene.
+    fetchAllPages<Record<string, unknown>>("/api/v1/processes")
+      .then((rows) => {
         setParentOptions(
-          (json.data ?? []).map((p: Record<string, unknown>) => ({
+          rows.map((p) => ({
             id: p.id as string,
             name: p.name as string,
             level: p.level as number,
           })),
         );
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("processes/new: Elternprozesse nicht geladen", err);
+      });
   }, []);
 
   // Update helper

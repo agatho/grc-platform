@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 import {
   ArrowLeft,
   Globe,
@@ -67,6 +67,11 @@ const riskColors: Record<string, string> = {
 };
 
 export default function SupplyChainEmissionsPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const totalEmissions = DEMO_REGIONS.reduce((sum, r) => sum + r.emissions, 0);
 
   return (
@@ -171,7 +176,7 @@ export default function SupplyChainEmissionsPage() {
                       <div className="flex items-center gap-3 text-xs text-gray-500">
                         <span>{region.vendorCount} Lieferanten</span>
                         <span className="font-mono font-medium text-gray-900">
-                          {region.emissions.toLocaleString("de-DE")} tCO₂e
+                          {region.emissions.toLocaleString(numberLocale)} tCO₂e
                         </span>
                       </div>
                     </div>
@@ -211,7 +216,7 @@ export default function SupplyChainEmissionsPage() {
                   <div className="flex items-center gap-3 text-xs">
                     <span className="text-gray-500">{cat.percentage}%</span>
                     <span className="font-mono font-medium text-gray-900">
-                      {cat.emissions.toLocaleString("de-DE")} tCO₂e
+                      {cat.emissions.toLocaleString(numberLocale)} tCO₂e
                     </span>
                   </div>
                 </div>

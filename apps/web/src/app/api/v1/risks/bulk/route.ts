@@ -6,7 +6,16 @@
 // `withAuditContext` transaction so each row gets its own audit-log
 // hash-chain entry (NOT one for the whole batch).
 
-import { db, risk, workItem, userOrganizationRole } from "@grc/db";
+import {
+  db,
+  risk,
+  workItem,
+  userOrganizationRole,
+  toNumericInput,
+  riskCategoryEnum,
+  riskSourceEnum,
+  treatmentStrategyEnum,
+} from "@grc/db";
 import { createRiskSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -18,11 +27,19 @@ import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
 // the schema is `aliasShortAssessment.pipe(z.object(...).refine(...))`
 // — the outer `z.preprocess<unknown>` defeats inference. Manually
 // declaring the parsed shape here avoids the cast-everywhere mess.
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Die Enum-Felder standen hier als
+// blankes `string` und passten damit auf keine der pgEnum-Spalten. Sie
+// leiten sich jetzt aus den Enums selbst ab: aendert sich ein Enum, bricht
+// der Typ — statt erst der INSERT.
+type RiskCategoryValue = (typeof riskCategoryEnum.enumValues)[number];
+type RiskSourceValue = (typeof riskSourceEnum.enumValues)[number];
+type TreatmentStrategyValue = (typeof treatmentStrategyEnum.enumValues)[number];
+
 interface RiskInput {
   title: string;
   description?: string;
-  riskCategory: string;
-  riskSource: string;
+  riskCategory: RiskCategoryValue;
+  riskSource: RiskSourceValue;
   ownerId?: string;
   department?: string;
   reviewDate?: string;
@@ -33,7 +50,7 @@ interface RiskInput {
   inherentImpact?: number;
   residualLikelihood?: number;
   residualImpact?: number;
-  treatmentStrategy?: string;
+  treatmentStrategy?: TreatmentStrategyValue;
   treatmentRationale?: string;
   catalogEntryId?: string;
   catalogSource?: string;
@@ -135,9 +152,11 @@ export const POST = withErrorHandler(async function POST(req: Request) {
               resL != null && resI != null ? resL * resI : null,
             treatmentStrategy: data.treatmentStrategy,
             treatmentRationale: data.treatmentRationale,
-            financialImpactMin: data.financialImpactMin,
-            financialImpactMax: data.financialImpactMax,
-            financialImpactExpected: data.financialImpactExpected,
+            financialImpactMin: toNumericInput(data.financialImpactMin),
+            financialImpactMax: toNumericInput(data.financialImpactMax),
+            financialImpactExpected: toNumericInput(
+              data.financialImpactExpected,
+            ),
             reviewDate: data.reviewDate,
             catalogEntryId: data.catalogEntryId,
             catalogSource: data.catalogSource,

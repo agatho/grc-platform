@@ -13,7 +13,10 @@
 import { readdir, readFile, mkdir, writeFile, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const API_DIR = join(ROOT, "apps/web/src/app/api/v1");
 const OUT_DIR = join(ROOT, "docs/security");
 
@@ -49,10 +52,7 @@ const TOKEN_VALIDATOR_RE =
 // (credential login, single-use DB-checked tokens, anonymous intake).
 // Keep in sync with the auth-smoke allowlist. Keys are route prefixes.
 const PUBLIC_BY_DESIGN = new Map([
-  [
-    "/api/v1/auth/admin-login",
-    "Credential login endpoint — public by design",
-  ],
+  ["/api/v1/auth/admin-login", "Credential login endpoint — public by design"],
   [
     "/api/v1/invitations/[token]/accept",
     "Single-use invitation token, validated against DB in handler",
@@ -150,14 +150,22 @@ async function main() {
 
     for (const method of methods) {
       const isMutating = method !== "GET";
-      const roleLods = Array.from(new Set(roles.map((r) => ROLE_TO_LOD[r] ?? "unknown")));
-      const anonymous = authKind === "anonymous" && roles.length === 0 && lods.length === 0;
+      const roleLods = Array.from(
+        new Set(roles.map((r) => ROLE_TO_LOD[r] ?? "unknown")),
+      );
+      const anonymous =
+        authKind === "anonymous" && roles.length === 0 && lods.length === 0;
       rows.push({
         route,
         method,
         isMutating,
         roles: roles.join("|"),
-        lods: [...lods, ...roleLods.filter((r) => ["1st", "2nd", "3rd", "cross", "isolated", "read"].includes(r))].join("|"),
+        lods: [
+          ...lods,
+          ...roleLods.filter((r) =>
+            ["1st", "2nd", "3rd", "cross", "isolated", "read"].includes(r),
+          ),
+        ].join("|"),
         authKind,
         publicReason,
         anonymous,
@@ -170,17 +178,34 @@ async function main() {
   // CSV
   const csv = [
     "route,method,mutating,roles,lods,auth_kind,anonymous",
-    ...rows.map((r) => `${r.route},${r.method},${r.isMutating},${r.roles},${r.lods},${r.authKind},${r.anonymous}`),
+    ...rows.map(
+      (r) =>
+        `${r.route},${r.method},${r.isMutating},${r.roles},${r.lods},${r.authKind},${r.anonymous}`,
+    ),
   ].join("\n");
   await writeFile(join(OUT_DIR, "lod-coverage.csv"), csv);
 
   // Markdown summary
   const anonymousMutating = rows.filter((r) => r.isMutating && r.anonymous);
-  const sessionMutating = rows.filter((r) => r.isMutating && r.authKind === "session");
-  const tokenMutating = rows.filter((r) => r.isMutating && r.authKind.startsWith("token:"));
-  const publicMutating = rows.filter((r) => r.isMutating && r.authKind === "public-by-design");
+  const sessionMutating = rows.filter(
+    (r) => r.isMutating && r.authKind === "session",
+  );
+  const tokenMutating = rows.filter(
+    (r) => r.isMutating && r.authKind.startsWith("token:"),
+  );
+  const publicMutating = rows.filter(
+    (r) => r.isMutating && r.authKind === "public-by-design",
+  );
   const getOnly = rows.filter((r) => r.method === "GET" && r.roles === "");
-  const lodCoverage = rows.reduce((acc, r) => { r.lods.split("|").filter(Boolean).forEach((l) => { acc[l] = (acc[l] ?? 0) + 1; }); return acc; }, {});
+  const lodCoverage = rows.reduce((acc, r) => {
+    r.lods
+      .split("|")
+      .filter(Boolean)
+      .forEach((l) => {
+        acc[l] = (acc[l] ?? 0) + 1;
+      });
+    return acc;
+  }, {});
 
   const md = [
     `# Three-Lines-of-Defense Coverage Report`,
@@ -201,7 +226,9 @@ async function main() {
     ``,
     `| LoD/Role | Endpoints |`,
     `|---|---|`,
-    ...Object.entries(lodCoverage).sort((a, b) => b[1] - a[1]).map(([k, v]) => `| ${k} | ${v} |`),
+    ...Object.entries(lodCoverage)
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, v]) => `| ${k} | ${v} |`),
     ``,
   ];
 
@@ -209,44 +236,69 @@ async function main() {
     md.push(`## ⚠️ Anonymous mutating endpoints`, "");
     md.push(`| Route | Method |`);
     md.push(`|---|---|`);
-    for (const r of anonymousMutating) md.push(`| \`${r.route}\` | ${r.method} |`);
+    for (const r of anonymousMutating)
+      md.push(`| \`${r.route}\` | ${r.method} |`);
     md.push("");
   }
 
   if (sessionMutating.length > 0) {
-    md.push(`## Session-authenticated mutating endpoints (Auth.js \`auth()\`)`, "");
-    md.push(`Authenticated via the Auth.js session directly instead of the \`withAuth\` helper (no role restriction beyond a valid session).`, "");
+    md.push(
+      `## Session-authenticated mutating endpoints (Auth.js \`auth()\`)`,
+      "",
+    );
+    md.push(
+      `Authenticated via the Auth.js session directly instead of the \`withAuth\` helper (no role restriction beyond a valid session).`,
+      "",
+    );
     md.push(`| Route | Method |`);
     md.push(`|---|---|`);
-    for (const r of sessionMutating) md.push(`| \`${r.route}\` | ${r.method} |`);
+    for (const r of sessionMutating)
+      md.push(`| \`${r.route}\` | ${r.method} |`);
     md.push("");
   }
 
   if (tokenMutating.length > 0) {
     md.push(`## Token-authenticated mutating endpoints`, "");
-    md.push(`Authenticated via an in-handler token validator (SCIM bearer token, portal access tokens, SAML assertion validation).`, "");
+    md.push(
+      `Authenticated via an in-handler token validator (SCIM bearer token, portal access tokens, SAML assertion validation).`,
+      "",
+    );
     md.push(`| Route | Method | Validator |`);
     md.push(`|---|---|---|`);
-    for (const r of tokenMutating) md.push(`| \`${r.route}\` | ${r.method} | \`${r.authKind.slice("token:".length)}\` |`);
+    for (const r of tokenMutating)
+      md.push(
+        `| \`${r.route}\` | ${r.method} | \`${r.authKind.slice("token:".length)}\` |`,
+      );
     md.push("");
   }
 
   if (publicMutating.length > 0) {
-    md.push(`## Public-by-design mutating endpoints (documented allowlist)`, "");
+    md.push(
+      `## Public-by-design mutating endpoints (documented allowlist)`,
+      "",
+    );
     md.push(`| Route | Method | Reason |`);
     md.push(`|---|---|---|`);
-    for (const r of publicMutating) md.push(`| \`${r.route}\` | ${r.method} | ${r.publicReason} |`);
+    for (const r of publicMutating)
+      md.push(`| \`${r.route}\` | ${r.method} | ${r.publicReason} |`);
     md.push("");
   }
 
   md.push(`## Methodology`);
   md.push(`- Parses every \`route.ts\` under \`apps/web/src/app/api/v1/\``);
-  md.push(`- Extracts \`withAuth("...")\` args (roles), \`requireLineOfDefense([...])\` args (LoD)`);
-  md.push(`- Additionally recognizes (2026-07-20): direct Auth.js session auth (\`await auth()\`), in-handler token validators (\`validateScimToken\`, \`validateDdToken\`, \`validateMailboxToken\`, \`validateSAMLSignature\`/\`validateSAMLAssertion\`) and a hand-curated public-by-design allowlist (see \`PUBLIC_BY_DESIGN\` in the script) — these were previously false-positive "anonymous mutating" counts (RBAC-smoke finding re auth/switch-org + SCIM).`);
+  md.push(
+    `- Extracts \`withAuth("...")\` args (roles), \`requireLineOfDefense([...])\` args (LoD)`,
+  );
+  md.push(
+    `- Additionally recognizes (2026-07-20): direct Auth.js session auth (\`await auth()\`), in-handler token validators (\`validateScimToken\`, \`validateDdToken\`, \`validateMailboxToken\`, \`validateSAMLSignature\`/\`validateSAMLAssertion\`) and a hand-curated public-by-design allowlist (see \`PUBLIC_BY_DESIGN\` in the script) — these were previously false-positive "anonymous mutating" counts (RBAC-smoke finding re auth/switch-org + SCIM).`,
+  );
   md.push(`- Role→LoD map (per ADR-007):`);
-  for (const [role, lod] of Object.entries(ROLE_TO_LOD)) md.push(`  - \`${role}\` → ${lod}`);
+  for (const [role, lod] of Object.entries(ROLE_TO_LOD))
+    md.push(`  - \`${role}\` → ${lod}`);
   md.push(``);
-  md.push(`False positives possible when auth is applied via a shared helper that this script doesn't match. Cross-check against \`grep -r "withAuth"\` in suspicious cases.`);
+  md.push(
+    `False positives possible when auth is applied via a shared helper that this script doesn't match. Cross-check against \`grep -r "withAuth"\` in suspicious cases.`,
+  );
 
   await writeFile(join(OUT_DIR, "lod-coverage.md"), md.join("\n"));
 
@@ -258,4 +310,7 @@ async function main() {
   console.log(`  Public-by-design mutating: ${publicMutating.length}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

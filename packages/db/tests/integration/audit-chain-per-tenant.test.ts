@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import * as schemaMod from "../../src/schema/platform";
+import { requireRow, requireAt } from "../helpers";
 
 const DATABASE_URL =
   process.env.DATABASE_URL ??
@@ -55,11 +56,14 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     await client`SELECT set_config('app.current_user_id', '', false)`;
     await client`SELECT set_config('app.current_org_id', '', false)`;
 
-    const [org] = await client<{ id: string }[]>`
+    const org = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${orgName}, 'subsidiary', 'DE', true, true)
       RETURNING id
-    `;
+    `,
+      "org",
+    );
     const orgId = org.id;
 
     // Two follow-up inserts in the same tenant to produce chain links
@@ -86,7 +90,9 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
 
     // Chain: each row's previous_hash is the prior row's entry_hash
     for (let i = 1; i < rows.length; i++) {
-      expect(rows[i].previous_hash).toBe(rows[i - 1].entry_hash);
+      expect(requireAt(rows, i, "rows").previous_hash).toBe(
+        requireAt(rows, i - 1, "rows").entry_hash,
+      );
     }
 
     await client.unsafe(
@@ -105,11 +111,14 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     const { client } = testDb;
     const now = Date.now();
 
-    const [org] = await client<{ id: string }[]>`
+    const org = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${"parallel-test-" + now}, 'subsidiary', 'DE', true, true)
       RETURNING id
-    `;
+    `,
+      "org",
+    );
     const orgId = org.id;
 
     // 10 sequential updates. The per-tenant advisory lock in the audit
@@ -143,7 +152,9 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     // Every non-first row's previous_hash must equal the prior row's entry_hash.
     // This is the property that the old chain failed at.
     for (let i = 1; i < rows.length; i++) {
-      expect(rows[i].previous_hash).toBe(rows[i - 1].entry_hash);
+      expect(requireAt(rows, i, "rows").previous_hash).toBe(
+        requireAt(rows, i - 1, "rows").entry_hash,
+      );
     }
 
     // Uniqueness: no two rows should share an entry_hash
@@ -166,14 +177,20 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     const { client } = testDb;
     const now = Date.now();
 
-    const [orgA] = await client<{ id: string }[]>`
+    const orgA = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${"tenant-a-" + now}, 'subsidiary', 'DE', true, true) RETURNING id
-    `;
-    const [orgB] = await client<{ id: string }[]>`
+    `,
+      "orgA",
+    );
+    const orgB = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${"tenant-b-" + now}, 'subsidiary', 'DE', true, true) RETURNING id
-    `;
+    `,
+      "orgB",
+    );
 
     // Interleave updates across two tenants
     for (let i = 0; i < 5; i++) {
@@ -208,11 +225,15 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
 
     // A's chain is continuous within itself
     for (let i = 1; i < rowsA.length; i++) {
-      expect(rowsA[i].previous_hash).toBe(rowsA[i - 1].entry_hash);
+      expect(requireAt(rowsA, i, "rowsA").previous_hash).toBe(
+        requireAt(rowsA, i - 1, "rowsA").entry_hash,
+      );
     }
     // B's chain is continuous within itself
     for (let i = 1; i < rowsB.length; i++) {
-      expect(rowsB[i].previous_hash).toBe(rowsB[i - 1].entry_hash);
+      expect(requireAt(rowsB, i, "rowsB").previous_hash).toBe(
+        requireAt(rowsB, i - 1, "rowsB").entry_hash,
+      );
     }
 
     // Neither chain references a hash that only exists in the other tenant's chain
@@ -255,36 +276,45 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     const { client } = testDb;
     const now = Date.now();
 
-    const [org] = await client<{ id: string }[]>`
+    const org = requireRow(
+      await client<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${"tombstone-" + now}, 'subsidiary', 'DE', true, true) RETURNING id
-    `;
+    `,
+      "org",
+    );
 
     await client`SELECT set_config('app.current_user_email', 'subject@example.com', false)`;
     await client`SELECT set_config('app.current_user_name', 'Test Subject', false)`;
 
     await client`UPDATE organization SET name = ${"tombstone-v2-" + now} WHERE id = ${org.id}`;
 
-    const [row] = await client<{ id: string; entry_hash: string }[]>`
+    const row = requireRow(
+      await client<{ id: string; entry_hash: string }[]>`
       SELECT id, entry_hash FROM audit_log WHERE org_id = ${org.id} ORDER BY created_at DESC LIMIT 1
-    `;
+    `,
+      "row",
+    );
 
     const originalHash = row.entry_hash;
 
     await client`SELECT tombstone_audit_entry(${row.id}::uuid, 'gdpr_art_17')`;
 
-    const [after] = await client<
-      {
-        entry_hash: string;
-        user_email: string;
-        user_name: string;
-        pii_tombstoned_at: Date | null;
-        pii_tombstone_reason: string | null;
-      }[]
-    >`
+    const after = requireRow(
+      await client<
+        {
+          entry_hash: string;
+          user_email: string;
+          user_name: string;
+          pii_tombstoned_at: Date | null;
+          pii_tombstone_reason: string | null;
+        }[]
+      >`
       SELECT entry_hash, user_email, user_name, pii_tombstoned_at, pii_tombstone_reason
       FROM audit_log WHERE id = ${row.id}
-    `;
+    `,
+      "after",
+    );
 
     // entry_hash is preserved — tombstone does not rehash
     expect(after.entry_hash).toBe(originalHash);
@@ -293,10 +323,35 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     expect(after.pii_tombstoned_at).toBeTruthy();
     expect(after.pii_tombstone_reason).toBe("gdpr_art_17");
 
-    // Tombstoning a second time must fail
+    // #WP8-S07-04 — hier stand vorher:
+    //
+    //   // Tombstoning a second time must fail
+    //   await expect(… 'double_tombstone')).rejects.toThrow(/already tombstoned/)
+    //
+    // Diese Zusicherung machte den Befund S07-04 unbehebbar: ein
+    // Audit-Eintrag kann mehrere Personen betreffen (Akteur, Gegenstand,
+    // Erwähnung in `changes`). Wird Person A heute und Person B in zwei
+    // Jahren gelöscht, war die zweite Löschung technisch unmöglich. Die
+    // Invariante des Guards — diese Spalten ändern sich AUSSCHLIESSLICH
+    // im Zuge einer protokollierten Redaktion — bleibt vollständig
+    // erhalten: der Guard verlangt jetzt einen VORRÜCKENDEN
+    // `pii_tombstoned_at`, ein gewöhnliches UPDATE wird weiterhin
+    // abgewiesen (siehe die beiden folgenden Prüfungen).
+    await client`SELECT tombstone_audit_entry(${row.id}::uuid, 'second_subject')`;
+
+    const twice = requireRow(
+      await client<
+        { entry_hash: string; pii_tombstone_reason: string | null }[]
+      >`SELECT entry_hash, pii_tombstone_reason FROM audit_log WHERE id = ${row.id}`,
+      "twice",
+    );
+    expect(twice.entry_hash).toBe(originalHash);
+    expect(twice.pii_tombstone_reason).toBe("second_subject");
+
+    // Ein UPDATE ohne Redaktion bleibt verboten.
     await expect(
-      client`SELECT tombstone_audit_entry(${row.id}::uuid, 'double_tombstone')`,
-    ).rejects.toThrow(/already tombstoned/);
+      client`UPDATE audit_log SET user_email = 'x@y.z' WHERE id = ${row.id}`,
+    ).rejects.toThrow(/append-only|tombstone/i);
 
     await client`SELECT set_config('app.current_user_email', '', false)`;
     await client`SELECT set_config('app.current_user_name', '', false)`;
@@ -333,11 +388,14 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     const b = postgres(DATABASE_URL, { max: 1 });
     const now = Date.now();
 
-    const [org] = await a<{ id: string }[]>`
+    const org = requireRow(
+      await a<{ id: string }[]>`
       INSERT INTO organization (name, type, country, is_eu, is_data_controller)
       VALUES (${"par-concurrent-" + now}, 'subsidiary', 'DE', true, true)
       RETURNING id
-    `;
+    `,
+      "org",
+    );
     const orgId = org.id;
 
     // Fire 20 cross-connection UPDATEs as fast as possible. With the
@@ -367,9 +425,9 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     expect(rows.length).toBe(21);
     for (let i = 1; i < rows.length; i++) {
       expect(
-        rows[i].previous_hash,
-        `row ${i} (chain_seq=${rows[i].chain_seq}) breaks the chain`,
-      ).toBe(rows[i - 1].entry_hash);
+        requireAt(rows, i, "rows").previous_hash,
+        `row ${i} (chain_seq=${requireAt(rows, i, "rows").chain_seq}) breaks the chain`,
+      ).toBe(requireAt(rows, i - 1, "rows").entry_hash);
     }
 
     await a.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);

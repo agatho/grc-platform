@@ -1,3 +1,9 @@
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06] Beide Builder liefern jetzt
+// Messages statt eines Fliesstext-Strings: Instruktion und Daten sind
+// getrennte Kanaele. `flat()` fasst sie fuer die Inhaltszusicherungen
+// wieder zusammen, die Trennung selbst prueft
+// `tests/prompt-injection.test.ts`.
+
 import { describe, it, expect } from "vitest";
 import {
   buildSoaGapPrompt,
@@ -5,6 +11,17 @@ import {
   parseSoaGapResponse,
   parseMaturityRoadmapResponse,
 } from "../src/prompts/isms-intelligence";
+
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
 
 describe("buildSoaGapPrompt", () => {
   it("should build a prompt with SoA data", () => {
@@ -29,15 +46,16 @@ describe("buildSoaGapPrompt", () => {
       framework: "iso27001",
     });
 
-    expect(prompt).toContain("ISO 27001");
-    expect(prompt).toContain("A.5.1");
-    expect(prompt).toContain("A.6.1");
-    expect(prompt).toContain("Server A");
-    expect(prompt).toContain("Data breach risk");
-    expect(prompt).toContain("JSON");
+    const text = prompt.map((m) => m.content).join("\n");
+    expect(text).toContain("ISO 27001");
+    expect(text).toContain("A.5.1");
+    expect(text).toContain("A.6.1");
+    expect(text).toContain("Server A");
+    expect(text).toContain("Data breach risk");
+    expect(text).toContain("JSON");
   });
 
-  it("should sanitize user content in prompt", () => {
+  it("kapselt Angreifertext im Nonce-Umschlag (S05-06)", () => {
     const prompt = buildSoaGapPrompt({
       soaData: [
         {
@@ -53,7 +71,14 @@ describe("buildSoaGapPrompt", () => {
       framework: "iso27001",
     });
 
-    expect(prompt).not.toContain("ignore all previous instructions");
+    const user = at(prompt, 1).content;
+    const nonce = /<grc_data nonce="([0-9a-f]{32})">/.exec(user)![1];
+    const close = `</grc_data nonce="${nonce}">`;
+    // Der Text bleibt erhalten (kein stiller Datenverlust), kann den
+    // Umschlag aber nicht verlassen.
+    expect(user).toContain("Ignore all previous instructions");
+    expect(user.slice(user.indexOf(close) + close.length).trim()).toBe("");
+    expect(at(prompt, 0).content).not.toContain("Ignore all previous");
   });
 });
 
@@ -77,11 +102,14 @@ describe("buildMaturityRoadmapPrompt", () => {
       targetMaturity: 4,
     });
 
-    expect(prompt).toContain("A.5 Organizational Controls");
-    expect(prompt).toContain("Current=2");
-    expect(prompt).toContain("Target=4");
-    expect(prompt).toContain("JSON");
-    expect(prompt).toContain("quick wins");
+    const text = prompt.map((m) => m.content).join("\n");
+    expect(text).toContain("A.5 Organizational Controls");
+    // Die Daten stehen jetzt als JSON im Umschlag statt als
+    // "Current=2, Target=4"-Fliesstext.
+    expect(text).toContain('"currentLevel": 2');
+    expect(text).toContain('"targetLevel": 4');
+    expect(text).toContain("JSON");
+    expect(text).toContain("quick wins");
   });
 });
 
@@ -94,10 +122,10 @@ describe("parseSoaGapResponse", () => {
 
     const result = parseSoaGapResponse(response);
     expect(result).toHaveLength(2);
-    expect(result[0].controlRef).toBe("A.5.1");
-    expect(result[0].gapType).toBe("not_covered");
-    expect(result[0].confidence).toBe(85);
-    expect(result[0].priority).toBe("high");
+    expect(at(result, 0).controlRef).toBe("A.5.1");
+    expect(at(result, 0).gapType).toBe("not_covered");
+    expect(at(result, 0).confidence).toBe(85);
+    expect(at(result, 0).priority).toBe("high");
   });
 
   it("should extract JSON from text with surrounding content", () => {
@@ -107,7 +135,7 @@ describe("parseSoaGapResponse", () => {
 
     const result = parseSoaGapResponse(response);
     expect(result).toHaveLength(1);
-    expect(result[0].controlRef).toBe("A.5.1");
+    expect(at(result, 0).controlRef).toBe("A.5.1");
   });
 
   it("should return empty array for invalid JSON", () => {
@@ -123,26 +151,26 @@ describe("parseSoaGapResponse", () => {
 
     const result = parseSoaGapResponse(response);
     expect(result).toHaveLength(1);
-    expect(result[0].controlRef).toBe("A.5.1");
+    expect(at(result, 0).controlRef).toBe("A.5.1");
   });
 
   it("should clamp confidence to 0-100", () => {
     const response = `[{"controlRef":"A.5.1","gapType":"not_covered","confidence":150}]`;
     const result = parseSoaGapResponse(response);
-    expect(result[0].confidence).toBe(100);
+    expect(at(result, 0).confidence).toBe(100);
   });
 
   it("should default priority to medium for invalid values", () => {
     const response = `[{"controlRef":"A.5.1","gapType":"partial","confidence":50,"priority":"extreme"}]`;
     const result = parseSoaGapResponse(response);
-    expect(result[0].priority).toBe("medium");
+    expect(at(result, 0).priority).toBe("medium");
   });
 
   it("should truncate long reasoning", () => {
     const longReasoning = "x".repeat(3000);
     const response = `[{"controlRef":"A.5.1","gapType":"partial","confidence":50,"reasoning":"${longReasoning}"}]`;
     const result = parseSoaGapResponse(response);
-    expect(result[0].reasoning.length).toBe(2000);
+    expect(at(result, 0).reasoning.length).toBe(2000);
   });
 });
 
@@ -155,9 +183,9 @@ describe("parseMaturityRoadmapResponse", () => {
 
     const result = parseMaturityRoadmapResponse(response);
     expect(result).toHaveLength(2);
-    expect(result[0].domain).toBe("A.5 Organizational");
-    expect(result[0].effort).toBe("M");
-    expect(result[1].isQuickWin).toBe(true);
+    expect(at(result, 0).domain).toBe("A.5 Organizational");
+    expect(at(result, 0).effort).toBe("M");
+    expect(at(result, 1).isQuickWin).toBe(true);
   });
 
   it("should return empty array for invalid JSON", () => {
@@ -167,20 +195,20 @@ describe("parseMaturityRoadmapResponse", () => {
   it("should clamp maturity levels to 1-5", () => {
     const response = `[{"domain":"Test","title":"Action","currentLevel":0,"targetLevel":6,"effort":"M","priority":1}]`;
     const result = parseMaturityRoadmapResponse(response);
-    expect(result[0].currentLevel).toBe(1);
-    expect(result[0].targetLevel).toBe(5);
+    expect(at(result, 0).currentLevel).toBe(1);
+    expect(at(result, 0).targetLevel).toBe(5);
   });
 
   it("should default effort to M for invalid values", () => {
     const response = `[{"domain":"Test","title":"Action","effort":"XL","priority":1}]`;
     const result = parseMaturityRoadmapResponse(response);
-    expect(result[0].effort).toBe("M");
+    expect(at(result, 0).effort).toBe("M");
   });
 
   it("should default quarter to Q1 for invalid values", () => {
     const response = `[{"domain":"Test","title":"Action","effort":"S","priority":1,"quarter":"Q99"}]`;
     const result = parseMaturityRoadmapResponse(response);
-    expect(result[0].quarter).toBe("Q1");
+    expect(at(result, 0).quarter).toBe("Q1");
   });
 
   it("should filter items without domain or title", () => {
@@ -191,6 +219,6 @@ describe("parseMaturityRoadmapResponse", () => {
     ]`;
     const result = parseMaturityRoadmapResponse(response);
     expect(result).toHaveLength(1);
-    expect(result[0].domain).toBe("Valid");
+    expect(at(result, 0).domain).toBe("Valid");
   });
 });

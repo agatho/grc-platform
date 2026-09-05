@@ -42,6 +42,7 @@ import { soaEntry } from "./schema/isms";
 import { controlCatalogEntry } from "./schema/catalog";
 import type { db as Db } from "./index";
 import { and, eq, isNull, inArray, sql } from "drizzle-orm";
+import { requireRow } from "./sql-result";
 
 type DbClient = typeof Db;
 
@@ -289,7 +290,11 @@ export async function syncSoaEntryToProgramme(
         result.subtaskAction = "updated";
         result.subtaskId = existingSub.id;
       } else {
-        const [{ maxSeq }] = await db
+        // [OP-065] `const [{ maxSeq }] = …` zerlegte eine Zeile, die der
+        // Compiler als `| undefined` kennt. Eine Aggregatabfrage liefert immer
+        // genau eine Zeile — `?? 0` schreibt das auf und ist zugleich derselbe
+        // Ausgangswert, den das `coalesce(…, 0)` in der Abfrage vorgibt.
+        const [seqRow] = await db
           .select({
             maxSeq: sql<number>`coalesce(max(${programmeJourneySubtask.sequence}), 0)::int`,
           })
@@ -297,12 +302,13 @@ export async function syncSoaEntryToProgramme(
           .where(
             eq(programmeJourneySubtask.journeyStepId, ctx.implementationStepId),
           );
-        const [created] = await db
+        const maxSeq = seqRow?.maxSeq ?? 0;
+        const createdRows = await db
           .insert(programmeJourneySubtask)
           .values({
             orgId,
             journeyStepId: ctx.implementationStepId,
-            sequence: (maxSeq ?? 0) + 1,
+            sequence: maxSeq + 1,
             title,
             description,
             status: targetStatus,
@@ -314,8 +320,19 @@ export async function syncSoaEntryToProgramme(
             completedAt: targetStatus === "completed" ? new Date() : null,
           })
           .returning();
+        // [OP-065] `created.id` war ein ungeprüfter Zugriff auf `rows[0]`.
+        // `.returning()` auf einem schlichten INSERT (ohne
+        // `onConflictDoNothing`) liefert genau eine Zeile — bleibt sie aus,
+        // ist der Datensatz NICHT angelegt worden, und ein Ergebnisbericht,
+        // der „created" meldet, wäre schlimmer als ein Fehlschlag.
+        // `requireRow` (sql-result.ts) trifft diese Entscheidung an einer
+        // Stelle für das ganze Paket.
+        const createdSubtask = requireRow(
+          createdRows,
+          "Journey-Subtask anlegen",
+        );
         result.subtaskAction = "created";
-        result.subtaskId = created.id;
+        result.subtaskId = createdSubtask.id;
       }
     }
   }
@@ -343,7 +360,7 @@ export async function syncSoaEntryToProgramme(
         entry.catalogCode && entry.catalogTitleDe
           ? `${entry.catalogCode} ${entry.catalogTitleDe}`
           : (entry.catalogCode ?? "Annex-A-Kontrolle");
-      const [link] = await db
+      const linkRows = await db
         .insert(programmeStepLink)
         .values({
           orgId,
@@ -356,8 +373,9 @@ export async function syncSoaEntryToProgramme(
           createdBy: actorId,
         })
         .returning();
+      const createdLink = requireRow(linkRows, "Programme-Step-Link anlegen");
       result.linkAction = "created";
-      result.linkId = link.id;
+      result.linkId = createdLink.id;
     }
   } else if (entry.applicability === "not_applicable" && ctx.soaDraftStepId) {
     // Drop the link if the entry has flipped to not_applicable.

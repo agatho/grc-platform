@@ -2,11 +2,13 @@
   "name": "@grc/worker",
   "version": "0.1.0",
   "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "dev": "tsx watch src/index.ts",
     "build": "tsc --noEmit",
     "start": "tsx src/index.ts",
-    "test": "vitest run --passWithNoTests",
+    "test": "node tests/require-db.mjs",
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
@@ -16,7 +18,7 @@
     "@grc/events": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@hono/node-server": "^2.0.10",
-    "hono": "^4.12.31",
+    "hono": "^4.13.5",
     "svix": "^1.98.0"
   },
   "devDependencies": {

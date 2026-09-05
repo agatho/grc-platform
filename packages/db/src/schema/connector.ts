@@ -17,6 +17,7 @@ import {
   timestamp,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 export const connectorTypeDefinition = pgTable("connector_type_definition", {
@@ -33,6 +34,12 @@ export const connectorTypeDefinition = pgTable("connector_type_definition", {
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  authMethods: text("auth_methods")
+    .array()
+    .default(sql`'{oauth2}'::text[]`),
+  supportedEntities: text("supported_entities")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 export const connectorInstance = pgTable("connector_instance", {

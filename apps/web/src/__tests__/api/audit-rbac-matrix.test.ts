@@ -28,7 +28,26 @@ const MATRIX: RouteSpec[] = [
     expectedRoles: [],
   },
   { path: "[id]/sign-off/route.ts", method: "GET", expectedRoles: [] },
-  { path: "[id]/sign-off/route.ts", method: "POST", expectedRoles: [] },
+  // #WP3-S02-06 (High): war `expectedRoles: []` — der hash-ketten-verankerte
+  // Sign-off lief mit `withAuth()` ohne Rollen, und `signerRole` wurde
+  // ungeprüft vom Client übernommen. Ein `viewer` konnte damit eine
+  // unveränderliche Zeile erzeugen, die eine Management-Freigabe behauptet.
+  {
+    path: "[id]/sign-off/route.ts",
+    method: "POST",
+    expectedRoles: [
+      "admin",
+      "auditor",
+      "external_auditor",
+      "compliance_officer",
+      "quality_manager",
+      "process_owner",
+      "control_owner",
+      "risk_manager",
+      "ciso",
+      "department_head",
+    ],
+  },
   { path: "[id]/racm/route.ts", method: "GET", expectedRoles: [] },
   { path: "[id]/scope-aggregation/route.ts", method: "GET", expectedRoles: [] },
   {
@@ -55,7 +74,12 @@ const MATRIX: RouteSpec[] = [
 
 function extractRoles(src: string, method: string): string[] | null {
   const re = new RegExp(
-    `export\\s+async\\s+function\\s+${method}\\s*\\(([\\s\\S]*?)withAuth\\s*\\(([^)]*)\\)`,
+    // [E2E-TRIAGE-2026-09-02] Also match the wrapped export form
+    // `export const GET = withErrorHandler(async function GET(` — the route
+    // handlers adopted `withErrorHandler` so `withAuth` can bind the org-pinned
+    // connection at all (see api.ts:184). The RBAC assertion below is unchanged;
+    // only the shape of the declaration this extractor has to recognise is.
+    `export\\s+(?:async\\s+function|const)\\s+${method}\\s*(?:=\\s*withErrorHandler\\s*\\(\\s*async\\s+function\\s+${method}\\s*)?\\(([\\s\\S]*?)withAuth\\s*\\(([^)]*)\\)`,
     "m",
   );
   const m = src.match(re);

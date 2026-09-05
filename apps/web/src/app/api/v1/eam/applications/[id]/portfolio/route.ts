@@ -1,11 +1,20 @@
-import { db, applicationPortfolio, architectureElement } from "@grc/db";
+import {
+  db,
+  applicationPortfolio,
+  architectureElement,
+  toNumericInput,
+} from "@grc/db";
 import { applicationPortfolioSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/eam/applications/:id/portfolio
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -27,10 +36,9 @@ export async function GET(
     );
 
   return Response.json({ data: portfolio ?? null });
-}
-
+});
 // PUT /api/v1/eam/applications/:id/portfolio — Update TIME assessment + lifecycle
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -79,18 +87,26 @@ export async function PUT(
     if (existing) {
       const [updated] = await tx
         .update(applicationPortfolio)
-        .set(body.data)
+        .set({
+          ...body.data,
+          annualCost: toNumericInput(body.data.annualCost),
+        })
         .where(eq(applicationPortfolio.elementId, id))
         .returning();
       return updated;
     } else {
       const [created] = await tx
         .insert(applicationPortfolio)
-        .values({ ...body.data, elementId: id, orgId: ctx.orgId })
+        .values({
+          ...body.data,
+          annualCost: toNumericInput(body.data.annualCost),
+          elementId: id,
+          orgId: ctx.orgId,
+        })
         .returning();
       return created;
     }
   });
 
   return Response.json({ data: result });
-}
+});

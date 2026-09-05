@@ -1,8 +1,48 @@
 {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] This package HAD a tsconfig.json,
+  // but CI type-checked only apps/web and apps/worker, so it was never run.
+  // When it is, the project pulls in its workspace dependencies' sources
+  // (packages/db, packages/shared) — which is why the errors it reported were
+  // all in `packages/db` and none in this package.
+  //
+  // Aligned with the six configs created for the previously config-less
+  // packages: `types: ["node"]` for the Node globals, no `rootDir` (a
+  // sibling's source is legitimately imported and rootDir rejects that with
+  // TS6059), and the two inherited strictness flags switched off with the
+  // measurement recorded in packages/shared/tsconfig.json.
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b, Strang 6 · OP-065] Die Messung oben
+  // stammt vom 2026-09-01 und war NICHT die Zahl dieses Pakets: sie zählte
+  // beide Schalter zusammen und, weil beim Einschalten in einem Paket auch
+  // die Quellen seiner Geschwisterpakete in das Programm geraten, dieselben
+  // Fundstellen in `shared` und `db` in jedem Paket erneut mit. Neu gemessen
+  // am 2026-09-03, nur `noUncheckedIndexedAccess`, je Paket die EIGENEN
+  // Dateien:
+  //
+  //   Paket        eigene Fehler   davon src   davon tests
+  //   shared            278            172         106
+  //   db                452             57         395
+  //   ai                 80              9          71
+  //   auth               30             28           2
+  //   automation         17             17           0
+  //   events              8              0           8
+  //   email               8              2           6
+  //   reporting           4              4           0
+  //   graph               3              3           0
+  //   ui                  0              0           0
+  //
+  // Alle abgetragen; `noUncheckedIndexedAccess` steht deshalb wieder auf dem
+  // ererbten `true` aus tsconfig.base.json. `noUnusedLocals` bleibt vorerst
+  // aus — das ist eine andere Fehlerklasse und ein eigener Punkt.
+  // Belege und die dabei gefundenen Produktdefekte: docs/UMSETZUNG-WELLE-4B-6.md
+
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "src"
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "types": ["node"],
+    "module": "preserve",
+    "noUnusedLocals": false
   },
   "include": ["src"]
 }

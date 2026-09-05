@@ -4,7 +4,6 @@ import { useTranslations } from "next-intl";
 import {
   Download,
   Shield,
-  FileSpreadsheet,
   Database,
   Building,
   FileText,

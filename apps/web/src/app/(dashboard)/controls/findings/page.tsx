@@ -10,7 +10,6 @@ import {
   RefreshCcw,
   AlertTriangle,
   Clock,
-  CheckCircle2,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";

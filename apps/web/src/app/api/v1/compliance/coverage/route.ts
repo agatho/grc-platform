@@ -24,17 +24,11 @@
 // (b) live computation paths (2) and (3) so the dashboard shows
 // realistic values immediately on an unused alpha tenant.
 
-import {
-  db,
-  frameworkGapAnalysis,
-  controlFrameworkCoverage,
-  control,
-  catalog,
-  catalogEntry,
-} from "@grc/db";
+import { frameworkGapAnalysis, controlFrameworkCoverage, control, catalog, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc, sql, isNull, inArray } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+import type { DbReader } from "@/lib/db-types";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 type FrameworkRow = {
@@ -62,7 +56,10 @@ function classify(pct: number): {
 }
 
 async function fromSnapshots(
-  tx: typeof db,
+  // [ARCTOS-FULL-2026-08-31 / Restarbeiten] Diese Helfer werden aus
+  // `withReadContext` heraus mit dem Transaktionsobjekt aufgerufen, nicht mit
+  // dem `db`-Proxy — siehe lib/db-types.ts.
+  tx: DbReader,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {
@@ -99,7 +96,10 @@ async function fromSnapshots(
 }
 
 async function fromControlFrameworkCoverage(
-  tx: typeof db,
+  // [ARCTOS-FULL-2026-08-31 / Restarbeiten] Diese Helfer werden aus
+  // `withReadContext` heraus mit dem Transaktionsobjekt aufgerufen, nicht mit
+  // dem `db`-Proxy — siehe lib/db-types.ts.
+  tx: DbReader,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {
@@ -144,7 +144,10 @@ async function fromControlFrameworkCoverage(
 }
 
 async function fromCatalogLinks(
-  tx: typeof db,
+  // [ARCTOS-FULL-2026-08-31 / Restarbeiten] Diese Helfer werden aus
+  // `withReadContext` heraus mit dem Transaktionsobjekt aufgerufen, nicht mit
+  // dem `db`-Proxy — siehe lib/db-types.ts.
+  tx: DbReader,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {

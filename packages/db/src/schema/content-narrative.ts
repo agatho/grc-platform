@@ -20,6 +20,7 @@ import {
   date,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 export const contentPlaceholder = pgTable("content_placeholder", {
@@ -97,6 +98,9 @@ export const narrativeTemplate = pgTable("narrative_template", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  placeholders: text("placeholders")
+    .array()
+    .default(sql`'{}'::text[]`),
 });
 
 export const narrativeInstance = pgTable("narrative_instance", {

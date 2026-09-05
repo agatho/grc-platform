@@ -3,14 +3,12 @@
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
 
 export default function CostManagementDashboardPage() {
   const t = useTranslations("eamDashboards");
   const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [treemapApps, setTreemapApps] = useState<Record<
+  const [_treemapApps, setTreemapApps] = useState<Record<
     string,
     unknown
   > | null>(null);

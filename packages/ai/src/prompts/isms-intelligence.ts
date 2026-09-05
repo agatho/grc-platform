@@ -4,7 +4,15 @@
  * - Maturity Roadmap Generation
  */
 
-import { sanitizeForPrompt } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06]
+// Beide Builder lieferten einen FLIESSTEXT-Prompt, in den SoA-Zeilen,
+// Asset-, Prozess- und Risikozusammenfassungen mit `##`-Überschriften
+// eingebaut wurden. `sanitizeForPrompt()` war die einzige Schranke — eine
+// Blocklist ohne Delimiterschutz. Jetzt strukturierter Datenumschlag; die
+// Builder geben Messages zurück statt eines Strings, damit System- und
+// Datenkanal getrennt bleiben.
+
+import { buildDataPrompt, safeText } from "../prompt-safety";
 
 // ─── SoA Gap Analysis Prompt ─────────────────────────────────
 
@@ -22,36 +30,12 @@ interface SoaGapPromptInput {
   framework: string;
 }
 
-export function buildSoaGapPrompt(input: SoaGapPromptInput): string {
-  const safeAssets = sanitizeForPrompt(input.assetSummary);
-  const safeProcesses = sanitizeForPrompt(input.processSummary);
-  const safeRisks = sanitizeForPrompt(input.riskSummary);
-
-  const soaLines = input.soaData
-    .map(
-      (s) =>
-        `- ${sanitizeForPrompt(s.controlRef)}: ${sanitizeForPrompt(s.controlTitle)} | Applicability: ${s.applicability} | Implementation: ${s.implementation}${s.linkedControlTitle ? ` | Linked: ${sanitizeForPrompt(s.linkedControlTitle)}` : ""}`,
-    )
-    .join("\n");
-
-  return `You are an ISO 27001 auditor performing a Statement of Applicability gap analysis.
-
-## Framework: ${sanitizeForPrompt(input.framework)}
-
-## Current SoA:
-${soaLines}
-
-## Organization Assets:
-${safeAssets}
-
-## Organization Processes:
-${safeProcesses}
-
-## Active Risks:
-${safeRisks}
+export function buildSoaGapPrompt(input: SoaGapPromptInput) {
+  return buildDataPrompt({
+    system: `You are an ISO 27001 auditor performing a Statement of Applicability gap analysis.
 
 ## Task
-Identify gaps in the SoA:
+Identify gaps in the SoA supplied in the data envelope:
 1. Controls marked "not_applicable" that SHOULD be applicable given the assets/processes/risks
 2. Controls marked "implemented" but without a linked organizational control
 3. Controls that appear to have only partial coverage
@@ -65,7 +49,24 @@ For each gap found, provide:
 - priority: "critical" | "high" | "medium" | "low"
 
 Respond ONLY with a JSON array of gap objects. No markdown, no explanation outside the JSON.
-Example: [{"controlRef":"A.5.1","controlTitle":"Policies for information security","gapType":"not_covered","confidence":85,"reasoning":"Organization has IT assets but no security policy control linked","priority":"high"}]`;
+Example: [{"controlRef":"A.5.1","controlTitle":"Policies for information security","gapType":"not_covered","confidence":85,"reasoning":"Organization has IT assets but no security policy control linked","priority":"high"}]`,
+    instruction:
+      "Perform the SoA gap analysis on the framework, SoA entries and organization summaries in the data envelope.",
+    data: {
+      framework: safeText(input.framework, 200),
+      soaEntries: (input.soaData ?? []).slice(0, 300).map((entry) => ({
+        controlRef: safeText(entry.controlRef, 100),
+        controlTitle: safeText(entry.controlTitle, 500),
+        applicability: safeText(entry.applicability, 60),
+        implementation: safeText(entry.implementation, 60),
+        linkedControlTitle: safeText(entry.linkedControlTitle, 500),
+      })),
+      assetSummary: safeText(input.assetSummary, 4000),
+      processSummary: safeText(input.processSummary, 4000),
+      riskSummary: safeText(input.riskSummary, 4000),
+    },
+    maxCharsPerField: 4000,
+  });
 }
 
 // ─── Maturity Roadmap Prompt ─────────────────────────────────
@@ -80,22 +81,9 @@ interface MaturityRoadmapPromptInput {
   targetMaturity: number;
 }
 
-export function buildMaturityRoadmapPrompt(
-  input: MaturityRoadmapPromptInput,
-): string {
-  const maturityLines = input.maturityData
-    .map(
-      (m) =>
-        `- ${sanitizeForPrompt(m.domain)}: Current=${m.currentLevel}, Target=${m.targetLevel}, Controls=${m.controlCount}`,
-    )
-    .join("\n");
-
-  return `You are an ISMS maturity consultant. Analyze the current maturity levels and generate an improvement roadmap.
-
-## Current Maturity by Domain:
-${maturityLines}
-
-## Target Maturity: Level ${input.targetMaturity}
+export function buildMaturityRoadmapPrompt(input: MaturityRoadmapPromptInput) {
+  return buildDataPrompt({
+    system: `You are an ISMS maturity consultant. Analyze the current maturity levels in the data envelope and generate an improvement roadmap.
 
 ## Task
 Generate a prioritized roadmap with improvement actions. For each action:
@@ -113,7 +101,19 @@ Generate a prioritized roadmap with improvement actions. For each action:
 Sort by: quick wins first, then by impact/effort ratio (highest first).
 
 Respond ONLY with a JSON array of action objects. No markdown, no explanation outside the JSON.
-Example: [{"domain":"A.5 Organizational Controls","currentLevel":2,"targetLevel":4,"title":"Establish information security policy framework","description":"Define and publish a comprehensive ISMS policy with sub-policies for key domains","effort":"M","effortFteMonths":2.0,"priority":5,"quarter":"Q1","isQuickWin":false}]`;
+Example: [{"domain":"A.5 Organizational Controls","currentLevel":2,"targetLevel":4,"title":"Establish information security policy framework","description":"Define and publish a comprehensive ISMS policy with sub-policies for key domains","effort":"M","effortFteMonths":2.0,"priority":5,"quarter":"Q1","isQuickWin":false}]`,
+    instruction:
+      "Build the maturity roadmap from the domain maturity data in the data envelope.",
+    data: {
+      targetMaturity: input.targetMaturity,
+      maturityByDomain: (input.maturityData ?? []).slice(0, 200).map((m) => ({
+        domain: safeText(m.domain, 200),
+        currentLevel: m.currentLevel,
+        targetLevel: m.targetLevel,
+        controlCount: m.controlCount,
+      })),
+    },
+  });
 }
 
 // ─── Response Parsers ────────────────────────────────────────

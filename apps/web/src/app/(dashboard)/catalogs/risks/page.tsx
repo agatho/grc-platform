@@ -20,6 +20,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface RiskCatalog {
   id: string;
@@ -116,7 +118,7 @@ export default function RiskCatalogBrowserPage() {
     const res = await fetch(`${ep}?${params}`);
     if (res.ok) {
       const json = await res.json();
-      const items = (json.data ?? []).map((e: any) => ({
+      const items = (json.data ?? []).map((e: UnvalidatedJson) => ({
         id: e.id,
         title: e.title ?? e.name ?? e.elementId ?? e.id,
       }));
@@ -237,7 +239,7 @@ export default function RiskCatalogBrowserPage() {
           if (activeRes.ok) {
             const activeJson = await activeRes.json();
             const activeIds = new Set(
-              (activeJson.data ?? []).map((a: any) => a.catalogId),
+              (activeJson.data ?? []).map((a: UnvalidatedJson) => a.catalogId),
             );
             setActivatedCatalogs(activeIds as Set<string>);
           }
@@ -259,16 +261,21 @@ export default function RiskCatalogBrowserPage() {
     setSelectedEntry(null);
 
     (async () => {
-      const params = new URLSearchParams({
-        parentEntryId: "root",
-        limit: "200",
-      });
-      if (search) params.set("search", search);
-      const res = await fetch(
-        `/api/v1/catalogs/risks/${selectedCatalog.id}/entries?${params}`,
-      );
-      const json = await res.json();
-      setEntries(json.data ?? []);
+      // [ARCTOS-FULL-2026-08-31 · OP-050] siehe catalogs/controls —
+      // dasselbe Muster, derselbe Ausgang.
+      const params: Record<string, string> = { parentEntryId: "root" };
+      if (search) params.search = search;
+      try {
+        setEntries(
+          await fetchAllPages<RiskCatalogEntry>(
+            `/api/v1/catalogs/risks/${selectedCatalog.id}/entries`,
+            { params },
+          ),
+        );
+      } catch (err) {
+        console.error("catalogs/risks: Einträge nicht geladen", err);
+        setEntries([]);
+      }
       setLoadingEntries(false);
     })();
   }, [selectedCatalog, search]);
@@ -277,11 +284,16 @@ export default function RiskCatalogBrowserPage() {
   const loadChildren = useCallback(
     async (entryId: string) => {
       if (!selectedCatalog || childrenMap[entryId]) return;
-      const res = await fetch(
-        `/api/v1/catalogs/risks/${selectedCatalog.id}/entries?parentEntryId=${entryId}&limit=200`,
-      );
-      const json = await res.json();
-      setChildrenMap((prev) => ({ ...prev, [entryId]: json.data ?? [] }));
+      // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Unterebene.
+      try {
+        const children = await fetchAllPages<RiskCatalogEntry>(
+          `/api/v1/catalogs/risks/${selectedCatalog.id}/entries`,
+          { params: { parentEntryId: entryId } },
+        );
+        setChildrenMap((prev) => ({ ...prev, [entryId]: children }));
+      } catch (err) {
+        console.error("catalogs/risks: Unterebene nicht geladen", err);
+      }
     },
     [selectedCatalog, childrenMap],
   );
@@ -340,9 +352,9 @@ export default function RiskCatalogBrowserPage() {
             <span className="text-sm font-medium text-gray-900">
               {entry.name}
             </span>
-            {(entry as any).riskCategory && (
+            {(entry as UnvalidatedJson).riskCategory && (
               <Badge variant="outline" className="text-xs">
-                {(entry as any).riskCategory}
+                {(entry as UnvalidatedJson).riskCategory}
               </Badge>
             )}
           </button>
@@ -513,33 +525,34 @@ export default function RiskCatalogBrowserPage() {
                   </label>
                   <p className="text-sm">{selectedEntry.level}</p>
                 </div>
-                {(selectedEntry as any).riskCategory && (
+                {(selectedEntry as UnvalidatedJson).riskCategory && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.category")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).riskCategory}
+                      {(selectedEntry as UnvalidatedJson).riskCategory}
                     </p>
                   </div>
                 )}
-                {(selectedEntry as any).defaultLikelihood != null && (
+                {(selectedEntry as UnvalidatedJson).defaultLikelihood !=
+                  null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.likelihood")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).defaultLikelihood}
+                      {(selectedEntry as UnvalidatedJson).defaultLikelihood}
                     </p>
                   </div>
                 )}
-                {(selectedEntry as any).defaultImpact != null && (
+                {(selectedEntry as UnvalidatedJson).defaultImpact != null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.impact")}
                     </label>
                     <p className="text-sm">
-                      {(selectedEntry as any).defaultImpact}
+                      {(selectedEntry as UnvalidatedJson).defaultImpact}
                     </p>
                   </div>
                 )}

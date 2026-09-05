@@ -13,7 +13,13 @@ const badgeVariants = cva(
         secondary:
           "border-transparent bg-gray-100 text-gray-700 hover:bg-gray-200/80 dark:bg-slate-800 dark:text-slate-50 dark:hover:bg-slate-800/80",
         destructive:
-          "border-transparent bg-red-500 text-slate-50 shadow hover:bg-red-500/80 dark:bg-red-900 dark:text-slate-50 dark:hover:bg-red-900/80",
+          // [ARCTOS-FULL-2026-08-31 · OP-049] `bg-red-500` mit hellem Text
+          // ist genau die Kombination aus E2E-TRIAGE-4 §6.2.2: 3,66:1 für
+          // slate-50 auf #fb2c36. Behoben war dort nur der Zähler an der
+          // Glocke — dies hier ist die Stelle, an der die Kombination in
+          // JEDEN destruktiven Badge des Produkts eingeht. red-600 trägt
+          // denselben Text mit 4,56:1.
+          "border-transparent bg-red-600 text-slate-50 shadow hover:bg-red-600/80 dark:bg-red-900 dark:text-slate-50 dark:hover:bg-red-900/80",
         outline: "",
       },
     },

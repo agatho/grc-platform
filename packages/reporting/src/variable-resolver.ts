@@ -56,12 +56,40 @@ function getNestedValue(
   if (parts.length < 2) return undefined;
 
   const namespace = parts[0];
-  if (!ALLOWED_NAMESPACES.has(namespace)) return undefined;
+  if (namespace === undefined || !ALLOWED_NAMESPACES.has(namespace)) {
+    return undefined;
+  }
 
+  // [OP-065] Der Kopfkommentar dieser Funktion sagt „Safely resolve nested
+  // property". Der Zugriff `(current as Record<string, unknown>)[part]` fragte
+  // aber nicht nach EIGENEN Eigenschaften, sondern lief in die
+  // Prototypenkette. Gemessen am 2026-09-03 gegen 01d0e4cc mit
+  // `{ org: { name: "ACME" } }`:
+  //
+  //   {{org.name}}         → "ACME"
+  //   {{org.unbekannt}}    → ""
+  //   {{org.constructor}}  → "function Object() { [native code] }"
+  //   {{org.__proto__}}    → "[object Object]"
+  //
+  // Der Text einer Berichtsvorlage ist damit ein Weg, Fremdes in einen
+  // erzeugten Bericht zu schreiben. `VARIABLE_PATTERN` lässt nur zwei
+  // Abschnitte zu, die Tiefe war also begrenzt — die Klasse ist es nicht.
+  // `Object.hasOwn` fragt genau das, was gemeint war.
+  //
+  // Wichtig ist dabei der UNTERSCHIED der beiden Ausgänge, den diese Funktion
+  // seit jeher macht und der von `tests/variable-resolver.test.ts` festgehalten
+  // wird: `undefined` heisst „Pfad nicht auflösbar" und lässt `{{…}}` als
+  // Platzhalter stehen (Sichtbarkeit beim Entwerfen der Vorlage), während ein
+  // aufgelöster, aber leerer Wert "" ergibt. Eine fehlende EIGENE Eigenschaft
+  // gehört in den zweiten Topf — vorher tat sie das über `undefined`, jetzt
+  // über denselben Weg. Ein früher Ausstieg an dieser Stelle hätte den
+  // Vertrag geändert.
   let current: unknown = obj;
   for (const part of parts) {
     if (current == null || typeof current !== "object") return undefined;
-    current = (current as Record<string, unknown>)[part];
+    current = Object.hasOwn(current, part)
+      ? (current as Record<string, unknown>)[part]
+      : undefined;
   }
 
   if (current == null) return "";
@@ -90,7 +118,9 @@ export function extractVariables(text: string): string[] {
   let match: RegExpExecArray | null;
   const pattern = new RegExp(VARIABLE_PATTERN);
   while ((match = pattern.exec(text)) !== null) {
-    matches.push(match[1]);
+    // Die Fanggruppe des Musters ist bei einem Treffer vorhanden; `?? ""`
+    // schreibt das auf, statt es mit `!` zu behaupten.
+    matches.push(match[1] ?? "");
   }
   return [...new Set(matches)];
 }

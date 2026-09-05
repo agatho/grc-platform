@@ -105,11 +105,18 @@ export const workItem = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    emergencyPlanId: uuid("emergency_plan_id"),
+    resourceClassification: varchar("resource_classification", { length: 20 }),
+    // STUFE2-E (0454): betroffener Prozessschritt (F16,
+    // GrcElementData.workItems). ON DELETE SET NULL — eine offene Massnahme
+    // bleibt offen, auch wenn das Diagramm umgebaut wird.
+    processStepId: uuid("process_step_id"),
   },
   (table) => [
     index("work_item_org_type_idx").on(table.orgId, table.typeKey),
     index("work_item_org_status_idx").on(table.orgId, table.status),
     index("work_item_responsible_idx").on(table.responsibleId),
+    index("work_item_process_step_idx").on(table.processStepId),
   ],
 );
 

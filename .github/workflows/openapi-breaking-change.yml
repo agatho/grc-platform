@@ -1,0 +1,102 @@
+name: API contract
+
+# [ARCTOS-FULL-2026-08-31 / WP12 - S14-15, S14-17]
+#
+# ADR-020 Implementation-Plan promised this workflow in April 2026; the audit
+# found it did not exist (D8), so nothing stopped a route from disappearing
+# under external integrators.
+#
+# Two gates:
+#
+#   1. reproducible — docs/openapi.yaml and docs/API_REFERENCE.md are GENERATED
+#      from the route tree. A hand edit to either is the first step of the next
+#      drift, and drift in exactly these two files is finding S14-15 (the
+#      reference documented 22 % of the API and listed two endpoints that do
+#      not exist). Regenerating and diffing makes a hand edit fail the PR.
+#
+#   2. breaking-change — a path or method REMOVED relative to the target branch
+#      fails the PR unless it carries the `breaking-change` label. Additions are
+#      always fine (ADR-020: new endpoint = minor).
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/web/src/app/api/**"
+      - "docs/openapi.yaml"
+      - "docs/API_REFERENCE.md"
+      - "scripts/generate-openapi.mjs"
+      - "scripts/generate-api-reference.mjs"
+      - ".github/workflows/openapi-breaking-change.yml"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  api-contract:
+    name: Generated API docs are reproducible, and no endpoint disappears
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Need the merge base to compare the surface against the target.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+
+      - name: Regenerate the API surface from the route tree
+        run: |
+          node scripts/generate-openapi.mjs
+          node scripts/generate-api-reference.mjs
+
+      - name: Fail if the committed generated docs differ
+        run: |
+          if ! git diff --quiet -- docs/openapi.yaml docs/API_REFERENCE.md; then
+            echo "::error::docs/openapi.yaml and/or docs/API_REFERENCE.md are out of date or were edited by hand. Run 'node scripts/generate-openapi.mjs && node scripts/generate-api-reference.mjs' and commit the result."
+            git --no-pager diff --stat -- docs/openapi.yaml docs/API_REFERENCE.md
+            exit 1
+          fi
+
+      - name: Compare the API surface against the target branch
+        id: diff
+        run: |
+          set -euo pipefail
+          BASE="origin/${{ github.base_ref }}"
+          git show "$BASE:docs/openapi.yaml" > /tmp/base-openapi.yaml 2>/dev/null || : > /tmp/base-openapi.yaml
+          # "  /api/v1/x:" path keys and the two-space-deeper method keys.
+          surface() {
+            awk '
+              /^  \/[^ ]*:$/ { path=$1; sub(/:$/,"",path); next }
+              /^    (get|post|put|patch|delete):$/ { m=$1; sub(/:$/,"",m); if (path != "") print m" "path }
+            ' "$1" | sort -u
+          }
+          surface /tmp/base-openapi.yaml > /tmp/base.txt
+          surface docs/openapi.yaml       > /tmp/head.txt
+          comm -23 /tmp/base.txt /tmp/head.txt > /tmp/removed.txt || true
+          echo "removed=$(wc -l < /tmp/removed.txt)" >> "$GITHUB_OUTPUT"
+          if [ -s /tmp/removed.txt ]; then
+            echo "Removed operations:"; cat /tmp/removed.txt
+          fi
+
+      - name: Block removals without the breaking-change label
+        if: steps.diff.outputs.removed != '0'
+        env:
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          if ! echo "$LABELS" | tr ',' '\n' | grep -qx "breaking-change"; then
+            echo "::error::This PR removes ${{ steps.diff.outputs.removed }} API operation(s). Under ADR-020 that is a breaking change: add the 'breaking-change' label and an entry in docs/api-changelog.md, or keep the endpoint."
+            cat /tmp/removed.txt
+            exit 1
+          fi
+          echo "Removals acknowledged via the breaking-change label."
+
+      - name: Require a changelog entry for a breaking change
+        if: steps.diff.outputs.removed != '0'
+        run: |
+          if git diff --quiet "origin/${{ github.base_ref }}" -- docs/api-changelog.md; then
+            echo "::error::A breaking API change needs an entry in docs/api-changelog.md (ADR-020)."
+            exit 1
+          fi

@@ -3,8 +3,18 @@
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Jede Spalte dieser Abfragen
+// ist ein `COUNT(...)::int`; der Treiber liefert sie deshalb als Zahl. Das
+// ist die ganze Zeilenform — sie als `Record<string, number>` zu benennen
+// behauptet nicht mehr, als aus der SELECT-Liste ablesbar ist.
+type KpiRow = Record<string, number>;
+
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
@@ -21,7 +31,7 @@ export async function GET(req: Request) {
         COUNT(*) FILTER (WHERE p.review_date IS NOT NULL AND p.review_date < now() AND p.deleted_at IS NULL)::int AS overdue_review
       FROM process p
       WHERE p.org_id = ${ctx.orgId}
-    `)) as any[];
+    `)) as unknown as KpiRow[];
 
     const [riskStats] = (await tx.execute(sql`
       SELECT
@@ -43,7 +53,7 @@ export async function GET(req: Request) {
             WHERE r.risk_score_residual >= 15 AND r.deleted_at IS NULL
           )
       ) q
-    `)) as any[];
+    `)) as unknown as KpiRow[];
 
     const [coverageStats] = (await tx.execute(sql`
       SELECT
@@ -51,7 +61,7 @@ export async function GET(req: Request) {
       FROM process_framework_mapping pfm
       JOIN process p ON p.id = pfm.process_id
       WHERE pfm.org_id = ${ctx.orgId} AND p.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as KpiRow[];
 
     const [findingStats] = (await tx.execute(sql`
       SELECT
@@ -65,7 +75,7 @@ export async function GET(req: Request) {
           OR f.process_step_id IN (SELECT id FROM process_step WHERE process_id = processes.id)
         )
       WHERE processes.org_id = ${ctx.orgId} AND processes.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as KpiRow[];
 
     const [ropaStats] = (await tx.execute(sql`
       SELECT
@@ -73,7 +83,7 @@ export async function GET(req: Request) {
         COUNT(*) FILTER (WHERE requires_dpia = true)::int AS processes_requiring_dpia
       FROM process_ropa_profile
       WHERE org_id = ${ctx.orgId} AND is_processing_activity = true
-    `)) as any[];
+    `)) as unknown as KpiRow[];
 
     return {
       ...stats,
@@ -85,4 +95,4 @@ export async function GET(req: Request) {
   });
 
   return Response.json({ data: kpis });
-}
+});

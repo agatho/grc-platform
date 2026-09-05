@@ -1,129 +1,424 @@
-# ADR-011 rev.3 — External Tamper-Evidence Anchors (FreeTSA + OpenTimestamps)
+# ADR-011 rev.4 — Tamper-Evidence des Audit-Trails (Hash-Kette, gesiegelte Anker, Verifikation)
 
-| **ADR-ID**     | **011**                                                                                         |
-| -------------- | ----------------------------------------------------------------------------------------------- |
-| **Title**      | **Audit Trail Architecture — rev.3 (external dual anchors)**                                    |
-| **Status**     | **Accepted**                                                                                    |
-| **Date**       | 2026-04-20                                                                                      |
-| **Supersedes** | — (extends rev.2)                                                                               |
-| **Context**    | GDPR Art. 5, ISO 27001 A.12.4, DORA Art. 28, eIDAS, Stakeholder-Analyse (Platform-Vendor-Trust) |
+| **ADR-ID**     | **011**                                                                                                             |
+| -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Title**      | **Audit Trail Architecture — rev.4 (Content-Commitment, gesiegelte Anker, echte Verifikation)**                     |
+| **Status**     | **Accepted**                                                                                                        |
+| **Date**       | 2026-09-01 (rev.4) · 2026-04-20 (rev.3)                                                                             |
+| **Supersedes** | rev.3 (erweitert rev.2)                                                                                             |
+| **Context**    | GDPR Art. 5 + Art. 17, ISO 27001 A.12.4, DORA Art. 28, eIDAS, HinSchG §8, Audit ARCTOS-FULL-2026-08-31 (Stream S03) |
 
-## Context
+> **Dateiname:** die Datei heißt weiterhin `ADR-011-rev3.md`, weil sie aus
+> Code, Tests und bereits ausgelieferten Archiv-READMEs verlinkt ist.
+> Inhaltlich ist dies rev.4.
 
-Rev.2 etablierte die per-tenant-SHA-256-Hash-Chain. Die dort bewiesene Eigenschaft ist: _innerhalb_ der Chain ist nichts unbemerkt manipulierbar. Das ungelöste Problem: ein Platform-Admin (wir selbst, die Betreiber) mit DB-Schreibrecht kann **die gesamte Chain rückwirkend neu berechnen** — alte Rows löschen, neue einsetzen, alle Hashes konsistent halten. Externe Beobachter haben keinen Bezugspunkt, der das widerlegen könnte.
+## Kontext
 
-Rev.3 schließt genau diese Lücke: die tägliche Merkle-Root jeder Tenant-Chain wird an _externe_ Trust-Roots übergeben. Was wir nach diesem Zeitpunkt schreiben, können wir nicht mehr rückwirkend umschreiben, ohne dass ein externer Zeuge widerspricht.
+Rev.2 etablierte die per-Tenant-SHA-256-Hash-Kette: innerhalb der Kette
+ist nichts unbemerkt manipulierbar. Rev.3 ergänzte externe Anker gegen das
+verbleibende Problem — ein Betreiber-Admin mit DB-Schreibrecht kann die
+gesamte Kette rückwirkend neu berechnen.
 
-## Decision
+**Rev.3 hat dieses Versprechen nicht eingelöst.** Der Audit
+ARCTOS-FULL-2026-08-31 (Stream S03: 20 Findings, davon 2 Critical) hat den
+Angriff, gegen den rev.3 schützen sollte, auf einem Klon der
+Produktionsdatenbank vollständig reproduziert. Rev.4 beschreibt, was
+vorher galt und was jetzt gilt — weil eine Architekturdokumentation, die
+eine nicht vorhandene Kontrolle behauptet, in einem Compliance-Produkt
+selbst ein Compliance-Mangel ist.
 
-**Dual-Anchor-Strategie** mit zwei unabhängigen externen Trust-Roots:
+### Zusage in rev.3 gegen Messung
 
-1. **FreeTSA (RFC 3161 Time-Stamp Authority)** — liefert signierte Zeitstempel in Sekunden. Single-Server (freetsa.org), daher ein Single-Point-of-Failure, aber operativ schnell und sofort juristisch nachvollziehbar (RFC 3161 ist eIDAS-anerkannt, wenn von einer QTSP signiert; FreeTSA ist nicht qualifiziert, aber als nicht-qualifizierter Zeitstempel dennoch prozessuell verwertbar — `§ 371a ZPO` erkennt elektronische Dokumente mit TSA-Siegel als Augenscheinsbeweis).
+| Zusage                                                                                                                               | Befund                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| „Was wir nach diesem Zeitpunkt schreiben, können wir nicht mehr rückwirkend umschreiben, ohne dass ein externer Zeuge widerspricht." | Der Zeuge lag in derselben Datenbank. `audit_anchor` hatte keine Append-only-Regel, keinen Guard, kein RLS; der Produktivcode überschrieb die Tabelle selbst per `onConflictDoUpdate`. `UPDATE audit_anchor SET merkle_root = repeat('0',64)` war Teil des reproduzierten Angriffs.                                                                                                                       |
+| „Platform-Vendor verliert ab Anchor-Zeitpunkt die Möglichkeit, Audit-Events rückwirkend zu manipulieren."                            | Ein einziges vom Guard **erlaubtes** UPDATE (`changes` + `hash_version = 0`) machte beliebige Inhaltsfälschung unsichtbar, **ohne** die Kette anzufassen: `entry_hash` blieb unverändert, die Merkle-Wurzel damit bit-identisch (`06985925db83…` vor und nach der Fälschung), der bereits erteilte FreeTSA-Zeitstempel bestätigte die manipulierte Kette weiterhin, `/integrity` meldete `healthy: true`. |
+| „Läuft 00:05 UTC" (D3)                                                                                                               | Es gab keinen Scheduler. Der Worker ist ein HTTP-Listener; im Repository existierte kein Cron-Eintrag, kein systemd-Timer, kein k8s-CronJob für diesen Job. Der externe Anker — die Grundlage der Revision — lief in der ausgelieferten Konfiguration nie.                                                                                                                                                |
+| Ankerschranke `#WAVE10-CRITICAL-01`                                                                                                  | Sie hatte Zweige für `hash_version` 1 und 2 und einen `ELSE entry_hash`-Fallback, aber keinen für v3, also für 100 % der Live-Zeilen: sie verglich jeden gespeicherten Hash mit sich selbst und meldete konstant 0 Brüche. Der Nightly-Cron hatte überhaupt keine Schranke.                                                                                                                               |
+| Verifikationspfad D6                                                                                                                 | Die Anleitung nannte die v1-Formel für v3-Daten (0 von 142 Zeilen trafen), dem Export fehlten vier Hash-Eingaben, und die angegebene Ordnung `(created_at, id)` erzeugte 23 vorgetäuschte Kettenbrüche in 142 Zeilen. Das mitgelieferte Python prüfte nur Merkle-über-gespeicherte-Hashes und meldete für den Inhaltsangriff wörtlich „All anchors matched".                                              |
+| TSA-Antwort als Beweis                                                                                                               | Sie wurde nie geprüft: kein Nonce-Abgleich, kein `messageImprint`-Vergleich, keine Signatur-, keine Zertifikatsprüfung. Akzeptanzkriterium war HTTP 200 plus `PKIStatus = 0`. `verified_at` existierte als Spalte, die kein Codepfad je schrieb.                                                                                                                                                          |
+| „Downloadable-Archive-Export … Phase 2", „OTS-Upgrade-Job … Phase 2"                                                                 | Beides war längst implementiert; die Roadmap unterschätzte den Stand.                                                                                                                                                                                                                                                                                                                                     |
 
-2. **OpenTimestamps (Bitcoin-Blockchain)** — aggregiert unseren Hash mit Millionen anderer in einem Calendar-Merkle-Tree, committet den Root alle 1-2 Stunden in eine Bitcoin-`OP_RETURN`-Transaktion. Trustless — keine einzelne Entität kann den Proof nachträglich zurückziehen. Latenz: ~1-2 h bis zum Bitcoin-Commit. Kosten: **0 €** (aggregiert).
+Die ehrliche Zusammenfassung des Zustands vor rev.4: **die Kette war eine
+Integritätsprüfung gegen versehentliche Korruption, keine Tamper-Evidence
+gegen einen privilegierten Akteur.**
 
-Beide parallel, weil jeder für sich eine Schwachstelle hat:
+## Entscheidung
 
-- FreeTSA könnte offline gehen oder Keys verlieren → OTS überlebt
-- OpenTimestamps-Calendar-Server könnten zensieren → FreeTSA überlebt
+### D1. Hash-Formel v4: Commitment statt Nutzdaten (Migration 0400)
 
-### D1. Schema: `audit_anchor` (Migration 0285)
+v1–v3 hashten die Nutzdaten direkt und ließen vier Spalten ganz außen vor:
+`user_email`, `user_name`, `ip_address`, `entity_title` — genau die
+Felder, die UI und Export als „Akteur" anzeigen, und drei davon standen
+zugleich auf der UPDATE-Allowlist. Eine Handlung war einem anderen
+Menschen zuschreibbar, ohne dass irgendeine Prüfung anschlug.
 
-```sql
-audit_anchor (
-  id, org_id, anchor_date, provider, merkle_root, leaf_count,
-  proof (base64 blob), proof_status, bitcoin_block_height,
-  last_error, created_at, upgraded_at, verified_at
-)
-UNIQUE (org_id, anchor_date, provider)
+```
+content_commitment = SHA256( changes | user_email | user_name |
+                             ip_address | entity_title )
+
+entry_hash = SHA256( previous_hash | id | org_id | user_id |
+                     entity_type | entity_id | action |
+                     content_commitment | action_detail | metadata |
+                     created_at_utc | previous_hash_scope )
 ```
 
-Pro Mandant, pro UTC-Tag, pro Provider **eine** Zeile. Das `proof`-Feld hält die rohen Bytes unverändert (bei FreeTSA: DER-encoded TimeStampResp; bei OTS: binäre .ots-Serialisierung). So bleibt der Beweis offline-verifizierbar mit `openssl ts -verify` bzw. `ots verify` — auch wenn unsere Verifikations-Code-Evolution divergiert.
+Drei Wirkungen aus einer Konstruktion:
 
-### D2. Merkle-Tree-Construction
+- Die Akteursfelder sind kryptografisch gebunden; `id` ebenfalls, sodass
+  Zeilen nicht mehr umgehängt werden können.
+- Der Verifizierer prüft zusätzlich, ob sich das Commitment aus den
+  aktuellen Spaltenwerten reproduzieren lässt. Wer `changes` ändert, muss
+  das Commitment ändern; das ändert `entry_hash`; das ändert die
+  verankerte Merkle-Wurzel — die außerhalb dieses Systems signiert ist.
+- Eine DSGVO-Redaktion darf die Nutzdaten überschreiben und das Commitment
+  erhalten; die Zeile rechnet weiterhin nach (D5).
 
-Blätter: alle `audit_log.entry_hash` einer Org für einen UTC-Tag, sortiert nach `(created_at, id) ASC` — deterministisch. Pairing: SHA-256 über die Konkatenation der Raw-Bytes (32+32=64). Odd-level: letztes Element wird mit sich selbst gepaart (Bitcoin-Konvention).
+**Bestandszeilen werden nicht neu gehasht.** Ein Rehash berechnet die
+Hashes aus dem _aktuellen_ Inhalt und macht damit jede vorangegangene
+Fälschung endgültig — genau das empfahl der `remedy`-Text des alten
+`/integrity`-Endpunkts, und genau das hätte jede bereits erteilte
+Merkle-Wurzel entwertet. v1–v3-Zeilen verifizieren weiter unter ihrer
+eigenen Formel; der Wechsel ist als Migrations-Anker in der Kette selbst
+protokolliert.
 
-Inkludsions-Beweis pro Leaf ist ~20 Knoten tief für 1 Million Einträge — vernachlässigbarer Overhead.
+`hash_version = 0` ist kein „Migration ausstehend" mehr, sondern ein
+Befund: für v0 existiert keine Formel, die Zeile ist von niemandem
+prüfbar, `healthy` ist `false`.
 
-### D3. Nightly Worker (`apps/worker/src/crons/daily-audit-anchor.ts`)
+### D2. Die Kette vergibt die Tabelle, nicht der Aufrufer (Migration 0401)
 
-Läuft 00:05 UTC. Für jede Org mit Activity am Vortag:
+Bis rev.3 berechnete `audit_trigger()` die Hashes und schrieb dann die
+Zeile. Sechs Produktivpfade — darunter DSGVO-Löschung,
+Retention-Hard-Delete und Controlled-Copy-Download — schrieben per
+`INSERT` an ihm vorbei und landeten mit `entry_hash = NULL` und
+`previous_hash_scope = NULL` in der Tabelle: außerhalb jeder Prüfung und
+jedes Ankers. `/integrity` wies sie als historischen Altbestand aus,
+während laufender Produktivcode sie erzeugte.
 
-1. Baue Merkle-Tree
-2. POST Root an FreeTSA → insert row mit `proof_status='complete'`
-3. POST Root an OTS-Calendar-Pool (parallel an 3 Calendars) → insert row mit `proof_status='pending'`
-4. Fehlschläge werden als `proof_status='failed'` mit `last_error` persistiert; retry ist idempotent (unique-index verhindert Duplikate).
+Die Kettenlogik liegt jetzt in einem `BEFORE INSERT`-Trigger auf
+`audit_log`. Jeder Insert — Trigger, Anwendungs-SQL, Migration, `psql` —
+wird skopiert, von Geheimnissen bereinigt, committet und gehasht. Vom
+Aufrufer gelieferte Kettenwerte werden **verworfen**, nicht übernommen:
+ein gefälschter Scope hätte eine Zeile in die Kette eines anderen
+Mandanten gelegt.
 
-### D4. On-Demand Anchor API (`POST /api/v1/audit-log/anchor`)
+Alle Guards sind `ENABLE ALWAYS`. `SET session_replication_role =
+'replica'` — der Bypass, mit dem der Audit die Kette komplett neu
+berechnet hat, und ein Muster, das das Projekt in seinen eigenen Tests
+verwendet — schaltet sie nicht mehr ab. `TRUNCATE` wird auf allen
+Log-Tabellen abgewiesen. Ein `DELETE` bleibt ein No-Op, wird aber in
+`audit_log_write_attempt` protokolliert statt wie bisher als „DELETE 0",
+also als Erfolg, zurückgemeldet.
 
-Ersetzt nicht den Nightly-Worker, ergänzt ihn. Use-Cases:
+### D3. Gesiegelte Anker (Migration 0403)
 
-- Admin fordert vor einer Prüfung einen sofortigen Anchor an
-- Tests / Alpha-Demos müssen nicht 24 h warten
+`audit_anchor` ist für seine Beweisfelder append-only: `merkle_root` und
+`leaf_count` eines abgeschlossenen Ankers sind unveränderlich; nur der
+dokumentierte OpenTimestamps-Upgrade-Pfad und der Retry eines
+**fehlgeschlagenen** Versuchs dürfen schreiben.
 
-### D5. UI-Sichtbarkeit
+Zusätzlich existiert ein zweites Register, `audit_anchor_seal`:
 
-Im `/audit-log`-Header erscheinen zwei Badges: "FreeTSA: verankert vor 2 h" und "OpenTimestamps: Bitcoin-Bestätigung ausstehend". Ein Button "Jetzt verankern" triggert den API-Endpoint manuell. Fehlerzustände (z.B. TSA offline) werden mit `title`-Hover sichtbar.
+- eigene Rolle `grc_audit_seal` als Eigentümer, `REVOKE` gegen `grc_app`
+  und `PUBLIC`, `FORCE ROW LEVEL SECURITY` mit einer Deny-all-Policy, die
+  sich nur innerhalb der `SECURITY DEFINER`-Siegelfunktionen öffnet;
+- jedes Siegel verkettet auf das vorherige (`prev_seal_hash`), mit
+  `UNIQUE NULLS NOT DISTINCT (prev_seal_hash)`: eine Zeile
+  herauszuschneiden oder nachträglich einzufügen bricht die Kette;
+- jedes Siegel trägt einen **HMAC unter einem Schlüssel, der nicht in der
+  Datenbank liegt** (`AUDIT_SEAL_KEY` aus der Anwendungsumgebung, per
+  Session-GUC übergeben).
 
-### D6. Verifikations-Pfad
+`audit_anchor_verify()` ist die Prüfung, die es vorher nicht gab. Sie
+meldet `anchor_digest_mismatch` (Anker überschrieben), `seal_missing`,
+`anchor_missing`, `seal_chain_broken`, `seal_hash_invalid`,
+`seal_hmac_invalid` und `seal_unsigned`.
 
-Ein Auditor kann die Kette _ohne_ ARCTOS verifizieren:
+### D4. Eine Verifikation, vier Aufrufer (Migration 0404)
 
-1. Export aller `audit_log`-Rows einer Org für Tag `T` als JSON (entry_hash + canonical fields).
-2. Rebuild des Merkle-Trees mit dem Standard-Sort (created_at, id).
-3. Vergleich des berechneten Roots mit `audit_anchor.merkle_root`.
-4. Verifikation des FreeTSA-Proofs mit `openssl ts -verify -data <merkle_root> -in proof.tsr`.
-5. Verifikation des OTS-Proofs mit `ots verify` — die CLI fragt Bitcoin-Block-Explorer ab (blockstream.info, mempool.space) und prüft den Merkle-Path bis zum Block-Header.
+Die Prüflogik existierte viermal: im `/integrity`-Endpunkt, in der
+Ankerschranke, im DR-Drill-Skript — und im Nightly-Cron gar nicht. Sie
+sind auseinandergelaufen, mit dem oben beschriebenen Ergebnis. **Das
+Kopieren war der Defekt.** Es gibt jetzt genau eine Implementierung,
+`audit_chain_check()` in der Datenbank; `/integrity`, die manuelle
+Ankerroute, der Nightly-Anker-Cron und der Verifikations-Cron rufen sie
+alle auf. Eine unbekannte Hash-Version ist ein Fehler, kein
+stillschweigend passierender `ELSE`.
 
-Wir brauchen keinen eigenen Bitcoin-Full-Node. Wenn ein Customer Trust-Minimierung bis zur Quelle will, kann er die OTS-CLI auf einen eigenen Bitcoin-Node zeigen — das Protokoll erlaubt es.
+### D5. DSGVO Art. 17 gegen Unveränderlichkeit
 
-## Evaluated Alternatives
+Der Zielkonflikt war nicht gelöst, sondern verdeckt:
+`tombstone_audit_entry()` schreibt `changes` um, und `changes` war
+Hash-Eingabe. Nach dem **ersten** echten Löschantrag lieferte
+`/integrity` dauerhaft 503. Code, ADR und Integrationstest behaupteten das
+Gegenteil; der Test prüfte nur `expect(after.entry_hash).toBe(originalHash)`
+— Hash-_Gleichheit_, nie _Verifizierbarkeit_.
 
-| Option                                      | Advantages                                                                | Disadvantages                                          | Choice                       |
-| ------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------- |
-| **FreeTSA + OpenTimestamps dual (aktuell)** | Redundanz, Bitcoin-Trustless + Sekunden-Latenz, Kosten 0 €                | Zwei Integrations                                      | ✅                           |
-| Nur FreeTSA                                 | Einfacher, sofort verifizierbar                                           | Single Server → Point of Failure                       | —                            |
-| Nur OpenTimestamps                          | Trustless via Bitcoin                                                     | 1-2 h Latenz bis voller Proof                          | —                            |
-| Kommerzielle eIDAS-QTSP (D-Trust, DigiCert) | Qualified Electronic Timestamp, maximale juristische Anerkennung in DE/EU | ~500-2000 €/Jahr, kommerzielle Abhängigkeit            | Phase 2, wenn GmbH existiert |
-| Eigener Bitcoin-Node + Direkt-OP_RETURN     | Volle Autonomie                                                           | ~€5-20 BTC-Gebühr pro Commit, Node-Ops                 | —                            |
-| Ethereum-Smart-Contract                     | Billiger als BTC, programmierbar                                          | Wenige Auditoren akzeptieren Ethereum-State als Beweis | —                            |
+Rev.4 löst ihn:
 
-## Consequences
+- **v4-Zeilen**: die Redaktion überschreibt die Nutzdaten und erhält das
+  Commitment. Die Zeile rechnet weiterhin nach, die Kette bleibt intakt,
+  die personenbezogenen Daten sind weg.
+- **v1–v3-Zeilen**: nicht rückwirkend reparierbar, ihre Nutzdaten waren
+  direkte Hash-Eingabe. Für sie wird die Redaktion als **eigenes,
+  gehashtes, verankerbares Kettenglied** geschrieben (`entity_type =
+'audit_log'`, `action_detail = 'pii_tombstone'`: wer, wann, warum). Der
+  Verifizierer meldet sie als `redacted_legacy` — kein Bruch. Eine
+  tombstonierte Zeile **ohne** dieses Ereignis ist ein Befund: so sieht
+  eine als Löschung getarnte Manipulation aus.
 
-### Positive
+Die Guard-Allowlist erlaubt die Redaktionsspalten ausschließlich auf dem
+Übergang `pii_tombstoned_at NULL → NOT NULL`, also beim ersten und
+einzigen Tombstone der Zeile. `hash_version` und `content_commitment`
+stehen nicht darauf und werden nie darauf stehen.
 
-- Platform-Vendor verliert ab Anchor-Zeitpunkt die Möglichkeit, Audit-Events rückwirkend zu manipulieren — egal ob legal, illegal, oder forensisch erzwungen. Das ist der _eigentliche_ Wert des ganzen Tamper-Evidence-Konzepts.
-- Bei GmbH-Gründung später muss nichts umgebaut werden — eine QTSP wird einfach als dritter Provider (`provider='dtrust'`) hinzugefügt.
-- Kunden können ihre Anchors unabhängig verifizieren, auch wenn ARCTOS nicht mehr existiert.
+### D6. Merkle-Konstruktion v2 (RFC 6962)
 
-### Negative / Trade-offs
+v1 folgte der Bitcoin-Konvention (ungerade Ebene: letztes Element mit sich
+selbst paaren) ohne Domain-Separation. Damit erzeugen `[a,b,c]` und
+`[a,b,c,c]` dieselbe Wurzel (CVE-2012-2459-Klasse), und ein innerer Knoten
+ist formal als Blatt präsentierbar. Die verankerte Wurzel legte die
+abgedeckte Menge also nicht eindeutig fest; einziges
+Unterscheidungsmerkmal war `audit_anchor.leaf_count` — in derselben,
+ungeschützten Tabelle.
 
-- **FreeTSA-Dependency**: Wenn freetsa.org permanent offline geht, gehen neue Anchors durch diesen Provider verloren. Alte bleiben verifizierbar (die X.509-Kette überlebt die TSA). OTS fängt das redundanz-bedingt ab.
-- **OTS-Latenz**: Ein Anchor ist erst ~1-2 h nach Erstellung Bitcoin-verifizierbar. In dem Fenster ist er nur gegen Calendar-Server verifizierbar. Für operationelle GRC-Use-Cases (monatliche/quartalsweise Audits) vernachlässigbar.
-- **Storage-Wachstum**: ~6 KB pro Anchor pro Provider pro Tag. Bei 1000 Tenants × 365 Tage × 2 Provider = ~4.4 GB/Jahr. Für Postgres-Scale unproblematisch.
-- **Byte-Genauigkeit im Merkle-Tree**: Unser Leaf-Sort (created_at, id) MUSS für die Verifikation dieselbe Reihenfolge ergeben wie zur Anchor-Zeit. Eine Migration, die `created_at`-Precision ändert oder IDs verändert, bricht die Verifikation. Das ist akzeptiert — ADR-014 Migration Policy verbietet solche Änderungen auf Log-Tabellen ohnehin.
+```
+v2:  leaf = SHA256(0x00 || entry_hash)
+     node = SHA256(0x01 || left || right)
+     ungerade Ebene: letzter Knoten wird unverändert hochgereicht
+     root = SHA256(0x02 || uint64_be(leaf_count) || tree_root)
+```
+
+Die Blattzahl ist damit in der Wurzel gebunden. Alte Anker bleiben
+verifizierbar; `audit_anchor.merkle_version` sagt, welche Konstruktion
+eine gegebene Wurzel erzeugt hat.
+
+**Blattreihenfolge ist `chain_seq`**, nicht `(created_at, id)`. Der
+Trigger stempelt `now()`, also für alle Zeilen einer Transaktion denselben
+Wert; der Tiebreak über eine Zufalls-UUID sortierte 23 von 142 Zeilen an
+eine andere Position. Trigger, Verifizierer, Ankerbau und Archiv-Export
+verwenden jetzt dieselbe Ordnung.
+
+### D7. TSA-Antworten werden geprüft
+
+`packages/shared/src/lib/freetsa.ts` validiert, bevor es etwas
+zurückgibt, das der Aufrufer als Beweis ablegt, und wirft sonst:
+
+1. `PKIStatus` muss 0 sein; `grantedWithMods` wird abgelehnt.
+2. Der `messageImprint` muss SHA-256 sein und byteweise der eingereichten
+   Wurzel entsprechen.
+3. Der Nonce der Antwort muss dem gesendeten entsprechen (RFC 3161 §2.4.2
+   — der einzige Replay-Schutz des Protokolls; er wurde vorher erzeugt,
+   zurückgegeben und von keinem Aufrufer gepinnt).
+4. Die CMS-Signatur muss verifizieren: `message-digest`-Attribut gegen
+   SHA-256 über den `eContent`, Signatur über die DER-`SET OF`
+   `signedAttrs` unter dem öffentlichen Schlüssel des Signaturzertifikats.
+5. `genTime` muss im Gültigkeitszeitraum des Zertifikats liegen und darf
+   nicht in der Zukunft liegen.
+6. Ist ein Vertrauensanker konfiguriert (`FREETSA_CA_PEM`), muss das
+   Zertifikat von ihm ausgestellt sein. Ohne Anker ist das Ergebnis
+   `chainVerified: false` — nicht stillschweigend „verifiziert".
+
+`audit_anchor.tsa_verified` unterscheidet „gespeichert" von „geprüft".
+`verified_at` wird vom periodischen Re-Verifikationsjob geschrieben.
+
+### D8. Automatische Verifikation in Produktion
+
+Vorher prüfte nichts in Produktion die Kette. Der einzige wiederkehrende
+Check, `scripts/dr-restore-drill.sh`, berechnete **keinen einzigen Hash
+neu**, nahm nur die 1000 jüngsten Zeilen und tolerierte bis zu zehn
+Kettenbrüche als „bekanntes Migrationsartefakt" — ein ausdrückliches
+Manipulationsbudget von zehn Zeilen, im direkten Widerspruch zu ADR-026.
+
+`apps/worker/src/crons/audit-chain-verify.ts` läuft über die
+**vollständige** Kette jedes Mandanten, rechnet jede Zeile nach, prüft
+jeden Anker gegen sein Siegel, re-verifiziert gespeicherte
+RFC-3161-Beweise, schreibt das Ergebnis nach `audit_chain_verification`
+und meldet `healthy: false` mit benannter Ursache. Keine Stichprobe, keine
+Toleranzschwelle.
+
+Zum „bekannten Artefakt": es war keins. Migration `0328` verkettete in
+`(created_at, id)`-Reihenfolge neu, während `0313` und der Verifizierer
+`chain_seq` verwenden — auf einer aus den Migrationen erzeugten Datenbank
+messbar 21 von 146 Zeilen. Migration `0402` repariert das
+**hashwahrend**: sie nummeriert `chain_seq` entlang der vorhandenen
+`previous_hash`-Verkettung um und rechnet keinen einzigen Hash neu, sodass
+jede bereits erteilte Merkle-Wurzel gültig bleibt.
+
+### D9. Kein Fork, unabhängig vom Isolationslevel (Migration 0402)
+
+Der Advisory-Lock aus 0343 serialisiert Schreiber, refresht aber nicht
+deren Snapshot: unter `repeatable read` liest der entsperrte Schreiber
+weiterhin das alte Kettenende und forkt die Kette (vom Audit
+reproduziert). Der Kommentar in 0284 („parallel inserts within one tenant
+are strictly serialised") behauptete eine Eigenschaft, die der Lock nicht
+liefert.
+
+Die Sign-off-Ketten lösen dasselbe Problem seit 0341 korrekt und auf der
+richtigen Ebene: `UNIQUE NULLS NOT DISTINCT` auf (Parent,
+`previous_chain_hash`). Eine Constraint wird gegen den _committeten_
+Zustand geprüft, nicht gegen den Transaktions-Snapshot, und hält deshalb
+auf jedem Isolationslevel. `audit_log` verwendet jetzt dieselbe
+Konstruktion (`audit_log_scope_prev_uniq`); der Advisory-Lock bleibt als
+Optimierung erhalten, damit der Normalfall nicht in eine Constraint läuft.
+
+### D10. Offline-Verifikationspfad
+
+Der Archiv-Export (`GET /api/v1/audit-log/archive`) enthält jetzt jedes
+Feld, das in den Digest eingeht: `chainSeq`, `hashVersion`,
+`actionDetail`, `metadata`, `contentCommitment`, `piiTombstonedAt`.
+`changes` und `metadata` werden als **exakte PostgreSQL-`jsonb::text`-
+Darstellung** exportiert — ein JSON-Round-Trip durch eine andere
+Bibliothek ordnet Schlüssel um und verändert die gehashten Bytes.
+
+`verify/verify_archive.py` (weiterhin auch als `rebuild_merkle.py`
+ausgeliefert) prüft in drei Stufen und in dieser Reihenfolge:
+
+1. **Zeile** — jeden `entry_hash` aus dem Zeileninhalt neu berechnen,
+   inklusive Commitment gegen die Nutzdaten.
+2. **Kette** — `previous_hash` gegen die Vorgängerzeile in
+   `chain_seq`-Reihenfolge.
+3. **Anker** — Merkle-Wurzel des Tages rekonstruieren und mit der
+   signierten vergleichen.
+
+Die Reihenfolge ist nicht kosmetisch: Stufe 3 allein — das, was das alte
+`rebuild_merkle.py` tat — beweist nichts über den Inhalt der Zeilen.
+
+### D11. Die Grenze, ausdrücklich
+
+**Ein PostgreSQL-Superuser kann jeden Trigger und jede Tabelle löschen.
+Nichts innerhalb einer Datenbank ist gegen den Eigentümer dieser Datenbank
+manipulationssicher** — und der Worker läuft laut
+`docker-compose.production.yml` bewusst als Superuser `grc`.
+
+Was rev.4 ändert, ist der Unterschied zwischen _tamper-proof_ und
+_tamper-evident_: eine Manipulation scheitert, oder sie hinterlässt eine
+Lücke, die benannt wird.
+
+| Angriff                                                        | vor rev.4                                                   | nach rev.4                                                                                |
+| -------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `changes` ändern                                               | erkannt                                                     | erkannt                                                                                   |
+| `changes` + `hash_version = 0`                                 | **nicht erkannt**, `healthy: true`, Merkle-Wurzel identisch | UPDATE abgewiesen; per Superuser erzwungen → `unverifiable_version`, `healthy: false`     |
+| `user_email` / `user_name` / `ip_address` ändern               | **nicht erkannt**, gar nicht gehasht                        | UPDATE abgewiesen; erzwungen → `commitment_mismatch`                                      |
+| Kette neu berechnen unter `session_replication_role='replica'` | **nicht erkannt**                                           | Guards feuern trotzdem (`ENABLE ALWAYS`); per Superuser erzwungen → `commitment_mismatch` |
+| `audit_anchor` überschreiben                                   | **nicht erkannt**                                           | UPDATE abgewiesen; erzwungen → `anchor_digest_mismatch` gegen das Siegel                  |
+| Siegel mitfälschen                                             | –                                                           | erfordert den HMAC-Schlüssel, der nicht in der Datenbank liegt                            |
+| `TRUNCATE audit_log`                                           | **nicht erkannt**, gesamter Trail weg                       | abgewiesen, auch unter `replica`                                                          |
+| Alles löschen inkl. Siegelregister, als Superuser              | **nicht erkannt**                                           | erkennbar **nur** gegen eine außerhalb gehaltene Kopie                                    |
+
+Die letzte Zeile ist die verbleibende Restlücke, und sie ist
+konstruktionsbedingt. Deshalb ist der Archiv-Export keine Bequemlichkeit,
+sondern die einzige Kontrolle, die ein kompromittiertes System überlebt —
+und die einzige, die der Anbieter nicht für den Kunden ausführen kann. Sie
+gehört als Pflicht ins Kundenrunbook, nicht als Angebot in die
+Feature-Liste. Der ausgelieferte Archiv-README sagt das inzwischen
+wörtlich, unter „What this archive does not prove".
+
+## Betriebsanforderungen
+
+Ohne diese vier Punkte ist rev.4 unvollständig:
+
+1. **`AUDIT_SEAL_KEY`** in der Anwendungsumgebung setzen, außerhalb der
+   Datenbank verwahren, rotierbar über `AUDIT_SEAL_KEY_ID`. Ohne ihn sind
+   Siegel verkettet, aber nicht signiert; `/integrity` meldet das als
+   `anchor_unsealed`.
+2. **`FREETSA_CA_PEM`** setzen, damit die Zertifikatskette geprüft wird
+   und nicht nur die Signatur.
+3. **Scheduler** für `POST /crons/daily-audit-anchor` und
+   `POST /crons/audit-chain-verify`. Der Worker bringt keinen mit; ohne
+   externen Scheduler läuft weder Anker noch Verifikation. Empfehlung:
+   Anker täglich 00:05 UTC, Verifikation täglich 02:00 UTC.
+4. **Alarm auf `healthy === false`** aus dem Verifikations-Cron und auf
+   Zeilen in `audit_log_write_attempt`. Ein Befund, den niemand liest, ist
+   kein Befund.
+
+**Verhaltensänderung:** `POST /crons/daily-audit-anchor {"date": "…"}`
+verankert jetzt **den angegebenen Tag**. Vorher verankerte er den Tag
+davor — der HTTP-Handler baute ein Datum, von dem der Job dann einen Tag
+abzog —, im Widerspruch zum Kommentar im Code.
+
+## Bewertete Alternativen
+
+| Option                                               | Vorteile                                                                                 | Nachteile                                                                                       | Wahl                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------- |
+| **FreeTSA + OpenTimestamps dual, gesiegelt (rev.4)** | Redundanz, Bitcoin-trustless + Sekunden-Latenz, 0 €, Anker gegen Überschreiben gesichert | zwei Integrationen, HMAC-Schlüssel muss verwaltet werden                                        | ✅                         |
+| Anker in derselben DB ohne Siegel (rev.3)            | einfach                                                                                  | der „externe Zeuge" ist überschreibbar — der reproduzierte Angriff                              | ❌ (Ist-Zustand vor rev.4) |
+| Nur FreeTSA                                          | einfacher, sofort verifizierbar                                                          | Single Server → Single Point of Failure                                                         | —                          |
+| Nur OpenTimestamps                                   | trustless via Bitcoin                                                                    | 1–2 h Latenz bis zum vollen Proof                                                               | —                          |
+| Bestandszeilen auf v4 rehashen                       | eine einzige Formel im System                                                            | macht jede vorangegangene Fälschung endgültig und entwertet jede bereits erteilte Merkle-Wurzel | ❌ ausdrücklich verworfen  |
+| Anker in eine separate DB-Instanz                    | echte Trennung von Daten und Beweis                                                      | zweiter Cluster, Betrieb, Migrationspfad                                                        | Phase 2                    |
+| Siegelzeilen in WORM-Objektspeicher spiegeln         | verlässt die Reichweite des DB-Superusers — schließt D11                                 | Storage-Abhängigkeit, Retention-Kosten                                                          | Phase 2                    |
+| Kommerzielle eIDAS-QTSP (D-Trust, DigiCert)          | qualifizierter Zeitstempel, maximale juristische Anerkennung in DE/EU                    | ~500–2000 €/Jahr, kommerzielle Abhängigkeit                                                     | Phase 2                    |
+| Eigener Bitcoin-Node + Direkt-`OP_RETURN`            | volle Autonomie                                                                          | ~5–20 € Gebühr pro Commit, Node-Betrieb                                                         | —                          |
+| Ethereum-Smart-Contract                              | billiger als BTC, programmierbar                                                         | wenige Auditoren akzeptieren Ethereum-State als Beweis                                          | —                          |
+
+## Konsequenzen
+
+### Positiv
+
+- Die Angriffe, die der Audit reproduziert hat, werden abgewiesen oder
+  erkannt — nachgewiesen in
+  `packages/db/tests/integration/audit-tamper-evidence.test.ts`, das jeden
+  einzelnen davon ausführt (31 Tests).
+- Der Zielkonflikt DSGVO Art. 17 ↔ Unveränderlichkeit ist für neue Zeilen
+  gelöst statt verdeckt.
+- Die Verifikation existiert einmal statt viermal und kann nicht mehr
+  auseinanderlaufen.
+- Der Offline-Pfad funktioniert: 142 von 142 statt 0 von 142.
+- Geheimnisse (Passwort-Hashes, OIDC-Client-Secrets, Access-/Refresh-
+  Tokens, Hinweisgeber-Tokens) landen nicht mehr im unlöschbaren Log.
+
+### Negativ / Kompromisse
+
+- **Schlüsselverwaltung.** `AUDIT_SEAL_KEY` ist ein neues Geheimnis mit
+  Lebenszyklus. Geht er verloren, sind alte Siegel nicht mehr HMAC-prüfbar
+  (die Verkettung bleibt). `seal_key_id` erlaubt Rotation.
+- **Zwei Hash-Versionen dauerhaft im Bestand.** Der Preis dafür, nicht zu
+  rehashen. Der Verifizierer beherrscht v1–v4; v0 ist ein Befund.
+- **Kein Schutz gegen den Superuser**, siehe D11. Die verbleibende
+  Kontrolle ist eine außerhalb gehaltene Archivkopie.
+- **Schreibkosten.** Jeder Audit-Insert berechnet zusätzlich ein
+  Commitment und durchläuft die Geheimnisprüfung. Letztere hat einen
+  Schnellpfad (eine Regex über die serialisierte Nutzlast), sodass der
+  Normalfall den rekursiven Durchlauf überspringt.
+- **Der Advisory-Lock bleibt ein Schreibengpass pro Mandant**, weil
+  `audit_trigger` an über 500 Tabellen hängt. Unverändert gegenüber
+  rev.3; für Stream S09/S10 vermerkt.
+- **Byte-Genauigkeit bleibt eine Voraussetzung.** Eine Migration, die
+  `created_at`-Präzision, IDs oder die `jsonb`-Textdarstellung ändert,
+  bricht die Verifikation. ADR-014 verbietet solche Änderungen auf
+  Log-Tabellen; rev.4 erweitert das ausdrücklich auf `content_commitment`
+  und `chain_seq`.
 
 ## Roadmap
 
-**Phase 1 (heute, dieser PR)**: FreeTSA + OTS Dual, on-demand API, nightly cron, UI-Badges.
+**Erledigt (früher als „Phase 2" geführt):** Archiv-Export,
+OTS-Upgrade-Job.
 
-**Phase 2** (wenn GmbH existiert):
+**Phase 2**
 
-- **QTSP-Integration** (D-Trust oder DigiCert) als `provider='qtsp_dtrust'`. Damit ist das Siegel eIDAS-qualifiziert.
-- **OTS-Upgrade-Job**: täglich die `proof_status='pending'` OTS-Rows gegen die Calendars pollen und mit dem vollen Bitcoin-Attestation-Proof ersetzen. Setzt `bitcoin_block_height`.
-- **Downloadable-Archive-Export**: ein Klick erzeugt eine ZIP mit audit_log-JSON + alle Anchor-Proofs + README mit Verification-Instructions für offline-Audit.
+- Siegelzeilen in einen Append-only-/WORM-Speicher außerhalb dieser
+  Datenbank spiegeln (`audit_anchor_seal_export()` liefert sie bereits als
+  JSONL). Erst das schließt die Restlücke aus D11.
+- QTSP-Integration (D-Trust oder DigiCert) als dritter Provider.
+- `audit_log` und `audit_anchor` in ein separates DB-Cluster mit eigener
+  Rolle.
 
-**Phase 3** (bei Enterprise-Sale):
+**Phase 3**
 
-- **Eigener Bitcoin-Pruned-Node** (~10 GB, 10€/Monat Hetzner) für vollständig autonome OTS-Verifikation ohne Explorer-API-Dependency.
-- **QTSP-Failover**: zwei QTSPs parallel (DE + NL), damit auch eine nationale Regulator-Intervention nicht zum Ausfall führt.
+- Eigener Bitcoin-Pruned-Node für autonome OTS-Verifikation ohne
+  Explorer-API-Abhängigkeit.
+- QTSP-Failover über zwei Jurisdiktionen.
 
-## References
+## Referenzen
 
-- RFC 3161 — Internet X.509 Public Key Infrastructure Time-Stamp Protocol
-- OpenTimestamps Protocol: https://petertodd.org/2016/opentimestamps-announcement
-- ADR-011 rev.2 — Per-Tenant Chain (Grundlage)
-- eIDAS Verordnung (EU) 910/2014 — Trust Services
-- `§ 371a ZPO` (Beweiswert elektronischer Dokumente mit Siegel)
-- FreeTSA: https://freetsa.org — kostenloser TSA-Dienst (Klaus-Rüdiger Kraft)
+- RFC 3161 — Internet X.509 PKI Time-Stamp Protocol
+- RFC 6962 §2 — Certificate Transparency, Merkle-Baum mit Domain-Separation
+- CVE-2012-2459 — Merkle-Duplikationsmehrdeutigkeit
+- ADR-011 rev.2 — Per-Tenant-Chain (Grundlage)
+- ADR-026 — Hash-Chain-Migration und Kontinuitätsbeweis
+- Auditbericht ARCTOS-FULL-2026-08-31, Stream S03 (20 Findings)
+- eIDAS-Verordnung (EU) 910/2014 · `§ 371a ZPO`
+- OpenTimestamps: https://petertodd.org/2016/opentimestamps-announcement
+- FreeTSA: https://freetsa.org

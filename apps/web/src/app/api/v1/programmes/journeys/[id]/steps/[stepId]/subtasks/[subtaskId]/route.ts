@@ -12,6 +12,11 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { reverseSyncSubtaskCompletion } from "@grc/db";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const patchSubtaskSchema = z
   .object({
@@ -34,7 +39,7 @@ const patchSubtaskSchema = z
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Empty body" });
 
-export async function PATCH(
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   {
     params,
@@ -118,14 +123,13 @@ export async function PATCH(
     try {
       soaSync = await reverseSyncSubtaskCompletion(db, subtaskId, ctx.orgId);
     } catch (err) {
-      console.error("[subtask PATCH] reverse SoA sync failed", err);
+      log.error("[subtask PATCH] reverse SoA sync failed", { err });
     }
   }
 
   return Response.json({ data: updated, soaSync });
-}
-
-export async function DELETE(
+});
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   {
     params,
@@ -171,4 +175,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { ok: true } });
-}
+});

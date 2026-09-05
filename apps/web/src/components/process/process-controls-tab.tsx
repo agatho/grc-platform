@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { ApiRequestError, fetchAllPages } from "@/lib/api-client";
 
 interface Control {
   id: string;
@@ -67,6 +68,10 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
   const [available, setAvailable] = useState<Control[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pickerOpen, setPickerOpen] = useState(false);
+  // [OP-050] Warum die Auswahl leer ist, gehört in den Dialog und nicht in
+  // die Konsole — ein leerer Dialog behauptet sonst „es gibt keine
+  // Kontrollen".
+  const [pickerError, setPickerError] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
 
   const reload = useCallback(async () => {
@@ -93,12 +98,29 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
     reload();
   }, [reload]);
 
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Hier stand
+  // `fetch("/api/v1/controls?limit=200")` mit `if (resp.ok)` und ohne `else`.
+  // `GET /api/v1/controls` benutzt `paginate()`, und das lehnt seit
+  // #NIGHT-059 jedes `limit > 100` mit 422 ab, statt still zu kappen. Der
+  // Zweig war also nie wahr: der Auswahldialog öffnete sich **immer leer**,
+  // und zwar mit derselben leeren Liste, die „diese Organisation hat keine
+  // Kontrollen" bedeutet. Ein Prozessverantwortlicher konnte darauf keine
+  // Kontrolle verknüpfen und hatte keinen Anhaltspunkt, warum.
+  //
+  // `fetchAllPages` fragt mit erlaubter Seitengrösse und blättert; ein
+  // Nicht-2xx wirft, statt zu einer leeren Liste zu werden.
   const openPicker = useCallback(async () => {
     setPickerOpen(true);
-    const resp = await fetch(`/api/v1/controls?limit=200`);
-    if (resp.ok) {
-      const j = await resp.json();
-      setAvailable(j.data ?? []);
+    setPickerError(null);
+    try {
+      setAvailable(await fetchAllPages<Control>("/api/v1/controls"));
+    } catch (err) {
+      setAvailable([]);
+      setPickerError(
+        err instanceof ApiRequestError
+          ? `${err.status}${err.detail ? ` — ${err.detail}` : ""}`
+          : "Die Kontrollen konnten nicht geladen werden.",
+      );
     }
   }, []);
 
@@ -210,6 +232,16 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+              {/*
+                [OP-050] Der Unterschied zwischen "es gibt keine Kontrollen"
+                und "die Kontrollen konnten nicht geladen werden" muss sichtbar
+                sein. Vorher war beides derselbe leere Kasten.
+              */}
+              {pickerError !== null && (
+                <p role="alert" className="text-sm text-destructive">
+                  {pickerError}
+                </p>
+              )}
               <div className="max-h-96 space-y-1 overflow-auto rounded border p-2">
                 {filtered.map((c) => (
                   <label

@@ -1,11 +1,15 @@
 import { db, maturityRoadmapAction } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, desc, asc } from "drizzle-orm";
+import { eq, and, desc, asc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { updateRoadmapActionStatusSchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/isms/maturity/roadmap — Get latest roadmap
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -57,10 +61,9 @@ export async function GET(req: Request) {
       byQuarter,
     },
   });
-}
-
+});
 // PUT /api/v1/isms/maturity/roadmap — Update action status
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -93,4 +96,4 @@ export async function PUT(req: Request) {
   }
 
   return Response.json({ data: result });
-}
+});

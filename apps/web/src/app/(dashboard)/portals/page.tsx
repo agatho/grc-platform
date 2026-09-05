@@ -7,7 +7,6 @@ import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
-  Plus,
   Users,
   ShieldCheck,
   Eye,
@@ -38,7 +37,7 @@ export default function PortalsPage() {
 
 function PortalsDashboard() {
   const t = useTranslations("portals");
-  const router = useRouter();
+  const _router = useRouter();
   const [configs, setConfigs] = useState<PortalConfigItem[]>([]);
   const [loading, setLoading] = useState(true);
 

@@ -5,6 +5,7 @@ import { db, applicationPortfolio, architectureElement } from "@grc/db";
 import { and, lte, eq, sql, isNull, or } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 export const processEamAssessmentReminder = withCronInstrumentation(
   "eam-assessment-reminder",
   async (): Promise<{ flagged: number; notificationsSent: number }> => {
@@ -43,9 +44,11 @@ export const processEamAssessmentReminder = withCronInstrumentation(
           )
         : null;
 
-      console.log(
-        `[eam-assessment-reminder] ${app.name} — ${monthsSinceAssessment ? `last assessed ${monthsSinceAssessment} months ago` : "never assessed"}`,
-      );
+      log.info("[eam-assessment-reminder] application due for assessment", {
+        elementId: app.elementId,
+        name: app.name,
+        monthsSinceAssessment,
+      });
 
       // In production: createNotification() for application owner
       if (app.owner) notificationsSent++;

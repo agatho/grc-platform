@@ -83,6 +83,33 @@ echo "  2. nano /opt/arctos/deploy/Caddyfile  (Domain anpassen)"
 echo "  3. cd /opt/arctos && docker compose -f docker-compose.production.yml up -d"
 echo "  4. caddy start --config /opt/arctos/deploy/Caddyfile"
 echo "  5. docker compose -f docker-compose.production.yml exec web npm run db:migrate-all"
-echo "  6. docker compose -f docker-compose.production.yml exec web npm run db:seed"
 echo ""
-echo "Login: admin@arctos.dev / admin123"
+echo "  6. Ersten Administrator anlegen (KEIN Demo-Seed in Produktion):"
+echo "       docker compose -f docker-compose.production.yml exec web \\"
+echo "         npm run db:create-admin -- --email <ihre.adresse@firma.de>"
+echo "     Das Skript erzeugt ein Zufallspasswort, gibt es EINMAL aus und"
+echo "     erzwingt die Aenderung bei der ersten Anmeldung."
+echo ""
+echo "  7. Optional: Plattform-Administrator berechtigen (S02-03). Nur ein"
+echo "     Plattform-Admin darf mandantenuebergreifende Konfiguration"
+echo "     (feature_gate, subscription_plan, plugin, data_region,"
+echo "     framework_mapping) aendern. Die Rolle ist bewusst NICHT ueber die"
+echo "     API vergebbar:"
+echo "       docker compose -f docker-compose.production.yml exec postgres \\"
+echo "         psql -U grc -d grc_platform -c \"INSERT INTO platform_admin"
+echo "         (user_id, reason) SELECT id, 'initial operator' FROM \\\"user\\\""
+echo "         WHERE email='<ihre.adresse@firma.de>';\""
+echo ""
+# [ARCTOS-FULL-2026-08-31 / WP3 · S02-01]
+# Hier stand: `echo "Login: admin@arctos.dev / admin123"` — der dokumentierte
+# Produktionspfad legte damit auf JEDER Instanz einen Administrator mit einem
+# Passwort an, das im oeffentlichen Repository steht. Zusammen mit
+# `RUN_SEEDS=true` im Produktions-Template war das ein direkter
+# Authentifizierungs-Bypass ohne jede weitere Voraussetzung. Der Demo-Seed
+# laeuft jetzt nur noch ausserhalb von NODE_ENV=production (bzw. mit
+# ALLOW_PRODUCTION_SEED=true) und vergibt kein festes Passwort mehr.
+echo "WICHTIG: Es gibt keinen vorkonfigurierten Standard-Login mehr."
+echo "         Das frueher dokumentierte Konto admin@arctos.dev / admin123 ist"
+echo "         entfernt; ein Bestandssystem MUSS es loeschen oder das Passwort"
+echo "         aendern:"
+echo "           UPDATE \"user\" SET is_active=false WHERE email='admin@arctos.dev';"

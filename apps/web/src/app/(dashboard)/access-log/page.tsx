@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
 import { Loader2 } from "lucide-react";
@@ -80,9 +81,15 @@ const AUTH_METHOD_LABELS: Record<string, string> = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema als Parameter statt als
+ * Konstante. Das Protokoll ist die Ansicht, in der Zeitstempel am dichtesten
+ * stehen — sie alle im deutschen Format auszugeben, waehrend die Spalten
+ * daneben englisch beschriftet sind, ist die sichtbarste Form dieses Mangels.
+ */
+function formatTimestamp(locale: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -97,6 +104,7 @@ function formatTimestamp(iso: string): string {
 // ──────────────────────────────────────────────────────────────
 
 export default function AccessLogPage() {
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("accessLog");
 
   const [entries, setEntries] = useState<AccessLogEntry[]>([]);
@@ -136,7 +144,7 @@ export default function AccessLogPage() {
         ),
         cell: ({ getValue }) => (
           <span className="whitespace-nowrap text-xs text-gray-600">
-            {formatTimestamp(getValue() as string)}
+            {formatTimestamp(numberLocale, getValue() as string)}
           </span>
         ),
       },

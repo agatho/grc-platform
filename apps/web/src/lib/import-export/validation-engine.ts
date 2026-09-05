@@ -3,15 +3,9 @@
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
-import type {
-  EntityDefinition,
-  ValidationError,
-  ValidationResult,
-  FKRule,
-} from "@grc/shared";
+import type { ValidationError, ValidationResult, FKRule } from "@grc/shared";
 import { getEntityDefinition } from "./entity-registry";
-import { applyMapping, getFieldDef } from "./column-mapper";
-import { sanitizeCsvValue } from "./csv-sanitizer";
+import { applyMapping } from "./column-mapper";
 
 /**
  * Validate all rows against entity definition rules.

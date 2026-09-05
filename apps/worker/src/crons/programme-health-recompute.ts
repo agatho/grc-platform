@@ -19,6 +19,7 @@ import {
 } from "@grc/shared";
 import { and, eq, isNull, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface ProgrammeHealthResult {
   journeysProcessed: number;
@@ -186,9 +187,13 @@ export const processProgrammeHealthRecompute = withCronInstrumentation(
             },
           });
         }
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "programme-health-recompute", scope: "item" },
+          err,
+        );
         errors++;
-        // Wrapper logs structured error; loop continues.
       }
     }
 

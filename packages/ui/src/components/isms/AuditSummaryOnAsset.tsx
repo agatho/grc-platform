@@ -19,7 +19,8 @@ interface AuditSummaryOnAssetProps {
 }
 
 const RESULT_COLORS: Record<string, string> = {
-  conformity: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1.
+  conformity: "bg-green-100 text-green-800",
   minor_non_conformity: "bg-yellow-100 text-yellow-700",
   major_non_conformity: "bg-red-100 text-red-700",
   not_audited: "bg-gray-100 text-gray-500",

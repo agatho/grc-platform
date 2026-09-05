@@ -53,6 +53,15 @@ export interface ProcessConformanceResult {
   totalTraces: number;
   conformantTraces: number;
   fitnessGaps: FitnessGap[];
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-014] Beobachtete Übergänge zwischen zwei
+   * modellierten Schritten, die das Modell nicht direkt verbindet.
+   *
+   * Die Größe, an der `GrcConformanceSummary.deviations` bisher scheiterte:
+   * `fitnessGaps` führt Knoten, der Vertrag verlangt ein Kantenpaar. Optional,
+   * weil Datensätze aus Läufen vor Migration 0465 die Spalte nicht haben.
+   */
+  deviationEdges?: ConformanceDeviationEdge[];
   precisionIssues: PrecisionIssue[];
   reworkLoops: ReworkLoop[];
   bottlenecks: Bottleneck[];
@@ -63,6 +72,19 @@ export interface FitnessGap {
   type: "unexpected" | "missing_in_model";
   frequency: number;
   percentage: number;
+}
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-014] Ein abweichender Übergang, als Kantenpaar
+ * aus BPMN-Elementkennungen (`process_step.bpmn_element_id`) — genau die Form,
+ * die `GrcConformanceSummary.deviations` verlangt.
+ */
+export interface ConformanceDeviationEdge {
+  fromElementId: string;
+  toElementId: string;
+  frequency: number;
+  /** Anteil an allen beobachteten abweichenden Übergängen, 0…1. */
+  share: number;
 }
 
 export interface PrecisionIssue {

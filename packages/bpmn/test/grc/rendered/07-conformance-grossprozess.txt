@@ -1,0 +1,236 @@
+Großer Prozess — Betrieb & Effizienz
+
+Sicht: Betrieb & Effizienz — Modell gegen Wirklichkeit: Durchlaufzeiten, Engpässe, Abweichungen.
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+Heatmap basiert auf 87 % der Ereignisse. 3 Aktivitäten sind nicht zugeordnet: Schritt 8, Schritt 19, Schritt 30.
+Kante L_F0: Beobachtet in 1.200 Fällen.
+Kante L_F1: Beobachtet in 1.191 Fällen.
+Kante L_F2: Beobachtet in 1.182 Fällen.
+Kante L_F3: Beobachtet in 1.173 Fällen.
+Kante L_F4: Beobachtet in 1.164 Fällen.
+Kante L_F5: Beobachtet in 1.155 Fällen.
+Kante L_F6: Beobachtet in 1.146 Fällen.
+Kante L_F7: Beobachtet in 1.137 Fällen.
+Kante L_F8: Beobachtet in 1.128 Fällen.
+Kante L_F9: Beobachtet in 1.119 Fällen.
+Kante L_F10: Beobachtet in 1.110 Fällen.
+Kante L_F11: Beobachtet in 1.101 Fällen.
+Kante L_F12: Beobachtet in 1.092 Fällen.
+Kante L_F13: Beobachtet in 1.083 Fällen.
+Kante L_F14: Beobachtet in 1.074 Fällen.
+Kante L_F15: Beobachtet in 1.065 Fällen.
+Kante L_F16: Beobachtet in 1.056 Fällen.
+Kante L_F17: Beobachtet in 1.047 Fällen.
+Kante L_F18: Beobachtet in 1.038 Fällen.
+Kante L_F19: Beobachtet in 1.029 Fällen.
+Kante L_F20: Beobachtet in 1.020 Fällen.
+Kante L_F21: Beobachtet in 1.011 Fällen.
+Kante L_F22: Beobachtet in 1.002 Fällen.
+Kante L_F23: Beobachtet in 993 Fällen.
+Kante L_F24: Beobachtet in 984 Fällen.
+Kante L_F25: Beobachtet in 975 Fällen.
+Kante L_F26: Beobachtet in 966 Fällen.
+Kante L_F27: Beobachtet in 957 Fällen.
+Kante L_F28: Beobachtet in 948 Fällen.
+Kante L_F29: Beobachtet in 939 Fällen.
+Kante L_F30: Modelliert, aber nie beobachtet.
+Kante L_F31: Beobachtet in 921 Fällen.
+Kante L_F32: Beobachtet in 912 Fällen.
+Kante L_F33: Beobachtet in 903 Fällen.
+Kante L_F34: Beobachtet in 894 Fällen.
+Kante L_F35: Beobachtet in 885 Fällen.
+Kante L_F36: Beobachtet in 876 Fällen.
+Kante L_F37: Beobachtet in 867 Fällen.
+Kante L_F38: Beobachtet in 858 Fällen.
+Kante L_F39: Beobachtet in 849 Fällen.
+Kante L_F40: Beobachtet in 840 Fällen.
+Kante L_F41: Beobachtet in 831 Fällen.
+Kante L_F42: Beobachtet in 822 Fällen.
+Kante L_F43: Beobachtet in 813 Fällen.
+Kante L_F44: Beobachtet in 804 Fällen.
+Kante L_F45: Beobachtet in 795 Fällen.
+Kante L_F46: Beobachtet in 786 Fällen.
+Kante L_F47: Beobachtet in 777 Fällen.
+Kante L_F48: Beobachtet in 768 Fällen.
+Kante L_F49: Beobachtet in 759 Fällen.
+Kante L_F50: Beobachtet in 750 Fällen.
+Kante L_F51: Beobachtet in 741 Fällen.
+Kante L_F52: Beobachtet in 732 Fällen.
+Kante L_F53: Beobachtet in 723 Fällen.
+Kante L_F54: Beobachtet in 714 Fällen.
+Kante L_F55: Beobachtet in 705 Fällen.
+Kante L_F56: Beobachtet in 696 Fällen.
+Kante L_F57: Beobachtet in 687 Fällen.
+Kante L_F58: Beobachtet in 678 Fällen.
+Kante L_F59: Beobachtet in 669 Fällen.
+Kante L_F60: Beobachtet in 660 Fällen.
+
+Der Prozess beginnt mit „Startereignis L_Start“. Schritt 1: „Startereignis L_Start“ führt zu „Schritt 1“. Schritt 2: „Schritt 1“ führt zu „Schritt 2“. Schritt 3: „Schritt 2“ führt zu „Schritt 3“. Schritt 4: „Schritt 3“ führt zu „Schritt 4“. Schritt 5: „Schritt 4“ führt zu „Schritt 5“. Schritt 6: „Schritt 5“ führt zu „Schritt 6“. Schritt 7: „Schritt 6“ führt zu „Schritt 7“. Schritt 8: „Schritt 7“ führt zu „Schritt 8“. Schritt 9: „Schritt 8“ führt zu „Schritt 9“. Schritt 10: „Schritt 9“ führt zu „Schritt 10“. Schritt 11: „Schritt 10“ führt zu „Schritt 11“. Schritt 12: „Schritt 11“ führt zu „Schritt 12“. Schritt 13: „Schritt 12“ führt zu „Schritt 13“. Schritt 14: „Schritt 13“ führt zu „Schritt 14“. Schritt 15: „Schritt 14“ führt zu „Schritt 15“. Schritt 16: „Schritt 15“ führt zu „Schritt 16“. Schritt 17: „Schritt 16“ führt zu „Schritt 17“. Schritt 18: „Schritt 17“ führt zu „Schritt 18“. Schritt 19: „Schritt 18“ führt zu „Schritt 19“. Schritt 20: „Schritt 19“ führt zu „Schritt 20“. Schritt 21: „Schritt 20“ führt zu „Schritt 21“. Schritt 22: „Schritt 21“ führt zu „Schritt 22“. Schritt 23: „Schritt 22“ führt zu „Schritt 23“. Schritt 24: „Schritt 23“ führt zu „Schritt 24“. Schritt 25: „Schritt 24“ führt zu „Schritt 25“. Schritt 26: „Schritt 25“ führt zu „Schritt 26“. Schritt 27: „Schritt 26“ führt zu „Schritt 27“. Schritt 28: „Schritt 27“ führt zu „Schritt 28“. Schritt 29: „Schritt 28“ führt zu „Schritt 29“. Schritt 30: „Schritt 29“ führt zu „Schritt 30“. Schritt 31: „Schritt 30“ führt zu „Schritt 31“. Schritt 32: „Schritt 31“ führt zu „Schritt 32“. Schritt 33: „Schritt 32“ führt zu „Schritt 33“. Schritt 34: „Schritt 33“ führt zu „Schritt 34“. Schritt 35: „Schritt 34“ führt zu „Schritt 35“. Schritt 36: „Schritt 35“ führt zu „Schritt 36“. Schritt 37: „Schritt 36“ führt zu „Schritt 37“. Schritt 38: „Schritt 37“ führt zu „Schritt 38“. Schritt 39: „Schritt 38“ führt zu „Schritt 39“. Schritt 40: „Schritt 39“ führt zu „Schritt 40“. Schritt 41: „Schritt 40“ führt zu „Schritt 41“. Schritt 42: „Schritt 41“ führt zu „Schritt 42“. Schritt 43: „Schritt 42“ führt zu „Schritt 43“. Schritt 44: „Schritt 43“ führt zu „Schritt 44“. Schritt 45: „Schritt 44“ führt zu „Schritt 45“. Schritt 46: „Schritt 45“ führt zu „Schritt 46“. Schritt 47: „Schritt 46“ führt zu „Schritt 47“. Schritt 48: „Schritt 47“ führt zu „Schritt 48“. Schritt 49: „Schritt 48“ führt zu „Schritt 49“. Schritt 50: „Schritt 49“ führt zu „Schritt 50“. Schritt 51: „Schritt 50“ führt zu „Schritt 51“. Schritt 52: „Schritt 51“ führt zu „Schritt 52“. Schritt 53: „Schritt 52“ führt zu „Schritt 53“. Schritt 54: „Schritt 53“ führt zu „Schritt 54“. Schritt 55: „Schritt 54“ führt zu „Schritt 55“. Schritt 56: „Schritt 55“ führt zu „Schritt 56“. Schritt 57: „Schritt 56“ führt zu „Schritt 57“. Schritt 58: „Schritt 57“ führt zu „Schritt 58“. Schritt 59: „Schritt 58“ führt zu „Schritt 59“. Schritt 60: „Schritt 59“ führt zu „Schritt 60“. Schritt 61: „Schritt 60“ führt zu „Endereignis L_End“. Schritt 62: „Endereignis L_End“ endet hier. Heatmap basiert auf 87 % der Ereignisse. 3 Aktivitäten sind nicht zugeordnet: Schritt 8, Schritt 19, Schritt 30. 57 Elemente tragen GRC-Hinweise in der Sicht „Betrieb & Effizienz".
+
+1. L_Start (Startereignis)
+2. Schritt 1 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 10 min, 1.200 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 5 min, Kosten je Durchlauf 4 €, 800 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+3. Schritt 2 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 27 min, 1.193 beobachtete Fälle.
+4. Schritt 3 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 44 min, 1.186 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 7 min, Kosten je Durchlauf 6 €, 826 Durchläufe.
+5. Schritt 4 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 1 min, 1.179 beobachtete Fälle.
+6. Schritt 5 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 18 min, 1.172 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 9 min, Kosten je Durchlauf 8 €, 852 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+7. Schritt 6 (exklusives Gateway)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 1 h 35 min, 1.165 beobachtete Fälle.
+8. Schritt 7 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 52 min, 1.158 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 11 min, Kosten je Durchlauf 10 €, 878 Durchläufe.
+9. Schritt 8 (Benutzeraufgabe)
+    Conformance: Keine Zuordnung zum Ereignisprotokoll — dieser Schritt geht nicht in die Heatmap ein.
+10. Schritt 9 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 26 min, 1.144 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 13 min, Kosten je Durchlauf 12 €, 904 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+11. Schritt 10 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 2 h 43 min, 1.137 beobachtete Fälle.
+12. Schritt 11 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h, 1.130 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 15 min, Kosten je Durchlauf 14 €, 930 Durchläufe.
+13. Schritt 12 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 17 min, 1.123 beobachtete Fälle.
+14. Schritt 13 (exklusives Gateway)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 34 min, 1.116 beobachtete Fälle, 3 Nacharbeitsschleifen.
+    Betrieb und Kosten: mittlere Dauer 17 min, Kosten je Durchlauf 16 €, 956 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+15. Schritt 14 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 3 h 51 min, 1.109 beobachtete Fälle.
+16. Schritt 15 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 8 min, 1.102 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 19 min, Kosten je Durchlauf 18 €, 982 Durchläufe.
+17. Schritt 16 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 25 min, 1.095 beobachtete Fälle.
+18. Schritt 17 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 42 min, 1.088 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 21 min, Kosten je Durchlauf 20 €, 1.008 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+19. Schritt 18 (Serviceaufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 4 h 59 min, 1.081 beobachtete Fälle.
+20. Schritt 19 (Aufgabe)
+    Conformance: Keine Zuordnung zum Ereignisprotokoll — dieser Schritt geht nicht in die Heatmap ein.
+    Betrieb und Kosten: mittlere Dauer 23 min, Kosten je Durchlauf 22 €, 1.034 Durchläufe.
+21. Schritt 20 (exklusives Gateway)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 33 min, 1.067 beobachtete Fälle.
+22. Schritt 21 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 50 min, 1.060 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 25 min, Kosten je Durchlauf 24 €, 1.060 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+23. Schritt 22 (Benutzeraufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 1 h 7 min, 1.053 beobachtete Fälle.
+24. Schritt 23 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 24 min, 1.046 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 27 min, Kosten je Durchlauf 26 €, 1.086 Durchläufe.
+25. Schritt 24 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 41 min, 1.039 beobachtete Fälle, als Engpass erkannt.
+26. Schritt 25 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 58 min, 1.032 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 29 min, Kosten je Durchlauf 28 €, 1.112 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+27. Schritt 26 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 2 h 15 min, 1.025 beobachtete Fälle.
+28. Schritt 27 (exklusives Gateway)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 32 min, 1.018 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 31 min, Kosten je Durchlauf 5 €, 1.138 Durchläufe.
+29. Schritt 28 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 49 min, 1.011 beobachtete Fälle.
+30. Schritt 29 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 6 min, 1.004 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 33 min, Kosten je Durchlauf 7 €, 1.164 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+31. Schritt 30 (Aufgabe)
+    Conformance: Keine Zuordnung zum Ereignisprotokoll — dieser Schritt geht nicht in die Heatmap ein.
+32. Schritt 31 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 40 min, 990 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 35 min, Kosten je Durchlauf 9 €, 1.190 Durchläufe.
+33. Schritt 32 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 57 min, 983 beobachtete Fälle.
+34. Schritt 33 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 14 min, 976 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 37 min, Kosten je Durchlauf 11 €, 1.216 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+35. Schritt 34 (exklusives Gateway)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 4 h 31 min, 969 beobachtete Fälle.
+36. Schritt 35 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 48 min, 962 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 39 min, Kosten je Durchlauf 13 €, 1.242 Durchläufe.
+37. Schritt 36 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 5 h 5 min, 955 beobachtete Fälle.
+38. Schritt 37 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 22 min, 948 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 41 min, Kosten je Durchlauf 15 €, 1.268 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+39. Schritt 38 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 39 min, 941 beobachtete Fälle.
+40. Schritt 39 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 56 min, 934 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 43 min, Kosten je Durchlauf 17 €, 1.294 Durchläufe.
+41. Schritt 40 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 13 min, 927 beobachtete Fälle.
+42. Schritt 41 (exklusives Gateway)
+    Conformance: Keine Zuordnung zum Ereignisprotokoll — dieser Schritt geht nicht in die Heatmap ein.
+    Betrieb und Kosten: mittlere Dauer 5 min, Kosten je Durchlauf 19 €, 1.320 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+43. Schritt 42 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 1 h 47 min, 913 beobachtete Fälle, als Engpass erkannt.
+44. Schritt 43 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 4 min, 906 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 7 min, Kosten je Durchlauf 21 €, 1.346 Durchläufe.
+45. Schritt 44 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 21 min, 899 beobachtete Fälle.
+46. Schritt 45 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 2 h 38 min, 892 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 9 min, Kosten je Durchlauf 23 €, 1.372 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+47. Schritt 46 (Serviceaufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 2 h 55 min, 885 beobachtete Fälle.
+48. Schritt 47 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 12 min, 878 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 11 min, Kosten je Durchlauf 25 €, 1.398 Durchläufe.
+49. Schritt 48 (exklusives Gateway)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 29 min, 871 beobachtete Fälle.
+50. Schritt 49 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 3 h 46 min, 864 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 13 min, Kosten je Durchlauf 27 €, 1.424 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+51. Schritt 50 (Benutzeraufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 4 h 3 min, 857 beobachtete Fälle.
+52. Schritt 51 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 20 min, 850 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 15 min, Kosten je Durchlauf 4 €, 1.450 Durchläufe.
+53. Schritt 52 (Aufgabe)
+    Conformance: Keine Zuordnung zum Ereignisprotokoll — dieser Schritt geht nicht in die Heatmap ein.
+54. Schritt 53 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 4 h 54 min, 836 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 17 min, Kosten je Durchlauf 6 €, 1.476 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+55. Schritt 54 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 11 min, 829 beobachtete Fälle.
+56. Schritt 55 (exklusives Gateway)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 28 min, 822 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 19 min, Kosten je Durchlauf 8 €, 1.502 Durchläufe.
+57. Schritt 56 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 45 min, 815 beobachtete Fälle.
+58. Schritt 57 (Benutzeraufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 2 min, 808 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 21 min, Kosten je Durchlauf 10 €, 1.528 Durchläufe.
+    Kommentare: Kommentare: 1 offen von 2.
+59. Schritt 58 (Aufgabe)
+    Conformance: Zuordnung normalisiert, mittlere Durchlaufzeit 1 h 19 min, 801 beobachtete Fälle.
+60. Schritt 59 (Aufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 36 min, 794 beobachtete Fälle.
+    Betrieb und Kosten: mittlere Dauer 23 min, Kosten je Durchlauf 12 €, 1.554 Durchläufe.
+61. Schritt 60 (Serviceaufgabe)
+    Conformance: Zuordnung exakt, mittlere Durchlaufzeit 1 h 53 min, 787 beobachtete Fälle.
+62. L_End (Endereignis)

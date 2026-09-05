@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Loader2,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Trash2,
-} from "lucide-react";
+import { Loader2, Plus, CheckCircle, Trash2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -37,7 +31,7 @@ export default function StrategyListPage() {
 
 function StrategyListInner() {
   const t = useTranslations("bcms");
-  const router = useRouter();
+  const _router = useRouter();
   const [items, setItems] = useState<ContinuityStrategy[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

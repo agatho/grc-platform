@@ -6,7 +6,7 @@ import { AlertTriangle, Check, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RiskAnomalyDetection } from "@grc/shared";
 
 const SEVERITY_COLORS: Record<string, string> = {

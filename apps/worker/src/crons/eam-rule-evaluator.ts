@@ -10,6 +10,7 @@ import {
 } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processEamRuleEvaluator = withCronInstrumentation(
   "eam-rule-evaluator",
@@ -19,7 +20,7 @@ export const processEamRuleEvaluator = withCronInstrumentation(
     resolvedViolations: number;
   }> => {
     let newViolations = 0;
-    let resolvedViolations = 0;
+    const resolvedViolations = 0;
 
     // Get all active rules across all orgs
     const rules = await db
@@ -106,8 +107,12 @@ export const processEamRuleEvaluator = withCronInstrumentation(
           .update(architectureRule)
           .set({ lastEvaluatedAt: new Date() })
           .where(eq(architectureRule.id, rule.id));
-      } catch {
-        // Wrapper logs structured error; loop continues to next rule.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "eam-rule-evaluator", scope: "Update last evaluated" },
+          err,
+        );
       }
     }
 

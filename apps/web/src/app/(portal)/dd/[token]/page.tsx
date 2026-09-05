@@ -556,7 +556,7 @@ export default function DdPortalPage() {
               ) : prog > 0 ? (
                 <CircleDot size={14} className="text-blue-500" />
               ) : (
-                <Circle size={14} className="text-gray-300" />
+                <Circle size={14} className="text-gray-500" />
               )}
               <span className="whitespace-nowrap">
                 {lang === "de" ? section.titleDe : section.titleEn}

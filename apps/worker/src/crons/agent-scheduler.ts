@@ -4,6 +4,7 @@
 import { db, agentRegistration } from "@grc/db";
 import { lte, eq, and } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { claimRow } from "../lib/job-runtime";
 
 export const processAgentScheduler = withCronInstrumentation(
   "agent-scheduler",
@@ -26,10 +27,18 @@ export const processAgentScheduler = withCronInstrumentation(
 
     for (const agent of dueAgents) {
       try {
-        await db
-          .update(agentRegistration)
-          .set({ status: "running", updatedAt: new Date() })
-          .where(eq(agentRegistration.id, agent.id));
+        // [WP9 · S10-09] Guarded claim. The previous `UPDATE … SET
+        // status='running'` had no `AND status='idle'` and evaluated no
+        // RETURNING, so two workers — or one external caller retrying after
+        // a gateway timeout — both "claimed" the same agent and both bumped
+        // its run counter.
+        const claimed = await claimRow({
+          table: "agent_registration",
+          id: agent.id,
+          expectedStatus: "idle",
+          nextStatus: "running",
+        });
+        if (!claimed) continue;
 
         const config = agent.config as Record<string, unknown>;
         const freq = (config.scanFrequencyMinutes as number) ?? 60;

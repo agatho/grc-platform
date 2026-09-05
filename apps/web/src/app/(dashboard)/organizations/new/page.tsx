@@ -11,7 +11,6 @@ import {
   X,
   Building2,
   MapPin,
-  Phone,
   Briefcase,
   Shield,
   Users,

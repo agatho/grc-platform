@@ -1,0 +1,30 @@
+{
+  "_comment": "#S13-02 Untergrenzen der DB-Integritäts-Gates. Aus einem echten Migrationslauf von Null gemessen, nicht geschätzt. Neu setzen: DATABASE_URL=… node scripts/verify-db-integrity.mjs --update-baseline. Eine LOCKERUNG (Untergrenze sinkt, oder eine der beiden 'darf nicht wachsen'-Kennzahlen steigt) verlangt zusätzlich --reason und wird in _history festgehalten (OP-064-Muster).",
+  "_updatedAt": "2026-09-03",
+  "_tolerancePercent": 2,
+  "counts": {
+    "tables": 606,
+    "rlsPolicies": 2639,
+    "rlsEnabledTables": 559,
+    "rlsForcedTables": 558,
+    "auditTriggers": 291,
+    "appendOnlyRules": 9,
+    "tombstoneGuards": 1,
+    "tamperGuardsNotEnabledAlways": 0,
+    "securityDefinerFns": 54
+  },
+  "_history": [
+    {
+      "date": "2026-09-03",
+      "changed": [
+        "auditTriggers: 283 → 291",
+        "rlsEnabledTables: 547 → 559",
+        "rlsForcedTables: 547 → 558",
+        "rlsPolicies: 2624 → 2639",
+        "securityDefinerFns: 45 → 54  ← LOCKERUNG",
+        "tables: 594 → 606"
+      ],
+      "reason": "Welle 4b-5: securityDefinerFns 45 -> 54. Die neun neuen Funktionen sind einzeln geprueft und stammen aus vier Migrationen, die alle NACH der Baselinemessung (f11c5895, 2026-09-01) hinzukamen: 0440 auth_user_is_org_member (Policy-Helfer: muss user_organization_role quer zur aktiven Org lesen, sonst ist die Frage \"in welchen Orgs bin ich Mitglied\" nicht beantwortbar); 0455 auth_lookup_user_by_email, auth_sso_touch_login, auth_sso_provision_user (Anmeldepfad OHNE Request-Kontext; sie ERSETZEN die kontextlose Disjunktion der user-Policy, die vorher das gesamte Nutzerverzeichnis aller Mandanten auf jeder kontextlosen Verbindung sichtbar machte — netto eine Verschaerfung); 0457 auth_invalidate_user_sessions (muss die fremde user-Zeile noch nach dem Rollenentzug erreichen; prueft die gemeinsame Organisation selbst); 0477 arctos_rls_unprotected, arctos_rls_guard_settle, arctos_rls_guard_on_alter, arctos_rls_guard_on_drop_policy (RLS-Dauerschutz: Event- und Constraint-Trigger, die in eine deny-all-Tabelle schreiben). Alle neun sind nach dem Muster S01-13 gehaertet: fixierter search_path (pg_catalog, public), REVOKE ALL ... FROM PUBLIC, gezielter GRANT; die vier Waechter aus 0477 sind nicht einmal an grc_app erteilt. Nachgemessen gegen pg_proc.proconfig und proacl am 2026-09-03. Die uebrigen Kennzahlen steigen (Verschaerfung): tables 594->606, rlsPolicies 2624->2639, rlsEnabledTables 547->559, rlsForcedTables 547->558, auditTriggers 283->291."
+    }
+  ]
+}

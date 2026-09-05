@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface ObligationRow {
   id: string;
@@ -62,12 +63,13 @@ function ObligationsQueueInner() {
     setLoading(true);
     try {
       // Fetch all contracts, then obligations for each
-      const cRes = await fetch(
-        "/api/v1/contracts?limit=200&status=active,renewal",
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422, und `if (!cRes.ok)
+      // return;` liess `loading` im `finally` auf false laufen — die Seite zeigte
+      // ihren Leerzustand über einer vollen Pflichtenliste.
+      const contracts = await fetchAllPages<{ id: string; title: string }>(
+        "/api/v1/contracts",
+        { params: { status: "active,renewal" } },
       );
-      if (!cRes.ok) return;
-      const cJson = await cRes.json();
-      const contracts = cJson.data ?? [];
 
       const allObls: ObligationRow[] = [];
       for (const c of contracts) {

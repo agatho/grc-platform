@@ -13,7 +13,7 @@ import {
   cciConfiguration,
   complianceCultureSnapshot,
 } from "@grc/db";
-import { eq, and, sql, isNull, gte, lt, desc } from "drizzle-orm";
+import { eq, and, sql, isNull, gte, lt } from "drizzle-orm";
 import type {
   CCIFactorWeights,
   CCIRawMetrics,
@@ -47,7 +47,7 @@ export async function getOrgWeights(orgId: string): Promise<CCIFactorWeights> {
 export async function calcTaskCompliance(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<CCIRawMetricDetail> {
   const { start, end } = getPeriodRange(period);
 
@@ -78,7 +78,7 @@ export async function calcTaskCompliance(
 export async function calcPolicyAckRate(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<CCIRawMetricDetail> {
   const { start, end } = getPeriodRange(period);
 
@@ -113,7 +113,7 @@ export async function calcPolicyAckRate(
 export async function calcTrainingCompletion(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<CCIRawMetricDetail> {
   const { start, end } = getPeriodRange(period);
 
@@ -149,7 +149,7 @@ export async function calcTrainingCompletion(
 export async function calcIncidentResponseData(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<{ rawMetric: CCIRawMetricDetail; avgHours: number }> {
   const { start, end } = getPeriodRange(period);
 
@@ -184,7 +184,7 @@ export async function calcIncidentResponseData(
 export async function calcFindingClosureRate(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<CCIRawMetricDetail> {
   const { start, end } = getPeriodRange(period);
 
@@ -215,7 +215,7 @@ export async function calcFindingClosureRate(
 export async function calcRCSAParticipation(
   orgId: string,
   period: string,
-  orgEntityId?: string,
+  _orgEntityId?: string,
 ): Promise<CCIRawMetricDetail> {
   const { start, end } = getPeriodRange(period);
 

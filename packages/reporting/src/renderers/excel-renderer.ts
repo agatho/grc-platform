@@ -46,7 +46,9 @@ export async function renderExcel(
         const ws = wb.addWorksheet(sheetName);
 
         // Determine columns from first row keys
-        const keys = Object.keys(tableData.rows[0]);
+        // [OP-065] `rows.length > 0` steht in der Zeile darüber; `?? {}`
+        // schreibt das auf, ohne einen erreichbaren Zweig hinzuzufügen.
+        const keys = Object.keys(tableData.rows[0] ?? {});
         ws.columns = keys.map((key, i) => ({
           header: tableData.headers[i] ?? key,
           key,

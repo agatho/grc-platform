@@ -72,6 +72,10 @@ async function extractPdf(buffer: Buffer): Promise<string | null> {
     // Server-side hardening: no fetch from worker, no @font-face
     // injection (there is no DOM anyway). Note: `isEvalSupported` was
     // removed in pdfjs-dist 5.x — eval'd PS functions no longer exist.
+    // #S08-04 (WP10): pinned to pdfjs-dist >= 6.2.108 — that release closes
+    // GHSA-hq66-cqwq-w95j (arbitrary JS execution when opening a crafted
+    // PDF). This path processes untrusted user uploads from the DMS, so the
+    // hardening flags below are defence in depth, not the primary control.
     useWorkerFetch: false,
     disableFontFace: true,
     // Silence pdf.js warnings on slightly malformed uploads.
@@ -94,7 +98,9 @@ async function extractPdf(buffer: Buffer): Promise<string | null> {
     }
     return parts.join("\n");
   } finally {
-    await doc.destroy();
+    // pdfjs-dist 6 removed PDFDocumentProxy.destroy(); the loading task owns
+    // the transport/worker teardown now (#S08-04 upgrade 5.7 -> 6.3).
+    await task.destroy();
   }
 }
 

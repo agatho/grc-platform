@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+  id="Definitions_procurement" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_procurement" isExecutable="false">
+    <bpmn:startEvent id="Start_p" name="Bedarf erkannt"><bpmn:outgoing>Flow_p1</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:userTask id="Task_pr" name="Purchase Request erstellen"><bpmn:incoming>Flow_p1</bpmn:incoming><bpmn:outgoing>Flow_p2</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_approve_pr" name="PR genehmigen"><bpmn:incoming>Flow_p2</bpmn:incoming><bpmn:outgoing>Flow_p3</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_rfq" name="Angebot einholen"><bpmn:incoming>Flow_p3</bpmn:incoming><bpmn:outgoing>Flow_p4</bpmn:outgoing></bpmn:userTask>
+    <bpmn:userTask id="Task_po" name="Bestellung aufgeben"><bpmn:incoming>Flow_p4</bpmn:incoming><bpmn:outgoing>Flow_p5</bpmn:outgoing></bpmn:userTask>
+    <bpmn:endEvent id="End_p" name="Bestellung abgeschlossen"><bpmn:incoming>Flow_p5</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_p1" sourceRef="Start_p" targetRef="Task_pr"/>
+    <bpmn:sequenceFlow id="Flow_p2" sourceRef="Task_pr" targetRef="Task_approve_pr"/>
+    <bpmn:sequenceFlow id="Flow_p3" sourceRef="Task_approve_pr" targetRef="Task_rfq"/>
+    <bpmn:sequenceFlow id="Flow_p4" sourceRef="Task_rfq" targetRef="Task_po"/>
+    <bpmn:sequenceFlow id="Flow_p5" sourceRef="Task_po" targetRef="End_p"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_p">
+    <bpmndi:BPMNPlane id="BPMNPlane_p" bpmnElement="Process_procurement">
+      <bpmndi:BPMNShape id="Start_p_di" bpmnElement="Start_p"><dc:Bounds x="152" y="82" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_pr_di" bpmnElement="Task_pr"><dc:Bounds x="240" y="60" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_approve_pr_di" bpmnElement="Task_approve_pr"><dc:Bounds x="420" y="60" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_rfq_di" bpmnElement="Task_rfq"><dc:Bounds x="600" y="60" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_po_di" bpmnElement="Task_po"><dc:Bounds x="780" y="60" width="120" height="80"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_p_di" bpmnElement="End_p"><dc:Bounds x="962" y="82" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_p1_di" bpmnElement="Flow_p1"><di:waypoint x="188" y="100"/><di:waypoint x="240" y="100"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_p2_di" bpmnElement="Flow_p2"><di:waypoint x="360" y="100"/><di:waypoint x="420" y="100"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_p3_di" bpmnElement="Flow_p3"><di:waypoint x="540" y="100"/><di:waypoint x="600" y="100"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_p4_di" bpmnElement="Flow_p4"><di:waypoint x="720" y="100"/><di:waypoint x="780" y="100"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_p5_di" bpmnElement="Flow_p5"><di:waypoint x="900" y="100"/><di:waypoint x="962" y="100"/></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

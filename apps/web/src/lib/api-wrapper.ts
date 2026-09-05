@@ -32,7 +32,14 @@
 // status, treatments) can keep theirs — wrapping them too is harmless,
 // the inner catch wins.
 
-import { problem, getRequestId } from "@/lib/api-errors";
+import {
+  problem,
+  getRequestId,
+  // [WP12 · S14-16] legacy `{ error: … }` → RFC 7807 on the way out
+  normaliseErrorResponse,
+  // [Welle 4b-7 · OP-079] Treibertext gehört ins Log, nicht in die Antwort
+  sanitiseDbError,
+} from "@/lib/api-errors";
 import { log } from "@/lib/logger";
 import { PaginationError } from "@/lib/api";
 
@@ -43,6 +50,180 @@ type RouteHandler<TCtx = unknown> = (
   req: Request,
   ctx: TCtx,
 ) => Promise<Response> | Response;
+
+/**
+ * The shape of what `withErrorHandler` HANDS BACK.
+ *
+ * [E2E-TRIAGE-2026-09-02] Deliberately different from `RouteHandler` in one
+ * respect: `ctx` is optional at the CALL site. Next always passes it — the
+ * comment above says as much, `(req, undefined)` for a flat route — but the
+ * ~90 unit tests under `src/__tests__/api/` invoke flat handlers directly as
+ * `GET(req)`, which is exactly how Next invokes them minus an argument
+ * TypeScript can see. Requiring it here would have turned every one of those
+ * call sites into a TS2554 the moment a route adopted the wrapper, which is a
+ * tax on the fix and not a property worth enforcing.
+ *
+ * The handler side keeps `ctx: TCtx` REQUIRED, so a dynamic route that
+ * destructures `{ params }` is still type-checked against what it declares.
+ */
+type WrappedRouteHandler<TCtx = unknown> = (
+  req: Request,
+  ctx?: TCtx,
+) => Promise<Response>;
+
+/**
+ * The mutable store `requestDbStorage.run(...)` is seeded with. Structurally
+ * identical to `RequestDbStore` in `packages/db/src/request-context.ts`; typed
+ * loosely here for the same reason the module is imported dynamically — the
+ * ~90 unit tests that `vi.mock("@grc/db")` must not have to provide the type.
+ */
+interface RequestStore {
+  db: unknown;
+  reserved: unknown;
+  orgId: string;
+  userId: string;
+  released: boolean;
+}
+
+/**
+ * [E2E-TRIAGE-2026-09-02 · C-07, main path] Give the reserved, org-pinned
+ * connection back when the RESPONSE is finished — not when the handler returns.
+ *
+ * What was wrong: `establishRequestScopedContext` (apps/web/src/lib/api.ts)
+ * reserves one connection per authenticated request out of `requestClient`
+ * (`max: 25`) and hands the release to Next's `after()` hook, which does not
+ * run when the client disconnects mid-flight. The first triage measured 22 of
+ * 25 connections stuck on the `set_config(…)` statement eight hours after an
+ * E2E run; measured again on this instance before this change: 25 of 25 idle
+ * and holding, and every authenticated request hanging on `reserve()` forever.
+ * A production instance stops serving logged-in users after ~25 aborted
+ * requests and does not recover without a restart.
+ *
+ * Why not a plain `finally` around the handler: a route that returns a stream
+ * it has not produced yet — the ZIP of `/audit-log/archive`, the report PDFs,
+ * the CSV exports — reads the database WHILE the body is being consumed. A
+ * `finally` would pull its connection out from under it.
+ *
+ * So the release is attached to the RESPONSE instead, on three triggers:
+ *   * no body (204, or a `Response` with a null body) → release at once;
+ *   * a body → wrap it in a stream that releases when the source ends, errors,
+ *     or is cancelled. `pull`-driven, so backpressure is unchanged;
+ *   * the request's abort signal. This is the one that matters in practice and
+ *     the one a body hook alone does NOT cover: when the client disconnects
+ *     before the response is written, the runtime may simply drop the body
+ *     object without ever reading or cancelling it, so neither `pull` nor
+ *     `cancel` ever fires — and `after()` does not run either. Measured on this
+ *     instance during the E2E run: 25 of 28 `grc_app` connections idle for six
+ *     minutes on the widget queries of pages Playwright had already navigated
+ *     away from, i.e. exactly the aborted-request case.
+ *
+ * The abort handler CANCELS THE READER FIRST and only releases afterwards.
+ * A streaming route (`/audit-log/archive`, the report PDFs) is still producing
+ * rows from that connection while the body is consumed; cancelling propagates
+ * to its source and stops it, so the connection is never handed back to the
+ * pool while a generator could still issue a query on it. Releasing straight
+ * from the abort handler would risk exactly that.
+ *
+ * The listener is attached only AFTER the handler has returned, so an abort
+ * mid-handler can never pull the connection out from under the handler itself.
+ *
+ * `releaseRequestContext` is idempotent, so the `after()` hook staying in place
+ * as a further safety net costs nothing. Routes with no reserved connection
+ * (unit tests, unauthenticated paths) are returned untouched.
+ */
+function releaseReservedWhenSettled(
+  store: RequestStore,
+  req: Request,
+  res: Response,
+  release?: (s: RequestStore) => Promise<void>,
+): Response {
+  if (!release || !store.reserved || store.released) return res;
+
+  let done = false;
+  const releaseOnce = () => {
+    if (done) return;
+    done = true;
+    void release(store).catch(() => {
+      // Nothing useful to do here: the request is already answered, and the
+      // connection is scrubbed-or-lost either way. Never let this reject into
+      // an unhandled rejection.
+    });
+  };
+
+  /** Attach `releaseOnce` to the client-disconnect signal, if there is one. */
+  const onAbort = (cancelSource?: (reason: unknown) => Promise<void>) => {
+    const signal = req.signal as AbortSignal | undefined;
+    if (!signal) return;
+    const handler = () => {
+      if (!cancelSource) {
+        releaseOnce();
+        return;
+      }
+      void cancelSource(new Error("client disconnected"))
+        .catch(() => {})
+        .then(releaseOnce);
+    };
+    if (signal.aborted) {
+      handler();
+      return;
+    }
+    try {
+      signal.addEventListener("abort", handler, { once: true });
+    } catch {
+      // Not an EventTarget in this runtime — the body hooks still apply.
+    }
+  };
+
+  if (!res.body) {
+    releaseOnce();
+    return res;
+  }
+
+  const reader = res.body.getReader();
+  onAbort((reason) => reader.cancel(reason));
+
+  const body = new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      try {
+        const { done: finished, value } = await reader.read();
+        if (finished) {
+          controller.close();
+          releaseOnce();
+          return;
+        }
+        controller.enqueue(value);
+      } catch (err) {
+        releaseOnce();
+        controller.error(err);
+      }
+    },
+    cancel(reason) {
+      releaseOnce();
+      return reader.cancel(reason);
+    },
+  });
+
+  return new Response(body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers,
+  });
+}
+
+/**
+ * True for anything that carries an HTTP status. Deliberately structural
+ * rather than `instanceof Response`: `NextResponse`, the undici `Response` of
+ * the Node runtime and the `Response` a test constructs in jsdom are three
+ * different constructors, and an `instanceof` check that silently fails for
+ * one of them would send that whole realm down the error path.
+ */
+function isResponseLike(value: unknown): value is Response {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Response).status === "number"
+  );
+}
 
 interface PgError {
   code?: string;
@@ -83,7 +264,7 @@ const TIMEOUT_CODES = new Set([
 export function withErrorHandler<TCtx = unknown>(
   handler: RouteHandler<TCtx>,
   routeLabel?: string,
-): RouteHandler<TCtx> {
+): WrappedRouteHandler<TCtx> {
   return async (req, ctx) => {
     // #SEC-F01b-RUN — Establish the request-scoped RLS context frame HERE, once,
     // around every wrapped handler. We seed the AsyncLocalStorage with a MUTABLE
@@ -112,13 +293,17 @@ export function withErrorHandler<TCtx = unknown>(
     let requestDbStorage:
       { run: <T>(store: unknown, cb: () => T) => T } | undefined;
     let baseDb: unknown;
+    let releaseRequestContext:
+      ((store: RequestStore) => Promise<void>) | undefined;
     try {
       const dbmod = (await import("@grc/db")) as {
         requestDbStorage?: { run: <T>(store: unknown, cb: () => T) => T };
         baseDb?: unknown;
+        releaseRequestContext?: (store: RequestStore) => Promise<void>;
       };
       requestDbStorage = dbmod.requestDbStorage;
       baseDb = dbmod.baseDb;
+      releaseRequestContext = dbmod.releaseRequestContext;
     } catch {
       // @grc/db is mocked without requestDbStorage/baseDb (Vitest's strict mock
       // guard throws on the missing named export) — run without the ALS frame,
@@ -132,22 +317,72 @@ export function withErrorHandler<TCtx = unknown>(
     ) {
       return runHandler(req, ctx);
     }
-    const initialStore = {
+    const initialStore: RequestStore = {
       db: baseDb,
       reserved: null,
       orgId: "",
       userId: "",
       released: true,
     };
-    return requestDbStorage.run(initialStore, () => runHandler(req, ctx));
+    const res = await requestDbStorage.run(initialStore, () =>
+      runHandler(req, ctx),
+    );
+    return releaseReservedWhenSettled(
+      initialStore,
+      req,
+      res,
+      releaseRequestContext,
+    );
   };
 
-  async function runHandler(req: Request, ctx: TCtx): Promise<Response> {
+  async function runHandler(req: Request, ctx?: TCtx): Promise<Response> {
     const requestId = getRequestId(req);
     const label = routeLabel ?? `${req.method} ${new URL(req.url).pathname}`;
 
     try {
-      return await handler(req, ctx);
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-16] Normalise the RETURNED
+      // error responses too, not just the throw path below.
+      //
+      // ADR-021 mandates RFC 7807 for "alle API-Errors" and `docs/STATUS.md`
+      // reported it as done; the measurement was 9 of 1.355 routes. The
+      // wrapper produced correct problem+json — but only for uncaught
+      // exceptions, so the regular 401/403/404/409/422 answers of the 143
+      // wrapped routes stayed `{ error: "…" }` in `application/json`.
+      //
+      // `normaliseErrorResponse` rewrites those on the way out and keeps every
+      // original field as an RFC 7807 extension member, so no route body has
+      // to change and no client that reads `json.error` breaks.
+      const res = await handler(req, ctx as TCtx);
+
+      // Two guards, both learned the hard way (WP11 measured 41 red tests
+      // after the first version of this call):
+      //
+      //  1. The success path never enters the normaliser at all. Deciding
+      //     "is this an error?" belongs HERE, before the response is handed
+      //     to a formatter — `normaliseErrorResponse` also returns early on
+      //     `status < 400`, but that made a 201 depend on the correctness of
+      //     an error-formatting helper, and that dependency is the defect,
+      //     not the early return.
+      //  2. If normalisation fails for any reason, the ORIGINAL response is
+      //     returned. Changing the content type of an error body is
+      //     cosmetic; turning a route's deliberate 422 into a 500 because the
+      //     cosmetics threw is a functional regression. The failure is logged
+      //     so it cannot hide.
+      if (!isResponseLike(res) || res.status < 400) return res;
+      try {
+        return await normaliseErrorResponse(res, {
+          instance: new URL(req.url).pathname,
+          requestId,
+        });
+      } catch (normaliseErr) {
+        log.warn("problem+json normalisation failed; passing through", {
+          route: label,
+          requestId,
+          status: res.status,
+          error: (normaliseErr as Error)?.message,
+        });
+        return res;
+      }
     } catch (err) {
       const e = err as PgError;
       const logger = log.withContext({
@@ -241,23 +476,41 @@ export function withErrorHandler<TCtx = unknown>(
         });
       }
 
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Beide Zweige gaben den
+      // Treibertext WÖRTLICH an den Aufrufer zurück — `detail: e.detail ??
+      // e.message`, und denselben Text noch einmal in `errors[0].message`.
+      // Dreissig Zeilen tiefer steht seit WAVE11 die Gegenregel für den
+      // 500er ("NEVER returned in the response body"); sie galt für den
+      // unbekannten Fehler und ausgerechnet nicht für die beiden Klassen,
+      // in denen Postgres die Nutzdaten mitschickt. Gemessen am 2026-09-04:
+      // `23502` liefert in `detail` die VOLLSTÄNDIGE Zeile ("Failing row
+      // contains (…)"), `23505` auf der globalen Eindeutigkeit
+      // `user_email_unique` die E-Mail-Adresse aus einer FREMDEN
+      // Organisation. `sanitiseDbError` behält die Spalte und die Art des
+      // Verstosses und lässt Werte, Constraint- und Relationsnamen weg; der
+      // volle Text steht unverändert im Log unter derselben `requestId`.
       if (e.code && CONSTRAINT_VIOLATION_CODES.has(e.code)) {
-        logger.warn("constraint violation", { message: e.message });
+        logger.warn("constraint violation", {
+          message: e.message,
+          detail: e.detail,
+        });
+        const safe = sanitiseDbError(e);
         return problem.validation({
           requestId,
           instance: req.url,
-          detail: e.detail ?? e.message ?? "Database constraint violated",
-          errors: [{ path: "", message: e.detail ?? e.message ?? e.code }],
+          detail: safe.detail,
+          errors: safe.errors,
         });
       }
 
       if (e.code && INVALID_INPUT_CODES.has(e.code)) {
-        logger.warn("invalid input", { message: e.message });
+        logger.warn("invalid input", { message: e.message, detail: e.detail });
+        const safe = sanitiseDbError(e);
         return problem.validation({
           requestId,
           instance: req.url,
-          detail: e.message ?? "Invalid input format",
-          errors: [{ path: "", message: e.message ?? e.code }],
+          detail: safe.detail,
+          errors: safe.errors,
         });
       }
 

@@ -2,9 +2,13 @@ import { db, eamContext } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/eam/contexts/:id/promote — Promote context to default
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -48,4 +52,4 @@ export async function POST(req: Request) {
     .returning();
 
   return Response.json({ data: promoted[0] });
-}
+});

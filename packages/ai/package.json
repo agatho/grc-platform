@@ -1,13 +1,26 @@
 {
   "name": "@grc/ai",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
+  "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "test": "node tests/require-db.mjs && vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.112.4",
     "@google/generative-ai": "^0.24.1",
-    "openai": "^6.48.0"
+    "@grc/db": "^0.1.0",
+    "@grc/shared": "^0.1.0",
+    "drizzle-orm": "^0.45.1",
+    "openai": "^6.48.0",
+    "zod": "^3.24"
   },
   "devDependencies": {
-    "typescript": "^5.7"
+    "typescript": "^5.7",
+    "vitest": "^4.1.11",
+    "@vitest/coverage-v8": "^4.1.10"
   }
 }

@@ -9,7 +9,6 @@ import {
   ShieldAlert,
   TrendingUp,
   Zap,
-  Plus,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -99,7 +98,7 @@ export default function ClimateScenarioPage() {
 }
 
 function ClimateScenarioInner() {
-  const t = useTranslations();
+  const _t = useTranslations();
   const [data, setData] = useState<ClimateScenario[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "physical" | "transition">(
@@ -132,7 +131,7 @@ function ClimateScenarioInner() {
   const highRisk = data.filter(
     (s) => riskScore(s.likelihood_score, s.impact_score)! >= 16,
   );
-  const assessed = data.filter(
+  const _assessed = data.filter(
     (s) => s.status === "assessed" || s.status === "mitigated",
   );
 

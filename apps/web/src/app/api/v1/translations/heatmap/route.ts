@@ -1,28 +1,20 @@
 // Sprint 21: Translation Heatmap API
 // GET /api/v1/translations/heatmap — returns completion % per entity type per language
 
-import { db, translationStatus, organization } from "@grc/db";
-import {
-  TRANSLATABLE_FIELDS,
-  ENTITY_TABLE_MAP,
-  SUPPORTED_LANGUAGES,
-} from "@grc/shared";
-import { eq, and, sql } from "drizzle-orm";
+import { db } from "@grc/db";
+import { TRANSLATABLE_FIELDS, ENTITY_TABLE_MAP } from "@grc/shared";
+import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
   // Get org active languages
-  const [org] = await db
-    .select({
-      activeLanguages: organization.settings,
-      defaultLanguage: sql<string>`COALESCE(default_language, 'de')`,
-    })
-    .from(organization)
-    .where(eq(organization.id, ctx.orgId));
-
   // Parse active languages from the org record
   let activeLanguages: string[];
   try {
@@ -99,4 +91,4 @@ export async function GET(req: Request) {
     data: heatmap,
     activeLanguages,
   });
-}
+});

@@ -8,7 +8,7 @@ import { Loader2, RefreshCcw, Grid3X3, AlertTriangle } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Types

@@ -15,6 +15,7 @@ import {
   Info,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface Catalog {
   id: string;
@@ -174,12 +175,15 @@ export default function CrossFrameworkMappingsPage() {
 
     (async () => {
       try {
-        const params = new URLSearchParams({ limit: "300" });
-        if (entrySearch) params.set("search", entrySearch);
-        const res = await fetch(`${base}?${params}`);
-        const json = await res.json();
-        setEntries(json.data ?? []);
-      } catch {
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=300` ⇒ 422, und
+        // `catch { setEntries([]) }` hat den Fehler in genau die Aussage
+        // übersetzt, die er nicht ist. Die Mapping-Seite blieb dadurch
+        // dauerhaft ohne Quelleinträge.
+        const params: Record<string, string> = {};
+        if (entrySearch) params.search = entrySearch;
+        setEntries(await fetchAllPages<CatalogEntry>(base, { params }));
+      } catch (err) {
+        console.error("catalogs/mappings: Einträge nicht geladen", err);
         setEntries([]);
       } finally {
         setLoadingEntries(false);

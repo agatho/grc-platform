@@ -2,15 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Store,
-  Search,
-  Puzzle,
-  Download,
-  CheckCircle2,
-  Loader2,
-  Star,
-} from "lucide-react";
+import { Search, Puzzle, Download, CheckCircle2, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

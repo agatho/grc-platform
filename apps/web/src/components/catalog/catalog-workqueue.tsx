@@ -11,7 +11,6 @@ import {
   Plus,
   CheckCircle2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface CatalogEntry {
@@ -46,10 +45,10 @@ export function CatalogWorkqueue({
   createRoute,
   createParam = "catalogEntryId",
 }: Props) {
-  const t = useTranslations("catalogs");
+  const _t = useTranslations("catalogs");
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
   const [catalogs, setCatalogs] = useState<CatalogInfo[]>([]);
-  const [totalEntries, setTotalEntries] = useState(0);
+  const [_totalEntries, setTotalEntries] = useState(0);
   const [unassignedCount, setUnassignedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -161,7 +160,7 @@ export function CatalogWorkqueue({
           {/* Entry list */}
           {loading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 size={20} className="animate-spin text-blue-400" />
+              <Loader2 size={20} className="animate-spin text-blue-600" />
             </div>
           ) : entries.length === 0 ? (
             <p className="text-sm text-blue-700 py-4 text-center">

@@ -1,45 +1,28 @@
 #!/usr/bin/env bash
-# Seed demo data only (assumes setup.sh has already run)
+# Seed demo data only (assumes setup.sh has already run).
+#
+# [E2E-TRIAGE-2026-09-02] This used to be a psql loop with three independent
+# defects, each enough on its own to leave the database empty while the script
+# printed "Done.":
+#   * it listed 11 of the 16 seed_demo_*.sql files and omitted
+#     seed_demo_00_platform.sql — the file whose own header says it must run
+#     FIRST because it creates the organisations every other demo file
+#     references — plus _11_extended, _12_ai_act, _13_programmes and
+#     _14_july_features;
+#   * every psql call ended in `>/dev/null 2>&1 || true`, so the resulting
+#     foreign-key errors could not be reported even in principle;
+#   * it read DB_HOST/DB_PORT/DB_USER/DB_PASS/DB_NAME, which this repository's
+#     .env does not define (it defines DATABASE_URL), and defaulted to
+#     localhost:5432 while the dev database listens on 5433.
+#
+# Ordering, the complete file list, the production guard and real error
+# reporting now live in packages/db/src/seed-demo.ts, which connects via
+# DATABASE_URL like every other entry point in packages/db and does not need
+# psql on PATH (Windows, CI containers).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPT_DIR")"
-DB_DIR="$ROOT_DIR/packages/db"
 
-set -a; source "$ROOT_DIR/.env" 2>/dev/null || true; set +a
-
-DB_HOST="${DB_HOST:-localhost}"
-DB_PORT="${DB_PORT:-5432}"
-DB_USER="${DB_USER:-grc}"
-DB_PASS="${DB_PASS:-grc_dev_password}"
-DB_NAME="${DB_NAME:-grc_platform}"
-
-# #SEC-F04: same guard as scripts/docker-entrypoint.sh. This helper seeds
-# accounts with KNOWN passwords — never let it run against a production
-# instance unless explicitly overridden. Dev/CI (NODE_ENV != production,
-# usually unset) is unaffected.
-if [ "${NODE_ENV:-}" = "production" ] && [ "${ALLOW_DEMO_SEED_IN_PROD:-}" != "true" ]; then
-  echo "WARNING: refusing to seed demo/test accounts in production; set ALLOW_DEMO_SEED_IN_PROD=true to override." >&2
-  exit 0
-fi
-
-echo "Seeding demo data..."
-
-for f in \
-  "$DB_DIR/sql/seed_demo_data.sql" \
-  "$DB_DIR/sql/seed_demo_09_processes.sql" \
-  "$DB_DIR/sql/seed_demo_01_assets_isms.sql" \
-  "$DB_DIR/sql/seed_demo_08_documents.sql" \
-  "$DB_DIR/sql/seed_demo_04_tprm_contracts.sql" \
-  "$DB_DIR/sql/seed_demo_02_dpms.sql" \
-  "$DB_DIR/sql/seed_demo_03_audit.sql" \
-  "$DB_DIR/sql/seed_demo_05_bcms.sql" \
-  "$DB_DIR/sql/seed_demo_06_kris.sql" \
-  "$DB_DIR/sql/seed_demo_10_control_tests.sql" \
-  "$DB_DIR/sql/seed_demo_07_tasks_findings.sql"; do
-  [ -f "$f" ] || continue
-  echo "  $(basename $f)"
-  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
-done
-
-echo "Done."
+cd "$ROOT_DIR/packages/db"
+exec npm run --silent db:seed:demo

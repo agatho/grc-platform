@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Loader2,
   ArrowLeft,
-  RefreshCcw,
   Sparkles,
   Plus,
   CheckCircle2,
@@ -43,6 +42,8 @@ import type {
 } from "@grc/shared";
 import { checklistResultToFindingSeverity } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface AuditDetail extends Audit {
   leadAuditorName?: string | null;
@@ -67,6 +68,11 @@ export default function ExecutionDetailPage() {
 type TabKey = "overview" | "checklists" | "activities" | "findings" | "report";
 
 function ExecutionDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const params = useParams<{ id: string }>();
   const [audit, setAudit] = useState<AuditDetail | null>(null);
@@ -327,7 +333,7 @@ function ExecutionDetailInner() {
           <DialogHeader>
             <DialogTitle>
               Übergang zu „
-              {transitionTo ? t(`auditStatus.${transitionTo}`) : ""}" —
+              {transitionTo ? t(`auditStatus.${transitionTo}`) : ""}&quot; —
               Audit-Konklusion erforderlich
             </DialogTitle>
           </DialogHeader>
@@ -377,8 +383,14 @@ function ExecutionDetailInner() {
               className="space-y-3"
             >
               <div>
-                <label className="text-sm font-medium">Audit-Konklusion</label>
+                <label
+                  htmlFor={`${a11yId}-audit-konklusion`}
+                  className="text-sm font-medium"
+                >
+                  Audit-Konklusion
+                </label>
                 <select
+                  id={`${a11yId}-audit-konklusion`}
                   name="conclusion"
                   required
                   defaultValue={audit.conclusion ?? ""}
@@ -555,6 +567,10 @@ function AuditEditDialog({
   audit: AuditDetail;
   onSaved: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const [saving, setSaving] = useState(false);
   const [auditors, setAuditors] = useState<
@@ -684,8 +700,14 @@ function AuditEditDialog({
               Auditor-Team (ISO 19011 § 5.4.4)
             </legend>
             <div>
-              <label className="text-sm font-medium">Lead-Auditor</label>
+              <label
+                htmlFor={`${a11yId}-lead-auditor`}
+                className="text-sm font-medium"
+              >
+                Lead-Auditor
+              </label>
               <select
+                id={`${a11yId}-lead-auditor`}
                 name="leadAuditorId"
                 defaultValue={audit.leadAuditorId ?? ""}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -701,8 +723,21 @@ function AuditEditDialog({
             </div>
             {auditors.length > 0 && (
               <div>
-                <label className="text-sm font-medium">Audit-Team</label>
-                <div className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1">
+                {/* [WP12 · S14-09] A group of checkboxes needs a GROUP name,
+                    not a <label> pointing at nothing. role="group" +
+                    aria-labelledby conveys "these checkboxes belong together
+                    and are called Audit-Team". */}
+                <span
+                  id={`${a11yId}-audit-team`}
+                  className="text-sm font-medium"
+                >
+                  Audit-Team
+                </span>
+                <div
+                  role="group"
+                  aria-labelledby={`${a11yId}-audit-team`}
+                  className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1"
+                >
                   {auditors.map((u) => (
                     <label
                       key={u.id}
@@ -735,8 +770,14 @@ function AuditEditDialog({
               Audit-Umfang (ISO 19011 § 5.4)
             </legend>
             <div>
-              <label className="text-sm font-medium">Scope-Beschreibung</label>
+              <label
+                htmlFor={`${a11yId}-scope-beschreibung`}
+                className="text-sm font-medium"
+              >
+                Scope-Beschreibung
+              </label>
               <textarea
+                id={`${a11yId}-scope-beschreibung`}
                 name="scopeDescription"
                 rows={2}
                 defaultValue={audit.scopeDescription ?? ""}
@@ -786,8 +827,8 @@ function AuditEditDialog({
           <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
             <strong>Hinweis:</strong> Tatsächliche Start-/Endtermine und die
             Audit-Konklusion werden beim Statuswechsel gesetzt (Buttons oben
-            rechts: „Weiter zu…"). Findings + Auditor-Zuweisungen pflegst du in
-            den jeweiligen Tabs.
+            rechts: „Weiter zu…&quot;). Findings + Auditor-Zuweisungen pflegst
+            du in den jeweiligen Tabs.
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
@@ -920,9 +961,10 @@ function MethodEntriesEditor({
       {/* Entries */}
       {value.length === 0 && (
         <div className="text-xs text-gray-400 border border-dashed border-gray-200 rounded-md p-4 text-center">
-          Noch keine Nachweise erfasst. Unten „+ Nachweis hinzufügen" klicken —
-          pro Methode erscheint ein eigenes Mini-Formular mit den passenden
-          Feldern (z. B. Interview → Person, Stichprobe → Population + IDs).
+          Noch keine Nachweise erfasst. Unten „+ Nachweis hinzufügen&quot;
+          klicken — pro Methode erscheint ein eigenes Mini-Formular mit den
+          passenden Feldern (z. B. Interview → Person, Stichprobe → Population +
+          IDs).
         </div>
       )}
       {value.map((entry, idx) => (
@@ -995,6 +1037,10 @@ function MethodEntryCard({
   onChange: (patch: Partial<EditableMethodEntry>) => void;
   onRemove: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
@@ -1023,8 +1069,14 @@ function MethodEntryCard({
       {/* Gemeinsame Felder: Datum + Notizen */}
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-1">
-          <label className="text-xs font-medium text-gray-600">Datum</label>
+          <label
+            htmlFor={`${a11yId}-datum`}
+            className="text-xs font-medium text-gray-600"
+          >
+            Datum
+          </label>
           <Input
+            id={`${a11yId}-datum`}
             type="date"
             value={entry.date ?? ""}
             onChange={(e) => onChange({ date: e.target.value || undefined })}
@@ -1032,10 +1084,14 @@ function MethodEntryCard({
           />
         </div>
         <div className="col-span-2">
-          <label className="text-xs font-medium text-gray-600">
+          <label
+            htmlFor={`${a11yId}-kurz-notiz-zum-nachweis`}
+            className="text-xs font-medium text-gray-600"
+          >
             Kurz-Notiz zum Nachweis
           </label>
           <Input
+            id={`${a11yId}-kurz-notiz-zum-nachweis`}
             value={entry.notes ?? ""}
             onChange={(e) => onChange({ notes: e.target.value || undefined })}
             placeholder="optional — detaillierte Notizen kommen in das Haupt-Notizfeld unten"
@@ -1048,8 +1104,14 @@ function MethodEntryCard({
       {entry.method === "interview" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">Person</label>
+            <label
+              htmlFor={`${a11yId}-person`}
+              className="text-xs font-medium text-gray-600"
+            >
+              Person
+            </label>
             <Input
+              id={`${a11yId}-person`}
               value={
                 (entry as MethodEntry & { interviewee?: string }).interviewee ??
                 ""
@@ -1063,10 +1125,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-rolle-funktion`}
+              className="text-xs font-medium text-gray-600"
+            >
               Rolle / Funktion
             </label>
             <Input
+              id={`${a11yId}-rolle-funktion`}
               value={
                 (entry as MethodEntry & { intervieweeRole?: string })
                   .intervieweeRole ?? ""
@@ -1089,10 +1155,14 @@ function MethodEntryCard({
       {entry.method === "observation" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-ort-standort`}
+              className="text-xs font-medium text-gray-600"
+            >
               Ort / Standort
             </label>
             <Input
+              id={`${a11yId}-ort-standort`}
               value={
                 (entry as MethodEntry & { location?: string }).location ?? ""
               }
@@ -1105,10 +1175,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-beobachteter-prozess`}
+              className="text-xs font-medium text-gray-600"
+            >
               Beobachteter Prozess
             </label>
             <Input
+              id={`${a11yId}-beobachteter-prozess`}
               value={
                 (entry as MethodEntry & { observedProcess?: string })
                   .observedProcess ?? ""
@@ -1127,10 +1201,14 @@ function MethodEntryCard({
       {entry.method === "walkthrough" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-prozess-aktivitat`}
+              className="text-xs font-medium text-gray-600"
+            >
               Prozess / Aktivität
             </label>
             <Input
+              id={`${a11yId}-prozess-aktivitat`}
               value={
                 (entry as MethodEntry & { process?: string }).process ?? ""
               }
@@ -1143,10 +1221,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-teilnehmer`}
+              className="text-xs font-medium text-gray-600"
+            >
               Teilnehmer
             </label>
             <Input
+              id={`${a11yId}-teilnehmer`}
               value={
                 (entry as MethodEntry & { participants?: string })
                   .participants ?? ""
@@ -1166,10 +1248,14 @@ function MethodEntryCard({
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-system`}
+                className="text-xs font-medium text-gray-600"
+              >
                 System
               </label>
               <Input
+                id={`${a11yId}-system`}
                 value={
                   (entry as MethodEntry & { system?: string }).system ?? ""
                 }
@@ -1182,10 +1268,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-testbeschreibung`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Testbeschreibung
               </label>
               <Input
+                id={`${a11yId}-testbeschreibung`}
                 value={
                   (entry as MethodEntry & { testDescription?: string })
                     .testDescription ?? ""
@@ -1200,10 +1290,14 @@ function MethodEntryCard({
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-test-ergebnis`}
+              className="text-xs font-medium text-gray-600"
+            >
               Test-Ergebnis
             </label>
             <textarea
+              id={`${a11yId}-test-ergebnis`}
               value={
                 (entry as MethodEntry & { testResult?: string }).testResult ??
                 ""
@@ -1225,10 +1319,14 @@ function MethodEntryCard({
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-population-n`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Population N
               </label>
               <Input
+                id={`${a11yId}-population-n`}
                 type="number"
                 min={0}
                 value={
@@ -1246,10 +1344,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-stichprobe-n`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Stichprobe n
               </label>
               <Input
+                id={`${a11yId}-stichprobe-n`}
                 type="number"
                 min={0}
                 value={
@@ -1267,10 +1369,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-auswahlverfahren`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Auswahlverfahren
               </label>
               <Input
+                id={`${a11yId}-auswahlverfahren`}
                 value={
                   (entry as MethodEntry & { selectionMethod?: string })
                     .selectionMethod ?? ""
@@ -1285,10 +1391,14 @@ function MethodEntryCard({
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-field`}
+              className="text-xs font-medium text-gray-600"
+            >
               Sample-IDs / Referenzen (kommagetrennt)
             </label>
             <textarea
+              id={`${a11yId}-field`}
               value={(
                 (entry as MethodEntry & { sampleIds?: string[] }).sampleIds ??
                 []
@@ -1313,10 +1423,14 @@ function MethodEntryCard({
       {entry.method === "reperformance" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-nachvollzogene-aktivitat`}
+              className="text-xs font-medium text-gray-600"
+            >
               Nachvollzogene Aktivität
             </label>
             <Input
+              id={`${a11yId}-nachvollzogene-aktivitat`}
               value={
                 (entry as MethodEntry & { activity?: string }).activity ?? ""
               }
@@ -1329,10 +1443,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-baseline-vergleich`}
+              className="text-xs font-medium text-gray-600"
+            >
               Baseline / Vergleich
             </label>
             <Input
+              id={`${a11yId}-baseline-vergleich`}
               value={
                 (entry as MethodEntry & { baseline?: string }).baseline ?? ""
               }
@@ -1358,6 +1476,10 @@ function DocumentReviewFields({
   entry: EditableMethodEntry;
   onChange: (patch: Partial<EditableMethodEntry>) => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id per instance: this editor
+  // renders once per method entry, so a fixed id would collide and every
+  // `aria-labelledby` would resolve to the first instance's heading.
+  const a11yId = useId();
   const docs =
     (
       entry as MethodEntry & {
@@ -1390,9 +1512,13 @@ function DocumentReviewFields({
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-gray-600">
+      {/* [WP12 · S14-09] Heads a repeating row editor, not one control. */}
+      <span
+        id={`${a11yId}-checked-docs`}
+        className="text-xs font-medium text-gray-600"
+      >
         Geprüfte Dokumente
-      </label>
+      </span>
       {docs.length === 0 && (
         <p className="text-[11px] text-gray-400">
           Noch keine Dokumente — Klick unten hinzufügt eine Zeile.
@@ -1439,6 +1565,10 @@ function DocumentReviewFields({
 // ─── Checklists Tab ──────────────────────────────────────────
 
 function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const [checklists, setChecklists] = useState<AuditChecklist[]>([]);
   const [selectedChecklist, setSelectedChecklist] = useState<string | null>(
@@ -1491,27 +1621,27 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          if (!cancelled) {
-            setRisks(
-              (j.data ?? []).map(
-                (x: {
-                  id: string;
-                  title: string;
-                  riskCategory?: string | null;
-                }) => ({
-                  id: x.id,
-                  title: x.title,
-                  riskCategory: x.riskCategory,
-                }),
-              ),
-            );
-          }
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422; der `catch`
+        // daneben nennt den Ausgang selbst beim Namen ("UI falls back to
+        // empty lists"). Damit war die Risiko-Auswahl im Befund-Dialog
+        // dauerhaft leer, und ein Befund liess sich nicht mit dem Risiko
+        // verknüpfen, das ihn ausgelöst hat.
+        const rows = await fetchAllPages<{
+          id: string;
+          title: string;
+          riskCategory?: string | null;
+        }>("/api/v1/risks");
+        if (!cancelled) {
+          setRisks(
+            rows.map((x) => ({
+              id: x.id,
+              title: x.title,
+              riskCategory: x.riskCategory,
+            })),
+          );
         }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
       }
       // Active control catalogs of the current org
       try {
@@ -1525,8 +1655,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             (x: { catalogId: string }) => x.catalogId,
           );
           if (ids.length > 0) {
+            // [ARCTOS-FULL-2026-08-31 · OP-050] war `limit=200` ⇒ 422 ⇒
+            // die Katalognamen fehlten, und die Framework-Auswahl blieb leer.
             const catRes = await fetch(
-              "/api/v1/catalogs?type=control&limit=200",
+              "/api/v1/catalogs?type=control&limit=100",
             );
             if (catRes.ok) {
               const catJ = await catRes.json();
@@ -2038,8 +2170,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           ))}
           {checklists.length === 0 && !loading && (
             <span className="text-sm text-gray-400">
-              Noch keine Checklisten. Rechts auf „Generieren" oder
-              „Framework-Import" klicken.
+              Noch keine Checklisten. Rechts auf „Generieren&quot; oder
+              „Framework-Import&quot; klicken.
             </span>
           )}
         </div>
@@ -2612,10 +2744,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
                   {/* Beobachtungen / Auditor-Notizen */}
                   <div>
-                    <label className="text-sm font-medium">
+                    <label
+                      htmlFor={`${a11yId}-field-2`}
+                      className="text-sm font-medium"
+                    >
                       Beobachtungen & Auditor-Notizen
                     </label>
                     <textarea
+                      id={`${a11yId}-field-2`}
                       name="notes"
                       defaultValue={evaluateItem.notes ?? ""}
                       rows={4}
@@ -2654,10 +2790,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">
+                        <label
+                          htmlFor={`${a11yId}-field-3`}
+                          className="text-sm font-medium"
+                        >
                           Vorgeschlagene Korrekturmaßnahme
                         </label>
                         <textarea
+                          id={`${a11yId}-field-3`}
                           name="correctiveActionSuggestion"
                           defaultValue={item.correctiveActionSuggestion ?? ""}
                           rows={3}
@@ -2715,7 +2855,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       {evaluateEvidenceIds.length === 0 && (
                         <span className="text-xs text-gray-400">
                           Keine Evidenzen verknüpft. Klicke oben auf „Evidenz
-                          hinzufügen" um aus dem Evidenz-Pool zu wählen.
+                          hinzufügen&quot; um aus dem Evidenz-Pool zu wählen.
                         </span>
                       )}
                       {evaluateEvidenceIds.map((id) => {
@@ -2925,13 +3065,17 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">
+                    <label
+                      htmlFor={`${a11yId}-field-4`}
+                      className="text-sm font-medium"
+                    >
                       Risiko-Verknüpfung
                       <span className="ml-1 text-xs text-gray-400">
                         (optional, ISO 27001 9.2 · ISO 31000 6.6)
                       </span>
                     </label>
                     <select
+                      id={`${a11yId}-field-4`}
                       name="riskId"
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                       defaultValue=""
@@ -3062,13 +3206,17 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=200`,
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ das
+      // Prüfungsprogramm war leer. Für eine Prüfungsakte ist das die
+      // schlimmste Anzeige: „keine Prüfungshandlungen durchgeführt".
+      setActivities(
+        await fetchAllPages<ActivityWithUser>(
+          `/api/v1/audit-mgmt/audits/${auditId}/activities`,
+        ),
       );
-      if (res.ok) {
-        const json = await res.json();
-        setActivities(json.data ?? []);
-      }
+    } catch (err) {
+      console.error("audit/executions: Aktivitäten nicht geladen", err);
+      setActivities([]);
     } finally {
       setLoading(false);
     }
@@ -3422,6 +3570,10 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
 // ─── Findings Tab ────────────────────────────────────────────
 
 function FindingsTab({ auditId }: { auditId: string }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const { formatDate } = useDateFormat();
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -3450,18 +3602,14 @@ function FindingsTab({ auditId }: { auditId: string }) {
     // Load risks for the optional risk-link picker
     (async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          setRisks(
-            (j.data ?? []).map((x: { id: string; title: string }) => ({
-              id: x.id,
-              title: x.title,
-            })),
-          );
-        }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+        // [ARCTOS-FULL-2026-08-31 · OP-050] siehe oben — zweite Aufrufstelle
+        // desselben Musters in derselben Datei.
+        const rows = await fetchAllPages<{ id: string; title: string }>(
+          "/api/v1/risks",
+        );
+        setRisks(rows.map((x) => ({ id: x.id, title: x.title })));
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
       }
     })();
   }, [auditId]);
@@ -3585,20 +3733,37 @@ function FindingsTab({ auditId }: { auditId: string }) {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium">Titel</label>
-                  <Input name="title" required />
+                  <label
+                    htmlFor={`${a11yId}-titel`}
+                    className="text-sm font-medium"
+                  >
+                    Titel
+                  </label>
+                  <Input id={`${a11yId}-titel`} name="title" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Beschreibung</label>
+                  <label
+                    htmlFor={`${a11yId}-beschreibung`}
+                    className="text-sm font-medium"
+                  >
+                    Beschreibung
+                  </label>
                   <textarea
+                    id={`${a11yId}-beschreibung`}
                     name="description"
                     rows={3}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Schweregrad</label>
+                  <label
+                    htmlFor={`${a11yId}-schweregrad`}
+                    className="text-sm font-medium"
+                  >
+                    Schweregrad
+                  </label>
                   <select
+                    id={`${a11yId}-schweregrad`}
                     name="severity"
                     required
                     defaultValue="observation"
@@ -3618,13 +3783,17 @@ function FindingsTab({ auditId }: { auditId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">
+                  <label
+                    htmlFor={`${a11yId}-risiko-verknupfung`}
+                    className="text-sm font-medium"
+                  >
                     Risiko-Verknüpfung
                     <span className="ml-1 text-xs text-gray-400">
                       (optional, ISO 31000 6.6)
                     </span>
                   </label>
                   <select
+                    id={`${a11yId}-risiko-verknupfung`}
                     name="riskId"
                     defaultValue=""
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -3638,8 +3807,17 @@ function FindingsTab({ auditId }: { auditId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Fälligkeit</label>
-                  <Input name="remediationDueDate" type="date" />
+                  <label
+                    htmlFor={`${a11yId}-falligkeit`}
+                    className="text-sm font-medium"
+                  >
+                    Fälligkeit
+                  </label>
+                  <Input
+                    id={`${a11yId}-falligkeit`}
+                    name="remediationDueDate"
+                    type="date"
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={saving}>
                   {saving ? (
@@ -3661,8 +3839,8 @@ function FindingsTab({ auditId }: { auditId: string }) {
         <div className="text-center py-8 text-gray-400">
           <p>{t("emptyFindings")}</p>
           <p className="text-xs mt-2">
-            Nutze „Feststellung hinzufügen" für Ad-hoc-Befunde oder erstelle aus
-            einer nicht-konformen Checklisten-Position heraus.
+            Nutze „Feststellung hinzufügen&quot; für Ad-hoc-Befunde oder
+            erstelle aus einer nicht-konformen Checklisten-Position heraus.
           </p>
         </div>
       ) : (
@@ -3912,7 +4090,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
           />
           <InfoRow
             label="E-Mail"
-            value={(report.audit as any).leadAuditorEmail ?? "-"}
+            value={(report.audit as UnvalidatedJson).leadAuditorEmail ?? "-"}
           />
           <InfoRow
             label={t("actualStart")}
@@ -4346,6 +4524,10 @@ function FindingRow({
   sevLabels: Record<string, string>;
   onUpdated: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -4498,10 +4680,14 @@ function FindingRow({
       {editing ? (
         <div className="rounded-md border border-blue-200 bg-blue-50/50 p-3 space-y-2 print:hidden">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">
+            <label
+              htmlFor={`${a11yId}-ma-nahmen-plan`}
+              className="text-xs font-medium text-gray-700 block mb-1"
+            >
               Maßnahmen-Plan
             </label>
             <textarea
+              id={`${a11yId}-ma-nahmen-plan`}
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
               rows={3}
@@ -4510,10 +4696,14 @@ function FindingRow({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">
+            <label
+              htmlFor={`${a11yId}-falligkeitsdatum`}
+              className="text-xs font-medium text-gray-700 block mb-1"
+            >
               Fälligkeitsdatum
             </label>
             <input
+              id={`${a11yId}-falligkeitsdatum`}
               type="date"
               value={due}
               onChange={(e) => setDue(e.target.value)}

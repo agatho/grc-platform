@@ -1,47 +1,51 @@
-import { generateBpmnSchema } from "@grc/shared";
+// POST /api/v1/processes/generate-bpmn — AI generate BPMN (multi-provider)
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-22, S05-06, S05-09, S05-10, S05-12]
+//
+// Das war die Route, mit der die Fokusfrage des Prüfplans („Kann ein
+// Nutzer den Provider wechseln und damit Daten in eine andere
+// Jurisdiktion schicken?") mit JA zu beantworten war: `provider` war ein
+// freies Request-Feld, der GET verriet jedem authentifizierten Nutzer,
+// welche Provider scharf sind, und nichts prüfte den Wunsch gegen eine
+// Betreiber- oder Org-Richtlinie.
+//
+// Jetzt:
+//   * `provider` wird als WUNSCH an `aiCompleteGoverned` gereicht. Ohne
+//     `ai_org_policy.allow_user_provider_choice = true` scheitert der
+//     Request mit 403, egal welcher Provider gewünscht ist. Mit dem
+//     Schalter sind nur die Provider wählbar, die die Richtlinie erlaubt.
+//   * Der GET zeigt nur noch die für DIESE Organisation zulässigen
+//     Provider und sagt ausdrücklich, ob eine Wahl überhaupt möglich ist.
+//   * Der eigene In-Memory-`Map`-Rate-Limiter ist durch die gemeinsame
+//     Schicht ersetzt.
+//   * Der Prompt läuft über den gehärteten Builder, die Ausgabe wird
+//     validiert.
+
 import { validateBpmnXml } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { aiComplete, getAvailableProviders, type AiProvider } from "@grc/ai";
+import {
+  aiCompleteGoverned,
+  buildTextToBpmnPrompt,
+  bpmnGenerationSchema,
+  getAvailableProviders,
+  loadOrgAiPolicy,
+  safeJsonParse,
+  selectProvider,
+  ALL_PROVIDERS,
+  type AiProvider,
+} from "@grc/ai";
 import { z } from "zod";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../ai/_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-// In-memory rate limit: 10 requests per hour per user
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10;
-const RATE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(userId);
-
-  if (!entry || now >= entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_WINDOW_MS });
-    return true;
-  }
-
-  if (entry.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  entry.count++;
-  return true;
-}
-
-const SYSTEM_PROMPT = `You are a BPMN 2.0 expert. Generate valid BPMN 2.0 XML based on the process description provided.
-
-Requirements:
-- Output ONLY valid BPMN 2.0 XML, no markdown, no explanation
-- Include proper namespace declarations (bpmn, bpmndi, dc, di)
-- Include a BPMNDiagram element with proper layout coordinates
-- Every element must have a corresponding BPMNShape or BPMNEdge in the diagram
-- Use meaningful element IDs and names
-- Include start event, end event, tasks, and gateways as appropriate
-- Use sequence flows to connect all elements
-- Layout should be left-to-right with proper spacing (x increments of ~180, y centered around 200)
-- Tasks should be 100x80, events 36x36, gateways 50x50
-- Ensure the XML is well-formed and parseable`;
-
-// Extended schema accepting optional provider
 const generateWithProviderSchema = z.object({
   name: z.string().min(3).max(200),
   description: z.string().min(50).max(2000),
@@ -54,20 +58,27 @@ const generateWithProviderSchema = z.object({
       "generic",
     ])
     .optional(),
-  provider: z
-    .enum(["claude_cli", "claude_api", "openai", "gemini", "ollama"])
-    .optional(),
+  provider: z.enum(ALL_PROVIDERS as [AiProvider, ...AiProvider[]]).optional(),
 });
 
-// POST /api/v1/processes/generate-bpmn — AI generate BPMN (multi-provider)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = generateWithProviderSchema.safeParse(await req.json());
+  // Eigener, engerer Eimer: 8 KB Prompt und maxTokens 8192 je Aufruf.
+  const limited = await aiRateLimit(ctx.userId, {
+    bucket: "bpmn-generate",
+    capacity: 10,
+    windowSeconds: 3600,
+  });
+  if (limited) return limited;
+
+  const body = generateWithProviderSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -75,93 +86,92 @@ export async function POST(req: Request) {
     );
   }
 
-  // Rate limit check
-  if (!checkRateLimit(ctx.userId)) {
-    return Response.json(
-      {
-        error: "Rate limit exceeded",
-        message:
-          "Maximum 10 BPMN generation requests per hour. Please try again later.",
-      },
-      { status: 429 },
-    );
-  }
-
   const { name, description, industry, provider } = body.data;
 
   try {
-    const response = await aiComplete({
-      provider: provider as AiProvider | undefined,
+    const result = await aiCompleteGoverned({
+      feature: "bpm.generate_bpmn",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      requestedProvider: provider ?? null,
+      messages: buildTextToBpmnPrompt(
+        `Process name: ${name}\nIndustry: ${industry ?? "generic"}\n\n${description}`,
+        "de",
+      ),
       maxTokens: 8192,
       temperature: 0.3,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `Generate a BPMN 2.0 XML diagram for the following process:
-
-Process Name: ${name}
-Industry: ${industry ?? "generic"}
-Description: ${description}
-
-Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. Output ONLY the XML, nothing else.`,
-        },
-      ],
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: bpmnGenerationSchema,
     });
 
-    let bpmnXml = response.text.trim();
-
-    // Strip markdown code fences if present
-    if (bpmnXml.startsWith("```")) {
-      bpmnXml = bpmnXml
-        .replace(/^```(?:xml)?\n?/, "")
-        .replace(/\n?```$/, "")
-        .trim();
-    }
-
-    // Validate the generated XML
-    const validation = validateBpmnXml(bpmnXml);
+    const validation = validateBpmnXml(result.data.bpmnXml);
     if (!validation.valid) {
       return Response.json(
         {
           error: "Generated BPMN XML failed validation",
           validationErrors: validation.errors,
-          bpmnXml,
         },
         { status: 422 },
       );
     }
 
-    return Response.json({
-      data: {
-        bpmnXml,
+    return aiJson(
+      {
+        bpmnXml: result.data.bpmnXml,
         processName: name,
-        provider: response.provider,
-        model: response.model,
-        usage: response.usage,
+        summary: result.data.summary ?? null,
+        provider: result.provider,
+        model: result.model,
+        usage: result.usage,
       },
-    });
-  } catch (e) {
-    const message = e instanceof Error ? e.message : "Unknown error";
-    return Response.json(
-      { error: `AI generation failed: ${message}` },
-      { status: 500 },
+      result.disclosure,
     );
+  } catch (e) {
+    return aiErrorResponse(e);
   }
-}
-
-// GET /api/v1/processes/generate-bpmn — List available AI providers
-export async function GET(req: Request) {
-  const ctx = await withAuth();
+});
+// GET /api/v1/processes/generate-bpmn — Provider, die DIESE Organisation wählen darf
+export const GET = withErrorHandler(async function GET() {
+  const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
+
+  const policy = await loadOrgAiPolicy(ctx.orgId);
+  const configured = getAvailableProviders();
+
+  // Zulässig ist genau, was `selectProvider` mit diesem Wunsch akzeptiert.
+  // Die Liste hier und die Durchsetzung im POST stammen damit aus
+  // derselben Funktion — sie können nicht auseinanderlaufen.
+  const permitted = configured.filter((p) => {
+    try {
+      selectProvider({
+        policy: { ...policy, allowUserProviderChoice: true },
+        configured,
+        requested: p,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+
+  let effectiveDefault: AiProvider | null = null;
+  try {
+    effectiveDefault = selectProvider({ policy, configured }).provider;
+  } catch {
+    effectiveDefault = null;
+  }
 
   return Response.json({
     data: {
-      availableProviders: getAvailableProviders(),
-      defaultProvider:
-        process.env.AI_DEFAULT_PROVIDER ??
-        getAvailableProviders()[0] ??
-        "claude",
+      // Nur die zulässigen — nicht mehr die vollständige Betreiberliste.
+      availableProviders: policy.allowUserProviderChoice ? permitted : [],
+      defaultProvider: effectiveDefault,
+      providerChoiceAllowed: policy.allowUserProviderChoice,
+      egressMode: policy.egressMode,
+      policySource: policy.modeSource,
+      hint: policy.allowUserProviderChoice
+        ? "Die Providerwahl ist für diese Organisation freigegeben und auf die aufgeführten Provider begrenzt."
+        : "Die Providerwahl je Anfrage ist für diese Organisation nicht freigegeben; der Provider folgt der Richtlinie.",
     },
   });
-}
+});

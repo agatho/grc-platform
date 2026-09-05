@@ -7,10 +7,9 @@ import {
   Loader2,
   RefreshCw,
   Filter,
-  ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +29,9 @@ import {
 
 import type { EventLogEntry } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ── Event type styling ────────────────────────────────────────
 
@@ -184,6 +186,9 @@ export default function EventLogPage() {
               key={evt.id}
               className="flex items-center gap-3 rounded-md border px-4 py-2.5 text-sm hover:bg-muted/50 cursor-pointer"
               onClick={() => setSelectedEvent(evt)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => activateOnKey(e, () => setSelectedEvent(evt))}
             >
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <Badge

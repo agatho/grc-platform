@@ -13,6 +13,17 @@ import {
   type ApprovalStepLike,
 } from "../src/process-approval";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 // ---------------------------------------------------------------------------
 // Status transitions
 // ---------------------------------------------------------------------------
@@ -154,8 +165,8 @@ describe("evaluateApprovalDecision", () => {
 
   it("approve on the last gate step approves the process — acknowledgments never block", () => {
     const chain = mkChain();
-    chain[0].status = "completed";
-    chain[1].status = "in_progress";
+    at(chain, 0).status = "completed";
+    at(chain, 1).status = "in_progress";
     const outcome = evaluateApprovalDecision(chain, "s2", "approve");
     expect(outcome.processOutcome).toBe("approved");
     expect(outcome.nextStepId).toBeNull();
@@ -175,8 +186,8 @@ describe("evaluateApprovalDecision", () => {
 
   it("reject leaves already-completed steps untouched", () => {
     const chain = mkChain();
-    chain[0].status = "completed";
-    chain[1].status = "in_progress";
+    at(chain, 0).status = "completed";
+    at(chain, 1).status = "in_progress";
     const outcome = evaluateApprovalDecision(chain, "s2", "reject");
     expect(outcome.stepUpdates.find((u) => u.id === "s1")).toBeUndefined();
     expect(outcome.stepUpdates).toContainEqual({
@@ -194,7 +205,7 @@ describe("evaluateApprovalDecision", () => {
 
   it("throws when the step is already terminal", () => {
     const chain = mkChain();
-    chain[0].status = "completed";
+    at(chain, 0).status = "completed";
     expect(() => evaluateApprovalDecision(chain, "s1", "approve")).toThrow(
       /cannot be decided/,
     );

@@ -4,6 +4,19 @@
 //                 → completed (or cancelled)
 
 import { sql } from "drizzle-orm";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
+// the `any` that stood on every `tx` parameter here.
+import type { DbTransaction } from "@/lib/db-types";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] Row shape for the raw-SQL reads
+ * below, which were cast `as any[]`. `any` meant a renamed column silently
+ * produced `undefined` and a gate that passed instead of blocking — in
+ * modules whose entire purpose is to refuse a release. `Record<string,
+ * unknown>` keeps the property access explicit while restoring the check that
+ * the value is used as something.
+ */
+type SqlRow = Record<string, unknown>;
 
 export interface AuditGateBlocker {
   code: string;
@@ -22,7 +35,8 @@ export type AuditStatus =
   | "cancelled";
 
 interface Args {
-  tx: any;
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction;
   auditId: string;
   orgId: string;
   target: AuditStatus;
@@ -41,7 +55,7 @@ export async function evaluateAuditGates({
            a.actual_start, a.actual_end, a.conclusion, a.report_document_id
     FROM audit a
     WHERE a.id = ${auditId} AND a.org_id = ${orgId} AND a.deleted_at IS NULL
-  `)) as any[];
+  `)) as SqlRow[];
   if (!a) {
     return [
       {
@@ -68,7 +82,7 @@ export async function evaluateAuditGates({
       (SELECT COUNT(*) FROM finding f
          WHERE f.org_id = ${orgId} AND f.audit_id = ${auditId} AND f.deleted_at IS NULL
            AND f.status NOT IN ('verified','closed','cancelled','remediated'))::int AS open_finding_count
-  `)) as any[];
+  `)) as SqlRow[];
 
   const checklistCount = Number(stats?.checklist_count ?? 0);
   const itemCount = Number(stats?.item_count ?? 0);

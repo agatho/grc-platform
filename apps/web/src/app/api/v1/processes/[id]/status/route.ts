@@ -4,7 +4,6 @@ import {
   processVersion,
   processApprovalStep,
   notification,
-  userOrganizationRole,
 } from "@grc/db";
 import { transitionProcessStatusSchema } from "@grc/shared";
 import {
@@ -18,10 +17,17 @@ import { emitEntityStatusChanged } from "@/lib/entity-events";
 import type { ProcessStatus } from "@grc/shared";
 import { evaluateTransitionGates } from "@/lib/process-gates";
 import { promoteWorkingVersion } from "@/lib/process-working-version";
+// [ARCTOS-FULL-2026-08-31 · OP-002] siehe `../../_lib/bpmn-lanes.ts`.
+import { syncLanesFromCurrentVersion } from "../../_lib/sync-process-lanes";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // PUT /api/v1/processes/:id/status — Status transition
 // (also exported as PATCH below for client robustness — B1.3)
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -66,28 +72,34 @@ export async function PUT(
   const currentStatus = existing.status as ProcessStatus;
   const targetStatus = body.data.status;
 
-  // Get user role for this org
-  const [userRole] = await db
-    .select({ role: userOrganizationRole.role })
-    .from(userOrganizationRole)
-    .where(
-      and(
-        eq(userOrganizationRole.userId, ctx.userId),
-        eq(userOrganizationRole.orgId, ctx.orgId),
-        isNull(userOrganizationRole.deletedAt),
-      ),
-    );
-
-  const role = userRole?.role ?? "viewer";
+  // [ARCTOS-FULL-2026-08-31 · OP-099] Dieselbe Einzelabfrage wie in der
+  // resolve-Route: die ERSTE Rollenzeile ohne ORDER BY entschied ueber den
+  // Statuswechsel. Der Index `uor_user_org_role_active_uniq` sortiert nach der
+  // Enum-Deklarationsreihenfolge von `user_role`, nicht nach Rechtestaerke —
+  // ein Nutzer mit `process_owner` und `auditor` wurde als `auditor` bewertet
+  // und bekam 403 auf einen Uebergang, den `process_owner` erlaubt.
+  //
+  // Eine Mitgliedschaft ist keine Rangfolge: der Nutzer HAT alle seine Rollen
+  // gleichzeitig. Der Uebergang ist deshalb erlaubt, sobald IRGENDEINE davon
+  // ihn erlaubt. `ctx.roles` liefert genau die Rollen dieser Org, frisch aus
+  // der Datenbank gelesen (apps/web/src/auth.ts, fetchFreshRoles) — dieselbe
+  // Quelle, gegen die `withAuth` oben schon geprueft hat.
+  const rolesInOrg = ctx.roles?.length ? ctx.roles : ["viewer"];
   const isReviewer = existing.reviewerId === ctx.userId;
 
-  // Validate transition
-  const validation = validateStatusTransition(
-    currentStatus,
-    targetStatus,
-    role,
-    isReviewer,
-  );
+  // Validate transition — erlaubt, wenn eine der gehaltenen Rollen es erlaubt.
+  // Bei Ablehnung wird die Meldung der ERSTEN Rolle zurueckgegeben; sie nennt
+  // den Uebergang, und der ist der eigentliche Grund.
+  let validation: { valid: boolean; error?: string } = { valid: false };
+  for (const candidate of rolesInOrg) {
+    validation = validateStatusTransition(
+      currentStatus,
+      targetStatus,
+      candidate,
+      isReviewer,
+    );
+    if (validation.valid) break;
+  }
 
   if (!validation.valid) {
     return Response.json({ error: validation.error }, { status: 403 });
@@ -115,7 +127,11 @@ export async function PUT(
         tx,
         processId: id,
         orgId: ctx.orgId,
-        target: targetStatus as any,
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `targetStatus`
+        // stammt aus `transitionProcessStatusSchema` und hat damit genau
+        // die fuenf Werte, die `ProcessStatus` nennt; die Zusicherung war
+        // ueberfluessig.
+        target: targetStatus,
       }),
     );
     const errorBlockers = blockers.filter((b) => b.severity === "error");
@@ -165,6 +181,27 @@ export async function PUT(
             orgId: ctx.orgId,
             userId: ctx.userId,
           });
+          // [ARCTOS-FULL-2026-08-31 · OP-002] Die Beförderung synchronisiert
+          // `process_step`, aber nicht `process_lane`. Ohne diesen Aufruf
+          // zeigte die Lane-Tabelle nach einer Veröffentlichung den Stand vor
+          // der Arbeitskopie.
+          if (promoted) {
+            try {
+              await syncLanesFromCurrentVersion({
+                tx,
+                processId: id,
+                orgId: ctx.orgId,
+                userId: ctx.userId,
+              });
+            } catch (e) {
+              log.error(
+                "[processes/status] process_lane sync after promotion failed",
+                {
+                  err: e,
+                },
+              );
+            }
+          }
         }
 
         if (!promoted) {
@@ -224,7 +261,7 @@ export async function PUT(
         }
       } catch (e) {
         // Auto-versioning is best-effort; do not block the state transition.
-        console.error("auto-versioning failed", e);
+        log.error("[processes/status] auto-versioning failed", { err: e });
       }
     }
 
@@ -278,7 +315,9 @@ export async function PUT(
           }
         }
       } catch (e) {
-        console.error("acknowledgment activation failed", e);
+        log.error("[processes/status] acknowledgment activation failed", {
+          err: e,
+        });
       }
     }
 
@@ -352,8 +391,7 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // B1.3: PATCH alias — the UI historically called PATCH while only PUT was
 // exported; accept both so older clients keep working.
 export { PUT as PATCH };

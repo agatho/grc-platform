@@ -16,15 +16,23 @@ import { spawn } from "node:child_process";
 import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const OUT_DIR = join(ROOT, "docs/perf");
 const OUT_MD = join(OUT_DIR, "ts-errors-report.md");
 
 function runTsc() {
   return new Promise((resolve) => {
-    const proc = spawn("npx.cmd", ["tsc", "--noEmit", "--project", "apps/web/tsconfig.json"], {
-      cwd: ROOT, shell: true,
-    });
+    const proc = spawn(
+      "npx.cmd",
+      ["tsc", "--noEmit", "--project", "apps/web/tsconfig.json"],
+      {
+        cwd: ROOT,
+        shell: true,
+      },
+    );
     let out = "";
     proc.stdout.on("data", (d) => (out += d.toString()));
     proc.stderr.on("data", (d) => (out += d.toString()));
@@ -37,15 +45,27 @@ function parse(output) {
   const re = /^(.+?)\((\d+),(\d+)\):\s*error\s+(TS\d+):\s*(.+)$/gm;
   let m;
   while ((m = re.exec(output)) !== null) {
-    errors.push({ file: m[1], line: Number(m[2]), col: Number(m[3]), code: m[4], message: m[5] });
+    errors.push({
+      file: m[1],
+      line: Number(m[2]),
+      col: Number(m[3]),
+      code: m[4],
+      message: m[5],
+    });
   }
   return errors;
 }
 
 function categorize(e) {
-  if (e.code === "TS2339" && /Property 'rows' does not exist/.test(e.message)) return "drizzle-rows";
+  if (e.code === "TS2339" && /Property 'rows' does not exist/.test(e.message))
+    return "drizzle-rows";
   if (e.code === "TS18048" || e.code === "TS2538") return "null-safety";
-  if (["TS2322", "TS2345", "TS2352", "TS2559", "TS2551", "TS2353"].includes(e.code)) return "type-mismatch";
+  if (
+    ["TS2322", "TS2345", "TS2352", "TS2559", "TS2551", "TS2353"].includes(
+      e.code,
+    )
+  )
+    return "type-mismatch";
   if (e.code === "TS2307") return "missing-module";
   if (e.code === "TS7006") return "implicit-any";
   if (e.code === "TS2554") return "arg-count";
@@ -81,7 +101,9 @@ async function main() {
   md.push(``);
   md.push(`**Total: ${errors.length} Fehler** in ${byFile.size} Dateien.`);
   md.push(``);
-  md.push(`Build laeuft trotzdem (\`ignoreBuildErrors\` ist aktiv fuer apps/web). Die Fehler sind also Entwicklungs-Bugs, keine Build-Blocker.`);
+  md.push(
+    `Build laeuft trotzdem (\`ignoreBuildErrors\` ist aktiv fuer apps/web). Die Fehler sind also Entwicklungs-Bugs, keine Build-Blocker.`,
+  );
   md.push(``);
 
   md.push(`## Nach Kategorie`);
@@ -89,18 +111,24 @@ async function main() {
   md.push(`| Kategorie | Anzahl | Fix-Strategie |`);
   md.push(`|---|---|---|`);
   const strat = {
-    "drizzle-rows": "db.execute() in postgres-js gibt Array direkt zurueck -- `.rows` entfernen, ggf. Type-Cast. RISKANT: runtime-kompatibel pruefen.",
+    "drizzle-rows":
+      "db.execute() in postgres-js gibt Array direkt zurueck -- `.rows` entfernen, ggf. Type-Cast. RISKANT: runtime-kompatibel pruefen.",
     "null-safety": "Null-Guard / Optional-Chaining / Default-Wert einsetzen.",
-    "type-mismatch": "Typ angleichen (Zod-Schema vs Drizzle-Spalte, Enum vs String).",
+    "type-mismatch":
+      "Typ angleichen (Zod-Schema vs Drizzle-Spalte, Enum vs String).",
     "missing-module": "Paket installieren oder Import auf `unknown` widen.",
     "implicit-any": "Explizite Type-Annotation hinzufuegen.",
     "arg-count": "Signatur-Call korrigieren.",
     "property-missing": "Property existiert wirklich nicht -- Code reviewen.",
-    "overload-mismatch": "Funktions-Overload prueft, ggf. Argument-Typen anpassen.",
-    "comparison-no-overlap": "`===` zwischen disjunkten Literal-Types -- Logik-Bug.",
-    "other": "Einzeln reviewen.",
+    "overload-mismatch":
+      "Funktions-Overload prueft, ggf. Argument-Typen anpassen.",
+    "comparison-no-overlap":
+      "`===` zwischen disjunkten Literal-Types -- Logik-Bug.",
+    other: "Einzeln reviewen.",
   };
-  for (const [cat, items] of [...byCat.entries()].sort((a, b) => b[1].length - a[1].length)) {
+  for (const [cat, items] of [...byCat.entries()].sort(
+    (a, b) => b[1].length - a[1].length,
+  )) {
     md.push(`| \`${cat}\` | ${items.length} | ${strat[cat] ?? "-"} |`);
   }
   md.push(``);
@@ -130,11 +158,16 @@ async function main() {
   md.push(`1. **null-safety** (einfache isolierte Fixes) -- quick wins`);
   md.push(`2. **implicit-any / arg-count / missing-module** -- isoliert`);
   md.push(`3. **type-mismatch** -- Zod vs Drizzle synchronisieren (mittel)`);
-  md.push(`4. **drizzle-rows** -- erfordert Runtime-Validierung (ADR-014: ggf. eigene ADR fuer Drizzle-Migration)`);
+  md.push(
+    `4. **drizzle-rows** -- erfordert Runtime-Validierung (ADR-014: ggf. eigene ADR fuer Drizzle-Migration)`,
+  );
   md.push(``);
 
   await writeFile(OUT_MD, md.join("\n"));
   console.log(`-> ${OUT_MD}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

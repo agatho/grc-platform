@@ -2,9 +2,13 @@ import { db, processTemplate } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/bpm/templates — Browse template library (read-only)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "process_owner",
@@ -32,10 +36,9 @@ export async function GET(req: Request) {
   }
 
   return Response.json({ data: rows });
-}
-
+});
 // POST, PUT, PATCH, DELETE — Not allowed (templates are seed data)
-export async function POST() {
+export const POST = withErrorHandler(async function POST() {
   return Response.json(
     {
       error:
@@ -43,18 +46,16 @@ export async function POST() {
     },
     { status: 405 },
   );
-}
-
-export async function PUT() {
+});
+export const PUT = withErrorHandler(async function PUT() {
   return Response.json(
     { error: "Templates cannot be modified via API" },
     { status: 405 },
   );
-}
-
-export async function DELETE() {
+});
+export const DELETE = withErrorHandler(async function DELETE() {
   return Response.json(
     { error: "Templates cannot be deleted via API" },
     { status: 405 },
   );
-}
+});

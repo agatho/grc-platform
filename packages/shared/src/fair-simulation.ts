@@ -89,9 +89,13 @@ function percentile(sortedArr: number[], p: number): number {
   const idx = (p / 100) * (sortedArr.length - 1);
   const lower = Math.floor(idx);
   const upper = Math.ceil(idx);
-  if (lower === upper) return sortedArr[lower];
+  // [OP-065] `lower`/`upper` liegen wegen `idx ∈ [0, len-1]` und der
+  // Leerprüfung darüber immer im Feld. `?? 0` schreibt das auf, ohne dass an
+  // zwei Stellen ein `!` behauptet werden muss.
+  const loValue = sortedArr[lower] ?? 0;
+  if (lower === upper) return loValue;
   const weight = idx - lower;
-  return sortedArr[lower] * (1 - weight) + sortedArr[upper] * weight;
+  return loValue * (1 - weight) + (sortedArr[upper] ?? loValue) * weight;
 }
 
 /**
@@ -151,35 +155,40 @@ export function runFAIRSimulation(input: FAIRInput): FAIRResult {
   const lmMean = sumLm / iterations;
 
   // Standard deviation
+  // [OP-065] Über die Werte statt über den Index: `aleValues` hat genau
+  // `iterations` Einträge (oben mit `new Array(iterations)` angelegt und
+  // lückenlos befüllt), aber der Compiler sah nur `number | undefined` — und
+  // `undefined - aleMean` wäre `NaN` gewesen, das sich lautlos durch
+  // Summe, Wurzel und Ergebnis zieht.
   let sumSqDiff = 0;
-  for (let i = 0; i < iterations; i++) {
-    const diff = aleValues[i] - aleMean;
+  for (const value of aleValues) {
+    const diff = value - aleMean;
     sumSqDiff += diff * diff;
   }
   const aleStdDev = Math.sqrt(sumSqDiff / iterations);
 
   // Distribution buckets (10 equal-width)
-  const minAle = aleValues[0];
-  const maxAle = aleValues[iterations - 1];
+  const minAle = aleValues[0] ?? 0;
+  const maxAle = aleValues[iterations - 1] ?? minAle;
   const bucketCount = 10;
   const bucketWidth = maxAle > minAle ? (maxAle - minAle) / bucketCount : 1;
   const distribution: DistributionBucket[] = [];
-  const bucketCounts = new Array(bucketCount).fill(0);
+  const bucketCounts: number[] = new Array<number>(bucketCount).fill(0);
 
-  for (let i = 0; i < iterations; i++) {
-    let bucketIdx = Math.floor((aleValues[i] - minAle) / bucketWidth);
+  for (const value of aleValues) {
+    let bucketIdx = Math.floor((value - minAle) / bucketWidth);
     if (bucketIdx >= bucketCount) bucketIdx = bucketCount - 1;
-    bucketCounts[bucketIdx]++;
+    bucketCounts[bucketIdx] = (bucketCounts[bucketIdx] ?? 0) + 1;
   }
 
-  for (let b = 0; b < bucketCount; b++) {
+  bucketCounts.forEach((count, b) => {
     distribution.push({
       rangeMin: Math.round((minAle + b * bucketWidth) * 100) / 100,
       rangeMax: Math.round((minAle + (b + 1) * bucketWidth) * 100) / 100,
-      count: bucketCounts[b],
-      percentage: Math.round((bucketCounts[b] / iterations) * 10000) / 100,
+      count,
+      percentage: Math.round((count / iterations) * 10000) / 100,
     });
-  }
+  });
 
   return {
     aleMean: Math.round(aleMean * 100) / 100,

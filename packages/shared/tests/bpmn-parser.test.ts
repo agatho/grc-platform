@@ -4,6 +4,17 @@
 import { describe, it, expect } from "vitest";
 import { parseBpmnXml, validateBpmnXml } from "../src/bpmn-parser";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 // ---------------------------------------------------------------------------
 // Test fixtures
 // ---------------------------------------------------------------------------
@@ -96,7 +107,7 @@ describe("parseBpmnXml", () => {
 
     // Orders should be in ascending sequence
     for (let i = 1; i < orders.length; i++) {
-      expect(orders[i]).toBeGreaterThan(orders[i - 1]);
+      expect(at(orders, i)).toBeGreaterThan(at(orders, i - 1));
     }
   });
 

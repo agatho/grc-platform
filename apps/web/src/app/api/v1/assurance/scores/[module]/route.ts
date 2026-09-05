@@ -4,13 +4,16 @@ import {
   control,
   controlTest,
   evidence,
-  finding,
   moduleConfig,
 } from "@grc/db";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { computeAssuranceScore, computeScoreTrend } from "@grc/shared";
 import type { ModuleAssuranceData } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const VALID_MODULES = new Set([
   "erm",
@@ -24,7 +27,7 @@ const VALID_MODULES = new Set([
 ]);
 
 // GET /api/v1/assurance/scores/:module — Detail + factors + recommendations
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ module: string }> },
 ) {
@@ -77,8 +80,7 @@ export async function GET(
     recommendations: result.recommendations,
     trend: computeScoreTrend(result.score, prevSnapshot?.score ?? null),
   });
-}
-
+});
 async function collectModuleData(orgId: string): Promise<ModuleAssuranceData> {
   const [controlStats] = await db
     .select({

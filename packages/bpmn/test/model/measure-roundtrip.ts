@@ -1,0 +1,367 @@
+/**
+ * Round-trip measurement over the whole corpus.
+ *
+ *   npx tsx packages/bpmn/test/model/measure-roundtrip.ts
+ *   node --experimental-strip-types packages/bpmn/test/model/measure-roundtrip.ts
+ *
+ * Writes `ROUNDTRIP-REPORT.md` next to this file and prints a summary. Exits
+ * with status 1 when any assurance fails, so it can be wired into CI as-is —
+ * but the report is written either way, because a failing measurement is the
+ * result, not an error.
+ */
+
+import { writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { loadCorpus } from "./corpus";
+import {
+  allAssurancesHold,
+  measureRoundTrip,
+  type RoundTripMeasurement,
+} from "./assurances";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REPORT = join(HERE, "ROUNDTRIP-REPORT.md");
+
+function mark(ok: boolean): string {
+  return ok ? "ok" : "**FAIL**";
+}
+
+function escapeCell(value: string): string {
+  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+}
+
+function truncate(value: string, max = 160): string {
+  return value.length <= max ? value : `${value.slice(0, max)}…`;
+}
+
+function renderDetails(m: RoundTripMeasurement): string[] {
+  const out: string[] = [];
+  out.push(`### \`${m.file}\``);
+  out.push("");
+  out.push(
+    `${m.elementsIn} elements · ${m.bytesIn} B in · ${m.bytesOut} B out` +
+      (m.warnings.length > 0
+        ? ` · ${m.warnings.length} moddle warning(s)`
+        : ""),
+  );
+  out.push("");
+
+  if (m.importError) {
+    out.push(`- **import failed:** ${m.importError}`);
+    out.push("");
+    return out;
+  }
+
+  if (m.warnings.length > 0) {
+    out.push("**moddle warnings**");
+    out.push("");
+    for (const w of m.warnings.slice(0, 20)) out.push(`- ${truncate(w)}`);
+    if (m.warnings.length > 20) out.push(`- … ${m.warnings.length - 20} more`);
+    out.push("");
+  }
+
+  if (!m.canonicalEquivalence.ok) {
+    out.push(
+      `**Z-A canonical equivalence — ${m.canonicalEquivalence.detail}**`,
+    );
+    out.push("");
+    out.push("| line | | in `<element>` | canonical line |");
+    out.push("|---:|---|---|---|");
+    for (const d of m.canonicalDifferences.slice(0, 30)) {
+      const sign =
+        d.kind === "removed" ? "− only in source" : "+ only after round-trip";
+      out.push(
+        `| ${d.line} | ${sign} | \`${escapeCell(d.context)}\` | \`${escapeCell(
+          truncate(d.text, 110),
+        )}\` |`,
+      );
+    }
+    if (m.canonicalDifferences.length > 30) {
+      out.push(
+        `| … | | | ${m.canonicalDifferences.length - 30} further differences |`,
+      );
+    }
+    out.push("");
+  }
+
+  if (!m.idempotence.ok) {
+    out.push(`**Z-B idempotence — ${m.idempotence.detail}**`);
+    out.push("");
+    const d = m.idempotenceFirstDivergence;
+    if (d) {
+      out.push(`First divergence at byte ${d.offset}:`);
+      out.push("");
+      out.push("```diff");
+      out.push(`- ${d.before.replace(/\n/g, "\\n")}`);
+      out.push(`+ ${d.after.replace(/\n/g, "\\n")}`);
+      out.push("```");
+      out.push("");
+    }
+  }
+
+  if (!m.nonLoss.ok) {
+    out.push(`**Z-C non-loss — ${m.nonLoss.detail}**`);
+    out.push("");
+    out.push("| kind | node | count in | count out |");
+    out.push("|---|---|---:|---:|");
+    for (const l of m.losses) {
+      out.push(
+        `| ${l.kind} | \`${escapeCell(truncate(l.key, 110))}\` | ${l.before} | ${l.after} |`,
+      );
+    }
+    out.push("");
+  }
+
+  if (m.additions.length > 0) {
+    out.push(
+      `<details><summary>${m.additions.length} node kind(s) added by the serialiser (allowed under Z-C)</summary>`,
+    );
+    out.push("");
+    out.push("| kind | node | count in | count out |");
+    out.push("|---|---|---:|---:|");
+    for (const a of m.additions.slice(0, 40)) {
+      out.push(
+        `| ${a.kind} | \`${escapeCell(truncate(a.key, 110))}\` | ${a.before} | ${a.after} |`,
+      );
+    }
+    out.push("");
+    out.push("</details>");
+    out.push("");
+  }
+
+  if (!m.readPreserveWrite.ok) {
+    out.push(`**Z-D read-preserve-write — ${m.readPreserveWrite.detail}**`);
+    out.push("");
+  }
+
+  return out;
+}
+
+export async function measureCorpus(): Promise<RoundTripMeasurement[]> {
+  const corpus = loadCorpus();
+  const results: RoundTripMeasurement[] = [];
+  for (const entry of corpus) {
+    results.push(await measureRoundTrip(entry.name, entry.xml));
+  }
+  return results;
+}
+
+export function renderReport(results: readonly RoundTripMeasurement[]): string {
+  const total = results.length;
+  const count = (pick: (m: RoundTripMeasurement) => boolean): number =>
+    results.filter(pick).length;
+
+  const za = count((m) => m.canonicalEquivalence.ok);
+  const zb = count((m) => m.idempotence.ok);
+  const zc = count((m) => m.nonLoss.ok);
+  const zd = count((m) => m.readPreserveWrite.ok);
+  const green = count(allAssurancesHold);
+
+  const lines: string[] = [];
+  lines.push("# Round-trip measurement — `bpmn-moddle` model layer");
+  lines.push("");
+  lines.push(
+    "Generated by `packages/bpmn/test/model/measure-roundtrip.ts`. " +
+      "Do not edit by hand; re-run the script instead.",
+  );
+  lines.push("");
+  lines.push(
+    "The four assurances are the ones stated in §5.1 of " +
+      "`/work/bpmn-plan/ARCTOS_BPMN_ENGINE_PLAN.md`:",
+  );
+  lines.push("");
+  lines.push(
+    "- **Z-A canonical equivalence** — `canonicalize(x) === canonicalize(write(read(x)))`, " +
+      "where the canonical form resolves namespace prefixes to URIs, sorts attributes, " +
+      "drops insignificant whitespace and rounds numbers to six decimals.",
+  );
+  lines.push(
+    "- **Z-B idempotence** — `write(read(write(read(x))))` is byte-identical to `write(read(x))`.",
+  );
+  lines.push(
+    "- **Z-C non-loss** — every element, attribute and text node of the input still occurs, " +
+      "at least as often, in the output. Additions are listed but allowed.",
+  );
+  lines.push(
+    "- **Z-D read-preserve-write** — an imported but unedited document exports back to the " +
+      "original bytes, and stops doing so once it is marked modified.",
+  );
+  lines.push("");
+  lines.push("## Summary");
+  lines.push("");
+  lines.push("| assurance | files passing |");
+  lines.push("|---|---|");
+  lines.push(`| Z-A canonical equivalence | ${za} / ${total} |`);
+  lines.push(`| Z-B idempotence | ${zb} / ${total} |`);
+  lines.push(`| Z-C non-loss | ${zc} / ${total} |`);
+  lines.push(`| Z-D read-preserve-write | ${zd} / ${total} |`);
+  lines.push(`| **all four** | **${green} / ${total}** |`);
+  lines.push("");
+
+  const repo = results.filter((m) => m.file.startsWith("repo-"));
+  const synth = results.filter((m) => !m.file.startsWith("repo-"));
+  lines.push("### By origin");
+  lines.push("");
+  lines.push("| group | files | all four assurances |");
+  lines.push("|---|---:|---|");
+  lines.push(
+    `| extracted from the repository (\`repo-*\`) | ${repo.length} | ${repo.filter(allAssurancesHold).length} / ${repo.length} |`,
+  );
+  lines.push(
+    `| hard cases built for the spike (\`synth-*\`) | ${synth.length} | ${synth.filter(allAssurancesHold).length} / ${synth.length} |`,
+  );
+  lines.push("");
+  lines.push(
+    `Sibling element order — *not* one of the assurances, since Z-A is stated over an ` +
+      `element set — is preserved in ${count((m) => m.siblingOrderPreserved.ok)} / ${total} files. ` +
+      "`moddle-xml` writes children back in schema order, so a plain text diff of a saved " +
+      "file will show movement even where Z-A holds.",
+  );
+  lines.push("");
+
+  // --- root causes --------------------------------------------------------
+  const lostAttributes = new Set<string>();
+  const lostElements = new Set<string>();
+  for (const m of results) {
+    for (const l of m.losses) {
+      if (l.kind === "attribute") lostAttributes.add(l.key);
+      if (l.kind === "element") lostElements.add(l.key);
+    }
+  }
+  if (lostAttributes.size > 0 || lostElements.size > 0) {
+    lines.push("## Root causes");
+    lines.push("");
+    lines.push(
+      "Every deviation below traces back to one of four behaviours of `moddle-xml`. " +
+        "None of them is a bug in this package; all of them are properties the " +
+        "replacement engine inherits, and they are what the assurances have to be " +
+        "stated against.",
+    );
+    lines.push("");
+    lines.push(
+      "1. **An attribute whose value equals the schema default is omitted on write.** " +
+        "The attribute was in the source, is not in the output, and the document still " +
+        "means the same thing — a Z-C failure by the letter of the assurance and a " +
+        "non-event by its intent. It is the single largest cause here.",
+    );
+    lines.push(
+      "2. **An IDREF that cannot be resolved is dropped**, with a `moddle` warning. " +
+        "This one *is* data loss: `dataStoreRef`, `messageRef`, `errorRef` and " +
+        "`BPMNShape/@bpmnElement` pointing at a missing element vanish silently from " +
+        "the saved file. A partial export from a foreign repository loses information " +
+        "the first time ARCTOS saves it.",
+    );
+    lines.push(
+      '3. **`xml.tagAlias: "lowerCase"` normalises `GrcMetadata` to `grcMetadata`.** ' +
+        "Required by §5.2 of the plan, not a defect — but it does move Z-A, so it is " +
+        "listed rather than hidden.",
+    );
+    lines.push(
+      "4. **Comments and processing instructions are not represented in the moddle tree** " +
+        "and are dropped. They are outside Z-C (which counts elements, attributes and " +
+        "text nodes) but they are content someone wrote on purpose.",
+    );
+    lines.push("");
+    lines.push(
+      `Distinct attributes lost anywhere in the corpus: **${lostAttributes.size}**; ` +
+        `distinct elements: **${lostElements.size}**.`,
+    );
+    lines.push("");
+    lines.push("| lost node kind |");
+    lines.push("|---|");
+    for (const key of [...lostElements, ...lostAttributes].sort()) {
+      lines.push(`| \`${escapeCell(key)}\` |`);
+    }
+    lines.push("");
+  }
+
+  lines.push("## Per file");
+  lines.push("");
+  lines.push("| file | elem | Z-A | Z-B | Z-C | Z-D | order kept | note |");
+  lines.push("|---|---:|---|---|---|---|---|---|");
+  for (const m of results) {
+    const note = m.importError
+      ? `import failed: ${truncate(m.importError, 70)}`
+      : [
+          m.canonicalEquivalence.ok
+            ? ""
+            : `Z-A: ${m.canonicalEquivalence.detail}`,
+          m.idempotence.ok ? "" : `Z-B: ${m.idempotence.detail}`,
+          m.nonLoss.ok ? "" : `Z-C: ${m.nonLoss.detail}`,
+          m.readPreserveWrite.ok ? "" : `Z-D: ${m.readPreserveWrite.detail}`,
+        ]
+          .filter(Boolean)
+          .join("; ");
+    lines.push(
+      `| \`${m.file}\` | ${m.elementsIn} | ${mark(m.canonicalEquivalence.ok)} | ${mark(
+        m.idempotence.ok,
+      )} | ${mark(m.nonLoss.ok)} | ${mark(m.readPreserveWrite.ok)} | ${
+        m.siblingOrderPreserved.ok ? "yes" : "no"
+      } | ${escapeCell(note)} |`,
+    );
+  }
+  lines.push("");
+
+  const failing = results.filter(
+    (m) => !allAssurancesHold(m) || m.additions.length > 0,
+  );
+  if (failing.length > 0) {
+    lines.push("## Differences in detail");
+    lines.push("");
+    for (const m of failing) lines.push(...renderDetails(m));
+  } else {
+    lines.push("## Differences in detail");
+    lines.push("");
+    lines.push(
+      "None — every file satisfies all four assurances with no additions.",
+    );
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+async function main(): Promise<void> {
+  const results = await measureCorpus();
+  writeFileSync(REPORT, renderReport(results), "utf8");
+  const failed = results.filter((m) => !allAssurancesHold(m));
+  const line = (label: string, ok: number): string =>
+    `${label}: ${ok}/${results.length}`;
+  console.log(
+    [
+      line("Z-A", results.filter((m) => m.canonicalEquivalence.ok).length),
+      line("Z-B", results.filter((m) => m.idempotence.ok).length),
+      line("Z-C", results.filter((m) => m.nonLoss.ok).length),
+      line("Z-D", results.filter((m) => m.readPreserveWrite.ok).length),
+    ].join("  ·  "),
+  );
+  for (const m of failed) {
+    console.log(
+      `FAIL ${m.file}: ` +
+        [
+          m.canonicalEquivalence.ok
+            ? null
+            : `Z-A ${m.canonicalEquivalence.detail}`,
+          m.idempotence.ok ? null : `Z-B ${m.idempotence.detail}`,
+          m.nonLoss.ok ? null : `Z-C ${m.nonLoss.detail}`,
+          m.readPreserveWrite.ok ? null : `Z-D ${m.readPreserveWrite.detail}`,
+        ]
+          .filter(Boolean)
+          .join("; "),
+    );
+  }
+  console.log(`report written to ${REPORT}`);
+  if (failed.length > 0) process.exitCode = 1;
+}
+
+const invokedDirectly =
+  process.argv[1] !== undefined &&
+  process.argv[1].endsWith("measure-roundtrip.ts");
+if (invokedDirectly) {
+  void main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

@@ -51,7 +51,7 @@ export default function MarketplacePage() {
 
 function MarketplaceBrowse() {
   const t = useTranslations("marketplace");
-  const router = useRouter();
+  const _router = useRouter();
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
   const [loading, setLoading] = useState(true);

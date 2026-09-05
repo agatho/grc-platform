@@ -1,12 +1,16 @@
-import { db, academyEnrollment } from "@grc/db";
+import { db, academyEnrollment, toTimestampInput } from "@grc/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import {
   createAcademyEnrollmentSchema,
   listEnrollmentsQuerySchema,
 } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -46,9 +50,8 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(total / query.limit),
     },
   });
-}
-
-export async function POST(req: Request) {
+});
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
   const body = createAcademyEnrollmentSchema.parse(await req.json());
@@ -59,6 +62,7 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         ...body,
+        dueDate: toTimestampInput(body.dueDate),
         assignedBy: ctx.userId,
       })
       .returning();
@@ -66,4 +70,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

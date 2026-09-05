@@ -13,10 +13,17 @@ import { validateBcmsGate2Coverage, type BiaCoverageStats } from "@grc/shared";
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { runBiaToAssetCascade } from "@/lib/cascade-runner";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-export async function POST(_req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  _req: Request,
+  { params }: RouteParams,
+) {
   const { id } = await params;
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -141,9 +148,22 @@ export async function POST(_req: Request, { params }: RouteParams) {
     existingEssentials.map((e) => e.processId),
   );
 
-  const newEssentialProcesses = allEssentialImpacts.filter(
+  const candidateEssentialProcesses = allEssentialImpacts.filter(
     (i) => !existingProcessSet.has(i.processId),
   );
+  // [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+  // `essential_process.mtpd_hours` und `.rto_hours` sind NOT NULL, in
+  // `bia_process_impact` sind beide nullable. Der Insert liess sie schlicht
+  // weg — jedes /finalize mit mindestens einem neuen essenziellen Prozess
+  // brach mit einer NOT-NULL-Verletzung ab und rollte die Statustransition
+  // mit zurueck. Impacts ohne beide Werte koennen keinen gueltigen
+  // Essential-Process-Datensatz ergeben; sie werden uebersprungen und in der
+  // Antwort ausgewiesen, statt mit einer erfundenen 0 gespeichert zu werden.
+  const newEssentialProcesses = candidateEssentialProcesses.filter(
+    (i) => i.mtpdHours != null && i.rtoHours != null,
+  );
+  const essentialsSkippedMissingRecoveryTimes =
+    candidateEssentialProcesses.length - newEssentialProcesses.length;
 
   let essentialsCreated = 0;
   if (newEssentialProcesses.length > 0) {
@@ -154,6 +174,8 @@ export async function POST(_req: Request, { params }: RouteParams) {
           processId: i.processId,
           biaAssessmentId: id,
           priorityRanking: i.priorityRanking ?? 99,
+          mtpdHours: i.mtpdHours as number,
+          rtoHours: i.rtoHours as number,
         })),
       );
       essentialsCreated = newEssentialProcesses.length;
@@ -192,6 +214,10 @@ export async function POST(_req: Request, { params }: RouteParams) {
       previousStatus: "in_progress",
       autoMarkedEssential: autoEssentialCount,
       essentialProcessesCreated: essentialsCreated,
+      // Impacts, die als essenziell markiert sind, aber MTPD oder RTO nicht
+      // tragen — sie ergeben keinen gueltigen essential_process-Datensatz.
+      essentialProcessesSkippedMissingRecoveryTimes:
+        essentialsSkippedMissingRecoveryTimes,
       coverageStats,
       cascade,
       blockers, // Warnings falls vorhanden
@@ -208,4 +234,4 @@ export async function POST(_req: Request, { params }: RouteParams) {
       ],
     },
   });
-}
+});

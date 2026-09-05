@@ -2,6 +2,8 @@
 // Parses BPMN XML and extracts RACI matrix from lanes, tasks, and message flows
 
 import type { RACIEntry, RACIMatrix } from "../schemas/bpm-derived";
+// [ARCTOS-FULL-2026-08-31 · OP-037] Eine Interpretation des Formats.
+import { extractBpmn, nodesOfType } from "./bpmn-extract";
 
 interface BpmnElement {
   id: string;
@@ -126,6 +128,11 @@ export function applyRACIOverrides(
         e.activityId === override.activityBpmnId &&
         e.participantId === override.participantBpmnId,
     );
+    // [OP-065] Dreimal stand `updatedEntries[existingIdx]` hinter derselben
+    // Bedingung `existingIdx >= 0`. Einmal entnehmen statt dreimal indizieren
+    // macht aus Bedingung und Zugriff eine Aussage; `?.`/`?? []` liefern
+    // denselben Ersatzwert wie die bisherigen `: []`-Zweige.
+    const existing = existingIdx >= 0 ? updatedEntries[existingIdx] : undefined;
 
     const entry: RACIEntry = {
       activityId: override.activityBpmnId,
@@ -138,10 +145,9 @@ export function applyRACIOverrides(
           ?.name ?? "",
       role: override.raciRole as "R" | "A" | "C" | "I",
       isOverride: true,
-      documents: existingIdx >= 0 ? updatedEntries[existingIdx].documents : [],
-      applications:
-        existingIdx >= 0 ? updatedEntries[existingIdx].applications : [],
-      risks: existingIdx >= 0 ? updatedEntries[existingIdx].risks : [],
+      documents: existing?.documents ?? [],
+      applications: existing?.applications ?? [],
+      risks: existing?.risks ?? [],
     };
 
     if (existingIdx >= 0) {
@@ -155,79 +161,60 @@ export function applyRACIOverrides(
 }
 
 // ─── XML parsing helpers ──────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · OP-037] Hier standen fünf reguläre Ausdrücke über
+// dem rohen XML. Sie sind durch `extractBpmn` ersetzt — dieselbe
+// Interpretation des Formats, die `@grc/bpmn` benutzt. Was die Ausdrücke
+// falsch machten (Präfixe, Attributreihenfolge, leere Lanes, Kommentare,
+// Entitäten, fremde Namensräume), steht im Kopf von `bpmn-extract.ts`.
+
+/** Die Aufgabentypen, die diese Auswertung als „Aufgabe" zählt. */
+const RACI_TASK_LOCAL_NAMES: ReadonlySet<string> = new Set([
+  "task",
+  "userTask",
+  "serviceTask",
+  "sendTask",
+  "receiveTask",
+  "manualTask",
+]);
 
 function extractLanes(xml: string): BpmnLane[] {
-  const lanes: BpmnLane[] = [];
-  const laneRegex =
-    /<bpmn:lane\s+id="([^"]+)"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = laneRegex.exec(xml)) !== null) {
-    const id = match[1];
-    const name = match[2] || id;
-    const content = match[3];
-    const flowNodeRefs: string[] = [];
-    const refRegex = /<bpmn:flowNodeRef>([^<]+)<\/bpmn:flowNodeRef>/g;
-    let refMatch: RegExpExecArray | null;
-    while ((refMatch = refRegex.exec(content)) !== null) {
-      flowNodeRefs.push(refMatch[1]);
-    }
-    lanes.push({ id, name, flowNodeRefs });
-  }
-
-  return lanes;
+  return extractBpmn(xml).lanes.map((lane) => ({
+    id: lane.id,
+    name: lane.name,
+    flowNodeRefs: [...lane.flowNodeRefs],
+  }));
 }
 
 function extractTasks(xml: string): BpmnElement[] {
-  const tasks: BpmnElement[] = [];
-  const taskRegex =
-    /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = taskRegex.exec(xml)) !== null) {
-    tasks.push({
-      id: match[2],
-      name: match[3] || match[2],
-      type: match[1],
-    });
-  }
-
-  return tasks;
+  return nodesOfType(extractBpmn(xml), RACI_TASK_LOCAL_NAMES).map((node) => ({
+    id: node.id,
+    // Wie bisher: ohne Namen steht die Kennung. Sie ist in der Matrix die
+    // einzige Möglichkeit, die Zeile wiederzuerkennen.
+    name: node.name || node.id,
+    type: node.localName,
+  }));
 }
 
 function extractMessageFlows(xml: string): BpmnMessageFlow[] {
-  const flows: BpmnMessageFlow[] = [];
-  const flowRegex =
-    /<bpmn:messageFlow[^>]+sourceRef="([^"]+)"[^>]+targetRef="([^"]+)"/g;
-  let match: RegExpExecArray | null;
-
-  while ((match = flowRegex.exec(xml)) !== null) {
-    flows.push({ sourceRef: match[1], targetRef: match[2] });
-  }
-
-  return flows;
+  return extractBpmn(xml).messageFlows.map((flow) => ({
+    sourceRef: flow.sourceRef,
+    targetRef: flow.targetRef,
+  }));
 }
 
 function extractDocumentRefs(xml: string, taskId: string): string[] {
-  const refs: string[] = [];
-  const docRegex = new RegExp(
-    `<bpmn:dataInputAssociation[^>]*>\\s*<bpmn:sourceRef>${taskId}</bpmn:sourceRef>\\s*<bpmn:targetRef>([^<]+)</bpmn:targetRef>`,
-    "g",
-  );
-  let match: RegExpExecArray | null;
-  while ((match = docRegex.exec(xml)) !== null) {
-    refs.push(match[1]);
-  }
-  return refs;
+  return [...(extractBpmn(xml).dataInputsByNode.get(taskId) ?? [])];
 }
 
 function extractApplicationRefs(_xml: string, _taskId: string): string[] {
-  // Custom application shapes would need custom namespace parsing
+  // Anwendungsformen wären eine eigene Namensraumerweiterung; es gibt sie
+  // heute nicht (unverändert gegenüber der Regex-Fassung).
   return [];
 }
 
 function extractRiskRefs(_xml: string, _taskId: string): string[] {
-  // Risk overlays from Sprint 3 would need custom namespace parsing
+  // Risiko-Overlays hängen an der Datenbank, nicht am BPMN (unverändert).
   return [];
 }
 

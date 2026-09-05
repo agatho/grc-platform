@@ -135,7 +135,7 @@ export default function ReviewCyclesPage() {
       {cycles.length === 0 && !error ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <ClipboardCheck size={48} className="text-gray-300 mb-4" />
+            <ClipboardCheck size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
               Keine Review-Zyklen vorhanden
             </p>

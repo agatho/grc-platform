@@ -77,7 +77,7 @@ function getDeadlineBadge(deadline: string) {
 }
 
 function IncidentsPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AiIncident[]>([]);
   const [loading, setLoading] = useState(true);

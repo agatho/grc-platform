@@ -20,10 +20,15 @@ import { isRetentionPurgeEligible } from "@grc/shared";
 import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface DocumentRetentionPurgeResult {
   scanned: number;
   purged: number;
   filesDeleted: number;
+  filesFailed: number;
+  auditEntriesRedacted: number;
+  redactionFailures: number;
+  purgeFailures: number;
 }
 
 export const processDocumentRetentionPurge = withCronInstrumentation(
@@ -32,6 +37,10 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
     const now = new Date();
     let purged = 0;
     let filesDeleted = 0;
+    let filesFailed = 0;
+    let auditEntriesRedacted = 0;
+    let redactionFailures = 0;
+    let purgeFailures = 0;
 
     const candidates = await db
       .select()
@@ -76,24 +85,64 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
         if (doc.filePath) filePaths.add(doc.filePath);
 
         await db.transaction(async (tx) => {
-          // 1. Audit-log entry BEFORE deletion (raw SQL — chain_seq /
-          //    hash chain are assigned by DB defaults + triggers).
+          // 1. Audit-log entry BEFORE deletion.
+          //
+          // [ARCTOS-FULL-2026-08-31 / WP4 · S03-05 — audit call only;
+          //  this cron belongs to WP7/WP8]
+          // The comment that used to stand here said the chain was
+          // "assigned by DB defaults + triggers". It was not: audit_log
+          // carried exactly one trigger, a BEFORE UPDATE guard, and the
+          // column defaults left entry_hash NULL, previous_hash_scope
+          // NULL and hash_version 1. Every hard-deleted document's
+          // retention record therefore sat outside the hash chain and
+          // outside the external anchor — the record of what was deleted
+          // was the least protected record in the system.
+          //
+          // Migration 0401 makes the comment true: audit_log now carries
+          // a BEFORE INSERT trigger that assigns scope, previous_hash,
+          // the content commitment and entry_hash for every insert,
+          // whatever wrote it.
+          //
+          // [WP8 · S07-15] Zwei Änderungen an genau dieser Anweisung:
+          //
+          //  (a) `purgedFiles` — die Dateipfade, die den ursprünglichen
+          //      DATEINAMEN enthalten — standen in `metadata`. `metadata`
+          //      ist unter v4 eine direkte Eingabe von
+          //      `compute_audit_hash_v4()` und damit die einzige
+          //      PII-tragende Spalte, die eine spätere Art.-17-Redaktion
+          //      NICHT anfassen kann, ohne die Kette zu brechen. Sie
+          //      wandern nach `changes`, das über das Content-Commitment
+          //      geht und redigierbar ist. In `metadata` bleiben nur
+          //      Zählwerte.
+          //
+          //  (b) `entity_title` trug den Dokumenttitel (bei einem
+          //      Personaldokument regelmäßig ein Klarname). Die Spalte ist
+          //      seit Migration 0428 redigierbar; der Titel bleibt hier
+          //      stehen, weil die Löschung ohne ihn nicht nachvollziehbar
+          //      wäre, und wird unten zusammen mit dem Rest tombstoniert,
+          //      sobald die Aufbewahrung des NACHWEISES abgelaufen ist.
           await tx.execute(sql`
             INSERT INTO audit_log
               (org_id, user_id, user_email, user_name,
                entity_type, entity_id, entity_title,
-               action, action_detail, metadata)
+               action, action_detail, changes, metadata)
             VALUES
               (${doc.orgId}, NULL, NULL, 'system:document-retention-purge',
                'document', ${doc.id}, ${doc.title},
                'delete', 'retention_purge',
+               ${JSON.stringify({
+                 purged: {
+                   title: doc.title,
+                   files: [...filePaths],
+                 },
+               })}::jsonb,
                ${JSON.stringify({
                  reason: "Retention period elapsed",
                  retentionUntil: doc.retentionUntil,
                  retentionPolicyId: doc.retentionPolicyId,
                  status: doc.status,
                  currentVersion: doc.currentVersion,
-                 purgedFiles: [...filePaths],
+                 purgedFileCount: filePaths.size,
                })}::jsonb)
           `);
 
@@ -114,22 +163,92 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
 
         purged++;
 
-        // 3. Physical files (best effort, after commit)
+        // 3. [WP8 · S07-15] Der Zielkonflikt in seiner allgemeinen Form:
+        //    das DELETE auf `document` erzeugt über den generischen
+        //    `audit_trigger` eine VOLLSTÄNDIGE Kopie der gelöschten Zeile
+        //    in `audit_log.changes` — und dort ist sie append-only. Die
+        //    Aufbewahrungsfrist hob sich damit selbst auf: gelöscht war
+        //    nur die Originalzeile, der Inhalt blieb.
+        //
+        //    Auflösung: der Audit-Trail behält, DASS und WANN gelöscht
+        //    wurde (Zeile, Zeitpunkt, Aktion, Kettenposition bleiben
+        //    unverändert), der INHALT wird redigiert. Das Content-
+        //    Commitment aus WP4 bleibt erhalten, die Kette verifiziert
+        //    danach weiter. `tombstone_audit_entries_for_entity` ist der
+        //    Mengen-Einstiegspunkt aus Migration 0428.
+        try {
+          const redacted = await db.execute(sql`
+            SELECT public.tombstone_audit_entries_for_entity(
+              ${doc.orgId}::uuid, 'document', ${doc.id}::uuid, 'retention_purge'
+            ) AS n
+          `);
+          const list = (
+            Array.isArray(redacted)
+              ? redacted
+              : ((redacted as unknown as { rows?: unknown[] }).rows ?? [])
+          ) as { n: number }[];
+          auditEntriesRedacted += Number(list[0]?.n ?? 0);
+        } catch (err) {
+          log.error("[document-retention-purge] audit redaction failed", {
+            documentId: doc.id,
+            err,
+          });
+          redactionFailures++;
+        }
+
+        // 4. Physical files (best effort, after commit)
         const storage = getFileStorage();
         for (const relPath of filePaths) {
           try {
             if (await storage.delete(relPath)) {
               filesDeleted++;
             }
-          } catch {
-            // Already gone or not accessible — nothing to do.
+          } catch (err) {
+            // #WP8-S07-15 (Nebenbefund): der leere `catch` liess eine
+            // Datei zurück, die nach dem Verschwinden der DB-Zeile weder
+            // auffindbar noch löschbar ist — eine Datei ohne Eigentümer
+            // und ohne Löschpfad. Sie wird jetzt gezählt und gemeldet.
+            filesFailed++;
+            log.error("[document-retention-purge] file could not be deleted", {
+              relPath,
+              err,
+            });
           }
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // #WP8 (S10-11-Klasse): der leere `catch` liess einen
+        // fehlgeschlagenen Purge als Erfolg durchgehen. Der Lauf zählt
+        // ihn jetzt und meldet ihn am Ende.
+        purgeFailures++;
+        log.error("[document-retention-purge] purge failed", {
+          documentId: doc.id,
+          err,
+        });
       }
     }
 
-    return { scanned: candidates.length, purged, filesDeleted };
+    if (purgeFailures > 0 || filesFailed > 0) {
+      log.error(
+        "[document-retention-purge] purge failure(s), file(s) left behind in object storage",
+        { purgeFailures, filesFailed },
+      );
+    }
+
+    if (redactionFailures > 0) {
+      // Eine nicht redigierte Kopie ist eine nicht vollzogene Löschung.
+      throw new Error(
+        `document-retention-purge: ${redactionFailures} document(s) purged but their audit copies could not be redacted`,
+      );
+    }
+
+    return {
+      scanned: candidates.length,
+      purged,
+      filesDeleted,
+      filesFailed,
+      auditEntriesRedacted,
+      redactionFailures,
+      purgeFailures,
+    };
   },
 );

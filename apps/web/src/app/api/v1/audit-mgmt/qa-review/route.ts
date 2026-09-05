@@ -1,13 +1,20 @@
 import {
   db,
+  audit,
   auditQaReview,
   auditQaChecklistItem,
   auditResourceAllocation,
+  auditorProfile,
+  userOrganizationRole,
 } from "@grc/db";
-import { createQaReviewSchema, computeQaScore } from "@grc/shared";
+import { createQaReviewSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // IIA Standards 2024 aligned QA checklist items
 const QA_CHECKLIST_TEMPLATE = [
@@ -188,7 +195,7 @@ const QA_CHECKLIST_TEMPLATE = [
 ];
 
 // POST /api/v1/audit-mgmt/qa-review?auditId=...
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -208,14 +215,122 @@ export async function POST(req: Request) {
     );
   }
 
-  // Validate reviewer independence: reviewer must NOT be in audit_resource_allocation
-  const allocations = await db
-    .select({ auditorId: auditResourceAllocation.auditorId })
-    .from(auditResourceAllocation)
-    .where(eq(auditResourceAllocation.auditId, auditId));
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-177]
+  //
+  // Unabhaengigkeit des QA-Reviewers (IIA 1130 / 2340): wer die Pruefung
+  // durchgefuehrt hat, darf ihre Qualitaet nicht selbst beurteilen. Bis
+  // hierher stand unter genau dieser Ueberschrift eine Abfrage, deren
+  // Ergebnis niemand gelesen hat; die Pruefung fand nicht statt.
+  //
+  // Der urspruengliche Autor hat die Aufloesung `auditor_profile` → `user`
+  // offengelassen („need to resolve auditor profiles"). Sie ist im Schema
+  // eindeutig und nachgeschlagen, nicht erfunden:
+  //   audit_qa_review.reviewer_id        → "user"(id)
+  //   audit_resource_allocation.auditor_id → auditor_profile(id)
+  //   auditor_profile.user_id            → "user"(id), UNIQUE (ap_user_idx)
+  // Der eindeutige Index macht die Zuordnung Profil↔Benutzer 1:1; ein
+  // Benutzer kann also nicht ueber zwei Profile am selben Auftrag haengen.
+  //
+  // Geprueft werden die drei Wege, auf denen ein Benutzer nachweislich zum
+  // Pruefteam DIESES Auftrags gehoert:
+  //   (a) `audit.lead_auditor_id` — die Auftragsleitung zeigt direkt auf
+  //       `"user"(id)`, ohne Umweg vergleichbar;
+  //   (b) `audit.auditor_ids` (uuid[]) — die Teamliste, die die Oberflaeche
+  //       unter „Auditoren" aus den Benutzern der Organisation setzt
+  //       (`audit/executions/[id]`); ebenfalls Benutzerkennungen;
+  //   (c) eine Ressourcenzuteilung `audit_resource_allocation` — der Weg,
+  //       den die urspruengliche Ueberschrift nennt, ueber `auditor_profile`.
+  // (a) und (b) sind noetig, weil ein Auftrag ohne Ressourcenplanung
+  // auskommt: (c) allein liesse die haeufigste Besetzung ungeprueft.
+  // NICHT geprueft wird `audit.auditee_id`: die gepruefte Stelle ist eine
+  // andere Konfliktart als die Teamzugehoerigkeit, und welche Rolle sie in
+  // der QA spielen soll, sagt weder Schema noch Code. Das bleibt offen.
 
-  // Check if reviewer is in the audit team (by userId, need to resolve auditor profiles)
-  // Simplified: check if reviewer is directly referenced
+  // Die Unabhaengigkeitspruefung kann nur etwas aussagen, wenn Auftrag und
+  // Reviewer ueberhaupt zu DIESER Organisation gehoeren: ein Auftrag einer
+  // fremden Organisation haette keine Zuteilungszeilen unter `ctx.orgId`,
+  // die Pruefung ginge leer durch.
+  const [auditRow] = await db
+    .select({
+      id: audit.id,
+      leadAuditorId: audit.leadAuditorId,
+      auditorIds: audit.auditorIds,
+    })
+    .from(audit)
+    .where(and(eq(audit.id, auditId), eq(audit.orgId, ctx.orgId)));
+  if (!auditRow) {
+    return Response.json({ error: "Audit not found" }, { status: 404 });
+  }
+
+  const [reviewerMembership] = await db
+    .select({ userId: userOrganizationRole.userId })
+    .from(userOrganizationRole)
+    .where(
+      and(
+        eq(userOrganizationRole.userId, body.data.reviewerId),
+        eq(userOrganizationRole.orgId, ctx.orgId),
+        isNull(userOrganizationRole.deletedAt),
+      ),
+    );
+  if (!reviewerMembership) {
+    return Response.json(
+      { error: "Reviewer not found in this organization" },
+      { status: 422 },
+    );
+  }
+
+  if (auditRow.leadAuditorId === body.data.reviewerId) {
+    return Response.json(
+      {
+        error:
+          "QA reviewer must be independent of the engagement team (IIA 1130): the reviewer leads this audit.",
+        code: "qa_reviewer_not_independent",
+        conflict: "lead_auditor",
+      },
+      { status: 422 },
+    );
+  }
+
+  if ((auditRow.auditorIds ?? []).includes(body.data.reviewerId)) {
+    return Response.json(
+      {
+        error:
+          "QA reviewer must be independent of the engagement team (IIA 1130): the reviewer is on the audit team.",
+        code: "qa_reviewer_not_independent",
+        conflict: "audit_team",
+      },
+      { status: 422 },
+    );
+  }
+
+  const [allocation] = await db
+    .select({ role: auditResourceAllocation.role })
+    .from(auditResourceAllocation)
+    .innerJoin(
+      auditorProfile,
+      eq(auditorProfile.id, auditResourceAllocation.auditorId),
+    )
+    .where(
+      and(
+        eq(auditResourceAllocation.orgId, ctx.orgId),
+        eq(auditResourceAllocation.auditId, auditId),
+        eq(auditorProfile.orgId, ctx.orgId),
+        eq(auditorProfile.userId, body.data.reviewerId),
+      ),
+    )
+    .limit(1);
+  if (allocation) {
+    return Response.json(
+      {
+        error:
+          "QA reviewer must be independent of the engagement team (IIA 1130): the reviewer is allocated to this audit.",
+        code: "qa_reviewer_not_independent",
+        conflict: "resource_allocation",
+        allocatedRole: allocation.role,
+      },
+      { status: 422 },
+    );
+  }
 
   const created = await withAuditContext(ctx, async (tx) => {
     const [review] = await tx
@@ -243,10 +358,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/audit-mgmt/qa-review?auditId=...
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "auditor", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -277,4 +391,4 @@ export async function GET(req: Request) {
     .where(eq(auditQaChecklistItem.qaReviewId, review.id));
 
   return Response.json({ data: { ...review, checklistItems: items } });
-}
+});

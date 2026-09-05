@@ -38,6 +38,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -103,13 +104,15 @@ function QuestionnairesInner() {
   const fetchTemplates = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/questionnaire-templates?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        setTemplates(json.data ?? []);
-      }
-    } catch {
-      /* ignore */
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422, danach
+      // `catch { /* ignore */ }` — die Vorlagenliste war leer und die Seite
+      // sagte nichts dazu.
+      setTemplates(
+        await fetchAllPages<TemplateRow>("/api/v1/questionnaire-templates"),
+      );
+    } catch (err) {
+      console.error("tprm/questionnaires: Vorlagen nicht geladen", err);
+      setTemplates([]);
     } finally {
       setLoading(false);
     }

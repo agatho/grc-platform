@@ -18,7 +18,7 @@ export default function ImportExportPage() {
 
 function ImportExportInner() {
   const t = useTranslations("eam");
-  const [importing, setImporting] = useState(false);
+  const [importing, _setImporting] = useState(false);
 
   return (
     <div className="space-y-6">

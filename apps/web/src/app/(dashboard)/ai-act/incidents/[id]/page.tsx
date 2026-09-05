@@ -75,7 +75,7 @@ function getDeadlineInfo(deadline: string | null) {
 }
 
 function IncidentDetailInner() {
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AiIncident | null>(null);

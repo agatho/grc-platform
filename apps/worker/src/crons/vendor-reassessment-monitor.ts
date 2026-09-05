@@ -4,6 +4,8 @@
 import { db, vendor, notification } from "@grc/db";
 import { and, sql, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface VendorReassessmentResult {
   processed: number;
@@ -49,30 +51,34 @@ export const processVendorReassessmentMonitor = withCronInstrumentation(
             (1000 * 60 * 60 * 24),
         );
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: v.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "vendor",
-          entityId: v.id,
-          title: `Vendor reassessment overdue: ${v.name}`,
-          message: `Vendor "${v.name}" (${v.tier}) assessment was due on ${v.nextAssessmentDate} (${daysOverdue} days overdue). Please schedule a reassessment.`,
-          channel: "both" as const,
-          templateKey: "vendor_reassessment_overdue",
-          templateData: {
-            vendorId: v.id,
-            vendorName: v.name,
-            vendorTier: v.tier,
-            nextAssessmentDate: v.nextAssessmentDate,
-            daysOverdue,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: v.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "vendor",
+            entityId: v.id,
+            title: `Vendor reassessment overdue: ${v.name}`,
+            message: `Vendor "${v.name}" (${v.tier}) assessment was due on ${v.nextAssessmentDate} (${daysOverdue} days overdue). Please schedule a reassessment.`,
+            channel: "both" as const,
+            templateKey: "vendor_reassessment_overdue",
+            templateData: {
+              vendorId: v.id,
+              vendorName: v.name,
+              vendorTier: v.tier,
+              nextAssessmentDate: v.nextAssessmentDate,
+              daysOverdue,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "vendor-reassessment-monitor" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "vendor-reassessment-monitor", scope: "v" }, err);
       }
     }
 

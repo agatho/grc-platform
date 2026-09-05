@@ -124,6 +124,13 @@ export const scimToken = pgTable(
       .defaultNow(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     revokedBy: uuid("revoked_by").references(() => user.id),
+    // #WP3-S02-15 (Migration 0411): SCIM tokens had no expiry at all and
+    // `revoked_at` was never read, so a leaked token stayed valid until someone
+    // manually flipped `is_active`. Rotation without a downtime window was not
+    // possible either — hence the explicit lineage columns.
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    rotatedFromId: uuid("rotated_from_id"),
+    rotatedAt: timestamp("rotated_at", { withTimezone: true }),
   },
   (table) => [
     index("st_org_idx").on(table.orgId),

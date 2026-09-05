@@ -1,37 +1,49 @@
-import { db, risk, riskControl, control, aiPromptLog } from "@grc/db";
+// POST /api/v1/ai/control-suggestions — AI-generated control suggestions for a risk
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
+//
+// Diese Route war der schlechteste der 23 AI-Endpunkte:
+//   * Prompt komplett ungehärtet, Risikotitel und -beschreibung direkt im
+//     Fliesstext (`Risk: "${riskRow.title}"`).
+//   * Antwort ungeprüft: `suggestions = JSON.parse(cleaned)` in `unknown[]`,
+//     direkt in die Response.
+//   * Eigener In-Memory-Rate-Limiter (`Map<string, number[]>`), also pro
+//     Container und ohne Bezug zu `@/lib/rate-limit`.
+//   * `ai_prompt_log` ohne Provider.
+//
+// Sie ist dieselbe Fachfunktion wie `ai/suggest-controls`, nur ohne
+// dessen Härtung. Beide laufen jetzt über `aiCompleteGoverned`.
+
+import { db, risk, riskControl, control } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { requireModule } from "@grc/auth";
 import { aiControlSuggestionsSchema } from "@grc/shared";
-import { aiComplete } from "@grc/ai";
+import {
+  aiCompleteGoverned,
+  buildIcsControlSuggestionPrompt,
+  icsControlSuggestionsSchema,
+  safeJsonParse,
+} from "@grc/ai";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-// Simple in-memory rate limiter: 5 requests per minute per user
-const rateLimitMap = new Map<string, number[]>();
-const RATE_LIMIT = 5;
-const RATE_WINDOW_MS = 60_000;
-
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now();
-  const timestamps = rateLimitMap.get(userId) ?? [];
-  const recent = timestamps.filter((t) => now - t < RATE_WINDOW_MS);
-  if (recent.length >= RATE_LIMIT) return false;
-  recent.push(now);
-  rateLimitMap.set(userId, recent);
-  return true;
-}
-
-// POST /api/v1/ai/control-suggestions — AI-generated control suggestions for a risk
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "control_owner");
   if (ctx instanceof Response) return ctx;
 
-  if (!checkRateLimit(ctx.userId)) {
-    return Response.json(
-      { error: "Rate limit exceeded. Maximum 5 requests per minute." },
-      { status: 429 },
-    );
-  }
+  const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
 
-  const body = aiControlSuggestionsSchema.safeParse(await req.json());
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
+  const body = aiControlSuggestionsSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -39,7 +51,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fetch risk details
   const [riskRow] = await db
     .select({
       id: risk.id,
@@ -63,7 +74,6 @@ export async function POST(req: Request) {
     return Response.json({ error: "Risk not found" }, { status: 404 });
   }
 
-  // Fetch existing controls for context
   const existingLinks = await db
     .select({
       title: control.title,
@@ -80,66 +90,37 @@ export async function POST(req: Request) {
       ),
     );
 
-  const prompt = `You are a GRC expert. Suggest 3-5 internal controls for the following risk. Return JSON array only.
-
-Risk: "${riskRow.title}"
-Description: "${riskRow.description ?? "N/A"}"
-Category: ${riskRow.riskCategory}
-Source: ${riskRow.riskSource}
-Inherent Score: ${riskRow.riskScoreInherent ?? "N/A"}
-
-Existing controls: ${existingLinks.length > 0 ? existingLinks.map((c) => `${c.title} (${c.controlType}, ${c.frequency})`).join("; ") : "None"}
-
-Return JSON: [{"title": string, "controlType": "preventive"|"detective"|"corrective", "frequency": "daily"|"weekly"|"monthly"|"quarterly"|"annually"|"event_driven", "frameworkRef": string, "rationale": string}]`;
-
-  const startMs = Date.now();
-
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown.",
-      },
-      { role: "user", content: prompt },
-    ],
-    maxTokens: 2000,
-    temperature: 0.3,
-  });
-
-  const latencyMs = Date.now() - startMs;
-
-  // Log AI usage
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "control-suggestions",
-    inputTokens: aiResponse.usage?.inputTokens ?? 0,
-    outputTokens: aiResponse.usage?.outputTokens ?? 0,
-    model: aiResponse.model,
-    latencyMs,
-    costUsd: String(
-      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
-    ),
-    cachedResult: false,
-  });
-
-  // Parse AI response
-  let suggestions: unknown[];
   try {
-    const cleaned = aiResponse.text.replace(/```json\n?|\n?```/g, "").trim();
-    suggestions = JSON.parse(cleaned);
-  } catch {
-    suggestions = [];
-  }
+    const result = await aiCompleteGoverned({
+      feature: "ai.control_suggestions",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "risk",
+      entityId: riskRow.id,
+      messages: buildIcsControlSuggestionPrompt({
+        riskTitle: riskRow.title,
+        riskDescription: riskRow.description,
+        riskCategory: riskRow.riskCategory,
+        riskSource: riskRow.riskSource,
+        inherentScore: riskRow.riskScoreInherent,
+        existingControls: existingLinks,
+      }),
+      maxTokens: 2000,
+      temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: icsControlSuggestionsSchema,
+    });
 
-  return Response.json({
-    data: {
-      riskId: body.data.riskId,
-      suggestions,
-      model: aiResponse.model,
-      provider: aiResponse.provider,
-    },
-  });
-}
+    return aiJson(
+      {
+        riskId: body.data.riskId,
+        suggestions: result.data.suggestions,
+        model: result.model,
+        provider: result.provider,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+});

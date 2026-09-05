@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_1" processRef="Process_1" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_1" name="Einkauf">
+        <bpmn:flowNodeRef>Activity_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_2</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_2" name="Buchhaltung">
+        <bpmn:flowNodeRef>Gateway_3</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_4</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start" />
+    <bpmn:endEvent id="EndEvent_1" name="End" />
+    <bpmn:userTask id="Activity_1" name="Bedarf melden" />
+    <bpmn:userTask id="Activity_2" name="Bestellung erfassen" />
+    <bpmn:exclusiveGateway id="Gateway_3" name="Betrag pruefen" />
+    <bpmn:userTask id="Activity_4" name="Rechnung buchen" />
+    <bpmn:sequenceFlow id="Flow_0" sourceRef="StartEvent_1" targetRef="Activity_1" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Activity_1" targetRef="Activity_2" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_2" targetRef="Gateway_3" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gateway_3" targetRef="Activity_4" name="&lt;= 5.000 EUR" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Gateway_3" targetRef="EndEvent_1" name="&gt; 5.000 EUR" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Activity_4" targetRef="EndEvent_1" />
+  </bpmn:process>
+</bpmn:definitions>

@@ -24,7 +24,9 @@ import {
 } from "@grc/db";
 import { and, isNull, isNotNull, lt, eq, inArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface AuditRemediationResult {
   processed: number;
   notifiedChecklistItems: number;
@@ -96,37 +98,40 @@ export const processAuditRemediationDeadlines = withCronInstrumentation(
             ? item.question.slice(0, 97) + "..."
             : item.question;
 
-        await db.insert(notification).values({
-          userId: item.leadAuditorId,
-          orgId: item.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "audit_checklist_item",
-          entityId: item.id,
-          title: overdue
-            ? `Korrektur überfällig: ${absDays} Tag(e)`
-            : `Korrektur fällig in ${absDays} Tag(en)`,
-          message: `NC-Bewertung in Audit "${item.auditTitle ?? "?"}": ${questionSnippet}`,
-          channel: "both" as const,
-          templateKey: "audit_remediation_deadline",
-          templateData: {
-            auditId: item.auditId,
-            auditTitle: item.auditTitle,
-            checklistItemId: item.id,
-            question: item.question,
-            result: item.result,
-            riskRating: item.riskRating,
-            remediationDeadline: item.remediationDeadline,
-            daysDiff,
-            overdue,
+        await insertNotification(
+          {
+            userId: item.leadAuditorId,
+            orgId: item.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "audit_checklist_item",
+            entityId: item.id,
+            title: overdue
+              ? `Korrektur überfällig: ${absDays} Tag(e)`
+              : `Korrektur fällig in ${absDays} Tag(en)`,
+            message: `NC-Bewertung in Audit "${item.auditTitle ?? "?"}": ${questionSnippet}`,
+            channel: "both" as const,
+            templateKey: "audit_remediation_deadline",
+            templateData: {
+              auditId: item.auditId,
+              auditTitle: item.auditTitle,
+              checklistItemId: item.id,
+              question: item.question,
+              result: item.result,
+              riskRating: item.riskRating,
+              remediationDeadline: item.remediationDeadline,
+              daysDiff,
+              overdue,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "audit-remediation-deadline-monitor" },
+        );
         notifiedChecklistItems++;
       } catch (err) {
-        console.error(
-          `[cron:audit-remediation-deadline-monitor] Failed for checklist item ${item.id}:`,
-          err instanceof Error ? err.message : String(err),
+        log.error(
+          "[cron:audit-remediation-deadline-monitor] Failed for checklist item",
+          { itemId: item.id, err },
         );
       }
     }
@@ -167,36 +172,42 @@ export const processAuditRemediationDeadlines = withCronInstrumentation(
         const overdue = daysDiff < 0;
         const absDays = Math.abs(daysDiff);
 
-        await db.insert(notification).values({
-          userId: f.ownerId,
-          orgId: f.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "finding",
-          entityId: f.id,
-          title: overdue
-            ? `Finding überfällig: ${absDays} Tag(e)`
-            : `Finding-Korrektur fällig in ${absDays} Tag(en)`,
-          message: `Finding "${f.title}" (Severity: ${f.severity}) — Frist: ${f.remediationDueDate}`,
-          channel: "both" as const,
-          templateKey: "audit_finding_deadline",
-          templateData: {
-            findingId: f.id,
-            title: f.title,
-            severity: f.severity,
-            status: f.status,
-            remediationDueDate: f.remediationDueDate,
-            daysDiff,
-            overdue,
-            auditId: f.auditId,
+        await insertNotification(
+          {
+            userId: f.ownerId,
+            orgId: f.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "finding",
+            entityId: f.id,
+            title: overdue
+              ? `Finding überfällig: ${absDays} Tag(e)`
+              : `Finding-Korrektur fällig in ${absDays} Tag(en)`,
+            message: `Finding "${f.title}" (Severity: ${f.severity}) — Frist: ${f.remediationDueDate}`,
+            channel: "both" as const,
+            templateKey: "audit_finding_deadline",
+            templateData: {
+              findingId: f.id,
+              title: f.title,
+              severity: f.severity,
+              status: f.status,
+              remediationDueDate: f.remediationDueDate,
+              daysDiff,
+              overdue,
+              auditId: f.auditId,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "audit-remediation-deadline-monitor" },
+        );
         notifiedFindings++;
       } catch (err) {
-        console.error(
-          `[cron:audit-remediation-deadline-monitor] Failed for finding ${f.id}:`,
-          err instanceof Error ? err.message : String(err),
+        log.error(
+          "[cron:audit-remediation-deadline-monitor] Failed for finding",
+          {
+            findingId: f.id,
+            err,
+          },
         );
       }
     }

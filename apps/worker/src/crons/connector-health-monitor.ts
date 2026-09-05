@@ -1,17 +1,37 @@
 // Sprint 62: Evidence Connector Framework — Health Monitor
-// Periodically checks health of all active connectors
+//
+// [ARCTOS-FULL-2026-08-31 / WP9 · S14-02, S10-15]
+//
+// This job used to contain:
+//
+//     // Simulated health check — real implementation would ping the provider
+//     const isHealthy = true;
+//
+// and then wrote `connector_health_check` rows with `status: "healthy"` and
+// a response time measured between two adjacent `Date.now()` calls, plus
+// `evidence_connector.healthStatus = "healthy"`. Every active connector was
+// reported healthy every four hours without a single packet leaving the
+// container. The connector dashboard therefore showed a perfect uptime
+// history for integrations that may have been broken for months.
+//
+// There is no provider client in this build. Rather than keep writing
+// "healthy", the job now refuses: it persists nothing, the run is recorded
+// as failed (`job_run.status = 'failed'`, HTTP 500 on the endpoint), and
+// `healthStatus` keeps whatever was last genuinely known. An absent health
+// check is a visible gap; a fabricated one is not.
 
-import { db, evidenceConnector, connectorHealthCheck } from "@grc/db";
+import { db, evidenceConnector } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { NotImplementedEvidenceError } from "../lib/job-runtime";
 
 export const connectorHealthMonitorCron = "0 */4 * * *"; // Every 4 hours
 
 export const connectorHealthMonitor = withCronInstrumentation(
   "connector-health-monitor",
-  async (): Promise<void> => {
+  async (): Promise<{ activeConnectors: number }> => {
     const activeConnectors = await db
-      .select()
+      .select({ id: evidenceConnector.id })
       .from(evidenceConnector)
       .where(
         and(
@@ -20,50 +40,12 @@ export const connectorHealthMonitor = withCronInstrumentation(
         ),
       );
 
-    for (const connector of activeConnectors) {
-      try {
-        const startTime = Date.now();
+    if (activeConnectors.length === 0) return { activeConnectors: 0 };
 
-        // Simulated health check — real implementation would ping the provider
-        const isHealthy = true;
-        const responseTimeMs = Date.now() - startTime;
-        const healthStatus = isHealthy ? "healthy" : "unhealthy";
-
-        await db.insert(connectorHealthCheck).values({
-          orgId: connector.orgId,
-          connectorId: connector.id,
-          status: healthStatus,
-          responseTimeMs,
-          checkType: "connectivity",
-          details: { connectorType: connector.connectorType },
-        });
-
-        await db
-          .update(evidenceConnector)
-          .set({
-            lastHealthCheck: new Date(),
-            healthStatus,
-            updatedAt: new Date(),
-          })
-          .where(eq(evidenceConnector.id, connector.id));
-      } catch {
-        await db.insert(connectorHealthCheck).values({
-          orgId: connector.orgId,
-          connectorId: connector.id,
-          status: "unhealthy",
-          checkType: "connectivity",
-          errorMessage: "Health check failed",
-        });
-
-        await db
-          .update(evidenceConnector)
-          .set({
-            lastHealthCheck: new Date(),
-            healthStatus: "unhealthy",
-            updatedAt: new Date(),
-          })
-          .where(eq(evidenceConnector.id, connector.id));
-      }
-    }
+    throw new NotImplementedEvidenceError(
+      "evidence connector health check",
+      `${activeConnectors.length} active connector(s) would have been probed. ` +
+        `No provider client is wired up, so no health check is recorded.`,
+    );
   },
 );

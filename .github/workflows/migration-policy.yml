@@ -1,48 +1,174 @@
-name: Migration Policy (ADR-014 Phase 3)
+name: Migration Policy (ADR-014 / ADR-023)
 
-# Enforces ADR-014: new schema migrations must land in
-# packages/db/drizzle/ (drizzle-kit generated), NOT in
-# packages/db/src/migrations/ (legacy, catch-up only).
+# [ARCTOS-FULL-2026-08-31 / WP1 · S09-06, S09-12, S09-15, S09-16]
 #
-# PRs that touch src/migrations/ fail this check. Main-branch pushes are
-# never checked (the legacy files already there stay, but no new ones
-# get added because PRs are blocked).
+# Vorher prüfte dieser Workflow ausschließlich, ob eine PR NEUE Dateien unter
+# `packages/db/src/migrations/*.sql` hinzufügt — ein Verzeichnis, das im Repo
+# seit der Konsolidierung nicht mehr existiert. Das Gate war damit wirkungslos:
+# handgeschriebene SQL-Dateien in `packages/db/drizzle/` passierten es
+# ungeprüft, und Änderungen an bestehenden Migrationen erfasste gar kein Gate.
+#
+# Der Workflow prüft jetzt das, was tatsächlich schiefgehen kann:
+#   1. keine neuen Dateien im aufgegebenen Legacy-Verzeichnis (unverändert)
+#   2. ADR-023 §4: jede NEUE Migration trägt den Metadaten-Header
+#   3. keine Änderung an einer bereits ausgelieferten Migration
+#      (ADR-014 forward-only) — mit dokumentierter Ausnahme für die
+#      Remediation dieses Audits
+#   4. eindeutige Migrationsnummern (S09-15)
+#   5. schemaweit eindeutige Indexnamen (die 42P07-Klasse aus S09-01)
+#   6. Migration-Rehearsal (ADR-023 §3): die vollständige Sequenz läuft gegen
+#      eine leere Datenbank, ein zweiter Lauf muss ein No-Op sein, und der
+#      Schema-Diff gegen das Drizzle-Schema muss leer sein
 
 on:
   pull_request:
     branches: [main, develop]
     paths:
       - "packages/db/**"
+      - ".github/workflows/migration-policy.yml"
+      - "packages/db/tests/check-migration-index-names.mjs"
+      - "packages/db/tests/schema-drift-report.ts"
 
 permissions:
   contents: read
   pull-requests: write
 
+env:
+  # Die 43 Migrationen aus S09-01 sind gegen eine leere Datenbank nie
+  # erfolgreich gelaufen und gelten nach ADR-014 als nicht ausgeliefert; sie
+  # durften im Rahmen von ARCTOS-FULL-2026-08-31 in-place repariert werden.
+  # Der Marker im Kopfkommentar macht die Ausnahme für das Gate sichtbar.
+  REMEDIATION_MARKER: "ARCTOS-FULL-2026-08-31"
+
 jobs:
-  check-migration-location:
-    name: Check migration location
+  check-migration-policy:
+    name: Migration policy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
-      - name: Detect new files in packages/db/src/migrations/
-        id: scan
+      - name: No new files in the retired src/migrations/ tree
         run: |
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-          # Added files only (A), not modifications (M). Legacy files can
-          # still be edited if someone really has to, just no new additions.
           NEW=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" -- 'packages/db/src/migrations/*.sql' || true)
           if [ -n "$NEW" ]; then
-            echo "::error::ADR-014 Phase 3 violation: new SQL migration files in src/migrations/ are not allowed."
-            echo "The following NEW files were added:"
+            echo "::error::ADR-014 violation: new SQL migration files in src/migrations/ are not allowed."
             echo "$NEW"
-            echo ""
-            echo "Move your migration to packages/db/drizzle/ and use drizzle-kit generate to author it."
-            echo "violated=true" >> "$GITHUB_OUTPUT"
             exit 1
-          else
-            echo "OK: no new src/migrations/ files in this PR."
           fi
+          echo "OK: no new src/migrations/ files."
+
+      - name: New migrations carry the ADR-023 metadata header
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          NEW=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" -- 'packages/db/drizzle/*.sql' || true)
+          FAIL=0
+          for f in $NEW; do
+            for key in "Migration:" "Breaking:" "Estimated-Duration:" "Locking:" "Compensating-Required:" "Reviewer:"; do
+              if ! head -40 "$f" | grep -q -- "^-- $key"; then
+                echo "::error file=$f::ADR-023 §4: metadata header line '-- $key' is missing."
+                FAIL=1
+              fi
+            done
+            if head -40 "$f" | grep -qE '^-- Breaking: yes'; then
+              echo "::notice file=$f::breaking migration — deploy/db-backup.sh --pre-breaking is required before rollout."
+            fi
+          done
+          [ "$FAIL" -eq 0 ] || exit 1
+          echo "OK: every new migration carries the ADR-023 header."
+
+      - name: Delivered migrations are not modified (forward-only)
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          CHANGED=$(git diff --name-only --diff-filter=MD "$BASE_SHA" "$HEAD_SHA" -- 'packages/db/drizzle/*.sql' || true)
+          FAIL=0
+          for f in $CHANGED; do
+            if [ -f "$f" ] && head -40 "$f" | grep -q "$REMEDIATION_MARKER"; then
+              echo "::notice file=$f::modified under the documented $REMEDIATION_MARKER remediation exception."
+              continue
+            fi
+            echo "::error file=$f::ADR-014 is forward-only — a delivered migration must not be modified or deleted. Write a new migration instead."
+            FAIL=1
+          done
+          [ "$FAIL" -eq 0 ] || exit 1
+          echo "OK: no delivered migration was modified."
+
+      - name: Migration numbers are unique
+        run: |
+          DUPES=$(ls packages/db/drizzle/*.sql \
+            | sed -E 's#.*/([0-9]{4}[a-z]?)_.*#\1#' \
+            | LC_ALL=C sort | uniq -d || true)
+          if [ -n "$DUPES" ]; then
+            echo "::error::duplicate migration numbers: $DUPES"
+            echo "Two files with the same number are applied in an order that differs"
+            echo "between 'sort', 'sort -V' and the runner — see S09-15."
+            exit 1
+          fi
+          echo "OK: all migration numbers are unique."
+
+      - name: Index names are unique across migrations
+        run: node packages/db/tests/check-migration-index-names.mjs
+
+  migration-rehearsal:
+    name: Migration rehearsal against an empty database (ADR-023 §3)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_rehearsal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_rehearsal -v ON_ERROR_STOP=1 -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            CREATE EXTENSION IF NOT EXISTS vector;
+            CREATE EXTENSION IF NOT EXISTS timescaledb;
+          "
+
+      - name: Apply every migration from zero
+        working-directory: packages/db
+        run: |
+          DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_rehearsal" \
+            npx tsx src/migrate-all.ts
+
+      - name: A repeated run must be a no-op (ledger + idempotency)
+        working-directory: packages/db
+        run: |
+          OUT=$(DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_rehearsal" \
+            npx tsx src/migrate-all.ts)
+          echo "$OUT"
+          echo "$OUT" | grep -q "All migrations applied successfully." || {
+            echo "::error::a repeated migration run must succeed — the container entrypoint runs on every start."
+            exit 1
+          }
+
+      - name: Schema drift Drizzle vs. database must be empty
+        working-directory: packages/db
+        run: |
+          DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_rehearsal" \
+            npx tsx tests/schema-drift-report.ts --fail-on-drift

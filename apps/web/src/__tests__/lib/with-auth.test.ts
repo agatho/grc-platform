@@ -144,16 +144,31 @@ describe("withAuth()", () => {
     expect(requireRoleMock).toHaveBeenCalledWith("admin", "risk_manager");
   });
 
-  it("succeeds via custom-role fallback when standard role denies but custom row exists", async () => {
+  // #WP3-S02-02 / S12-14 (Critical) — der Custom-Role-Fallback.
+  //
+  // Hier stand: "succeeds via custom-role fallback when standard role denies
+  // but custom row exists" — der Test schrieb den Defekt als Sollverhalten
+  // fest. `checkCustomRoleAccess` prüfte nur, ob der Nutzer IRGENDEINE
+  // Custom-Rolle mit IRGENDEINER Berechtigung != 'none' in der Org besitzt,
+  // ohne Modul- und ohne Aktionsbezug. Damit bestand jeder Nutzer mit einer
+  // beliebigen Custom-Rolle JEDE Rollenprüfung der Plattform, inklusive
+  // `withAuth("admin")` auf `POST /users/:id/roles`.
+  //
+  // Neues Sollverhalten: der Fallback ist modul- und aktionsbewusst und greift
+  // ohne ermittelbaren Routenpfad gar nicht (fail closed). Der vollständige
+  // Eskalationspfad wird in
+  // `src/__tests__/api/s02-02-privilege-escalation.test.ts` gefahren.
+  it("does NOT grant via the custom-role fallback when no route context exists", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     getCurrentOrgIdMock.mockResolvedValue("org-1");
     requireRoleMock.mockReturnValue(() =>
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    // Custom-role lookup finds a row → access granted
-    dbExecuteMock.mockResolvedValue([{ "?column?": 1 }]);
+    // Even a custom-role row that WOULD have satisfied the old fallback.
+    dbExecuteMock.mockResolvedValue([{ action: "admin", module_key: "erm" }]);
     const { withAuth } = await import("../../lib/api");
     const result = await withAuth("admin");
-    expect(result).not.toBeInstanceOf(Response);
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(403);
   });
 });

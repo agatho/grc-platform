@@ -215,7 +215,7 @@ export default function PlaceholdersPage() {
                             {ph.currentValue}
                           </span>
                         ) : (
-                          <span className="text-gray-300">&mdash;</span>
+                          <span className="text-gray-500">&mdash;</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">

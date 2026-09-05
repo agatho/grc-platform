@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_Nested" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_Nested" isExecutable="false">
+    <bpmn:startEvent id="N_Start">
+      <bpmn:outgoing>NF_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="Sub_L1" name="Ebene 1">
+      <bpmn:incoming>NF_1</bpmn:incoming>
+      <bpmn:outgoing>NF_2</bpmn:outgoing>
+      <bpmn:startEvent id="L1_Start">
+        <bpmn:outgoing>L1_F1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:subProcess id="Sub_L2" name="Ebene 2">
+        <bpmn:incoming>L1_F1</bpmn:incoming>
+        <bpmn:outgoing>L1_F2</bpmn:outgoing>
+        <bpmn:multiInstanceLoopCharacteristics id="MI_1" isSequential="false"/>
+        <bpmn:startEvent id="L2_Start">
+          <bpmn:outgoing>L2_F1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:transaction id="Sub_L3" name="Ebene 3 (Transaktion)">
+          <bpmn:incoming>L2_F1</bpmn:incoming>
+          <bpmn:outgoing>L2_F2</bpmn:outgoing>
+          <bpmn:startEvent id="L3_Start">
+            <bpmn:outgoing>L3_F1</bpmn:outgoing>
+          </bpmn:startEvent>
+          <bpmn:scriptTask id="L3_Task" name="Buchung ausfuehren" scriptFormat="javascript">
+            <bpmn:incoming>L3_F1</bpmn:incoming>
+            <bpmn:outgoing>L3_F2</bpmn:outgoing>
+            <bpmn:script>print("ok");</bpmn:script>
+          </bpmn:scriptTask>
+          <bpmn:endEvent id="L3_End">
+            <bpmn:incoming>L3_F2</bpmn:incoming>
+          </bpmn:endEvent>
+          <bpmn:sequenceFlow id="L3_F1" sourceRef="L3_Start" targetRef="L3_Task"/>
+          <bpmn:sequenceFlow id="L3_F2" sourceRef="L3_Task" targetRef="L3_End"/>
+        </bpmn:transaction>
+        <bpmn:endEvent id="L2_End">
+          <bpmn:incoming>L2_F2</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="L2_F1" sourceRef="L2_Start" targetRef="Sub_L3"/>
+        <bpmn:sequenceFlow id="L2_F2" sourceRef="Sub_L3" targetRef="L2_End"/>
+      </bpmn:subProcess>
+      <bpmn:adHocSubProcess id="Sub_AdHoc" name="Ad-hoc-Teil" ordering="Parallel">
+        <bpmn:incoming>L1_F2</bpmn:incoming>
+        <bpmn:outgoing>L1_F3</bpmn:outgoing>
+        <bpmn:manualTask id="AdHoc_Task" name="Manuell nachbearbeiten"/>
+      </bpmn:adHocSubProcess>
+      <bpmn:endEvent id="L1_End">
+        <bpmn:incoming>L1_F3</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="L1_F1" sourceRef="L1_Start" targetRef="Sub_L2"/>
+      <bpmn:sequenceFlow id="L1_F2" sourceRef="Sub_L2" targetRef="Sub_AdHoc"/>
+      <bpmn:sequenceFlow id="L1_F3" sourceRef="Sub_AdHoc" targetRef="L1_End"/>
+    </bpmn:subProcess>
+    <bpmn:endEvent id="N_End">
+      <bpmn:incoming>NF_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="NF_1" sourceRef="N_Start" targetRef="Sub_L1"/>
+    <bpmn:sequenceFlow id="NF_2" sourceRef="Sub_L1" targetRef="N_End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Nested">
+    <bpmndi:BPMNPlane id="Plane_Nested" bpmnElement="Process_Nested">
+      <bpmndi:BPMNShape id="N_Start_di" bpmnElement="N_Start">
+        <dc:Bounds x="152" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_L1_di" bpmnElement="Sub_L1" isExpanded="false">
+        <dc:Bounds x="240" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="N_End_di" bpmnElement="N_End">
+        <dc:Bounds x="420" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="NF_1_di" bpmnElement="NF_1">
+        <di:waypoint x="188" y="200"/>
+        <di:waypoint x="240" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="NF_2_di" bpmnElement="NF_2">
+        <di:waypoint x="360" y="200"/>
+        <di:waypoint x="420" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_Sub_L1">
+    <bpmndi:BPMNPlane id="Plane_Sub_L1" bpmnElement="Sub_L1">
+      <bpmndi:BPMNShape id="L1_Start_di" bpmnElement="L1_Start">
+        <dc:Bounds x="152" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_L2_di" bpmnElement="Sub_L2" isExpanded="false">
+        <dc:Bounds x="240" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_AdHoc_di" bpmnElement="Sub_AdHoc" isExpanded="false">
+        <dc:Bounds x="410" y="160" width="120" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L1_End_di" bpmnElement="L1_End">
+        <dc:Bounds x="590" y="182" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="L1_F1_di" bpmnElement="L1_F1">
+        <di:waypoint x="188" y="200"/>
+        <di:waypoint x="240" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L1_F2_di" bpmnElement="L1_F2">
+        <di:waypoint x="360" y="200"/>
+        <di:waypoint x="410" y="200"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L1_F3_di" bpmnElement="L1_F3">
+        <di:waypoint x="530" y="200"/>
+        <di:waypoint x="590" y="200"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

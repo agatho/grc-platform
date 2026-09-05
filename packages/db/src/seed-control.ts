@@ -5,6 +5,7 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -12,8 +13,22 @@ const db = drizzle(client);
 async function seed() {
   console.log("Seeding Sprint 4 ICS + DMS demo data...");
 
-  // Bypass RLS for seeding
-  await db.execute(sql`SET app.bypass_rls = 'true'`);
+  // [ARCTOS-FULL-2026-08-31 / WP2 · S01-02, S01-23]
+  //
+  // Hier stand `SET app.bypass_rls = 'true'` — sitzungsweit (ohne LOCAL,
+  // anders als seed-risk.ts, das `set_config(..., true)` verwendet und damit
+  // transaktionslokal bleibt). Beides ist jetzt gegenstandslos: Migration
+  // 0390 hat den GUC aus allen 55 Policies entfernt, weil er von JEDER
+  // Datenbankrolle setzbar war — auch von der absichtlich unprivilegierten
+  // Runtime-Rolle `grc_app` — und damit ein globaler RLS-Escape-Hatch auf 33
+  // Kerntabellen war.
+  //
+  // Das Seed braucht ihn nicht: es öffnet oben einen EIGENEN Client auf
+  // DATABASE_URL, also die Superuser-Rolle `grc`. Superuser umgehen RLS
+  // ohnehin, unabhängig von FORCE. Läuft dieses Seed je gegen eine
+  // unprivilegierte Verbindung, ist der richtige Weg
+  // `set_config('app.current_org_id', <org>, true)` je Org — nicht ein
+  // globaler Schalter.
 
   // Get first org for seeding
   const orgs = await db.execute(
@@ -23,7 +38,7 @@ async function seed() {
     console.log("No organizations found. Run db:seed first.");
     process.exit(1);
   }
-  const orgId = orgs[0].id;
+  const orgId = requireRow(orgs, "Organisation suchen").id;
 
   // Get admin user
   const users = await db.execute(
@@ -33,13 +48,13 @@ async function seed() {
     console.log("No users found. Run db:seed first.");
     process.exit(1);
   }
-  const userId = users[0].id;
+  const userId = requireRow(users, "Benutzer suchen").id;
 
   // ─── Check idempotency ─────────────────────────────────────
   const existingControls = await db.execute(
     sql`SELECT COUNT(*) as cnt FROM control WHERE org_id = ${orgId}`,
   );
-  if (Number(existingControls[0].cnt) > 0) {
+  if (Number(requireRow(existingControls, "Kontrollen zaehlen").cnt) > 0) {
     console.log("Control data already exists, skipping seed.");
     await client.end();
     return;

@@ -5,7 +5,9 @@
 import { db, rcsaCampaign, rcsaAssignment, notification, user } from "@grc/db";
 import { eq, and, sql, lt, gt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface RcsaReminderResult {
   processed: number;
   remindersSent: number;
@@ -26,7 +28,7 @@ export const processRcsaReminder = withCronInstrumentation(
       .where(eq(rcsaCampaign.status, "active"));
 
     if (activeCampaigns.length === 0) {
-      console.log("[cron:rcsa-reminder] No active campaigns found");
+      log.info("[cron:rcsa-reminder] No active campaigns found");
       return { processed: 0, remindersSent: 0, errors: [] };
     }
 
@@ -76,25 +78,28 @@ export const processRcsaReminder = withCronInstrumentation(
           }
 
           try {
-            await db.insert(notification).values({
-              orgId: campaign.orgId,
-              userId,
-              type: "deadline_approaching",
-              entityType: "rcsa_campaign",
-              entityId: campaign.id,
-              title: `RCSA Reminder: ${campaign.name}`,
-              message: `You have ${userAssignments.length} pending assessment(s) for "${campaign.name}". Deadline in ${daysRemaining} day(s).`,
-              channel: "both",
-              templateKey: "rcsa_reminder",
-              templateData: {
-                campaignName: campaign.name,
-                pendingCount: userAssignments.length,
-                deadline: campaign.periodEnd,
-                daysRemaining,
+            await insertNotification(
+              {
+                orgId: campaign.orgId,
+                userId,
+                type: "deadline_approaching",
+                entityType: "rcsa_campaign",
+                entityId: campaign.id,
+                title: `RCSA Reminder: ${campaign.name}`,
+                message: `You have ${userAssignments.length} pending assessment(s) for "${campaign.name}". Deadline in ${daysRemaining} day(s).`,
+                channel: "both",
+                templateKey: "rcsa_reminder",
+                templateData: {
+                  campaignName: campaign.name,
+                  pendingCount: userAssignments.length,
+                  deadline: campaign.periodEnd,
+                  daysRemaining,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "rcsa-reminder" },
+            );
 
             // Increment reminders_sent on each assignment
             for (const assignment of userAssignments) {

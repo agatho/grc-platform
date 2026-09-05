@@ -1,0 +1,49 @@
+{
+  "a11y": {
+    "canvasLabel": "BPMN-Prozessdiagramm",
+    "editorLabel": "BPMN-Prozessdiagramm, bearbeitbar",
+    "canvasHint": "Interaktives Diagramm. Pfeiltasten verschieben den Ausschnitt, Plus und Minus zoomen, 0 passt das Diagramm ein. Eine gleichwertige Tabelle aller Diagrammelemente steht unterhalb des Diagramms zur Verfügung.",
+    "loading": "Diagramm wird geladen",
+    "tableHeading": "Diagrammelemente als Tabelle",
+    "tableShow": "Elementtabelle einblenden",
+    "tableHide": "Elementtabelle ausblenden",
+    "tableEmpty": "Das Diagramm enthält keine Elemente.",
+    "colName": "Bezeichnung",
+    "colType": "Elementtyp",
+    "colId": "Element-ID",
+    "riskBadge": "{count, plural, =0 {Kein Risiko} one {1 Risiko} other {# Risiken}} verknüpft, höchster Risikowert {score}",
+    "controlBadge": "{effective} von {total} verknüpften Kontrollen sind wirksam",
+    "findingBadge": "{open, plural, one {1 offene Feststellung} other {# offene Feststellungen}}, davon {critical} kritisch",
+    "lodStripe": "Verteidigungslinie: {lod}",
+    "drillDown": "Zum verknüpften Teilprozess {name} wechseln"
+  },
+  "grcView": {
+    "label": "GRC-Sicht",
+    "off": "GRC-Sicht: aus",
+    "frameworkLabel": "Rahmenwerk",
+    "frameworkOff": "Rahmenwerk: alle",
+    "loading": "GRC-Daten werden geladen …",
+    "error": "GRC-Daten nicht geladen ({reason})",
+    "computedAt": "Stand: {timestamp}",
+    "views": {
+      "modeling": "Modellierung",
+      "risk-control": "Risiko & Kontrolle",
+      "compliance": "Compliance & Nachweis",
+      "privacy": "Datenschutz",
+      "continuity": "Kontinuität (BCM)",
+      "operations": "Betrieb & Effizienz",
+      "organization": "Organisation & SoD",
+      "architecture": "Architektur (EAM)",
+      "responsibility": "Verantwortung"
+    }
+  },
+  "chrome": {
+    "disabledReason": "Bearbeitung erfordert die Rolle Prozessmodellierer."
+  },
+  "plane": {
+    "label": "Ebene",
+    "up": "Eine Ebene zurück",
+    "breadcrumb": "Ebenen des Diagramms",
+    "openHint": "Doppelklick oder Taste O öffnet die Ebene eines Subprozesses."
+  }
+}

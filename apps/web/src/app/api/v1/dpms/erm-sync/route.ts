@@ -1,7 +1,11 @@
-import { db } from "@grc/db";
+import { db, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 /**
  * GET /api/v1/dpms/erm-sync?check=true
@@ -14,7 +18,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
  */
 
 // ── GET: risk aggregation + sync status ───────────────────────
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "dpo", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -56,10 +60,9 @@ export async function GET(req: Request) {
       unsyncedHighCount: Number(row.unsynced_high_count ?? 0),
     },
   });
-}
-
+});
 // ── POST: sync to ERM ─────────────────────────────────────────
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -148,7 +151,7 @@ export async function POST(req: Request) {
         RETURNING id
       `);
 
-      const riskId = riskInsert.rows?.[0]?.id;
+      const riskId = firstRow(riskInsert)?.id;
       if (!riskId) continue;
 
       await tx.execute(sql`
@@ -169,4 +172,4 @@ export async function POST(req: Request) {
       message: `${syncedCount} Datenschutzrisiken ins ERM synchronisiert`,
     },
   });
-}
+});

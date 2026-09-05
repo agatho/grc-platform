@@ -11,10 +11,14 @@
  *   limit        — max entries (default 100)
  */
 import { db, orgActiveCatalog, catalog, catalogEntry } from "@grc/db";
-import { eq, and, inArray, notInArray, asc } from "drizzle-orm";
+import { eq, and, inArray, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -102,18 +106,18 @@ export async function GET(req: Request) {
   // 3. Filter out already-assigned entries if requested
   let unassignedCount = 0;
   if (unassignedOnly) {
-    // Check which entries are already referenced
-    try {
-      const refRes = await db.execute(
-        `SELECT DISTINCT catalog_entry_id FROM catalog_entry_reference
-         WHERE org_id = '${ctx.orgId}'
-         AND catalog_entry_id = ANY($1::uuid[])`,
-        // Fallback: use raw query since catalog_entry_reference might not be in drizzle schema
-      );
-    } catch {
-      // If catalog_entry_reference table doesn't exist or query fails,
-      // just return all entries
-    }
+    // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-077 → OP-178]
+    // Hier stand eine zweite Abfrage auf `catalog_entry_reference`, deren
+    // Ergebnis nie gelesen wurde. Sie konnte auch gar nichts liefern: der
+    // Text enthielt den Platzhalter `$1::uuid[]`, aber es wurden keine
+    // Parameter uebergeben — der Aufruf warf bei JEDEM Durchlauf, und der
+    // leere `catch` verschluckte den Fehler. Uebrig blieb ein Rundlauf zur
+    // Datenbank pro Anfrage. Entfernt.
+    // Was NICHT hier behoben wird: die verbliebene Abfrage baut ihren
+    // SQL-Text mit `'${ctx.orgId}'` und `"${entityTable}"` zusammen statt
+    // ueber gebundene Parameter. Beide Werte stammen heute aus der Sitzung
+    // bzw. aus einem Ternaer, sind also nicht vom Aufrufer steuerbar; die
+    // Form ist trotzdem die falsche und steht als OP-178 im Register.
     // Simpler approach: check if a risk/control exists with this catalogEntryId
     try {
       const entityTable = catalogType === "risk" ? "risk" : "control";
@@ -124,9 +128,10 @@ export async function GET(req: Request) {
          AND deleted_at IS NULL`,
       );
       const assignedIds = new Set(
-        (assignedResult as any[]).map((r: any) => r.catalog_entry_id),
+        (assignedResult as unknown as Array<{ catalog_entry_id: string }>).map(
+          (r) => r.catalog_entry_id,
+        ),
       );
-      const beforeCount = entries.length;
       entries = entries.filter((e) => !assignedIds.has(e.id));
       unassignedCount = entries.length;
     } catch {
@@ -142,4 +147,4 @@ export async function GET(req: Request) {
     totalEntries,
     unassignedCount,
   });
-}
+});

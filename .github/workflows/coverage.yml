@@ -21,7 +21,9 @@ env:
   NODE_VERSION: "22"
   AUTH_SECRET: ci-build-placeholder
   AUTH_TRUST_HOST: "true"
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  # [WP10 · S08-09] TURBO_TOKEN stand hier workflow-weit und war damit auch
+  # `npm ci` zugaenglich, das per Design fremden Code ausfuehrt. Er wird
+  # jetzt nur noch auf den Schritten gesetzt, die turbo aufrufen.
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 permissions:
@@ -37,21 +39,50 @@ jobs:
       # #WAVE11-SCORECARD: pin all GitHub Actions by commit SHA (scorecard
       # alerts 1407-1415). Comment carries the tag for readability — keep
       # both in sync when bumping.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
+      # [WP10 · S08-09/S08-19] wie im Dockerfile: keine Lifecycle-Skripte
+      # des gesamten Baums, die zwei noetigen gezielt nachziehen.
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S13-25]
+      #
+      # Hier stand `continue-on-error: true` mit der Begruendung
+      # "individual failures should not block aggregation". Wirkung: der
+      # Workflow blockierte auch bei KOMPLETT fehlgeschlagenen Tests nicht,
+      # setzte keine Mindestabdeckung durch und war damit kein Gate, sondern
+      # ein Report. Zusammen mit `--passWithNoTests` in fuenf Workspaces
+      # (S13-17) war die aggregierte Zahl als Qualitaetsaussage wertlos.
+      #
+      # Jetzt: Testfehler blockieren. Die Aggregation laeuft trotzdem
+      # (`if: always()`), damit der Report auch im Fehlerfall am PR haengt —
+      # das war das legitime Anliegen hinter dem alten continue-on-error.
+      # ────────────────────────────────────────────────────────────────
       - name: Run vitest with coverage in all packages
+        id: coverage_run
         run: npm run test:coverage
-        continue-on-error: true # individual failures should not block aggregation
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
 
       - name: Aggregate coverage report
+        if: always()
         run: npx tsx scripts/coverage-aggregate.ts
+
+      # [WP10 · S13-25] Ratsche gegen .coverage-ratchet.json: die
+      # Gesamt- und Paketabdeckung darf nicht unter den eingecheckten Stand
+      # fallen, und ein Paket darf nicht stillschweigend aus der Messung
+      # verschwinden (sonst passiert `--passWithNoTests` das Gate durch
+      # Loeschen der Testdateien).
+      - name: Coverage ratchet
+        run: node scripts/coverage-gate.mjs
 
       - name: Upload aggregated summary (JSON + Markdown)
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -82,7 +113,7 @@ jobs:
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        uses: actions/github-script@373c709c69115d41ff229c7e5df9f8788daa9553 # v9
         with:
           script: |
             const fs = require('fs');

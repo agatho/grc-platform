@@ -72,7 +72,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function CorrectiveActionDetailInner() {
-  const router = useRouter();
+  const _router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { formatDate } = useDateFormat();
   const [data, setData] = useState<CorrectiveAction | null>(null);

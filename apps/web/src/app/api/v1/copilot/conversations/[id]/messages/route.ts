@@ -1,11 +1,39 @@
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-17, S05-21, S05-06, S05-09, S05-12]
+//
+// Der Endpunkt war ein Stub, der die Nutzereingabe zurückspiegelte:
+//
+//   const aiResponseContent = `[AI Response] Processing query: "${…}"`;
+//
+// und sie als Assistentennachricht mit dem Inhaltstyp Markdown ablegte.
+// In `CLAUDE.md` stand dazu „GRC Copilot … ✅ Done". Zwei Konsequenzen:
+// die Doku-Aussage war falsch (S05-17), und die zurückgespiegelte
+// Nutzereingabe lag als „markdown" im Bestand — self-XSS, sobald je ein
+// Markdown-Renderer angebunden würde (S05-21).
+//
+// Jetzt: ein echter, richtliniengebundener Modellaufruf mit
+// RAG-Kontext aus `copilot_rag_source` (org-gescopt). `contentType`
+// bleibt `text`, weil es im Produkt keinen Markdown-Renderer gibt — die
+// Zusicherung aus S05-21 wird damit nicht durch die Hintertür verletzt.
+
 import { db, copilotConversation, copilotMessage } from "@grc/db";
 import { sendMessageSchema, messageQuerySchema } from "@grc/shared";
-import { eq, and, desc, sql, lt } from "drizzle-orm";
+import { eq, and, desc, sql, lt, asc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
+import {
+  aiCompleteGoverned,
+  buildCopilotPrompt,
+  copilotAnswerSchema,
+  safeJsonParse,
+} from "@grc/ai";
+import { aiErrorResponse } from "../../../../ai/_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/copilot/conversations/:id/messages — Send message + get AI response
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -66,8 +94,69 @@ export async function POST(
   if (!conv)
     return Response.json({ error: "Conversation not found" }, { status: 404 });
 
+  // RAG-Kontext: einfache Volltextauswahl über die indizierten Quellen
+  // dieser Organisation. Der Index selbst wird von
+  // `copilot-rag-indexer` gepflegt (Eigentum WP8) — hier wird nur
+  // gelesen, org-gescopt und längenbegrenzt.
+  const contextRows = (await db.execute(sql`
+    SELECT source_type, title, content
+      FROM copilot_rag_source
+     WHERE org_id = ${ctx.orgId}::uuid
+       AND (
+         content ILIKE ${"%" + body.data.content.slice(0, 80) + "%"}
+         OR title ILIKE ${"%" + body.data.content.slice(0, 80) + "%"}
+       )
+     ORDER BY last_indexed_at DESC
+     LIMIT 12
+  `)) as unknown as Array<{
+    source_type: string;
+    title: string;
+    content: string;
+  }>;
+
+  const history = await db
+    .select({ role: copilotMessage.role, content: copilotMessage.content })
+    .from(copilotMessage)
+    .where(
+      and(
+        eq(copilotMessage.conversationId, id),
+        eq(copilotMessage.orgId, ctx.orgId),
+      ),
+    )
+    .orderBy(asc(copilotMessage.createdAt))
+    .limit(20);
+
+  let ai;
+  try {
+    ai = await aiCompleteGoverned({
+      feature: "copilot.chat",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      // Copilot-Fragen betreffen regelmässig benannte Personen
+      // (Verantwortliche, Melder, Prüfer).
+      containsPersonalData: true,
+      messages: buildCopilotPrompt({
+        question: body.data.content,
+        history: history.map((h) => ({
+          role: h.role === "assistant" ? "assistant" : "user",
+          content: h.content,
+        })),
+        context: contextRows.map((r) => ({
+          sourceType: r.source_type,
+          title: r.title,
+          content: r.content,
+        })),
+      }),
+      maxTokens: 2000,
+      temperature: 0.2,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: copilotAnswerSchema,
+    });
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+
   const result = await withAuditContext(ctx, async (tx) => {
-    // Insert user message
     const [userMsg] = await tx
       .insert(copilotMessage)
       .values({
@@ -80,10 +169,8 @@ export async function POST(
       })
       .returning();
 
-    // Generate AI response (placeholder - integrates with Sprint 51 LLM infra)
-    const aiResponseContent = `[AI Response] Processing query: "${body.data.content.substring(0, 100)}..."`;
-    const inputTokens = Math.ceil(body.data.content.length / 4);
-    const outputTokens = Math.ceil(aiResponseContent.length / 4);
+    const inputTokens = ai.usage?.inputTokens ?? 0;
+    const outputTokens = ai.usage?.outputTokens ?? 0;
 
     const [assistantMsg] = await tx
       .insert(copilotMessage)
@@ -91,18 +178,24 @@ export async function POST(
         conversationId: id,
         orgId: ctx.orgId,
         role: "assistant",
-        content: aiResponseContent,
-        contentType: "markdown",
-        model: "default",
+        content: ai.data.answer,
+        // [S05-21] bewusst "text": es gibt keinen Markdown-Renderer im
+        // Produkt. Wer einen einführt, muss zuerst sanitizen.
+        contentType: "text",
+        model: ai.model,
         inputTokens,
         outputTokens,
-        latencyMs: 500,
-        ragSources: [],
+        latencyMs: ai.latencyMs,
+        ragSources: ai.data.usedSources,
         templateKey: body.data.templateKey,
+        metadata: {
+          provider: ai.provider,
+          confidence: ai.data.confidence,
+          aiDisclosure: ai.disclosure,
+        },
       })
       .returning();
 
-    // Update conversation stats
     await tx
       .update(copilotConversation)
       .set({
@@ -114,14 +207,17 @@ export async function POST(
       })
       .where(eq(copilotConversation.id, id));
 
-    return { userMessage: userMsg, assistantMessage: assistantMsg };
+    return {
+      userMessage: userMsg,
+      assistantMessage: assistantMsg,
+      aiDisclosure: ai.disclosure,
+    };
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
-
+});
 // GET /api/v1/copilot/conversations/:id/messages — List messages
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -167,4 +263,4 @@ export async function GET(
     .offset(offset);
 
   return Response.json({ data: messages });
-}
+});

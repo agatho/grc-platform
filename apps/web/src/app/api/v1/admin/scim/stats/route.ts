@@ -1,9 +1,13 @@
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/admin/scim/stats — SCIM dashboard statistics
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -22,10 +26,13 @@ export async function GET(req: Request) {
 
   return Response.json({
     data: {
-      lastSync: (stats as any)?.last_sync ?? null,
-      syncedUsers: (stats as any)?.synced_users ?? 0,
-      errorCount: (stats as any)?.error_count ?? 0,
-      activeTokens: (stats as any)?.active_tokens ?? 0,
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die Zeilenform steht
+      // bereits als Typargument an `db.execute<…>` oben; die vier `as any`
+      // haben sie nur wieder weggeworfen.
+      lastSync: stats?.last_sync ?? null,
+      syncedUsers: stats?.synced_users ?? 0,
+      errorCount: stats?.error_count ?? 0,
+      activeTokens: stats?.active_tokens ?? 0,
     },
   });
-}
+});

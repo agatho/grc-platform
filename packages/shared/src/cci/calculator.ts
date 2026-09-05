@@ -174,9 +174,14 @@ export function getPeriodString(date: Date): string {
  * Get the previous period string (month before the given period).
  */
 export function getPreviousPeriod(period: string): string {
+  // [OP-065] `split("-")` liefert für "2026-09" zwei Teile, für "2026" aber
+  // nur einen — `monthStr` war dann `undefined`, `parseInt(undefined)` ist
+  // `NaN`, und heraus kam die Periode "NaN-NaN". `?? ""` macht daraus
+  // dasselbe `NaN`, aber ohne dass der Compiler übergangen wird; die
+  // Formatprüfung gehört zum Aufrufer und ist hier nicht neu erfunden.
   const [yearStr, monthStr] = period.split("-");
-  let year = parseInt(yearStr, 10);
-  let month = parseInt(monthStr, 10) - 1;
+  let year = parseInt(yearStr ?? "", 10);
+  let month = parseInt(monthStr ?? "", 10) - 1;
   if (month === 0) {
     month = 12;
     year--;
@@ -189,8 +194,8 @@ export function getPreviousPeriod(period: string): string {
  */
 export function getPeriodRange(period: string): { start: Date; end: Date } {
   const [yearStr, monthStr] = period.split("-");
-  const year = parseInt(yearStr, 10);
-  const month = parseInt(monthStr, 10) - 1; // JS months are 0-indexed
+  const year = parseInt(yearStr ?? "", 10);
+  const month = parseInt(monthStr ?? "", 10) - 1; // JS months are 0-indexed
   const start = new Date(Date.UTC(year, month, 1));
   const end = new Date(Date.UTC(year, month + 1, 1));
   return { start, end };

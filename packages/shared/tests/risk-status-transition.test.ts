@@ -113,8 +113,17 @@ describe("createRiskSchema — financial impact refine", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      // Error must be attached to financialImpactMax (the offending field)
-      const fieldErrors = result.error.flatten().fieldErrors;
+      // Error must be attached to financialImpactMax (the offending field).
+      // [WP12 · S14-25] `flatten().fieldErrors` is typed from the schema's
+      // OUTPUT shape; for a schema whose effects are declared via
+      // `.superRefine()` that shape widens to `{}` and the property access
+      // failed to compile once the package got a tsconfig.json. Asserting the
+      // record shape keeps the check exactly as strong — the assertion below
+      // is still that this specific key carries the error.
+      const fieldErrors = result.error.flatten().fieldErrors as Record<
+        string,
+        string[] | undefined
+      >;
       expect(fieldErrors.financialImpactMax).toBeDefined();
     }
   });

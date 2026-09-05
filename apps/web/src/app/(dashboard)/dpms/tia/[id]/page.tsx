@@ -77,7 +77,7 @@ export default function TiaDetailPage() {
 
 function TiaDetailInner() {
   const { formatDate: fmtDate } = useDateFormat();
-  const t = useTranslations("dpms");
+  const _t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<TiaDetail | null>(null);

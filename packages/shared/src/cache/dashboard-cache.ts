@@ -123,9 +123,11 @@ export class DashboardCache {
     try {
       const info = await this.adapter.info("memory");
       const match = info.match(/used_memory:(\d+)/);
+      // [OP-065] Die Fanggruppe `(\d+)` ist bei einem geglückten Treffer
+      // vorhanden; `?? ""` schreibt das auf, statt es mit `!` zu behaupten.
       if (match) {
         memoryUsedMb =
-          Math.round((parseInt(match[1], 10) / 1024 / 1024) * 100) / 100;
+          Math.round((parseInt(match[1] ?? "", 10) / 1024 / 1024) * 100) / 100;
       }
     } catch {
       // Redis info may not be available in all setups

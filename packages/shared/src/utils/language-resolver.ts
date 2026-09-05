@@ -48,6 +48,18 @@ export interface ResolvedEntityMeta {
   _fallback?: string[];
   /** The language that was actually used for resolution */
   _resolvedLanguage?: string;
+  /**
+   * [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] `resolveEntity()` preserves the
+   * original JSONB translation map of every resolved field under
+   * `<field>_translations`. That was written through a
+   * `(resolved as Record<string, unknown>)[...]` cast and never declared, so
+   * a caller reading `resolved.title_translations` got a type error — which
+   * nobody saw, because packages/shared had no tsconfig.json and was never
+   * type-checked. Declaring the pattern makes the documented output part of
+   * the contract instead of an undocumented side effect.
+   */
+  [preservedTranslations: `${string}_translations`]:
+    Record<string, string> | undefined;
 }
 
 // ── Core resolver functions ────────────────────────────────────────
@@ -65,11 +77,31 @@ export function resolveField(
   if (typeof field === "string") return field; // backwards compat
   if (typeof field !== "object") return "";
 
+  // [OP-065] Drei Zugriffe auf ein aus JSONB gelesenes Objekt, alle über
+  // `[]` und ohne Rücksicht auf die Prototypenkette. Das ist dieselbe
+  // Fehlerklasse wie F-4 in `audit-advanced.ts`, und sie ist hier gemessen:
+  //
+  //   resolveField({de,en}, "constructor", "de") → typeof "function"
+  //   resolveField({de,en}, "toString",    "de") → typeof "function"
+  //   resolveField({de,en}, "__proto__",   "de") → typeof "object"
+  //
+  // Die Signatur sagt `string`. Zurück kam der Object-Konstruktor. Über die
+  // heutigen Routen ist das nicht erreichbar — `translationExportQuerySchema`
+  // und `aiTranslateSchema` engen die Sprachkennung auf `z.enum(...)` ein —,
+  // aber die Zusicherung liegt damit beim AUFRUFER, nicht bei dieser
+  // Funktion, und der nächste Aufrufer erbt sie nicht mit.
+  //
+  // `pick` fragt über `Object.hasOwn` und prüft, dass tatsächlich eine
+  // Zeichenkette dasteht: ein JSONB-Wert kann auch eine Zahl oder ein
+  // Objekt sein, und auch dann darf hier kein Nicht-String herausfallen.
+  const pick = (key: string | undefined): string | undefined => {
+    if (key === undefined || !Object.hasOwn(field, key)) return undefined;
+    const value = field[key];
+    return typeof value === "string" ? value : undefined;
+  };
+
   return (
-    field[userLang] ??
-    field[orgDefaultLang] ??
-    field[Object.keys(field)[0]] ??
-    ""
+    pick(userLang) ?? pick(orgDefaultLang) ?? pick(Object.keys(field)[0]) ?? ""
   );
 }
 
@@ -196,17 +228,115 @@ export function computeSourceHash(text: string): string {
   return createHash("sha256").update(text).digest("hex").substring(0, 16);
 }
 
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-18]
+//
+// `sanitizeTranslation()` schrieb HTML-Entities in den DATENBESTAND:
+//
+//   .replace(/&/g, "&amp;").replace(/</g, "&lt;") …
+//
+// Eine Kontrolle „Vier-Augen-Prinzip bei Beträgen > 10.000 €" wurde als
+// „… amounts &gt; 10,000 EUR" PERSISTIERT. React escaped beim Rendern
+// erneut, der Nutzer sah `&gt;` im Klartext, und in CSV-/XLSX-/PDF-
+// Exporten sowie in nachgelagerten Prompts stand ebenfalls die Entity.
+// Escaping gehört an die Ausgabe, nicht in den Bestand — zumal an dieser
+// Stelle gar kein XSS-Pfad besteht (S05-21: kein
+// `dangerouslySetInnerHTML`, kein Markdown-Renderer).
+//
+// Was bleibt: Steuerzeichen und unsichtbare Bidi-/Zero-Width-Zeichen
+// entfernen. Die sind in einem Übersetzungstext nie gewollt und können
+// die Darstellung verfälschen.
+
+const TRANSLATION_CONTROL_CHARS =
+  /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
+const TRANSLATION_INVISIBLE_CHARS =
+  /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
+
 /**
- * Sanitize translated content to prevent XSS.
- * Escapes HTML entities in translated strings.
+ * Normalisiert eine Übersetzung vor der Speicherung.
+ *
+ * ACHTUNG: Diese Funktion escaped NICHT mehr. Wer den Wert in einen
+ * HTML-Kontext schreibt, muss dort escapen — React tut das von selbst.
  */
 export function sanitizeTranslation(text: string): string {
+  if (typeof text !== "string") return "";
+  return text
+    .replace(TRANSLATION_CONTROL_CHARS, " ")
+    .replace(TRANSLATION_INVISIBLE_CHARS, "")
+    .trim();
+}
+
+/**
+ * HTML-Entity-Escaping — ausdrücklich benannt, damit klar ist, was es tut.
+ *
+ * [WP6 · S05-18] Diese Funktion war früher der Rumpf von
+ * `sanitizeTranslation()` und wurde damit auf ALLE gespeicherten
+ * Übersetzungen angewendet. Sie bleibt erhalten, weil der
+ * XLIFF-Importpfad (`utils/xliff.ts`) sie braucht: dort kommt der Text aus
+ * einer externen Übersetzungsdatei (SDL Trados, memoQ), und die
+ * bestehende Zusage ist, dass er escaped in den Bestand geht.
+ *
+ * Für neue Aufrufer gilt: Escaping gehört an die Ausgabe, nicht in den
+ * Bestand. Wer diese Funktion aufruft, sollte begründen können, warum.
+ */
+export function escapeHtmlEntities(text: string): string {
+  if (typeof text !== "string") return "";
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;");
+}
+
+// ── Übersetzungsspeicher (S05-04, S05-19) ─────────────────────────
+//
+// Übersetzungen liegen seit Migration 0416 in `entity_translation` —
+// NICHT mehr in der Fachspalte. Diese beiden Tabellen beschreiben, aus
+// welcher Spalte der QUELLTEXT je Entitätstyp gelesen wird.
+//
+// Warum eine eigene Tabelle: `TRANSLATABLE_FIELDS` nannte für
+// `risk_catalog_entry`/`control_catalog_entry` die Felder `title` und
+// `description`. Die Tabellen haben aber `title_de`/`title_en` bzw.
+// `description_de`/`description_en` und kein `deleted_at` — der
+// Übersetzungspfad endete dort in einem unbehandelten 500
+// (`column "title" does not exist`, S05-19). Genau dieser Schema-Drift
+// hat den latenten Cross-Tenant-Write blockiert; die Zuordnung hier
+// behebt den Drift, und die Org-Spalte in `entity_translation` verhindert
+// den Cross-Tenant-Write.
+
+/** Spalte, aus der der Quelltext je (Entitätstyp, Feld) stammt. */
+export const TRANSLATION_SOURCE_COLUMNS: Record<
+  string,
+  Record<string, string>
+> = {
+  risk_catalog_entry: { title: "title_de", description: "description_de" },
+  control_catalog_entry: {
+    title: "title_de",
+    description: "description_de",
+    implementation: "implementation_de",
+  },
+};
+
+/** Entitätstypen ohne `deleted_at`-Spalte (globale Kataloge). */
+export const TRANSLATION_ENTITIES_WITHOUT_SOFT_DELETE = new Set([
+  "risk_catalog_entry",
+  "control_catalog_entry",
+]);
+
+/**
+ * Physischer Spaltenname für ein logisches Übersetzungsfeld.
+ * Fällt auf den logischen Namen zurück, wo beide gleich heissen.
+ */
+export function translationSourceColumn(
+  entityType: string,
+  field: string,
+): string {
+  return TRANSLATION_SOURCE_COLUMNS[entityType]?.[field] ?? field;
+}
+
+/** Hat der Entitätstyp eine `org_id`-Spalte? Kataloge sind global. */
+export function translationEntityHasOrgId(entityType: string): boolean {
+  return !TRANSLATION_ENTITIES_WITHOUT_SOFT_DELETE.has(entityType);
 }
 
 /**

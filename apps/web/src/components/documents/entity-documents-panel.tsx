@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   FileText,
-  Upload,
   Trash2,
   Download,
   Loader2,
@@ -20,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface LinkedDocument {
   link_id: string;
@@ -46,7 +46,9 @@ const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
   in_review: "bg-yellow-100 text-yellow-700",
   approved: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — als einziges Paar der
+  // -100/-700-Familie unter 4,5.
+  published: "bg-green-100 text-green-800",
   archived: "bg-gray-100 text-gray-500",
 };
 
@@ -92,7 +94,7 @@ export function EntityDocumentsPanel({
     if (res.ok) {
       const json = await res.json();
       setAvailableDocs(
-        (json.data ?? []).map((d: any) => ({
+        (json.data ?? []).map((d: UnvalidatedJson) => ({
           id: d.id,
           title: d.title,
           category: d.category,

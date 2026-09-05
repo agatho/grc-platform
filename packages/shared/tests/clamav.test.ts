@@ -1,13 +1,14 @@
 // ClamAV clamd INSTREAM client — protocol framing + response parsing
 // against a mocked socket (no clamd needed).
 
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { EventEmitter } from "events";
 import {
   parseClamdResponse,
   scanBuffer,
   isClamAvConfigured,
   isClamAvFailClosed,
+  isClamAvRequired,
   type ClamdSocketLike,
 } from "../src/lib/clamav";
 
@@ -160,9 +161,24 @@ describe("env flags", () => {
     expect(isClamAvConfigured()).toBe(true);
   });
 
-  it("isClamAvFailClosed defaults to fail-open", () => {
+  // #S04-06: the default is environment-dependent since the audit fix —
+  // fail-open outside production, fail-CLOSED in production.
+  it("isClamAvFailClosed defaults to fail-open outside production", () => {
+    vi.stubEnv("NODE_ENV", "test");
     expect(isClamAvFailClosed()).toBe(false);
     process.env.CLAMAV_FAIL_CLOSED = "1";
     expect(isClamAvFailClosed()).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("isClamAvFailClosed defaults to fail-CLOSED in production", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    expect(isClamAvFailClosed()).toBe(true);
+    expect(isClamAvRequired()).toBe(true);
+    // An explicit opt-out stays possible, but must be written down.
+    process.env.CLAMAV_FAIL_CLOSED = "0";
+    expect(isClamAvFailClosed()).toBe(false);
+    delete process.env.CLAMAV_FAIL_CLOSED;
+    vi.unstubAllEnvs();
   });
 });

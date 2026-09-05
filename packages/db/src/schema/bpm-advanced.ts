@@ -95,6 +95,12 @@ export const processConformanceResult = pgTable(
     totalTraces: integer("total_traces"),
     conformantTraces: integer("conformant_traces"),
     fitnessGaps: jsonb("fitness_gaps").default("[]"),
+    // [ARCTOS-FULL-2026-08-31 · OP-014] Beobachtete Übergänge zwischen zwei
+    // modellierten Schritten, die das Modell nicht direkt verbindet — als
+    // KANTENPAAR (`fromElementId`/`toElementId`, BPMN-Kennungen). `fitness_gaps`
+    // führt Knoten und kann `GrcConformanceSummary.deviations` deshalb nicht
+    // füllen; Migration 0465 legt die Spalte an, die es kann.
+    deviationEdges: jsonb("deviation_edges").default("[]"),
     precisionIssues: jsonb("precision_issues").default("[]"),
     reworkLoops: jsonb("rework_loops").default("[]"),
     bottlenecks: jsonb("bottlenecks").default("[]"),
@@ -171,10 +177,16 @@ export const processKpiDefinition = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // STUFE2-E (0454): Bezugsschritt der Kennzahl (Gutter am Element).
+    processStepId: uuid("process_step_id"),
+    // BPMN-ID der Kante, wenn die Kennzahl eine Durchlaufzeit ZWISCHEN zwei
+    // Schritten misst. Kein Fremdschluessel — Kanten haben keine Zeile.
+    sequenceFlowId: varchar("sequence_flow_id", { length: 100 }),
   },
   (table) => [
     index("pkd_process_idx").on(table.processId),
     index("pkd_org_idx").on(table.orgId),
+    index("pkd_process_step_idx").on(table.processStepId),
   ],
 );
 

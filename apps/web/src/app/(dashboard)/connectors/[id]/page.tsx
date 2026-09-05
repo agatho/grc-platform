@@ -5,13 +5,11 @@ import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
-  RefreshCcw,
   Play,
   Heart,
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  Shield,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -48,7 +46,7 @@ interface TestResult {
 }
 
 export default function ConnectorDetailPage() {
-  const t = useTranslations("connectors");
+  const _t = useTranslations("connectors");
   const { formatDateTime } = useDateFormat();
   const params = useParams();
   const router = useRouter();
@@ -213,7 +211,7 @@ export default function ConnectorDetailPage() {
         </div>
         {testResults.length === 0 ? (
           <p className="text-sm text-gray-400 py-12 text-center">
-            No test results yet. Click "Run Tests" to execute.
+            No test results yet. Click &quot;Run Tests&quot; to execute.
           </p>
         ) : (
           <div className="divide-y divide-gray-100">

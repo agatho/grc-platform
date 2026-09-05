@@ -21,6 +21,39 @@ import { checkWebhookUrl } from "@grc/shared";
 import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
+import { resolveOrgRecipients } from "../lib/recipients";
+import { insertNotification } from "../lib/notify";
+
+import { log } from "../lib/logger";
+// #S10-16 (ARCTOS-FULL-2026-08-31, Medium): tables the `change_status`
+// automation action may write to.
+//
+// `params.entityType` originates in an automation rule that an org user
+// authors in the UI. It was passed straight into `sql.identifier()`. That
+// is not SQL injection — the identifier is quoted correctly and the
+// `org_id` filter keeps the tenant boundary — but it let a rule set
+// `status` on ANY table carrying (id, org_id, status, updated_at),
+// including tables the rule's author has no route permission for.
+//
+// Documented escalation: a user with automation-edit rights but no DMS
+// rights writes `changeStatus(entityType: "document", newStatus:
+// "expired")`. `document-retention-purge.ts` selects
+// `status IN ('archived','expired')` and hard-deletes — turning an
+// automation rule into a deletion tool for documents the author could not
+// otherwise touch.
+//
+// Adding a new automation-managed entity is now a deliberate, reviewable
+// edit to this list. `document` is intentionally NOT on it.
+const AUTOMATION_STATUS_TABLES = new Set([
+  "risk",
+  "control",
+  "finding",
+  "incident",
+  "task",
+  "work_item",
+  "vendor",
+  "asset",
+]);
 
 /**
  * Resolve a user in the given org that holds one of the requested roles.
@@ -32,14 +65,16 @@ async function resolveOrgUserForRole(
   orgId: string,
   role: string,
 ): Promise<string | null> {
-  const rows = await db.execute(sql`
-    SELECT user_id FROM user_organization_role
-    WHERE org_id = ${orgId}::uuid
-      AND role IN (${role}, 'admin')
-    ORDER BY CASE WHEN role = ${role} THEN 0 ELSE 1 END
-    LIMIT 1
-  `);
-  return (rows as unknown as Array<{ user_id: string }>)[0]?.user_id ?? null;
+  // [WP9 · S10-07] This query used to ignore `deleted_at`. Revoking an org
+  // role is a SOFT delete (`UPDATE user_organization_role SET deleted_at =
+  // now()`), so a person who had left the organisation kept being resolved
+  // as the recipient of automation tasks and escalations. Delegated to the
+  // shared resolver so the filter is not maintained in nine places.
+  const [userId] = await resolveOrgRecipients(orgId, [role, "admin"], {
+    limit: 1,
+    preferRole: role,
+  });
+  return userId ?? null;
 }
 
 /**
@@ -55,8 +90,9 @@ const automationActionServices: ActionServices = {
         params.assigneeRole,
       );
       if (!createdBy) {
-        console.error(
-          `[AutomationServices] createTask: no user with role ${params.assigneeRole} or admin in org ${params.orgId}`,
+        log.error(
+          "[AutomationServices] createTask: no user with the requested role or admin in org",
+          { assigneeRole: params.assigneeRole, orgId: params.orgId },
         );
         return { id: "failed" };
       }
@@ -80,7 +116,7 @@ const automationActionServices: ActionServices = {
         .returning({ id: task.id });
       return { id: created.id };
     } catch (err) {
-      console.error("[AutomationServices] createTask failed:", err);
+      log.error("[AutomationServices] createTask failed", { err });
       return { id: "failed" };
     }
   },
@@ -99,25 +135,82 @@ const automationActionServices: ActionServices = {
         templateData: params.link ? { link: params.link } : {},
       });
     } catch (err) {
-      console.error("[AutomationServices] sendNotification failed:", err);
+      log.error("[AutomationServices] sendNotification failed", { err });
     }
   },
 
   sendEmail: async (params) => {
-    // Email sending via Resend SDK — placeholder for Sprint 28
-    console.log(
-      `[AutomationServices] sendEmail: template=${params.templateKey} role=${params.recipientRole}`,
-    );
+    // [WP9 · S10-15] This was `console.log`. The automation engine's e-mail
+    // action — one of five actions a rule author can pick in the UI — did
+    // nothing at all, and reported success.
+    //
+    // It now writes a real notification on the `email` channel with the
+    // rule's template key and data. `scheduled-notifications` picks it up
+    // and delivers it, which is the same path every other e-mail in the
+    // platform takes; an unknown template key is rejected at this point
+    // (S10-03) rather than three failed deliveries later.
+    try {
+      const recipients = await resolveOrgRecipients(
+        params.orgId,
+        [params.recipientRole],
+        { limit: 25 },
+      );
+      if (recipients.length === 0) {
+        log.error(
+          "[AutomationServices] sendEmail: no active member with the requested role in org",
+          { recipientRole: params.recipientRole, orgId: params.orgId },
+        );
+        return;
+      }
+      const title =
+        typeof params.data.title === "string"
+          ? params.data.title
+          : `Automation: ${params.templateKey}`;
+      for (const userId of recipients) {
+        await insertNotification(
+          {
+            orgId: params.orgId,
+            userId,
+            type: "escalation",
+            title,
+            message:
+              typeof params.data.message === "string"
+                ? params.data.message
+                : null,
+            channel: "email",
+            templateKey: params.templateKey,
+            templateData: params.data,
+            scheduledFor: new Date(),
+          },
+          { job: "automation-engine", dedupeWindow: "day" },
+        );
+      }
+    } catch (err) {
+      log.error("[AutomationServices] sendEmail failed", { err });
+    }
   },
 
   changeStatus: async (params) => {
-    // Generic status update via raw SQL (entity type varies)
+    // Generic status update via raw SQL (entity type varies).
+    // #S10-16: refuse any entity that is not automation-managed. See the
+    // AUTOMATION_STATUS_TABLES comment at the top of this file.
+    if (!AUTOMATION_STATUS_TABLES.has(params.entityType)) {
+      log.error(
+        "[AutomationServices] changeStatus refused: not an automation-managed entity",
+        {
+          entityType: params.entityType,
+          orgId: params.orgId,
+          entityId: params.entityId,
+        },
+      );
+      return;
+    }
     try {
       await db.execute(
         sql`UPDATE ${sql.identifier(params.entityType)} SET status = ${params.newStatus}, updated_at = now() WHERE id = ${params.entityId}::uuid AND org_id = ${params.orgId}::uuid`,
       );
     } catch (err) {
-      console.error("[AutomationServices] changeStatus failed:", err);
+      log.error("[AutomationServices] changeStatus failed", { err });
     }
   },
 
@@ -140,7 +233,7 @@ const automationActionServices: ActionServices = {
         channel: "both",
       });
     } catch (err) {
-      console.error("[AutomationServices] escalate failed:", err);
+      log.error("[AutomationServices] escalate failed", { err });
     }
   },
 
@@ -163,8 +256,9 @@ const automationActionServices: ActionServices = {
         );
 
       if (!webhook) {
-        console.warn(
-          `[AutomationServices] triggerWebhook: webhook ${params.webhookId} not found or inactive`,
+        log.warn(
+          "[AutomationServices] triggerWebhook: webhook not found or inactive",
+          { webhookId: params.webhookId },
         );
         return;
       }
@@ -173,8 +267,9 @@ const automationActionServices: ActionServices = {
       // ran (PR #200), but rows that predate it could still be delivered.
       const urlCheck = checkWebhookUrl(webhook.url);
       if (!urlCheck.ok) {
-        console.error(
-          `[AutomationServices] triggerWebhook: refusing unsafe URL for webhook ${webhook.id}: ${urlCheck.reason}`,
+        log.error(
+          "[AutomationServices] triggerWebhook: refusing unsafe URL for webhook",
+          { webhookId: webhook.id, reason: urlCheck.reason },
         );
         await db.insert(webhookDeliveryLog).values({
           webhookId: webhook.id,
@@ -196,8 +291,9 @@ const automationActionServices: ActionServices = {
       // Resolve and verify before issuing fetch.
       const hostCheck = await checkResolvedHostIsPublic(urlCheck.url.hostname);
       if (!hostCheck.ok) {
-        console.error(
-          `[AutomationServices] triggerWebhook: DNS rebind guard rejected ${webhook.id}: ${hostCheck.reason}`,
+        log.error(
+          "[AutomationServices] triggerWebhook: DNS rebind guard rejected webhook",
+          { webhookId: webhook.id, reason: hostCheck.reason },
         );
         await db.insert(webhookDeliveryLog).values({
           webhookId: webhook.id,
@@ -278,7 +374,7 @@ const automationActionServices: ActionServices = {
         errorMessage,
       });
     } catch (err) {
-      console.error("[AutomationServices] triggerWebhook failed:", err);
+      log.error("[AutomationServices] triggerWebhook failed", { err });
     }
   },
 };
@@ -310,7 +406,7 @@ export function initAutomationEngine(): AutomationEngine {
     void engineInstance!.handleEvent(event);
   });
 
-  console.log(
+  log.info(
     "[Sprint28] AutomationEngine initialized and subscribed to Event Bus",
   );
 

@@ -13,7 +13,7 @@ import {
   index,
   numeric,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
@@ -48,6 +48,12 @@ export const riskPredictionModel = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    featureImportanceJson: jsonb("feature_importance_json"),
+    trainedAt: timestamp("trained_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    trainingMetrics: jsonb("training_metrics"),
+    version: varchar("version", { length: 50 }),
   },
   (table) => ({
     orgIdx: index("rpm_org_idx").on(table.orgId),
@@ -108,6 +114,18 @@ export const riskPrediction = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    computedAt: timestamp("computed_at", { withTimezone: true })
+      .notNull()
+      .default(sql`now()`),
+    escalationProbability: numeric("escalation_probability", {
+      precision: 5,
+      scale: 2,
+    }),
+    featuresJson: jsonb("features_json"),
+    modelVersion: varchar("model_version", { length: 50 }),
+    predictedScore: numeric("predicted_score", { precision: 5, scale: 2 }),
+    riskId: uuid("risk_id"),
+    topFactorsJson: jsonb("top_factors_json"),
   },
   (table) => ({
     modelIdx: index("rp_model_idx").on(table.modelId),

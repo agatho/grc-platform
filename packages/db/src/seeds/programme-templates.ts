@@ -19,6 +19,7 @@ import {
 } from "../schema/programme";
 import { eq, and } from "drizzle-orm";
 import { CIS_TEMPLATES } from "./cis-controls-templates";
+import { requireRow } from "../sql-result";
 
 // ──────────────────────────────────────────────────────────────
 // Type-defs für Seed-Daten
@@ -3420,7 +3421,7 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
       .limit(1);
     if (existing.length > 0) continue;
 
-    const [template] = await db
+    const templateRows = await db
       .insert(programmeTemplate)
       .values({
         code: seed.code,
@@ -3434,14 +3435,22 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
         isActive: true,
       })
       .returning();
+    // [OP-065] `.returning()` liefert hier genau eine Zeile; ohne sie gäbe es
+    // keine Vorlage, an die Phasen und Schritte hängen könnten. Ein Abbruch
+    // ist die richtige Antwort — der Seed darf nicht mit halben Bäumen
+    // weiterlaufen und am Ende „templatesSeeded: 12" melden.
+    const templateRow = requireRow(
+      templateRows,
+      `Vorlage ${seed.code} anlegen`,
+    );
     templatesSeeded++;
 
     const phaseCodeToId = new Map<string, string>();
     for (const phase of seed.phases) {
-      const [phaseRow] = await db
+      const phaseRows = await db
         .insert(programmeTemplatePhase)
         .values({
-          templateId: template.id,
+          templateId: templateRow.id,
           code: phase.code,
           sequence: phase.sequence,
           name: phase.name,
@@ -3452,7 +3461,10 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
           gateCriteria: phase.gateCriteria ?? [],
         })
         .returning();
-      phaseCodeToId.set(phase.code, phaseRow.id);
+      phaseCodeToId.set(
+        phase.code,
+        requireRow(phaseRows, `Phase ${phase.code} in ${seed.code} anlegen`).id,
+      );
       phasesSeeded++;
     }
 
@@ -3463,10 +3475,10 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
           `Seed-Konsistenzfehler: Phase ${step.phaseCode} nicht in Template ${seed.code}`,
         );
       }
-      const [stepRow] = await db
+      const stepRows = await db
         .insert(programmeTemplateStep)
         .values({
-          templateId: template.id,
+          templateId: templateRow.id,
           phaseId,
           code: step.code,
           sequence: step.sequence,
@@ -3482,6 +3494,10 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
           isMilestone: step.isMilestone ?? false,
         })
         .returning();
+      const stepRow = requireRow(
+        stepRows,
+        `Schritt ${step.code} in ${seed.code} anlegen`,
+      );
       stepsSeeded++;
 
       if (step.subtasks && step.subtasks.length > 0) {

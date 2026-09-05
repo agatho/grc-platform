@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, LogOut, Settings, Globe } from "lucide-react";
 import { ThemeSwitcher } from "./theme-switcher";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const LANGUAGES = [
   { code: "de", label: "DE" },
@@ -21,7 +22,7 @@ export function UserMenu() {
   const [switchingLang, setSwitchingLang] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  const currentLanguage = (session?.user as any)?.language ?? "de";
+  const currentLanguage = (session?.user as UnvalidatedJson)?.language ?? "de";
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

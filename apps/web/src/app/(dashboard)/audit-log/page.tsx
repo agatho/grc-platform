@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -37,6 +38,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -179,9 +183,15 @@ const ACTION_COLORS: Record<string, string> = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema als Parameter statt als
+ * Konstante. Das Protokoll ist die Ansicht, in der Zeitstempel am dichtesten
+ * stehen — sie alle im deutschen Format auszugeben, waehrend die Spalten
+ * daneben englisch beschriftet sind, ist die sichtbarste Form dieses Mangels.
+ */
+function formatTimestamp(locale: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -463,6 +473,9 @@ function ChangeDetailDialog({
   canTombstone: boolean;
   onTombstoned: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   const [tombstoneOpen, setTombstoneOpen] = useState(false);
   const [tombstoneReason, setTombstoneReason] = useState<string>("gdpr_art_17");
   const [tombstoneBusy, setTombstoneBusy] = useState(false);
@@ -615,7 +628,7 @@ function ChangeDetailDialog({
               <>
                 <dt className="text-gray-500">{t("tombstonedAt")}</dt>
                 <dd className="font-mono text-xs text-purple-700">
-                  {formatTimestamp(entry.piiTombstonedAt!)}
+                  {formatTimestamp(numberLocale, entry.piiTombstonedAt!)}
                 </dd>
 
                 <dt className="text-gray-500">{t("tombstoneReason")}</dt>
@@ -717,6 +730,7 @@ function ChangeDetailDialog({
 // ──────────────────────────────────────────────────────────────
 
 export default function AuditLogPage() {
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("auditLog");
   const { data: session } = useSession();
 
@@ -816,6 +830,20 @@ export default function AuditLogPage() {
     try {
       // 503 means "chain broken" — the body is still valid JSON, we read it
       const res = await fetch("/api/v1/audit-log/integrity");
+      // [E2E-TRIAGE-3 · 2026-09-02] A throttled check is not a failed check.
+      //
+      // Every non-200/503 became `HTTP <status>` in the panel, and on THIS
+      // panel an error reads as "the audit trail could not be verified" —
+      // indistinguishable from a broken hash chain. A 429 is neither: the
+      // verification simply did not run. Say so, and say when to retry.
+      if (res.status === 429) {
+        const retryAfter = Number(res.headers.get("Retry-After") ?? "0");
+        throw new Error(
+          retryAfter > 0
+            ? `Integritätsprüfung ist aktuell begrenzt — erneut möglich in ${retryAfter}s. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).`
+            : "Integritätsprüfung ist aktuell begrenzt. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).",
+        );
+      }
       if (res.status !== 200 && res.status !== 503) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -939,7 +967,7 @@ export default function AuditLogPage() {
         ),
         cell: ({ getValue }) => (
           <span className="whitespace-nowrap text-xs text-gray-600">
-            {formatTimestamp(getValue() as string)}
+            {formatTimestamp(numberLocale, getValue() as string)}
           </span>
         ),
       },
@@ -1202,17 +1230,31 @@ function AuditLogTable({
   // We render DataTable but wrap rows with click handlers via a wrapper
   // DataTable does not natively support row click, so we wrap it and
   // add a click listener at the table container level
+
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One resolver for both input
+  // modalities, so mouse and keyboard cannot drift apart.
+  const activateRowFrom = (target: EventTarget | null) => {
+    const row = (target as HTMLElement | null)?.closest?.(
+      "tbody tr[data-row-index]",
+    );
+    if (!row) return;
+    const idx = Number(row.getAttribute("data-row-index"));
+    const entry = data[idx];
+    if (!Number.isNaN(idx) && entry) onRowClick(entry);
+  };
+
   return (
+    // The container is deliberately NOT `role="button"` and NOT focusable: it
+    // wraps an entire table, so a tab stop here would announce "button" for
+    // the whole grid and hand the user one target with no predictable effect.
+    // The ROWS are focusable instead (`tabIndex={0}` in
+    // `DataTableWithRowIndex`); their key events bubble up here, where the
+    // same `closest()` lookup resolves the row that actually has focus. That
+    // is the keyboard equivalent of the click path — WCAG 2.1.1.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- keyboard activation is implemented on the focusable rows, see above
     <div
-      onClick={(e) => {
-        const target = e.target as HTMLElement;
-        const row = target.closest("tbody tr[data-row-index]");
-        if (!row) return;
-        const idx = Number(row.getAttribute("data-row-index"));
-        if (!Number.isNaN(idx) && data[idx]) {
-          onRowClick(data[idx]);
-        }
-      }}
+      onClick={(e) => activateRowFrom(e.target)}
+      onKeyDown={(e) => activateOnKey(e, () => activateRowFrom(e.target))}
     >
       <DataTableWithRowIndex
         data={data}
@@ -1326,7 +1368,13 @@ function DataTableWithRowIndex<TData>({
                 <TableRow
                   key={row.id}
                   data-row-index={row.index}
-                  className="cursor-pointer hover:bg-gray-50"
+                  // [WP12 · S14-09] The row is the activation target (the
+                  // container above delegates Enter/Space from here). Without
+                  // this the entry detail was reachable by mouse only.
+                  // `<tr>` keeps its row semantics — a `role="button"` here
+                  // would remove the row from the grid for a screen reader.
+                  tabIndex={0}
+                  className="cursor-pointer hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -1359,19 +1407,29 @@ function DataTableWithRowIndex<TData>({
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] Icon-only buttons need an
+              accessible name (axe `button-name`, impact critical). This page
+              carries a private copy of the pagination block from
+              components/ui/data-table.tsx, which is fixed the same way. */}
           <button
+            type="button"
+            aria-label="Previous page"
+            title="Previous page"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button
+            type="button"
+            aria-label="Next page"
+            title="Next page"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

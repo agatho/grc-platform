@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   Network,
   Shield,
-  Bug,
   Cpu,
   Workflow,
 } from "lucide-react";
@@ -28,7 +27,7 @@ function OrphanSection({
   title,
   icon: Icon,
   orphans,
-  emptyMessage,
+  emptyMessage: _emptyMessage,
 }: {
   title: string;
   icon: React.ElementType;

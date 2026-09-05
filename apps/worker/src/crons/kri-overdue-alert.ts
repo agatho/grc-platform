@@ -5,6 +5,8 @@
 import { db, kri, notification, userOrganizationRole } from "@grc/db";
 import { eq, and, isNull, lt, inArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface KriOverdueResult {
   processed: number;
@@ -97,14 +99,18 @@ export const processKriOverdueAlerts = withCronInstrumentation(
         };
 
         for (const recipient of recipients) {
-          await db.insert(notification).values({
-            ...notificationBase,
-            userId: recipient.userId,
-          });
+          await insertNotification(
+            {
+              ...notificationBase,
+              userId: recipient.userId,
+            },
+            { job: "kri-overdue-alert" },
+          );
           notified++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues to next KRI.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "kri-overdue-alert", scope: "recipient" }, err);
       }
     }
 

@@ -287,9 +287,22 @@ export default function DashboardListPage() {
                             dash.visibility}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {dash.widgetCount} {t("widgets")}
+                          {dash.widgetCount} {t("widgetsLabel")}
                         </span>
                       </div>
+                      {/*
+                        [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] This wrapper
+                        is not a control. Its only handler stops a click from
+                        reaching the surrounding card, so that the edit and
+                        delete buttons inside it do not also open the
+                        dashboard. Giving it `role="button"` + `tabIndex={0}`
+                        (as an earlier pass did) added a tab stop that
+                        announces "button" and does nothing — a phantom target
+                        between two real ones. The buttons inside are keyboard
+                        operable on their own; a click they raise still
+                        bubbles through here and is still stopped.
+                      */}
+                      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- event-swallowing wrapper, not an activation target: see comment above */}
                       <div
                         className="flex items-center gap-0.5"
                         onClick={(e) => e.stopPropagation()}

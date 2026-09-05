@@ -1,6 +1,12 @@
-import { db, assessmentControlEval, assessmentRun } from "@grc/db";
+import {
+  db,
+  assessmentControlEval,
+  assessmentRun,
+  evalResultEnum,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { submitControlEvalSchema } from "@grc/shared";
+import { parseQueryParams, uuidQueryParam } from "@/lib/query-schema";
 import { eq, and, sql, desc } from "drizzle-orm";
 import {
   withAuth,
@@ -8,9 +14,14 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/isms/assessments/[id]/evaluations
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -21,10 +32,29 @@ export async function GET(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
+  // #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+  // against a schema instead of being read as `string | null` and cast
+  // with `as <enum>`. An unknown filter value used to reach Postgres and
+  // surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+  // and free-text search terms are length-bounded.
+  const evaluationListQuerySchema = z.object({
+    result: z.enum(evalResultEnum.enumValues).optional(),
+    // Were passed to eq() unvalidated: a non-UUID produced a Postgres
+    // "invalid input syntax for type uuid" 500.
+    assetId: uuidQueryParam,
+    controlId: uuidQueryParam,
+  });
+
   const { page, limit, offset, searchParams } = paginate(req);
-  const resultFilter = searchParams.get("result");
-  const assetId = searchParams.get("assetId");
-  const controlId = searchParams.get("controlId");
+  const q = parseQueryParams(evaluationListQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const resultFilter = q.data.result ?? null;
+  const assetId = q.data.assetId ?? null;
+  const controlId = q.data.controlId ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [
     eq(assessmentControlEval.orgId, ctx.orgId),
@@ -64,10 +94,9 @@ export async function GET(
     .where(and(...conditions));
 
   return paginatedResponse(rows, total, page, limit);
-}
-
+});
 // POST /api/v1/isms/assessments/[id]/evaluations — single or bulk submit
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -213,4 +242,4 @@ export async function POST(
     { data: Array.isArray(body) ? result : result[0] },
     { status: 201 },
   );
-}
+});

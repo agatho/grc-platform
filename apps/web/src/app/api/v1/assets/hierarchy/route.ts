@@ -2,6 +2,10 @@ import { db, asset } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface AssetNode {
   id: string;
@@ -18,21 +22,23 @@ interface AssetNode {
 }
 
 // GET /api/v1/assets/hierarchy — Full asset tree nested by parent_asset_id
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const module = url.searchParams.get("module");
+  const moduleKey = url.searchParams.get("module");
 
   const conditions: SQL[] = [
     eq(asset.orgId, ctx.orgId),
     isNull(asset.deletedAt),
   ];
 
-  // Filter by visible_in_modules if module param provided
-  if (module) {
-    conditions.push(sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`);
+  // Filter by visible_in_modules if the `module` query param is provided
+  if (moduleKey) {
+    conditions.push(
+      sql`${asset.visibleInModules} @> ARRAY[${moduleKey}]::text[]`,
+    );
   }
 
   const rows = await db
@@ -70,4 +76,4 @@ export async function GET(req: Request) {
   }
 
   return Response.json({ data: roots });
-}
+});

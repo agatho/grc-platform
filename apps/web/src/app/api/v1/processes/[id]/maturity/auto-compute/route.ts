@@ -10,6 +10,10 @@ import { db, process, processMaturityAssessment } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface DimensionScore {
   dimension: string;
@@ -25,7 +29,11 @@ function bucket(pct: number): number {
   return 1;
 }
 
-export async function POST(
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Zeilenform aus der
+// SELECT-Liste benannt statt `any`.
+type SignalRow = Record<string, unknown>;
+
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -77,7 +85,7 @@ export async function POST(
         (SELECT COUNT(*) FROM process_kpi_measurement m
            JOIN process_kpi_definition d ON d.id = m.kpi_definition_id
            WHERE d.process_id = ${id} AND m.status = 'green')::int AS kpi_green
-    `)) as any[];
+    `)) as unknown as SignalRow[];
     return c;
   });
 
@@ -147,4 +155,4 @@ export async function POST(
   );
 
   return Response.json({ data: { ...result, dimensions: scores, overall } });
-}
+});

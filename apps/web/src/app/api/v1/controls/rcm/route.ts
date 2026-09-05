@@ -1,6 +1,6 @@
 import { db, control, risk, riskControl } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 

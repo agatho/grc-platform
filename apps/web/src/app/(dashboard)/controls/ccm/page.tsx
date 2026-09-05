@@ -1,14 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  Shield,
-  ShieldCheck,
-  ShieldAlert,
-  ShieldX,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";

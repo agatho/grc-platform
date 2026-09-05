@@ -3,19 +3,11 @@
 // BPM Overhaul Phase 4: Per-process BIA view — same data as the tab but
 // dedicated route for BCM Managers who navigate by process.
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Loader2, AlertTriangle, Plus } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProcessBiaTab } from "@/components/process/process-bia-tab";
 

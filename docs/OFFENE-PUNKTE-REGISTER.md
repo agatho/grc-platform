@@ -1,0 +1,1213 @@
+# ARCTOS — Register aller offenen Punkte
+
+**Stand:** 2026-09-02 · **Repo:** `/work/repo`, Branch `audit/full-2026-08-31`, HEAD `4caff361`
+**Zweck:** Sammlung und Ordnung, kein Plan. Jede Zeile ist ein offener Punkt mit belegter
+Herkunft. Wo ein Bericht etwas anderes sagt als der Code, gewinnt der Code — die Abweichung
+steht in Abschnitt B.
+
+**Quellen:** 17 Berichte in `docs/bpmn-engine/` (9.865 Zeilen) · `docs/audits/ARCTOS-FULL-2026-08-31-Abschlussbericht.md`
+§5 · `docs/audits/ARCTOS-FULL-2026-08-31/` (Findings-Register, 12 Umsetzungsprotokolle) ·
+`/work/audit/remediation/` (VERIFIKATION.md, RESTDEFEKTE.md) · Code und die vier Ratschen
+(`lint-ratchet`, `coverage-gate`, `audit-i18n-usage`, `audit-dead-exports`), am 2026-09-02 selbst
+ausgeführt.
+
+**Kategorien:** `Produktdefekt` · `fehlende Funktion` · `Testlücke` · `Codequalität` · `Betrieb` ·
+`Doku` · `Entscheidung des Eigentümers` · `Zeitkriterium`.
+**Umfang:** S ≤ 1 Tag · M ≤ 1 Woche · L ≤ 1 Monat · XL > 1 Monat.
+
+---
+
+## Register
+
+| ID     | Titel                                                                                                                                                                                                      | Herkunft (Datei + Abschnitt)                                                                                                                                                                                               | Kategorie                             | Umfang        | Blockiert durch                                                                      | Wert                                                                                                                                                                             |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-001 | Keine Oberfläche für die zehn neuen GRC-Tabellen (Lanes, SoD, Schritt-ROPA, Schritt-BIA, Schritt-Dokument, Aktivitätszuordnung)                                                                            | `docs/bpmn-engine/STUFE2-E-SCHEMA.md` §6.4                                                                                                                                                                                 | fehlende Funktion                     | XL            | —                                                                                    | Die Daten, von denen 23 Layer leben, sind heute nur per SQL pflegbar; erst eine Maske macht die Diagrammschicht für Anwender nutzbar.                                            |
+| OP-002 | `process_lane` wird beim Import nicht befüllt — Lane-Zugehörigkeit bleibt geometrisch geraten                                                                                                              | `STUFE2-E-SCHEMA.md` §6.6; Code: kein `INSERT INTO process_lane` außerhalb `packages/db/tests/rls/process-diagram-grc-isolation.test.ts:139`                                                                               | Produktdefekt                         | M             | OP-001 (teilweise)                                                                   | Bei überlappenden Rahmen ordnet die Diagrammschicht Schritte heute der falschen Lane zu; F5/F17 werden damit belastbar.                                                          |
+| OP-003 | `user_diagram_preference` (0452) wird von niemandem geschrieben; `GrcViewSelect` hält die Sicht in React-State                                                                                             | `STUFE2-E-SCHEMA.md` §6.5; Code: `apps/web/src/components/bpmn/grc-view-select.tsx`, keine Referenz auf `userDiagramPreference` außerhalb `packages/db/src/schema/process-diagram-grc.ts:448`                              | fehlende Funktion                     | S             | —                                                                                    | Die gewählte GRC-Sicht überlebt einen Seitenwechsel; die Tabelle steht bereits.                                                                                                  |
+| OP-004 | Layer F14 (Vorfälle am Schritt) nicht gebaut                                                                                                                                                               | `STUFE2-E-SCHEMA.md` §6.1; `STUFE2-A2-GRC.md` §6                                                                                                                                                                           | fehlende Funktion                     | S             | —                                                                                    | `security_incident.process_step_id` steht seit 0454; eine Abfrage plus Badge macht Vorfälle am Element sichtbar.                                                                 |
+| OP-005 | Layer F16 (offene Maßnahmen mit Fälligkeit) nicht gebaut                                                                                                                                                   | `STUFE2-E-SCHEMA.md` §6.1; `STUFE2-A2-GRC.md` §6                                                                                                                                                                           | fehlende Funktion                     | S             | —                                                                                    | Wie F14: `work_item.process_step_id` steht, Fälligkeiten werden am Prozessschritt sichtbar.                                                                                      |
+| OP-006 | Layer F11 (Kostenverteilung / Kostentreiber) nicht gebaut — Slot „Lane-Fußzeile" existiert nicht                                                                                                           | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | M             | Entscheidung: Slotsystem um einen Lane-Fußzeilen-Slot erweitern                      | Kostenanteile je Lane werden im Diagramm sichtbar statt nur im Gutter.                                                                                                           |
+| OP-007 | Layer F12 (EAM-Anwendungslandschaft) nicht gebaut — braucht eine zweite Zeichenebene                                                                                                                       | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | XL            | OP-018 (Modellierungsschicht)                                                        | Anwendungen und Zuordnungslinien auf der Fläche statt nur als Badge.                                                                                                             |
+| OP-008 | Layer F15 (KRI-Schwellenampel) nicht gebaut — `kri_measurement` hat keinen Zeitreihenvertrag                                                                                                               | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | M             | Entscheidung: Zeitreihenvertrag + Richtungsaussage                                   | Ohne Richtung wäre der Badge eine Zahl ohne Bedeutung; mit ihr ein Frühwarnsignal.                                                                                               |
+| OP-009 | Layer F18 (Zeitreise / Änderungssicht) nicht gebaut — braucht zwei Szenen gleichzeitig                                                                                                                     | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | L             | —                                                                                    | Diff zweier Prozessstände auf der Fläche; `packages/shared/src/bpmn-diff.ts` ist die Grundlage.                                                                                  |
+| OP-010 | F17 nur halb: Quote je Lane gebaut, Aufschlüsselung je Rolle im Panel fehlt                                                                                                                                | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | S             | —                                                                                    | Die Kenntnisnahmelücke wird handlungsfähig statt nur zählbar.                                                                                                                    |
+| OP-011 | Sicht „Modellierung": Validierungsmarker (BR) — Slot angelegt, Layer fehlt                                                                                                                                 | `STUFE2-A2-GRC.md` §6                                                                                                                                                                                                      | fehlende Funktion                     | S             | Zuständigkeit `packages/bpmn/src/verify/`                                            | Modellierungsfehler erscheinen am Element statt in einer Liste daneben.                                                                                                          |
+| OP-012 | Kantenkennzahlen (`edges`: Häufigkeit, Verzweigungswahrscheinlichkeit) — braucht `process_event_transition_map`                                                                                            | `STUFE2-E-SCHEMA.md` §6.2; `apps/web/src/lib/grc-overlay.ts:363` `MISSING_TODAY` (Eintrag `edges`)                                                                                                                         | fehlende Funktion                     | M             | —                                                                                    | Process-Mining-Aussagen auf Kantenebene; schaltet zusammen mit OP-013 vier Vertragsfelder frei.                                                                                  |
+| OP-013 | `process_event` trägt keinen Lebenszyklus — `meanDurationMinutes` / `isBottleneck` nicht berechenbar                                                                                                       | `STUFE2-E-SCHEMA.md` §3.4; `apps/web/src/lib/grc-overlay.ts` `MISSING_TODAY`                                                                                                                                               | fehlende Funktion                     | M             | —                                                                                    | Engpassanalyse wird möglich; heute wäre jede Dauer eine andere Größe unter demselben Namen.                                                                                      |
+| OP-014 | `process_conformance_result.fitness_gaps` liefert Knoten statt Kantenpaare — `GrcConformanceSummary.deviations` bleibt leer                                                                                | `STUFE2-E-SCHEMA.md` §6.3; `MISSING_TODAY` (`diagram.conformance.deviations`)                                                                                                                                              | Produktdefekt                         | M             | Mining-Strang                                                                        | Konformitätsabweichungen werden im Diagramm als Kante darstellbar statt gar nicht.                                                                                               |
+| OP-015 | `process_framework_mapping` führt nur den Rahmenwerkscode, keinen Anzeigenamen                                                                                                                             | `STUFE2-E-SCHEMA.md` §3.4; `MISSING_TODAY` (`frameworks[].frameworkName`)                                                                                                                                                  | Doku                                  | S             | —                                                                                    | Nutzer sehen „ISO 27001" statt „ISO27001-A.5.1"; kosmetisch, aber im Audit-Kontext lesbarer.                                                                                     |
+| OP-016 | `diagram.framework` ist ein Sichtwahlparameter ohne Heimat in der Oberfläche                                                                                                                               | `STUFE2-E-SCHEMA.md` §3.4; `MISSING_TODAY`                                                                                                                                                                                 | fehlende Funktion                     | S             | OP-003                                                                               | Die Rahmenwerkauswahl der Sicht F8 wird bedienbar statt fest verdrahtet.                                                                                                         |
+| OP-017 | `controls[].lastTestResult` / `.lastEvidenceAt` werden abgeleitet, nicht gelesen — bewusste Entscheidung                                                                                                   | `STUFE2-E-SCHEMA.md` §2.1; `MISSING_TODAY`                                                                                                                                                                                 | Doku                                  | S             | —                                                                                    | **Streichkandidat.** Kein Nutzen aus einer Änderung; die Ableitung ist die richtige Lösung, der `MISSING_TODAY`-Eintrag nur ein Hinweis.                                         |
+| OP-018 | Drill-down in Subprozesse — der Importer zeichnet nur die erste `BPMNPlane`                                                                                                                                | `STUFE2-D-OFFENE-PUNKTE.md` §3.2; `STUFE2-A1-MODELING.md` §7.2; `STUFE2-B1-EDITOR.md` §7.2                                                                                                                                 | fehlende Funktion                     | L             | —                                                                                    | Verschachtelte Prozesse werden bearbeitbar; zugleich Ursache der größten `intentional`-Divergenzklasse.                                                                          |
+| OP-019 | Automatischer Typwechsel Ereignis → Boundary-Event beim Anheften fehlt                                                                                                                                     | `STUFE2-D-OFFENE-PUNKTE.md` §3.2; `STUFE2-A1-MODELING.md` §7.1                                                                                                                                                             | fehlende Funktion                     | M             | OP-020 (nicht zeitgleich mit Auto-Resize ändern)                                     | Ein Zwischenereignis auf eine Aktivität zu ziehen erzeugt das, was der Nutzer meint, statt eines ungültigen Modells.                                                             |
+| OP-020 | 34 Divergenzen `waypoints/bpmn:SequenceFlow/count` gegen bpmn-js (Verdacht: Relayout beim Redo)                                                                                                            | `STUFE2-D-OFFENE-PUNKTE.md` §5.1, §2.4                                                                                                                                                                                     | Produktdefekt                         | M             | —                                                                                    | Größter Einzelposten der 77 `ours-wrong`-Klassen; jeder Speichervorgang erzeugt sonst einen Diff gegen die Referenz.                                                             |
+| OP-021 | 20 Divergenzen `waypoints/bpmn:SequenceFlow/position` (Restfälle nach der Docking-Korrektur)                                                                                                               | `STUFE2-D-OFFENE-PUNKTE.md` §5.2, §2.3                                                                                                                                                                                     | Produktdefekt                         | M             | —                                                                                    | Geometrieparität mit bpmn-js; Voraussetzung für den XML-Vergleich im Shadow-Compare.                                                                                             |
+| OP-022 | 9 Divergenzen `element-set` / `element-type` (teils Folgeschaden der positionellen `gen-`-Ausrichtung des Prüfstands)                                                                                      | `STUFE2-D-OFFENE-PUNKTE.md` §5.3, §2.8                                                                                                                                                                                     | Testlücke                             | M             | OP-020                                                                               | Der Prüfstand misst dann die Engine und nicht sich selbst.                                                                                                                       |
+| OP-023 | 4 Divergenzen `candidate-set/*/more-ours` — ein `bpmn:SequenceFlow` zu viel nach `connect` + `undo`                                                                                                        | `STUFE2-D-OFFENE-PUNKTE.md` §5.4                                                                                                                                                                                           | Produktdefekt                         | S             | —                                                                                    | Undo hinterlässt kein Geisterelement mehr.                                                                                                                                       |
+| OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)                                                                                                   | `STUFE2-D-OFFENE-PUNKTE.md` §5.5                                                                                                                                                                                           | Produktdefekt                         | S             | —                                                                                    | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.                                                                                                     |
+| OP-025 | 2 Divergenzen `outcome/createShape` (Task bzw. EventBasedGateway in der Wurzel von `synth-nested-subprocesses`)                                                                                            | `STUFE2-D-OFFENE-PUNKTE.md` §5.6                                                                                                                                                                                           | Produktdefekt                         | S             | OP-018                                                                               | Regelparität beim Anlegen in verschachtelten Wurzeln.                                                                                                                            |
+| OP-026 | Zwei lesende Einbindungen ohne GRC-Sichtwahl (Dialog „Version ansehen", `my-processes/[id]`)                                                                                                               | `STUFE2-D-OFFENE-PUNKTE.md` §1.6, §5.8                                                                                                                                                                                     | fehlende Funktion                     | S             | Entscheidung: gehört eine Sichtwahl in die Mitarbeitersicht?                         | GRC-Overlays auch beim Lesen; eine Zeile Verdrahtung je Stelle.                                                                                                                  |
+| OP-027 | Kein E2E-Test bedient die BPMN-Fläche — weder Maus noch Tastatur                                                                                                                                           | `STUFE2-C-ABSCHLUSS.md` §5.1; Code: keine `djs-`/Canvas-Interaktion in `apps/web/e2e/**`, `tests/e2e/**`                                                                                                                   | Testlücke                             | L             | OP-053 (Produktionsbau als Ziel)                                                     | Der einzige Nachweis, dass ein Mensch mit dem Editor ein Diagramm zeichnen kann; Plan §5.6 Kriterium 6.                                                                          |
+| OP-028 | `chrome: "full"` im Lesemodus nicht in Betrieb — jede lesende Fläche bekommt `minimal`                                                                                                                     | `STUFE2-C-ABSCHLUSS.md` §5.12; `STUFE2-D-OFFENE-PUNKTE.md` §3.2                                                                                                                                                            | fehlende Funktion                     | S             | Entscheidung: ausgegraute Palette bei fehlendem Recht?                               | Wer nicht bearbeiten darf, sieht warum, statt eine Fläche ohne Werkzeuge.                                                                                                        |
+| OP-029 | Moduswechsel zur Laufzeit (Viewbox, Zoom, Selektion, Layer erhalten) nicht gebaut                                                                                                                          | `STUFE2-B1-EDITOR.md` §7.12; `STUFE2-C-ABSCHLUSS.md` §5.9                                                                                                                                                                  | fehlende Funktion                     | M             | —                                                                                    | Umschalten Lesen ↔ Bearbeiten ohne Verlust des Arbeitsstands.                                                                                                                    |
+| OP-030 | Beschriftung von `bpmn:Group` schreibt `name` statt `bpmn:CategoryValue`                                                                                                                                   | `STUFE2-A1-MODELING.md` §7.3; `STUFE2-B1-EDITOR.md` §7.9                                                                                                                                                                   | Produktdefekt                         | S             | —                                                                                    | Gruppenbeschriftungen bleiben beim Austausch mit anderen BPMN-Werkzeugen erhalten.                                                                                               |
+| OP-031 | Kein Space-, Lasso-, Hand-Werkzeug (Module vorhanden, Palette-Einträge und Zustandsmodell fehlen)                                                                                                          | `STUFE2-B1-EDITOR.md` §7.7; `STUFE2-C-ABSCHLUSS.md` §5.8                                                                                                                                                                   | fehlende Funktion                     | S             | —                                                                                    | Vier der 21 Editorfunktionen aus Plan §5.6 Kriterium 4.                                                                                                                          |
+| OP-032 | Keine Mehrfachauswahl per Tastatur über einen Bereich („alles in dieser Lane")                                                                                                                             | `STUFE2-B1-EDITOR.md` §7.11                                                                                                                                                                                                | fehlende Funktion                     | S             | —                                                                                    | Tastaturbedienung erreicht Parität mit der Maus; a11y-relevant.                                                                                                                  |
+| OP-033 | Eingeklappte Subprozesse behalten selektierbare Kinder (`hidden` statt entfernt)                                                                                                                           | `STUFE2-B1-EDITOR.md` §7.3; `STUFE2-A1-MODELING.md` §7.5                                                                                                                                                                   | Produktdefekt                         | S             | Entscheidung aus A1 §7.5                                                             | `Strg+A` und die Ansage zählen keine unsichtbaren Elemente mehr mit.                                                                                                             |
+| OP-034 | Kontrast der BPMN-Bedienelemente ungemessen — axe schaltet `color-contrast` in jsdom ab                                                                                                                    | `STUFE2-B1-EDITOR.md` §7.10; `STUFE2-C-ABSCHLUSS.md` §5.3; Abschlussbericht §5 O-I                                                                                                                                         | Testlücke                             | M             | OP-027 (Browserlauf)                                                                 | Plan §4.4 (Fokusring ≥ 3:1) wird nachweisbar statt behauptet.                                                                                                                    |
+| OP-035 | NVDA / VoiceOver nie ausgeführt — kein Test mit assistiver Technologie                                                                                                                                     | `STUFE2-C-ABSCHLUSS.md` §5 Kriterium 5; Abschlussbericht §5 O-I                                                                                                                                                            | Testlücke                             | M             | manuelle Abnahme, echte Geräte                                                       | Ohne sie ist keine EN-301-549-Aussage möglich (siehe OP-062).                                                                                                                    |
+| OP-036 | Leistungsbudget des BPMN-Editors nicht gemessen                                                                                                                                                            | `STUFE2-C-ABSCHLUSS.md` §5 Kriterium 7                                                                                                                                                                                     | Testlücke                             | S             | OP-053                                                                               | Plan §5.6 Kriterium 7; ohne Zahl ist „schnell genug" eine Behauptung.                                                                                                            |
+| OP-037 | `packages/shared` parst BPMN weiterhin selbst — 1.529 Zeilen in sechs Dateien                                                                                                                              | `STUFE2-B2-EINBINDUNG.md` §5.5; `STUFE2-C-ABSCHLUSS.md` §5.13; Code: `packages/shared/src/{bpmn-diff,bpmn-parser,bpmn-validator}.ts`, `src/lib/{bpmn-raci-engine,bpmn-walkthrough-engine,excel-to-bpmn}.ts` = 1.529 Zeilen | Codequalität                          | L             | `@grc/bpmn` als maßgebliche Interpretation                                           | Zwei Antworten auf dieselbe Frage verschwinden; jede Woche Verzug erhöht die Zahl der Divergenzstellen.                                                                          |
+| OP-038 | Zwei ambiente `declare module "bpmn-moddle"` (Paket und App)                                                                                                                                               | `STUFE2-B2-EINBINDUNG.md` §5.1 Punkt 2; Code: `packages/bpmn/src/model/bpmn-moddle.d.ts:12` **und** `apps/web/src/types/bpmn-moddle.d.ts:15`                                                                               | Codequalität                          | S             | —                                                                                    | Ein stiller Fehlerherd verschwindet — die schmalere App-Fassung kennt weder `ModdleWarning` noch die zweiargumentige `toXML`-Signatur.                                           |
+| OP-039 | Vertikale Pools nur teilweise geprüft — der Korpus enthält keinen senkrechten Pool                                                                                                                         | `STUFE2-A1-MODELING.md` §7.4                                                                                                                                                                                               | Testlücke                             | S             | —                                                                                    | Die Symmetrie der Lane-Geometrie wird belegt statt angenommen; Risiko mittel.                                                                                                    |
+| OP-040 | `moveShape` bewegt Beschriftungen und Anhefter nicht mit — Aufruferdisziplin nötig                                                                                                                         | `STUFE2-A1-MODELING.md` §7 („Nur teilweise tragfähig", Punkt 7)                                                                                                                                                            | Codequalität                          | S             | —                                                                                    | Ein Aufrufer, der `moveShape` statt `moveElements` nimmt, hinterlässt eine dauerhaft falsche DI; ein Lint- oder Typ-Guard verhindert das.                                        |
+| OP-041 | Lane-Geometrie: Kind-Lanes wachsen nicht mit, wenn eine Lane mit Kindern vergrößert wird                                                                                                                   | `STUFE2-A1-MODELING.md` §7.9                                                                                                                                                                                               | Produktdefekt                         | S             | —                                                                                    | Sichtbarer Geometriefehler bei geschachtelten Lanes.                                                                                                                             |
+| OP-042 | `connection.move` über Containergrenzen relativiert die Wegpunkte nicht                                                                                                                                    | `STUFE2-A1-MODELING.md` §7.10                                                                                                                                                                                              | Produktdefekt                         | S             | —                                                                                    | Werkzeuge, die container-relative Koordinaten erwarten, lesen das Ergebnis sonst anders.                                                                                         |
+| OP-043 | Kein XSD-Schema-Validator — Invarianten prüfen Referenzintegrität, nicht Schemakonformität                                                                                                                 | `STUFE2-A1-MODELING.md` §7.11                                                                                                                                                                                              | Testlücke                             | M             | —                                                                                    | `cancelActivity="ja"` fällt heute niemandem auf; ein XSD-Lauf gegen `BPMN20.xsd` fängt eine ganze Fehlerklasse.                                                                  |
+| OP-044 | Datenassoziationen flach modelliert (`sourceRef` als einelementige Liste statt `ioSpecification`)                                                                                                          | `STUFE2-A1-MODELING.md` §7.8                                                                                                                                                                                               | Codequalität                          | M             | —                                                                                    | Austausch mit Camunda-Werkzeugen wird spezifikationstreu.                                                                                                                        |
+| OP-045 | Renderer zeichnet Choreographie- und Konversationselemente nicht                                                                                                                                           | `SPIKE-MESSUNG-DRAW.md` §2.3                                                                                                                                                                                               | fehlende Funktion                     | M             | Entscheidung: bietet ARCTOS das je an? (Plan N1)                                     | **Streichkandidat**, solange das Produkt Choreographien nicht anbietet — heute nur als gestricheltes Rechteck sichtbar.                                                          |
+| OP-046 | Renderer-Kleinlücken: `ImplicitThrowEvent`, `participantMultiplicity`, Nachrichtensymbol am MessageFlow, `isMarkerVisible=false`, DI-Farbattribute, Label-Kollisionsvermeidung, Clipping am Subprozessrand | `SPIKE-MESSUNG-DRAW.md` §2.3                                                                                                                                                                                               | fehlende Funktion                     | M             | —                                                                                    | Sieben kleine Darstellungsunterschiede zu bpmn-js; einzeln 15–30 LOC, zusammen die letzte Renderparität.                                                                         |
+| OP-047 | 4 von 6 reparierten `audit_log`-Schreibwegen ohne Test (`controlled-copy`, `erase`, `verify-integrity`, `processes/bulk`)                                                                                  | `E2E-TRIAGE-4.md` §9; Code: nur `apps/web/src/__tests__/api/document-signature-requests.test.ts` referenziert `lib/audit-entry`                                                                                            | Testlücke                             | S             | —                                                                                    | Acht Schreibwege waren seit 0407 tot und niemand merkte es; ohne Test kann das erneut passieren.                                                                                 |
+| OP-048 | `db:create-admin` setzt keine Mandanten-Regel durch — spätere Mitgliedschaften bleiben möglich                                                                                                             | `E2E-TRIAGE-4.md` §9                                                                                                                                                                                                       | Betrieb                               | S             | Entscheidung: gilt die Ein-Mitgliedschafts-Regel auch für Betreiberkonten?           | Der Mandanten-Zwiespalt (OP-056) kann nicht über ein neu angelegtes Konto zurückkommen.                                                                                          |
+| OP-049 | Kontrastkombination `bg-red-500` + kleiner weißer Text nicht systematisch gesucht                                                                                                                          | `E2E-TRIAGE-4.md` §9; behoben nur `notification-bell.tsx`                                                                                                                                                                  | Testlücke                             | S             | —                                                                                    | Die a11y-Smoke deckt drei Seiten ab; eine baumweite Suche schließt die Klasse statt des Einzelfalls.                                                                             |
+| OP-050 | UI-Aufrufe mit `limit > 100` laufen in 422 → stiller Leerzustand                                                                                                                                           | `E2E-TRIAGE-3.md` §6; `E2E-TRIAGE-4.md` §9; Code gemessen: **30** Fundstellen in `apps/web/src` (26× `limit=200`, 1× 300, 2× 500, 1× 10000), 34 repoweit — der Bericht nennt 37                                            | Produktdefekt                         | M             | Entscheidung: Aufrufstellen auf 100 + Blätterung **oder** `MAX_PAGE_SIZE` anheben    | Ganze Listen erscheinen leer statt unvollständig; das ist die gefährlichere Fehlerform.                                                                                          |
+| OP-051 | Migration `0439` verweist auf `packages/db/tests/unit/work-item-type-registry.test.ts`, den es nicht gibt                                                                                                  | `E2E-TRIAGE-3.md` §6; `E2E-TRIAGE-4.md` §9; Code: `packages/db/drizzle/0439_work_item_type_catalog_gaps.sql:38`, Datei existiert nicht (`find` leer)                                                                       | Doku                                  | S             | —                                                                                    | Entweder der Test entsteht (dann hält er die Katalogregistrierung) oder der Verweis fällt weg; heute belegt er etwas, das nicht existiert.                                       |
+| OP-052 | `f-17-schema-drift`: 4 fehlende Tabellen (`account`, `session`, `verification_token`, `audit_anchor_seal`), Drift-Endpunkt antwortet 503                                                                   | `E2E-TRIAGE-2.md` §6; `E2E-TRIAGE-3.md` §6; `E2E-TRIAGE-4.md` §9; Code: `tests/e2e/regression/f-17-schema-drift.spec.ts:30` toleriert ≤ 5                                                                                  | Produktdefekt                         | S             | Entscheidung: Auth.js-Adaptertabellen anlegen oder als bewusst tot dokumentieren     | Ein Gesundheitsendpunkt, der dauerhaft 503 meldet, wird ignoriert — genau die Klasse Defekt, die dieser Audit gefunden hat.                                                      |
+| OP-053 | Produktionsbau löscht `.next/standalone/apps/web/.env.local`; kein Skript kopiert es zurück                                                                                                                | `E2E-TRIAGE-4.md` §5, §7; Code: weder `Dockerfile`, `apps/web/scripts/next-build.mjs` noch `deploy/**` kopiert `.env.local` zurück                                                                                         | Betrieb                               | S             | —                                                                                    | Nach jedem Neubau startet der Server ohne `AUTH_SECRET` und jede Anmeldung landet auf `/api/auth/error`; heute steht nur ein Merksatz im Bericht.                                |
+| OP-054 | `AUDIT_INTEGRITY`-Rate-Limit von 1 Anfrage/Minute ist ungewöhnlich eng                                                                                                                                     | `E2E-TRIAGE-2.md` §6 (`f-18-integrity`)                                                                                                                                                                                    | Entscheidung des Eigentümers          | S             | Entscheidung: ist 1/min so gemeint?                                                  | Ein absichtlich enges Limit gehört begründet, ein versehentliches korrigiert; heute weiß es niemand.                                                                             |
+| OP-055 | Detailrouten liegen unter Modulpfaden, Listen unter Wurzelpfaden (`findings`, `audit-mgmt`, `vendors`)                                                                                                     | `E2E-TRIAGE-2.md` §6; `E2E-TRIAGE-3.md` §6                                                                                                                                                                                 | Codequalität                          | M             | —                                                                                    | Keine Fehlfunktion, aber die Ursache dafür, dass drei Specs auf die 404-Seite zeigten; einheitliche Pfade verhindern die Wiederholung.                                           |
+| OP-056 | Mandanten-Zwiespalt: `arctos-org-id` ist ein `Secure`-Cookie und erreicht Playwrights `request`-Kontext gegen `http://` nicht                                                                              | `E2E-TRIAGE-3.md` §6; `E2E-TRIAGE-4.md` §1 (für Rollenkonten gelöst, für das Admin-Konto offen)                                                                                                                            | Testlücke                             | M             | Vollauf davor und danach nötig                                                       | UI- und API-Specs behaupten gegen denselben Mandanten; ohne Fix kann eine Änderung über 40 grüne Specs stillschweigend verschieben.                                              |
+| OP-057 | `admin@arctos.local` ist Plattform-Admin — `f-02b` kann nicht grün werden, ohne seine Aussage zu verlieren                                                                                                 | `E2E-TRIAGE.md` §7.4                                                                                                                                                                                                       | Testlücke                             | S             | OP-048                                                                               | Das Testkonto prüft wieder die Rechteschranke statt sie zu umgehen.                                                                                                              |
+| OP-058 | Kein Smoke-Durchlauf über die großen Listenendpunkte nach dem Wickeln der 1.170 Routen                                                                                                                     | `E2E-TRIAGE.md` §7.5                                                                                                                                                                                                       | Testlücke                             | S             | —                                                                                    | Die mechanische Transformation über 1.168 Route-Dateien ist typgeprüft, aber nie zur Laufzeit bestätigt.                                                                         |
+| OP-059 | Repository ist öffentlich lesbar — `lod-coverage.csv` liefert 1.801 Route/Rolle-Paare und die sieben anonymen Endpunkte                                                                                    | Abschlussbericht §5 O-A; `umsetzungsprotokolle/WP10.md` §4.1                                                                                                                                                               | Entscheidung des Eigentümers          | S             | GitHub-Einstellung des Eigentümers                                                   | Solange es so ist, sind alle übrigen Maßnahmen nachrangig.                                                                                                                       |
+| OP-060 | Git-Historie enthält Dev-/CI-Passwörter und Arbeitsplatzpfade                                                                                                                                              | Abschlussbericht §5 O-B; `WP10.md` §4.4                                                                                                                                                                                    | Entscheidung des Eigentümers          | M             | OP-059 (bei öffentlichem Repo nur begrenzt wirksam)                                  | Ein Rewrite lohnt nur zusammen mit OP-059; die Passwörter sind rotiert.                                                                                                          |
+| OP-061 | bpmn.io-Wasserzeichen: kommerzielle Lizenz oder Wasserzeichen im Produkt                                                                                                                                   | Abschlussbericht §5 O-C; `WP10.md` §4.2                                                                                                                                                                                    | Entscheidung des Eigentümers          | S             | Geschäftsentscheidung                                                                | Die einzige lizenzkonforme Alternative zum sichtbaren Wasserzeichen; jede CSS-Lösung ist ein Verstoß.                                                                            |
+| OP-062 | EN 301 549 nicht erklärbar — kein Seitenlauf im Browser, keine Fokusreihenfolge über ganze Seiten, keine assistive Technologie                                                                             | Abschlussbericht §5 O-I                                                                                                                                                                                                    | Testlücke                             | L             | OP-034, OP-035, OP-093                                                               | Ohne Konformitätsprüfung darf in keinem Vergabeverfahren Konformität behauptet werden.                                                                                           |
+| OP-063 | Lint-Altbestand in `apps/worker`, `packages/*`, `scripts` eingefroren statt abgearbeitet                                                                                                                   | Abschlussbericht §5 O-G; `VERIFIKATION.md` Teil D O-1; Code: `.eslint-ratchet.json` Baseline 404                                                                                                                           | Codequalität                          | L             | —                                                                                    | Das Plankriterium „0 Fehler in allen Workspaces" bleibt sonst dauerhaft unerfüllt.                                                                                               |
+| OP-064 | **Lint-Ratsche ist verletzt:** 418 Befunde gegen Baseline 404, `no-console` 135 > 121 (+14)                                                                                                                | Code: `node scripts/lint-ratchet.mjs` am 2026-09-02 → Exit ≠ 0; Verursacher `packages/db/src/seed-e2e-users.ts` (8), `seed-demo.ts` (3), `packages/bpmn/test/model/measure-roundtrip.ts` (3)                               | Codequalität                          | S             | —                                                                                    | Das CI-Tor ist heute rot; entweder Logger benutzen oder Baseline mit Begründung nachziehen.                                                                                      |
+| OP-065 | Pakete mit abgeschwächten Compiler-Optionen — Restschuld beim Einschalten: shared 502, db 641, auth 321, email 542                                                                                         | Abschlussbericht §5 O-H (nennt 3 Pakete); `WP12.md` §3.13 (nennt 10); Code: `noUncheckedIndexedAccess: false` in **10** `packages/*/tsconfig.json` (ai, auth, automation, db, email, events, graph, reporting, shared, ui) | Codequalität                          | XL            | —                                                                                    | Eine ganze Klasse von Laufzeitfehlern („index kann `undefined` sein") wird vom Compiler gefangen statt in Produktion.                                                            |
+| OP-066 | `packages/auth` und `packages/email` Function-Coverage gefallen — **Coverage-Gate ist rot**                                                                                                                | `WP11.md` §6.3; Code: `node scripts/coverage-gate.mjs` am 2026-09-02 → `packages/auth functions 59,09 % < 62,50 %`, `packages/email functions 95,50 % < 97,46 %`                                                           | Testlücke                             | S             | —                                                                                    | Ungetesteter neuer Code in zwei Paketen; im Aggregat geht das unter, die relative Ratsche fängt es.                                                                              |
+| OP-067 | `coverage/coverage-baseline.json` steht auf dem Audit-Stand (20,41 % / 13,89 %), gemessen sind 23,27 % / 16,97 %                                                                                           | `WP10.md` §4.16; Code: `coverage/coverage-baseline.json` vs. `coverage/aggregated-summary.json`                                                                                                                            | Betrieb                               | S             | OP-066 (erst nach grünem Lauf nachziehen)                                            | Die Ratsche ist heute zu locker; jede Absenkung bis 20,41 % bliebe unbemerkt.                                                                                                    |
+| OP-068 | `packages/bpmn` fehlt in `coverage/aggregated-summary.json` — Floor 40/30 gesetzt, aber nicht aggregiert                                                                                                   | Code: `vitest.coverage.shared.ts:115` definiert den Floor, `coverage/aggregated-summary.json` listet nur 12 Pakete ohne bpmn                                                                                               | Testlücke                             | S             | —                                                                                    | Das neue Kernpaket zählt in keiner Gesamtzahl mit; sein Coverage-Verfall wäre unsichtbar.                                                                                        |
+| OP-069 | Gesamt-Coverage 23,27 %, `apps/web` 15,37 % Lines / 10,5 % Branches — Fachlogik der 1.357 Routen ungedeckt                                                                                                 | `WP11.md` §5.1; Code: `coverage/aggregated-summary.json`                                                                                                                                                                   | Testlücke                             | XL            | —                                                                                    | Keine Zahl, auf der eine Zulassungsentscheidung aufbauen kann; sie steigt nur durch geschriebene Tests.                                                                          |
+| OP-070 | 96 von 482 Pages und 75 von 134 Komponenten ohne i18n-Anbindung                                                                                                                                            | `WP12.md` S14-14; Abschlussbericht §5 O-I; Code: `node scripts/audit-i18n-usage.mjs` → `96/482 pages, 75/134 components`                                                                                                   | fehlende Funktion                     | XL            | Produktentscheidung: mehrere hundert Rechtsbegriffe in zwei Sprachen                 | Zweisprachigkeit ist Produktzusage; die AI-Act-Seiten sind der heikelste Teil.                                                                                                   |
+| OP-071 | **i18n-Untranslated-Ratsche ist verletzt:** 171 Dateien gegen Budget 169                                                                                                                                   | Code: `node scripts/audit-i18n-usage.mjs --max-untranslated 169` am 2026-09-02 → `FAIL … budget 169`; `.github/workflows/i18n-coverage.yml:155`                                                                            | Codequalität                          | S             | OP-070                                                                               | Die Ratsche soll Zuwachs verhindern — sie ist bereits um zwei Dateien überschritten.                                                                                             |
+| OP-072 | **i18n-Bundle out of sync:** `common.ismsAssessment.actions.retry` fehlt im Laufzeitbündel für `de` und `en`                                                                                               | Code: `node scripts/audit-i18n-usage.mjs` am 2026-09-02 → `FAIL runtime bundle out of sync: 2`                                                                                                                             | Produktdefekt                         | S             | —                                                                                    | Ein im Code benutzter Schlüssel erreicht die Laufzeit nicht; der Nutzer sieht den Rohschlüssel. `apps/web/scripts/build-messages.ts` neu laufen lassen.                          |
+| OP-073 | 6.796 Katalogschlüssel werden von keiner statischen Aufrufstelle erreicht (Budget 6.800)                                                                                                                   | `WP12.md` S14-21; Code: `audit-i18n-usage.mjs` → `6796`                                                                                                                                                                    | Codequalität                          | L             | 400 Aufrufstellen bauen ihren Schlüssel dynamisch — Massenlöschung ist ein Risiko    | Der Katalog wird wartbar; jede automatische Löschung braucht vorher die dynamischen Aufrufstellen.                                                                               |
+| OP-074 | Dead-Exports-Report ist veraltet: eingecheckt 1.991 in 322 Dateien, gemessen **2.706 in 461 Dateien**                                                                                                      | Code: `docs/perf/dead-exports-report.md:15` gegen `node scripts/audit-dead-exports.mjs` am 2026-09-02                                                                                                                      | Codequalität                          | L             | —                                                                                    | +715 tote Exports seit der letzten Messung; es gibt **kein** CI-Gate darauf (kein Treffer in `.github/**`).                                                                      |
+| OP-075 | Kein CI-Gate auf `audit-dead-exports.mjs` — die Zahl kann beliebig wachsen                                                                                                                                 | Code: `grep -rl dead-exports .github/ package.json` → leer                                                                                                                                                                 | Codequalität                          | S             | OP-074                                                                               | Die drei anderen Ratschen (Lint, Coverage, i18n) haben ein Tor; diese nicht.                                                                                                     |
+| OP-076 | 129 `any` in `apps/web/src/app/api/v1/**` — Regel dort namentlich ausgenommen                                                                                                                              | `WP12.md` §3.6; Hotspots `processes/audit-pack` (14×), `tprm/vendors/[id]/onboarding-pack` (12×), `audit-mgmt/audits/[id]/audit-pack` (12×), `whistleblowing/statistics` (8×)                                              | Codequalität                          | L             | —                                                                                    | Die Ausnahme macht die Schuld sichtbar; sie abzutragen heißt, die vier Hotspots zu typisieren.                                                                                   |
+| OP-077 | 483 tote Bindungen in denselben Routen (`no-unused-vars` dort ausgenommen)                                                                                                                                 | `WP12.md` §3.7                                                                                                                                                                                                             | Codequalität                          | M             | —                                                                                    | Der AST-Codemod ist erprobt; 800 Diff-Zeilen in fremden Routen waren der einzige Grund für den Aufschub.                                                                         |
+| OP-078 | 6 Routen mit `const module = …` (`@next/next/no-assign-module-variable` dort aus)                                                                                                                          | `WP12.md` §3.8                                                                                                                                                                                                             | Codequalität                          | S             | —                                                                                    | Lokale Umbenennung; danach kann die Ausnahme fallen.                                                                                                                             |
+| OP-079 | RFC 7807 Phase 3b: Routen ohne `withErrorHandler` liefern weiterhin `{ error: … }`                                                                                                                         | `WP12.md` S14-16, §3.9                                                                                                                                                                                                     | Codequalität                          | M             | OP-084 (115 ungewickelte Routen)                                                     | Einheitliches Fehlerformat für alle Integratoren; heute 107 von 1.362 Routen.                                                                                                    |
+| OP-080 | `react-hooks/exhaustive-deps` und die sieben React-Compiler-Regeln aus `eslint-plugin-react-hooks@7` sind aus (23 bzw. 36 Fundstellen)                                                                     | `WP12.md` §3.14                                                                                                                                                                                                            | Codequalität                          | L             | OP-027 (ohne E2E nicht verifizierbar)                                                | Saubere Auflösung ist `@tanstack/react-query` — bereits Abhängigkeit —, aber eine Verhaltensänderung in 19 Seiten.                                                               |
+| OP-081 | `server-only`-Guard fehlt in `packages/db/src/index.ts` und `packages/auth/src/providers.ts`                                                                                                               | `WP12.md` §3.5 (S12-10)                                                                                                                                                                                                    | Codequalität                          | S             | neue Abhängigkeit `server-only` → Lockfile-Änderung                                  | Ein Fehlimport aus einer `"use client"`-Datei wird ein Buildfehler statt eines Shims, der Serverkonstanten inlinen kann.                                                         |
+| OP-082 | `/trust` nicht in `PUBLIC_PREFIXES` — Trust Center bleibt hinter dem Login                                                                                                                                 | `WP12.md` §3.1 (S12-05 Defekt A)                                                                                                                                                                                           | fehlende Funktion                     | S             | —                                                                                    | Die Voraussetzung ist erfüllt (`withOrgReadContext`); eine Zeile in `packages/auth/src/rbac.ts`.                                                                                 |
+| OP-083 | S01-04 Restlücke: die `user`-Policy trägt eine kontextlose Disjunktion (Anmeldung liest per E-Mail)                                                                                                        | `WP2.md` §6.1; Status dort **teilweise**                                                                                                                                                                                   | Produktdefekt                         | M             | S02-05 (`packages/auth/src/providers.ts:197,341`)                                    | Der saubere Weg ist eine `SECURITY DEFINER`-Funktion (Muster `app_current_org_scope()` in 0396); bis dahin ist die Isolation der `user`-Tabelle schwächer als die aller anderen. |
+| OP-084 | 115 Routen ohne `withErrorHandler` nutzen den kontextlosen Basis-Pool                                                                                                                                      | `WP2.md` §6.2 (S01-21/S01-22)                                                                                                                                                                                              | Produktdefekt                         | M             | —                                                                                    | Fail-closed gilt nur für Tabellen mit org_id-Policy; die Wickelung macht die Zusage vollständig.                                                                                 |
+| OP-085 | Session-Invalidierung beim Rollenentzug fehlt (S01-22)                                                                                                                                                     | `WP2.md` §6.2; liegt vollständig in `packages/auth/**`                                                                                                                                                                     | Produktdefekt                         | M             | —                                                                                    | Ein entzogenes Recht wirkt sofort statt erst beim nächsten Token-Refresh.                                                                                                        |
+| OP-086 | `includeDescendants` im Audit-Log ist unter RLS wirkungslos (S01-26, Status **teilweise**)                                                                                                                 | `WP2.md` §4 S01-26, §6.4; Ort `apps/web/src/app/api/v1/audit-log/route.ts:48-60`                                                                                                                                           | Produktdefekt                         | S             | —                                                                                    | Entweder die rekursive CTE durch `SELECT * FROM app_current_org_scope()` ersetzen oder den Parameter entfernen; beides besser als der Status quo.                                |
+| OP-087 | Event-Trigger `arctos_rls_guard_trg` greift nur bei `CREATE`, nicht bei `ALTER … DISABLE RLS` oder `DROP POLICY`                                                                                           | `WP2.md` §6.12                                                                                                                                                                                                             | Codequalität                          | M             | bewusst so; Coverage-Gate und Systemtest melden es                                   | Ein Dauerschutz statt einer Meldung nach der Tat.                                                                                                                                |
+| OP-088 | Fünf Tabellen sind nicht per Zeilenprobe auf Mandantentrennung geprüft                                                                                                                                     | `WP2.md` §2 (Ende), §6.13                                                                                                                                                                                                  | Testlücke                             | S             | —                                                                                    | Der Systemtest deckt dann alle mandantenbezogenen Objekte statt fast aller.                                                                                                      |
+| OP-089 | Zwei Materialized Views bleiben mandantenübergreifend materialisiert (Zugriff nur entzogen)                                                                                                                | `WP2.md` §6.14                                                                                                                                                                                                             | Codequalität                          | S             | beide derzeit unbenutzt                                                              | **Streichkandidat**, solange sie unbenutzt sind — wer sie öffnet, muss eine org-Filterung mitliefern.                                                                            |
+| OP-090 | Worker läuft als DB-Superuser: `docker-compose.production.yml` und `ci.yml` noch nicht auf `grc_worker` umgestellt (S01-09, Status **teilweise**)                                                          | `WP2.md` §4 S01-09, §6.9                                                                                                                                                                                                   | Betrieb                               | S             | —                                                                                    | Bis dahin muss der Worker `ARCTOS_ALLOW_PRIVILEGED_DB=true` setzen — RLS ist für ihn wirkungslos. Einziger unmittelbar deploy-relevanter Punkt aus WP2.                          |
+| OP-091 | `GRC_APP_PASSWORD` ohne `:?`-Pflichtprüfung in `docker-compose.production.yml:212` (S01-11, Status **teilweise**)                                                                                          | `WP2.md` §4 S01-11, §6.10                                                                                                                                                                                                  | Betrieb                               | S             | —                                                                                    | Konsistent zu `DB_PASSWORD`/`AUTH_SECRET`/`CRON_SECRET` derselben Datei; ein leeres Passwort startet sonst still.                                                                |
+| OP-092 | CI-Gate `audit-rls-coverage.mjs --check` und die RLS-Suite mit `APP_DATABASE_URL` fehlen in `ci.yml`                                                                                                       | `WP2.md` §6.11 (zugleich S11-11)                                                                                                                                                                                           | Testlücke                             | S             | —                                                                                    | Ohne `APP_DATABASE_URL` läuft die RLS-Suite als Superuser und ist wertlos.                                                                                                       |
+| OP-093 | a11y-Lauf (`apps/web/src/__tests__/a11y/`) gehört in dieselbe CI-Stufe wie die Unit-Tests                                                                                                                  | `WP12.md` §3.15                                                                                                                                                                                                            | Testlücke                             | S             | —                                                                                    | Braucht keine DB, kein Netz, keinen Browser; heute läuft er nicht bei jedem PR.                                                                                                  |
+| OP-094 | Modul-/Rollenguard hängt an den Middleware-Headern `x-arctos-path` / `x-arctos-method`                                                                                                                     | `WP3.md` §5.1                                                                                                                                                                                                              | Codequalität                          | M             | —                                                                                    | Ein Pfad ohne Middleware verliert heute den Modulguard; die Ausfallrichtung ist restriktiv, die Abhängigkeit trotzdem unschön.                                                   |
+| OP-095 | Plattform-Admin nur am DB-Prompt vergebbar — Migration 0411 muss eingespielt sein                                                                                                                          | `WP3.md` §5.2                                                                                                                                                                                                              | Betrieb                               | S             | Betreiberschritt                                                                     | Ohne 0411 antwortet jeder Schreibzugriff auf globale Tabellen mit 403 — korrekt, aber als Betriebsereignis sichtbar zu machen.                                                   |
+| OP-096 | SAML: weder Ablauf noch Kette des IdP-Zertifikats werden geprüft — ein abgelaufenes Zertifikat verifiziert                                                                                                 | `WP3.md` §5.3                                                                                                                                                                                                              | Produktdefekt                         | M             | —                                                                                    | Zertifikatsrotation wird ein Betriebsvorgang mit Warnung statt einer stillen Annahme.                                                                                            |
+| OP-097 | Klartext-Tokenspalten `dd_session.access_token` und `user.ical_token` leben bis zum `DROP COLUMN` weiter (S02-20 halb geschlossen)                                                                         | `WP3.md` §5.4; Nummernkreis 0413/0414 frei                                                                                                                                                                                 | Produktdefekt                         | S             | Rotationsfenster muss ablaufen (Zeitkriterium)                                       | Das Leseleck schließt vollständig; bis dahin ist es nur halb zu.                                                                                                                 |
+| OP-098 | S02-07 (Massenexport) und die Mailbox-Route (S02-05) sind mechanisch fertig, aber nicht eingebaut                                                                                                          | `WP3.md` §5.5                                                                                                                                                                                                              | fehlende Funktion                     | S             | Einbau bei WP8                                                                       | Bis zum Einbau greift der Rollenboden, die Vier-Augen-Prüfung nicht.                                                                                                             |
+| OP-099 | `…/comments/[commentId]/resolve/route.ts:19-36` nimmt die erste Rollenzeile ohne `ORDER BY`                                                                                                                | `WP12.md` §3.4 (S12-13)                                                                                                                                                                                                    | Produktdefekt                         | S             | —                                                                                    | Ein Nutzer mit `viewer` **und** `admin` bekommt heute je nach Heap-Reihenfolge eine 403.                                                                                         |
+| OP-100 | Kein Scheduler-Nachholmechanismus für verpasste Läufe (`job_run`)                                                                                                                                          | `WP9.md` §5.5                                                                                                                                                                                                              | fehlende Funktion                     | M             | —                                                                                    | Ein Job, dessen Minute in ein Neustartfenster fiel, läuft heute gar nicht.                                                                                                       |
+| OP-101 | Rate Limiting ist prozesslokal — bei N Web-Containern gilt `N × capacity`                                                                                                                                  | `WP9.md` §5.1; `WP10.md` §4.9; `apps/web/src/lib/rate-limit.ts`                                                                                                                                                            | Betrieb                               | M             | Redis-Backend                                                                        | Ein Login-Lockout überlebt einen Neustart und gilt über alle Container. Für die Ein-Container-Installation folgenlos.                                                            |
+| OP-102 | Generische E-Mail-Vorlage ersetzt 48 fachliche Vorlagen                                                                                                                                                    | `WP9.md` §5.2                                                                                                                                                                                                              | fehlende Funktion                     | L             | —                                                                                    | Eine DSGVO-Art.-33-Warnung verdient dieselbe Sorgfalt wie die 27 handgeschriebenen.                                                                                              |
+| OP-103 | Vierzehn Pfade melden ehrlich „nicht implementiert" — Connector-Tests, Identity-Prüfungen, Marketplace-Scanner, Simulation, Import, Evidenzprüfung, Modelltraining, acht Modul-Prozesse                    | `WP9.md` §5.3; `apps/worker/src/lib/module-aware-cron.ts:10-17`                                                                                                                                                            | fehlende Funktion                     | XL            | —                                                                                    | Sie existieren heute nicht; der Fix stellte die Ehrlichkeit her, nicht die Funktion.                                                                                             |
+| OP-104 | `CLAUDE.md`, `docs/STATUS.md` und `docs/feature-catalog.md` führen mehrere dieser Pfade als „✅ Done"                                                                                                      | `WP9.md` §5.3; Abschlussbericht §6; S14-02 nennt die Fundstellen                                                                                                                                                           | Doku                                  | M             | OP-103                                                                               | Nachweislich falsche Zusagen in der Produktdokumentation.                                                                                                                        |
+| OP-105 | Dedup-Schlüssel enthält einen Hash des Titels — Titeländerung erzeugt eine zusätzliche Zustellung                                                                                                          | `WP9.md` §5.4                                                                                                                                                                                                              | Codequalität                          | S             | bewusster Kompromiss                                                                 | **Streichkandidat**: lieber einmal zu viel als eine unterdrückte Fristmeldung.                                                                                                   |
+| OP-106 | `job_run` ist Betriebsprotokoll, kein Nachweis (nicht an der Audit-Kette, 90-Tage-Löschung)                                                                                                                | `WP9.md` §5.6                                                                                                                                                                                                              | Doku                                  | S             | —                                                                                    | Wer daraus eine Compliance-Aussage ableitet, muss das gesondert begründen — heute steht das nur im Protokoll.                                                                    |
+| OP-107 | `apps/worker/tests/crons/control-embedding-sync.test.ts` rot (der `@grc/ai`-Mock exportiert `providerPlacements` nicht)                                                                                    | `WP9.md` §5.7                                                                                                                                                                                                              | Testlücke                             | S             | WP6-Dateihoheit                                                                      | Eine rote Testdatei beim Abschluss einer Welle; sie gehört grün oder begründet.                                                                                                  |
+| OP-108 | `it.fails` in `scheduled-notifications` markiert einen echten Defekt in fremder Datei                                                                                                                      | `WP11.md` §5.3 (WP9 2.5)                                                                                                                                                                                                   | Produktdefekt                         | S             | WP9                                                                                  | Bleibt er länger als eine Iteration stehen, steht in der Suite eine Erwartung, dass etwas kaputt ist.                                                                            |
+| OP-109 | `apps/web/src/__tests__/api/ai-assist-routes.test.ts` ist lastabhängig — ein Hook-Fehlschlag überspringt still 10 Tests                                                                                    | `WP11.md` §6.2                                                                                                                                                                                                             | Testlücke                             | S             | —                                                                                    | Ein fehlgeschlagener Hook bleibt ein Fehlschlag statt wie eine bewusste Auslassung auszusehen.                                                                                   |
+| OP-110 | Drei Testdateien mit unvollständigem `vi.mock("@/lib/api-errors")` testen die RFC-7807-Normalisierung nicht                                                                                                | `WP12.md` §3.17 (`lib/api-wrapper.test.ts`, `api/wave-25-block-b-c.test.ts`, `api/wave-24-block-c-d.test.ts`)                                                                                                              | Testlücke                             | S             | —                                                                                    | Die Tests sind grün, weil der Wrapper einen Fehlschlag der Normalisierung abfängt — sie prüfen sie nicht.                                                                        |
+| OP-111 | `packages/db/src/seed-all.ts:179` benutzt `ALTER TABLE … ENABLE TRIGGER ALL` auf 13 Tabellen — dieselbe Falle wie WP11 2.4                                                                                 | `WP11.md` §6.4                                                                                                                                                                                                             | Produktdefekt                         | S             | —                                                                                    | Heute folgenlos; sie zündet, sobald ein `ENABLE ALWAYS`-Guard auf eine dieser Tabellen gelegt wird.                                                                              |
+| OP-112 | TOCTOU zwischen DNS-Prüfung und `fetch` in `safeFetch` — robuster Fix ist ein undici-Dispatcher mit IP-Pinning                                                                                             | `WP5.md` §4                                                                                                                                                                                                                | Produktdefekt                         | M             | ändert das HTTP-Verhalten aller ausgehenden Aufrufe                                  | Die SSRF-Schranke wird gegen DNS-Rebinding dicht.                                                                                                                                |
+| OP-113 | `custom_sql` bleibt eine Lesefläche: Org-Admin/Auditor kann jede Zeile lesen, die `grc_app` in seiner Org lesen darf                                                                                       | `WP5.md` §4; `WP5.md` §0                                                                                                                                                                                                   | Entscheidung des Eigentümers          | M             | Entscheidung: Feature behalten oder entfernen                                        | Bewusst akzeptiert; identisch zur Lage bei `bi-reports/execute`. Die Entscheidung gehört dokumentiert, nicht revidiert.                                                          |
+| OP-114 | `assertZipWithinLimits` vertraut dem Central Directory — ein Archiv kann beim Entpacken mehr liefern                                                                                                       | `WP5.md` §4                                                                                                                                                                                                                | Codequalität                          | S             | —                                                                                    | Zweite und dritte Schicht fangen es ab; die Pre-Flight-Prüfung wird ehrlich beschrieben oder gehärtet.                                                                           |
+| OP-115 | Magic-Bytes-Prüfung ist keine Inhaltsprüfung — eine Datei mit `%PDF`-Header und beliebigem Rest passiert                                                                                                   | `WP5.md` §4                                                                                                                                                                                                                | Doku                                  | S             | ClamAV bleibt zuständig                                                              | **Streichkandidat** als Defekt; als Zusage gehört die Grenze in die Doku.                                                                                                        |
+| OP-116 | S04-09 (Fehlerbehandlung in Handlern) ist zu ~8 % abgedeckt — 23 von 276 Handlern                                                                                                                          | `WP5.md` §4                                                                                                                                                                                                                | Codequalität                          | L             | fremde Dateihoheit                                                                   | Inkonsistente Fehlerbehandlung, kein Sicherheitsthema; zusammen mit OP-079 zu erledigen.                                                                                         |
+| OP-117 | Ausgehendes Klartext-HTTP für Threat-Feeds ist ab jetzt abgelehnt (`WEBHOOK_ALLOW_HTTP=1` als Ausstieg)                                                                                                    | `WP5.md` §4                                                                                                                                                                                                                | Betrieb                               | S             | —                                                                                    | Bewusste, dokumentierte Regression; Pilotkunden mit HTTP-Feeds brauchen die Variable.                                                                                            |
+| OP-118 | AI-Egress-Default ist `any_configured` — die Data-Sovereignty-Zusage hält nur bei gesetzter Richtlinie                                                                                                     | `WP6.md` §5                                                                                                                                                                                                                | Entscheidung des Eigentümers          | S             | Betreiberentscheidung (`egress_mode=local_only` oder `organization.data_residency`)  | Wer die Zusage unbedingt halten will, muss sie setzen; der Default ist bewusst nicht restriktiv.                                                                                 |
+| OP-119 | Keine inhaltliche Datenminimierung: bei erlaubter Cloud-Verarbeitung gehen die vollständigen Fachtexte hinaus                                                                                              | `WP6.md` §5; Weg in `WP6.md` §4.9 an WP8 übergeben                                                                                                                                                                         | fehlende Funktion                     | L             | —                                                                                    | Die Zusage „Data Sovereignty" umfasst dann auch den Umfang, nicht nur das Ziel.                                                                                                  |
+| OP-120 | Verschlüsselung at rest im Dokumentenspeicher ist eine Betreibermaßnahme (Garage kann SSE nicht)                                                                                                           | `WP7.md` §4 (erstens)                                                                                                                                                                                                      | Entscheidung des Eigentümers          | M             | Betreiberentscheidung: LUKS oder SSE-fähiges Backend                                 | Wer AES-256 at rest für DMS-Dokumente braucht, muss handeln; heute steht es sichtbar statt implizit.                                                                             |
+| OP-121 | Signaturkette ist ungeschlüsselt — ein PostgreSQL-Superuser kann den Trigger entfernen                                                                                                                     | `WP7.md` §4 (zweitens); `WP4.md` §5                                                                                                                                                                                        | Produktdefekt                         | L             | OP-125 (WORM-Spiegelung)                                                             | Belastbare Tamper-Evidence ist heute allein der HMAC-gesiegelte `audit_log`.                                                                                                     |
+| OP-122 | Mandantentrennung im Objektspeicher ist applikativ, nicht strukturell — ein Bucket pro Mandant fehlt                                                                                                       | `WP7.md` §4 (drittens), Weg in `WP7.md` §3                                                                                                                                                                                 | fehlende Funktion                     | L             | —                                                                                    | `orgScopedStorage` lebt im selben Prozess wie der Code, den sie schützt; Codeausführung im Web-Container umgeht sie.                                                             |
+| OP-123 | Kein Streaming: Upload, Download und Hash-Berechnung halten die Datei vollständig im Heap; released PDFs > 20 MB werden abgewiesen                                                                         | `WP7.md` §1 (S06-…, Status **teilweise geschlossen**), §4 (viertens)                                                                                                                                                       | Produktdefekt                         | L             | `WATERMARK_MAX_BYTES` als Zwischenlösung                                             | Große Dokumente werden auslieferbar statt mit `reason: too_large` abgewiesen.                                                                                                    |
+| OP-124 | `audit_log.metadata` ist unter Hash-v4 direkte Hash-Eingabe und deshalb nicht redigierbar — ein Freitext-`reason` mit Klartext überlebt eine Art.-17-Löschung                                              | `WP8.md` §5 (erstens)                                                                                                                                                                                                      | Produktdefekt                         | M             | —                                                                                    | Der Löschpfad wird vollständig; heute bleibt eine benannte Lücke.                                                                                                                |
+| OP-125 | WORM-Spiegelung der Ankersiegel außerhalb der Datenbank (WP4 Phase 2)                                                                                                                                      | `WP4.md` §5; `WP10.md` §4.13                                                                                                                                                                                               | fehlende Funktion                     | L             | Append-only-Speicher außerhalb der DB (Betreiber)                                    | Der einzige Schritt, der die Restlücke gegen einen Datenbank-Superuser schließt.                                                                                                 |
+| OP-126 | Restore aus einem Backup vor dem Löschantrag bringt den Personenbezug zurück — kein Wiederanwendungsmechanismus                                                                                            | `WP8.md` §5 (zweitens)                                                                                                                                                                                                     | fehlende Funktion                     | M             | über Backup-Aufbewahrung steuerbar                                                   | Art. 17 hält auch über einen Restore hinweg.                                                                                                                                     |
+| OP-127 | Legal Hold existiert nur auf `document`; der Vorrang einer Aufbewahrungspflicht ist eine organisatorische Prüfung                                                                                          | `WP8.md` §5 (drittens); ADR-011 rev.2 führt ihn selbst als zurückgestellt                                                                                                                                                  | fehlende Funktion                     | L             | —                                                                                    | Der Zielkonflikt Löschpflicht ↔ Aufbewahrungspflicht wird technisch entschieden statt per DSB-Handgriff.                                                                         |
+| OP-128 | Re-Seal-Skript für `WB_ENCRYPTION_KEY` fehlt — Rotation nur mit dauerhaftem `WB_ENCRYPTION_KEY_PREVIOUS`                                                                                                   | `WP10.md` §4.12 (WP8-Punkt 2)                                                                                                                                                                                              | Betrieb                               | S             | —                                                                                    | Analog zu `scripts/encrypt-connector-secrets.mjs`; Schlüsselrotation wird ein normaler Vorgang.                                                                                  |
+| OP-129 | `webhook_registration.secret_hash` enthält keinen Hash, sondern das Klartext-HMAC-Geheimnis (S10-26, Status **teilweise**)                                                                                 | `WP9.md` §2 S10-26; `WP10.md` §4.10; Migration 0436 kennzeichnet es nur                                                                                                                                                    | Doku                                  | S             | drei Dateihoheiten                                                                   | Die Umbenennung nach `signing_secret` beendet eine irreführende Spaltenbezeichnung in einem Sicherheitskontext.                                                                  |
+| OP-130 | Doku-Drift rund um den Worker (S10-27, Status **teilweise**): `docs/STATUS.md:321` (124 statt 131 Cron-Jobs), `:350`, `:92`, `docs/ADR-019` behauptet ein Caddy-Limit, das es nicht gibt                   | `WP9.md` §2 S10-27                                                                                                                                                                                                         | Doku                                  | S             | —                                                                                    | Vier belegte Falschaussagen in der Betriebsdokumentation.                                                                                                                        |
+| OP-131 | `deploy/update-all.sh` fährt `sort` und `                                                                                                                                                                  |                                                                                                                                                                                                                            | true`und ruft`db-backup.sh` nicht auf | `WP1.md` §7.2 | Betrieb                                                                              | S                                                                                                                                                                                | —   | Ein fehlgeschlagener Schritt im Deploy bricht ab statt still weiterzulaufen. |
+| OP-132 | `docs/ADR-023` steht auf _Proposed_, obwohl §1/§3/§4 implementiert sind                                                                                                                                    | `WP1.md` §7.2                                                                                                                                                                                                              | Doku                                  | S             | —                                                                                    | Der Entscheidungsstand entspricht der Umsetzung.                                                                                                                                 |
+| OP-133 | `docs/runbook.md` §5 (Compensating-Migration-Flow) fehlt                                                                                                                                                   | `WP1.md` §7.2                                                                                                                                                                                                              | Doku                                  | S             | —                                                                                    | Der dokumentierte Rückweg für eine fehlerhafte Migration existiert.                                                                                                              |
+| OP-134 | Migrationen `0383`, `0385`, `0386` sind `Breaking` und brauchen ein Pre-Deploy-Backup; `0387` legt 450 Indizes an (Wartungsfenster)                                                                        | `WP1.md` §7.2                                                                                                                                                                                                              | Betrieb                               | S             | erster Produktionsrollout                                                            | Ein Rollout ohne Wartungsfenster auf einer befüllten Datenbank ist sonst ein Ausfall.                                                                                            |
+| OP-135 | Vier Migrationen brauchen einen zweiten Pass (`0068`, `0069`, `0071`, `0106`)                                                                                                                              | `WP1.md` §7.4                                                                                                                                                                                                              | Codequalität                          | M             | topologische Sortierung würde ausgelieferte Migrationen ändern                       | Der Migrationslauf wird einpassig und damit erklärbar.                                                                                                                           |
+| OP-136 | `dashboard_widget_config` (13 System-Dashboards) und `notification_template` (3 RCSA-Vorlagen) haben kein Zielmodell; die Seeds sind No-Ops                                                                | `WP1.md` §7.5                                                                                                                                                                                                              | fehlende Funktion                     | M             | fachliche Entscheidung                                                               | Entweder ein org-gebundenes Zielmodell oder die Seeds entfallen; heute liegt totes Gewicht im Seed.                                                                              |
+| OP-137 | Fünf Spalten, in denen die Datenbank strenger ist als der Code (`*_sign_off.ip_address` als `inet`, `catalog_entry_mapping.*` als Enum)                                                                    | `WP1.md` §7.6 (`ACCEPTED_TYPE_DRIFT`)                                                                                                                                                                                      | Codequalität                          | S             | Code-Seite liegt bei WP7 bzw. dem Katalogmodul                                       | Der Drift-Check wird wieder eine vollständige Aussage.                                                                                                                           |
+| OP-138 | Veralteter Kommentar in `packages/db/src/index.ts:157` nennt `create-missing-tables.ts` noch als Teil des Ablaufs                                                                                          | `WP1.md` §7.1                                                                                                                                                                                                              | Doku                                  | S             | —                                                                                    | Der Kommentar beschreibt ein Skript, das genau der Defekt war, den der Audit fand.                                                                                               |
+| OP-139 | `account`, `session`, `verification_token` tragen RLS ohne jede Policy (deny-all) und werden nicht benutzt                                                                                                 | `/work/audit/remediation/RESTDEFEKTE.md` „Weiterhin offen"; `WP1.md` §7.1 (account-Policy über `user_id`)                                                                                                                  | Codequalität                          | S             | Entscheidung: entfernen oder als bewusst tot dokumentieren                           | Löst zugleich drei der vier Meldungen in OP-052 auf.                                                                                                                             |
+| OP-140 | `getControlCoverage` enthält einen sinnlosen `LEFT JOIN process_control pc ON pc.process_id IS NOT NULL` (Kreuzprodukt)                                                                                    | `RESTDEFEKTE.md` „Weiterhin offen"; Code: `packages/reporting/src/threat-dashboard.ts:246`                                                                                                                                 | Codequalität                          | S             | von keiner Route erreichbar                                                          | **Streichkandidat**, solange die Funktion tot ist — sonst ein Kreuzprodukt in einem Reporting-Pfad.                                                                              |
+| OP-141 | Prettier-Tor rot im Arbeitsbaum: 159 Dateien, überwiegend eingecheckte `coverage/`-Artefakte, die `.gitignore` nicht ausnimmt                                                                              | `RESTDEFEKTE.md` „Weiterhin offen"; `STUFE2-D-OFFENE-PUNKTE.md` §6 (sieben weitere Dateien aus fremden Strängen)                                                                                                           | Codequalität                          | S             | —                                                                                    | Ein Formatier-Tor, das dauerhaft rot ist, wird ignoriert; die `coverage/`-Artefakte gehören nicht ins Repo.                                                                      |
+| OP-142 | `0394` ist ein Einmal-Scan — eine spätere FOR-ALL-Migration mit `org_id IS NULL` brächte S01-07 lautlos zurück                                                                                             | `VERIFIKATION.md` Teil D O-9                                                                                                                                                                                               | Codequalität                          | S             | Dauerschutz ist heute allein der RLS-Systemtest                                      | Ein wiederkehrender Scan statt einer Momentaufnahme.                                                                                                                             |
+| OP-143 | `grc_platform` im Container ist nicht auf Branch-Stand (528 Tabellen, alter `audit_trigger` auf `wb_report`, kein `export_approval`)                                                                       | `VERIFIKATION.md` Teil D O-10                                                                                                                                                                                              | Betrieb                               | S             | —                                                                                    | Wer dagegen misst, misst einen anderen Codestand — das erklärt vermutlich die zwei nicht reproduzierbaren Testfehler B.1/B.2.                                                    |
+| OP-144 | `@grc`-Scope auf npmjs.com nicht registriert (Dependency Confusion)                                                                                                                                        | `WP10.md` §4.3 (S08-13)                                                                                                                                                                                                    | Entscheidung des Eigentümers          | S             | Konto des Eigentümers                                                                | Verhindert, dass ein Dritter den Scope belegt.                                                                                                                                   |
+| OP-145 | Acht überholte `dependabot/*`-Branches auf origin                                                                                                                                                          | `WP10.md` §4.5 (S08-20)                                                                                                                                                                                                    | Betrieb                               | S             | Eigentümer                                                                           | Kein Rückstau-Eindruck, den es nicht mehr gibt.                                                                                                                                  |
+| OP-146 | Erster Lauf der Betriebsskripte auf Staging steht aus (`update-all.sh`, `rollback.sh`, `db-backup.sh`, `offsite-sync.sh`, `dr-restore-drill.sh`)                                                           | `WP10.md` §4.6, §5 („richtig geschrieben, nicht erprobt"); Abschlussbericht §7                                                                                                                                             | Betrieb                               | M             | Staging-Umgebung mit Docker-Daemon                                                   | Genau dieser Unterschied hat die drei falschen Rollback-Kommandos aus S13-05 entstehen lassen.                                                                                   |
+| OP-147 | Alarm-Zustellkanal nicht eingerichtet (`ALERT_WEBHOOK_URL`, `HEALTHCHECKS_URL`)                                                                                                                            | `WP10.md` §4.7 (S13-11, S13-12), §5; Abschlussbericht §5 O-D                                                                                                                                                               | Betrieb                               | S             | Eigentümer setzt die Variablen                                                       | Ein Alarm, den niemand empfängt, ist kein Alarm; der Dead-Man's-Switch ist der einzige Mechanismus, der „Host tot" meldet.                                                       |
+| OP-148 | Zweite Replik für echtes Zero-Downtime (S13-22, Status **teilweise**)                                                                                                                                      | `WP10.md` §1 S13-22, §4.8; Weg in `docs/runbook.md` §6                                                                                                                                                                     | Entscheidung des Eigentümers          | L             | Architekturentscheidung; Voraussetzung Expand/Contract-Disziplin (ADR-023)           | Deployments ohne Ausfallfenster.                                                                                                                                                 |
+| OP-149 | Fachliche DMS-Alarmschwellen fehlen (`controlled_copy_watermark_failed`, `uncontrolled_copy_download`, `storage_integrity_mismatch`)                                                                       | `WP10.md` §4.11                                                                                                                                                                                                            | Entscheidung des Eigentümers          | S             | fachliche Entscheidung über die Schwellen                                            | Der Mechanismus steht; ohne Schwellen feuert er nie.                                                                                                                             |
+| OP-150 | Required Checks in GitHub nicht konfiguriert — vier Workflows sind pfadgefiltert, ein leerer Check-Satz ist nicht von einem grünen zu unterscheiden                                                        | `WP10.md` §4.14                                                                                                                                                                                                            | Entscheidung des Eigentümers          | S             | GitHub-Einstellung                                                                   | Insbesondere `Security Audit` (das Gate aus S08-03) muss required sein.                                                                                                          |
+| OP-151 | Zwei neue Workflows nicht in der Branch-Protection: `openapi-breaking-change.yml` und der Job `i18n-code-vs-catalog`                                                                                       | `WP12.md` §3.10                                                                                                                                                                                                            | Betrieb                               | S             | OP-150                                                                               | Die beiden neuen Tore wirken erst, wenn sie required sind.                                                                                                                       |
+| OP-152 | 222 `console.*`-Aufrufe (58 web, 164 worker) gehen am Field-Scrubbing vorbei                                                                                                                               | `WP10.md` §4.15 (S13-15), §5                                                                                                                                                                                               | Codequalität                          | M             | **vor** dem Anschluss an einen externen Log-Empfänger (ADR-017)                      | Sonst ist die Zusage „keine sensiblen Daten im Log" wieder eine Behauptung.                                                                                                      |
+| OP-153 | `E2E_EMAIL` / `E2E_PASSWORD` nicht als Repository-Secrets angelegt — der E2E-Job fällt auf                                                                                                                 | `WP10.md` §4.17                                                                                                                                                                                                            | Betrieb                               | S             | Eigentümer                                                                           | Beabsichtigtes Fail-loud; ohne die Secrets läuft die Suite in CI nicht.                                                                                                          |
+| OP-154 | Trigger-Zustand auf allen bestehenden Datenbanken einmalig prüfen — ein Guard kann vorhanden und trotzdem wirkungslos sein (`tgenabled <> 'A'`)                                                            | `WP10.md` §4.18; belegt: `audit_anchor_append_only_trg`/`audit_anchor_no_truncate` auf `'O'`, `audit_log_tombstone_guard` auf `'D'`                                                                                        | Betrieb                               | S             | Betreiberschritt je Installation                                                     | Auf einer Produktivdatenbank wäre eine deaktivierte Löschsperre auf `audit_log` ein Auditbefund erster Ordnung.                                                                  |
+| OP-155 | Schema-Drift-Endpunkt vergleicht den ENABLE-Zustand von Triggern nicht                                                                                                                                     | `WP10.md` §4.18 („Für WP1 relevant"); S09-09                                                                                                                                                                               | Testlücke                             | S             | OP-154                                                                               | Genau dieser Zustand ist der Unterschied zwischen „Guard vorhanden" und „Guard wirkt".                                                                                           |
+| OP-156 | Seed-Admin und ggf. `AUTH_SECRET` rotieren — ein Sitzungstoken liegt in der öffentlichen Historie (`1a19506c`, `415f50ff`)                                                                                 | `WP10.md` §4.19; `WP11.md` §6.1                                                                                                                                                                                            | Entscheidung des Eigentümers          | S             | Eigentümer; entschärfend: localhost-gebunden, seit 2026-04-06 abgelaufen, Seed-Konto | Rotation beendet die Gültigkeit sofort — anders als die Historienbereinigung (OP-060).                                                                                           |
+| OP-157 | Verschachtelte interaktive Elemente in der Budget-Karte (`<button>` in `<button>`) — ungültiges HTML                                                                                                       | `WP12.md` §3.20                                                                                                                                                                                                            | Produktdefekt                         | M             | Designentscheidung: Kachel mit benanntem Link statt flächig klickbarer Fläche        | Das Verhalten ist zwischen Browsern nicht definiert; a11y-relevant.                                                                                                              |
+| OP-158 | `messages/{de,en}/identity.json:111` („Self-hosted. Keine US-Cloud-Abhängigkeit.") — WP6 hat eine Präzisierung vorgeschlagen                                                                               | `WP12.md` §3.17                                                                                                                                                                                                            | Entscheidung des Eigentümers          | S             | Produkt-/Marketingabstimmung                                                         | Für die Standardkonfiguration richtig; mit gesetzten Cloud-Keys irreführend.                                                                                                     |
+| OP-159 | `ARCTOS_BUILD_IGNORE_TS_ERRORS=1` existiert als Schalter — er darf nicht benutzt werden, um Typfehler loszuwerden                                                                                          | `WP12.md` §3.19; `apps/web/next.config.ts`                                                                                                                                                                                 | Doku                                  | S             | —                                                                                    | Ein sichtbarer, bewusster Akt statt eines stillen `ignoreBuildErrors: true`; die Regel gehört in den Review-Leitfaden.                                                           |
+| OP-160 | `bpmn-grc-bridge.ts` führt eine zweite, veraltete `MISSING_TODAY`-Liste mit zehn Einträgen                                                                                                                 | Code: `apps/web/src/components/bpmn/bpmn-grc-bridge.ts:124-180` gegen `apps/web/src/lib/grc-overlay.ts:363` (7 Einträge) — Details in Abschnitt B                                                                          | Doku                                  | S             | —                                                                                    | Zwei Listen mit widersprüchlichem Inhalt; die ältere behauptet fehlende Tabellen, die es seit 0444–0454 gibt.                                                                    |
+| OP-161 | Shadow-Compare-Betrieb: 30 Tage bzw. 500 Speichervorgänge ohne Abweichung                                                                                                                                  | `STUFE2-D-OFFENE-PUNKTE.md` §4; `STUFE2-C-ABSCHLUSS.md` §5 Kriterium 3; Plan §5.6 Kriterium 3                                                                                                                              | Zeitkriterium                         | XL            | **verstrichene Zeit unter echter Benutzung** — nicht durch Testläufe ersetzbar       | Der einzige Nachweis, dass die eigene Engine im Alltag nichts verliert; sinnvoll, ihn jetzt zu beginnen.                                                                         |
+| OP-162 | Pilotphase nicht begonnen — Kriterium 8 („keine offene Regression ‚hoch' aus der Pilotphase") ist unbewertbar                                                                                              | `STUFE2-C-ABSCHLUSS.md` §5 (Kriterientabelle)                                                                                                                                                                              | Zeitkriterium                         | XL            | OP-161, OP-027, OP-036                                                               | Das Wasserzeichen kann erst fallen, wenn alle acht Kriterien gleichzeitig erfüllt sind.                                                                                          |
+| OP-163 | XML-Vergleich im Shadow-Compare ist abgeschaltet — die Klasse `both-lossy` kann heute gar nicht auftreten                                                                                                  | `STUFE2-A3-VERIFIKATION.md` §3.9 („Zur Null bei `both-lossy`")                                                                                                                                                             | Testlücke                             | M             | OP-020, OP-021 (sinnvoll erst bei kurzer `ours-wrong`-Liste)                         | Die Null bedeutet heute nicht „moddle verliert nichts", sondern „auf dieser Ebene nicht messbar".                                                                                |
+| OP-164 | Erster Staging-Lauf ist der eigentliche Beweis: Backup, Off-Site-Verschlüsselung, DR-Restore, Alarmzustellung, Scheduler sind nur gegen Testdatenbanken verifiziert                                        | Abschlussbericht §7                                                                                                                                                                                                        | Betrieb                               | M             | OP-146                                                                               | Alle Kontrollen, die im Betrieb wirken sollen, sind nie gegen eine Produktivumgebung gelaufen.                                                                                   |
+| OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung als Löschung gilt)                                                                             | Abschlussbericht §7                                                                                                                                                                                                        | Entscheidung des Eigentümers          | M             | anwaltliche Prüfung                                                                  | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsberatung.                                                                                   |
+| OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                                                                                                                 | Abschlussbericht §7 („Grenzen dieses Audits")                                                                                                                                                                              | Testlücke                             | L             | Produktivinstanz                                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.                                                                                         |
+
+---
+
+## A. Nicht durch Arbeit lösbar
+
+Ehrlich abgegrenzt: „braucht 30 Tage Laufzeit" ist etwas anderes als „ist aufwendig".
+
+### A.1 Zeitkriterien — Arbeit hilft nicht, nur verstrichene Zeit
+
+| ID     | Punkt                                                                                             | Was die Zeit leisten muss                                                                                                                                                                                                                                                                      |
+| ------ | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-161 | Shadow-Compare-Betrieb, 30 Tage bzw. 500 Speichervorgänge ohne Abweichung (Plan §5.6 Kriterium 3) | Echte Benutzung durch echte Nutzer. Weder mehr Testläufe noch mehr erzeugte Folgen ersetzen das — beides misst etwas anderes. `shadowCompare()` trägt es ohne Umbau, der Editor kann seit Stufe C speichern. **Der Betrieb kann heute beginnen**; jeder Tag ohne Start ist ein verlorener Tag. |
+| OP-162 | Pilotphase für Kriterium 8 („keine offene Regression ‚hoch'")                                     | Ein Release-Zyklus mit Nutzern. Ohne Pilotphase ist das Kriterium nicht erfüllbar, sondern unbewertbar.                                                                                                                                                                                        |
+| OP-097 | Rotationsfenster für `dd_session.access_token` / `user.ical_token`                                | Ausgegebene Links müssen ablaufen, bevor `DROP COLUMN` folgen darf. Die Arbeit danach ist eine Migration (S).                                                                                                                                                                                  |
+
+### A.2 Entscheidungen des Eigentümers / Betreibers — außerhalb des Repositories
+
+| ID              | Punkt                                                             | Wer entscheidet, wo                                                                  |
+| --------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| OP-059          | Repository auf privat stellen                                     | Eigentümer, GitHub-Interface. Solange offen, sind alle übrigen Maßnahmen nachrangig. |
+| OP-060          | Historienbereinigung                                              | Eigentümer; bei öffentlichem Repo ohnehin nur begrenzt wirksam.                      |
+| OP-061          | bpmn.io: kommerzielle Lizenz oder Wasserzeichen                   | Geschäftsentscheidung. Keine CSS-Regel ist zulässig.                                 |
+| OP-144          | `@grc`-Scope auf npmjs.com registrieren                           | Eigentümer, npm-Konto.                                                               |
+| OP-145          | Acht überholte `dependabot/*`-Branches schließen                  | Eigentümer, GitHub.                                                                  |
+| OP-147          | `ALERT_WEBHOOK_URL` / `HEALTHCHECKS_URL` setzen                   | Betreiber, `/opt/arctos/.env`. Code ist fertig und ohne diesen Schritt folgenlos.    |
+| OP-148          | Zweite Replik für Zero-Downtime                                   | Architekturentscheidung des Betreibers.                                              |
+| OP-149          | Schwellen der fachlichen DMS-Alarme                               | Fachliche Entscheidung.                                                              |
+| OP-150 / OP-151 | Required Checks konfigurieren                                     | Eigentümer, GitHub Branch Protection.                                                |
+| OP-153          | `E2E_EMAIL` / `E2E_PASSWORD` als Repository-Secrets               | Eigentümer, GitHub Actions Secrets.                                                  |
+| OP-154          | Trigger-`ENABLE ALWAYS` auf bestehenden Datenbanken prüfen        | Betreiber, je Installation, einmalig.                                                |
+| OP-156          | Seed-Admin und ggf. `AUTH_SECRET` rotieren                        | Eigentümer. Rotation beendet die Gültigkeit sofort, anders als OP-060.               |
+| OP-095          | Migration 0411 einspielen (Plattform-Admin am DB-Prompt)          | Betreiber.                                                                           |
+| OP-118          | AI-Egress-Richtlinie setzen (`local_only` / `data_residency`)     | Betreiber; der Default `any_configured` ist bewusst nicht restriktiv.                |
+| OP-120          | Verschlüsselung at rest (LUKS oder SSE-fähiges Backend)           | Betreiber.                                                                           |
+| OP-125          | Append-only-Speicher für die WORM-Spiegelung bereitstellen        | Betreiber; die Arbeit danach ist L.                                                  |
+| OP-158          | Formulierung „Keine US-Cloud-Abhängigkeit"                        | Produkt-/Marketingentscheidung.                                                      |
+| OP-165          | Rechtliche Würdigung (Signaturklasse, Art. 17, Pseudonymisierung) | Anwaltliche Prüfung; keine technische Arbeit.                                        |
+| OP-113          | `custom_sql` als Lesefläche behalten oder entfernen               | Produktentscheidung; bewusst akzeptiert.                                             |
+| OP-054          | `AUDIT_INTEGRITY` 1/min — so gemeint oder nicht?                  | Entscheidung, dann S Arbeit.                                                         |
+
+### A.3 Braucht eine Umgebung, die es hier nicht gibt — Arbeit hilft, aber nicht allein
+
+Diese sind **nicht** Zeitkriterien, sondern Ressourcenfragen. Sie werden hier getrennt genannt,
+weil sie in den Berichten gern mit A.1 vermischt werden.
+
+- **OP-146 / OP-164** — Staging mit Docker-Daemon und Produktions-Stack. Die Skripte sind
+  geschrieben und geprüft, nur nie ausgeführt.
+- **OP-062 / OP-034 / OP-035** — Browserlauf, echte Geräte, assistive Technologie.
+- **OP-166** — laufende Produktivinstanz für einen Penetrationstest.
+- **OP-143** — eine Datenbank auf Branch-Stand.
+
+---
+
+## B. Widersprüche und Dubletten — gegen den Code geprüft
+
+### B.1 Zwei `MISSING_TODAY`-Listen, eine davon nachweislich falsch
+
+`apps/web/src/components/bpmn/bpmn-grc-bridge.ts:124` führt zehn Einträge und behauptet unter
+anderem:
+
+- „Es gibt keine Lane-Tabelle (`process_lane`) und keine SoD-Regelmenge (`sod_rule`)" (Zeile 170)
+- „`process_step_raci` fehlt" (Zeile 156)
+- „`process_step.step_key` existiert nicht" (Zeile 175)
+- „`finding.due_at` existiert im Schema nicht"
+
+**Der Code sagt etwas anderes.** `packages/db/drizzle/0444_process_lane.sql`,
+`0446_sod_rule.sql`, `0447_process_step_raci.sql` und `0445_process_step_identity.sql`
+(`step_key`) existieren; `apps/web/src/app/api/v1/processes/[id]/diagram-overlay/route.ts:400`
+und `:427` lesen `process_lane` und `sod_rule` produktiv;
+`packages/db/src/schema/process-diagram-grc.ts:66` definiert `processLane`.
+**Es gilt:** `apps/web/src/lib/grc-overlay.ts:363` mit **sieben** Einträgen ist die maßgebliche
+Liste; die Fassung in `bpmn-grc-bridge.ts` ist der Stand vor Stufe E und gehört gestrichen oder
+auf die neue verwiesen (→ OP-160). Ein Wächtertest prüft nur die Liste in `grc-overlay.ts`
+(`apps/web/src/__tests__/lib/grc-overlay.test.ts:742`), nicht die in der Brücke — die falsche
+Liste hat also keinen Wächter.
+
+### B.2 „Produktionsbuild nicht herstellbar" gegen „Compiled successfully"
+
+- Abschlussbericht §5 **O-E** und `VERIFIKATION.md` Teil D **O-7**: „nicht herstellbar (> 7 GB RAM)".
+- `WP12.md` S12-16: „offen — scheitert **nicht** am Speicher", Turbopack-Verklemmung.
+- `E2E-TRIAGE-4.md` §6.3: `npm run build --workspace=@grc/web` → „**Compiled successfully**,
+  Finished TypeScript in 4.8min", mit `ignoreBuildErrors=false`.
+
+**Es gilt:** Der Bau **läuft** — auf der Maschine des Eigentümers, gegen `81200d89` plus dem
+Änderungssatz von Runde 4. Er läuft **nicht** in der Auditumgebung (2 vCPU, 7 GB). Das ist eine
+Umgebungs-, keine Produktaussage. Nachfolgeposten ist nicht der Bau selbst, sondern OP-053
+(der Bau löscht `.env.local`) — das ist der Teil, der reproduzierbar Schaden anrichtet.
+
+### B.3 „Playwright-E2E: kein grüner Gesamtlauf" gegen 199/199
+
+- Abschlussbericht §5 **O-F**: „Ein vollständiger Lauf kam nicht zustande: 31 von 47
+  Regressions-Specs, 13 grün, 11 rot, 7 übersprungen. Es gibt keine Vergleichsbasis."
+- `VERIFIKATION.md` Teil D **O-5**: „Neun weitere E2E-Regressionsfehler … plus die 16 nie
+  erreichten Specs."
+- `E2E-TRIAGE-4.md` §6.1: „Lauf 8: **199 Tests — 199 bestanden, 0 gescheitert, 0 übersprungen**,
+  4,5 min", Lauf 9 als Wiederholung unverändert.
+
+**Es gilt:** Der grüne Vollauf existiert und ist zweimal reproduziert. Die vier Triage-Runden
+haben O-F/O-5 abgearbeitet. Was **offen bleibt**, ist nicht der Lauf, sondern das, was er nicht
+abdeckt: die Canvas-Bedienung (OP-027) und der Mandanten-Zwiespalt für das Admin-Konto (OP-056).
+
+### B.4 „Drei Pakete mit abgeschwächten Compiler-Optionen" gegen zehn
+
+- Abschlussbericht §5 **O-H** und `VERIFIKATION.md` **O-8**: „`db`, `shared` und `auth`".
+- `WP12.md` §3.13: „in den **zehn** Paket-Konfigurationen aus".
+- **Code:** `noUncheckedIndexedAccess: false` steht in **zehn** `packages/*/tsconfig.json` —
+  `ai`, `auth`, `automation`, `db`, `email`, `events`, `graph`, `reporting`, `shared`, `ui`.
+  `tsconfig.base.json:16-17` setzt beide Flags auf `true`.
+
+**Es gilt:** zehn Pakete. Die im Abschlussbericht genannten Zahlen (641/502/321) sind die
+gemessene Restschuld dreier Pakete, nicht die Zahl der betroffenen Pakete; `email` mit 542
+fehlt dort ganz (→ OP-065).
+
+### B.5 „404 eingefrorene Lint-Befunde" gegen 418 gemessen
+
+- Abschlussbericht §5 **O-G**, `RESTDEFEKTE.md` **O-1**, `.eslint-ratchet.json`: Baseline **404**.
+- **Code:** `node scripts/lint-ratchet.mjs` am 2026-09-02 → **418** Befunde, `no-console`
+  **135 > 121 (+14)**, Exit ≠ 0.
+
+**Es gilt:** Die Ratsche ist **verletzt**, nicht nur unerfüllt. Die 14 stammen aus
+`packages/db/src/seed-e2e-users.ts` (8, aus E2E-Triage 3), `packages/db/src/seed-demo.ts` (3,
+aus E2E-Triage 1) und `packages/bpmn/test/model/measure-roundtrip.ts` (3) — also aus den
+Arbeitssträngen nach dem Audit (→ OP-064).
+
+### B.6 „37 UI-Aufrufe mit `limit > 100`" gegen 30 gemessen
+
+- `E2E-TRIAGE-3.md` §6 und `E2E-TRIAGE-4.md` §9: **37**.
+- **Code:** 30 Fundstellen in `apps/web/src` (26× `limit=200`, 1× `300`, 2× `500`, 1× `10000`),
+  34 im ganzen Repo ohne `node_modules`.
+
+**Es gilt:** 30 in der Oberfläche. Die Differenz ist vermutlich eine andere Zählmethodik
+(Serverpfade oder Tests mitgezählt); die Fehlerklasse ist unverändert (→ OP-050).
+
+### B.7 „6.794 / 6.795 ungenutzte i18n-Schlüssel" gegen 6.796
+
+- `WP12.md` S14-21: „Stand nach dieser Remediation: **6.794**", Budget 6.800.
+- **Code:** `audit-i18n-usage.mjs` → **6.796**.
+
+Innerhalb des Budgets, aber gestiegen. Die parallel gemeldete Zahl „74 Komponenten ohne i18n"
+(WP12 S14-14) ist inzwischen **75**, und damit ist die Untranslated-Ratsche gerissen (→ OP-071).
+
+### B.8 „1.991 tote Exports" gegen 2.706
+
+- `docs/perf/dead-exports-report.md:15` (eingecheckt): **1.991 in 322 Dateien**.
+- **Code:** `node scripts/audit-dead-exports.mjs` am 2026-09-02 → **2.706 in 461 Dateien**.
+
+**Es gilt:** 2.706. Der eingecheckte Report ist um 715 Einträge veraltet, und es gibt kein
+CI-Gate, das das bemerkt hätte (→ OP-074, OP-075). _(Der Report wurde nach der Messung wieder
+auf den eingecheckten Stand zurückgesetzt — diese Datei ist die einzige Änderung dieser Arbeit.)_
+
+### B.9 Dieselbe Restlücke in zwei Protokollen: Drill-down
+
+`STUFE2-A1-MODELING.md` §7.2 (Modellierungsschicht), `STUFE2-B1-EDITOR.md` §7.2 (Bedienung),
+`STUFE2-C-ABSCHLUSS.md` §5.5, `STUFE2-D-OFFENE-PUNKTE.md` §3.2, `SPIKE-MESSUNG-DRAW.md` §2.3
+und `STUFE2-A2-GRC.md` §6 nennen es je einzeln. Es ist **ein** Arbeitspaket (→ OP-018), nicht
+sechs; die GRC-Schicht kompensiert es fachlich über die Roll-up-Rechnung.
+
+### B.10 Auto-Resize: in C §5.6 offen, in D §2.6 geschlossen
+
+`STUFE2-C-ABSCHLUSS.md` §5.6 und `STUFE2-B1-EDITOR.md` §7.5 führen „Kein Auto-Resize" als offen.
+`STUFE2-D-OFFENE-PUNKTE.md` §2.6 und §0 („Container-Bounds — Auto-Resize gebaut", `bounds`-Klassen
+von 8+7 auf 1+0) führen es als geschlossen. **Es gilt D** — der spätere Bericht; C und B1 sind
+Momentaufnahmen davor. Rest ist OP-024 (2 verbliebene `bounds`-Fälle).
+
+### B.11 `MISSING_TODAY`-Umfang: 13 → 10 → 7
+
+`STUFE2-C-ABSCHLUSS.md` §5.11 spricht von „zehn Vertragsfeldern", `STUFE2-D-OFFENE-PUNKTE.md` §0
+von 13, `STUFE2-E-SCHEMA.md` §0 von 7. **Der Code sagt 7** (`grc-overlay.ts:363`, gezählt).
+Die Zehn in C beziehen sich auf die Brückenliste aus B.1.
+
+### B.12 Findings-Register: nur ein „teilweise", die Protokolle nennen deutlich mehr
+
+`FINDINGS_REGISTER.md` enthält genau **einen** Treffer für „teilweise" (S05-11, in der
+Befundbeschreibung, nicht im Status). Die Umsetzungsprotokolle führen dagegen mindestens
+**zwölf** Findings mit Status „teilweise": S01-04, S01-09, S01-11, S01-26 (WP2), S03-10 (WP4),
+S06-… Speicherdeckelung (WP7 §1), S10-26, S10-27 (WP9), S13-22, Health-Endpunkt-Umfang (WP10),
+S12-05, S14-14, S14-16, S14-18, S14-19 (WP12). **Es gilt:** Das Register führt keinen
+Umsetzungsstand je Finding — wer nur dorthin sieht, hält 323 Findings für geschlossen. Die
+Teilstände dieses Registers sind OP-083, OP-086, OP-090, OP-091, OP-100, OP-123, OP-129,
+OP-130, OP-148, OP-070, OP-079, OP-076.
+
+---
+
+## C. Bereits erledigt, aber noch als offen geführt
+
+Im Code nachgeprüft. Diese Punkte gehören aus den jeweiligen Berichten ausgetragen.
+
+| Geführt als offen in                                                                                               | Punkt                                                                                                                                                                                                                              | Codebefund                                                                                                                                           | Urteil                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `STUFE2-B2-EINBINDUNG.md` §5.1 Punkt 1                                                                             | `"./grc"` fehlt in `packages/bpmn/package.json#exports` — „blockiert die GRC-Dekoration"                                                                                                                                           | `packages/bpmn/package.json#exports` führt `.`, `./model`, `./draw`, `./viewer`, `./modeling`, `./editor`, **`./grc`**                               | **erledigt**                                                                             |
+| `STUFE2-B2-EINBINDUNG.md` §5.2 („die wichtigste offene Vorbedingung für den Pilotbetrieb")                         | `@grc/bpmn` fehlt in `apps/web/package.json`; `transpilePackages` fehlt                                                                                                                                                            | `apps/web/package.json:21` `"@grc/bpmn": "^0.1.0"`; `apps/web/next.config.ts:29` listet `@grc/bpmn` in `transpilePackages`                           | **erledigt**                                                                             |
+| `STUFE2-B2-EINBINDUNG.md` §5.4                                                                                     | `ReplaceMenu.ts:120` setzt `node.innerHTML` und bricht den Sicherheitstest S12-15                                                                                                                                                  | `packages/bpmn/src/editor/ReplaceMenu.ts:123` — Kommentar „[ARCTOS-FULL-2026-08-31 · S12-15] Kein `innerHTML`", kein `innerHTML =` mehr im Quelltext | **erledigt**                                                                             |
+| `STUFE2-C-ABSCHLUSS.md` §5.11                                                                                      | „`decorateGrc` hat noch keinen Datenlieferanten … keine Seite reicht ihn durch"                                                                                                                                                    | Endpunkt `apps/web/src/app/api/v1/processes/[id]/diagram-overlay/route.ts` existiert; zwei Einbindungen reichen durch (`STUFE2-D` §1.6)              | **erledigt**, Rest ist OP-026                                                            |
+| `STUFE2-C-ABSCHLUSS.md` §5.6, `STUFE2-B1-EDITOR.md` §7.5                                                           | Kein Auto-Resize                                                                                                                                                                                                                   | `STUFE2-D` §2.6 gebaut; `bounds/bpmn:{SubProcess,Participant}` von 8+7 auf 1+0                                                                       | **erledigt**, Rest ist OP-024                                                            |
+| `STUFE2-C-ABSCHLUSS.md` §5.7/§5.8, `STUFE2-B1-EDITOR.md` §7.4/§7.6                                                 | Containerwechsel per Tastatur, Suche im Diagramm, Tastaturhilfe (`?`)                                                                                                                                                              | `STUFE2-D-OFFENE-PUNKTE.md` §3.1 „Geschlossen"                                                                                                       | **erledigt**                                                                             |
+| `STUFE2-C-ABSCHLUSS.md` §5 Kriterium 2 („9 Divergenzklassen"), `STUFE2-A3-VERIFIKATION.md` §3.9 (143 Abweichungen) | Divergenzzahlen                                                                                                                                                                                                                    | `STUFE2-D` §0: 147 → **77** `ours-wrong`, 26 `intentional`, 5 `reference-wrong`, 0 unklassifiziert                                                   | **überholt** — die aktuelle Zahl ist 77, aufgeschlüsselt in OP-020…OP-025                |
+| `STUFE2-A2-GRC.md` §6 / `STUFE2-D` §1.5                                                                            | Zehn GRC-Layer bleiben leer, weil das Schema fehlt (`process_lane`, `sod_rule`, `process_step_raci`, `process_step_ropa`, `process_step_data_category`, `process_step_bia`, `process_step_document`, `process_event_activity_map`) | Migrationen `0444`–`0454` vorhanden; `STUFE2-E` §0: **23 von 23 Layern** bekommen Daten                                                              | **erledigt** — offen ist nur die Pflegeoberfläche (OP-001) und der Import (OP-002)       |
+| `E2E-TRIAGE-2.md` §6 (C-15)                                                                                        | Die drei `coverage`-Routen sind untracked; jeder frische Klon antwortet 404                                                                                                                                                        | `git ls-files` führt `compliance/coverage/route.ts`, `audit-mgmt/universe/coverage/route.ts`, `processes/[id]/coverage/route.ts`                     | **erledigt**                                                                             |
+| `E2E-TRIAGE.md` §7.2/§7.3 (C-04, C-06, C-07)                                                                       | Organisationsliste unter RLS, CSP-Inline-Script, reservierte Verbindungen                                                                                                                                                          | In `E2E-TRIAGE-2.md` §2 einzeln behoben und gemessen                                                                                                 | **erledigt**                                                                             |
+| `E2E-TRIAGE-2.md` §6                                                                                               | `isms-workflow:96` (SoA), `management-review:27` (`actionElementId`), `process-map:37` (`childCount`), `f-18-integrity`, `b-01`/`b-02`/`i-02`                                                                                      | `E2E-TRIAGE-3.md` §2.1–2.6 behoben; Migration `0442_management_review_action_element_id.sql` existiert                                               | **erledigt** (Ausnahme: das Rate-Limit selbst → OP-054)                                  |
+| `E2E-TRIAGE-3.md` §6                                                                                               | Die zwei übersprungenen Specs (`document-signature.spec.ts:74`, `i-08-cve-flow.spec.ts:6`)                                                                                                                                         | `E2E-TRIAGE-4.md` §3/§4: beide Skips entfernt, `seed_demo_15_cve.sql` neu, Lauf 8 = 199/199/0                                                        | **erledigt**                                                                             |
+| `VERIFIKATION.md` Teil D **O-2**                                                                                   | `POST /api/v1/organizations` schlägt unter `grc_app` fehl (42501)                                                                                                                                                                  | `packages/db/drizzle/0438_organization_insert_policy.sql` vorhanden; `RESTDEFEKTE.md` Defekt 1 mit Nachweis                                          | **erledigt**                                                                             |
+| `VERIFIKATION.md` Teil D **O-3**                                                                                   | `GET /api/v1/isms/threats/heatmap` → 500 (`v.asset_id does not exist`)                                                                                                                                                             | Route ruft `getThreatHeatmap` aus `@grc/reporting`; kein rohes `v.asset_id` mehr; `RESTDEFEKTE.md` Defekt 2 mit Nachweis                             | **erledigt**                                                                             |
+| `VERIFIKATION.md` Teil D **O-4**                                                                                   | `POST /api/v1/findings` → 500 (FK `work_item_type`)                                                                                                                                                                                | `packages/db/drizzle/0439_work_item_type_catalog_gaps.sql` registriert `finding` und 15 weitere Typen                                                | **erledigt** — Restposten ist nur der Testverweis (OP-051)                               |
+| `VERIFIKATION.md` Teil D **O-6**                                                                                   | Drift-Check kennt kein `extra-in-db`                                                                                                                                                                                               | `RESTDEFEKTE.md` Defekt 3 mit Nachweis (Richtung ergänzt, Bereinigung durchgeführt)                                                                  | **erledigt**                                                                             |
+| Abschlussbericht §5 **O-E**                                                                                        | Produktionsbuild nicht herstellbar                                                                                                                                                                                                 | `E2E-TRIAGE-4.md` §6.3: „Compiled successfully", 4,8 min TypeScript, `ignoreBuildErrors=false`                                                       | **erledigt** auf der Zielmaschine — siehe B.2; Nachfolgeposten OP-053                    |
+| Abschlussbericht §5 **O-F** / `VERIFIKATION.md` **O-5**                                                            | Playwright-E2E: kein vollständiger Lauf, 11 rote Specs ohne Vergleichsbasis                                                                                                                                                        | `E2E-TRIAGE-4.md` §6.1: 199/199/0, zweimal reproduziert                                                                                              | **erledigt** — siehe B.3                                                                 |
+| `STUFE2-A3-VERIFIKATION.md` §3.1–§3.8, `packages/bpmn/test/verify/known-findings.ts`                               | Acht benannte Modellierungsbefunde (Undo entfernt DI nicht, `PARENT_LINK_BROKEN` zu streng, …)                                                                                                                                     | `KNOWN_FINDINGS` ist **leer**; alle Einträge stehen mit `fixedIn` in `RESOLVED_FINDINGS`                                                             | **erledigt**                                                                             |
+| `STUFE2-B2-EINBINDUNG.md` §5.3, `STUFE2-A3` §3.7                                                                   | `move` auf ein BoundaryEvent verliert `attachedToRef` (16/200 Folgen rot)                                                                                                                                                          | `STUFE2-C-ABSCHLUSS.md` §2 und §4.2: `PROPERTY_STRICT=1` von 16/200 auf **0**, 5 von 5 Startwerten grün                                              | **erledigt**                                                                             |
+| `WP12.md` §3.19                                                                                                    | 91 Typfehler in `apps/web` (88× `.rows`, 3× `chainSeq`)                                                                                                                                                                            | `VERIFIKATION.md` A.1 und A.2 behoben; Abnahme „Typecheck 12/12, Ausgang 91 Fehler"                                                                  | **erledigt**                                                                             |
+| `WP12.md` §3.16                                                                                                    | `loading-spinner.tsx` → das `it.fails` in `all-components-smoke.test.tsx` muss umgewandelt werden                                                                                                                                  | `WP11.md` §5.3: „der zweite `it.fails` (`LoadingSpinner`) wurde von WP12 behoben und ist wieder ein normales `it`"                                   | **erledigt**                                                                             |
+| Alle Berichte der bpmn-engine-Reihe („Nicht committet. Wie beauftragt.")                                           | Der Arbeitsstand liege unkommittiert im Arbeitsverzeichnis                                                                                                                                                                         | `git status --short` ist leer; `HEAD` = `4caff361` „feat(grc,e2e): zehn fehlende Tabellen, alle 23 Layer scharf, E2E 199/199"                        | **überholt** — die Arbeit ist committet; die Sätze in den Berichten sind Momentaufnahmen |
+
+---
+
+## D. Unbelegte Vermutungen
+
+Punkte, die in der Kandidatenliste des Auftrags standen, für die ich aber **keine** Herkunft
+in den Quellen und keine Fundstelle im Code gefunden habe. Sie stehen hier statt im Register.
+
+| Vermutung                                         | Was ich stattdessen gefunden habe                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| „`CLAMAV_OPTIONAL`" als offener Punkt             | Kein offener Punkt mehr. `packages/shared/src/lib/clamav.ts:85` implementiert den Ausstieg, `.env.example:210/218/421` und `docs/env-vars-reference.md:249` dokumentieren ihn, `E2E-TRIAGE-4.md` §3.3 führt ihn als erledigt. Offen ist allenfalls die Betreiberentscheidung, clamd zu betreiben statt den Ausstieg zu setzen (Teil von OP-147/OP-D). |
+| „1.991 tote Exports"                              | Der eingecheckte Wert; gemessen sind 2.706 (→ B.8, OP-074).                                                                                                                                                                                                                                                                                           |
+| „Coverage 23,3 % gesamt und 15,4 % in `apps/web`" | Bestätigt: 23,27 % / 15,37 % (`coverage/aggregated-summary.json`). Als Zahl belegt, als offener Punkt in OP-069 geführt.                                                                                                                                                                                                                              |
+| „6.795 ungenutzte i18n-Schlüssel"                 | Gemessen 6.796 (→ B.7).                                                                                                                                                                                                                                                                                                                               |
+| „96 von 482 Seiten ohne i18n"                     | Bestätigt (`audit-i18n-usage.mjs`); zusätzlich 75 von 134 Komponenten, wodurch die Ratsche reißt (→ OP-071).                                                                                                                                                                                                                                          |
+
+Außerdem nicht belegbar, weil außerhalb dieses Arbeitsverzeichnisses:
+
+- Der tatsächliche Sichtbarkeitsstatus des GitHub-Repositories (OP-059) — belegt ist nur die
+  Aussage in `WP10.md` §4.1 und `WP11.md` §6.1 („beide Commits liegen auf `origin/main` eines
+  öffentlichen Repositories", geprüft mit `git branch -r --contains`).
+- Der Zustand der Instanz auf dem Rechner des Eigentümers (`E2E-TRIAGE.md` §7.7).
+
+---
+
+## E. Zahlen auf einen Blick
+
+**166 offene Punkte.**
+
+| Kategorie                    | Anzahl |
+| ---------------------------- | ------ |
+| fehlende Funktion            | 34     |
+| Codequalität                 | 31     |
+| Produktdefekt                | 28     |
+| Testlücke                    | 25     |
+| Betrieb                      | 19     |
+| Entscheidung des Eigentümers | 14     |
+| Doku                         | 13     |
+| Zeitkriterium                | 2      |
+
+| Umfang | Anzahl |
+| ------ | ------ |
+| S      | 93     |
+| M      | 45     |
+| L      | 20     |
+| XL     | 8      |
+
+**Streichkandidaten** (kein nennbarer Wert oder bewusste Entscheidung): OP-017, OP-045, OP-089,
+OP-105, OP-115, OP-140.
+
+**Vier Tore sind heute rot:** Lint-Ratsche (OP-064), Coverage-Gate (OP-066), i18n-Bundle
+(OP-072) und i18n-Untranslated-Ratsche (OP-071). Keines davon steht in einem der Berichte —
+alle vier stammen aus der Messung vom 2026-09-02.
+
+---
+
+## Nachtrag 2026-09-03 — ein neuer Punkt aus der Abnahme der Wellen 0–3
+
+| ID     | Titel                                                                          | Herkunft                                                                  | Kategorie             | Umfang | Blockiert durch          | Wert                                                             |
+| ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- | --------------------- | ------ | ------------------------ | ---------------------------------------------------------------- |
+| OP-167 | **Der Produktionsbau bricht ab: `/_global-error` lässt sich nicht prerendern** | Eigene Messung 2026-09-03 auf der Maschine des Eigentümers, vier Bauläufe | Betrieb (Fremdfehler) | offen  | Fehler in Next.js 16.2.x | Ohne Produktionsbau gibt es kein Deployment und keinen E2E-Lauf. |
+
+**Was gemessen wurde.** `next build` bricht bei 516 von 688 Seiten ab:
+
+```
+Error occurred prerendering page "/_global-error"
+TypeError: Cannot read properties of null (reading 'useContext')
+    at ignore-listed frames { digest: '3120278025' }
+```
+
+Vier Läufe, vier Ausschlüsse — die Ursache liegt **nicht** in diesem Repository:
+
+| Lauf                                         | Ergebnis                           | Was er ausschliesst                                     |
+| -------------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| unverändert                                  | rot, `digest: 3120278025`          | —                                                       |
+| `global-error.tsx` auf ein Minimum reduziert | rot, **derselbe** digest           | Der Inhalt unserer Datei.                               |
+| `global-error.tsx` ganz entfernt             | rot, **derselbe** digest           | Unsere Datei überhaupt — Next erzeugt die Route selbst. |
+| Node 24.13 statt 25.2                        | rot, **derselbe** digest           | Die Node-Version.                                       |
+| `--debug-prerender`                          | **grün**, 688/688 Seiten, 0 Fehler | —                                                       |
+
+Dazu: nur eine React-Kopie im Baum (19.2.7), `package-lock.json` seit dem letzten
+grünen Bau unverändert, und die Dateien der Anwendungshülle (`layout.tsx`,
+`global-error.tsx`, `not-found.tsx`, die vier Provider) sind seit dem letzten
+erfolgreichen Bau bei `4caff361` **nicht angefasst** worden.
+
+**Es ist ein bekannter Fehler in Next.js 16.2.x** (vercel/next.js#95741, gemeldet
+für 16.2.6 und 16.2.10; wir fahren 16.2.11). Die Ursache dort: mehrere Routen
+werden beim statischen Erzeugen als ungekeyte Geschwister in einen Renderdurchgang
+gebündelt, und welche Route dabei abstürzt, hängt von der Verteilung auf die
+Arbeiter ab. **Das erklärt, warum der Bau bei 685 Seiten durchlief und bei 688
+nicht mehr**: die Bündelung hat sich mit den neuen Seiten verschoben. Der
+vorherige grüne Lauf war Glück, kein Beweis.
+
+**`--debug-prerender` ist keine Lösung.** Es schaltet ausweislich der Next-Doku
+`serverMinification` und `turbopackMinify` ab, erzeugt Server-Sourcemaps und
+setzt `prerenderEarlyExit=false` — und die Doku sagt ausdrücklich: „Do not deploy
+builds generated with `--debug-prerender` to production." Der Lauf ist der
+Beleg für die Diagnose, nicht der Weg zum Artefakt.
+
+### Die zwei Wege — was davon gemessen ist
+
+**(a) `next build --webpack`.** Gemessen, zweimal, und **kein Ersatz auf
+Zuruf**:
+
+- Der erste Lauf starb an `JavaScript heap out of memory` beim voreingestellten
+  Heap von 4 GB. Webpack braucht für diesen Baum deutlich mehr; mit 16 GB läuft
+  er weiter.
+- Der zweite Lauf kam bis TypeScript und brach dort ab — mit einem Fehler, den
+  der Turbopack-Bau **gar nicht erhebt**:
+
+  ```
+  Type '{ __tag__: "GET"; __param_position__: "second";
+          __param_type__: { params: Promise<{ id: string }> } | undefined }'
+  does not satisfy the constraint 'ParamCheck<RouteContext>'.
+    Type 'undefined' is not assignable to type 'RouteContext'.
+  ```
+
+  Der Webpack-Pfad erzeugt strengere Routentypen, und unsere
+  `withErrorHandler`-Wickel deklarieren den zweiten Parameter optional. Das ist
+  behebbar, aber es ist eigene Arbeit an über tausend Routen und keine
+  Bauflagge.
+
+Dazu kommt: Commit `cea14434` hat den **Turbopack-Produktionsbau ausdrücklich
+gewählt**. Ihn wegen eines Fremdfehlers aufzugeben, ist eine Entscheidung und
+keine Reparatur.
+
+**(b) Anhebung auf Next 16.3.4 — gemessen, und sie hilft nicht.** Auf der
+Maschine des Eigentümers installiert und gebaut:
+
+- Der Bau kam weiter als je zuvor und meldete `✓ Compiled successfully in 64s`.
+- Danach fünf TypeScript-Fehler in drei Testdateien, alle aus **einer** Ursache:
+  Next 16.3 bringt eine eigene Deklaration von `import.meta.glob` mit, die kein
+  Typargument nimmt, während Vites Deklaration eines nimmt
+  (`TS2558: Expected 0 type arguments, but got 1`).
+- Nach deren Behebung läuft die Erzeugungsphase — **und bricht an derselben
+  Stelle ab**, mit einem anderen digest: `1660660369` statt `3120278025`.
+
+**Ein Fehler in der Beweisführung, offen benannt.** Der Zwischenstand
+„Compiled successfully" wurde einmal als Beleg dafür genommen, der Absturz sei
+weg, und in einem Commit so festgehalten. Er war es nicht: die
+TypeScript-Fehler hatten den Bau **vor** der Erzeugungsphase beendet, in der er
+sonst scheitert. Ein Teilsignal als Ergebnis gelesen — genau die Fehlerform,
+gegen die dieses Register angetreten ist. Der Commit ist berichtigt, die
+Anhebung zurückgenommen.
+
+Die Version bleibt deshalb auf **16.2.11**: eine Anhebung, die den Grund für die
+Anhebung nicht beseitigt, ist Rauschen in einem Zweig, der auf Freigabe wartet.
+Die drei `import.meta.glob`-Aufrufstellen sind trotzdem umgestellt — die
+typargumentfreie Form ist unter beiden Deklarationen gültig und macht eine
+spätere Anhebung um diese fünf Fehler billiger.
+
+### Was daneben aufgefallen ist
+
+Der Bau meldete vier Warnungen `Module not found: Can't resolve
+'../model/index.js'` aus `packages/bpmn/src/viewer/BpmnCanvas.ts`. Der Pfad
+stand dort in einer **Variablen** samt `@vite-ignore`, mit der Begründung „so
+übersetzt dieses Paket auch dann, wenn `src/model/index.ts` (anderer
+Arbeitsstrang) noch nicht existiert". Der Strang ist längst gelandet; die
+Krücke war zum Defekt geworden — ein Bezeichner in einer Variablen ist für den
+Bündler nicht auflösbar, die Endung `.js` ist dieselbe Fehlerklasse, die in
+diesem Audit schon 711 Importe in 139 Dateien betraf, und das `try/catch`
+verdeckte den Auflösefehler hinter einer freundlichen Meldung. Behoben:
+gewöhnlicher dynamischer Import mit literalem Bezeichner, Trägheit erhalten.
+
+### Nachtrag 2026-09-03 — zwei neue Punkte aus der Abnahme von Welle 4a
+
+Bei der Wiederholung der Abnahme gegen eine **von Null migrierte** Datenbank
+(426/426 Migrationen, 614 Tabellen) mit der produktionsnahen Rolle `grc_app`
+und `FORCE ROW LEVEL SECURITY` — so, wie `deploy/provision-grc-app.sh` sie
+einrichtet — sind zwei Punkte aufgefallen, die vorher nicht sichtbar sein
+konnten. Sie gehoeren zusammen: der erste hat den zweiten verdeckt.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                     | Art     | Stand   |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------- | ------- |
+| OP-168 | **Ein Datenbanktest konnte unter produktionsnahen Bedingungen nie laufen.** `apps/worker/tests/lib/job-runtime.db.test.ts` nahm fuer seinen **Fixture**-Kanal `APP_DATABASE_URL ?? DATABASE_URL`, also bevorzugt die RLS-gebundene Rolle. Schon das Anlegen der Fixture-Organisation scheiterte damit an `new row violates row-level security policy for table "organization"` — im `beforeAll`, weshalb alle sechs Zusicherungen als _skipped_ endeten statt als _failed_. Der Test lief ausschliesslich dort durch, wo `APP_DATABASE_URL` FEHLTE. | Eigene Messung 2026-09-03 | Test    | behoben |
+| OP-169 | **Der gesamte Benachrichtigungspfad des Workers haengt an BYPASSRLS.** `insertNotification` schrieb ohne Organisationskontext; die Policy `notification_org_isolation` verlangt `org_id = current_setting('app.current_org_id')`. **41 der 44 Cron-Jobs** setzen keinen Kontext (nur `calendar-digest`, `calendar-overdue-check` und `overdue-tasks` tun es ueber `withOrgContext`). Sie schrieben bisher nur deshalb erfolgreich, weil die Worker-Rolle BYPASSRLS traegt.                                                                          | Eigene Messung 2026-09-03 | Produkt | behoben |
+
+**Warum das zusammengehoert.** OP-169 war messbar, sobald OP-168 behoben war
+— vorher starb die Suite eine Ebene zu frueh. Es ist dasselbe Muster, das
+dieses Audit schon dreimal gefunden hat: **die Wache ueber der Sache war
+kaputt, nicht die Sache** — nur diesmal war die Sache es auch.
+
+**Die Tragweite von OP-169.** Zwei Folgen, beide unangenehm:
+
+1. RLS war fuer den Benachrichtigungspfad **wirkungslos**. Die Mandanten-
+   trennung dieser Tabelle beruhte allein darauf, dass jeder Job die richtige
+   `org_id` in die Zeile schreibt — nicht auf der Policy.
+2. Die Entprivilegierung des Workers (OP-090, der einzige unmittelbar
+   deploy-relevante Punkt des Registers) haette **41 Jobs auf einen Schlag**
+   brechen lassen. Ein Punkt, an dem 41 andere haengen, war als
+   Rollen-Konfiguration gefuehrt und war in Wirklichkeit Anwendungscode.
+
+**Behebung — zentral, nicht 41-fach.** `notify.ts` ist ausweislich seines
+eigenen Kopfes „der einzige Schreibpfad fuer Benachrichtigungen"; dort sitzt
+schon die Dedup-Garantie zentral statt 44-fach. Der Organisationskontext sitzt
+jetzt daneben: Ohne uebergebene Transaktion oeffnet `insertNotification` eine
+eigene und setzt `app.current_org_id` **transaktionslokal**
+(`set_config(..., true)`) aus der `org_id` der Zeile — dieselbe Regel wie
+`withOrgContext` (S10-14), also kein Sitzungszustand auf einer gepoolten
+Verbindung. Uebergibt der Aufrufer eine Transaktion, bleibt sie unangetastet:
+dort haelt der Aufrufer den Kontext, und ein `SET LOCAL` von hier aus wuerde
+ihn fuer den Rest SEINER Transaktion ueberschreiben.
+
+**Nachweis.** `job-runtime.db.test.ts` laeuft jetzt in beiden Umgebungen
+(6/6 mit und ohne `APP_DATABASE_URL`); die gesamte Worker-Suite ist in beiden
+Faellen gruen (134 Dateien, 397 Tests). Dazu ein neuer, **datenbankfreier**
+Test `notify-org-context.test.ts`: Der Datenbanktest deckt denselben Fall ab,
+aber nur wenn die Umgebung `APP_DATABASE_URL` setzt — genau daran ist der
+Befund vorbeigelaufen, und ein Tor, das nur unter einer ungenannten Bedingung
+ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
+Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
+alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
+
+### Nachtrag 2026-09-05 — Welle 5c: die Folgearbeiten, und ein zehnter stummer Bereich
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5C.md`. Abgearbeitet wurden die
+Codeänderungen, die Welle 5b gemessen, benannt und wegen fremder Dateihoheit
+liegen gelassen hatte.
+
+| OP     | Ergebnis                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-114 | **behoben** — `excel-to-bpmn.ts` liest über `stream.xlsx.WorkbookReader` mit Zeilen- (10.000) und Zellgrenze. Gemessen an einer 7,72-MB-Tabelle mit 200.000 Zeilen: **756 MB / 5.409 ms → 178 MB / 767 ms**. Der alte Stand wandelte bei `maxRows: 5` klaglos 12 Zeilen um.                                                                                                                                       |
+| OP-128 | **behoben** — `scripts/reseal-wb-secrets.mjs`, gegen `grc_v4c` mit echtem Bestandsfall gelaufen: 4 Werte umgeschlüsselt, zweiter Lauf 0 (idempotent), falscher PREVIOUS-Schlüssel → „4 UNREADABLE", Exit 1. **Falle dabei:** `WB_PSEUDONYM_KEY` wird aus `WB_ENCRYPTION_KEY` abgeleitet — eine Rotation zerstört still alle `wb_report.ip_hash`. Das Skript verweigert deshalb ohne gesetztes `WB_PSEUDONYM_KEY`. |
+| OP-100 | **behoben** — `findMissedRuns`/`reconcileMissedRuns` gegen `job_run`; gegen die laufende Datenbank: kein Nachholen ohne Historie, ein zwei Tage alter Lauf → 1 nachgeholt mit `trigger_source='catchup'`, zweiter Aufruf 0.                                                                                                                                                                                       |
+| OP-112 | **nicht gebaut, mit Messung.** Der Dispatcher trägt (pinnendes `connect.lookup`, nachgemessen gegen `rebind.invalid`) — aber `npm ls undici --all --omit=dev` ergibt **`(empty)`**: undici kommt nur über `jsdom`, eine devDependency. Ein Import in produktivem Code bräche jeden ausgehenden Aufruf. Es fehlt genau eine Zeile in `packages/shared/package.json`; Rezept und Messung stehen im Code.            |
+
+**Die beiden Kommentarzahlen stimmten nicht — und hatten Nachbarn.**
+„fourteen" → **13 Dateien / 24 Pfade / 12 Modulprozesse**; „129 jobs" → **131**,
+und ungefragt gleich mit: „roughly 40k rows a day" → gemessen **4.053**
+(Faktor 10) und „some at minute cadence" → **genau einer**. Die „129" stand
+ausserdem an zwei weiteren Stellen. Die Tests rechnen alle diese Zahlen jetzt
+nach, statt sie zu behaupten.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                    | Beleg                     | Art | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --- | ------- |
+| OP-194 | **Der Platzhalterfilter des Geheimnis-Scanners prüfte die GANZE ZEILE.** Ein echter Schlüssel neben einem `example.com` war damit unsichtbar. Gemessen: alter Stand 0 Funde / Exit 0, neuer Stand 1 Fund / Exit 1. Die Umstellung auf musterbegrenzte Prüfung kostet gegen den heutigen Baum **nichts**.                               | Eigene Messung 2026-09-05 | Tor | behoben |
+| OP-195 | **`audit-dead-exports.mjs` hielt jede Prüfnaht für toten Code**, die nur aus Tests heraus benutzt wird — der Import-Index las ausschliesslich `SRC_DIRS`. Das Tor forderte wörtlich „Entfernen, nicht in die Ratsche aufnehmen", hätte also zum **Löschen benutzter Exporte** aufgefordert. Korrigiert: 2767 in 471 → **2464 in 458**. | Eigene Messung 2026-09-05 | Tor | behoben |
+
+Damit ist OP-194 **der zehnte** Fall in diesem Audit, in dem ein Tor nicht
+auslösen konnte, und OP-195 einer, in dem ein Tor zur falschen Handlung
+aufgefordert hätte. Beide Ratschen sind auf den gemessenen Stand
+nachgezogen — `(fatal-or-directive)` 1 → 0 und Dead-Exports 2765/470 →
+2464/458, letztere ausdrücklich als **Werkzeugkorrektur** und nicht als
+Arbeitsergebnis begründet — und beide anschliessend durch künstliche
+Verletzung geprüft.
+
+**Und noch einmal derselbe eigene Fehler, diesmal von einem Strang selbst
+gefunden:** Der Geheimnis-Scanner war rot, weil `docs/UMSETZUNG-WELLE-5B.md`
+den Fund erklärt und dabei das Muster ausschreibt — der eingecheckte Report
+war **vor** dieser Zeile erzeugt worden. „Artefakt statt Messung", in genau
+dem Dokument, das diesen Fehler anprangert. Behoben über ein neues,
+**musterbegrenztes** Ausnahmefeld; gegengeprüft, dass ein anderer Fund in
+derselben Datei weiterhin Exit 1 meldet.
+
+**Nebenbefund:** Der Kommentar in `index.ts:452` („node: bricht den
+Client-Bundle") ist Webpack-Überlieferung. Gegen dasselbe `next@16.2.11` mit
+Turbopack in drei Varianten gemessen: **alle Exit 0**.
+
+### Nachtrag 2026-09-05 — Welle 5b: die Doku, und ein neuntes Tor
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5B.md`. Erledigt: OP-104 (Kern), OP-051,
+OP-133, OP-134, OP-115, OP-114 (dokumentarisch), OP-112, OP-117, OP-106,
+OP-100 (dokumentarisch), OP-130, OP-151, OP-159, OP-053. Bereits vorher
+erledigt und nur noch nachgetragen: OP-131, OP-132, OP-138.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                    | Beleg                     | Art | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --- | ------- |
+| OP-193 | **Das Geheimnis-Tor lief mit `continue-on-error: true` UND `\|\| true`.** Beide Abschaltungen zusammen haben den Exit-1 des Skripts verworfen; der eingecheckte Report stammte vom 2026-09-01 und meldete „3901 Dateien, 0 Funde". Neu erzeugt: **4420 Dateien, 2 CRITICAL** — beide in `packages/shared/tests/logger-scrubbing.test.ts:100`, **eingeschleppt von Welle 4b-2 (OP-152) dieses Audits** und zwei Wellen lang unsichtbar. | Eigene Messung 2026-09-05 | Tor | behoben |
+
+Das ist **das neunte Tor in diesem Audit, das nicht auslösen konnte** — und
+das erste, das einen Befund aus der eigenen Arbeit verdeckt hat. Die zwei
+Treffer waren die Eingabewerte des Tests, der beweist, dass der Scrubber sie
+schwärzt (ein erfundener JWT-Kopf, ein `sk-`-Muster, eine Verbindungszeichen-
+kette mit dem Passwort `geheim`, eine PEM-Kopfzeile ohne Schlüsselmaterial) —
+fände der Scanner sie nicht, wäre der Test wertlos. Sie stehen jetzt als
+bewertete Ausnahme in `KNOWN_TEST_FIXTURES`, der Schritt ist scharf, und die
+Gegenprobe in einer verfolgten Datei ergibt 2 CRITICAL / Exit 1. Der
+Kommentar im Workflow schreibt die PEM-Kopfzeile bewusst **nicht** aus —
+sonst meldet der Scanner seine eigene Dokumentation als Fund; genau so
+gemessen, die Treffer wanderten nach dem Eintragen der Ausnahme auf die
+Workflow-Datei.
+
+**OP-104 — was nachweislich falsch war.** Zwölf `✅ Done`-Zeilen in
+`CLAUDE.md`, `STATUS.md` und `feature-catalog.md` standen auf Fähigkeiten, die
+501 antworten oder `failed` melden. Dazu Zahlen, die sich **innerhalb
+derselben Datei** widersprachen:
+
+- `CLAUDE.md:135` „31 catalog frameworks" gegen Zeile 21 „46" → gemessen **46**
+- `CLAUDE.md:136` „401 cross-framework mappings" → gemessen **943**
+- `CLAUDE.md:63` „0001–0361, 340 files" gegen Zeile 18 „402" → gemessen **428**
+- Die Zähltabelle „re-measured 2026-09-01": **8 von 12 Zeilen überholt**
+- `docs/feature-catalog.md:130` nennt einen Prüfbefehl
+  `SELECT count(*) FROM cross_framework_mapping;` → `ERROR: relation does not
+exist` (die Tabelle heisst `framework_mapping`). **Die Doku-Drift-Korrektur
+  war selbst gedriftet.**
+- `docs/runbook.md` §5: Der dokumentierte Prüfbefehl
+  `grep -l '^-- Breaking: *true'` findet **nichts**, weil der Header
+  `yes-breaking` schreibt — er gab **vor einem Breaking-Rollout Entwarnung**.
+  Korrigiert findet er 0383/0385/0386.
+
+Auch hier stimmten die Registerzahlen nicht: OP-103 „vierzehn Pfade" →
+**19 in 12 Dateien**; OP-145 „acht" Dependabot-Branches → **10**.
+
+**Codeänderungen, die nötig sind und bewusst NICHT gemacht wurden** (Quellcode
+lag ausserhalb der Dateihoheit dieses Strangs) — in dieser Reihenfolge:
+
+1. **OP-114**: `packages/shared/src/lib/excel-to-bpmn.ts:54` — `wb.xlsx.load()`
+   auf `WorkbookReader` umstellen. Dieser Pfad hat als **einziger keine zweite
+   Schicht**, entgegen dem bisherigen Registertext.
+2. **OP-128**: ein Re-Seal-Skript für `WB_ENCRYPTION_KEY`.
+3. **OP-112**: undici-Dispatcher mit IP-Pinning in `url-safety-server.ts`.
+4. **OP-100**: Nachholabgleich gegen `job_run` in `job-registry.ts`.
+5. Zwei Kommentare tragen falsche Zahlen weiter:
+   `no-fabricated-evidence.test.ts:11` („fourteen", zählt 13) und
+   `job-run-retention.ts:4` („129 jobs" gegen 132).
+
+**OP-136 ist bestätigt und eine fachliche Entscheidung:**
+`dashboard_widget_config` und `notification_template` existieren gar nicht —
+die zugehörigen Seeds sind No-Ops.
+
+### Nachtrag 2026-09-05 — Welle 5a: OP-070, und wofür die Übersetzungen schon da waren
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5A.md`.
+
+**Auch hier stimmte die Registerzahl nicht.** „96 Seiten" ist seit WP12 alt;
+selbst gemessen waren es **151 Dateien** (78 Seiten + 73 Komponenten) mit rund
+3.059 Zeichenketten — die Ratsche stand exakt ausgereizt. Nachher: **131**
+(72 + 59), rund 2.833 Zeichenketten. Beide CI-Ratschen sind nachgezogen
+(`--max-unused 2166 → 2133`, `--max-untranslated 151 → 131`) und in beide
+Richtungen nachgeprüft: grün beim gesetzten Wert, rot eins darunter.
+
+**Der Befund, der drei Punkte miteinander verbindet: die Übersetzungen
+existierten längst.** 185 der 2.166 „toten" Katalogschlüssel standen **wortgleich
+als Literal** in genau den Seiten, die als „ohne i18n" gezählt werden.
+`portal.*` (41), `wbPortal.*` (23) und `ddResults.*` (4) waren vollständig in
+beiden Sprachen da — und von **null** Aufrufstellen erreicht. Das ist der
+**dritte unabhängige Grund**, warum die Liste aus OP-073 keine Löschliste ist:
+Nach den Phantomen aus der doppelten `common.json` und der variabel
+durchgereichten Navigation nun Schlüssel, die nicht tot sind, sondern nur noch
+nicht angeschlossen. Wer diese Liste abgearbeitet hätte, hätte die fertige
+Übersetzung gelöscht und die hartcodierte Fassung stehen lassen.
+
+**Sechs Defekte, die dabei sichtbar wurden:**
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                | Art              | Stand              |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------ |
+| OP-188 | **`DataTable` zeigte deutschen Nutzern Englisch** — „No results.", „Page x of y", „row(s)" in **27 Listenansichten**. Der Kopfkommentar der Datei beschrieb den Zustand und bot den Aufrufern einen Ausweg an; **keiner der 27 hat ihn genommen**.                                                                                                 | Produkt          | behoben            |
+| OP-189 | **Externe Besucher konnten die Sprache gar nicht wählen.** `NEXT_LOCALE` wird erst beim Speichern des Profils gesetzt, also nach der Anmeldung. Die Endseiten des Lieferantenportals (`dd/expired`, `dd/complete`) sind fest **englisch** — ohne Sprachwähler wäre ihr Übersetzen eine Verschlechterung für englischsprachige Lieferanten gewesen. | Produkt          | behoben            |
+| OP-190 | **87 Fundstellen formatieren fest `de-DE`**, 12 davon in Dateien, die der Ratsche als übersetzt gelten — sieben im Budgetmodul, also **Geldbeträge auf englischen Seiten**. `lib/format-date.ts` gibt es seit FE-HIGH-2 genau dafür und war dort nicht angeschlossen. Im Bildschirmbereich 70 → 2.                                                 | Produkt          | weitgehend behoben |
+| OP-191 | **Der HinSchG-Meldekanal hatte neun Wörter falsch geschrieben** („Identitaet", „geschuetzt", „verschluesselt" …). Der Katalog schreibt sie richtig — die transliterierten Umlaute waren eine Folge der Hartcodierung.                                                                                                                              | Produkt          | behoben            |
+| OP-192 | **Vier Bedienelemente ohne zugänglichen Namen** (Tag entfernen, Antwort senden, Beweismittel hochladen, drei Werkzeugknöpfe). Im Meldekanal ist das der Unterschied zwischen bedienbar und nicht.                                                                                                                                                  | Barrierefreiheit | behoben            |
+| —      | **13 der 151 gezählten Dateien zeigen gar keinen Text** — der Zähler nimmt dort Tailwind-Klassenketten für Sätze. Die ehrliche Restschuld ist damit **118, nicht 131**. Beziffert statt behoben (`scripts/**` lag ausserhalb der Dateihoheit dieses Strangs).                                                                                      | Tor              | offen              |
+
+**Bewusst nicht übersetzt:** `legal/imprint` und `legal/privacy` (133
+Zeichenketten). Gesetzliche Pflichtangaben mit massgeblicher deutscher Fassung;
+eine englische Fassung ist eine Rechtsentscheidung mit Prüfvorbedingung, keine
+Behebung. Die Fusszeile darüber ist umgestellt, der **Weg** zu den Dokumenten
+also zweisprachig.
+
+**Offen, in dieser Reihenfolge:** `ai-act` (10 Dateien, 494 Zeichenketten) →
+`settings` (3, 298) → `admin` (12, 297) → `admin/rls-audit`. Die Teiländerung
+an der letzten wurde **zurückgenommen**, weil sie die Datei inkonsistent
+gemacht hätte — eine halb umgestellte Datei ist schlechter als eine ganz
+hartcodierte.
+
+### Nachtrag 2026-09-04 — OP-079/OP-116, und der schwerste Befund des Audits
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-4B-7.md`.
+
+**Die Registerzahlen stimmten in beiden Fällen nicht.** Selbst nachgemessen:
+OP-079 nannte „107 von 1.362" — tatsächlich **1.372 Routendateien, 2.039
+exportierte Handler, 94 ungewickelt in 49 Dateien** (mit Auflösung der
+Alias-Exporte; ohne sie zählt man fälschlich 97). Nachher: **62 in 25
+Dateien**, ausnahmslos konstante Weiterleitungen, Discovery/405-Antworten und
+zwei Health-Sonden — ohne `await`, ohne Datenbank, ohne Wurfpfad, namentlich in
+einem Strukturtest festgehalten. Fehlerantworten, die den Aufrufer als
+`{error}` erreichten: **75 → 0**.
+
+OP-116 nannte „23 von 276" — tatsächlich **284 lesende GET-Dateien, 29 mit
+Schema (10,2 %)**. Nebenbei: Der Registertitel („Fehlerbehandlung in
+Handlern") beschreibt etwas anderes als seine Quelle S04-09 („GET-Handler ohne
+Query-Schema"). Die Defektklasse dahinter ist geschlossen: 12 UUID-Flüsse in 8
+Dateien und 12 Datumsflüsse in 6 Dateien → je 0.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Beleg                                                                                    | Art            | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------- | ------- |
+| OP-187 | **Der zentrale Fehlerwickel gab Treibertext an den Aufrufer — für alle 1.945 gewickelten Handler.** `withErrorHandler` setzte für die Verstossklassen 23xxx/22xxx `detail: e.detail ?? e.message` und denselben Text noch einmal in `errors[0].message` — dreissig Zeilen über der eigenen WAVE11-Regel „NEVER returned in the response body", die ausgerechnet nur für den unbekannten 500er galt. **Eigene Nachmessung gegen das laufende Schema:** `INSERT INTO "user" (email) …` → `DETAIL: Failing row contains (…)` mit der **vollständigen Zeile**; 30 weitere Tabellen führen NOT-NULL-Spalten mit `hash`/`secret`/`token`. Und `user_email_unique` ist **`ON public."user" USING btree (email)`**, also global statt je Organisation — ein Verstoss dagegen bestätigt die Existenz einer Adresse **über Mandantengrenzen hinweg**. | Eigene Messung 2026-09-04; alter Code `9504a98a:apps/web/src/lib/api-wrapper.ts:482-483` | **Sicherheit** | behoben |
+
+`sanitiseDbError` behält jetzt die Spalte und die Art des Verstosses und lässt
+Werte, Constraint- und Relationsnamen weg; der volle Text steht unverändert im
+Log unter derselben `requestId`. Das ist der Unterschied, um den es geht: Die
+Diagnose bleibt, sie steht nur nicht mehr in der Antwort.
+
+**Zwölf weitere Produktdefekte**, die schwersten zuerst:
+
+- **`GET /api/v1/health` gab `err.message` an unauthentifizierte Aufrufer** —
+  Rollenname, Host, Port, Datenbankname — direkt unter der Zusage „prevent info
+  leaks to unauthenticated callers". `/api/health` machte es seit jeher richtig.
+- **SCIM-Gruppen stehen auf einer Tabelle, die es nicht gibt.** `user_group`
+  kommt in keiner Migration und keinem Schema vor, nur in diesen zwei Dateien.
+  Vier Unwahrheiten nebeneinander: `GET /Groups` → 200 mit `totalResults: 0`,
+  `GET /Groups/:id` → 404 „not found", `POST`/`PATCH` → 500 mit
+  `relation "user_group" does not exist`. Der `catch` schluckte zusätzlich einen
+  **Deadlock** (gemessen: 200 mit leerer Liste).
+- **SCIM `POST /Users`** gab `err.message` zurück — dasselbe
+  Cross-Tenant-Orakel: Die RLS-gefilterte Vorprüfung sieht die fremde Person
+  nicht, das INSERT schon.
+- **SCIM `/Users/[id]`: vier Handler ohne jedes `try`** — eine nicht-UUID-
+  Kennung ergab einen 500er mit leerem Rumpf.
+- **SAML-ACS: `await req.formData()` ungeschützt**, Wurf bei falschem
+  Content-Type. **Die Smoke-Suite hatte diesen Wurf per `allowThrow: true`
+  ausdrücklich erlaubt** — mit zutreffender technischer Beschreibung. Ein Befund,
+  als Konfiguration gelesen. Die Ausnahme ist gestrichen und wird von keinem
+  Eintrag mehr gesetzt.
+- **`auth/sso/config?orgId=<keine uuid>`** → 500 mit leerem Rumpf,
+  unauthentifiziert, bei **jedem Besuch der Anmeldeseite**; `branding/css/…`
+  ebenso.
+- **12 Datumsfilter**: `new Date("garbage")` ergibt `Invalid Date`, der Treiber
+  wirft einen `RangeError` **ohne SQLSTATE**, und der Wickel ordnet nach Code
+  zu — also **500** statt 422. Betraf unter anderem die
+  ABAC-Zugriffsprotokollansicht.
+
+**Was begründet offen bleibt:** die 255 rohen Query-Leser (jede
+Schemaumstellung ist eine unverifizierbare Verhaltensänderung pro Route; die
+Defektklasse ist geschlossen, gemessen mit zwei benannten Suchmustern — andere
+Formen wie `sql`-Interpolation sind damit ausdrücklich **nicht**
+ausgeschlossen), die `user_group`-Migration (fremde Dateihoheit), das
+mandantenübergreifende Verknüpfen eines bestehenden SCIM-Kontos
+(Produktentscheidung), und die 62 konstanten Handler.
+
+**Und ein achter Fall der bekannten Art.** Die Smoke-Suite hat den SAML-Wurf
+nicht übersehen — sie hat ihn **erlaubt**, mit einer korrekten Begründung
+daneben. Damit ist die Liste um eine Variante reicher: Ein Tor kann nicht nur
+falsch zielen, es kann den Befund auch ausdrücklich als zulässig führen.
+
+### Nachtrag 2026-09-04 — OP-173, OP-065 und sechzehn Defekte aus einem Compiler-Schalter
+
+Zwei Stränge, beide abgeschlossen. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-5.md` und `-4B-6.md`.
+
+**OP-173 — `apps/web` ist jetzt in der Ratsche**, und zwar als **eigener
+Bereich**, nicht im selben Topf: Ein Rückgang in `apps/worker` hätte sonst
+einen Anstieg in `apps/web` gedeckt. Zwei ESLint-Läufe mit je eigenem `cwd`,
+weil Flat Config vom Arbeitsverzeichnis aus sucht — aus der Wurzel gelintet
+fiele `apps/web` unter die Wurzelkonfiguration, die es ausdrücklich ignoriert,
+und heraus käme eine **plausible falsche Null**. Stand: `root` 283,
+`apps/web` 0. In sechs Lagen gegengeprüft, jede rot.
+
+Die beiden Altfehler waren keine Formalie:
+
+- `grc-maintenance-surface.test.ts:263` behauptete `expect(0 || null).toBeNull()`
+  unter der Überschrift „Der Gegenbeweis" — eine Aussage über JavaScript, nicht
+  über die geprüfte Funktion. Sie wäre auch grün geblieben, wenn es die
+  Funktion gar nicht mehr gäbe.
+- `bpmn-moddle-declaration.test.ts:105` benutzte `require("node:fs")` in einer
+  ESM-Datei, die drei Zeilen höher aus **demselben** Modul statisch importiert.
+  Gemessen: `node --input-type=module -e 'require("node:fs")'` →
+  `ReferenceError: require is not defined in ES module scope`. Getragen hat es
+  allein der CJS-Interop von Vitest; unter jedem nativen ESM-Lader wäre der
+  einzige Aufrufer des geprüften Wächters beim ersten Aufruf gestorben.
+
+**Die SECURITY-DEFINER-Frage ist beantwortet.** 54 gegen Baseline 45: neun
+Funktionen aus den Migrationen 0440, 0455, 0457 und 0477, alle nach dem
+Baseline-Stand `f11c5895` entstanden, **alle gerechtfertigt** — ein
+RLS-Policy-Helfer, der Anmeldepfad ohne Request-Kontext (er _ersetzt_ die
+kontextlose Disjunktion der `user`-Policy; die Zahl stieg, weil die Fläche
+sank), die Session-Invalidierung und die vier Wächter des RLS-Dauerschutzes.
+Gegen `pg_proc` nachgemessen: alle neun mit festem `search_path`, kein
+`EXECUTE` für PUBLIC. Baseline mit Begründung nachgezogen — und dabei fiel auf,
+dass `--update-baseline` genau die Bequemlichkeit zuliess, die OP-064 für die
+Lint-Ratsche abgestellt hat: Jede **Lockerung** verlangt jetzt ein `--reason`
+mit `_history`-Eintrag.
+
+**OP-065 — die Option ist in allen zehn Paketen an.** Die geerbten Zahlen
+(shared 502, db 641, auth 321, email 542) stimmten nicht mehr; sie zählten zwei
+Schalter zusammen und bei `email` überwiegend JSX-Syntaxfehler. Nachgemessen,
+nur `noUncheckedIndexedAccess`, je Paket die **eigenen** Dateien: db 452,
+shared 278, ai 80, auth 30, automation 17, events 8, email 8, reporting 4,
+graph 3, ui 0 — **880**. Alle abgetragen, **kein `!`, kein `as`**.
+
+**Sechzehn Produktdefekte hat dieser eine Compiler-Schalter ans Licht
+gebracht.** Die schwersten:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Art     | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| OP-184 | **Der DER-Parser lässt sich mit sechs Bytes zum Stillstand bringen.** `length = (length << 8) \| …` rechnet vorzeichenbehaftet; vier Längenbytes ergeben eine **negative** Länge, `readChildren` setzt `off = child.end` und läuft rückwärts. Eigene Nachmessung gegen den alten Stand: `30 84 ff 00 00 00` → `end = -16777210`, **kein Wurf**; der neue Stand lehnt dieselben Bytes präzise ab („declares 4278190080 content bytes but only 0 are present"). Der Parser liest RFC-3161-Antworten **und gespeicherte `audit_anchor.proof`**. | Produkt | behoben |
+| OP-185 | **Der ZIP-Bombenwächter meldete „entpackt sich zu nichts".** `buf[off]` jenseits des Puffers ist `undefined` und im Bit-Ausdruck **0**; ein Eintrag, der sich über `0xffffffff` als ≥ 4 GiB deklariert, wurde mit `uncompressedSize = 0` durchgewinkt. Erreichbar über `POST /api/v1/import/upload`.                                                                                                                                                                                                                                         | Produkt | behoben |
+| OP-186 | **`freetsa.ts` warf am eigenen Fehlermodell vorbei** — rund 25 ungeprüfte Zugriffe; eine verstümmelte Antwort ergab einen rohen `TypeError` statt `TimestampValidationError` und landete so als `last_error` am Anker.                                                                                                                                                                                                                                                                                                                       | Produkt | behoben |
+
+Dazu der Prototypen-Durchgriff aus OP-171s Nachbarschaft gleich **dreifach**:
+`isValidWpTransition` wirft bei `toString`; `resolveField` gibt für
+`userLang="constructor"` eine **Funktion** zurück, wo `string` deklariert ist;
+und `getNestedValue` — im Kopf als „Safely resolve nested property" bezeichnet
+— rendert `{{org.constructor}}` als `function Object() { [native code] }` in
+einen Bericht. In `UserInvited.tsx` verweigert React daraufhin das Rendern.
+
+**Und ein Hebel für eine erfundene grüne Bewertung:** `computeQaScore` lieferte
+nicht nur `NaN` bei Gewicht 0 und `-Infinity` bei negativem Gewicht, sondern
+für `[{compliant, 5}, {non_compliant, -1}]` **125/green**. Behoben mit
+Gewichtsfilter; die Invariante `score ∈ [0,100]` ist jetzt bewiesen.
+
+**Die Quoting-Umgehung ist geschlossen** — und zwar durch **lexikalisches
+Verbot** des `"` vor der Musterprüfung, nicht durch ein `"?` in der Regex: Das
+nähme genau eine Schreibweise heraus und liesse `""` und `U&"…"` stehen.
+Gemessen war: `SELECT pg_sleep(3600)` abgelehnt, `SELECT "pg_sleep"(3600)`
+**durchgelassen**, ebenso `"current_setting"`, `"pg_read_file"`, `"dblink"`.
+
+**Drei Punkte bleiben offen und sind aufgenommen:** ein fehlender
+CHECK-Constraint auf `weight` (die richtige Stelle, denn `weight` steht in
+keinem Zod-Schema), der Rest von `noUnusedLocals` (rund 75), und — der
+unangenehmste — **der QA-Bewertungspfad ist gar nicht verdrahtet**:
+`computeQaScore` hat keinen Aufrufer, `overall_score` bleibt leer.
+
+### Nachtrag 2026-09-03 — Welle 4c: die Kennzahlen, und was hinter ihnen stand
+
+OP-074, OP-075, OP-073, OP-089 und ein Teil von OP-069 sind abgearbeitet.
+Einzelheiten in `docs/UMSETZUNG-WELLE-4C.md`.
+
+| OP     | vorher                                                    | nachher                                                                                     |
+| ------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| OP-074 | Report nannte 1.991 in 322 Dateien; gemessen 2.765 in 470 | Report auf den gemessenen Stand geschrieben                                                 |
+| OP-075 | kein Tor                                                  | vierte Ratsche mit **drei Armen** (Gesamtzahl, je Datei, Aktualität des Reports), in der CI |
+| OP-073 | 6.805 gegen Budget 6.800 — **das Tor war rot**            | **2.166**; **kein Schlüssel gelöscht**                                                      |
+| OP-089 | zwei mandantenübergreifende Materialized Views            | Migration 0478: **keine Materialized View mehr im Schema**, 428/428 von Null, 617 Tabellen  |
+| OP-069 | gesamt 33,92 % Zeilen                                     | **34,34 %**; `api.ts` 69,9 → 80,1 %, `api-wrapper.ts` 60,0 → 97,8 %                         |
+
+**OP-073 — die Liste taugte nicht als Löschliste, und das ist der Befund.**
+Zwei unabhängige Defekte des Detektors, beide korrigiert:
+
+1. **4.331 der 6.805 Einträge waren Phantome.** `common.json` steht durch die
+   Merge-Regel aus `i18n/request.ts` **zweimal** im Nachrichtenbaum (Wurzel und
+   `common`). Von 12.956 gezählten „Nachrichten" sind 4.340 Dubletten; der Code
+   erreicht je Nachricht nur eine Schreibweise, die andere galt als tot.
+2. **Die Hauptnavigation stand auf der Liste.** 35 Aufrufstellen reichen den
+   Schlüssel als Variable durch (`t(item.labelKey)`) — das sah der Detektor
+   nicht. Ergebnis: **204 von 205** Schlüsseln aus `nav-config.ts` und **113 von
+   113** aus `module-tab-config.ts` galten als „nie erreicht".
+
+Hätte jemand diese Liste als Arbeitsauftrag genommen, wäre **die Navigation
+entbeschriftet** worden. Belastbar tot sind 278 Schlüssel in vier nie
+gebundenen Namensräumen; ihre Löschung liegt in `apps/web/messages/**` und
+wartet auf einen eigenen Schnitt.
+
+**OP-089 — und ein zweiter Befund darunter.** RLS trägt auf einer Materialized
+View nicht (PostgreSQL kennt dafür kein `ENABLE ROW LEVEL SECURITY`, und der
+REFRESH läuft im Kontext des Eigentümers). Getragen hat die normale View mit
+`security_invoker = true`; alle fünf Basistabellen führen bereits RLS, FORCE
+und org-Policy. Nebenbei: Im ganzen Repository steht **kein einziges
+`REFRESH`** — die beiden Views waren seit ihrer Anlage nicht nur unsicher,
+sondern **leer**. Und `ALTER DEFAULT PRIVILEGES` aus 0399/0437 gab den neuen
+Views ungefragt `arwd` für `grc_app` _und_ `grc_worker`, weshalb die Migration
+ein ausdrückliches `REVOKE ALL` voranstellt.
+
+**Vier weitere Tore standen bei `8a212b47` rot.** Der Reihe nach:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                           | Art | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ------- |
+| OP-183 | **Das Prettier-Tor der CI las `.prettierignore` nie.** `--ignore-path .gitignore` **ersetzt** die Vorgabeliste, statt sie zu ergänzen. Lokal meldete `npm run format` grün (es läuft ohne `--ignore-path`, also greift `.prettierignore`), in der CI wurde eine andere Dateimenge geprüft. Zwei Massstäbe für dieselbe Frage. | Tor | behoben |
+| —      | Die i18n-Ratsche (6.805 gegen Budget 6.800) — mit OP-073 erledigt.                                                                                                                                                                                                                                                            | Tor | behoben |
+| —      | Die Coverage-Ratsche (`packages/shared` functions). **Verursacht durch `logger.ts` aus meinem eigenen Commit `08a4ae4f`.** Mit Tests geschlossen, **nicht** abgesenkt.                                                                                                                                                        | Tor | behoben |
+| —      | Der eingecheckte RLS-Report (616 gegen 617 Objekte).                                                                                                                                                                                                                                                                          | Tor | behoben |
+
+**Ein Fehler von mir, offen benannt.** Ich habe bei der Abnahme von Welle 4b-2
+`npm run coverage:gate` laufen lassen und grün gemeldet — gegen einen
+**veralteten** `coverage/aggregated-summary.json` aus einem früheren Lauf. Das
+Tor war zu diesem Zeitpunkt in Wahrheit rot, und zwar durch meine eigene
+Änderung. Es ist dieselbe Fehlerform wie bei der Messung zu Next 16.3.4: ein
+Artefakt als Ergebnis gelesen, ohne zu prüfen, ob es den aktuellen Stand
+beschreibt. Die Abnahme erzeugt den Bericht jetzt neu, bevor sie das Tor
+befragt.
+
+**Damit sind es sechs Tore in diesem Audit, die nicht auslösen konnten** — eine
+ignorierte Tor-Eingabe, ein `git diff` auf ungetrackte Pfade, ein `tee` ohne
+`pipefail`, ein Test der an seiner Vorbedingung starb (OP-168), eine Suite die
+ihre Voraussetzung erriet (OP-170), eine `allow`-Liste die das Gefährliche
+durchliess (OP-171) — und mit OP-183 ein siebtes: ein Tor, das die falsche
+Dateimenge prüfte. Das neue Dead-Exports-Tor ist deshalb in fünf Lagen künstlich
+verletzt und jedes Mal rot geworden, darunter eigens der Fall, den OP-074
+beschreibt.
+
+**Aufgenommen, nicht behoben** (ausserhalb der Dateihoheit dieses Strangs):
+`SELECT "pg_sleep"(3600)` passiert die Ausnahmeliste für Custom-SQL, weil der
+Funktionsname in Anführungszeichen steht; `isValidWpTransition` wirft bei
+`"toString"`; `computeQaScore` liefert `NaN` bei Gewicht 0; und
+`verify-db-integrity.mjs` ist mit 54 gegen 45 SECURITY-DEFINER-Funktionen rot —
+die Baseline wurde bewusst **nicht** angehoben.
+
+### Nachtrag 2026-09-03 — die Restdefekte aus Strang 3, und ein 500er, der nie auffiel
+
+Strang 4 hat die fünf Produktdefekte abgearbeitet, die Strang 3 gefunden,
+benannt und bewusst nicht behoben hatte. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-4.md`.
+
+| OP     | Ergebnis                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-175 | **behoben** — und zwar **gegen** das Beilegen der PDF entschieden: `documents/[id]/download` setzt am Berichtsdokument vier Kontrollen durch (Wasserzeichen S06-07, SHA-256-Abgleich S06-09, Protokolleintrag je Download S06-08, Rohfassung nur admin/quality_manager), das Pack steht aber vier Rollen offen. Die Bytes hineinzukopieren wäre ein Weg an allen vieren vorbei gewesen. Die README nennt jetzt Titel, Dokumentkennung und den kontrollierten Downloadpfad.                                                                                                                                                                                                             |
+| OP-176 | **6 von 7** Routen wirken jetzt; **4** Parameter bleiben mit Begründung offen — siehe unten.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| OP-177 | **behoben.** Die vom ursprünglichen Autor offengelassene Auflösung ist im Schema eindeutig: `audit_qa_review.reviewer_id` → `"user"(id)`, und `audit_resource_allocation.auditor_id` → `auditor_profile(id)` → `auditor_profile.user_id` → `"user"(id)` mit UNIQUE `ap_user_idx`, also 1:1 und verlustfrei. Beim Nachschlagen kamen **zwei weitere** Konfliktwege heraus, die der Kopfkommentar nicht nannte: `audit.lead_auditor_id` und `audit.auditor_ids`. Die Teamliste ist die häufigere Besetzung — nur `audit_resource_allocation` zu prüfen hätte wieder eine Kontrolle ergeben, die selten trifft. Jetzt drei Konfliktwege und zwei Vorbedingungen, 422 mit `conflict`-Feld. |
+| OP-179 | **behoben** — `UNION ALL`-Verzeichnis, darauf `LIMIT/OFFSET`, `count(*)` und Facetten sehen **dieselbe volle Menge**, feste Sortierung. `?page=abc` wird abgefangen (hätte mit OFFSET einen Datenbankfehler ergeben).                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| OP-180 | **2 von 2 behoben** — `entity_type` steht in der DELETE-Bedingung, die Szenarien sind über `simulation_scenario.process_id` an den Prozess gebunden.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+**Der schwerste Fund kam nebenbei:**
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                              | Beleg                                                                                                                                                                                                              | Art     | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- | ------- |
+| OP-182 | **Die Auditorenansicht war seit jeher leer.** `role-dashboards/data/auditor` enthielt `WHERE status = 'open'` gegen den Enum `finding_status` (`identified, in_remediation, remediated, verified, accepted, closed`). Die Abfrage steht **unbedingt** im Pfad, die Route lief also **bei jedem Aufruf in einen 500er**, und die Seite rendert bei fehlendem `data` `null`. Kein Fehlschlag, keine Meldung, nur eine leere Seite. | Eigene Nachmessung 2026-09-03 gegen das laufende Schema: `select 1 from finding where status = 'open'` → `ERROR: invalid input value for enum finding_status: "open"`; alter Code `3dbc48f5:…/auditor/route.ts:54` | Produkt | behoben |
+
+Repariert mit der Hausdefinition `["identified","in_remediation"]`, die fünf
+andere Routen bereits verwenden.
+
+**Ein Fallstrick, der ohne Messung gegen die laufende Datenbank durchgegangen
+wäre.** Drizzle expandiert ein JS-Array im `sql`-Baustein zur
+**Parameterliste**, nicht zum Array: `ANY(${arr}::finding_status[])` wird zu
+`ANY(($2, $3)::finding_status[])` und schlägt fehl. Sichtbar erst zur
+Laufzeit — mit grünem `tsc`, grünem Lint und grünem Unit-Test wären drei
+Bedingungen in Produktion gefallen. Daher `api/v1/_lib/pg-array.ts`. Das ist
+dieselbe Klasse wie OP-182 und wie der `as any`-Befund aus Strang 3: **der
+Compiler beruhigt, die Datenbank entscheidet.**
+
+**Was mit Begründung offen bleibt** (nicht behoben, weil es kein Ziel gibt):
+
+- `status` in `role-dashboards/data/auditor`, `departmentId` und `timeRange` in
+  `role-dashboards/data/department-manager`, `depth` in
+  `predictive-risk/correlations`.
+- `departmentId` hat **beweisbar kein Ziel**: `task` hat keine Abteilung,
+  `risk.department`/`control.department` sind `varchar`, `eam_org_unit` hängt
+  nur an `eam_business_context`/`process_lane`. Dahinter steckt der eigentliche
+  Befund: Die Route filtert auf `assignee_id = ctx.userId` — ein
+  „Abteilungsleiter"-Dashboard **ohne Abteilungsbegriff**. Das ist Produktarbeit,
+  kein Nachziehen.
+- Die Marktplatzsuche wirkt in der Oberfläche noch nicht:
+  `extensions/marketplace/page.tsx` hält `search` im Zustand und sendet es nie
+  (ausserhalb der Dateihoheit dieses Strangs).
+
+### Nachtrag 2026-09-03 — OP-076/OP-077 erledigt: zwei „Stilregeln", die Defektdetektoren waren
+
+OP-076 (129 `any`), OP-077 (483 tote Bindungen) und der Restbestand von OP-152
+(56 `console.*`) in `apps/web/src/app/api/v1/**` sind abgetragen; die
+namentlichen Ausnahmen in `apps/web/eslint.config.mjs` sind **ersatzlos
+entfernt**. Selbst nachgemessen über alle 1.376 Routendateien: **0 Befunde**,
+und die drei Regeln stehen dort nachweislich auf Schwere 2 (`error`) — die
+Null kommt nicht daher, dass niemand hinsieht. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-3.md`.
+
+Gemessen statt geschätzt: `no-unused-vars` **500** (Register: 483) → 0,
+`no-explicit-any` **128** (Register: 129) → 0, `no-console` **53**
+(Register: 56) → 0.
+
+**Der eigentliche Befund ist nicht die Zahl.** Die beiden abgeschalteten
+Regeln waren keine Stilregeln, sondern **Defektdetektoren**. Acht
+Produktdefekte hingen an genau der Meldung, die seit WP12 auf `off` stand:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Art     | Stand                                                        |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------------------------------ |
+| OP-181 | **Vier von fünf Spalten des DSGVO-Meldeprotokolls waren immer leer.** `dpms/data-breach/[id]/notification-pack` griff unter `(n: any)` auf `recipient`, `channel`, `notifiedAt` und `status` zu — **diese Spalten gibt es in `data_breach_notification` nicht** (sie heissen `recipient_email`, `sent_at`, `response_status`; ein `channel` existiert gar nicht; gegen das laufende Schema nachgeprüft). `csv(undefined)` schreibt eine leere Zelle: Das Meldeprotokoll im Paket zu Art. 33/34 DSGVO war seit jeher bis auf die erste Spalte leer, **ohne dass irgendetwas fehlschlug**. | Produkt | behoben                                                      |
+| —      | **`resolved_at` blieb beim Abschluss eines KI-Vorfalls leer.** In `ai-act/incidents/[id]` wurde `resolvedClause` gebaut und nie in das UPDATE eingesetzt. Für Art. 73 KI-VO ist der Abschlusszeitpunkt ein berichtspflichtiges Datum.                                                                                                                                                                                                                                                                                                                                                    | Produkt | behoben                                                      |
+| OP-177 | **Die Unabhängigkeitsprüfung des QA-Reviewers findet nicht statt.** In `audit-mgmt/qa-review` steht die Abfrage unter der Überschrift „reviewer must NOT be in audit_resource_allocation" — ihr Ergebnis liest niemand. Ein Mitglied des Prüfteams kann sich selbst als QA-Reviewer eintragen.                                                                                                                                                                                                                                                                                           | Produkt | **offen**                                                    |
+| OP-178 | **`catalogs/active-entries` baut SQL per Zeichenkette** (`WHERE org_id = '${ctx.orgId}'`). Beide Werte sind heute nicht steuerbar, die Form ist trotzdem falsch. Eine zweite Abfrage war **tot und immer fehlschlagend** (`$1::uuid[]` ohne Parameter) und wurde von einem leeren `catch` verschluckt.                                                                                                                                                                                                                                                                                   | Produkt | behoben                                                      |
+| OP-179 | **Der EAM-Katalog kann nicht geblättert werden.** `offset` wurde berechnet und nie angewandt — jede Seite ist die erste.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Produkt | **offen** (Fassung von `total` und Facetten ist mitzuklären) |
+| OP-176 | **Sieben Routen prüfen einen Parameter und werfen ihn weg** (`timeRange`, `framework`, `minCorrelation`, `search`, `page` …). Die Eingabeprüfung bleibt, die Wirkung fehlt.                                                                                                                                                                                                                                                                                                                                                                                                              | Produkt | **offen**                                                    |
+| OP-180 | **Zwei Routen werten ihr Pfadsegment nicht aus** (`import/mappings/[entityType]` DELETE; `processes/[id]/simulation/compare`). Organisationsgebunden, also kein Mandantenleck — aber die URL verspricht mehr, als der Handler prüft.                                                                                                                                                                                                                                                                                                                                                     | Produkt | **offen**                                                    |
+| OP-175 | **Ein Paket kündigt eine Datei an, die es nie enthält** (`report.pdf` im Audit-Pack).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Produkt | **offen**                                                    |
+| OP-174 | **Roher Treibertext in der Antwort** (`programmes/journeys/[id]/next-actions`) — dieselbe Reparatur wie in der Schwesterroute aus E2E-TRIAGE-2026-09-02, diese Datei war dort nicht erfasst.                                                                                                                                                                                                                                                                                                                                                                                             | Produkt | behoben                                                      |
+
+Dazu zwei Befunde, die keine eigene Nummer brauchen, aber die Richtung zeigen:
+`processes/[id]/dmn-links` gab die DMN-Entscheidungen **fremder Prozesse**
+zurück (behoben), und `reports/soa` zählte „Teilweise umgesetzt", übersetzte es
+in beiden Sprachen — und liess die Kachel weg, so dass die Kachelzeile nicht
+aufging (behoben).
+
+**`as any` hatte eine Wirkung, nicht nur eine Typlücke.** Nachgemessen:
+`SELECT … WHERE status = 'bogus'` → `ERROR: invalid input value for enum
+wb_case_status`. Ein Tippfehler im Filter wurde damit zum **500er**; im
+SSO-Rückkanal machte derselbe Cast einen Tippfehler in der IdP-Rollenzuordnung
+zum **fehlgeschlagenen Login**. Jetzt 422 beziehungsweise Rückfall auf
+`viewer`, geprüft über `column.enumValues`. Das ist der Punkt: Der Cast hat den
+Compiler beruhigt und den Fehler an die Datenbank weitergereicht.
+
+**Was daraus für dieses Register folgt.** Eine abgeschaltete Lint-Regel ist
+hier kein Stilverzicht gewesen, sondern ein **abgeschalteter Detektor** — und
+sie stand mit der Begründung „800 Diff-Zeilen in fremden Dateien" seit WP12
+aus. Die Diff-Zeilen kamen; acht Produktdefekte kamen mit. Sie waren die ganze
+Zeit sichtbar, es sah nur niemand hin.
+
+Randbefund: 16 Routen importierten `requireModule` und riefen es nie auf — für
+`data-sovereignty` und `role-dashboards` gibt es gar keinen Modulschlüssel. Der
+Import war Kopiervorlage und **las sich wie eine vorhandene Prüfung**.
+
+### Nachtrag 2026-09-03 — OP-152 erledigt, und drei Punkte, die dabei auffielen
+
+OP-152 ist abgetragen: `no-console` fällt im gemessenen Bereich der Ratsche von
+**23 auf 0**, die Gesamtzahl von 306 auf 283. Einzelheiten in
+`docs/UMSETZUNG-WELLE-4B-2.md`. Drei Beobachtungen gehören ins Register, weil
+sie über den Punkt hinausreichen.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                | Beleg                     | Art     | Stand   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------- | ------- |
+| OP-171 | **Die Ratsche sah 23 Befunde, wo 88 Aufrufe standen.** Die Regel war nicht aus, sie war nachsichtig: `allow: ["warn","error","info","debug"]` nahm genau die vier Stufen aus, auf denen man ein Fehlerobjekt ausgibt — also die Form, um die es bei OP-152 geht. Gezählt wurde nur `console.log`.                                  | Eigene Messung 2026-09-03 | Tor     | behoben |
+| OP-172 | **`redactEmail` liess den ersten Buchstaben des lokalen Teils stehen** (`p***@domain`) und schrieb ihn auf dem VORGABEPFAD der Produktion (`EMAIL_ENABLED=false`) an den Log-Empfänger. Die Begründung an der Aufrufstelle sagt seit S10-24, Vorlagenschlüssel und Domain reichten zur Diagnose — der Buchstabe war nie gefordert. | Eigene Messung 2026-09-03 | Produkt | behoben |
+| OP-173 | **`apps/web` hat keine Lint-Ratsche.** Der grösste Workspace des Repositories wird von `.eslint-ratchet.json._targets` nicht erfasst; sein Bestand an Lint-Befunden ist nicht gedeckelt. Bis Welle 4b kannte seine Konfiguration ausserdem `no-console` überhaupt nicht.                                                           | Eigene Messung 2026-09-03 | Tor     | offen   |
+
+**Was OP-171 mit den bisherigen Funden verbindet.** Es ist der fünfte Fall
+derselben Art in diesem Audit: ein Tor, das nicht auslösen kann. Vorher waren es
+eine ausgeschlossene Tor-Eingabe, ein `git diff` auf ungetrackte Pfade, ein
+`tee` ohne `pipefail`, ein Datenbanktest, der an seiner eigenen Vorbedingung
+starb (OP-168), und eine Suite, die ihre Voraussetzung erriet (OP-170). Hier
+war es eine Ausnahmeliste, die das Gefährliche durchliess und das Harmlose
+zählte.
+
+**Was bei OP-172 methodisch wichtig ist.** Der neue Logger maskiert
+adressartige Werte von sich aus (`p***@domain`, nachgemessen). Das ist
+Tiefenverteidigung — hatte aber zur Folge, dass die bestehende Zusicherung
+„schreibt die Empfängeradresse nicht nach stdout" **nicht mehr unterscheiden
+konnte**, ob der `EmailService` selbst redigiert: Die Gegenprobe mit entfernter
+Quell-Redigierung lief grün. Erst nachdem `redactEmail` vollständig redigiert
+(`***@domain`), trennt der Unterschied zur blossen Logger-Maskierung die beiden
+Schichten wieder. Ein zusätzlicher Schutz kann eine Zusicherung blind machen;
+das ist kein Grund gegen den Schutz, wohl aber einer, die Zusicherung danach
+neu gegenzuprüfen.
+
+### Nachtrag 2026-09-03 — OP-170: eine Suite, die ihre eigene Voraussetzung erriet
+
+Beim Gesamtlauf gegen die frisch migrierte Datenbank `grc_v4b` fiel
+`organizations-create-rls.test.ts` aus — und zwar als vermeintlicher
+RLS-Defekt. Er war keiner.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                                                                                      | Art  | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---- | ------- |
+| OP-170 | **Die Routenketten-Suite lief still gegen die falsche Datenbank und notfalls unter der falschen Rolle.** Jede der vier Dateien hatte einen fest verdrahteten Rueckfallwert auf `…/grc_platform`. Fehlte `APP_DATABASE_URL`, legte der privilegierte Kanal die Fixtures in der einen Datenbank an, waehrend die geprüfte Rolle in einer **anderen** suchte. Fehlte sie ganz, konnte die Suite als SUPERUSER laufen und trotzdem gruen melden — ein Test namens „unter grc_app", der die Rolle nie sah. | Eigene Messung 2026-09-03: `DATABASE_URL` → `grc_v4b`, `APP_DATABASE_URL` → `grc_platform` | Test | behoben |
+
+**Warum das hierher gehoert.** Es ist zum vierten Mal dasselbe Muster:
+_die Wache ueber der Sache war kaputt_. Ein Test, der seine eigene
+Voraussetzung erraet, prueft etwas anderes als sein Name behauptet — und der
+Rueckfallwert war nicht nur unnoetig, er war irrefuehrend: Der Fehlschlag las
+sich wie ein Mandantentrennungsproblem und war ein Umgebungsfehler.
+
+**Behebung.** Ein Setup-Modul
+(`src/__tests__/rls-route-chain/setup-require-roles.ts`, in
+`vitest.rls.config.ts` als `setupFiles` eingehaengt) bricht ab, wenn eine der
+beiden Verbindungen fehlt **oder** wenn sie auf verschiedene Datenbanken
+zeigen. Die fuenf fest verdrahteten Rueckfallwerte in den vier Dateien sind
+entfernt. Nachgemessen in drei Lagen: ohne `APP_DATABASE_URL` bricht die
+Suite ab, bei verschiedenen Datenbanken bricht sie ab und nennt beide Namen,
+richtig gesetzt laeuft sie (4 Dateien, 24 Tests). Die CI setzt beide Werte
+bereits auf dieselbe Datenbank (`grc_platform_test`), ist also nicht
+betroffen.
+
+### Nachtrag 2026-09-03 — die Canary, und was sie widerlegt hat
+
+Auf Weisung des Eigentümers („probiere erst mal die canary") wurde
+**Next 16.4.0-canary.15** gemessen. Vier weitere Bauläufe, diesmal mit einer
+Vorsichtsmassnahme aus dem eigenen Fehler von gestern: die Typprüfung wurde
+über den bestehenden, umgebungsgeschützten Schalter
+`ARCTOS_BUILD_IGNORE_TS_ERRORS=1` übersprungen — nicht um Fehler zu
+verstecken, sondern damit der Bau die **Erzeugungsphase überhaupt erreicht**,
+in der der Absturz sitzt. Genau daran war die Messung zu 16.3.4 gescheitert.
+
+**(1) Die Canary hilft nicht.** `✓ Compiled successfully in 63s`, dann
+`Collecting page data`, dann `Generating static pages (516/688)` und derselbe
+Abbruch: `Error occurred prerendering page "/_global-error"` ·
+`TypeError: Cannot read properties of null (reading 'useContext')` ·
+`STANDALONE_SERVER_JS=MISSING`. Diesmal ist die Erzeugungsphase nachweislich
+erreicht worden; die Messung ist vollständig.
+
+**(2) Ein Arbeiter statt 31 — und damit fällt die bisherige Erklärung.**
+Mit `experimental.cpus: 1` bricht der Bau bei **`(0/688)`** ab, also an der
+allerersten Seite. Damit ist die bisherige Zuordnung zu
+vercel/next.js#95741 („route batching during static generation")
+**widerlegt**: Der Fehler hängt weder an der Zahl der Seiten noch an der
+Stapelbildung. Er ist deterministisch und trifft `/_global-error` als Erstes.
+Der beobachtete Umschlag bei 685→688 Seiten war ein Zufall der
+Arbeiterverteilung, nicht die Ursache. Diese Korrektur betrifft eine Aussage,
+die dieses Register selbst aufgestellt hat — sie wird hier nicht
+stillschweigend ersetzt, sondern benannt.
+
+**(3) Ohne unsere `global-error.tsx` — derselbe Absturz.** Die Datei wurde für
+einen Baulauf beiseitegelegt, so dass Next seine **eigene** Vorgabeseite
+erzeugt. Ergebnis: identischer Fehler an identischer Stelle. Damit liegt der
+Defekt beweisbar **nicht** in unserem Code. Die Datei ist wiederhergestellt.
+
+**(4) Ohne das next-intl-Plugin — derselbe Absturz.** `withNextIntl` wurde für
+einen Baulauf umgangen. Identischer Fehler. Damit scheidet auch eine
+Wechselwirkung mit der Übersetzungsschicht aus. Die Konfiguration ist
+wiederhergestellt.
+
+**Was daraus folgt.** Der Absturz ist ein Fehler in Turbopacks
+Produktions-Erzeugung der synthetischen Route `/_global-error` — ohne Zutun
+unseres Codes, unserer Konfiguration und unserer Abhängigkeiten, und in
+16.2.11, 16.3.4 und 16.4.0-canary.15 gleichermassen. Der Fehlerbericht kann
+jetzt mit vier trennscharfen Messungen statt einer Korrelation angereichert
+werden; die Zuordnung zu #95741 ist zurückzunehmen.
+
+### Vorlage an den Eigentümer
+
+Beide gemessenen Wege scheiden aus: `--debug-prerender` darf laut Next-Doku
+nicht deployt werden, `--webpack` erzeugt strengere Routentypen und bräuchte
+Nacharbeit an über tausend Routen, und 16.3.4 behebt den Fehler nicht.
+
+Was bleibt, ist eine Entscheidung des Eigentümers:
+
+1. **Auf einen Fix warten** und den Fehlerbericht mit unseren sechs Messungen
+   anreichern (vercel/next.js#95741 sucht ausdrücklich Reproduktionen „mit der
+   Grösse eines echten Produktionsbaums").
+2. **Auf Webpack wechseln** und die Routentypen nachziehen — bezifferbare
+   Arbeit, aber sie nimmt die Turbopack-Entscheidung aus `cea14434` zurück.
+3. **Eine Canary-Fassung von 16.3.x prüfen**, in der der Fehler möglicherweise
+   behoben ist.
+
+Bis dahin ist der Produktionsbau blockiert und mit ihm der Playwright-Lauf.
+Alles andere — 13 Typprüfungen, 6.680 Tests, 426 Migrationen von Null, die RLS-
+und Integritätssuiten und alle Tore — ist grün und von diesem Punkt nicht
+berührt.

@@ -10,7 +10,6 @@ import {
   Award,
   CheckCircle2,
   XCircle,
-  Clock,
   ArrowRight,
 } from "lucide-react";
 
@@ -73,7 +72,7 @@ export default function CertificationsPage() {
 function CertificationsInner() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("certifications");
-  const router = useRouter();
+  const _router = useRouter();
   const [readiness, setReadiness] = useState<ReadinessData | null>(null);
   const [timeline, setTimeline] = useState<TimelineData | null>(null);
   const [priorities, setPriorities] = useState<PriorityItem[]>([]);

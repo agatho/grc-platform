@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-04] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01/S09-04) und gilt nach ADR-014 als nicht
+-- ausgeliefert; die Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: account-Block entfernt (kein org_id -> 42703 auf Tabelle 1 von 142, dadurch entstanden 0 von 570 Policies) und jeder der 141 Tabellenbloecke um einen to_regclass- und org_id-Spalten-Guard erweitert, damit ein Fehltreffer nicht die restlichen Tabellen mitreisst.
 -- Migration 0315: RLS gap-closure v4 (Wave 11).
 --
 -- The rls-coverage-report drifted to 142 missing (baseline 131) since
@@ -19,27 +24,24 @@
 BEGIN;
 
 -- ─── account ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS account ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS account FORCE ROW LEVEL SECURITY;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='account' AND policyname='account_tenant_select') THEN
-    CREATE POLICY account_tenant_select ON account FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='account' AND policyname='account_tenant_insert') THEN
-    CREATE POLICY account_tenant_insert ON account FOR INSERT WITH CHECK (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='account' AND policyname='account_tenant_update') THEN
-    CREATE POLICY account_tenant_update ON account FOR UPDATE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid) WITH CHECK (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='account' AND policyname='account_tenant_delete') THEN
-    CREATE POLICY account_tenant_delete ON account FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
-  END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+-- [ARCTOS-FULL-2026-08-31 / S09-04] Block ersatzlos entfernt. `account` ist
+-- die Auth.js-OAuth-Tabelle und hat kein org_id; `ALTER TABLE IF EXISTS`
+-- guardete nur die Tabellen-, nicht die Spaltenexistenz. Weil die gesamte
+-- Datei in einer Transaktion laeuft und `account` alphabetisch an erster
+-- Stelle steht, entstand durch das 42703 hier KEINE der 570 Policies fuer
+-- die 142 Tabellen. account ist ueber user_id -> "user" mandantengebunden
+-- und braucht eine eigene Policy-Form (offen fuer WP2).
 
 -- ─── ai_conformity_assessment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_conformity_assessment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_conformity_assessment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_conformity_assessment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_conformity_assessment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_conformity_assessment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_conformity_assessment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_conformity_assessment' AND policyname='ai_conformity_assessment_tenant_select') THEN
     CREATE POLICY ai_conformity_assessment_tenant_select ON ai_conformity_assessment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -52,12 +54,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_conformity_assessment' AND policyname='ai_conformity_assessment_tenant_delete') THEN
     CREATE POLICY ai_conformity_assessment_tenant_delete ON ai_conformity_assessment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ai_framework_mapping ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_framework_mapping ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_framework_mapping FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_framework_mapping') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_framework_mapping'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_framework_mapping ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_framework_mapping FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_framework_mapping' AND policyname='ai_framework_mapping_tenant_select') THEN
     CREATE POLICY ai_framework_mapping_tenant_select ON ai_framework_mapping FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -70,12 +78,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_framework_mapping' AND policyname='ai_framework_mapping_tenant_delete') THEN
     CREATE POLICY ai_framework_mapping_tenant_delete ON ai_framework_mapping FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ai_fria ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_fria ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_fria FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_fria') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_fria'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_fria ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_fria FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_fria' AND policyname='ai_fria_tenant_select') THEN
     CREATE POLICY ai_fria_tenant_select ON ai_fria FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -88,12 +102,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_fria' AND policyname='ai_fria_tenant_delete') THEN
     CREATE POLICY ai_fria_tenant_delete ON ai_fria FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ai_human_oversight_log ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_human_oversight_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_human_oversight_log FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_human_oversight_log') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_human_oversight_log'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_human_oversight_log ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_human_oversight_log FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_human_oversight_log' AND policyname='ai_human_oversight_log_tenant_select') THEN
     CREATE POLICY ai_human_oversight_log_tenant_select ON ai_human_oversight_log FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -106,12 +126,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_human_oversight_log' AND policyname='ai_human_oversight_log_tenant_delete') THEN
     CREATE POLICY ai_human_oversight_log_tenant_delete ON ai_human_oversight_log FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ai_system ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_system ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_system FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_system') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_system'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_system ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_system FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_system' AND policyname='ai_system_tenant_select') THEN
     CREATE POLICY ai_system_tenant_select ON ai_system FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -124,12 +150,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_system' AND policyname='ai_system_tenant_delete') THEN
     CREATE POLICY ai_system_tenant_delete ON ai_system FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ai_transparency_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ai_transparency_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ai_transparency_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ai_transparency_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ai_transparency_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ai_transparency_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ai_transparency_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_transparency_entry' AND policyname='ai_transparency_entry_tenant_select') THEN
     CREATE POLICY ai_transparency_entry_tenant_select ON ai_transparency_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -142,12 +174,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ai_transparency_entry' AND policyname='ai_transparency_entry_tenant_delete') THEN
     CREATE POLICY ai_transparency_entry_tenant_delete ON ai_transparency_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── api_key_scope ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS api_key_scope ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS api_key_scope FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.api_key_scope') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='api_key_scope'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS api_key_scope ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS api_key_scope FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='api_key_scope' AND policyname='api_key_scope_tenant_select') THEN
     CREATE POLICY api_key_scope_tenant_select ON api_key_scope FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -160,12 +198,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='api_key_scope' AND policyname='api_key_scope_tenant_delete') THEN
     CREATE POLICY api_key_scope_tenant_delete ON api_key_scope FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── api_scope ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS api_scope ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS api_scope FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.api_scope') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='api_scope'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS api_scope ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS api_scope FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='api_scope' AND policyname='api_scope_tenant_select') THEN
     CREATE POLICY api_scope_tenant_select ON api_scope FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -178,12 +222,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='api_scope' AND policyname='api_scope_tenant_delete') THEN
     CREATE POLICY api_scope_tenant_delete ON api_scope FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── architecture_change_vote ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS architecture_change_vote ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS architecture_change_vote FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.architecture_change_vote') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='architecture_change_vote'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS architecture_change_vote ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS architecture_change_vote FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='architecture_change_vote' AND policyname='architecture_change_vote_tenant_select') THEN
     CREATE POLICY architecture_change_vote_tenant_select ON architecture_change_vote FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -196,12 +246,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='architecture_change_vote' AND policyname='architecture_change_vote_tenant_delete') THEN
     CREATE POLICY architecture_change_vote_tenant_delete ON architecture_change_vote FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── assessment_control_eval ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS assessment_control_eval ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS assessment_control_eval FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.assessment_control_eval') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='assessment_control_eval'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS assessment_control_eval ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS assessment_control_eval FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_control_eval' AND policyname='assessment_control_eval_tenant_select') THEN
     CREATE POLICY assessment_control_eval_tenant_select ON assessment_control_eval FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -214,12 +270,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_control_eval' AND policyname='assessment_control_eval_tenant_delete') THEN
     CREATE POLICY assessment_control_eval_tenant_delete ON assessment_control_eval FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── assessment_risk_eval ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS assessment_risk_eval ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS assessment_risk_eval FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.assessment_risk_eval') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='assessment_risk_eval'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS assessment_risk_eval ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS assessment_risk_eval FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_risk_eval' AND policyname='assessment_risk_eval_tenant_select') THEN
     CREATE POLICY assessment_risk_eval_tenant_select ON assessment_risk_eval FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -232,12 +294,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_risk_eval' AND policyname='assessment_risk_eval_tenant_delete') THEN
     CREATE POLICY assessment_risk_eval_tenant_delete ON assessment_risk_eval FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── assessment_run ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS assessment_run ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS assessment_run FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.assessment_run') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='assessment_run'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS assessment_run ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS assessment_run FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_run' AND policyname='assessment_run_tenant_select') THEN
     CREATE POLICY assessment_run_tenant_select ON assessment_run FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -250,12 +318,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='assessment_run' AND policyname='assessment_run_tenant_delete') THEN
     CREATE POLICY assessment_run_tenant_delete ON assessment_run FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── asset_classification ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS asset_classification ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS asset_classification FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.asset_classification') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='asset_classification'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS asset_classification ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS asset_classification FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='asset_classification' AND policyname='asset_classification_tenant_select') THEN
     CREATE POLICY asset_classification_tenant_select ON asset_classification FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -268,12 +342,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='asset_classification' AND policyname='asset_classification_tenant_delete') THEN
     CREATE POLICY asset_classification_tenant_delete ON asset_classification FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── asset_type_risk_recommendation ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS asset_type_risk_recommendation ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS asset_type_risk_recommendation FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.asset_type_risk_recommendation') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='asset_type_risk_recommendation'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS asset_type_risk_recommendation ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS asset_type_risk_recommendation FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='asset_type_risk_recommendation' AND policyname='asset_type_risk_recommendation_tenant_select') THEN
     CREATE POLICY asset_type_risk_recommendation_tenant_select ON asset_type_risk_recommendation FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -286,12 +366,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='asset_type_risk_recommendation' AND policyname='asset_type_risk_recommendation_tenant_delete') THEN
     CREATE POLICY asset_type_risk_recommendation_tenant_delete ON asset_type_risk_recommendation FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── audit_anchor ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS audit_anchor ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS audit_anchor FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.audit_anchor') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='audit_anchor'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS audit_anchor ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS audit_anchor FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_anchor' AND policyname='audit_anchor_tenant_select') THEN
     CREATE POLICY audit_anchor_tenant_select ON audit_anchor FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -304,12 +390,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_anchor' AND policyname='audit_anchor_tenant_delete') THEN
     CREATE POLICY audit_anchor_tenant_delete ON audit_anchor FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── audit_risk_prediction ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS audit_risk_prediction ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS audit_risk_prediction FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.audit_risk_prediction') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='audit_risk_prediction'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS audit_risk_prediction ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS audit_risk_prediction FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_risk_prediction' AND policyname='audit_risk_prediction_tenant_select') THEN
     CREATE POLICY audit_risk_prediction_tenant_select ON audit_risk_prediction FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -322,12 +414,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_risk_prediction' AND policyname='audit_risk_prediction_tenant_delete') THEN
     CREATE POLICY audit_risk_prediction_tenant_delete ON audit_risk_prediction FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── audit_risk_prediction_model ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS audit_risk_prediction_model ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS audit_risk_prediction_model FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.audit_risk_prediction_model') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='audit_risk_prediction_model'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS audit_risk_prediction_model ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS audit_risk_prediction_model FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_risk_prediction_model' AND policyname='audit_risk_prediction_model_tenant_select') THEN
     CREATE POLICY audit_risk_prediction_model_tenant_select ON audit_risk_prediction_model FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -340,12 +438,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='audit_risk_prediction_model' AND policyname='audit_risk_prediction_model_tenant_delete') THEN
     CREATE POLICY audit_risk_prediction_model_tenant_delete ON audit_risk_prediction_model FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bc_exercise_finding ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bc_exercise_finding ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bc_exercise_finding FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bc_exercise_finding') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bc_exercise_finding'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bc_exercise_finding ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bc_exercise_finding FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_finding' AND policyname='bc_exercise_finding_tenant_select') THEN
     CREATE POLICY bc_exercise_finding_tenant_select ON bc_exercise_finding FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -358,12 +462,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_finding' AND policyname='bc_exercise_finding_tenant_delete') THEN
     CREATE POLICY bc_exercise_finding_tenant_delete ON bc_exercise_finding FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bc_exercise_inject_log ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bc_exercise_inject_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bc_exercise_inject_log FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bc_exercise_inject_log') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bc_exercise_inject_log'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bc_exercise_inject_log ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bc_exercise_inject_log FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_inject_log' AND policyname='bc_exercise_inject_log_tenant_select') THEN
     CREATE POLICY bc_exercise_inject_log_tenant_select ON bc_exercise_inject_log FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -376,12 +486,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_inject_log' AND policyname='bc_exercise_inject_log_tenant_delete') THEN
     CREATE POLICY bc_exercise_inject_log_tenant_delete ON bc_exercise_inject_log FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bc_exercise_scenario ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bc_exercise_scenario ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bc_exercise_scenario FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bc_exercise_scenario') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bc_exercise_scenario'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bc_exercise_scenario ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bc_exercise_scenario FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_scenario' AND policyname='bc_exercise_scenario_tenant_select') THEN
     CREATE POLICY bc_exercise_scenario_tenant_select ON bc_exercise_scenario FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -394,12 +510,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bc_exercise_scenario' AND policyname='bc_exercise_scenario_tenant_delete') THEN
     CREATE POLICY bc_exercise_scenario_tenant_delete ON bc_exercise_scenario FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bcp ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bcp ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bcp FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bcp') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bcp'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bcp ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bcp FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp' AND policyname='bcp_tenant_select') THEN
     CREATE POLICY bcp_tenant_select ON bcp FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -412,12 +534,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp' AND policyname='bcp_tenant_delete') THEN
     CREATE POLICY bcp_tenant_delete ON bcp FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bcp_procedure ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bcp_procedure ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bcp_procedure FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bcp_procedure') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bcp_procedure'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bcp_procedure ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bcp_procedure FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp_procedure' AND policyname='bcp_procedure_tenant_select') THEN
     CREATE POLICY bcp_procedure_tenant_select ON bcp_procedure FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -430,12 +558,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp_procedure' AND policyname='bcp_procedure_tenant_delete') THEN
     CREATE POLICY bcp_procedure_tenant_delete ON bcp_procedure FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bcp_resource ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bcp_resource ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bcp_resource FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bcp_resource') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bcp_resource'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bcp_resource ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bcp_resource FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp_resource' AND policyname='bcp_resource_tenant_select') THEN
     CREATE POLICY bcp_resource_tenant_select ON bcp_resource FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -448,12 +582,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bcp_resource' AND policyname='bcp_resource_tenant_delete') THEN
     CREATE POLICY bcp_resource_tenant_delete ON bcp_resource FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── benchmark_pool ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS benchmark_pool ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS benchmark_pool FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.benchmark_pool') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='benchmark_pool'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS benchmark_pool ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS benchmark_pool FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='benchmark_pool' AND policyname='benchmark_pool_tenant_select') THEN
     CREATE POLICY benchmark_pool_tenant_select ON benchmark_pool FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -466,12 +606,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='benchmark_pool' AND policyname='benchmark_pool_tenant_delete') THEN
     CREATE POLICY benchmark_pool_tenant_delete ON benchmark_pool FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bia_assessment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bia_assessment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bia_assessment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bia_assessment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bia_assessment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bia_assessment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bia_assessment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_assessment' AND policyname='bia_assessment_tenant_select') THEN
     CREATE POLICY bia_assessment_tenant_select ON bia_assessment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -484,12 +630,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_assessment' AND policyname='bia_assessment_tenant_delete') THEN
     CREATE POLICY bia_assessment_tenant_delete ON bia_assessment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bia_process_impact ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bia_process_impact ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bia_process_impact FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bia_process_impact') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bia_process_impact'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bia_process_impact ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bia_process_impact FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_process_impact' AND policyname='bia_process_impact_tenant_select') THEN
     CREATE POLICY bia_process_impact_tenant_select ON bia_process_impact FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -502,12 +654,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_process_impact' AND policyname='bia_process_impact_tenant_delete') THEN
     CREATE POLICY bia_process_impact_tenant_delete ON bia_process_impact FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bia_supplier_dependency ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bia_supplier_dependency ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bia_supplier_dependency FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bia_supplier_dependency') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bia_supplier_dependency'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bia_supplier_dependency ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bia_supplier_dependency FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_supplier_dependency' AND policyname='bia_supplier_dependency_tenant_select') THEN
     CREATE POLICY bia_supplier_dependency_tenant_select ON bia_supplier_dependency FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -520,12 +678,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bia_supplier_dependency' AND policyname='bia_supplier_dependency_tenant_delete') THEN
     CREATE POLICY bia_supplier_dependency_tenant_delete ON bia_supplier_dependency FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bowtie_path ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bowtie_path ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bowtie_path FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bowtie_path') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bowtie_path'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bowtie_path ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bowtie_path FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bowtie_path' AND policyname='bowtie_path_tenant_select') THEN
     CREATE POLICY bowtie_path_tenant_select ON bowtie_path FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -538,12 +702,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bowtie_path' AND policyname='bowtie_path_tenant_delete') THEN
     CREATE POLICY bowtie_path_tenant_delete ON bowtie_path FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── bowtie_template ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS bowtie_template ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS bowtie_template FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.bowtie_template') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='bowtie_template'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS bowtie_template ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS bowtie_template FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bowtie_template' AND policyname='bowtie_template_tenant_select') THEN
     CREATE POLICY bowtie_template_tenant_select ON bowtie_template FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -556,12 +726,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='bowtie_template' AND policyname='bowtie_template_tenant_delete') THEN
     CREATE POLICY bowtie_template_tenant_delete ON bowtie_template FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── catalog_lifecycle_phase ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS catalog_lifecycle_phase ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS catalog_lifecycle_phase FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.catalog_lifecycle_phase') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='catalog_lifecycle_phase'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS catalog_lifecycle_phase ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS catalog_lifecycle_phase FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='catalog_lifecycle_phase' AND policyname='catalog_lifecycle_phase_tenant_select') THEN
     CREATE POLICY catalog_lifecycle_phase_tenant_select ON catalog_lifecycle_phase FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -574,12 +750,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='catalog_lifecycle_phase' AND policyname='catalog_lifecycle_phase_tenant_delete') THEN
     CREATE POLICY catalog_lifecycle_phase_tenant_delete ON catalog_lifecycle_phase FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── cloud_service_catalog ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS cloud_service_catalog ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS cloud_service_catalog FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.cloud_service_catalog') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='cloud_service_catalog'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS cloud_service_catalog ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS cloud_service_catalog FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='cloud_service_catalog' AND policyname='cloud_service_catalog_tenant_select') THEN
     CREATE POLICY cloud_service_catalog_tenant_select ON cloud_service_catalog FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -592,12 +774,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='cloud_service_catalog' AND policyname='cloud_service_catalog_tenant_delete') THEN
     CREATE POLICY cloud_service_catalog_tenant_delete ON cloud_service_catalog FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── continuity_strategy ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS continuity_strategy ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS continuity_strategy FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.continuity_strategy') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='continuity_strategy'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS continuity_strategy ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS continuity_strategy FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='continuity_strategy' AND policyname='continuity_strategy_tenant_select') THEN
     CREATE POLICY continuity_strategy_tenant_select ON continuity_strategy FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -610,12 +798,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='continuity_strategy' AND policyname='continuity_strategy_tenant_delete') THEN
     CREATE POLICY continuity_strategy_tenant_delete ON continuity_strategy FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── contract ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS contract ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS contract FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.contract') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='contract'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS contract ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS contract FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract' AND policyname='contract_tenant_select') THEN
     CREATE POLICY contract_tenant_select ON contract FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -628,12 +822,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract' AND policyname='contract_tenant_delete') THEN
     CREATE POLICY contract_tenant_delete ON contract FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── contract_amendment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS contract_amendment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS contract_amendment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.contract_amendment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='contract_amendment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS contract_amendment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS contract_amendment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_amendment' AND policyname='contract_amendment_tenant_select') THEN
     CREATE POLICY contract_amendment_tenant_select ON contract_amendment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -646,12 +846,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_amendment' AND policyname='contract_amendment_tenant_delete') THEN
     CREATE POLICY contract_amendment_tenant_delete ON contract_amendment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── contract_obligation ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS contract_obligation ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS contract_obligation FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.contract_obligation') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='contract_obligation'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS contract_obligation ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS contract_obligation FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_obligation' AND policyname='contract_obligation_tenant_select') THEN
     CREATE POLICY contract_obligation_tenant_select ON contract_obligation FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -664,12 +870,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_obligation' AND policyname='contract_obligation_tenant_delete') THEN
     CREATE POLICY contract_obligation_tenant_delete ON contract_obligation FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── contract_sla ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS contract_sla ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS contract_sla FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.contract_sla') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='contract_sla'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS contract_sla ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS contract_sla FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_sla' AND policyname='contract_sla_tenant_select') THEN
     CREATE POLICY contract_sla_tenant_select ON contract_sla FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -682,12 +894,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_sla' AND policyname='contract_sla_tenant_delete') THEN
     CREATE POLICY contract_sla_tenant_delete ON contract_sla FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── contract_sla_measurement ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS contract_sla_measurement ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS contract_sla_measurement FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.contract_sla_measurement') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='contract_sla_measurement'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS contract_sla_measurement ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS contract_sla_measurement FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_sla_measurement' AND policyname='contract_sla_measurement_tenant_select') THEN
     CREATE POLICY contract_sla_measurement_tenant_select ON contract_sla_measurement FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -700,12 +918,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='contract_sla_measurement' AND policyname='contract_sla_measurement_tenant_delete') THEN
     CREATE POLICY contract_sla_measurement_tenant_delete ON contract_sla_measurement FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── control_catalog ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS control_catalog ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS control_catalog FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.control_catalog') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='control_catalog'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS control_catalog ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS control_catalog FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_catalog' AND policyname='control_catalog_tenant_select') THEN
     CREATE POLICY control_catalog_tenant_select ON control_catalog FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -718,12 +942,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_catalog' AND policyname='control_catalog_tenant_delete') THEN
     CREATE POLICY control_catalog_tenant_delete ON control_catalog FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── control_catalog_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS control_catalog_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS control_catalog_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.control_catalog_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='control_catalog_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS control_catalog_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS control_catalog_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_catalog_entry' AND policyname='control_catalog_entry_tenant_select') THEN
     CREATE POLICY control_catalog_entry_tenant_select ON control_catalog_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -736,12 +966,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_catalog_entry' AND policyname='control_catalog_entry_tenant_delete') THEN
     CREATE POLICY control_catalog_entry_tenant_delete ON control_catalog_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── control_library_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS control_library_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS control_library_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.control_library_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='control_library_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS control_library_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS control_library_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_library_entry' AND policyname='control_library_entry_tenant_select') THEN
     CREATE POLICY control_library_entry_tenant_select ON control_library_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -754,12 +990,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_library_entry' AND policyname='control_library_entry_tenant_delete') THEN
     CREATE POLICY control_library_entry_tenant_delete ON control_library_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── control_maturity ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS control_maturity ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS control_maturity FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.control_maturity') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='control_maturity'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS control_maturity ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS control_maturity FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_maturity' AND policyname='control_maturity_tenant_select') THEN
     CREATE POLICY control_maturity_tenant_select ON control_maturity FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -772,12 +1014,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='control_maturity' AND policyname='control_maturity_tenant_delete') THEN
     CREATE POLICY control_maturity_tenant_delete ON control_maturity FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── country_risk_profile ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS country_risk_profile ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS country_risk_profile FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.country_risk_profile') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='country_risk_profile'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS country_risk_profile ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS country_risk_profile FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='country_risk_profile' AND policyname='country_risk_profile_tenant_select') THEN
     CREATE POLICY country_risk_profile_tenant_select ON country_risk_profile FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -790,12 +1038,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='country_risk_profile' AND policyname='country_risk_profile_tenant_delete') THEN
     CREATE POLICY country_risk_profile_tenant_delete ON country_risk_profile FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── crisis_contact_node ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS crisis_contact_node ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS crisis_contact_node FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.crisis_contact_node') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='crisis_contact_node'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS crisis_contact_node ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS crisis_contact_node FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_contact_node' AND policyname='crisis_contact_node_tenant_select') THEN
     CREATE POLICY crisis_contact_node_tenant_select ON crisis_contact_node FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -808,12 +1062,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_contact_node' AND policyname='crisis_contact_node_tenant_delete') THEN
     CREATE POLICY crisis_contact_node_tenant_delete ON crisis_contact_node FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── crisis_log ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS crisis_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS crisis_log FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.crisis_log') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='crisis_log'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS crisis_log ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS crisis_log FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_log' AND policyname='crisis_log_tenant_select') THEN
     CREATE POLICY crisis_log_tenant_select ON crisis_log FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -826,12 +1086,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_log' AND policyname='crisis_log_tenant_delete') THEN
     CREATE POLICY crisis_log_tenant_delete ON crisis_log FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── crisis_scenario ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS crisis_scenario ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS crisis_scenario FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.crisis_scenario') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='crisis_scenario'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS crisis_scenario ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS crisis_scenario FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_scenario' AND policyname='crisis_scenario_tenant_select') THEN
     CREATE POLICY crisis_scenario_tenant_select ON crisis_scenario FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -844,12 +1110,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_scenario' AND policyname='crisis_scenario_tenant_delete') THEN
     CREATE POLICY crisis_scenario_tenant_delete ON crisis_scenario FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── crisis_team_member ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS crisis_team_member ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS crisis_team_member FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.crisis_team_member') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='crisis_team_member'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS crisis_team_member ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS crisis_team_member FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_team_member' AND policyname='crisis_team_member_tenant_select') THEN
     CREATE POLICY crisis_team_member_tenant_select ON crisis_team_member FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -862,12 +1134,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='crisis_team_member' AND policyname='crisis_team_member_tenant_delete') THEN
     CREATE POLICY crisis_team_member_tenant_delete ON crisis_team_member FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── custom_dashboard_widget ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS custom_dashboard_widget ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS custom_dashboard_widget FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.custom_dashboard_widget') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='custom_dashboard_widget'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS custom_dashboard_widget ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS custom_dashboard_widget FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='custom_dashboard_widget' AND policyname='custom_dashboard_widget_tenant_select') THEN
     CREATE POLICY custom_dashboard_widget_tenant_select ON custom_dashboard_widget FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -880,12 +1158,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='custom_dashboard_widget' AND policyname='custom_dashboard_widget_tenant_delete') THEN
     CREATE POLICY custom_dashboard_widget_tenant_delete ON custom_dashboard_widget FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── cve_feed_item ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS cve_feed_item ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS cve_feed_item FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.cve_feed_item') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='cve_feed_item'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS cve_feed_item ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS cve_feed_item FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='cve_feed_item' AND policyname='cve_feed_item_tenant_select') THEN
     CREATE POLICY cve_feed_item_tenant_select ON cve_feed_item FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -898,12 +1182,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='cve_feed_item' AND policyname='cve_feed_item_tenant_delete') THEN
     CREATE POLICY cve_feed_item_tenant_delete ON cve_feed_item FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── data_breach ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS data_breach ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS data_breach FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.data_breach') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='data_breach'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS data_breach ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS data_breach FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_breach' AND policyname='data_breach_tenant_select') THEN
     CREATE POLICY data_breach_tenant_select ON data_breach FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -916,12 +1206,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_breach' AND policyname='data_breach_tenant_delete') THEN
     CREATE POLICY data_breach_tenant_delete ON data_breach FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── data_breach_notification ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS data_breach_notification ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS data_breach_notification FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.data_breach_notification') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='data_breach_notification'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS data_breach_notification ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS data_breach_notification FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_breach_notification' AND policyname='data_breach_notification_tenant_select') THEN
     CREATE POLICY data_breach_notification_tenant_select ON data_breach_notification FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -934,12 +1230,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_breach_notification' AND policyname='data_breach_notification_tenant_delete') THEN
     CREATE POLICY data_breach_notification_tenant_delete ON data_breach_notification FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── data_region ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS data_region ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS data_region FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.data_region') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='data_region'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS data_region ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS data_region FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_region' AND policyname='data_region_tenant_select') THEN
     CREATE POLICY data_region_tenant_select ON data_region FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -952,12 +1254,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='data_region' AND policyname='data_region_tenant_delete') THEN
     CREATE POLICY data_region_tenant_delete ON data_region FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dd_evidence ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dd_evidence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dd_evidence FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dd_evidence') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dd_evidence'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dd_evidence ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dd_evidence FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_evidence' AND policyname='dd_evidence_tenant_select') THEN
     CREATE POLICY dd_evidence_tenant_select ON dd_evidence FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -970,12 +1278,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_evidence' AND policyname='dd_evidence_tenant_delete') THEN
     CREATE POLICY dd_evidence_tenant_delete ON dd_evidence FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dd_response ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dd_response ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dd_response FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dd_response') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dd_response'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dd_response ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dd_response FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_response' AND policyname='dd_response_tenant_select') THEN
     CREATE POLICY dd_response_tenant_select ON dd_response FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -988,12 +1302,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_response' AND policyname='dd_response_tenant_delete') THEN
     CREATE POLICY dd_response_tenant_delete ON dd_response FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dd_session ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dd_session ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dd_session FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dd_session') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dd_session'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dd_session ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dd_session FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_session' AND policyname='dd_session_tenant_select') THEN
     CREATE POLICY dd_session_tenant_select ON dd_session FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1006,12 +1326,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dd_session' AND policyname='dd_session_tenant_delete') THEN
     CREATE POLICY dd_session_tenant_delete ON dd_session FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dpia ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dpia ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dpia FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dpia') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dpia'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dpia ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dpia FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia' AND policyname='dpia_tenant_select') THEN
     CREATE POLICY dpia_tenant_select ON dpia FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1024,12 +1350,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia' AND policyname='dpia_tenant_delete') THEN
     CREATE POLICY dpia_tenant_delete ON dpia FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dpia_measure ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dpia_measure ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dpia_measure FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dpia_measure') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dpia_measure'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dpia_measure ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dpia_measure FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia_measure' AND policyname='dpia_measure_tenant_select') THEN
     CREATE POLICY dpia_measure_tenant_select ON dpia_measure FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1042,12 +1374,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia_measure' AND policyname='dpia_measure_tenant_delete') THEN
     CREATE POLICY dpia_measure_tenant_delete ON dpia_measure FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dpia_risk ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dpia_risk ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dpia_risk FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dpia_risk') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dpia_risk'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dpia_risk ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dpia_risk FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia_risk' AND policyname='dpia_risk_tenant_select') THEN
     CREATE POLICY dpia_risk_tenant_select ON dpia_risk FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1060,12 +1398,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dpia_risk' AND policyname='dpia_risk_tenant_delete') THEN
     CREATE POLICY dpia_risk_tenant_delete ON dpia_risk FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dsr ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dsr ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dsr FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dsr') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dsr'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dsr ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dsr FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dsr' AND policyname='dsr_tenant_select') THEN
     CREATE POLICY dsr_tenant_select ON dsr FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1078,12 +1422,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dsr' AND policyname='dsr_tenant_delete') THEN
     CREATE POLICY dsr_tenant_delete ON dsr FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── dsr_activity ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS dsr_activity ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS dsr_activity FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.dsr_activity') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='dsr_activity'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS dsr_activity ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS dsr_activity FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dsr_activity' AND policyname='dsr_activity_tenant_select') THEN
     CREATE POLICY dsr_activity_tenant_select ON dsr_activity FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1096,12 +1446,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='dsr_activity' AND policyname='dsr_activity_tenant_delete') THEN
     CREATE POLICY dsr_activity_tenant_delete ON dsr_activity FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_annual_report ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_annual_report ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_annual_report FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_annual_report') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_annual_report'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_annual_report ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_annual_report FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_annual_report' AND policyname='esg_annual_report_tenant_select') THEN
     CREATE POLICY esg_annual_report_tenant_select ON esg_annual_report FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1114,12 +1470,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_annual_report' AND policyname='esg_annual_report_tenant_delete') THEN
     CREATE POLICY esg_annual_report_tenant_delete ON esg_annual_report FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_control_link ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_control_link ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_control_link FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_control_link') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_control_link'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_control_link ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_control_link FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_control_link' AND policyname='esg_control_link_tenant_select') THEN
     CREATE POLICY esg_control_link_tenant_select ON esg_control_link FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1132,12 +1494,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_control_link' AND policyname='esg_control_link_tenant_delete') THEN
     CREATE POLICY esg_control_link_tenant_delete ON esg_control_link FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_materiality_assessment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_materiality_assessment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_materiality_assessment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_materiality_assessment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_materiality_assessment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_materiality_assessment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_materiality_assessment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_assessment' AND policyname='esg_materiality_assessment_tenant_select') THEN
     CREATE POLICY esg_materiality_assessment_tenant_select ON esg_materiality_assessment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1150,12 +1518,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_assessment' AND policyname='esg_materiality_assessment_tenant_delete') THEN
     CREATE POLICY esg_materiality_assessment_tenant_delete ON esg_materiality_assessment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_materiality_topic ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_materiality_topic ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_materiality_topic FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_materiality_topic') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_materiality_topic'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_materiality_topic ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_materiality_topic FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_topic' AND policyname='esg_materiality_topic_tenant_select') THEN
     CREATE POLICY esg_materiality_topic_tenant_select ON esg_materiality_topic FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1168,12 +1542,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_topic' AND policyname='esg_materiality_topic_tenant_delete') THEN
     CREATE POLICY esg_materiality_topic_tenant_delete ON esg_materiality_topic FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_materiality_vote ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_materiality_vote ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_materiality_vote FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_materiality_vote') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_materiality_vote'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_materiality_vote ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_materiality_vote FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_vote' AND policyname='esg_materiality_vote_tenant_select') THEN
     CREATE POLICY esg_materiality_vote_tenant_select ON esg_materiality_vote FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1186,12 +1566,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_materiality_vote' AND policyname='esg_materiality_vote_tenant_delete') THEN
     CREATE POLICY esg_materiality_vote_tenant_delete ON esg_materiality_vote FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_measurement ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_measurement ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_measurement FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_measurement') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_measurement'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_measurement ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_measurement FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_measurement' AND policyname='esg_measurement_tenant_select') THEN
     CREATE POLICY esg_measurement_tenant_select ON esg_measurement FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1204,12 +1590,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_measurement' AND policyname='esg_measurement_tenant_delete') THEN
     CREATE POLICY esg_measurement_tenant_delete ON esg_measurement FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esg_target ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esg_target ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esg_target FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esg_target') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esg_target'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esg_target ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esg_target FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_target' AND policyname='esg_target_tenant_select') THEN
     CREATE POLICY esg_target_tenant_select ON esg_target FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1222,12 +1614,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esg_target' AND policyname='esg_target_tenant_delete') THEN
     CREATE POLICY esg_target_tenant_delete ON esg_target FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esrs_datapoint_definition ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esrs_datapoint_definition ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esrs_datapoint_definition FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esrs_datapoint_definition') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esrs_datapoint_definition'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esrs_datapoint_definition ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esrs_datapoint_definition FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esrs_datapoint_definition' AND policyname='esrs_datapoint_definition_tenant_select') THEN
     CREATE POLICY esrs_datapoint_definition_tenant_select ON esrs_datapoint_definition FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1240,12 +1638,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esrs_datapoint_definition' AND policyname='esrs_datapoint_definition_tenant_delete') THEN
     CREATE POLICY esrs_datapoint_definition_tenant_delete ON esrs_datapoint_definition FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── esrs_metric ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS esrs_metric ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS esrs_metric FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.esrs_metric') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='esrs_metric'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS esrs_metric ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS esrs_metric FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esrs_metric' AND policyname='esrs_metric_tenant_select') THEN
     CREATE POLICY esrs_metric_tenant_select ON esrs_metric FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1258,12 +1662,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='esrs_metric' AND policyname='esrs_metric_tenant_delete') THEN
     CREATE POLICY esrs_metric_tenant_delete ON esrs_metric FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── essential_process ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS essential_process ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS essential_process FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.essential_process') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='essential_process'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS essential_process ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS essential_process FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='essential_process' AND policyname='essential_process_tenant_select') THEN
     CREATE POLICY essential_process_tenant_select ON essential_process FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1276,12 +1686,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='essential_process' AND policyname='essential_process_tenant_delete') THEN
     CREATE POLICY essential_process_tenant_delete ON essential_process FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── extension_marketplace ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS extension_marketplace ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS extension_marketplace FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.extension_marketplace') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='extension_marketplace'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS extension_marketplace ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS extension_marketplace FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='extension_marketplace' AND policyname='extension_marketplace_tenant_select') THEN
     CREATE POLICY extension_marketplace_tenant_select ON extension_marketplace FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1294,12 +1710,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='extension_marketplace' AND policyname='extension_marketplace_tenant_delete') THEN
     CREATE POLICY extension_marketplace_tenant_delete ON extension_marketplace FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── feature_gate ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS feature_gate ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS feature_gate FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.feature_gate') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='feature_gate'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS feature_gate ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS feature_gate FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='feature_gate' AND policyname='feature_gate_tenant_select') THEN
     CREATE POLICY feature_gate_tenant_select ON feature_gate FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1312,12 +1734,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='feature_gate' AND policyname='feature_gate_tenant_delete') THEN
     CREATE POLICY feature_gate_tenant_delete ON feature_gate FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── framework_mapping ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS framework_mapping ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS framework_mapping FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.framework_mapping') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='framework_mapping'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS framework_mapping ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS framework_mapping FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='framework_mapping' AND policyname='framework_mapping_tenant_select') THEN
     CREATE POLICY framework_mapping_tenant_select ON framework_mapping FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1330,12 +1758,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='framework_mapping' AND policyname='framework_mapping_tenant_delete') THEN
     CREATE POLICY framework_mapping_tenant_delete ON framework_mapping FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── general_catalog_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS general_catalog_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS general_catalog_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.general_catalog_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='general_catalog_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS general_catalog_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS general_catalog_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='general_catalog_entry' AND policyname='general_catalog_entry_tenant_select') THEN
     CREATE POLICY general_catalog_entry_tenant_select ON general_catalog_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1348,12 +1782,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='general_catalog_entry' AND policyname='general_catalog_entry_tenant_delete') THEN
     CREATE POLICY general_catalog_entry_tenant_delete ON general_catalog_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── invitation ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS invitation ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS invitation FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.invitation') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='invitation'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS invitation ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS invitation FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='invitation' AND policyname='invitation_tenant_select') THEN
     CREATE POLICY invitation_tenant_select ON invitation FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1366,12 +1806,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='invitation' AND policyname='invitation_tenant_delete') THEN
     CREATE POLICY invitation_tenant_delete ON invitation FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── lksg_assessment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS lksg_assessment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS lksg_assessment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.lksg_assessment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='lksg_assessment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS lksg_assessment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS lksg_assessment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='lksg_assessment' AND policyname='lksg_assessment_tenant_select') THEN
     CREATE POLICY lksg_assessment_tenant_select ON lksg_assessment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1384,12 +1830,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='lksg_assessment' AND policyname='lksg_assessment_tenant_delete') THEN
     CREATE POLICY lksg_assessment_tenant_delete ON lksg_assessment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── management_review ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS management_review ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS management_review FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.management_review') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='management_review'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS management_review ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS management_review FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='management_review' AND policyname='management_review_tenant_select') THEN
     CREATE POLICY management_review_tenant_select ON management_review FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1402,12 +1854,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='management_review' AND policyname='management_review_tenant_delete') THEN
     CREATE POLICY management_review_tenant_delete ON management_review FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── marketplace_category ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS marketplace_category ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS marketplace_category FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.marketplace_category') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='marketplace_category'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS marketplace_category ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS marketplace_category FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='marketplace_category' AND policyname='marketplace_category_tenant_select') THEN
     CREATE POLICY marketplace_category_tenant_select ON marketplace_category FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1420,12 +1878,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='marketplace_category' AND policyname='marketplace_category_tenant_delete') THEN
     CREATE POLICY marketplace_category_tenant_delete ON marketplace_category FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── module_config ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS module_config ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS module_config FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.module_config') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='module_config'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS module_config ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS module_config FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='module_config' AND policyname='module_config_tenant_select') THEN
     CREATE POLICY module_config_tenant_select ON module_config FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1438,12 +1902,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='module_config' AND policyname='module_config_tenant_delete') THEN
     CREATE POLICY module_config_tenant_delete ON module_config FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── onboarding_step ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS onboarding_step ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS onboarding_step FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.onboarding_step') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='onboarding_step'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS onboarding_step ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS onboarding_step FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='onboarding_step' AND policyname='onboarding_step_tenant_select') THEN
     CREATE POLICY onboarding_step_tenant_select ON onboarding_step FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1456,12 +1926,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='onboarding_step' AND policyname='onboarding_step_tenant_delete') THEN
     CREATE POLICY onboarding_step_tenant_delete ON onboarding_step FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── org_active_catalog ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS org_active_catalog ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS org_active_catalog FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.org_active_catalog') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='org_active_catalog'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS org_active_catalog ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS org_active_catalog FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_active_catalog' AND policyname='org_active_catalog_tenant_select') THEN
     CREATE POLICY org_active_catalog_tenant_select ON org_active_catalog FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1474,12 +1950,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_active_catalog' AND policyname='org_active_catalog_tenant_delete') THEN
     CREATE POLICY org_active_catalog_tenant_delete ON org_active_catalog FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── org_branding ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS org_branding ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS org_branding FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.org_branding') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='org_branding'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS org_branding ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS org_branding FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_branding' AND policyname='org_branding_tenant_select') THEN
     CREATE POLICY org_branding_tenant_select ON org_branding FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1492,12 +1974,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_branding' AND policyname='org_branding_tenant_delete') THEN
     CREATE POLICY org_branding_tenant_delete ON org_branding FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── org_catalog_exclusion ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS org_catalog_exclusion ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS org_catalog_exclusion FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.org_catalog_exclusion') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='org_catalog_exclusion'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS org_catalog_exclusion ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS org_catalog_exclusion FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_catalog_exclusion' AND policyname='org_catalog_exclusion_tenant_select') THEN
     CREATE POLICY org_catalog_exclusion_tenant_select ON org_catalog_exclusion FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1510,12 +1998,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_catalog_exclusion' AND policyname='org_catalog_exclusion_tenant_delete') THEN
     CREATE POLICY org_catalog_exclusion_tenant_delete ON org_catalog_exclusion FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── org_risk_methodology ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS org_risk_methodology ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS org_risk_methodology FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.org_risk_methodology') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='org_risk_methodology'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS org_risk_methodology ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS org_risk_methodology FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_risk_methodology' AND policyname='org_risk_methodology_tenant_select') THEN
     CREATE POLICY org_risk_methodology_tenant_select ON org_risk_methodology FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1528,12 +2022,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='org_risk_methodology' AND policyname='org_risk_methodology_tenant_delete') THEN
     CREATE POLICY org_risk_methodology_tenant_delete ON org_risk_methodology FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── playbook_phase ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS playbook_phase ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS playbook_phase FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.playbook_phase') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='playbook_phase'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS playbook_phase ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS playbook_phase FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='playbook_phase' AND policyname='playbook_phase_tenant_select') THEN
     CREATE POLICY playbook_phase_tenant_select ON playbook_phase FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1546,12 +2046,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='playbook_phase' AND policyname='playbook_phase_tenant_delete') THEN
     CREATE POLICY playbook_phase_tenant_delete ON playbook_phase FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── playbook_task_template ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS playbook_task_template ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS playbook_task_template FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.playbook_task_template') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='playbook_task_template'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS playbook_task_template ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS playbook_task_template FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='playbook_task_template' AND policyname='playbook_task_template_tenant_select') THEN
     CREATE POLICY playbook_task_template_tenant_select ON playbook_task_template FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1564,12 +2070,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='playbook_task_template' AND policyname='playbook_task_template_tenant_delete') THEN
     CREATE POLICY playbook_task_template_tenant_delete ON playbook_task_template FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── plugin ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS plugin ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS plugin FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.plugin') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='plugin'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS plugin ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS plugin FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='plugin' AND policyname='plugin_tenant_select') THEN
     CREATE POLICY plugin_tenant_select ON plugin FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1582,12 +2094,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='plugin' AND policyname='plugin_tenant_delete') THEN
     CREATE POLICY plugin_tenant_delete ON plugin FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── plugin_hook ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS plugin_hook ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS plugin_hook FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.plugin_hook') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='plugin_hook'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS plugin_hook ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS plugin_hook FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='plugin_hook' AND policyname='plugin_hook_tenant_select') THEN
     CREATE POLICY plugin_hook_tenant_select ON plugin_hook FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1600,12 +2118,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='plugin_hook' AND policyname='plugin_hook_tenant_delete') THEN
     CREATE POLICY plugin_hook_tenant_delete ON plugin_hook FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process' AND policyname='process_tenant_select') THEN
     CREATE POLICY process_tenant_select ON process FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1618,12 +2142,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process' AND policyname='process_tenant_delete') THEN
     CREATE POLICY process_tenant_delete ON process FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_asset ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_asset ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_asset FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_asset') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_asset'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_asset ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_asset FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_asset' AND policyname='process_asset_tenant_select') THEN
     CREATE POLICY process_asset_tenant_select ON process_asset FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1636,12 +2166,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_asset' AND policyname='process_asset_tenant_delete') THEN
     CREATE POLICY process_asset_tenant_delete ON process_asset FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_control ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_control ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_control FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_control') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_control'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_control ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_control FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_control' AND policyname='process_control_tenant_select') THEN
     CREATE POLICY process_control_tenant_select ON process_control FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1654,12 +2190,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_control' AND policyname='process_control_tenant_delete') THEN
     CREATE POLICY process_control_tenant_delete ON process_control FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_document ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_document ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_document FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_document') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_document'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_document ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_document FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_document' AND policyname='process_document_tenant_select') THEN
     CREATE POLICY process_document_tenant_select ON process_document FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1672,12 +2214,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_document' AND policyname='process_document_tenant_delete') THEN
     CREATE POLICY process_document_tenant_delete ON process_document FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_maturity_questionnaire ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_maturity_questionnaire ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_maturity_questionnaire FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_maturity_questionnaire') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_maturity_questionnaire'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_maturity_questionnaire ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_maturity_questionnaire FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_maturity_questionnaire' AND policyname='process_maturity_questionnaire_tenant_select') THEN
     CREATE POLICY process_maturity_questionnaire_tenant_select ON process_maturity_questionnaire FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1690,12 +2238,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_maturity_questionnaire' AND policyname='process_maturity_questionnaire_tenant_delete') THEN
     CREATE POLICY process_maturity_questionnaire_tenant_delete ON process_maturity_questionnaire FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_simulation_result ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_simulation_result ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_simulation_result FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_simulation_result') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_simulation_result'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_simulation_result ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_simulation_result FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_simulation_result' AND policyname='process_simulation_result_tenant_select') THEN
     CREATE POLICY process_simulation_result_tenant_select ON process_simulation_result FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1708,12 +2262,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_simulation_result' AND policyname='process_simulation_result_tenant_delete') THEN
     CREATE POLICY process_simulation_result_tenant_delete ON process_simulation_result FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_step ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_step ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_step FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_step') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_step'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_step ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_step FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step' AND policyname='process_step_tenant_select') THEN
     CREATE POLICY process_step_tenant_select ON process_step FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1726,12 +2286,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step' AND policyname='process_step_tenant_delete') THEN
     CREATE POLICY process_step_tenant_delete ON process_step FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_step_asset ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_step_asset ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_step_asset FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_step_asset') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_step_asset'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_step_asset ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_step_asset FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step_asset' AND policyname='process_step_asset_tenant_select') THEN
     CREATE POLICY process_step_asset_tenant_select ON process_step_asset FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1744,12 +2310,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step_asset' AND policyname='process_step_asset_tenant_delete') THEN
     CREATE POLICY process_step_asset_tenant_delete ON process_step_asset FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_step_control ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_step_control ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_step_control FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_step_control') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_step_control'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_step_control ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_step_control FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step_control' AND policyname='process_step_control_tenant_select') THEN
     CREATE POLICY process_step_control_tenant_select ON process_step_control FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1762,12 +2334,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_step_control' AND policyname='process_step_control_tenant_delete') THEN
     CREATE POLICY process_step_control_tenant_delete ON process_step_control FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_template ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_template ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_template FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_template') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_template'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_template ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_template FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_template' AND policyname='process_template_tenant_select') THEN
     CREATE POLICY process_template_tenant_select ON process_template FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1780,12 +2358,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_template' AND policyname='process_template_tenant_delete') THEN
     CREATE POLICY process_template_tenant_delete ON process_template FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── process_version ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS process_version ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS process_version FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.process_version') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='process_version'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS process_version ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS process_version FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_version' AND policyname='process_version_tenant_select') THEN
     CREATE POLICY process_version_tenant_select ON process_version FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1798,12 +2382,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='process_version' AND policyname='process_version_tenant_delete') THEN
     CREATE POLICY process_version_tenant_delete ON process_version FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── programme_template ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS programme_template ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS programme_template FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.programme_template') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='programme_template'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS programme_template ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS programme_template FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template' AND policyname='programme_template_tenant_select') THEN
     CREATE POLICY programme_template_tenant_select ON programme_template FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1816,12 +2406,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template' AND policyname='programme_template_tenant_delete') THEN
     CREATE POLICY programme_template_tenant_delete ON programme_template FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── programme_template_phase ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS programme_template_phase ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS programme_template_phase FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.programme_template_phase') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='programme_template_phase'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS programme_template_phase ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS programme_template_phase FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_phase' AND policyname='programme_template_phase_tenant_select') THEN
     CREATE POLICY programme_template_phase_tenant_select ON programme_template_phase FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1834,12 +2430,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_phase' AND policyname='programme_template_phase_tenant_delete') THEN
     CREATE POLICY programme_template_phase_tenant_delete ON programme_template_phase FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── programme_template_step ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS programme_template_step ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS programme_template_step FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.programme_template_step') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='programme_template_step'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS programme_template_step ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS programme_template_step FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_step' AND policyname='programme_template_step_tenant_select') THEN
     CREATE POLICY programme_template_step_tenant_select ON programme_template_step FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1852,12 +2454,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_step' AND policyname='programme_template_step_tenant_delete') THEN
     CREATE POLICY programme_template_step_tenant_delete ON programme_template_step FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── programme_template_subtask ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS programme_template_subtask ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS programme_template_subtask FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.programme_template_subtask') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='programme_template_subtask'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS programme_template_subtask ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS programme_template_subtask FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_subtask' AND policyname='programme_template_subtask_tenant_select') THEN
     CREATE POLICY programme_template_subtask_tenant_select ON programme_template_subtask FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1870,12 +2478,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='programme_template_subtask' AND policyname='programme_template_subtask_tenant_delete') THEN
     CREATE POLICY programme_template_subtask_tenant_delete ON programme_template_subtask FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── questionnaire_question ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS questionnaire_question ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS questionnaire_question FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.questionnaire_question') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='questionnaire_question'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS questionnaire_question ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS questionnaire_question FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_question' AND policyname='questionnaire_question_tenant_select') THEN
     CREATE POLICY questionnaire_question_tenant_select ON questionnaire_question FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1888,12 +2502,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_question' AND policyname='questionnaire_question_tenant_delete') THEN
     CREATE POLICY questionnaire_question_tenant_delete ON questionnaire_question FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── questionnaire_section ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS questionnaire_section ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS questionnaire_section FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.questionnaire_section') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='questionnaire_section'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS questionnaire_section ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS questionnaire_section FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_section' AND policyname='questionnaire_section_tenant_select') THEN
     CREATE POLICY questionnaire_section_tenant_select ON questionnaire_section FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1906,12 +2526,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_section' AND policyname='questionnaire_section_tenant_delete') THEN
     CREATE POLICY questionnaire_section_tenant_delete ON questionnaire_section FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── questionnaire_template ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS questionnaire_template ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS questionnaire_template FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.questionnaire_template') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='questionnaire_template'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS questionnaire_template ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS questionnaire_template FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_template' AND policyname='questionnaire_template_tenant_select') THEN
     CREATE POLICY questionnaire_template_tenant_select ON questionnaire_template FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1924,12 +2550,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='questionnaire_template' AND policyname='questionnaire_template_tenant_delete') THEN
     CREATE POLICY questionnaire_template_tenant_delete ON questionnaire_template FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── recovery_procedure_step ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS recovery_procedure_step ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS recovery_procedure_step FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.recovery_procedure_step') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='recovery_procedure_step'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS recovery_procedure_step ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS recovery_procedure_step FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='recovery_procedure_step' AND policyname='recovery_procedure_step_tenant_select') THEN
     CREATE POLICY recovery_procedure_step_tenant_select ON recovery_procedure_step FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1942,12 +2574,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='recovery_procedure_step' AND policyname='recovery_procedure_step_tenant_delete') THEN
     CREATE POLICY recovery_procedure_step_tenant_delete ON recovery_procedure_step FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── regulatory_feed_item ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS regulatory_feed_item ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS regulatory_feed_item FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.regulatory_feed_item') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='regulatory_feed_item'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS regulatory_feed_item ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS regulatory_feed_item FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='regulatory_feed_item' AND policyname='regulatory_feed_item_tenant_select') THEN
     CREATE POLICY regulatory_feed_item_tenant_select ON regulatory_feed_item FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1960,12 +2598,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='regulatory_feed_item' AND policyname='regulatory_feed_item_tenant_delete') THEN
     CREATE POLICY regulatory_feed_item_tenant_delete ON regulatory_feed_item FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── risk_catalog ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS risk_catalog ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS risk_catalog FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.risk_catalog') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='risk_catalog'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS risk_catalog ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS risk_catalog FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='risk_catalog' AND policyname='risk_catalog_tenant_select') THEN
     CREATE POLICY risk_catalog_tenant_select ON risk_catalog FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1978,12 +2622,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='risk_catalog' AND policyname='risk_catalog_tenant_delete') THEN
     CREATE POLICY risk_catalog_tenant_delete ON risk_catalog FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── risk_catalog_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS risk_catalog_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS risk_catalog_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.risk_catalog_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='risk_catalog_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS risk_catalog_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS risk_catalog_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='risk_catalog_entry' AND policyname='risk_catalog_entry_tenant_select') THEN
     CREATE POLICY risk_catalog_entry_tenant_select ON risk_catalog_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -1996,12 +2646,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='risk_catalog_entry' AND policyname='risk_catalog_entry_tenant_delete') THEN
     CREATE POLICY risk_catalog_entry_tenant_delete ON risk_catalog_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── role_permission ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS role_permission ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS role_permission FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.role_permission') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='role_permission'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS role_permission ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS role_permission FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='role_permission' AND policyname='role_permission_tenant_select') THEN
     CREATE POLICY role_permission_tenant_select ON role_permission FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2014,12 +2670,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='role_permission' AND policyname='role_permission_tenant_delete') THEN
     CREATE POLICY role_permission_tenant_delete ON role_permission FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ropa_data_category ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ropa_data_category ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ropa_data_category FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ropa_data_category') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ropa_data_category'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ropa_data_category ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ropa_data_category FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_data_category' AND policyname='ropa_data_category_tenant_select') THEN
     CREATE POLICY ropa_data_category_tenant_select ON ropa_data_category FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2032,12 +2694,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_data_category' AND policyname='ropa_data_category_tenant_delete') THEN
     CREATE POLICY ropa_data_category_tenant_delete ON ropa_data_category FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ropa_data_subject ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ropa_data_subject ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ropa_data_subject FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ropa_data_subject') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ropa_data_subject'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ropa_data_subject ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ropa_data_subject FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_data_subject' AND policyname='ropa_data_subject_tenant_select') THEN
     CREATE POLICY ropa_data_subject_tenant_select ON ropa_data_subject FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2050,12 +2718,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_data_subject' AND policyname='ropa_data_subject_tenant_delete') THEN
     CREATE POLICY ropa_data_subject_tenant_delete ON ropa_data_subject FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ropa_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ropa_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ropa_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ropa_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ropa_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ropa_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ropa_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_entry' AND policyname='ropa_entry_tenant_select') THEN
     CREATE POLICY ropa_entry_tenant_select ON ropa_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2068,12 +2742,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_entry' AND policyname='ropa_entry_tenant_delete') THEN
     CREATE POLICY ropa_entry_tenant_delete ON ropa_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── ropa_recipient ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS ropa_recipient ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS ropa_recipient FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.ropa_recipient') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='ropa_recipient'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS ropa_recipient ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS ropa_recipient FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_recipient' AND policyname='ropa_recipient_tenant_select') THEN
     CREATE POLICY ropa_recipient_tenant_select ON ropa_recipient FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2086,12 +2766,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='ropa_recipient' AND policyname='ropa_recipient_tenant_delete') THEN
     CREATE POLICY ropa_recipient_tenant_delete ON ropa_recipient FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── scenario_engine_scenario ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS scenario_engine_scenario ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS scenario_engine_scenario FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.scenario_engine_scenario') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='scenario_engine_scenario'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS scenario_engine_scenario ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS scenario_engine_scenario FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='scenario_engine_scenario' AND policyname='scenario_engine_scenario_tenant_select') THEN
     CREATE POLICY scenario_engine_scenario_tenant_select ON scenario_engine_scenario FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2104,12 +2790,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='scenario_engine_scenario' AND policyname='scenario_engine_scenario_tenant_delete') THEN
     CREATE POLICY scenario_engine_scenario_tenant_delete ON scenario_engine_scenario FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── security_incident ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS security_incident ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS security_incident FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.security_incident') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='security_incident'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS security_incident ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS security_incident FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='security_incident' AND policyname='security_incident_tenant_select') THEN
     CREATE POLICY security_incident_tenant_select ON security_incident FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2122,12 +2814,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='security_incident' AND policyname='security_incident_tenant_delete') THEN
     CREATE POLICY security_incident_tenant_delete ON security_incident FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── session ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS session ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS session FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.session') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='session'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS session ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS session FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='session' AND policyname='session_tenant_select') THEN
     CREATE POLICY session_tenant_select ON session FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2140,12 +2838,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='session' AND policyname='session_tenant_delete') THEN
     CREATE POLICY session_tenant_delete ON session FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── simulation_run_result ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS simulation_run_result ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS simulation_run_result FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.simulation_run_result') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='simulation_run_result'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS simulation_run_result ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS simulation_run_result FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='simulation_run_result' AND policyname='simulation_run_result_tenant_select') THEN
     CREATE POLICY simulation_run_result_tenant_select ON simulation_run_result FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2158,12 +2862,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='simulation_run_result' AND policyname='simulation_run_result_tenant_delete') THEN
     CREATE POLICY simulation_run_result_tenant_delete ON simulation_run_result FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── soa_entry ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS soa_entry ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS soa_entry FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.soa_entry') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='soa_entry'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS soa_entry ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS soa_entry FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='soa_entry' AND policyname='soa_entry_tenant_select') THEN
     CREATE POLICY soa_entry_tenant_select ON soa_entry FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2176,12 +2886,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='soa_entry' AND policyname='soa_entry_tenant_delete') THEN
     CREATE POLICY soa_entry_tenant_delete ON soa_entry FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── subscription_plan ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS subscription_plan ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS subscription_plan FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.subscription_plan') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='subscription_plan'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS subscription_plan ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS subscription_plan FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='subscription_plan' AND policyname='subscription_plan_tenant_select') THEN
     CREATE POLICY subscription_plan_tenant_select ON subscription_plan FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2194,12 +2910,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='subscription_plan' AND policyname='subscription_plan_tenant_delete') THEN
     CREATE POLICY subscription_plan_tenant_delete ON subscription_plan FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── task ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS task ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS task FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.task') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='task'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS task ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS task FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='task' AND policyname='task_tenant_select') THEN
     CREATE POLICY task_tenant_select ON task FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2212,12 +2934,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='task' AND policyname='task_tenant_delete') THEN
     CREATE POLICY task_tenant_delete ON task FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── task_comment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS task_comment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS task_comment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.task_comment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='task_comment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS task_comment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS task_comment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='task_comment' AND policyname='task_comment_tenant_select') THEN
     CREATE POLICY task_comment_tenant_select ON task_comment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2230,12 +2958,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='task_comment' AND policyname='task_comment_tenant_delete') THEN
     CREATE POLICY task_comment_tenant_delete ON task_comment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── template_pack ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS template_pack ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS template_pack FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.template_pack') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='template_pack'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS template_pack ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS template_pack FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='template_pack' AND policyname='template_pack_tenant_select') THEN
     CREATE POLICY template_pack_tenant_select ON template_pack FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2248,12 +2982,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='template_pack' AND policyname='template_pack_tenant_delete') THEN
     CREATE POLICY template_pack_tenant_delete ON template_pack FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── template_pack_item ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS template_pack_item ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS template_pack_item FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.template_pack_item') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='template_pack_item'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS template_pack_item ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS template_pack_item FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='template_pack_item' AND policyname='template_pack_item_tenant_select') THEN
     CREATE POLICY template_pack_item_tenant_select ON template_pack_item FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2266,12 +3006,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='template_pack_item' AND policyname='template_pack_item_tenant_delete') THEN
     CREATE POLICY template_pack_item_tenant_delete ON template_pack_item FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── threat ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS threat ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS threat FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.threat') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='threat'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS threat ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS threat FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='threat' AND policyname='threat_tenant_select') THEN
     CREATE POLICY threat_tenant_select ON threat FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2284,12 +3030,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='threat' AND policyname='threat_tenant_delete') THEN
     CREATE POLICY threat_tenant_delete ON threat FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── tia ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS tia ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS tia FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.tia') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='tia'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS tia ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS tia FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='tia' AND policyname='tia_tenant_select') THEN
     CREATE POLICY tia_tenant_select ON tia FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2302,12 +3054,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='tia' AND policyname='tia_tenant_delete') THEN
     CREATE POLICY tia_tenant_delete ON tia FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── usage_meter ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS usage_meter ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS usage_meter FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.usage_meter') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='usage_meter'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS usage_meter ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS usage_meter FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='usage_meter' AND policyname='usage_meter_tenant_select') THEN
     CREATE POLICY usage_meter_tenant_select ON usage_meter FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2320,12 +3078,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='usage_meter' AND policyname='usage_meter_tenant_delete') THEN
     CREATE POLICY usage_meter_tenant_delete ON usage_meter FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── user_dashboard_layout ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS user_dashboard_layout ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS user_dashboard_layout FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.user_dashboard_layout') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='user_dashboard_layout'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS user_dashboard_layout ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS user_dashboard_layout FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='user_dashboard_layout' AND policyname='user_dashboard_layout_tenant_select') THEN
     CREATE POLICY user_dashboard_layout_tenant_select ON user_dashboard_layout FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2338,12 +3102,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='user_dashboard_layout' AND policyname='user_dashboard_layout_tenant_delete') THEN
     CREATE POLICY user_dashboard_layout_tenant_delete ON user_dashboard_layout FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vendor ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vendor ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vendor FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vendor') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vendor'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vendor ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vendor FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor' AND policyname='vendor_tenant_select') THEN
     CREATE POLICY vendor_tenant_select ON vendor FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2356,12 +3126,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor' AND policyname='vendor_tenant_delete') THEN
     CREATE POLICY vendor_tenant_delete ON vendor FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vendor_contact ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vendor_contact ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vendor_contact FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vendor_contact') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vendor_contact'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vendor_contact ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vendor_contact FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_contact' AND policyname='vendor_contact_tenant_select') THEN
     CREATE POLICY vendor_contact_tenant_select ON vendor_contact FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2374,12 +3150,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_contact' AND policyname='vendor_contact_tenant_delete') THEN
     CREATE POLICY vendor_contact_tenant_delete ON vendor_contact FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vendor_due_diligence ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vendor_due_diligence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vendor_due_diligence FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vendor_due_diligence') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vendor_due_diligence'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vendor_due_diligence ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vendor_due_diligence FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_due_diligence' AND policyname='vendor_due_diligence_tenant_select') THEN
     CREATE POLICY vendor_due_diligence_tenant_select ON vendor_due_diligence FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2392,12 +3174,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_due_diligence' AND policyname='vendor_due_diligence_tenant_delete') THEN
     CREATE POLICY vendor_due_diligence_tenant_delete ON vendor_due_diligence FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vendor_due_diligence_question ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vendor_due_diligence_question ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vendor_due_diligence_question FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vendor_due_diligence_question') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vendor_due_diligence_question'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vendor_due_diligence_question ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vendor_due_diligence_question FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_due_diligence_question' AND policyname='vendor_due_diligence_question_tenant_select') THEN
     CREATE POLICY vendor_due_diligence_question_tenant_select ON vendor_due_diligence_question FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2410,12 +3198,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_due_diligence_question' AND policyname='vendor_due_diligence_question_tenant_delete') THEN
     CREATE POLICY vendor_due_diligence_question_tenant_delete ON vendor_due_diligence_question FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vendor_risk_assessment ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vendor_risk_assessment ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vendor_risk_assessment FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vendor_risk_assessment') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vendor_risk_assessment'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vendor_risk_assessment ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vendor_risk_assessment FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_risk_assessment' AND policyname='vendor_risk_assessment_tenant_select') THEN
     CREATE POLICY vendor_risk_assessment_tenant_select ON vendor_risk_assessment FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2428,12 +3222,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vendor_risk_assessment' AND policyname='vendor_risk_assessment_tenant_delete') THEN
     CREATE POLICY vendor_risk_assessment_tenant_delete ON vendor_risk_assessment FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── verification_token ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS verification_token ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS verification_token FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.verification_token') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='verification_token'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS verification_token ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS verification_token FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='verification_token' AND policyname='verification_token_tenant_select') THEN
     CREATE POLICY verification_token_tenant_select ON verification_token FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2446,12 +3246,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='verification_token' AND policyname='verification_token_tenant_delete') THEN
     CREATE POLICY verification_token_tenant_delete ON verification_token FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── vulnerability ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS vulnerability ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS vulnerability FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.vulnerability') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='vulnerability'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS vulnerability ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS vulnerability FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vulnerability' AND policyname='vulnerability_tenant_select') THEN
     CREATE POLICY vulnerability_tenant_select ON vulnerability FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2464,12 +3270,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='vulnerability' AND policyname='vulnerability_tenant_delete') THEN
     CREATE POLICY vulnerability_tenant_delete ON vulnerability FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── wb_anonymous_mailbox ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS wb_anonymous_mailbox ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wb_anonymous_mailbox FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.wb_anonymous_mailbox') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='wb_anonymous_mailbox'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS wb_anonymous_mailbox ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS wb_anonymous_mailbox FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_anonymous_mailbox' AND policyname='wb_anonymous_mailbox_tenant_select') THEN
     CREATE POLICY wb_anonymous_mailbox_tenant_select ON wb_anonymous_mailbox FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2482,12 +3294,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_anonymous_mailbox' AND policyname='wb_anonymous_mailbox_tenant_delete') THEN
     CREATE POLICY wb_anonymous_mailbox_tenant_delete ON wb_anonymous_mailbox FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── wb_case ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS wb_case ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wb_case FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.wb_case') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='wb_case'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS wb_case ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS wb_case FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case' AND policyname='wb_case_tenant_select') THEN
     CREATE POLICY wb_case_tenant_select ON wb_case FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2500,12 +3318,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case' AND policyname='wb_case_tenant_delete') THEN
     CREATE POLICY wb_case_tenant_delete ON wb_case FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── wb_case_evidence ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS wb_case_evidence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wb_case_evidence FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.wb_case_evidence') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='wb_case_evidence'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS wb_case_evidence ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS wb_case_evidence FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case_evidence' AND policyname='wb_case_evidence_tenant_select') THEN
     CREATE POLICY wb_case_evidence_tenant_select ON wb_case_evidence FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2518,12 +3342,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case_evidence' AND policyname='wb_case_evidence_tenant_delete') THEN
     CREATE POLICY wb_case_evidence_tenant_delete ON wb_case_evidence FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── wb_case_message ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS wb_case_message ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wb_case_message FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.wb_case_message') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='wb_case_message'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS wb_case_message ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS wb_case_message FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case_message' AND policyname='wb_case_message_tenant_select') THEN
     CREATE POLICY wb_case_message_tenant_select ON wb_case_message FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2536,12 +3366,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_case_message' AND policyname='wb_case_message_tenant_delete') THEN
     CREATE POLICY wb_case_message_tenant_delete ON wb_case_message FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── wb_report ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS wb_report ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS wb_report FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.wb_report') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='wb_report'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS wb_report ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS wb_report FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_report' AND policyname='wb_report_tenant_select') THEN
     CREATE POLICY wb_report_tenant_select ON wb_report FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2554,12 +3390,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='wb_report' AND policyname='wb_report_tenant_delete') THEN
     CREATE POLICY wb_report_tenant_delete ON wb_report FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 -- ─── widget_definition ─────────────────────────────────────────────
-ALTER TABLE IF EXISTS widget_definition ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS widget_definition FORCE ROW LEVEL SECURITY;
 DO $$ BEGIN
+  IF to_regclass('public.widget_definition') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema='public' AND table_name='widget_definition'
+                      AND column_name='org_id') THEN
+    RETURN;
+  END IF;
+  ALTER TABLE IF EXISTS widget_definition ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE IF EXISTS widget_definition FORCE ROW LEVEL SECURITY;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='widget_definition' AND policyname='widget_definition_tenant_select') THEN
     CREATE POLICY widget_definition_tenant_select ON widget_definition FOR SELECT USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
@@ -2572,6 +3414,6 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='widget_definition' AND policyname='widget_definition_tenant_delete') THEN
     CREATE POLICY widget_definition_tenant_delete ON widget_definition FOR DELETE USING (org_id = NULLIF(current_setting('app.current_org_id', true), '')::uuid);
   END IF;
-EXCEPTION WHEN undefined_table THEN NULL; END $$;
+EXCEPTION WHEN undefined_table OR undefined_column THEN NULL; END $$;
 
 COMMIT;

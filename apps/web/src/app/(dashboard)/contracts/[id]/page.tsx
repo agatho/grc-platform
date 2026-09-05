@@ -13,8 +13,6 @@ import {
   FolderOpen,
   RefreshCcw,
 } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";

@@ -392,7 +392,7 @@ function WorkItemsTab({
 
 export default function AssetDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const assetId = params.id as string;
 
   const t = useTranslations("assets");

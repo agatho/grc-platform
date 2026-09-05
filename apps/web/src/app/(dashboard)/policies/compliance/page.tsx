@@ -5,13 +5,9 @@ import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   BarChart3,
-  CheckCircle,
-  Download,
   FileText,
   Loader2,
   RefreshCcw,
-  Send,
-  Users,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";

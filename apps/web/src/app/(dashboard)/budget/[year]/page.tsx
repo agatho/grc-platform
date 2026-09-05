@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -55,6 +56,10 @@ interface MatrixCell {
 }
 
 export default function BudgetYearPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const params = useParams();
   const router = useRouter();
@@ -299,13 +304,13 @@ export default function BudgetYearPage() {
                 </td>
                 {COST_CATEGORIES.map((cat) => (
                   <td key={cat} className="px-4 py-3 text-right text-gray-700">
-                    {getCategoryTotal(cat).toLocaleString("de-DE", {
+                    {getCategoryTotal(cat).toLocaleString(numberLocale, {
                       minimumFractionDigits: 2,
                     })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right text-gray-900 bg-gray-200">
-                  {grandTotal.toLocaleString("de-DE", {
+                  {grandTotal.toLocaleString(numberLocale, {
                     minimumFractionDigits: 2,
                   })}
                 </td>
@@ -386,7 +391,7 @@ export default function BudgetYearPage() {
                               />
                             ) : (
                               <span className="text-gray-700">
-                                {Number(cell[q]).toLocaleString("de-DE", {
+                                {Number(cell[q]).toLocaleString(numberLocale, {
                                   minimumFractionDigits: 2,
                                 })}
                               </span>
@@ -394,9 +399,12 @@ export default function BudgetYearPage() {
                           </td>
                         ))}
                         <td className="px-4 py-2 text-right font-medium text-gray-900 bg-gray-50">
-                          {Number(cell.plannedAmount).toLocaleString("de-DE", {
-                            minimumFractionDigits: 2,
-                          })}
+                          {Number(cell.plannedAmount).toLocaleString(
+                            numberLocale,
+                            {
+                              minimumFractionDigits: 2,
+                            },
+                          )}
                         </td>
                       </tr>
                     );
@@ -433,6 +441,9 @@ function MatrixRow({
   areaTotal: number;
   t: (key: string) => string;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-4 py-3 font-medium text-gray-900 sticky left-0 bg-white z-10">
@@ -455,7 +466,7 @@ function MatrixRow({
               />
             ) : (
               <span className="text-gray-700">
-                {Number(val).toLocaleString("de-DE", {
+                {Number(val).toLocaleString(numberLocale, {
                   minimumFractionDigits: 2,
                 })}
               </span>
@@ -464,7 +475,7 @@ function MatrixRow({
         );
       })}
       <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
-        {areaTotal.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+        {areaTotal.toLocaleString(numberLocale, { minimumFractionDigits: 2 })}
       </td>
     </tr>
   );

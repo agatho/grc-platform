@@ -1,11 +1,16 @@
-import { db, threatFeedSource } from "@grc/db";
+import { threatFeedSource } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { updateThreatFeedSourceSchema } from "@grc/shared";
+import { updateThreatFeedSourceSchema, checkOutboundUrl } from "@grc/shared";
+import { assertUrlIsSafe } from "@grc/shared/lib/url-safety-server";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/isms/threats/feeds/[id]
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -17,6 +22,28 @@ export async function PUT(
 
   const { id } = await params;
   const body = updateThreatFeedSourceSchema.parse(await req.json());
+
+  // #S04-03: the SSRF guard must cover UPDATE as well — otherwise a feed
+  // is created with a harmless URL and then repointed at
+  // http://169.254.169.254/ a second later.
+  if (body.feedUrl !== undefined) {
+    const literal = checkOutboundUrl(body.feedUrl, { purpose: "threat feeds" });
+    if (!literal.ok) {
+      return Response.json(
+        { error: `Feed URL rejected: ${literal.reason}` },
+        { status: 422 },
+      );
+    }
+    const resolved = await assertUrlIsSafe(body.feedUrl, {
+      purpose: "threat feeds",
+    });
+    if (!resolved.ok) {
+      return Response.json(
+        { error: `Feed URL rejected: ${resolved.reason}` },
+        { status: 422 },
+      );
+    }
+  }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
@@ -34,10 +61,9 @@ export async function PUT(
   }
 
   return Response.json({ data: result });
-}
-
+});
 // DELETE /api/v1/isms/threats/feeds/[id]
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -58,4 +84,4 @@ export async function DELETE(
   });
 
   return Response.json({ success: true });
-}
+});

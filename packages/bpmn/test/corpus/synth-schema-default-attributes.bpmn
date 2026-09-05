@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:arctos="https://arctos.grc/schema/bpmn/1.0"
+                  id="Definitions_Defaults" targetNamespace="http://arctos.dev/bpmn"
+                  expressionLanguage="http://www.w3.org/1999/XPath"
+                  typeLanguage="http://www.w3.org/2001/XMLSchema">
+  <bpmn:process id="Process_Defaults" isExecutable="false" isClosed="false" processType="None">
+    <bpmn:startEvent id="SD_Start" isInterrupting="true" parallelMultiple="false">
+      <bpmn:outgoing>SD_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="SD_Sub" triggeredByEvent="false">
+      <bpmn:incoming>SD_F1</bpmn:incoming>
+      <bpmn:outgoing>SD_F2</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics id="SD_MI" isSequential="false"/>
+      <bpmn:task id="SD_Inner" isForCompensation="false"/>
+    </bpmn:subProcess>
+    <bpmn:boundaryEvent id="SD_Boundary" attachedToRef="SD_Sub" cancelActivity="true" parallelMultiple="false">
+      <bpmn:outgoing>SD_F3</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="SD_Timer"/>
+    </bpmn:boundaryEvent>
+    <bpmn:eventBasedGateway id="SD_Gw" instantiate="false" eventGatewayType="Exclusive" gatewayDirection="Unspecified">
+      <bpmn:incoming>SD_F2</bpmn:incoming>
+      <bpmn:outgoing>SD_F4</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:dataObject id="SD_Data" isCollection="false"/>
+    <bpmn:endEvent id="SD_End">
+      <bpmn:incoming>SD_F3</bpmn:incoming>
+      <bpmn:incoming>SD_F4</bpmn:incoming>
+      <bpmn:extensionElements>
+        <arctos:grcMetadata isCriticalProcess="false">
+          <arctos:ropa isProcessingActivity="false" requiresDpia="false"/>
+        </arctos:grcMetadata>
+      </bpmn:extensionElements>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SD_F1" sourceRef="SD_Start" targetRef="SD_Sub" isImmediate="false"/>
+    <bpmn:sequenceFlow id="SD_F2" sourceRef="SD_Sub" targetRef="SD_Gw"/>
+    <bpmn:sequenceFlow id="SD_F3" sourceRef="SD_Boundary" targetRef="SD_End"/>
+    <bpmn:sequenceFlow id="SD_F4" sourceRef="SD_Gw" targetRef="SD_End"/>
+  </bpmn:process>
+</bpmn:definitions>

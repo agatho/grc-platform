@@ -1,284 +1,167 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import "./bpmn-editor.css";
-import arctosModdleExtension from "./arctos-moddle-extension.json";
-import type { RiskOverlayData, CallActivityOverlayData } from "./bpmn-editor";
+/**
+ * Die Weiche für die lesenden Diagrammflächen.
+ *
+ * Drei Einbindungen auf zwei Seiten gehen hier durch (Bestandsaufnahme §1.5):
+ * die BPMN-Vorschau im Übersichtsreiter, der Dialog „Version ansehen" und die
+ * Mitarbeitersicht in `my-processes/[id]`. Alle drei laufen bei
+ * `ARCTOS_BPMN_ENGINE=arctos` **vollständig** auf `@grc/bpmn` — Lesen ist der
+ * Fall, für den die eigene Engine fertig ist (Plan §5.4, Stufen S1/S2).
+ *
+ * Modulpfad und Exportname bleiben, damit keine Aufrufstelle sich ändert.
+ */
 
-// ---------------------------------------------------------------------------
-// bpmn-js viewer instance type
-// ---------------------------------------------------------------------------
+import { useState } from "react";
+import type { GrcViewId } from "@grc/bpmn/grc";
 
-interface ViewerInstance {
-  destroy: () => void;
-  importXML: (xml: string) => Promise<{ warnings: string[] }>;
-  get: (name: string) => unknown;
+import { resolveBpmnEngine } from "@/lib/feature-flags";
+import { useGrcOverlay } from "@/hooks/use-grc-overlay";
+import { GrcViewSelect } from "./grc-view-select";
+import { ArctosBpmnCanvas, supportsMode } from "./arctos-bpmn-canvas";
+import { BpmnViewerLegacy } from "./bpmn-viewer-legacy";
+import type { BpmnViewerProps } from "./bpmn-canvas-types";
+
+export type { BpmnViewerProps } from "./bpmn-canvas-types";
+
+/** Wie `editorEngineFor`, aber für lesende Flächen: kein Modus-Vorbehalt. */
+export function viewerEngineFor(props: {
+  engine?: string | undefined;
+}): "legacy" | "arctos" {
+  const engine = resolveBpmnEngine(
+    props.engine ? { explicit: props.engine } : {},
+  );
+  return engine === "arctos" && supportsMode("read") ? "arctos" : "legacy";
 }
 
-interface BpmnElement {
-  id: string;
-  type: string;
-  businessObject?: { name?: string };
-}
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-interface BpmnViewerProps {
-  xml: string;
-  onElementClick?: (
-    elementId: string,
-    elementType: string,
-    elementName: string | null,
-  ) => void;
-  riskOverlayData?: RiskOverlayData[];
-  // Call-Activity Drill-Down: badge + dblclick navigation into children
-  callActivityOverlayData?: CallActivityOverlayData[];
-  onNavigateToProcess?: (processId: string) => void;
-  className?: string;
-  /** Minimum height for the viewer container */
-  minHeight?: number;
-}
-
-// ---------------------------------------------------------------------------
-// Component — read-only NavigatedViewer
-// ---------------------------------------------------------------------------
-
-export function BpmnViewer({
-  xml,
-  onElementClick,
-  riskOverlayData,
-  callActivityOverlayData,
-  onNavigateToProcess,
-  className,
-  minHeight = 400,
-}: BpmnViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<ViewerInstance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Store latest callback in ref to avoid re-init
-  const onElementClickRef = useRef(onElementClick);
-  onElementClickRef.current = onElementClick;
-  const onNavigateToProcessRef = useRef(onNavigateToProcess);
-  onNavigateToProcessRef.current = onNavigateToProcess;
-  // bpmnElementId → calledProcessId for the dblclick drill-down
-  const callTargetsRef = useRef<Map<string, string>>(new Map());
-
-  // Dynamic import and init
-  useEffect(() => {
-    let destroyed = false;
-
-    async function init() {
-      if (!containerRef.current || !xml) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const ViewerModule = await import("bpmn-js/lib/NavigatedViewer");
-        const ViewerClass = ViewerModule.default;
-
-        const viewer = new ViewerClass({
-          container: containerRef.current,
-          // B1.1: keep arctos:* extension attributes intact on import.
-          moddleExtensions: { arctos: arctosModdleExtension },
-        }) as unknown as ViewerInstance;
-
-        if (destroyed) {
-          viewer.destroy();
-          return;
-        }
-
-        viewerRef.current = viewer;
-
-        await viewer.importXML(xml);
-
-        const canvas = viewer.get("canvas") as {
-          zoom: (mode: string) => void;
-        };
-        canvas.zoom("fit-viewport");
-
-        // Element click
-        const eventBus = viewer.get("eventBus") as {
-          on: (
-            event: string,
-            callback: (e: { element: BpmnElement | null }) => void,
-          ) => void;
-        };
-        eventBus.on("element.click", (e) => {
-          const element = e.element;
-          if (
-            element &&
-            element.type !== "bpmn:Process" &&
-            element.businessObject
-          ) {
-            onElementClickRef.current?.(
-              element.id,
-              element.type,
-              element.businessObject.name ?? null,
-            );
-          }
-        });
-
-        // Call-Activity Drill-Down: double-click navigates into the
-        // linked child process.
-        eventBus.on("element.dblclick", (e) => {
-          const element = e.element;
-          if (!element) return;
-          const target = callTargetsRef.current.get(element.id);
-          if (target) onNavigateToProcessRef.current?.(target);
-        });
-
-        if (!destroyed) setLoading(false);
-      } catch (err) {
-        if (!destroyed) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load BPMN viewer",
-          );
-          setLoading(false);
-        }
-      }
-    }
-
-    void init();
-
-    return () => {
-      destroyed = true;
-      const viewer = viewerRef.current;
-      if (viewer) {
-        viewer.destroy();
-        viewerRef.current = null;
-      }
-    };
-    // Re-init when xml changes
-  }, [xml]);
-
-  // Apply risk overlays
-  useEffect(() => {
-    const viewer = viewerRef.current;
-    if (!viewer || loading || !riskOverlayData?.length) return;
-
-    try {
-      type OverlayService = {
-        remove: (opts: { type: string }) => void;
-        add: (
-          elementId: string,
-          type: string,
-          opts: { position: { top: number; right: number }; html: HTMLElement },
-        ) => void;
-      };
-      const overlays = viewer.get("overlays") as OverlayService;
-
-      overlays.remove({ type: "risk-badge" });
-
-      for (const item of riskOverlayData) {
-        const color =
-          item.highestScore > 15
-            ? "bg-red-100 text-red-800 border-red-300"
-            : item.highestScore > 8
-              ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-              : "bg-green-100 text-green-800 border-green-300";
-
-        const html = document.createElement("div");
-        html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
-        html.textContent = `${item.riskCount} · ${item.highestScore}`;
-        html.style.transform = "translate(50%, -50%)";
-
-        overlays.add(item.bpmnElementId, "risk-badge", {
-          position: { top: -14, right: -14 },
-          html,
-        });
-      }
-    } catch {
-      // Overlays may fail if elements don't exist in the diagram
-    }
-  }, [riskOverlayData, loading]);
-
-  // Call-Activity Drill-Down: badge on elements with a linked child
-  // process; clicking the badge navigates to the child's detail page.
-  useEffect(() => {
-    callTargetsRef.current = new Map(
-      (callActivityOverlayData ?? []).map((c) => [
-        c.bpmnElementId,
-        c.calledProcessId,
-      ]),
-    );
-    const viewer = viewerRef.current;
-    if (!viewer || loading) return;
-    try {
-      type OverlayService = {
-        remove: (opts: { type: string }) => void;
-        add: (
-          elementId: string,
-          type: string,
-          opts: {
-            position: { bottom: number; left: number };
-            html: HTMLElement;
-          },
-        ) => void;
-      };
-      const overlays = viewer.get("overlays") as OverlayService;
-      overlays.remove({ type: "call-activity-badge" });
-      for (const item of callActivityOverlayData ?? []) {
-        const html = document.createElement("div");
-        html.className =
-          "inline-flex items-center gap-1 rounded-full border border-indigo-300 bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-800 shadow-sm cursor-pointer";
-        html.textContent = `↗${
-          item.calledProcessName ? ` ${item.calledProcessName}` : ""
-        }`;
-        html.style.maxWidth = "160px";
-        html.style.overflow = "hidden";
-        html.style.whiteSpace = "nowrap";
-        html.style.textOverflow = "ellipsis";
-        html.style.transform = "translate(-50%, 50%)";
-        html.title = item.calledProcessName ?? item.calledProcessId;
-        html.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          onNavigateToProcessRef.current?.(item.calledProcessId);
-        });
-        overlays.add(item.bpmnElementId, "call-activity-badge", {
-          position: { bottom: -14, left: -14 },
-          html,
-        });
-      }
-    } catch {
-      // Overlays may fail if elements don't exist in the diagram
-    }
-  }, [callActivityOverlayData, loading]);
-
-  if (!xml) {
-    return (
-      <div
-        className={`flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 ${className ?? ""}`}
-        style={{ minHeight }}
-      >
-        <p className="text-sm text-gray-400">No BPMN diagram available</p>
-      </div>
-    );
+export function BpmnViewer(props: BpmnViewerProps) {
+  if (viewerEngineFor(props) === "legacy") {
+    return <BpmnViewerLegacy {...props} />;
   }
+  return (
+    <ArctosBpmnCanvas
+      xml={props.xml}
+      mode="read"
+      {...(props.onElementClick
+        ? { onElementClick: props.onElementClick }
+        : {})}
+      {...(props.onNavigateToProcess
+        ? { onNavigateToProcess: props.onNavigateToProcess }
+        : {})}
+      {...(props.riskOverlayData
+        ? { riskOverlayData: props.riskOverlayData }
+        : {})}
+      {...(props.callActivityOverlayData
+        ? { callActivityOverlayData: props.callActivityOverlayData }
+        : {})}
+      {...(props.grcOverlayData
+        ? { grcOverlayData: props.grcOverlayData }
+        : {})}
+      {...(props.grcView ? { grcView: props.grcView } : {})}
+      // [ARCTOS-FULL-2026-08-31 · OP-028] Hier folgt `read` aus dem KONTEXT —
+      // Übersichtsreiter, Versionsdialog, Mitarbeitersicht —, nicht aus einem
+      // fehlenden Recht. Eine dauerhaft graue Werkzeugleiste wäre dort falsch
+      // (Plan §2.4, zweite Achse); `bpmn-editor.tsx` setzt aus demselben Grund
+      // "full".
+      chrome="minimal"
+      {...(props.className ? { className: props.className } : {})}
+      minHeight={props.minHeight ?? 400}
+    />
+  );
+}
 
-  if (error) {
-    return (
-      <div
-        className={`flex items-center justify-center text-red-500 text-sm ${className ?? ""}`}
-        style={{ minHeight }}
-      >
-        {error}
-      </div>
-    );
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-026] Eine lesende Diagrammfläche **mit**
+ * GRC-Sichtwahl.
+ *
+ * **Der Befund, nachgemessen.** `GrcViewSelect` + `useGrcOverlay` waren
+ * gebaut und an zwei Stellen verdrahtet (`processes/[id]/page.tsx:943` und
+ * `:1485`). Zwei weitere lesende Einbindungen hatten sie nicht:
+ *
+ * | Einbindung | Datei | vorher |
+ * |---|---|---|
+ * | Dialog „Version ansehen" | `processes/[id]/page.tsx:1735` | `<BpmnViewerDynamic xml=… />`, ohne Sichtwahl |
+ * | Mitarbeitersicht | `my-processes/[id]/page.tsx:289` | `<BpmnViewer xml=… />`, ohne Sichtwahl |
+ *
+ * Die 23 GRC-Layer waren dort also unerreichbar — nicht weil Daten fehlten
+ * (der Endpunkt liefert sie), sondern weil niemand die drei Teile
+ * zusammengesetzt hatte.
+ *
+ * **Warum eine eigene Komponente und nicht dreimal derselbe Block.** Die
+ * Verdrahtung besteht aus einem Haken, einem Zustand, einem Auswahlfeld und
+ * zwei bedingt gesetzten Props — an vier Stellen kopiert wäre das genau die
+ * Form, aus der die Abweichungen entstehen, die dieser Audit an anderer Stelle
+ * gefunden hat (`UMSETZUNG-WELLE-1C.md` §1, „Der Einzelfall ist behoben, die
+ * Frage war nie gestellt"). Hier steht sie einmal.
+ *
+ * **Die Entscheidung, die das Register offen lässt** („gehört eine Sichtwahl
+ * in die Mitarbeitersicht?"): ja, und zwar ausgeschaltet als Vorgabe. `null`
+ * heisst ausdrücklich **aus** — dann wird der Overlay-Endpunkt gar nicht erst
+ * befragt (`useGrcOverlay`, `enabled`), es entsteht keine zusätzliche Last,
+ * und die Fläche verhält sich wie bisher. Wer die Sicht einschaltet, sieht
+ * Daten, die er ohnehin sehen darf: der Endpunkt prüft die Rechte, nicht
+ * dieses Auswahlfeld.
+ */
+
+export interface BpmnGrcViewerProps extends BpmnViewerProps {
+  /** Prozess, dessen GRC-Datensatz geholt wird. Fehlt er, gibt es keine Wahl. */
+  processId?: string | undefined;
+  /** Version, falls die Fläche eine bestimmte Fassung zeigt. */
+  versionId?: string | undefined;
+}
+
+export function BpmnGrcViewer({
+  processId,
+  versionId,
+  ...viewerProps
+}: BpmnGrcViewerProps) {
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading,
+    error,
+    reload,
+  } = useGrcOverlay(processId, {
+    enabled: grcView !== null,
+    versionId,
+  });
+
+  // Ohne Prozesskennung gibt es keinen Endpunkt, den man fragen könnte. Dann
+  // die Auswahl gar nicht erst zeigen, statt ein Feld anzubieten, das nichts
+  // bewirkt.
+  if (!processId) {
+    return <BpmnViewer {...viewerProps} />;
   }
 
   return (
-    <div className={`relative ${className ?? ""}`} style={{ minHeight }}>
-      {loading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80">
-          <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-        </div>
-      )}
-      <div ref={containerRef} className="h-full w-full" style={{ minHeight }} />
+    <div>
+      <div className="mb-1 flex justify-end">
+        <GrcViewSelect
+          value={grcView}
+          onChange={setGrcView}
+          loading={loading}
+          error={error}
+          // [ARCTOS-FULL-2026-08-31 · OP-003] Die Prozesskennung ausdrücklich,
+          // statt sie aus der Route raten zu lassen: der Versionsdialog und
+          // die Mitarbeitersicht stehen nicht zwingend unter
+          // `/processes/[id]`.
+          processId={processId}
+          // [ARCTOS-FULL-2026-08-31 · OP-016] Eine Rahmenwerkauswahl ändert
+          // den Datensatz (der Endpunkt legt `diagram.framework` bei), also
+          // muss er neu geholt werden. Hier geht das, weil der Haken dieser
+          // Komponente gehört.
+          onReloadRequest={reload}
+          {...(grcOverlayData?.computedAt !== undefined
+            ? { computedAt: grcOverlayData.computedAt }
+            : {})}
+        />
+      </div>
+      <BpmnViewer
+        {...viewerProps}
+        {...(grcView !== null && grcOverlayData !== undefined
+          ? { grcOverlayData, grcView }
+          : {})}
+      />
     </div>
   );
 }

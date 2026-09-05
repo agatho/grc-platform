@@ -3,6 +3,10 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const updateVulnerabilitySchema = z.object({
   title: z.string().min(1).max(500).optional(),
@@ -15,7 +19,7 @@ const updateVulnerabilitySchema = z.object({
 });
 
 // GET /api/v1/isms/vulnerabilities/[id]
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -44,10 +48,9 @@ export async function GET(
   }
 
   return Response.json({ data: rows[0] });
-}
-
+});
 // PUT /api/v1/isms/vulnerabilities/[id]
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -86,10 +89,9 @@ export async function PUT(
   }
 
   return Response.json({ data: result });
-}
-
+});
 // DELETE /api/v1/isms/vulnerabilities/[id] (soft delete)
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -115,4 +117,4 @@ export async function DELETE(
   });
 
   return Response.json({ success: true });
-}
+});

@@ -1,18 +1,29 @@
 // BPM Overhaul Phase 7: Suggest compliance framework mappings for a process.
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
 
 import { db, process, processStep } from "@grc/db";
 import {
-  aiComplete,
+  aiCompleteGoverned,
   buildFrameworkMappingPrompt,
+  frameworkMappingsSchema,
   safeJsonParse,
 } from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../../ai/_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const schema = z.object({
-  candidateFrameworks: z.array(z.string()).optional(),
+  candidateFrameworks: z.array(z.string().max(120)).max(40).optional(),
   locale: z.enum(["de", "en"]).optional(),
 });
 
@@ -27,15 +38,7 @@ const DEFAULT_FRAMEWORKS = [
   "coso",
 ];
 
-interface Mapping {
-  frameworkCode: string;
-  entryCode?: string;
-  title?: string;
-  mappingStrength?: "covers" | "partial" | "references";
-  rationale?: string;
-}
-
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -43,6 +46,9 @@ export async function POST(
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
   if (m) return m;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
 
   const { id } = await params;
   const [existing] = await db
@@ -74,34 +80,35 @@ export async function POST(
     .from(processStep)
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
 
-  const prompt = buildFrameworkMappingPrompt({
-    processName: existing.name,
-    processDescription: existing.description,
-    activityNames: steps.map((s) => s.name).filter(Boolean) as string[],
-    candidateFrameworks,
-    locale,
-  });
-
-  let resp;
   try {
-    resp = await aiComplete({
-      messages: prompt,
+    const result = await aiCompleteGoverned({
+      feature: "bpm.map_frameworks",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "process",
+      entityId: existing.id,
+      messages: buildFrameworkMappingPrompt({
+        processName: existing.name,
+        processDescription: existing.description,
+        activityNames: steps.map((s) => s.name).filter(Boolean) as string[],
+        candidateFrameworks,
+        locale,
+      }),
       maxTokens: 1800,
       temperature: 0.2,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: frameworkMappingsSchema,
     });
-  } catch (err) {
-    return Response.json(
-      { error: "AI provider failure", details: (err as Error).message },
-      { status: 502 },
-    );
-  }
 
-  const parsed = safeJsonParse<{ mappings?: Mapping[] }>(resp.text);
-  return Response.json({
-    data: {
-      suggestions: parsed?.mappings ?? [],
-      provider: resp.provider,
-      model: resp.model,
-    },
-  });
-}
+    return aiJson(
+      {
+        suggestions: result.data.mappings,
+        provider: result.provider,
+        model: result.model,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+});

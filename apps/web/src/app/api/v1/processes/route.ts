@@ -18,7 +18,6 @@ import {
   ilike,
   or,
   inArray,
-  sql,
 } from "drizzle-orm";
 import {
   withAuth,
@@ -31,7 +30,7 @@ import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/processes — Create process + initial version
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -133,8 +132,26 @@ export async function POST(req: Request) {
     data: result.process,
   });
 
-  return Response.json({ data: result }, { status: 201 });
-}
+  // [E2E-TRIAGE-2026-09-02 · C-09] `data` is the created PROCESS, as it is for
+  // every other create endpoint in this API (`/findings`, `/vendors`,
+  // `/audit-mgmt/audits`, `/organizations` all answer `{ data: <entity> }`).
+  //
+  // It used to be `{ data: { process, version } }`, so `data.id` was
+  // `undefined`. The product's own UI reads exactly that:
+  // `app/(dashboard)/processes/new/page.tsx` does `const processId =
+  // json.data?.id` and then `router.push(processId ? '/processes/' + processId
+  // : '/processes')` — i.e. creating a process from the form has always
+  // silently dropped the user back on the list instead of opening what they
+  // just created. Four E2E specs read `data.id` too and sent the literal string
+  // "undefined" into the next call, which is where
+  // `PUT /api/v1/processes/undefined/ropa-profile → 500` in the server log
+  // comes from. Nothing in the repository reads `data.process` or
+  // `data.version`.
+  //
+  // The initial version number stays reachable on the entity (`currentVersion`)
+  // and the version rows through `/api/v1/processes/:id/versions`.
+  return Response.json({ data: result.process }, { status: 201 });
+});
 
 // GET /api/v1/processes — List processes (paginated, filterable)
 export const GET = withErrorHandler(async function GET(req: Request) {

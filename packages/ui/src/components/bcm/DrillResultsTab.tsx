@@ -23,7 +23,11 @@ interface DrillResultsTabProps {
 }
 
 const OUTCOME_STYLES: Record<string, string> = {
-  passed: "bg-green-100 text-green-700 border-green-300",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1. Grün ist der einzige
+  // Farbton, dessen -100/-700-Paar die 4,5:1 verfehlt — rot, gelb,
+  // orange, blau, teal, lila liegen alle darüber. Deshalb steht hier
+  // -800, während die Nachbarzeilen auf -700 bleiben.
+  passed: "bg-green-100 text-green-800 border-green-300",
   partial: "bg-yellow-100 text-yellow-700 border-yellow-300",
   failed: "bg-red-100 text-red-700 border-red-300",
 };

@@ -5,6 +5,10 @@ import { db, dataBreach, dataBreachNotification } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function csv(s: unknown): string {
   if (s == null) return "";
@@ -13,7 +17,7 @@ function csv(s: unknown): string {
   return str;
 }
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -115,14 +119,23 @@ export async function POST(
   zip.file(
     "notifications-log.csv",
     [
-      "RecipientType,Recipient,Channel,NotifiedAt,Status",
-      ...notifications.map((n: any) =>
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076 → OP-181]
+      // Vier der fuenf Spalten gab es in `data_breach_notification` nicht:
+      // `recipient`, `channel`, `notifiedAt` und `status` sind keine Felder
+      // dieser Tabelle (sie heissen `recipient_email`, `sent_at`,
+      // `response_status`, ein `channel` gibt es nicht). Unter `(n: any)`
+      // lieferte jeder dieser Zugriffe `undefined`, und `csv(undefined)`
+      // schreibt eine leere Zelle: das Meldeprotokoll im DSGVO-Meldepaket
+      // (Art. 33/34) war seit jeher bis auf die erste Spalte LEER, ohne
+      // dass irgendetwas fehlschlug. Die Kopfzeile nennt jetzt die Spalten,
+      // die es wirklich gibt.
+      "RecipientType,RecipientEmail,SentAt,ResponseStatus",
+      ...notifications.map((n) =>
         [
           csv(n.recipientType),
-          csv(n.recipient),
-          csv(n.channel),
-          csv(n.notifiedAt),
-          csv(n.status),
+          csv(n.recipientEmail),
+          csv(n.sentAt),
+          csv(n.responseStatus),
         ].join(","),
       ),
     ].join("\n"),
@@ -142,4 +155,4 @@ export async function POST(
       },
     },
   );
-}
+});

@@ -8,6 +8,8 @@
 import { db, document, workItem, notification } from "@grc/db";
 import { and, isNull, isNotNull, eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface DocumentAutoExpireResult {
   scanned: number;
@@ -63,28 +65,32 @@ export const processDocumentAutoExpire = withCronInstrumentation(
           const expiresStr = doc.expiresAt
             ? new Date(doc.expiresAt).toISOString().split("T")[0]
             : "";
-          await db.insert(notification).values({
-            userId: doc.ownerId,
-            orgId: doc.orgId,
-            type: "status_change" as const,
-            entityType: "document",
-            entityId: doc.id,
-            title: `Document expired: ${doc.title}`,
-            message: `Document "${doc.title}" reached its expiry date (${expiresStr}) and was automatically set to 'expired'.`,
-            channel: "both" as const,
-            templateKey: "document_auto_expired",
-            templateData: {
-              documentId: doc.id,
-              documentTitle: doc.title,
-              expiresAt: expiresStr,
+          await insertNotification(
+            {
+              userId: doc.ownerId,
+              orgId: doc.orgId,
+              type: "status_change" as const,
+              entityType: "document",
+              entityId: doc.id,
+              title: `Document expired: ${doc.title}`,
+              message: `Document "${doc.title}" reached its expiry date (${expiresStr}) and was automatically set to 'expired'.`,
+              channel: "both" as const,
+              templateKey: "document_auto_expired",
+              templateData: {
+                documentId: doc.id,
+                documentTitle: doc.title,
+                expiresAt: expiresStr,
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "document-auto-expire" },
+          );
           notified++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "document-auto-expire", scope: "item" }, err);
       }
     }
 

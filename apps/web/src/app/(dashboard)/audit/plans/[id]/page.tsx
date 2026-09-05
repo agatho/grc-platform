@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Plus, ArrowLeft, Check, X } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, Check } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export default function PlanDetailPage() {
 function PlanDetailInner() {
   const t = useTranslations("auditMgmt");
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const _router = useRouter();
   const [plan, setPlan] = useState<AuditPlan | null>(null);
   const [items, setItems] = useState<AuditPlanItem[]>([]);
   const [loading, setLoading] = useState(true);

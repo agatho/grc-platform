@@ -5,6 +5,17 @@ import {
   type ActionServices,
 } from "../action-executor";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const mockServices: ActionServices = {
   createTask: vi.fn().mockResolvedValue({ id: "task-123" }),
   sendNotification: vi.fn().mockResolvedValue(undefined),
@@ -39,9 +50,9 @@ describe("executeActions", () => {
     );
 
     expect(results).toHaveLength(1);
-    expect(results[0].status).toBe("success");
-    expect(results[0].type).toBe("create_task");
-    expect(results[0].result).toEqual({
+    expect(at(results, 0).status).toBe("success");
+    expect(at(results, 0).type).toBe("create_task");
+    expect(at(results, 0).result).toEqual({
       taskId: "task-123",
       taskTitle: "Review Ransomware Risk",
     });
@@ -69,7 +80,7 @@ describe("executeActions", () => {
       mockServices,
     );
 
-    expect(results[0].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
     expect(mockServices.sendNotification).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Risk Ransomware Risk over appetite",
@@ -89,7 +100,7 @@ describe("executeActions", () => {
       mockServices,
     );
 
-    expect(results[0].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
     expect(mockServices.sendEmail).toHaveBeenCalled();
   });
 
@@ -100,7 +111,7 @@ describe("executeActions", () => {
       mockServices,
     );
 
-    expect(results[0].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
     expect(mockServices.changeStatus).toHaveBeenCalledWith(
       expect.objectContaining({ newStatus: "in_review" }),
     );
@@ -121,7 +132,7 @@ describe("executeActions", () => {
       mockServices,
     );
 
-    expect(results[0].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
     expect(mockServices.escalate).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Urgent: Ransomware Risk",
@@ -141,7 +152,7 @@ describe("executeActions", () => {
       mockServices,
     );
 
-    expect(results[0].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
     expect(mockServices.triggerWebhook).toHaveBeenCalled();
   });
 
@@ -162,8 +173,8 @@ describe("executeActions", () => {
       failingServices,
     );
 
-    expect(results[0].status).toBe("failure");
-    expect(results[0].error).toBe("DB connection failed");
+    expect(at(results, 0).status).toBe("failure");
+    expect(at(results, 0).error).toBe("DB connection failed");
   });
 
   it("executes multiple actions sequentially", async () => {
@@ -183,8 +194,8 @@ describe("executeActions", () => {
     );
 
     expect(results).toHaveLength(2);
-    expect(results[0].status).toBe("success");
-    expect(results[1].status).toBe("success");
+    expect(at(results, 0).status).toBe("success");
+    expect(at(results, 1).status).toBe("success");
   });
 });
 

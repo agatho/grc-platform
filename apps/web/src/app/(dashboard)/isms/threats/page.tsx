@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Threat } from "@grc/shared";
 
-const THREAT_CATEGORIES = [
+const _THREAT_CATEGORIES = [
   "natural_disaster",
   "malware",
   "social_engineering",

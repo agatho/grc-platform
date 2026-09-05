@@ -13,6 +13,7 @@ import {
 import { eq, and, sql } from "drizzle-orm";
 
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processArchitectureHealthSnapshot = withCronInstrumentation(
   "architecture-health-snapshot",
@@ -98,8 +99,14 @@ export const processArchitectureHealthSnapshot = withCronInstrumentation(
 
         orgsProcessed++;
       } catch (err) {
-        // Wrapper logs structured error; loop continues to next org.
-        void err;
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "architecture-health-snapshot",
+            scope: "Data flow compliance",
+          },
+          err,
+        );
       }
     }
 

@@ -13,6 +13,7 @@ import { requireModule } from "@grc/auth";
 import { and, eq, gte, lte, asc } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { toDateParam, invalidDateParam } from "@/lib/query-schema";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -66,9 +67,18 @@ export const GET = withErrorHandler<RouteParams>(async function GET(
     eq(kriMeasurement.kriId, id),
     eq(kriMeasurement.orgId, ctx.orgId),
   ];
-  if (fromParam)
-    conds.push(gte(kriMeasurement.measuredAt, new Date(fromParam)));
-  if (toParam) conds.push(lte(kriMeasurement.measuredAt, new Date(toParam)));
+  // [Welle 4b-7 · OP-116] `new Date("garbage")` wirft nicht — der Treiber
+  // wirft, mit `RangeError` statt SQLSTATE, und der Wickel macht daraus 500.
+  if (fromParam) {
+    const d = toDateParam(fromParam);
+    if (!d) return invalidDateParam(req, "from");
+    conds.push(gte(kriMeasurement.measuredAt, d));
+  }
+  if (toParam) {
+    const d = toDateParam(toParam);
+    if (!d) return invalidDateParam(req, "to");
+    conds.push(lte(kriMeasurement.measuredAt, d));
+  }
 
   const rows = await db
     .select({

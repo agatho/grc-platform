@@ -1,0 +1,245 @@
+{
+  "_comment": "#S13-25 Coverage-Ratsche. Von scripts/coverage-gate.mjs geprüft. Werte dürfen nur STEIGEN. Neu setzen über `node scripts/coverage-gate.mjs --update-baseline` in einem eigenen, begründeten Commit; eine Absenkung verlangt zusätzlich --reason und wird in _history festgehalten.",
+  "_updatedAt": "2026-09-03",
+  "totals": {
+    "lines": 34.32,
+    "statements": 34.75,
+    "functions": 33.42,
+    "branches": 25.84
+  },
+  "packages": {
+    "packages/email": {
+      "lines": 98.32,
+      "statements": 97.95,
+      "functions": 100,
+      "branches": 91.63
+    },
+    "packages/shared": {
+      "lines": 85.89,
+      "statements": 83.85,
+      "functions": 75.42,
+      "branches": 73.8
+    },
+    "packages/ui": {
+      "lines": 100,
+      "statements": 100,
+      "functions": 100,
+      "branches": 100
+    },
+    "packages/auth": {
+      "lines": 65.6,
+      "statements": 64.28,
+      "functions": 68.38,
+      "branches": 52.62
+    },
+    "packages/automation": {
+      "lines": 59.13,
+      "statements": 60,
+      "functions": 71.42,
+      "branches": 47.5
+    },
+    "packages/reporting": {
+      "lines": 55.5,
+      "statements": 55.28,
+      "functions": 57.14,
+      "branches": 40.54
+    },
+    "packages/events": {
+      "lines": 52.88,
+      "statements": 54.95,
+      "functions": 48.14,
+      "branches": 50
+    },
+    "packages/ai": {
+      "lines": 60.67,
+      "statements": 58.42,
+      "functions": 68.79,
+      "branches": 54.84
+    },
+    "apps/worker": {
+      "lines": 49,
+      "statements": 48,
+      "functions": 56.28,
+      "branches": 28.16
+    },
+    "packages/graph": {
+      "lines": 27.23,
+      "statements": 27.38,
+      "functions": 6.66,
+      "branches": 21.58
+    },
+    "apps/web": {
+      "lines": 19.74,
+      "statements": 21.16,
+      "functions": 20.99,
+      "branches": 12.82
+    },
+    "packages/db": {
+      "lines": 31.2,
+      "statements": 30.09,
+      "functions": 31.81,
+      "branches": 28.04
+    },
+    "packages/bpmn": {
+      "lines": 90.13,
+      "statements": 87.54,
+      "functions": 90.89,
+      "branches": 74.03
+    }
+  },
+  "_history": [
+    {
+      "date": "2026-09-02",
+      "totals": {
+        "lines": 32.51,
+        "statements": 32.99,
+        "functions": 32.09,
+        "branches": 23.89
+      },
+      "changed": [
+        "apps/web branches: 9.65 % → 11.86 %",
+        "apps/web functions: 19.13 % → 20.48 %",
+        "apps/web lines: 14.49 % → 18.79 %",
+        "apps/web statements: 16.28 % → 20.24 %",
+        "apps/worker branches: 12.47 % → 25.54 %",
+        "apps/worker functions: 37.23 % → 54.42 %",
+        "apps/worker lines: 31.09 % → 47.68 %",
+        "apps/worker statements: 30.48 % → 46.63 %",
+        "packages/auth branches: 43.76 % → 52.31 %",
+        "packages/auth functions: 62.50 % → 67.42 %",
+        "packages/auth lines: 52.53 % → 65.14 %",
+        "packages/auth statements: 51.87 % → 63.83 %",
+        "packages/email branches: 55.90 % → 91.63 %",
+        "packages/email functions: 97.46 % → 100.00 %",
+        "packages/email lines: 87.24 % → 98.32 %",
+        "packages/email statements: 86.86 % → 97.95 %",
+        "packages/shared branches: 69.43 % → 69.67 %",
+        "packages/shared functions: 68.76 % → 72.22 %",
+        "packages/shared lines: 81.05 % → 82.17 %",
+        "packages/shared statements: 79.02 % → 80.16 %",
+        "total branches: 13.89 % → 23.89 %",
+        "total functions: 22.97 % → 32.09 %",
+        "total lines: 20.41 % → 32.51 %",
+        "total statements: 21.68 % → 32.99 %"
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "totals": {
+        "lines": 32.64,
+        "statements": 33.13,
+        "functions": 32.22,
+        "branches": 24.05
+      },
+      "changed": [
+        "apps/web branches: 11.86 % → 11.92 %",
+        "apps/web functions: 20.48 % → 20.53 %",
+        "apps/web lines: 18.79 % → 18.84 %",
+        "apps/web statements: 20.24 % → 20.29 %",
+        "apps/worker branches: 25.54 % → 27.29 %",
+        "apps/worker functions: 54.42 % → 55.96 %",
+        "apps/worker lines: 47.68 % → 48.73 %",
+        "apps/worker statements: 46.63 % → 47.73 %",
+        "packages/auth branches: 52.31 % → 52.62 %",
+        "packages/auth functions: 67.42 % → 68.14 %",
+        "packages/auth lines: 65.14 % → 65.55 %",
+        "packages/auth statements: 63.83 % → 64.23 %",
+        "packages/bpmn branches: 72.71 % → 72.77 %",
+        "packages/bpmn functions: 90.01 % → 90.13 %",
+        "packages/bpmn lines: 89.05 % → 89.12 %",
+        "packages/bpmn statements: 86.40 % → 86.46 %",
+        "total branches: 23.89 % → 24.05 %",
+        "total functions: 32.09 % → 32.22 %",
+        "total lines: 32.51 % → 32.64 %",
+        "total statements: 32.99 % → 33.13 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 33.43,
+        "statements": 33.9,
+        "functions": 32.89,
+        "branches": 24.89
+      },
+      "changed": [
+        "apps/web branches: 11.92 % → 12.00 %",
+        "apps/web functions: 20.53 % → 20.60 %",
+        "apps/web lines: 18.84 % → 18.93 %",
+        "apps/web statements: 20.29 % → 20.37 %",
+        "packages/bpmn branches: 72.77 % → 73.88 %",
+        "packages/bpmn functions: 90.13 % → 90.44 %",
+        "packages/bpmn lines: 89.12 % → 89.98 %",
+        "packages/bpmn statements: 86.46 % → 87.32 %",
+        "packages/shared branches: 69.67 % → 70.94 %",
+        "packages/shared functions: 72.22 % → 74.77 %",
+        "packages/shared lines: 82.17 % → 84.17 %",
+        "packages/shared statements: 80.16 % → 82.13 %",
+        "total branches: 24.05 % → 24.89 %",
+        "total functions: 32.22 % → 32.89 %",
+        "total lines: 32.64 % → 33.43 %",
+        "total statements: 33.13 % → 33.90 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 33.79,
+        "statements": 34.25,
+        "functions": 33.04,
+        "branches": 25.3
+      },
+      "changed": [
+        "apps/web branches: 12.00 % → 12.45 %",
+        "apps/web functions: 20.60 % → 20.69 %",
+        "apps/web lines: 18.93 % → 19.31 %",
+        "apps/web statements: 20.37 % → 20.75 %",
+        "packages/bpmn branches: 73.88 % → 73.90 %",
+        "packages/bpmn functions: 90.44 % → 90.82 %",
+        "packages/bpmn lines: 89.98 % → 90.00 %",
+        "packages/bpmn statements: 87.32 % → 87.42 %",
+        "total branches: 24.89 % → 25.30 %",
+        "total functions: 32.89 % → 33.04 %",
+        "total lines: 33.43 % → 33.79 %",
+        "total statements: 33.90 % → 34.25 %"
+      ]
+    },
+    {
+      "date": "2026-09-03",
+      "totals": {
+        "lines": 34.32,
+        "statements": 34.75,
+        "functions": 33.42,
+        "branches": 25.84
+      },
+      "changed": [
+        "apps/web branches: 12.45 % → 12.82 %",
+        "apps/web functions: 20.69 % → 20.99 %",
+        "apps/web lines: 19.31 % → 19.74 %",
+        "apps/web statements: 20.75 % → 21.16 %",
+        "apps/worker branches: 27.29 % → 28.16 %",
+        "apps/worker functions: 55.96 % → 56.28 %",
+        "apps/worker lines: 48.73 % → 49.00 %",
+        "apps/worker statements: 47.73 % → 48.00 %",
+        "packages/auth functions: 68.14 % → 68.38 %",
+        "packages/auth lines: 65.55 % → 65.60 %",
+        "packages/auth statements: 64.23 % → 64.28 %",
+        "packages/bpmn branches: 73.90 % → 74.03 %",
+        "packages/bpmn functions: 90.82 % → 90.89 %",
+        "packages/bpmn lines: 90.00 % → 90.13 %",
+        "packages/bpmn statements: 87.42 % → 87.54 %",
+        "packages/db functions: 30.23 % → 31.81 %",
+        "packages/db lines: 30.97 % → 31.20 %",
+        "packages/db statements: 29.87 % → 30.09 %",
+        "packages/shared branches: 70.94 % → 73.80 %",
+        "packages/shared functions: 74.77 % → 75.42 %",
+        "packages/shared lines: 84.17 % → 85.89 %",
+        "packages/shared statements: 82.13 % → 83.85 %",
+        "total branches: 25.30 % → 25.84 %",
+        "total functions: 33.04 % → 33.42 %",
+        "total lines: 33.79 % → 34.32 %",
+        "total statements: 34.25 % → 34.75 %"
+      ]
+    }
+  ]
+}

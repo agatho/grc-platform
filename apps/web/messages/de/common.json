@@ -332,7 +332,8 @@
       "platformData": "Import & Suche",
       "platformCatalogs": "Kataloge & Frameworks",
       "platformAdmin": "Administration"
-    }
+    },
+    "title": "Hauptnavigation"
   },
   "orgSwitcher": {
     "label": "Organisation",
@@ -749,7 +750,22 @@
     "revoking": "Wird widerrufen...",
     "revokeSuccess": "Einladung widerrufen",
     "revokeError": "Einladung konnte nicht widerrufen werden",
-    "sendError": "Einladung konnte nicht gesendet werden"
+    "sendError": "Einladung konnte nicht gesendet werden",
+    "acceptTitle": "Einladung annehmen",
+    "acceptWelcome": "Willkommen bei ARCTOS",
+    "acceptDone": "Ihre Einladung wurde angenommen. Sie können sich jetzt anmelden.",
+    "acceptGoToLogin": "Zur Anmeldung",
+    "acceptSubmit": "Einladung annehmen",
+    "yourName": "Ihr Name",
+    "namePlaceholder": "Max Mustermann",
+    "password": "Passwort",
+    "passwordPlaceholder": "Mindestens {count} Zeichen",
+    "confirmPassword": "Passwort bestätigen",
+    "confirmPasswordPlaceholder": "Passwort wiederholen",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "passwordTooShort": "Passwort muss mindestens {count} Zeichen lang sein",
+    "acceptError": "Einladung konnte nicht angenommen werden",
+    "selfHostedNote": "Self-hosted. ISO-27001-konform. Ihre Daten bleiben bei Ihnen."
   },
   "accessLog": {
     "title": "Zugriffsprotokoll",
@@ -1418,7 +1434,8 @@
       "risks": "Risiken",
       "history": "Historie",
       "comments": "Kommentare",
-      "approval": "Freigabe"
+      "approval": "Freigabe",
+      "documents": "Dokumente"
     },
     "status": {
       "draft": "Entwurf",
@@ -1790,7 +1807,8 @@
       "tests": "Tests",
       "findings": "Feststellungen",
       "rcm": "RKM",
-      "history": "Historie"
+      "history": "Historie",
+      "documents": "Dokumente"
     },
     "tests": {
       "empty": "Keine Tests erfasst",
@@ -2734,7 +2752,9 @@
     },
     "actions": {
       "cancel": "Abbrechen",
-      "save": "Speichern"
+      "save": "Speichern",
+      "dismiss": "Verwerfen",
+      "retry": "Erneut versuchen"
     }
   },
   "bcms": {
@@ -3792,7 +3812,7 @@
     "expiredContact": "Bitte kontaktieren Sie {orgName} unter {email} für eine Fristverlaengerung.",
     "completeMessage": "Ihr Fragebogen wurde erfolgreich eingereicht.",
     "completeSummary": "Sie haben {answered} Fragen in {sections} Abschnitten beantwortet.",
-    "completeClose": "Sie können dieses Fenster schließen. Bei Rückfragen wenden Sie sich an {email}.",
+    "completeClose": "Sie können dieses Fenster schließen. Bei Rückfragen wenden Sie sich an <mail>{email}</mail>.",
     "deadline": "Frist",
     "daysRemaining": "Noch {count} Tage verbleibend",
     "estimatedTime": "Geschätzte Dauer: {minutes} Minuten",
@@ -3826,7 +3846,18 @@
     "acceptAssessment": "Bewertung akzeptieren",
     "requestClarification": "Klaerung anfordern",
     "exportPdf": "PDF exportieren",
-    "comparison": "Vergleich mit vorheriger Bewertung"
+    "comparison": "Vergleich mit vorheriger Bewertung",
+    "poweredBy": "Bereitgestellt von ARCTOS",
+    "expiredNoContact": "Bitte wenden Sie sich an die anfragende Organisation, um eine Fristverlängerung zu erhalten. Sie kann einen neuen Zugangslink ausstellen.",
+    "completeSubmissionSummary": "Zusammenfassung der Einreichung",
+    "completeThanks": "Ihr Fragebogen wurde erfolgreich eingereicht. Vielen Dank für Ihre Zeit und Mitwirkung.",
+    "fieldQuestionnaire": "Fragebogen",
+    "fieldVendor": "Lieferant",
+    "fieldSubmitted": "Eingereicht am",
+    "fieldQuestionsAnswered": "Beantwortete Fragen",
+    "fieldEvidenceFiles": "Nachweisdateien",
+    "completeCloseNoContact": "Sie können dieses Fenster schließen.",
+    "documentTitle": "ARCTOS — Lieferantenportal"
   },
   "ddResults": {
     "title": "Due-Diligence-Ergebnisse",
@@ -4256,7 +4287,59 @@
     "noMessages": "Noch keine Nachrichten",
     "replyPlaceholder": "Ihre Antwort...",
     "evidence": "Beweismittel",
-    "encrypted": "Alle Daten sind Ende-zu-Ende verschlüsselt"
+    "encrypted": "Alle Daten sind Ende-zu-Ende verschlüsselt",
+    "categories": {
+      "fraud": {
+        "label": "Betrug",
+        "description": "Finanzbetrug, Bilanzmanipulation, Unterschlagung"
+      },
+      "corruption": {
+        "label": "Korruption",
+        "description": "Bestechung, unzulässige Vorteilsnahme"
+      },
+      "discrimination": {
+        "label": "Diskriminierung",
+        "description": "Diskriminierung, Belästigung, Mobbing"
+      },
+      "privacy": {
+        "label": "Datenschutz",
+        "description": "Verstöße gegen die DSGVO, Datenmissbrauch"
+      },
+      "environmental": {
+        "label": "Umwelt",
+        "description": "Umweltverschmutzung, illegale Entsorgung"
+      },
+      "health_safety": {
+        "label": "Arbeitsschutz",
+        "description": "Unsichere Arbeitsbedingungen, Arbeitsunfälle"
+      },
+      "other": {
+        "label": "Sonstiges",
+        "description": "Andere Verstöße gegen Gesetze oder Richtlinien"
+      }
+    },
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "minChars": "mind. {count} Zeichen",
+    "charCount": "{used}/{max}",
+    "orgNotFound": "Organisation nicht gefunden",
+    "connectionError": "Verbindungsfehler",
+    "submitError": "Fehler beim Einreichen",
+    "codeValidUntil": "Der Code ist gültig bis {date}. Ohne diesen Code ist kein Zugriff möglich.",
+    "requiredMark": "Pflichtfeld",
+    "statusSteps": {
+      "received": "Eingegangen",
+      "acknowledged": "Bestätigt",
+      "investigating": "In Bearbeitung",
+      "resolved": "Gelöst",
+      "closed": "Geschlossen"
+    },
+    "invalidOrExpired": "Ungültig oder abgelaufen",
+    "mailboxNotFound": "Postfach nicht gefunden",
+    "daysRemaining": "{count} Tage",
+    "sendReply": "Antwort senden",
+    "uploadEvidence": "Beweismittel hochladen",
+    "fileSizeKb": "{size} KB"
   },
   "budget": {
     "title": "GRC Budget",
@@ -4490,7 +4573,9 @@
       "sendEmail": "Per E-Mail senden",
       "noReportData": "Keine Berichtsdaten für dieses Jahr verfügbar"
     },
-    "currency": "EUR"
+    "currency": "EUR",
+    "expandRow": "Unterbudgets einblenden",
+    "collapseRow": "Unterbudgets ausblenden"
   },
   "branding": {
     "title": "Corporate Design & Branding",
@@ -4719,7 +4804,9 @@
       "daysLeft": "Tage verbleibend",
       "comment": "Kommentar",
       "confidence": "Konfidenzgrad"
-    }
+    },
+    "campaigns": "RCSA-Kampagnen",
+    "campaignsSubtitle": "Risk & Control Self-Assessments verwalten"
   },
   "policies": {
     "loading": "Laden...",
@@ -4838,11 +4925,11 @@
       "readTime": "Lesezeit",
       "submit": "Bestätigen",
       "success": "Erfolgreich bestätigt",
-      "successDesc": "Ihre Bestätigung wurde gespeichert. Die digitale Signatur dient als Nachweis.",
+      "successDesc": "Ihre Bestätigung wurde gespeichert und im Audit-Trail protokolliert. Die Prüfsumme sichert die Unverändertheit des Eintrags.",
       "quizFailed": "Quiz nicht bestanden",
       "quizFailedDesc": "Sie haben {score}% erreicht. Erforderlich sind {threshold}%.",
       "date": "Bestätigt am",
-      "signatureHash": "Digitale Signatur"
+      "signatureHash": "Bestätigungs-Prüfsumme"
     },
     "quiz": {
       "title": "Verstaendnisfragen",
@@ -5111,5 +5198,70 @@
       "postureWeightsDesc": "Gewichtung der sieben Security-Posture-Faktoren (Summe muss 100% ergeben)"
     }
   },
-  "loading": "Laden..."
+  "loading": "Laden...",
+  "errorReference": "Fehlerkennung",
+  "ai": {
+    "disclosureLabel": "Transparenzhinweis zur KI-Nutzung",
+    "providerLine": "Anbieter: {provider} · Modell: {model} · Verarbeitung in: {country}",
+    "humanReviewRequired": "Das Ergebnis ist ein Vorschlag und muss vor der Übernahme geprüft werden."
+  },
+  "table": {
+    "noResults": "Keine Einträge gefunden.",
+    "rowCount": "{count} Zeilen",
+    "pageOf": "Seite {page} von {total}",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "filterPlaceholder": "Filtern …"
+  },
+  "footer": {
+    "copyright": "© {year} ARCTOS — Audit, Risk, Compliance & Trust OS",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz"
+  },
+  "a11y": {
+    "toggleMenu": "Menü umschalten",
+    "close": "Schließen",
+    "noValue": "kein Wert"
+  },
+  "tags": {
+    "addPlaceholder": "Tag hinzufügen …",
+    "createNew": "„{input}“ als neues Tag erstellen",
+    "searchHint": "Tippen Sie, um Tags zu suchen oder zu erstellen",
+    "remove": "Tag „{tag}“ entfernen"
+  },
+  "localeSwitch": {
+    "label": "Sprache wählen",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "trust": {
+    "notFoundTitle": "Trust Center nicht gefunden",
+    "notFoundBody": "Die angeforderte Organisation existiert nicht.",
+    "subtitle": "Trust Center — Sicherheits- und Compliance-Status",
+    "statusActive": "Compliance-Status: Aktiv",
+    "statusCounts": "{frameworks} aktive Frameworks · {modules} Sicherheitsmodule aktiviert",
+    "statusEmptyTitle": "Noch keine Angaben veröffentlicht",
+    "statusEmptyBody": "Für diese Organisation sind derzeit keine aktiven Frameworks und keine aktivierten Sicherheitsmodule hinterlegt.",
+    "certifications": "Zertifizierungen & verpflichtende Standards",
+    "frameworks": "Aktive Compliance-Frameworks",
+    "modules": "Aktivierte Sicherheitsmodule",
+    "source": "Quelle: {source}",
+    "activatedOn": "Aktiviert: {date}",
+    "practices": "Sicherheitspraktiken",
+    "lastUpdated": "Bereitgestellt von der ARCTOS-GRC-Plattform · Zuletzt aktualisiert: {date}",
+    "practice": {
+      "dataProcessingTitle": "Datenverarbeitung",
+      "dataProcessingDesc": "Alle Daten werden in der EU verarbeitet und gespeichert.",
+      "accessControlTitle": "Zugriffskontrolle",
+      "accessControlDesc": "Rollenbasierte Zugriffskontrolle mit Three Lines of Defense.",
+      "auditTrailTitle": "Audit-Trail",
+      "auditTrailDesc": "Kryptographisch gesicherter Audit-Trail (SHA-256 Hash-Chain).",
+      "encryptionTitle": "Verschlüsselung",
+      "encryptionDesc": "Transportverschlüsselung mit TLS 1.3. Besonders schutzbedürftige Daten — Hinweisgebermeldungen und Zugangsdaten von Konnektoren — sind zusätzlich applikativ mit AES-256-GCM verschlüsselt. Die Verschlüsselung des Datenträgers und, wo der Objektspeicher es unterstützt, die serverseitige Verschlüsselung des Dokumentenspeichers werden vom Betreiber der Installation konfiguriert.",
+      "incidentTitle": "Incident Response",
+      "incidentDesc": "Definierter Incident-Response-Prozess mit 24h-Meldepflicht.",
+      "continuityTitle": "Business Continuity",
+      "continuityDesc": "Getestete Business-Continuity-Pläne und Disaster Recovery."
+    }
+  }
 }

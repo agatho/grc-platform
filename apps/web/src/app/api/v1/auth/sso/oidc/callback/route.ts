@@ -1,4 +1,9 @@
-import { db, ssoConfig, user, userOrganizationRole } from "@grc/db";
+import {
+  ssoConfig,
+  user,
+  userOrganizationRole,
+  withOrgReadContext,
+} from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import {
@@ -10,11 +15,14 @@ import {
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import { openSecret } from "@grc/shared";
-import type { OidcClaimMapping, GroupRoleMapping } from "@grc/shared";
+import type { GroupRoleMapping } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
+import { isEnumValue } from "../../../../_lib/enum-filter";
+import { log } from "@/lib/logger";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/auth/sso/oidc/callback — OIDC authorization callback
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
   const stateParam = url.searchParams.get("state");
@@ -85,18 +93,24 @@ export async function GET(req: Request) {
     return Response.json({ error: "Invalid state parameter" }, { status: 400 });
   }
 
-  // Load SSO config
-  const [config] = await db
-    .select()
-    .from(ssoConfig)
-    .where(
-      and(
-        eq(ssoConfig.orgId, orgId),
-        eq(ssoConfig.provider, "oidc"),
-        eq(ssoConfig.isActive, true),
-        isNull(ssoConfig.deletedAt),
+  // #WP3-S02-05 — `sso_config` has FORCE RLS. This handler is anonymous by
+  // design (the IdP redirects the browser back without a session), so no request-scoped org context
+  // exists and a plain read under `grc_app` returned 0 rows: SSO looked
+  // "not configured" on every production instance. The org is known from the
+  // RelayState, so pin it on a dedicated connection for exactly this read.
+  const [config] = await withOrgReadContext(orgId, (sdb) =>
+    sdb
+      .select()
+      .from(ssoConfig)
+      .where(
+        and(
+          eq(ssoConfig.orgId, orgId),
+          eq(ssoConfig.provider, "oidc"),
+          eq(ssoConfig.isActive, true),
+          isNull(ssoConfig.deletedAt),
+        ),
       ),
-    );
+  );
 
   if (!config?.oidcDiscoveryUrl || !config?.oidcClientId) {
     return Response.json(
@@ -125,11 +139,18 @@ export async function GET(req: Request) {
       codeVerifier: storedVerifier,
     });
 
-    // Validate ID token
-    const claims = validateIdToken(tokens.id_token, {
+    // #WP3-S02-24 — Validate the ID token INCLUDING its signature.
+    //
+    // Vorher: `validateIdToken` dekodierte den Payload per base64 und prüfte
+    // nur iss/aud/exp/iat/nonce. Die JWKS-Abholung im selben Modul wurde nie
+    // aufgerufen, `alg` nie geprüft — jedes JWT mit den richtigen Claims wurde
+    // akzeptiert. Jetzt wird gegen `jwks_uri` aus dem Discovery-Dokument
+    // kryptografisch verifiziert; `alg: none` und HMAC sind ausgeschlossen.
+    const claims = await validateIdToken(tokens.id_token, {
       issuer: discovery.issuer,
       audience: config.oidcClientId,
       nonce,
+      jwksUri: discovery.jwks_uri,
     });
 
     // Extract user attributes
@@ -144,67 +165,101 @@ export async function GET(req: Request) {
     };
     const attrs = extractOidcAttributes(claims, claimMapping);
 
-    // JIT Provisioning
-    const email = attrs.email.toLowerCase();
-    const name =
-      [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
+    // #WP3-S02-05 — the JIT-provisioning block touches `user` and
+    // `user_organization_role`, both FORCE-RLS. Without an org context under
+    // `grc_app` the existence check returned 0 rows (so every SSO login tried
+    // to CREATE the user and hit the unique constraint) and the role insert
+    // was rejected by the policy. The org is known from the state/RelayState,
+    // so the whole block runs on a connection pinned to it.
+    const provisioned = await withOrgReadContext(orgId, async (sdb) => {
+      // JIT Provisioning
+      const email = attrs.email.toLowerCase();
+      const name =
+        [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
 
-    const [existing] = await db
-      .select()
-      .from(user)
-      .where(and(eq(user.email, email), isNull(user.deletedAt)));
+      const [existing] = await sdb
+        .select()
+        .from(user)
+        .where(and(eq(user.email, email), isNull(user.deletedAt)));
 
-    let userId: string;
+      let userId: string;
 
-    if (existing) {
-      await db.execute(sql`
-        UPDATE "user" SET
-          name = ${name},
-          last_login_at = now(),
-          identity_provider = 'oidc',
-          last_synced_at = now(),
-          is_active = true
-        WHERE id = ${existing.id}
-      `);
-      userId = existing.id;
-    } else {
-      if (!config.autoProvision) {
-        return Response.json(
-          { error: "Auto-provisioning is disabled for this organization" },
-          { status: 403 },
+      if (existing) {
+        await sdb.execute(sql`
+          UPDATE "user" SET
+            name = ${name},
+            last_login_at = now(),
+            identity_provider = 'oidc',
+            last_synced_at = now(),
+            is_active = true
+          WHERE id = ${existing.id}
+        `);
+        userId = existing.id;
+      } else {
+        if (!config.autoProvision) {
+          return Response.json(
+            { error: "Auto-provisioning is disabled for this organization" },
+            { status: 403 },
+          );
+        }
+
+        const [created] = await sdb
+          .insert(user)
+          .values({
+            email,
+            name,
+            emailVerified: new Date(),
+            isActive: true,
+            language: "de",
+            identityProvider: "oidc",
+            lastLoginAt: new Date(),
+            lastSyncedAt: new Date(),
+            externalId: claims.sub,
+          })
+          .returning();
+        userId = created.id;
+
+        const groupMapping =
+          (config.groupRoleMapping as GroupRoleMapping) ?? {};
+        const mappingEntries = groupRoleMappingToEntries(groupMapping);
+        const role = resolveRole(
+          attrs.groups ?? [],
+          mappingEntries,
+          config.defaultRole ?? "viewer",
         );
+
+        // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] `resolveRole` gibt
+        // `string` zurueck — die Zuordnung Gruppe→Rolle stammt aus der
+        // IdP-Konfiguration der Organisation und ist damit frei getippter
+        // Text. Mit `as any` ging ein Tippfehler in dieser Konfiguration
+        // ungeprueft in eine Aufzaehlungsspalte: die Datenbank wies ihn ab
+        // (`invalid input value for enum user_role`), und der SSO-Login
+        // scheiterte mit einem 500er statt mit einer Rolle. Unbekannte
+        // Werte fallen jetzt auf `viewer` zurueck — den Wert, den die
+        // Konfiguration ohnehin als Vorgabe fuehrt — und werden protokolliert.
+        const safeRole = isEnumValue(userOrganizationRole.role.enumValues, role)
+          ? role
+          : "viewer";
+        if (safeRole !== role) {
+          log.warn(
+            "[oidc/callback] unknown role in group mapping, falling back",
+            {
+              role,
+              orgId,
+            },
+          );
+        }
+
+        await sdb.insert(userOrganizationRole).values({
+          userId,
+          orgId,
+          role: safeRole,
+        });
       }
-
-      const [created] = await db
-        .insert(user)
-        .values({
-          email,
-          name,
-          emailVerified: new Date(),
-          isActive: true,
-          language: "de",
-          identityProvider: "oidc",
-          lastLoginAt: new Date(),
-          lastSyncedAt: new Date(),
-          externalId: claims.sub,
-        })
-        .returning();
-      userId = created.id;
-
-      const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
-      const mappingEntries = groupRoleMappingToEntries(groupMapping);
-      const role = resolveRole(
-        attrs.groups ?? [],
-        mappingEntries,
-        config.defaultRole ?? "viewer",
-      );
-
-      await db.insert(userOrganizationRole).values({
-        userId,
-        orgId,
-        role: role as any,
-      });
-    }
+      return { userId, email };
+    });
+    if (provisioned instanceof Response) return provisioned;
+    const { userId, email } = provisioned;
 
     await logAccessEvent({
       userId,
@@ -233,4 +288,4 @@ export async function GET(req: Request) {
       { status: 401 },
     );
   }
-}
+});

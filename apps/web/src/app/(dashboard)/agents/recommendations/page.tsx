@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Check, X, ClipboardList } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -69,7 +69,11 @@ export default function RecommendationsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge className={SEVERITY_COLORS[rec.severity] ?? ""}>
-                    {t(`recommendations.severity.${rec.severity}` as any)}
+                    {t(
+                      `recommendations.severity.${rec.severity}` as Parameters<
+                        typeof t
+                      >[0],
+                    )}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
                     {rec.entityType}

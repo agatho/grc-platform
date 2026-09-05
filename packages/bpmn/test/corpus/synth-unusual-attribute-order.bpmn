@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions targetNamespace="http://arctos.dev/bpmn" id="Definitions_AttrOrder"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  expressionLanguage="http://www.w3.org/1999/XPath"
+                  typeLanguage="http://www.w3.org/2001/XMLSchema"
+                  exporterVersion="0.0.1" exporter="handmade">
+  <bpmn:process isExecutable="false" name="Attributreihenfolge" id="Process_AttrOrder">
+    <bpmn:startEvent name="Start" id="AO_Start">
+      <bpmn:outgoing>AO_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task name="Erledigen" id="AO_Task">
+      <bpmn:outgoing>AO_F2</bpmn:outgoing>
+      <bpmn:incoming>AO_F1</bpmn:incoming>
+    </bpmn:task>
+    <bpmn:endEvent id="AO_End" name="Ende">
+      <bpmn:incoming>AO_F2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow targetRef="AO_Task" sourceRef="AO_Start" id="AO_F1"/>
+    <bpmn:sequenceFlow targetRef="AO_End" id="AO_F2" sourceRef="AO_Task"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_AttrOrder">
+    <bpmndi:BPMNPlane bpmnElement="Process_AttrOrder" id="Plane_AttrOrder">
+      <bpmndi:BPMNShape bpmnElement="AO_Start" id="AO_Start_di">
+        <dc:Bounds height="36" width="36" y="102" x="152"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="AO_Task" id="AO_Task_di">
+        <dc:Bounds width="100" x="240" height="80" y="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AO_End_di" bpmnElement="AO_End">
+        <dc:Bounds y="102" height="36" x="402" width="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="AO_F1" id="AO_F1_di">
+        <di:waypoint y="120" x="188"/>
+        <di:waypoint x="240" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="AO_F2_di" bpmnElement="AO_F2">
+        <di:waypoint x="340" y="120"/>
+        <di:waypoint y="120" x="402"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

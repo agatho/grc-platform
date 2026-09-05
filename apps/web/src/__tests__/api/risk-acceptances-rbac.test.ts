@@ -345,9 +345,31 @@ describe("GET /api/v1/risk-acceptances", () => {
     expect(body.data[0].id).toBe("acc-1");
   });
 
-  it("answers POST with 405 (create lives on the risk)", async () => {
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Der Handler nimmt jetzt
+  // den `req` entgegen (Next.js uebergibt ihn ohnehin) und antwortet in
+  // RFC-7807-Form. Vorher stand hier `Response.json({ error, detail },
+  // { status: 405 })` in `application/json` — nachgemessen am 2026-09-04 die
+  // EINZIGE Fehlerantwort ausserhalb der beiden Health-Sonden, die den
+  // Aufrufer noch nicht als problem+json erreichte.
+  it("answers POST with 405 as problem+json, with the Allow header", async () => {
     const { POST } = await import("../../app/api/v1/risk-acceptances/route");
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/v1/risk-acceptances", {
+        method: "POST",
+      }),
+    );
     expect(res.status).toBe(405);
+    expect(res.headers.get("content-type")).toContain("problem+json");
+    expect(res.headers.get("allow")).toBe("GET");
+    const body = (await res.json()) as {
+      type: string;
+      title: string;
+      detail: string;
+      requestId: string;
+    };
+    expect(body.type).toContain("method-not-allowed");
+    expect(body.title).toBe("Method Not Allowed");
+    expect(body.detail).toContain("/api/v1/risks/{riskId}/acceptance");
+    expect(body.requestId).toBeTruthy();
   });
 });

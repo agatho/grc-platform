@@ -4,8 +4,12 @@ import { db, process } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -38,11 +42,17 @@ export async function GET(
     `);
   });
 
-  const latest = (rows as any[])[0];
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+  const latest = (
+    rows as unknown as Array<{
+      rework_loops: unknown;
+      computed_at: Date | string | null;
+    }>
+  )[0];
   return Response.json({
     data: {
       reworkLoops: latest?.rework_loops ?? [],
       computedAt: latest?.computed_at ?? null,
     },
   });
-}
+});

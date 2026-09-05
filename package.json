@@ -9,8 +9,8 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
-    "test": "turbo test",
-    "test:coverage": "turbo test:coverage",
+    "test": "turbo run test --continue --concurrency=2",
+    "test:coverage": "turbo run test:coverage --continue --concurrency=1 || (tsx scripts/coverage-aggregate.ts; exit 1)",
     "test:coverage:aggregate": "tsx scripts/coverage-aggregate.ts",
     "setup": "bash scripts/setup.sh",
     "db:generate": "turbo db:generate --filter=@grc/db",
@@ -18,13 +18,35 @@
     "db:migrate-all": "turbo db:migrate-all --filter=@grc/db",
     "db:seed": "turbo db:seed --filter=@grc/db",
     "db:seed:demo": "bash scripts/seed-demo.sh",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "db:create-admin": "turbo db:create-admin --filter=@grc/db",
+    "db:seed:e2e-users": "npm run --silent db:seed:e2e-users --workspace=@grc/db",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "sbom:check": "node scripts/generate-sbom.mjs --check",
+    "notice": "node scripts/generate-notice.mjs",
+    "notice:check": "node scripts/generate-notice.mjs --check",
+    "license:check": "node scripts/license-gate.mjs",
+    "audit:gate": "node scripts/audit-gate.mjs",
+    "env:check": "node scripts/check-env-example.mjs",
+    "lint:ratchet": "node scripts/lint-ratchet.mjs",
+    "coverage:gate": "node scripts/coverage-gate.mjs",
+    "deadexports": "node scripts/audit-dead-exports.mjs",
+    "deadexports:gate": "node scripts/audit-dead-exports.mjs --check",
+    "deps:hygiene": "node scripts/check-dependency-hygiene.mjs",
+    "ci:actions-pinned": "node scripts/check-action-pinning.mjs",
+    "posttest:coverage": "tsx scripts/coverage-aggregate.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:web": "playwright test --config apps/web/playwright.config.ts",
+    "test:e2e:regression": "playwright test --config tests/e2e/playwright.config.ts"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "dotenv-cli": "^11.0.0",
+    "eslint": "^9.39.5",
     "prettier": "^3.9.6",
     "turbo": "^2.10.5",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "typescript-eslint": "^8.65.0"
   },
   "overrides": {
     "esbuild": ">=0.25.0",
@@ -35,9 +57,14 @@
     "exceljs": {
       "uuid": "^11.1.1"
     },
-    "next": {
-      "postcss": "^8.5.10"
-    }
+    "brace-expansion@^1": "^1.1.18",
+    "brace-expansion@^2": "^2.1.4",
+    "brace-expansion@^4": "^5.0.9",
+    "brace-expansion@^5": "^5.0.9",
+    "postcss": "^8.5.23",
+    "nanoid": "^3.3.18",
+    "js-yaml@^4": "^4.3.1",
+    "undici@^7": "^7.29.0"
   },
   "engines": {
     "node": ">=22.0.0"
@@ -45,6 +72,7 @@
   "packageManager": "npm@11.12.0",
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "resend": "^6.17.2"
+    "resend": "^6.17.2",
+    "server-only": "0.0.1"
   }
 }

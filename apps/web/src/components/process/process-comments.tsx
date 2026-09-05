@@ -200,7 +200,7 @@ export function ProcessComments({
         </div>
       ) : threadedComments.length === 0 ? (
         <div className="text-center py-8">
-          <MessageSquare className="mx-auto h-8 w-8 text-gray-300" />
+          <MessageSquare className="mx-auto h-8 w-8 text-gray-500" />
           <p className="mt-2 text-sm text-gray-500">
             {t("comments.noComments")}
           </p>
@@ -326,7 +326,8 @@ function CommentItem({
           {comment.isResolved && (
             <Badge
               variant="secondary"
-              className="text-[10px] bg-green-100 text-green-700"
+              // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+              className="text-[10px] bg-green-100 text-green-800"
             >
               {t("comments.resolved")}
             </Badge>

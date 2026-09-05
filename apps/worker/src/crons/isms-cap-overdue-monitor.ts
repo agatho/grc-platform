@@ -11,6 +11,8 @@ import {
 } from "@grc/db";
 import { and, eq, not, inArray, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface IsmsCapMonitorResult {
   ncProcessed: number;
@@ -70,36 +72,40 @@ export const processIsmsCapOverdueMonitor = withCronInstrumentation(
               ? "OVERDUE"
               : "WARNING";
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: nc.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "isms_nonconformity",
-          entityId: nc.id,
-          title: `[${urgencyLevel}] ISMS NC: ${nc.ncCode ?? ""} ${nc.title}`,
-          message:
-            diffDays < 0
-              ? `OVERDUE by ${Math.abs(diffDays)}d: ISO 27001 Kap. 10 corrective-action deadline for NC "${nc.title}" has passed.`
-              : `Nonconformity "${nc.title}" has ${diffDays}d remaining until the due date.`,
-          channel: "both" as const,
-          templateKey: "isms_cap_overdue",
-          templateData: {
-            kind: "nonconformity",
-            ncId: nc.id,
-            ncCode: nc.ncCode,
-            ncTitle: nc.title,
-            severity: nc.severity,
-            daysRemaining: Math.max(0, diffDays),
-            daysOverdue: diffDays < 0 ? Math.abs(diffDays) : 0,
-            urgencyLevel,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: nc.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "isms_nonconformity",
+            entityId: nc.id,
+            title: `[${urgencyLevel}] ISMS NC: ${nc.ncCode ?? ""} ${nc.title}`,
+            message:
+              diffDays < 0
+                ? `OVERDUE by ${Math.abs(diffDays)}d: ISO 27001 Kap. 10 corrective-action deadline for NC "${nc.title}" has passed.`
+                : `Nonconformity "${nc.title}" has ${diffDays}d remaining until the due date.`,
+            channel: "both" as const,
+            templateKey: "isms_cap_overdue",
+            templateData: {
+              kind: "nonconformity",
+              ncId: nc.id,
+              ncCode: nc.ncCode,
+              ncTitle: nc.title,
+              severity: nc.severity,
+              daysRemaining: Math.max(0, diffDays),
+              daysOverdue: diffDays < 0 ? Math.abs(diffDays) : 0,
+              urgencyLevel,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "isms-cap-overdue-monitor" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "isms-cap-overdue-monitor", scope: "item" }, err);
       }
     }
 
@@ -144,34 +150,38 @@ export const processIsmsCapOverdueMonitor = withCronInstrumentation(
               ? "OVERDUE"
               : "WARNING";
 
-        await db.insert(notification).values({
-          userId: recipientId,
-          orgId: ca.orgId,
-          type: "deadline_approaching" as const,
-          entityType: "isms_corrective_action",
-          entityId: ca.id,
-          title: `[${urgencyLevel}] ISMS CAPA: ${ca.title}`,
-          message:
-            diffDays < 0
-              ? `OVERDUE by ${Math.abs(diffDays)}d: Corrective action "${ca.title}" has passed its due date.`
-              : `Corrective action "${ca.title}" has ${diffDays}d remaining until the due date.`,
-          channel: "both" as const,
-          templateKey: "isms_cap_overdue",
-          templateData: {
-            kind: "corrective_action",
-            caId: ca.id,
-            caTitle: ca.title,
-            daysRemaining: Math.max(0, diffDays),
-            daysOverdue: diffDays < 0 ? Math.abs(diffDays) : 0,
-            urgencyLevel,
+        await insertNotification(
+          {
+            userId: recipientId,
+            orgId: ca.orgId,
+            type: "deadline_approaching" as const,
+            entityType: "isms_corrective_action",
+            entityId: ca.id,
+            title: `[${urgencyLevel}] ISMS CAPA: ${ca.title}`,
+            message:
+              diffDays < 0
+                ? `OVERDUE by ${Math.abs(diffDays)}d: Corrective action "${ca.title}" has passed its due date.`
+                : `Corrective action "${ca.title}" has ${diffDays}d remaining until the due date.`,
+            channel: "both" as const,
+            templateKey: "isms_cap_overdue",
+            templateData: {
+              kind: "corrective_action",
+              caId: ca.id,
+              caTitle: ca.title,
+              daysRemaining: Math.max(0, diffDays),
+              daysOverdue: diffDays < 0 ? Math.abs(diffDays) : 0,
+              urgencyLevel,
+            },
+            createdAt: now,
+            updatedAt: now,
           },
-          createdAt: now,
-          updatedAt: now,
-        });
+          { job: "isms-cap-overdue-monitor" },
+        );
 
         notified++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "isms-cap-overdue-monitor", scope: "item" }, err);
       }
     }
 

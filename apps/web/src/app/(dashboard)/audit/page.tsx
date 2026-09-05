@@ -20,7 +20,6 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
 
 interface AuditDashboard {

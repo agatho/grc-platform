@@ -8,7 +8,8 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const RING_COLORS: Record<string, string> = {
   adopt: "bg-green-100 text-green-900 border-green-300",
@@ -29,10 +30,10 @@ export default function TechRadarPage() {
 function TechRadarInner() {
   const t = useTranslations("eam");
   const [data, setData] = useState<{
-    technologies: any[];
-    quadrants: Record<string, any[]>;
+    technologies: UnvalidatedJson[];
+    quadrants: Record<string, UnvalidatedJson[]>;
   } | null>(null);
-  const [holdWithUsage, setHoldWithUsage] = useState<any[]>([]);
+  const [holdWithUsage, setHoldWithUsage] = useState<UnvalidatedJson[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {

@@ -1,15 +1,37 @@
-import { db, finding, aiPromptLog } from "@grc/db";
+// POST /api/v1/ai/root-cause-patterns — AI pattern detection across findings
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
+
+import { db, finding } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { requireModule } from "@grc/auth";
 import { aiRootCausePatternsSchema } from "@grc/shared";
-import { aiComplete } from "@grc/ai";
+import {
+  aiCompleteGoverned,
+  buildRootCausePatternPrompt,
+  rootCausePatternsSchema,
+  safeJsonParse,
+} from "@grc/ai";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-// POST /api/v1/ai/root-cause-patterns — AI pattern detection across findings
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
-  const body = aiRootCausePatternsSchema.safeParse(await req.json());
+  const moduleCheck = await requireModule("audit", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
+  const body = aiRootCausePatternsSchema.safeParse(
+    await req.json().catch(() => null),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -17,7 +39,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Determine date range
   const months =
     body.data.period === "3m" ? 3 : body.data.period === "6m" ? 6 : 12;
   const since = new Date();
@@ -54,70 +75,37 @@ export async function POST(req: Request) {
     });
   }
 
-  const prompt = `You are a GRC expert. Analyze these findings and identify root-cause patterns.
-
-Findings (${findings.length} total, last ${months} months):
-${JSON.stringify(
-  findings.map((f) => ({
-    title: f.title,
-    description: f.description?.substring(0, 200),
-    severity: f.severity,
-    source: f.source,
-  })),
-  null,
-  2,
-)}
-
-Identify top 5 patterns. Return JSON:
-{"patterns": [{"pattern": string, "frequency": number, "affectedFindingCount": number, "severity": "high"|"medium"|"low", "systemicRecommendation": string}]}`;
-
-  const startMs = Date.now();
-
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a GRC expert specializing in root cause analysis. Respond with valid JSON only, no markdown.",
-      },
-      { role: "user", content: prompt },
-    ],
-    maxTokens: 3000,
-    temperature: 0.2,
-  });
-
-  const latencyMs = Date.now() - startMs;
-
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "root-cause-patterns",
-    inputTokens: aiResponse.usage?.inputTokens ?? 0,
-    outputTokens: aiResponse.usage?.outputTokens ?? 0,
-    model: aiResponse.model,
-    latencyMs,
-    costUsd: String(
-      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
-    ),
-    cachedResult: false,
-  });
-
-  let result: unknown;
   try {
-    const cleaned = aiResponse.text.replace(/```json\n?|\n?```/g, "").trim();
-    result = JSON.parse(cleaned);
-  } catch {
-    result = { patterns: [] };
-  }
+    const result = await aiCompleteGoverned({
+      feature: "ai.root_cause_patterns",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      messages: buildRootCausePatternPrompt({
+        months,
+        findings: findings.map((f) => ({
+          title: f.title,
+          description: f.description,
+          severity: f.severity,
+          source: f.source,
+        })),
+      }),
+      maxTokens: 3000,
+      temperature: 0.2,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: rootCausePatternsSchema,
+    });
 
-  return Response.json({
-    data: {
-      period: body.data.period,
-      findingsAnalyzed: findings.length,
-      ...(result as object),
-      model: aiResponse.model,
-      provider: aiResponse.provider,
-    },
-  });
-}
+    return aiJson(
+      {
+        period: body.data.period,
+        findingsAnalyzed: findings.length,
+        patterns: result.data.patterns,
+        model: result.model,
+        provider: result.provider,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+});

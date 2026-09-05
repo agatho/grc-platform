@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
+import { ApiRequestError, fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +58,8 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [users, setUsers] = useState<UserOption[]>([]);
+  // [OP-050] Der Grund, aus dem die Liste leer ist, gehört an die Oberfläche.
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   // Local edit state
   const [isActive, setIsActive] = useState(false);
@@ -85,22 +88,33 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
     }
   }, [processId]);
 
-  // Fetch users for reviewer dropdown
+  // Nutzerliste für die Prüferauswahl.
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Hier stand
+  // `fetch("/api/v1/users?limit=200")` in einem `try { … } catch { /* ignore */ }`.
+  // `GET /api/v1/users` benutzt `paginate()`, das `limit > 100` seit
+  // #NIGHT-059 mit 422 beantwortet — die Auswahl blieb also **immer leer**,
+  // und der `catch` hat den einzigen Hinweis darauf verschluckt. Wer eine
+  // Prüfung terminieren wollte, fand niemanden, den er als Prüfer eintragen
+  // konnte, und bekam keinen Grund genannt.
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/users?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        setUsers(
-          (json.data ?? []).map((u: Record<string, string>) => ({
-            id: u.id,
-            name: u.name ?? u.email,
-            email: u.email,
-          })),
-        );
-      }
-    } catch {
-      // ignore
+      const rows = await fetchAllPages<Record<string, string>>("/api/v1/users");
+      setUsers(
+        rows.map((u) => ({
+          id: u.id!,
+          name: u.name ?? u.email!,
+          email: u.email!,
+        })),
+      );
+      setUsersError(null);
+    } catch (err) {
+      setUsers([]);
+      setUsersError(
+        err instanceof ApiRequestError
+          ? `Prüferliste nicht geladen (${err.status})`
+          : "Prüferliste nicht geladen",
+      );
     }
   }, []);
 
@@ -217,6 +231,15 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
                   ))}
                 </SelectContent>
               </Select>
+              {/*
+                [OP-050] Eine leere Prüferauswahl hiess vorher zweierlei und
+                sah einmal aus. Der Fehlerfall sagt es jetzt.
+              */}
+              {usersError !== null && (
+                <p role="alert" className="text-sm text-destructive">
+                  {usersError}
+                </p>
+              )}
             </div>
 
             {/* Next review date */}

@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {
-  FileSearch,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { FileSearch, Plus, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

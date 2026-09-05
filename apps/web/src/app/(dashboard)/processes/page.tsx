@@ -31,7 +31,6 @@ import { ProcessGalleryCard } from "@/components/process/process-gallery-card";
 import { ProcessBulkActions } from "@/components/process/process-bulk-actions";
 import { BpmDashboardKpis } from "@/components/process/bpm-dashboard-kpis";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -40,7 +39,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@grc/ui";
-import type { Process, ProcessStatus } from "@grc/shared";
+import type { ProcessStatus } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -78,9 +80,9 @@ export default function ProcessesPage() {
 function ProcessLandscape() {
   const t = useTranslations("process");
   const tGov = useTranslations("processGovernance");
-  const tActions = useTranslations("actions");
+  const _tActions = useTranslations("actions");
   const tMap = useTranslations("processMap");
-  const router = useRouter();
+  const _router = useRouter();
 
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -603,6 +605,9 @@ function TreeNodeItem({
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(node.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => activateOnKey(e, () => onSelect(node.id))}
       >
         {/* Bulk selection checkbox */}
         <input

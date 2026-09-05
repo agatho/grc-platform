@@ -8,20 +8,14 @@ import { ArrowLeft, Loader2, Link2, Plus, History, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import type { WorkItem, WorkItemLink } from "@grc/shared";
+import type { WorkItem } from "@grc/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import { useDateFormat } from "@/lib/format-date";
 import {
   Dialog,
@@ -530,7 +524,7 @@ function HistoryTab({
   itemId: string;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const tAudit = useTranslations("auditLog");
+  const _tAudit = useTranslations("auditLog");
   const { formatDateTime } = useDateFormat();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -629,7 +623,7 @@ function HistoryTab({
 
 export default function WorkItemDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const itemId = params.id as string;
 
   const t = useTranslations("workItems");
@@ -660,7 +654,7 @@ export default function WorkItemDetailPage() {
   // Register tab when item loads
   useEffect(() => {
     if (item) {
-      const IconComp = item.typeIcon ? getLucideIcon(item.typeIcon) : null;
+      const _IconComp = item.typeIcon ? getLucideIcon(item.typeIcon) : null;
       openTab({
         id: `wi-${itemId}`,
         label: item.elementId ? `${item.elementId} - ${item.name}` : item.name,

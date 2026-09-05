@@ -4,6 +4,7 @@
 import { db, regulatoryChange, regulatoryDigest } from "@grc/db";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processRegulatoryDigest = withCronInstrumentation(
   "regulatory-digest-generator",
@@ -39,8 +40,15 @@ export const processRegulatoryDigest = withCronInstrumentation(
           criticalCount: orgChange.criticalCount,
         });
         digestsGenerated++;
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "regulatory-digest-generator",
+            scope: "In production: generate AI summary of changes",
+          },
+          err,
+        );
       }
     }
 

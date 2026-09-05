@@ -96,7 +96,12 @@ export function CustomStepDialog({
           const j = await r.json();
           setUsers(j.data ?? []);
         }
-      } catch {}
+      } catch {
+        // [WP12 · S12-21] Deliberately silent: this is a best-effort prefetch
+        // for a picker. A failure leaves the list empty, which the component
+        // already renders as "no entries"; surfacing a toast here would fire
+        // on every transient network blip while the dialog is opening.
+      }
     })();
   }, [open]);
 

@@ -161,7 +161,7 @@ function FAIRCompareInner() {
             <tbody>
               {risks
                 .sort((a, b) => b.aleP50 - a.aleP50)
-                .map((r, idx) => (
+                .map((r, _idx) => (
                   <tr key={r.riskId} className="border-b last:border-0">
                     <td className="p-2 font-medium">{r.riskTitle}</td>
                     <td className="p-2">

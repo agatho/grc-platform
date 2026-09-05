@@ -2,6 +2,14 @@ import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { getAccessibleOrgIds } from "@grc/auth";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the
+// `requestDbStorage.run(...)` frame that `withAuth` -> establishRequestScopedContext
+// mutates with the org-pinned connection (apps/web/src/lib/api-wrapper.ts:113).
+// Without it that helper falls back to `requestDbStorage.enterWith(...)`, which
+// Next drops across the `await` in withAuth (api.ts:184-196), the handler's
+// queries run on the context-less base pool, and RLS filters every row — the
+// route answers 200 with an EMPTY list instead of the tenant's data.
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface OrgNode {
   id: string;
@@ -32,7 +40,7 @@ type OrgRow = Record<string, unknown> & {
 };
 
 // GET /api/v1/organizations/tree — Corporate hierarchy with GDPR fields (admin)
-export async function GET() {
+export const GET = withErrorHandler(async function GET() {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -84,4 +92,4 @@ export async function GET() {
   }
 
   return Response.json({ data: buildTree(null) });
-}
+});

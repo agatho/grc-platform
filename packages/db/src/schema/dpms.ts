@@ -17,6 +17,7 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
 import { securityIncident } from "./isms";
@@ -138,6 +139,11 @@ export const ropaEntry = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    processId: uuid("process_id"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("ropa_org_idx").on(t.orgId),
@@ -264,10 +270,22 @@ export const dpia = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    processId: uuid("process_id"),
+    // STUFE2-E (0454): ausloesender Prozessschritt. NULL = die DPIA gilt
+    // fuer den ganzen Prozess. ON DELETE SET NULL — der Elementbezug ist eine
+    // Verfeinerung, die Akte bleibt ohne ihn gueltig. Drizzle-Fremdschluessel
+    // ausgelassen (Zyklus dpms.ts -> process.ts); die Bedingung
+    // `dpia_process_step_fk` steht in der Migration.
+    processStepId: uuid("process_step_id"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("dpia_org_idx").on(t.orgId),
     index("dpia_status_idx").on(t.orgId, t.status),
+    index("dpia_process_step_idx").on(t.processStepId),
   ],
 );
 
@@ -299,6 +317,13 @@ export const dpiaRisk = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    ermRiskId: uuid("erm_risk_id"),
+    ermSyncedAt: timestamp("erm_synced_at", { withTimezone: true }),
+    numericImpact: integer("numeric_impact"),
+    numericLikelihood: integer("numeric_likelihood"),
+    riskScore: integer("risk_score").generatedAlwaysAs(
+      sql`(COALESCE(numeric_likelihood, 0) * COALESCE(numeric_impact, 0))`,
+    ),
   },
   (t) => [
     index("dpia_risk_org_idx").on(t.orgId),
@@ -371,6 +396,15 @@ export const dsr = pgTable(
     closedAt: timestamp("closed_at", { withTimezone: true }),
     handlerId: uuid("handler_id").references(() => user.id),
     notes: text("notes"),
+    // #WP8-S07-13 (Migration 0430) — Art. 15/17/20 waren reine
+    // Vorgangssteuerung: `dsr` hatte keinen Bezug auf gefundene
+    // Datensaetze und kein Ergebnisartefakt. Diese vier Spalten sind der
+    // Anker fuer den Sammellauf `dsr_collect_subject_data()` und den
+    // Loeschlauf `gdpr_erase_subject()`.
+    subjectUserId: uuid("subject_user_id"),
+    collectedAt: timestamp("collected_at", { withTimezone: true }),
+    collectedBy: uuid("collected_by"),
+    collectionSummary: jsonb("collection_summary"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -378,6 +412,10 @@ export const dsr = pgTable(
       .notNull()
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("dsr_org_idx").on(t.orgId),
@@ -461,6 +499,13 @@ export const dataBreach = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    affectedProcessIds: uuid("affected_process_ids")
+      .array()
+      .default(sql`'{}'::uuid[]`),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("db_org_idx").on(t.orgId),

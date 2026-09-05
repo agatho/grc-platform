@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
-  Shield,
   Users,
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface UserRole {
   userId: string;
@@ -31,22 +31,42 @@ interface UserRole {
 }
 
 export default function AccessReviewsPage() {
-  const t = useTranslations("accessLog");
-  const { data: session } = useSession();
+  const _t = useTranslations("accessLog");
+  const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
   const [users, setUsers] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState<Set<string>>(new Set());
+  const [_reviewing, _setReviewing] = useState<Set<string>>(new Set());
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [revoked, setRevoked] = useState<Set<string>>(new Set());
+  const [loadError, setLoadError] = useState(false);
 
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Vorher `limit=200` + `if (res.ok)` ohne
+  // else. Der Server lehnt `limit > 100` mit 422 ab (#NIGHT-059), also stand
+  // hier für jeden Mandanten eine leere Zugriffsüberprüfung — und eine leere
+  // Zugriffsüberprüfung liest sich wie das Ergebnis „keine Berechtigungen zu
+  // prüfen", nicht wie ein Fehler. Jetzt geblättert und der Fehler benannt.
   const fetchUsers = useCallback(async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const res = await fetch("/api/v1/users?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        const userData = (json.data ?? []).map((u: any) => ({
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `(u: any)` — typed to the
+      // fields this mapper actually reads.
+      type UserRow = {
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        roles?: Array<{
+          role?: string;
+          lineOfDefense?: string | null;
+          department?: string | null;
+        }>;
+        lastLoginAt?: string | null;
+        isActive?: boolean;
+      };
+      const rows = await fetchAllPages<UserRow>("/api/v1/users");
+      setUsers(
+        rows.map((u) => ({
           userId: u.id,
           userName: u.name ?? "Unknown",
           userEmail: u.email ?? "",
@@ -55,9 +75,12 @@ export default function AccessReviewsPage() {
           department: u.roles?.[0]?.department ?? null,
           lastLogin: u.lastLoginAt ?? null,
           isActive: u.isActive ?? true,
-        }));
-        setUsers(userData);
-      }
+        })),
+      );
+    } catch (err) {
+      console.error("access-reviews: Nutzerliste nicht geladen", err);
+      setUsers([]);
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -110,6 +133,18 @@ export default function AccessReviewsPage() {
 
   return (
     <div className="space-y-6">
+      {/* [ARCTOS-FULL-2026-08-31 · OP-050] Ein Ladefehler darf hier nicht als
+          „keine Berechtigungen zu prüfen" durchgehen. */}
+      {loadError && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          <AlertTriangle size={16} />
+          Benutzer konnten nicht geladen werden. Die Liste unten ist
+          unvollständig.
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

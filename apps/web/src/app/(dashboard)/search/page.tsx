@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -99,7 +100,7 @@ function SearchPageInner() {
       .then((r) => r.json())
       .then((json) =>
         setAvailableTags(
-          (json.data ?? []).map((t: any) => ({
+          (json.data ?? []).map((t: UnvalidatedJson) => ({
             name: t.name,
             color: t.color,
             category: t.category,

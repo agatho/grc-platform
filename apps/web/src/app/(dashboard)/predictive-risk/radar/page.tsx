@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Radar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RadarDataPoint } from "@grc/shared";
 
 const RISK_COLORS: Record<string, string> = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useId } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 
@@ -53,6 +53,11 @@ const HEALTH_LABELS = {
 };
 
 export function PredictiveWidget({ journeyId }: { journeyId: string }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [data, setData] = useState<PredictiveData | null>(null);
   const [shiftDays, setShiftDays] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -68,7 +73,12 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
           const j = await r.json();
           setData(j.data);
         }
-      } catch {}
+      } catch {
+        // [WP12 · S12-21] Deliberately silent: this is a best-effort prefetch
+        // for a picker. A failure leaves the list empty, which the component
+        // already renders as "no entries"; surfacing a toast here would fire
+        // on every transient network blip while the dialog is opening.
+      }
       setLoading(false);
     })();
   }, [journeyId, shiftDays]);
@@ -181,11 +191,15 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
         )}
 
         <div>
-          <label className="text-xs text-slate-500">
+          <label
+            htmlFor={`${a11yId}-what-if-verzogerung-in-tagen`}
+            className="text-xs text-slate-500"
+          >
             What-if: Verzögerung in Tagen
           </label>
           <div className="mt-1 flex items-center gap-3">
             <input
+              id={`${a11yId}-what-if-verzogerung-in-tagen`}
               type="range"
               min="-30"
               max="90"

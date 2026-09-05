@@ -18,7 +18,6 @@ import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { RiskScoreBadge } from "@/components/risk/risk-score-badge";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@grc/ui";
 import type { RiskCategory, RiskSource, TreatmentStrategy } from "@grc/shared";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -128,7 +128,7 @@ export default function NewRiskPage() {
 
 function NewRiskForm() {
   const t = useTranslations("risk");
-  const tActions = useTranslations("actions");
+  const _tActions = useTranslations("actions");
   const router = useRouter();
 
   // Pre-fill from catalog entry query params
@@ -155,20 +155,23 @@ function NewRiskForm() {
 
   // Fetch users for owner picker
   useEffect(() => {
-    fetch("/api/v1/users?limit=200")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
+    // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ die Auswahl des
+    // Risikoeigentümers war leer, und `catch(() => {})` hat den 422 restlos
+    // verschluckt. Ein Pflichtfeld ohne Optionen blockiert das Anlegen eines
+    // Risikos, ohne zu sagen warum.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
+        setOrgUsers(
+          rows.map((u) => ({
+            id: u.id as string,
+            name: (u.name as string) || (u.email as string),
+            email: u.email as string,
+          })),
+        );
       })
-      .then((json) => {
-        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
-          id: u.id as string,
-          name: (u.name as string) || (u.email as string),
-          email: u.email as string,
-        }));
-        setOrgUsers(users);
-      })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("risks/new: Nutzerliste nicht geladen", err);
+      });
   }, []);
 
   // Computed scores.
@@ -392,7 +395,18 @@ function NewRiskForm() {
                   "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
                   isActive && "bg-slate-900 text-white",
                   isComplete && "bg-emerald-100 text-emerald-800",
-                  !isActive && !isComplete && "bg-gray-100 text-gray-400",
+                  // [E2E-TRIAGE-2026-09-02 · C-05b] Was `text-gray-400`. That
+                  // token is 4.47:1 on `bg-gray-100` — axe measures exactly
+                  // that on this page ("insufficient color contrast of 4.47,
+                  // foreground #757069, background #f6f4f2, 14px"), which is a
+                  // WCAG 1.4.3 AA failure on a 14px label. `gray-400` cannot be
+                  // darkened far enough to fix this at the token level without
+                  // passing `gray-500` (4.61:1 there) and collapsing the
+                  // hierarchy — it is simply not a body-text colour on a
+                  // gray-100 fill. `gray-600` is 6.94:1 and still reads as the
+                  // muted, not-yet-reached step next to the active
+                  // (`slate-900`) and completed (`emerald-800`) ones.
+                  !isActive && !isComplete && "bg-gray-100 text-gray-600",
                 )}
               >
                 {isComplete ? (

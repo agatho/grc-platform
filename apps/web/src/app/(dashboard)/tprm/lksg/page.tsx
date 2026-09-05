@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  Shield,
-  RefreshCcw,
-  AlertTriangle,
-  Pencil,
-} from "lucide-react";
+import { Loader2, RefreshCcw, AlertTriangle, Pencil } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";

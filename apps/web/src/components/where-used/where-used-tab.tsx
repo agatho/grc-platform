@@ -131,10 +131,14 @@ function getEntityMeta(type: string) {
 const RELATIONSHIP_COLORS: Record<string, string> = {
   mitigates: "bg-blue-100 text-blue-700",
   affects: "bg-red-100 text-red-700",
-  implemented_in: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — die einzige Lücke der
+  // -100/-700-Familie.
+  implemented_in: "bg-green-100 text-green-800",
   documented_in: "bg-amber-100 text-amber-700",
   found_in: "bg-orange-100 text-orange-700",
-  affected: "bg-red-100 text-red-600",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 3,90:1; die Schwester `affects`
+  // zwei Zeilen höher stand schon richtig auf red-700.
+  affected: "bg-red-100 text-red-700",
   tested_by: "bg-teal-100 text-teal-700",
   linked_to: "bg-gray-100 text-gray-700",
   depends_on: "bg-purple-100 text-purple-700",

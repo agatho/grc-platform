@@ -47,9 +47,23 @@ function buildLocale(locale: string): void {
   }
 
   // Spread common into root for backward compatibility (useTranslations("nav.xxx"))
-  // Common content is available both at root level and under "common" key
+  // Common content is available both at root level and under "common" key.
+  //
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-05] The `common` key used to be
+  // overwritten by the whole common.json, which shadowed the NESTED `common`
+  // node inside it ({loading, error, total, errorTitle, retry, …}). Both
+  // `useTranslations("common") + t("errorTitle")` and
+  // `useTranslations() + t("common.error")` therefore resolved to undefined.
+  // The nested node is merged into the namespace instead. This merge is
+  // mirrored in `apps/web/src/i18n/request.ts` (`mergeCommonNamespace`) and
+  // `scripts/audit-i18n-usage.mjs` fails CI if the two bundles drift apart.
   const commonContent = (merged.common ?? {}) as Record<string, unknown>;
-  const result = { ...commonContent, ...merged };
+  const nestedCommon = (commonContent.common ?? {}) as Record<string, unknown>;
+  const result = {
+    ...commonContent,
+    ...merged,
+    common: { ...commonContent, ...nestedCommon },
+  };
 
   const outPath = join(MESSAGES_DIR, `${locale}.json`);
   writeFileSync(outPath, JSON.stringify(result, null, 2) + "\n", "utf-8");

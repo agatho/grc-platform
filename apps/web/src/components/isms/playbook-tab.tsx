@@ -252,7 +252,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
 
         {suggestions.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-8">
-            <Play size={24} className="text-gray-300 mb-2" />
+            <Play size={24} className="text-gray-500 mb-2" />
             <p className="text-sm text-gray-500">{t("noPlaybook")}</p>
           </div>
         )}
@@ -493,7 +493,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                       ) : tk.status === "cancelled" ? (
                         <XCircle size={14} className="text-gray-400 shrink-0" />
                       ) : (
-                        <Clock size={14} className="text-blue-400 shrink-0" />
+                        <Clock size={14} className="text-blue-600 shrink-0" />
                       )}
                       <span
                         className={`text-xs truncate ${
@@ -510,7 +510,9 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                       ) && (
                         <Badge
                           variant="outline"
-                          className="text-[8px] bg-red-50 text-red-600 border-red-200 shrink-0"
+                          // [ARCTOS-FULL-2026-08-31 · OP-049] red-600 auf red-50 = 4,36:1, und
+                          // bei 8 px greift keine Grosstext-Ausnahme.
+                          className="text-[8px] bg-red-50 text-red-700 border-red-200 shrink-0"
                         >
                           Critical
                         </Badge>
@@ -538,9 +540,11 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                         variant="outline"
                         className={`text-[8px] ${
                           tk.status === "done"
-                            ? "bg-green-50 text-green-600"
+                            ? // [ARCTOS-FULL-2026-08-31 · OP-049] 3,07:1 bzw. 4,36:1 auf den
+                              // sehr hellen -50-Flächen, bei 8 px Schriftgrösse.
+                              "bg-green-50 text-green-700"
                             : tk.status === "overdue"
-                              ? "bg-red-50 text-red-600"
+                              ? "bg-red-50 text-red-700"
                               : "bg-gray-50 text-gray-600"
                         }`}
                       >

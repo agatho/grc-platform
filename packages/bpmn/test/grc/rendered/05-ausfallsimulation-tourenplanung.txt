@@ -1,0 +1,22 @@
+Tourenplanung — Ausfall von DispoSuite
+
+Sicht: Kontinuität (BCM) — Was steht still, wenn eine Anwendung ausfällt — und ab wann reißt das MTPD?
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+Ausfall „DispoSuite": 1 von 4 Schritten betroffen (1 direkt, 0 blockiert), 1 mit Ausweichverfahren, MTPD 4 h — Reißpunkt in 1 h 45 min.
+
+Der Prozess beginnt mit „Tour angefordert“. Schritt 1: „Tour angefordert“ führt zu „Route optimieren“. Schritt 2: „Route optimieren“ führt zu „Fahrzeuge disponieren“. Schritt 3: „Fahrzeuge disponieren“ führt zu „Tour geplant“. Schritt 4: „Tour geplant“ endet hier. Ausfall „DispoSuite": 1 von 4 Schritten betroffen (1 direkt, 0 blockiert), 1 mit Ausweichverfahren, MTPD 4 h — Reißpunkt in 1 h 45 min. 3 Elemente tragen GRC-Hinweise in der Sicht „Kontinuität (BCM)".
+
+1. Tour angefordert (Startereignis)
+2. Route optimieren (Aufgabe)
+    Ausfallsimulation: Direkt vom Ausfall betroffen (DispoSuite), MTPD 4 h.
+    Kontinuität: Kritikalität sehr hoch, MTPD 4 h, RTO 2 h, RPO 15 min, kein Ausweichverfahren dokumentiert. Kein Ausweichverfahren dokumentiert.
+    Anwendungen: Anwendungen: DispoSuite (Kritikalität sehr hoch, 2 offene Schwachstellen).
+    Weitere Hinweise: Kritikalität sehr hoch, MTPD 4 h, RTO 2 h, RPO 15 min, kein Ausweichverfahren dokumentiert.
+3. Fahrzeuge disponieren (Aufgabe)
+    Ausfallsimulation: Ausweichverfahren vorhanden, trägt 4 h: Manuelle Disposition über Telefonliste
+    Kontinuität: Kritikalität hoch, MTPD 8 h, RTO 4 h, RPO 1 h, Ausweichverfahren: Manuelle Disposition über Telefonliste. Ausweichverfahren vorhanden: Manuelle Disposition über Telefonliste.
+    Anwendungen: Anwendungen: ERP (Kritikalität hoch).
+    Kommentare: Kommentare: 2 offen von 2.
+    Weitere Hinweise: Kritikalität hoch, MTPD 8 h, RTO 4 h, RPO 1 h, Ausweichverfahren: Manuelle Disposition über Telefonliste.
+4. Tour geplant (Endereignis)
+    Kontinuität: Kritikalität mittel, MTPD 12 h, kein Ausweichverfahren dokumentiert. Kein Ausweichverfahren dokumentiert.

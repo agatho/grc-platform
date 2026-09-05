@@ -3,6 +3,8 @@
 // XXE prevention: external entity processing is disabled
 
 import type { SamlMetadataResult } from "@grc/shared";
+// #S04-02: SSRF guard (literal + DNS + per-redirect-hop re-validation).
+import { safeFetch } from "@grc/shared/lib/url-safety-server";
 
 /**
  * Safe XML tag content extractor (no external dependencies).
@@ -128,9 +130,26 @@ export function parseSAMLMetadata(metadataXml: string): SamlMetadataResult {
 export async function fetchAndParseSAMLMetadata(
   metadataUrl: string,
 ): Promise<SamlMetadataResult> {
-  const response = await fetch(metadataUrl, {
+  // #S04-02 (ARCTOS-FULL-2026-08-31, High) — SSRF. This was a bare
+  // `fetch(metadataUrl, …)` on an admin-supplied URL that only passed
+  // `z.string().url()`, so `http://169.254.169.254/latest/meta-data/…`
+  // (cloud IMDS credentials), `http://postgres:5432` and internal admin
+  // panels were reachable from the app server, with parts of the response
+  // reflected back through `entityId`/`ssoUrl`.
+  //
+  // `safeFetch` applies the project's existing url-safety guard — literal
+  // + DNS-resolved private/reserved-range check — to the initial URL AND
+  // to every redirect hop, and enforces https.
+  //
+  // WP5 scope note: this file belongs to WP3 (SAML signature work). The
+  // change is deliberately limited to swapping `fetch` for `safeFetch`;
+  // no parsing or validation logic is touched.
+  const response = await safeFetch(metadataUrl, {
     headers: { Accept: "application/xml, text/xml" },
-    signal: AbortSignal.timeout(10000),
+    timeoutMs: 10000,
+    requireHttps: true,
+    purpose: "SAML metadata retrieval",
+    maxRedirects: 3,
   });
 
   if (!response.ok) {

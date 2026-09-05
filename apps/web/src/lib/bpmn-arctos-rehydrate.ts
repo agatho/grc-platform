@@ -171,7 +171,7 @@ interface ExportLinkRow {
 export async function buildArctosLinksFromDb(
   tx: SqlExecutor,
   processId: string,
-  orgId: string,
+  _orgId: string,
 ): Promise<ExportLinks[]> {
   const rows = (await tx.execute(sql`
     SELECT

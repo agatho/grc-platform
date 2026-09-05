@@ -1,11 +1,15 @@
 name: Schema Drift Report (F-18)
 
-# Runs the static audit-rls-coverage tool + checks that every NEW table
-# added via drizzle migration has a matching Drizzle schema TS file.
-# Does NOT hit any live DB -- purely static, runs on every PR.
+# Runs the static audit-rls-coverage tool + a LIVE deep schema comparison.
 #
-# The deep cross-check of Drizzle-Schema vs. running DB happens in
-# production via GET /api/v1/health/schema-drift (admin-only endpoint).
+# [ARCTOS-FULL-2026-08-31 / WP1 · S09-09]
+# Vorher hielt dieser Workflow ausdruecklich fest, er treffe "purely static"
+# keine laufende Datenbank, und verwies fuer den Tiefenabgleich auf den
+# Produktions-Endpunkt. Der verglich damals aber nur Tabellennamen, sodass die
+# Spalten-, Typ- und RLS-Drift in keiner Umgebung geprueft wurde. Der Workflow
+# baut jetzt zusaetzlich das Schema aus den Migrationen auf und laesst
+# denselben Vergleicher laufen, den auch der Endpunkt benutzt
+# (packages/db/tests/schema-drift.ts).
 
 on:
   pull_request:
@@ -18,36 +22,125 @@ permissions:
   contents: read
 
 jobs:
-  static-schema-audit:
-    name: Static schema + RLS coverage
+  # [ARCTOS-FULL-2026-08-31 · OP-142]
+  #
+  # Hier standen ZWEI Jobs: `static-schema-audit` (RLS-Abdeckung) und
+  # `live-schema-drift` (Schemavergleich). Der erste konnte nicht laufen:
+  #
+  #   * er rief `node scripts/audit-rls-coverage.mjs` OHNE vorheriges
+  #     `npm ci` — das Skript importiert `postgres`, also brach es mit
+  #     ERR_MODULE_NOT_FOUND ab (gemessen);
+  #   * und selbst mit Abhaengigkeiten haette er keine Datenbank gehabt: der
+  #     Job hatte keinen `services:`-Block, das Skript faellt ohne
+  #     DATABASE_URL auf `localhost:5432/grc_platform` zurueck und bekommt
+  #     ECONNREFUSED (gemessen).
+  #
+  # Der Folgeschritt „Fail if RLS_MISSING count increased" las danach die
+  # EINGECHECKTE CSV — also einen Stand, den dieser Lauf nie gemessen hatte —
+  # und verglich ihn mit der Baseline 1, obwohl dort seit WP2 eine 0 steht.
+  # Ein Tor, dessen Messschritt immer abbricht und dessen Bewertungsschritt
+  # eine fremde Datei liest, ist kein Tor.
+  #
+  # Beide Jobs sind zu einem zusammengelegt: die RLS-Abdeckung braucht genau
+  # dieselbe Vorbereitung wie der Schemavergleich (Abhaengigkeiten, leere
+  # Datenbank, vollstaendige Migrationssequenz), und getrennt haette der
+  # RLS-Teil sie ein zweites Mal aufbauen muessen.
+  schema-and-rls:
+    name: Schema-Drift und RLS-Abdeckung gegen eine frisch migrierte Datenbank
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: timescale/timescaledb-ha:pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_drift
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_drift
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
+          cache: npm
 
-      - name: Run RLS + audit-trigger coverage audit
+      - run: npm ci
+
+      - name: Create extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_drift -v ON_ERROR_STOP=1 -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            CREATE EXTENSION IF NOT EXISTS vector;
+            CREATE EXTENSION IF NOT EXISTS timescaledb;
+          "
+
+      - name: Build the schema from the migrations
+        working-directory: packages/db
+        run: npx tsx src/migrate-all.ts
+
+      - name: Compare Drizzle schema against the database
+        working-directory: packages/db
+        run: npx tsx tests/schema-drift-report.ts --fail-on-drift
+
+      - name: Provision grc_app + grc_worker (same script as deploy)
+        env:
+          DIRECT_PSQL: "1"
+          PGPASSWORD: grc_test_password
+          PGHOST: localhost
+          PGUSER: grc
+          GRC_APP_PASSWORD: grc_app_dev_password
+          GRC_WORKER_PASSWORD: grc_worker_dev_password
+        run: bash deploy/provision-grc-app.sh grc_drift
+
+      - name: RLS-Abdeckung messen
         run: node scripts/audit-rls-coverage.mjs
 
       - name: Upload report as artifact
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: rls-coverage-report
           path: docs/security/rls-coverage-report.*
           retention-days: 30
 
-      - name: Fail if RLS_MISSING count increased
+      # [ARCTOS-FULL-2026-08-31 · OP-142] Der Vorgaenger zaehlte NUR
+      # `RLS_MISSING` — also „Tabelle ohne RLS". Das ist eine von sechs
+      # Befundarten, die das Werkzeug kennt, und ausgerechnet nicht die, die
+      # S01-07 wieder einschleppen wuerde: eine FOR-ALL-Policy mit
+      # `org_id IS NULL` laesst RLS eingeschaltet und eine Policy stehen. Sie
+      # erscheint als `WEAK_POLICY` mit dem Defekttext
+      # „org_id IS NULL writable (S01-07)" — und lief an einem
+      # RLS_MISSING-Zaehler vorbei.
+      #
+      # Migration 0394 hat die sieben damals vorhandenen Faelle behoben, aber
+      # als EINMAL-Scan: eine spaetere Migration mit derselben Form haette
+      # niemand gemeldet. Dieser Schritt ist der wiederkehrende Scan. Er
+      # zaehlt JEDEN Status ausser OK und PLATFORM_EXEMPT und gibt die
+      # Defekttexte aus, damit die Fehlermeldung sagt, was zu tun ist.
+      #
+      # Gegengeprueft: mit einer kuenstlich angelegten Policy
+      #   CREATE POLICY … ON regulatory_source FOR ALL
+      #     USING (org_id IS NULL OR org_id = <org-GUC>)
+      # meldet der Schritt
+      #   regulatory_source WEAK_POLICY "…: org_id IS NULL writable (S01-07)"
+      # und bricht ab; nach DROP POLICY ist er wieder gruen.
+      - name: Keine RLS-Luecke (auch keine schwache Policy — S01-07)
         run: |
-          MISSING=$(grep -c ",RLS_MISSING$" docs/security/rls-coverage-report.csv || echo 0)
-          echo "RLS_MISSING count: $MISSING"
-          # Baseline: 131 tables without RLS (nach 0105_phase3_rls_audit_triggers).
-          # Anything above that means ein neuer Tenant-Table wurde ohne RLS
-          # hinzugefuegt. Bei legitim erweiterter Coverage: Baseline senken.
-          BASELINE=131
-          if [ "$MISSING" -gt "$BASELINE" ]; then
-            echo "::error::RLS_MISSING count $MISSING exceeds baseline $BASELINE -- a new table was added without RLS."
+          GAPS=$(awk -F, 'NR>1 && $7 != "OK" && $7 != "PLATFORM_EXEMPT" {n++} END{print n+0}' \
+            docs/security/rls-coverage-report.csv)
+          echo "RLS-Luecken: $GAPS"
+          if [ "$GAPS" -ne 0 ]; then
+            awk -F, 'NR>1 && $7 != "OK" && $7 != "PLATFORM_EXEMPT" {print "  " $7 "  " $1 "  " $8}' \
+              docs/security/rls-coverage-report.csv
+            echo "::error::$GAPS Objekte ohne wirksame RLS oder mit schwacher Policy — siehe Artefakt rls-coverage-report."
             exit 1
           fi

@@ -2,7 +2,11 @@ import { z } from "zod";
 
 // Sprint 19: Bulk Import/Export Zod schemas
 
-const importEntityTypeValues = [
+// #S10-19 (ARCTOS-FULL-2026-08-31): exported so the worker can re-validate
+// `export_schedule.entity_types` at execution time instead of trusting that
+// every row went through the Zod layer. Rows can also arrive from seeds,
+// migrations or a future import path.
+export const importEntityTypeValues = [
   "risk",
   "control",
   "asset",
@@ -70,6 +74,11 @@ export const exportRequestSchema = z.object({
 export const bulkExportSchema = z.object({
   entityTypes: z.array(z.enum(importEntityTypeValues)).min(1).max(8),
   format: z.enum(exportFormatValues).default("csv"),
+  // #WP8-S07-14 / #WP3-S02-07 — Kennung einer Freigabe, die eine ZWEITE
+  // Person erteilt hat (`export_approval`, Migration 0432). Pflicht, sobald
+  // der Export personenbezogene Daten berührt; die Route entscheidet das
+  // über `decideBulkExport()`, nicht das Schema.
+  approvalId: z.string().uuid().optional().nullable(),
 });
 
 // ─── Export Schedule ────────────────────────────────────────

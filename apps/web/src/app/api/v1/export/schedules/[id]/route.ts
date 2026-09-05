@@ -2,9 +2,13 @@ import { db, exportSchedule } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { updateExportScheduleSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/export/schedules/:id — Get single schedule
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -23,10 +27,9 @@ export async function GET(
   }
 
   return Response.json(schedule);
-}
-
+});
 // PATCH /api/v1/export/schedules/:id — Update schedule
-export async function PATCH(
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -64,10 +67,9 @@ export async function PATCH(
   });
 
   return Response.json(updated);
-}
-
+});
 // DELETE /api/v1/export/schedules/:id — Delete schedule
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -86,4 +88,4 @@ export async function DELETE(
   }
 
   return Response.json({ success: true });
-}
+});

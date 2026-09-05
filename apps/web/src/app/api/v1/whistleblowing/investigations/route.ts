@@ -12,6 +12,11 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // #WAVE13-RBAC-03: risk_manager removed from all three handlers — HinSchG
 // case files contain protected reporter identities (§§16, 32 HinSchG) and
@@ -19,7 +24,7 @@ import {
 // whistleblowing officer set + auditor (LoD3 oversight).
 
 // GET /api/v1/whistleblowing/investigations
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
   // that the channel exists + works, without exposing case-content).
@@ -51,10 +56,9 @@ export async function GET(req: Request) {
     .limit(limit)
     .offset(offset);
   return paginatedResponse(rows, rows.length, limit, offset);
-}
-
+});
 // POST /api/v1/whistleblowing/investigations — Start investigation from case
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
   // that the channel exists + works, without exposing case-content).
@@ -100,10 +104,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // PATCH /api/v1/whistleblowing/investigations — Advance phase
-export async function PATCH(req: Request) {
+export const PATCH = withErrorHandler(async function PATCH(req: Request) {
   // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
   // that the channel exists + works, without exposing case-content).
@@ -124,6 +127,9 @@ export async function PATCH(req: Request) {
   const investigationId = url.searchParams.get("id");
   if (!investigationId)
     return Response.json({ error: "id required" }, { status: 400 });
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
+  if (!isUuidParam(investigationId)) return invalidUuidParam(req, "id");
 
   const body = advanceInvestigationPhaseSchema.safeParse(await req.json());
   if (!body.success)
@@ -183,4 +189,4 @@ export async function PATCH(req: Request) {
   });
 
   return Response.json({ data: updated });
-}
+});

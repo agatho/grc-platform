@@ -5,6 +5,7 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
+import { requireRow } from "./sql-result";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -347,9 +348,10 @@ async function seedRisks() {
           RETURNING id
         `);
 
-        riskIds.push(result[0].id);
+        const createdRisk = requireRow(result, "Risiko anlegen");
+        riskIds.push(createdRisk.id);
         console.log(
-          `    Risk created: "${riskDef.title.substring(0, 40)}..." (${result[0].id.substring(0, 8)})`,
+          `    Risk created: "${riskDef.title.substring(0, 40)}..." (${createdRisk.id.substring(0, 8)})`,
         );
       }
 
@@ -427,7 +429,7 @@ async function seedRisks() {
             ${kriDef.thresholdGreen},
             ${kriDef.thresholdYellow},
             ${kriDef.thresholdRed},
-            ${kriDef.measurements[kriDef.measurements.length - 1].value},
+            ${requireRow(kriDef.measurements.slice(-1), `KRI ${kriDef.name}: Messwerte`).value},
             'monthly'::kri_measurement_frequency,
             true,
             ${adminId},
@@ -436,7 +438,7 @@ async function seedRisks() {
           RETURNING id
         `);
 
-        const kriId = kriResult[0].id;
+        const kriId = requireRow(kriResult, "KRI anlegen").id;
         console.log(
           `    KRI created: "${kriDef.name.substring(0, 40)}..." (${kriId.substring(0, 8)})`,
         );
@@ -462,8 +464,10 @@ async function seedRisks() {
         console.log(`      ${kriDef.measurements.length} measurements added`);
 
         // Update KRI last_measured_at and compute alert status
-        const latestValue =
-          kriDef.measurements[kriDef.measurements.length - 1].value;
+        const latestValue = requireRow(
+          kriDef.measurements.slice(-1),
+          `KRI ${kriDef.name}: Messwerte`,
+        ).value;
         let alertStatus: string;
         if (kriDef.direction === "asc") {
           if (latestValue <= kriDef.thresholdGreen) alertStatus = "green";
@@ -480,9 +484,9 @@ async function seedRisks() {
         // Determine trend from measurements
         const values = kriDef.measurements.map((m) => m.value);
         let trend = "stable";
-        if (values.length >= 2) {
-          const last = values[values.length - 1];
-          const prev = values[values.length - 2];
+        const last = values[values.length - 1];
+        const prev = values[values.length - 2];
+        if (values.length >= 2 && last !== undefined && prev !== undefined) {
           if (kriDef.direction === "asc") {
             // Lower is better
             trend =

@@ -1,0 +1,54 @@
+ARCTOS GRC Platform
+Copyright (c) ARCTOS — lizenziert unter PolyForm Shield 1.0.0 (siehe LICENSE).
+
+Dieses Produkt enthält Software von Dritten. Die vollständigen Lizenztexte
+und Copyright-Vermerke aller im ausgelieferten Produktionsbaum enthaltenen
+Pakete stehen in THIRD-PARTY-LICENSES.md — im Repository und in beiden
+Docker-Images unter /app/THIRD-PARTY-LICENSES.md.
+
+GENERIERT — nicht von Hand bearbeiten.
+Erzeugt von scripts/generate-notice.mjs aus dem installierten npm-Baum.
+Neu erzeugen: npm run notice
+
+Pakete im Produktionsbaum: 441
+
+Lizenzverteilung (Produktionsbaum):
+   357  MIT
+    30  ISC
+    21  Apache-2.0
+     6  BSD-3-Clause
+     4  BSD-2-Clause
+     3  Unlicense
+     3  MPL-2.0
+     2  LGPL-3.0-or-later
+     2  Apache-2.0 AND MIT
+     2  UNKNOWN
+     2  MIT/X11
+     2  0BSD
+     1  Apache-2.0 AND LGPL-3.0-or-later AND MIT
+     1  SEE LICENSE IN LICENSE
+     1  CC-BY-4.0
+     1  (MIT OR GPL-3.0-or-later)
+     1  (MIT AND Zlib)
+     1  MIT-0
+     1  MIT AND ISC
+
+Besondere Hinweise:
+
+  bpmn-js (Camunda Services GmbH, Custom-Lizenz, siehe THIRD-PARTY-LICENSES.md)
+  Die Lizenz erteilt die Rechte ausdrücklich unter der Bedingung, dass das
+  bpmn.io-Wasserzeichen in gerenderten Diagrammen vollständig sichtbar bleibt
+  und nicht von anderen Elementen überdeckt wird. ARCTOS erfüllt diese
+  Bedingung; das Wasserzeichen wird angezeigt (#S08-02).
+
+  jszip
+  Dual-lizenziert (MIT OR GPL-3.0-or-later). ARCTOS nutzt jszip unter der **MIT**-Variante. Diese Wahl ist hiermit ausdrücklich dokumentiert.
+
+  LGPL-3.0-or-later — betroffen: @img/sharp-libvips-linux-x64, @img/sharp-libvips-linuxmusl-x64
+  LGPL-3.0-or-later: Die Bibliothek wird als native Shared Library dynamisch gebunden und unverändert weitergegeben. Nach LGPL-3 §4 liegen der Lizenztext und der Copyright-Vermerk unten bei; der Quellcode ist beim jeweiligen Upstream-Projekt verfügbar, und das Relinking gegen eine eigene Fassung ist durch den Austausch der Shared Library im Image möglich.
+
+  MPL-2.0 — betroffen: lightningcss, lightningcss-linux-x64-gnu, lightningcss-linux-x64-musl
+  MPL-2.0: dateibasiertes Copyleft. Die Dateien werden unverändert weitergegeben; Quelle und Lizenztext sind unten genannt.
+
+  CC-BY-4.0 — betroffen: caniuse-lite
+  CC-BY-4.0: Namensnennung des Urhebers erforderlich — sie erfolgt unten.

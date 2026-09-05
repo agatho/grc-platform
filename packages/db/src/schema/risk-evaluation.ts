@@ -13,7 +13,6 @@ import {
   timestamp,
   date,
   jsonb,
-  pgEnum,
   index,
   unique,
 } from "drizzle-orm/pg-core";
@@ -23,32 +22,19 @@ import { risk, riskTreatment } from "./risk";
 // ──────────────────────────────────────────────────────────────
 // Enums
 // ──────────────────────────────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 / Restdefekte · O-6] The four declarations moved to
+// the leaf module `risk-evaluation-enums.ts` so that `risk.ts` can declare the
+// columns they belong to (risk.risk_object_type / .evaluation_phase /
+// .evaluation_cycle / .evaluation_type) without an import cycle. Re-exported
+// here, so every existing importer keeps working unchanged.
 
-export const riskObjectTypeEnum = pgEnum("risk_object_type", [
-  "risk",
-  "mixed_case",
-  "chance",
-]);
-
-export const evaluationPhaseEnum = pgEnum("evaluation_phase", [
-  "assignment",
-  "gross_evaluation",
-  "net_evaluation",
-  "approval",
-  "active",
-]);
-
-export const evaluationCycleEnum = pgEnum("evaluation_cycle", [
-  "monthly",
-  "quarterly",
-  "semi_annual",
-  "annual",
-]);
-
-export const evaluationTypeEnum = pgEnum("evaluation_type", [
-  "qualitative",
-  "quantitative",
-]);
+export {
+  riskObjectTypeEnum,
+  evaluationPhaseEnum,
+  evaluationCycleEnum,
+  evaluationTypeEnum,
+} from "./risk-evaluation-enums";
 
 // ──────────────────────────────────────────────────────────────
 // risk_evaluation_log — Phase transition audit trail

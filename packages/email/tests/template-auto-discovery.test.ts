@@ -269,9 +269,14 @@ describe("Email template auto-discovery (full sweep)", () => {
           string,
           unknown
         >;
+        // [WP12 · S14-25] `React.FC<unknown>` types the props as `unknown`,
+        // so `createElement(Component, { …, lang })` was rejected: `lang` is
+        // not assignable to `unknown`'s (empty) property set. The templates
+        // take a `lang` prop plus template-specific fields, which is exactly
+        // what the kitchen-sink object supplies.
         const Component =
-          (mod[name] as React.FC<unknown>) ??
-          (mod.default as React.FC<unknown>);
+          (mod[name] as React.FC<Record<string, unknown>>) ??
+          (mod.default as React.FC<Record<string, unknown>>);
         const html = await render(
           React.createElement(Component, { ...kitchenSink, lang: "en" }),
         );
@@ -284,9 +289,14 @@ describe("Email template auto-discovery (full sweep)", () => {
           string,
           unknown
         >;
+        // [WP12 · S14-25] `React.FC<unknown>` types the props as `unknown`,
+        // so `createElement(Component, { …, lang })` was rejected: `lang` is
+        // not assignable to `unknown`'s (empty) property set. The templates
+        // take a `lang` prop plus template-specific fields, which is exactly
+        // what the kitchen-sink object supplies.
         const Component =
-          (mod[name] as React.FC<unknown>) ??
-          (mod.default as React.FC<unknown>);
+          (mod[name] as React.FC<Record<string, unknown>>) ??
+          (mod.default as React.FC<Record<string, unknown>>);
         const html = await render(
           React.createElement(Component, { ...kitchenSink, lang: "de" }),
         );

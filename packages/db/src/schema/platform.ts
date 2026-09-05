@@ -14,6 +14,8 @@ import {
   inet,
   integer,
   bigint,
+  bigserial,
+  smallint,
   numeric,
   date,
   index,
@@ -213,6 +215,12 @@ export const organization = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    activeLanguages: jsonb("active_languages")
+      .notNull()
+      .default(sql`'["de"]'::jsonb`),
+    defaultLanguage: varchar("default_language", { length: 5 })
+      .notNull()
+      .default(sql`'de'::character varying`),
   },
   (table) => [index("org_parent_idx").on(table.parentOrgId)],
 );
@@ -236,9 +244,33 @@ export const user = pgTable("user", {
   notificationPreferences: jsonb("notification_preferences").default({}),
   // Sprint 17: iCal token for calendar subscription
   icalToken: varchar("ical_token", { length: 128 }),
+  // #WP3-S02-20 (Migration 0411): the iCal token was stored in PLAINTEXT and
+  // compared directly. A read leak (backup, read replica) handed out every
+  // active calendar feed. The app now writes and matches the SHA-256 hash; the
+  // plaintext column stays for one rotation window and is dropped afterwards.
+  icalTokenHash: varchar("ical_token_hash", { length: 64 }),
   icalTokenCreatedAt: timestamp("ical_token_created_at", {
     withTimezone: true,
   }),
+  // #WP3-S02-09 (Migration 0411): login lockout. There was no counter and no
+  // lock at all — `grep lockout|failed_attempts|locked_until` over
+  // packages/auth and packages/db/src/schema returned nothing.
+  failedLoginAttempts: integer("failed_login_attempts").notNull().default(0),
+  lastFailedLoginAt: timestamp("last_failed_login_at", { withTimezone: true }),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  // [ARCTOS-FULL-2026-08-31 · OP-085] (Migration 0457) Sitzungs-Epoche.
+  // Ein JWT, dessen `iat` VOR diesem Zeitpunkt liegt, wird im
+  // `session`-Callback abgelehnt. Die JWT-Strategie hat keinen
+  // serverseitigen Sitzungsspeicher, also auch keine Denylist, in die man
+  // eine einzelne ausgestellte Kennung eintragen koennte; ein Zeitstempel je
+  // Nutzer invalidiert stattdessen alles Aeltere auf einen Schlag — genau die
+  // Semantik von "Rechte entzogen, bitte neu anmelden" — und ist nach Ablauf
+  // der maximalen Sitzungsdauer (2 h) von selbst wirkungslos.
+  sessionsValidFrom: timestamp("sessions_valid_from", { withTimezone: true }),
+  // #WP3-S02-01 (Migration 0411): forced first-password change, so a seeded or
+  // operator-provisioned account cannot keep a known password.
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
+  passwordChangedAt: timestamp("password_changed_at", { withTimezone: true }),
   // Sprint 20: Identity provider fields (SSO/SCIM)
   externalId: varchar("external_id", { length: 200 }),
   identityProvider: varchar("identity_provider", { length: 50 }).default(
@@ -256,6 +288,9 @@ export const user = pgTable("user", {
   updatedBy: uuid("updated_by"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
   deletedBy: uuid("deleted_by"),
+  contentLanguage: varchar("content_language", { length: 5 }).default(
+    sql`NULL::character varying`,
+  ),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -335,9 +370,31 @@ export const auditLog = pgTable(
     // chain_seq is non-ambiguous even within a single transaction
     // (multiple audit rows from one PUT).
     hashVersion: integer("hash_version").notNull().default(1),
-    chainSeq: bigint("chain_seq", { mode: "number" }).notNull(),
+    // [ARCTOS-FULL-2026-08-31 / Restarbeiten]
+    // In der Datenbank ist die Spalte seit jeher
+    // `bigint NOT NULL DEFAULT nextval('audit_log_chain_seq_seq')` — also ein
+    // BIGSERIAL — und seit WP4 (Migration 0401) weist der BEFORE-INSERT-
+    // Trigger `audit_log_chain_assign()` die Kettenwerte ohnehin selbst zu
+    // und VERWIRFT vom Aufrufer gelieferte. Die Deklaration als schlichtes
+    // `bigint().notNull()` behauptete dagegen eine Pflichtangabe beim Insert
+    // und machte `chainSeq` in `$inferInsert` zu einem Required-Feld. Genau
+    // das brach nach dem Entfernen von `typescript.ignoreBuildErrors` acht
+    // Aufrufstellen (Dokumenten-Upload/-Erase/-Integrität, Controlled Copy,
+    // Signatur-Provider, Bulk-Prozesse). `bigserial` bildet die DB-Realität
+    // exakt ab (identischer `udt_name` int8, kein Schema-Drift) und macht die
+    // Spalte beim Insert korrekt optional.
+    chainSeq: bigserial("chain_seq", { mode: "number" }),
+    // ADR-011 rev.4 (ARCTOS-FULL-2026-08-31 / WP4 · S03-02, S03-03, S03-06):
+    // SHA-256 over the redactable payload — changes, user_email, user_name,
+    // ip_address, entity_title. v4 hashes THIS instead of the payload
+    // directly, which (a) binds the four actor columns that used to be
+    // outside the digest and freely editable, and (b) lets a GDPR redaction
+    // rewrite the payload while the row still recomputes. NULL for v1–v3
+    // rows, which keep verifying under their own formula.
+    contentCommitment: varchar("content_commitment", { length: 64 }),
     // GDPR Art. 17 tombstone (set by tombstone_audit_entry() function).
-    // entry_hash is preserved when tombstoned so the chain stays verifiable.
+    // entry_hash is preserved when tombstoned; for v4 rows the content
+    // commitment is preserved too, so the row stays verifiable.
     piiTombstonedAt: timestamp("pii_tombstoned_at", { withTimezone: true }),
     piiTombstoneReason: text("pii_tombstone_reason"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -388,7 +445,23 @@ export const auditAnchor = pgTable(
       .notNull()
       .defaultNow(),
     upgradedAt: timestamp("upgraded_at", { withTimezone: true }),
+    // Set by the periodic re-verification job (S03-11). Before the
+    // ARCTOS-FULL-2026-08-31 remediation this column existed and no code
+    // path ever wrote it: the platform claimed "anchored" without ever
+    // having checked the timestamp it stored.
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
+    // S03-08: queried by /audit-log/integrity/continuity since Wave 24,
+    // did not exist until migration 0403; the resulting error was
+    // swallowed by a bare catch.
+    anchoredAt: timestamp("anchored_at", { withTimezone: true }),
+    hashVersion: smallint("hash_version"),
+    // S03-17: 1 = Bitcoin duplication convention, 2 = RFC-6962 domain
+    // separation with the leaf count bound into the root.
+    merkleVersion: smallint("merkle_version").notNull().default(1),
+    // S03-11: true only after nonce, messageImprint, CMS signature and
+    // certificate were all checked.
+    tsaVerified: boolean("tsa_verified").notNull().default(false),
+    tsaGenTime: timestamp("tsa_gen_time", { withTimezone: true }),
   },
   (table) => [
     index("audit_anchor_org_date_idx").on(table.orgId, table.anchorDate),
@@ -508,6 +581,12 @@ export const notification = pgTable(
     emailMessageId: varchar("email_message_id", { length: 255 }),
     emailError: text("email_error"),
     retryCount: integer("retry_count").notNull().default(0),
+    // [WP9 · S10-10 / Migration 0435] Idempotenzschlüssel für wiederkehrende
+    // Cron-Benachrichtigungen. NULL = kein Dedup (Einzelereignisse aus der
+    // Web-App). Der partielle UNIQUE-Index (org_id, dedupe_key) setzt ihn in
+    // der Datenbank durch, damit der Guard nicht in 44 Cron-Dateien einzeln
+    // richtig sein muss.
+    dedupeKey: text("dedupe_key"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -523,6 +602,53 @@ export const notification = pgTable(
   (table) => [
     index("notif_user_unread_idx").on(table.userId, table.isRead),
     index("notif_org_idx").on(table.orgId),
+    // Nicht partiell — siehe Migration 0435: ein partieller Index taugt
+    // nur dann als ON-CONFLICT-Arbiter, wenn jedes INSERT sein Prädikat
+    // wiederholt. NULL kollidiert nie mit NULL, das reicht.
+    uniqueIndex("notification_dedupe_uidx").on(table.orgId, table.dedupeKey),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// job_run — Betriebsprotokoll der Worker-Jobs (WP9 · S10-02, S10-12)
+// ──────────────────────────────────────────────────────────────
+// Vor diesem Audit existierte weder ein Scheduler noch irgendeine Spur
+// darüber, ob ein Job gelaufen ist: Fehlläufe antworteten mit HTTP 200 und
+// `success: true`. Der In-Process-Scheduler (apps/worker/src/lib/scheduler.ts)
+// schreibt hier je Lauf eine Zeile.
+export const jobRun = pgTable(
+  "job_run",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobName: varchar("job_name", { length: 120 }).notNull(),
+    /**
+     * scheduler | http | manual | catchup
+     *
+     * [Welle 5c · OP-100] `catchup` kam mit dem Nachholabgleich in
+     * `apps/worker/src/lib/job-registry.ts` dazu: ein Lauf, den der
+     * Scheduler versaeumt hat und der beim Start nachgeholt wurde. Ohne
+     * eigene Kennung waere im Betriebsprotokoll nicht unterscheidbar, was
+     * planmaessig und was nachgeholt lief. Die Spalte ist ein varchar ohne
+     * CHECK-Constraint (Migration 0435), der Wert brauchte deshalb keine
+     * Migration.
+     */
+    triggerSource: varchar("trigger_source", { length: 20 })
+      .notNull()
+      .default("scheduler"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    durationMs: integer("duration_ms"),
+    /** running | success | partial | failed | skipped_locked */
+    status: varchar("status", { length: 20 }).notNull().default("running"),
+    failedItems: integer("failed_items").notNull().default(0),
+    result: jsonb("result"),
+    error: text("error"),
+    host: varchar("host", { length: 120 }),
+  },
+  (table) => [
+    index("job_run_name_started_idx").on(table.jobName, table.startedAt),
   ],
 );
 
@@ -574,6 +700,43 @@ export const invitation = pgTable(
 // ──────────────────────────────────────────────────────────────
 // Auth.js tables (ADR-007 rev.1) — session/account storage
 // ──────────────────────────────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · OP-139] BEWUSST TOT — Entscheidung, kein Versehen.
+//
+// Diese drei Tabellen sind die Adaptertabellen von Auth.js. Das Projekt faehrt
+// die JWT-Strategie und hat KEINEN DrizzleAdapter konfiguriert; keine Zeile
+// Anwendungscode importiert `account`, `session` oder `verificationToken`, und
+// keine SQL-Anweisung ausserhalb dieser Definition nennt sie. Sie sind leer.
+//
+// Migration 0392 hat ihnen deshalb RLS + FORCE OHNE jede Policy gegeben und
+// `grc_app` alle Rechte entzogen: unter der Laufzeitrolle sind sie vollstaendig
+// gesperrt. Sie tragen die sensibelsten Spalten des Schemas
+// (`session_token`, `refresh_token`, `access_token`, `id_token`).
+//
+// WARUM NICHT ENTFERNT — die Alternative wurde geprueft:
+//
+//  * Ein DROP TABLE waere nach ADR-023 `Breaking: yes` und verlangte einen
+//    Vorab-Backup-Schritt (`deploy/db-backup.sh --pre-breaking`) — fuer drei
+//    leere Tabellen, deren Sperre nichts kostet.
+//  * Die Deklaration IST der Vertrag mit Auth.js. Wird spaeter auf den
+//    DB-Adapter umgestellt, laesst der Adapter die Tabellen sonst neu
+//    entstehen — ohne RLS, ohne Policy, ohne dass jemand hinsieht. Genau das
+//    verhindert der heutige Zustand: der Adapter schlaegt sofort und laut fehl
+//    (`permission denied`), und wer ihn einschaltet, MUSS zuerst echte, an
+//    `app.current_user_id` gebundene Policies schreiben.
+//  * Der Grund, aus dem OP-139 aufgeschrieben wurde, war nicht das Vorhandensein
+//    der Tabellen, sondern dass ihr Zustand nur in einem Migrationskommentar
+//    behauptet war. Zwei Restdefekt-Berichte mussten sie als Sonderfall von Hand
+//    ausnehmen. Das ist jetzt geprueft statt behauptet:
+//    `packages/db/tests/rls/authjs-adapter-tables.test.ts` misst RLS, FORCE,
+//    Policy-Anzahl, Rechte und Zeilenzahl UND durchsucht den Quellbaum nach
+//    Referenzen. Wer den Adapter einschaltet, bekommt einen roten Test mit
+//    einer Anleitung.
+//
+// OP-052 (Schema-Drift meldet vier fehlende Tabellen) haengt NICHT hieran:
+// gegen eine frisch migrierte Datenbank meldet der Drift-Report 0 fehlende
+// Tabellen. Die vier Meldungen stammten aus einer Container-Datenbank, die
+// 65 Tabellen hinter dem Branch-Stand lag (VERIFIKATION.md, O-10).
 
 export const account = pgTable(
   "account",
@@ -737,4 +900,55 @@ export const organizationContact = pgTable(
     index("oc_role_idx").on(table.orgId, table.roleType),
     index("oc_user_idx").on(table.internalUserId),
   ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// #WP3-S02-03 — platform_admin (Migration 0411)
+// ──────────────────────────────────────────────────────────────
+// `feature_gate`, `subscription_plan`, `plugin`, `data_region` und
+// `framework_mapping` haben kein `org_id`, keine RLS und keine Policy. Ihre
+// Schreib-Endpunkte waren nur mit `withAuth("admin")` geschützt — und `admin`
+// ist eine PRO-ORGANISATION vergebene Rolle. Ein Mandanten-Admin konnte damit
+// Feature-, Abrechnungs- und Data-Sovereignty-Konfiguration ALLER Mandanten
+// ändern; für `framework_mapping` genügte sogar `risk_manager`.
+//
+// Diese Tabelle trägt das fehlende Plattform-Admin-Konzept. Sie hat bewusst
+// KEINE INSERT/UPDATE/DELETE-Policy für die Laufzeitrolle `grc_app`: die
+// Anwendung darf die Frage stellen, aber die Antwort nie selbst erzeugen.
+export const platformAdmin = pgTable(
+  "platform_admin",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => user.id, { onDelete: "cascade" }),
+    grantedAt: timestamp("granted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    grantedBy: uuid("granted_by").references(() => user.id),
+    reason: varchar("reason", { length: 500 }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  },
+  (table) => [index("platform_admin_active_idx").on(table.userId)],
+);
+
+// ──────────────────────────────────────────────────────────────
+// #WP3-S02-23 — saml_assertion_replay (Migration 0411)
+// ──────────────────────────────────────────────────────────────
+// Der SAML-Replay-Schutz war eine prozesslokale `Map` (der Code sagte selbst:
+// "In production, this should be backed by Redis") — bei mehr als einer
+// Web-Instanz wirkungslos. Verbraucht wird über die SECURITY-DEFINER-Funktion
+// `auth_consume_saml_assertion` (Migration 0412), weil der ACS anonym läuft.
+export const samlAssertionReplay = pgTable(
+  "saml_assertion_replay",
+  {
+    assertionId: varchar("assertion_id", { length: 256 }).primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    consumedAt: timestamp("consumed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => [index("saml_assertion_replay_expiry_idx").on(table.expiresAt)],
 );

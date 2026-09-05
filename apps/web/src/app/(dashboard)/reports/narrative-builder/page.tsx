@@ -5,7 +5,6 @@ import {
   Loader2,
   Plus,
   RefreshCcw,
-  FileText,
   Languages,
   Hash,
   BookOpen,

@@ -181,27 +181,31 @@ export function buildHistogram(
 ): HistogramBucket[] {
   if (sortedValues.length === 0) return [];
 
-  const minVal = sortedValues[0];
-  const maxVal = sortedValues[sortedValues.length - 1];
+  // [OP-065] Die Leerprüfung steht direkt darüber; `?? 0` bzw. `?? minVal`
+  // schreiben das auf. `counts` war unbestimmt typisiert (`any[]` aus
+  // `new Array(n).fill(0)`) und hat die Indexzugriffe darauf ganz an der
+  // Prüfung vorbeigeführt — auch das ist jetzt `number[]`.
+  const minVal = sortedValues[0] ?? 0;
+  const maxVal = sortedValues[sortedValues.length - 1] ?? minVal;
   const range = maxVal - minVal;
   const bucketWidth = range > 0 ? range / buckets : 1;
   const result: HistogramBucket[] = [];
-  const counts = new Array(buckets).fill(0);
+  const counts: number[] = new Array<number>(buckets).fill(0);
 
-  for (let i = 0; i < sortedValues.length; i++) {
-    let idx = Math.floor((sortedValues[i] - minVal) / bucketWidth);
+  for (const value of sortedValues) {
+    let idx = Math.floor((value - minVal) / bucketWidth);
     if (idx >= buckets) idx = buckets - 1;
-    counts[idx]++;
+    counts[idx] = (counts[idx] ?? 0) + 1;
   }
 
-  for (let b = 0; b < buckets; b++) {
+  counts.forEach((count, b) => {
     result.push({
       bucket: round2(minVal + b * bucketWidth),
       bucketMax: round2(minVal + (b + 1) * bucketWidth),
-      count: counts[b],
-      percentage: round2((counts[b] / sortedValues.length) * 100),
+      count,
+      percentage: round2((count / sortedValues.length) * 100),
     });
-  }
+  });
 
   return result;
 }
@@ -221,8 +225,8 @@ export function buildExceedanceCurve(
 ): ExceedancePoint[] {
   if (sortedValues.length === 0) return [];
 
-  const minVal = sortedValues[0];
-  const maxVal = sortedValues[sortedValues.length - 1];
+  const minVal = sortedValues[0] ?? 0;
+  const maxVal = sortedValues[sortedValues.length - 1] ?? minVal;
   const step = (maxVal - minVal) / thresholdCount;
   const result: ExceedancePoint[] = [];
 
@@ -234,7 +238,11 @@ export function buildExceedanceCurve(
     let hi = sortedValues.length;
     while (lo < hi) {
       const mid = (lo + hi) >>> 1;
-      if (sortedValues[mid] <= threshold) {
+      // [OP-065] `lo < hi` sichert `mid ∈ [lo, hi-1] ⊂ [0, len-1]`. `?? +∞`
+      // hält die Schranke im unmöglichen Fall auf der sicheren Seite: ein
+      // nicht lesbarer Wert zählt als „über der Schwelle", die Suche
+      // verkleinert das Fenster und terminiert.
+      if ((sortedValues[mid] ?? Number.POSITIVE_INFINITY) <= threshold) {
         lo = mid + 1;
       } else {
         hi = mid;

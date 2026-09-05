@@ -16,6 +16,8 @@
 import { db, risk, riskAcceptance, notification } from "@grc/db";
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface RiskAcceptanceExpiryResult {
   orgsScanned: number;
@@ -100,29 +102,39 @@ export const processRiskAcceptanceExpiry = withCronInstrumentation(
             const validStr = row.validUntil
               ? String(row.validUntil).split("T")[0]
               : "";
-            await tx.insert(notification).values({
-              userId: row.acceptedBy,
-              orgId,
-              type: "deadline_approaching" as const,
-              entityType: "risk",
-              entityId: row.riskId,
-              title: `Risk acceptance expired: ${row.riskTitle ?? row.riskId}`,
-              message: `The formal acceptance of risk "${row.riskTitle ?? row.riskId}" reached its validity limit (${validStr}) and was automatically set to 'expired'. The risk returned to the assessment lane — re-accept or treat it.`,
-              channel: "both" as const,
-              templateKey: "risk_acceptance_expired",
-              templateData: {
-                riskId: row.riskId,
-                acceptanceId: row.id,
-                validUntil: validStr,
+            await insertNotification(
+              {
+                userId: row.acceptedBy,
+                orgId,
+                type: "deadline_approaching" as const,
+                entityType: "risk",
+                entityId: row.riskId,
+                title: `Risk acceptance expired: ${row.riskTitle ?? row.riskId}`,
+                message: `The formal acceptance of risk "${row.riskTitle ?? row.riskId}" reached its validity limit (${validStr}) and was automatically set to 'expired'. The risk returned to the assessment lane — re-accept or treat it.`,
+                channel: "both" as const,
+                templateKey: "risk_acceptance_expired",
+                templateData: {
+                  riskId: row.riskId,
+                  acceptanceId: row.id,
+                  validUntil: validStr,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "risk-acceptance-expiry" },
+            );
             notified++;
           }
         });
-      } catch {
-        // Wrapper logs structured error; continue with the next org.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "risk-acceptance-expiry",
+            scope: "assessment lane mirrors the manual revoke fl",
+          },
+          err,
+        );
       }
     }
 

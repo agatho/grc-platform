@@ -89,7 +89,6 @@ export default function MyWorkPage() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [includeCompleted, msTypeFilter]);
 
   if (error) {

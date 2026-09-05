@@ -7,8 +7,6 @@ import {
   KeyRound,
   Loader2,
   ExternalLink,
-  Copy,
-  Check,
   AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { safeExternalHref } from "@grc/ui";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -224,7 +223,15 @@ export default function SsoConfigPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
-      window.open(json.data.redirectUrl, "sso-test", "width=600,height=700");
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S12-12] `window.open()` executes a
+      // `javascript:` target in the OPENER's origin. `redirectUrl` derives
+      // from the IdP login URL that an org admin configures, so one admin
+      // could plant a payload that runs in a second admin's session the
+      // moment they click "test SSO". An IdP endpoint is always an absolute
+      // https(/http) URL, so the scheme allow-list costs nothing here.
+      const target = safeExternalHref(json.data.redirectUrl);
+      if (!target) throw new Error(t("testError"));
+      window.open(target, "sso-test", "width=600,height=700");
     } catch (err) {
       setError(err instanceof Error ? err.message : t("testError"));
     }

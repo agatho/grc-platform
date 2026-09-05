@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:arctos="https://arctos.grc/schema/bpmn/1.0"
+                  id="Definitions_TagAlias" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_TagAlias" isExecutable="false">
+    <bpmn:userTask id="TA_Task" name="Freigabe">
+      <bpmn:extensionElements>
+        <arctos:GrcMetadata lineOfDefense="second" complianceProfile="gdpr" isCriticalProcess="true">
+          <arctos:controlRefs>
+            <arctos:controlRef id="ctl-1" title="Vier-Augen-Prinzip" effectiveness="effective" controlType="preventive"/>
+          </arctos:controlRefs>
+          <arctos:bcmKpi mtpdMinutes="240" rtoMinutes="60" rpoMinutes="15" criticality="high"/>
+          <arctos:ropa isProcessingActivity="true" purpose="Vertragsabwicklung" legalBasis="contract" requiresDpia="false"/>
+        </arctos:GrcMetadata>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+  </bpmn:process>
+</bpmn:definitions>

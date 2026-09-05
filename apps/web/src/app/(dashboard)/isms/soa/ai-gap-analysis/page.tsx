@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import {
   Loader2,
   Sparkles,
-  AlertTriangle,
   Check,
   X,
   Info,

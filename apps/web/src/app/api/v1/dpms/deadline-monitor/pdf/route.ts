@@ -5,6 +5,10 @@ import { requireModule } from "@grc/auth";
 import { and, eq, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { renderHtmlToPdfResponse, escHtml, STANDARD_PDF_CSS } from "@/lib/pdf";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
@@ -56,7 +60,7 @@ function classify(
   };
 }
 
-export async function GET(_req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -203,4 +207,4 @@ ${
     html,
     `DPMS-Deadline-Monitor-${now.toISOString().slice(0, 10)}`,
   );
-}
+});

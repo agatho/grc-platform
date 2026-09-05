@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -9,7 +10,6 @@ import {
   ArrowLeft,
   TrendingUp,
   TrendingDown,
-  AlertTriangle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,11 @@ interface DashboardData {
 }
 
 export default function BudgetDashboardPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const params = useParams();
   const router = useRouter();
@@ -151,13 +156,13 @@ export default function BudgetDashboardPage() {
                 <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>
                     {t("dashboard.budget")}:{" "}
-                    {item.planned.toLocaleString("de-DE")}
+                    {item.planned.toLocaleString(numberLocale)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>
                     {t("dashboard.actual")}:{" "}
-                    {item.actual.toLocaleString("de-DE")}
+                    {item.actual.toLocaleString(numberLocale)}
                   </span>
                 </div>
                 <Badge
@@ -211,7 +216,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.budget.toLocaleString("de-DE")}
+                          {point.budget.toLocaleString(numberLocale)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -224,7 +229,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.actual.toLocaleString("de-DE")}
+                          {point.actual.toLocaleString(numberLocale)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -237,7 +242,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.forecast.toLocaleString("de-DE")}
+                          {point.forecast.toLocaleString(numberLocale)}
                         </span>
                       </div>
                     </div>
@@ -350,17 +355,17 @@ export default function BudgetDashboardPage() {
                       {t(`areas.${v.grcArea}`)}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">
-                      {v.planned.toLocaleString("de-DE")}
+                      {v.planned.toLocaleString(numberLocale)}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">
-                      {v.actual.toLocaleString("de-DE")}
+                      {v.actual.toLocaleString(numberLocale)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span
                         className={`font-medium ${v.variance > 0 ? "text-red-600" : "text-green-600"}`}
                       >
                         {v.variance > 0 ? "+" : ""}
-                        {v.variance.toLocaleString("de-DE")}
+                        {v.variance.toLocaleString(numberLocale)}
                       </span>
                     </td>
                   </tr>

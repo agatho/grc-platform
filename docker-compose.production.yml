@@ -3,6 +3,33 @@
 # Usage: docker compose -f docker-compose.production.yml up -d
 # ============================================================================
 
+# ── Log-Rotation (#S13-16) ──────────────────────────────────────────────────
+# [ARCTOS-FULL-2026-08-31 / WP10]
+# Keine der beiden Compose-Dateien enthielt einen `logging:`-Block. Docker
+# verwendet dann den json-file-Treiber OHNE max-size/max-file: die Logdateien
+# wachsen unbegrenzt, bis die Partition voll ist. Betroffen waren alle
+# Dienste, allen voran `web` (Next.js-Request-Logs) und `worker`.
+#
+# Verschaerfend: Backups und Logs liegen auf derselben Partition, und die
+# Out-of-Disk-Prozedur in runbook.md empfahl
+# `docker system prune -af --volumes` — was bei gestoppten Containern
+# (im Incident wahrscheinlich) `uploads`, `branding` und `garagedata` mit
+# loescht, also genau die Daten, fuer die es damals kein Backup gab
+# (#S13-06). Diese Prozedur ist in docs/runbook.md ersetzt.
+#
+# 50 MB x 5 Dateien = hoechstens 250 MB je Container. Das ist die technische
+# LOG-RETENTION: rund 3-7 Tage bei ueblichem Verkehr. Wer laenger aufbewahren
+# will, verschifft die Logs (ADR-017) — dann gilt dort die dokumentierte
+# Frist. Logzeilen enthalten `userId`, `orgId` und `X-Request-ID` und sind
+# damit personenbeziehbar; die Frist gehoert ins Verarbeitungsverzeichnis.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "50m"
+    max-file: "5"
+    # Erleichtert die spaetere Zuordnung beim Log-Shipping (ADR-017).
+    labels: "com.docker.compose.service"
+
 services:
   # ── PostgreSQL + TimescaleDB ──────────────────────────────────
   postgres:
@@ -21,6 +48,7 @@ services:
     # Operators who want bit-identical can replace with a digest:
     #   image: timescale/timescaledb@sha256:...
     image: timescale/timescaledb:2.26.3-pg16
+    logging: *default-logging # #S13-16
     restart: unless-stopped
     # #SEC-F07: block privilege escalation via setuid binaries. Postgres
     # itself is otherwise unchanged (it still needs a writable data dir on
@@ -50,6 +78,7 @@ services:
   redis:
     # #DEP-CONFIG: pinned minor (was `redis:7-alpine`, moving tag).
     image: redis:7.4-alpine
+    logging: *default-logging # #S13-16
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -64,8 +93,17 @@ services:
   # Security-Patches mehr; Trivy fand 4 CRITICAL + 42 HIGH). Garage ist
   # leichtgewichtig (Rust), aktiv gepflegt, S3-kompatibel. Bootstrap
   # (Layout/Bucket/Key) + Datenmigration: siehe deploy/MINIO-TO-GARAGE-MIGRATION.md.
-  # Läuft zunächst PARALLEL zu minio; nach verifizierter Umstellung wird der
-  # minio-Block entfernt.
+  #
+  # #S06-09 (ARCTOS-FULL-2026-08-31, Medium): der minio-Block lief laut
+  # Kommentar „zunächst PARALLEL" — die Umstellung war im Repo nie
+  # vollzogen, also blieb ein Dienst mit unauthentifiziertem Object-Write
+  # (CVE-2026-40344/-41145) und JWT-Algorithm-Confusion (CVE-2026-33322)
+  # Teil der AUSGELIEFERTEN Produktionskonfiguration, obwohl es im
+  # Community-Zweig dafür keinen Fix mehr gibt. minio und minio-init sind
+  # jetzt entfernt; Garage ist der einzige Objektspeicher. Das Volume
+  # `miniodata` bleibt bis zur bestätigten Datenmigration bestehen (es zu
+  # löschen wäre Datenverlust) und wird danach per
+  # `docker volume rm` entfernt — siehe deploy/MINIO-TO-GARAGE-MIGRATION.md.
   garage:
     image: dxflrs/garage:v2.3.0
     restart: unless-stopped
@@ -88,59 +126,25 @@ services:
       - arctos
     # Kein Port exposed — nur intern. S3-API :3900, Admin :3903, RPC :3901.
 
-  # ── MinIO (S3-kompatibler Objektspeicher, self-hosted) ────────
-  # DMS-File-Storage. Der Web-Container ist read_only — lokales FS
-  # funktioniert dort nur über das uploads-Volume; MinIO ist der
-  # empfohlene Backend (STORAGE_BACKEND=s3 in .env). Path-style URLs.
-  minio:
-    # #SEC-IMG (Pentest v2 / Trivy): der vorherige Tag (2025-04-22, ~15 Mon. alt)
-    # trug in der minio-Binary 4 CRITICAL + 42 HIGH — u.a. unauthentifizierter
-    # Object-Write (CVE-2026-40344/-41145), OIDC-JWT-Algorithm-Confusion
-    # (CVE-2026-33322) und Session-Policy-Privilege-Escalation (CVE-2025-62506).
-    # Nicht ins Internet exponiert (nur Docker-Netz), aber via SSRF/Foothold real.
-    # HINWEIS: minio/minio + minio/mc wurden im Juli 2026 upstream ARCHIVIERT.
-    # Letztes brauchbares Community-Release (fixt CVE-2025-62506 + OS-Pakete).
-    # Die reinen 2026-CVEs (unauth write CVE-2026-40344/-41145, JWT CVE-2026-33322)
-    # haben im Community-Zweig ggf. KEINEN Fix mehr — dafuer Migration auf den
-    # gepflegten Fork `pgsty/minio` noetig (offene Architektur-Entscheidung).
-    # Vor `up` per `docker pull` auf Tag-Existenz pruefen.
-    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
-    restart: unless-stopped
-    # RAM-Deckel: verhindert, dass der Sidecar den Host in den OOM treibt
-    mem_limit: 512m
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-arctos}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - arctos
-    # Kein Port exposed — nur intern; Console bei Bedarf via SSH-Tunnel:
-    # ssh -L 9001:localhost:9001 und Port temporär mappen.
-
-  # One-shot: Bucket anlegen (idempotent), dann Exit.
-  minio-init:
-    # Neuester offizieller mc-Tag vor der Upstream-Archivierung. Vor `up`
-    # ebenfalls per `docker pull` auf Existenz prüfen.
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+  # One-shot: Garage-Layout + Bucket + org-getrennte Keys anlegen
+  # (idempotent), dann Exit. Ersetzt den frueheren minio-init.
+  garage-init:
+    image: dxflrs/garage:v2.3.0
     depends_on:
-      minio:
+      garage:
         condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set arctos http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
-      mc mb --ignore-existing arctos/$${S3_BUCKET} &&
-      echo 'minio-init: bucket ready'"
+    entrypoint: ["/bin/sh", "/bootstrap/garage-bootstrap.sh"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-arctos}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:-}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:-}
       S3_BUCKET: ${S3_BUCKET:-arctos-dms}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      GARAGE_ZONE: ${GARAGE_ZONE:-dc1}
+      GARAGE_CAPACITY: ${GARAGE_CAPACITY:-100G}
+    volumes:
+      - ./deploy/garage/garage.toml:/etc/garage.toml:ro
+      - ./deploy/garage/bootstrap:/bootstrap:ro
     networks:
       - arctos
     restart: "no"
@@ -171,6 +175,7 @@ services:
   # ── ARCTOS Web App ────────────────────────────────────────────
   web:
     image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-web:${IMAGE_TAG:-latest}
+    logging: *default-logging # #S13-16
     build:
       context: .
       dockerfile: Dockerfile
@@ -206,19 +211,55 @@ services:
       # grc_app so Row-Level Security is actually enforced (grc has BYPASSRLS
       # and would silently disable every RLS policy). grc_app is provisioned
       # by deploy/provision-grc-app.sh, which update-all.sh + setup-hetzner.sh
-      # run before (re)starting these containers. If GRC_APP_PASSWORD is unset
-      # the app falls back to DATABASE_URL in code — do NOT rely on that in
-      # production; set GRC_APP_PASSWORD in .env.
-      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:-}@postgres:5432/grc_platform
+      # run before (re)starting these containers.
+      #
+      # [ARCTOS-FULL-2026-08-31 / WP10 · S08-17, S13-10]
+      # Hier stand `${GRC_APP_PASSWORD:-}` und darueber der Kommentar
+      # "If GRC_APP_PASSWORD is unset the app falls back to DATABASE_URL in
+      # code". Das war FALSCH: `??` prueft auf undefined/null, und Compose
+      # setzt die Variable — nur eben leer. Es entstand also kein Fallback,
+      # sondern ein GESETZTER, UNGUELTIGER URL (`grc_app:` mit leerem
+      # Passwort) und damit ein Verbindungsfehler. Der Kommentar beschrieb
+      # ein Verhalten, das der Code nicht hatte — in einem GRC-Produkt der
+      # schwerere Mangel, weil ein Pruefer sich darauf verlaesst.
+      # `:?` macht daraus einen sofortigen, lesbaren Abbruch beim
+      # `docker compose up`.
+      APP_DATABASE_URL: postgresql://grc_app:${GRC_APP_PASSWORD:?Set GRC_APP_PASSWORD in .env — ohne die Nicht-Superuser-Rolle grc_app ist RLS wirkungslos (S13-09/S13-10); anlegen mit deploy/provision-grc-app.sh}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env}
-      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
+      # #S08-17: stand ohne `:?` und ohne Default. Fehlte die Variable,
+      # setzte Compose einen leeren String (mit einer Warnung auf stderr,
+      # die im `update-all.sh`-Aufruf durch `| tail -5` unterging).
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY:?Set CONNECTOR_ENCRYPTION_KEY in .env — openssl rand -hex 32}
       # Encrypt-at-rest for single-column app secrets (SSO client secret,
       # connector OAuth refresh tokens). openssl rand -base64 32
-      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      # #S08-17: leerer Default entfernt. `secret-crypto.ts` verweigert zur
+      # Laufzeit korrekt (fail-hard), aber der Container startete und wirkte
+      # gesund — der Defekt zeigte sich erst, wenn Monate spaeter jemand SSO
+      # konfigurieren wollte.
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY in .env — openssl rand -base64 32}
       SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
+      # ── Neue Pflicht-Betriebsvariablen der Remediation ───────────────
+      # [WP4 · S03-01] HMAC-Siegel der Audit-Anker. Ohne ihn ist die Kette
+      # Integritaetspruefung, aber keine Tamper-Evidence gegen einen
+      # Datenbank-Superuser. Web braucht ihn fuer /api/v1/audit-log/integrity.
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — openssl rand -hex 32 (WP4/S03-01)}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      # [WP8 · S07-03] Pseudonymisierungsschluessel. Ohne ihn greift ein
+      # Installationsschluessel IN der Datenbank — das "zusaetzliche Wissen"
+      # nach Art. 4 Nr. 5 DSGVO laege dann im selben Dump wie die Daten.
+      # Vernichtungsverfahren: docs/runbook.md §7.
+      PII_PSEUDONYM_KEY: ${PII_PSEUDONYM_KEY:?Set PII_PSEUDONYM_KEY in .env — openssl rand -hex 32 (WP8/S07-03)}
+      PII_PSEUDONYM_KEY_ID: ${PII_PSEUDONYM_KEY_ID:-default}
+      WB_PSEUDONYM_KEY: ${WB_PSEUDONYM_KEY:-}
+      IP_PSEUDONYM_KEY: ${IP_PSEUDONYM_KEY:-}
+      # [WP9 · S10-05] Trusted-Proxy-Hops: bestimmt, welchem
+      # X-Forwarded-For-Eintrag geglaubt wird. Muss der tatsaechlichen Zahl
+      # eigener Reverse-Proxys entsprechen (Caddy = 1), sonst ist das
+      # Login-Rate-Limit per Header umgehbar.
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
@@ -234,7 +275,7 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
-      # DMS-Storage (local = Volume oben; s3 = MinIO-Sidecar/extern)
+      # DMS-Storage (local = Volume oben; s3 = Garage-Sidecar/extern)
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads/documents}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       S3_ENDPOINT: ${S3_ENDPOINT:-}
@@ -243,6 +284,42 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
+      # #S06-11: serverseitige Verschlüsselung, wo das Backend sie kann
+      # (leer = keine — das Trust-Portal behauptet sie dann auch nicht).
+      S3_SSE: ${S3_SSE:-}
+      S3_SSE_KMS_KEY_ID: ${S3_SSE_KMS_KEY_ID:-}
+      # #S06-03: Anzahl der eigenen Reverse-Proxys vor der App. Ohne diesen
+      # Wert gilt jede X-Forwarded-For-Angabe als Selbstauskunft des Clients
+      # und wird im Signatur-Zertifikat als solche ausgewiesen.
+      # [WP9 · S10-05c] Dieselbe Variable steuert jetzt auch das Rate-Limit:
+      # getClientIp() zählt die vertrauenswürdigen Hops von RECHTS im
+      # X-Forwarded-For. Vorher nahm es den ERSTEN Eintrag — also den vom
+      # Client gelieferten — und ein einziger Header-Wert pro Versuch hob das
+      # Login-Limit vollständig auf. 0 = XFF ganz ignorieren (App direkt
+      # exponiert), 2 = CDN vor Caddy.
+      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+      # [WP9 · S10-05] Rate-Limit-Budgets, Format "<Anzahl>/<Sekunden>".
+      # ADR-019 hat diese Variablen versprochen; gelesen hat sie bis zu
+      # diesem Audit niemand. Leer lassen = Vorgaben aus lib/rate-limit.ts.
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-}
+      RATE_LIMIT_AUTH: ${RATE_LIMIT_AUTH:-}
+      RATE_LIMIT_COPILOT: ${RATE_LIMIT_COPILOT:-}
+      RATE_LIMIT_AI: ${RATE_LIMIT_AI:-}
+      RATE_LIMIT_IMPORT: ${RATE_LIMIT_IMPORT:-}
+      RATE_LIMIT_EXPORT: ${RATE_LIMIT_EXPORT:-}
+      RATE_LIMIT_UPLOAD: ${RATE_LIMIT_UPLOAD:-}
+      RATE_LIMIT_PORTAL: ${RATE_LIMIT_PORTAL:-}
+      RATE_LIMIT_INTAKE: ${RATE_LIMIT_INTAKE:-}
+      # Obergrenze der Token-Bucket-Map (S10-23: vorher unbegrenzt).
+      RATE_LIMIT_MAX_BUCKETS: ${RATE_LIMIT_MAX_BUCKETS:-50000}
+      # [WP4 · S03-01] Signaturschlüssel der Audit-Anker-Siegel. Wird von
+      # /api/v1/audit-log/integrity zur Prüfung gebraucht; ohne ihn meldet
+      # der Endpunkt `anchor_unsealed`.
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — ohne ihn sind die Audit-Anker unsigniert (WP4/S03-01)}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      # #S06-05: RFC-3161-Zeitstempel für Signaturglieder ("0" = aus).
+      SIGNATURE_TSA_ENABLED: ${SIGNATURE_TSA_ENABLED:-1}
+      FREETSA_CA_PEM: ${FREETSA_CA_PEM:-}
       # ClamAV-Scan (leer = übersprungen)
       CLAMAV_HOST: ${CLAMAV_HOST:-}
       CLAMAV_PORT: ${CLAMAV_PORT:-3310}
@@ -273,6 +350,27 @@ services:
       PRIVACY_HOSTING_LOCATION: ${PRIVACY_HOSTING_LOCATION:-Hetzner Online GmbH, Deutschland}
       PRIVACY_SUPERVISORY_AUTHORITY: ${PRIVACY_SUPERVISORY_AUTHORITY:-}
       PRIVACY_ADDITIONAL_TEXT: ${PRIVACY_ADDITIONAL_TEXT:-}
+    # [ARCTOS-FULL-2026-08-31 / WP10 · S13-13b]
+    # `web` hatte KEINEN Healthcheck, obwohl postgres, redis, garage und
+    # clamav einen hatten und WP9 den Worker nachgeruestet hat. Wirkung:
+    # `restart: unless-stopped` reagiert nur auf einen BEENDETEN Prozess.
+    # Ein haengender Node-Prozess (Event-Loop blockiert, Pool erschoepft)
+    # wurde nie neu gestartet — waehrend runbook.md:118 zusagte
+    # "Docker-Restart-Policy greift automatisch". Das galt nur fuer den
+    # sauberen Crash, nicht fuer den haeufigeren Hang; und weil auch kein
+    # externes Monitoring existierte (#S13-11), gab es ueberhaupt keinen
+    # Mechanismus, der einen haengenden Container erkennt.
+    #
+    # `start_period` deckt den Migrationslauf des Entrypoints ab; er kann
+    # auf einer grossen Datenbank mehrere Minuten dauern.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://127.0.0.1:3000/api/v1/health'').then(r=>r.json().then(j=>process.exit(r.ok&&j.status!==''unhealthy''?0:1))).catch(()=>process.exit(1))"'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 180s
     depends_on:
       postgres:
         condition: service_healthy
@@ -283,6 +381,7 @@ services:
 
   # ── ARCTOS Worker (Cron Jobs, Background Tasks) ───────────────
   worker:
+    logging: *default-logging # #S13-16
     build:
       context: .
       dockerfile: Dockerfile.worker
@@ -299,19 +398,52 @@ services:
     tmpfs:
       - /tmp
     environment:
-      # #SEC-F01b: the worker runs cross-org SYSTEM jobs ("for every org, do
-      # …" — 128 cron files). Under grc_app + RLS those would need an org
-      # context per row and, without one, see 0 rows → the crons would silently
-      # do nothing. So the worker deliberately connects as the PRIVILEGED
-      # superuser `grc` (BYPASSRLS): it is trusted, non-user-facing, and
-      # cross-org by design. Only the user-facing WEB app runs least-privilege
-      # (grc_app + per-request RLS context, #SEC-F01b/request-context.ts).
-      # Because APP_DATABASE_URL is intentionally NOT set here, packages/db
-      # falls back to DATABASE_URL (grc) for the worker's runtime pool.
-      DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
+      # ── Datenbankrolle ───────────────────────────────────────────────
+      # #SEC-F01b: der Worker fährt org-übergreifende SYSTEMjobs ("für jede
+      # Org …" — 129 Cron-Dateien). Unter grc_app + RLS bräuchte jede Zeile
+      # einen Org-Kontext und sähe ohne ihn 0 Zeilen; die Jobs täten still
+      # nichts. Der Worker braucht also BYPASSRLS.
+      #
+      # [ARCTOS-FULL-2026-08-31 / WP9 · S01-09] Bis hierher stand als Rolle
+      # der SUPERUSER `grc`. BYPASSRLS und SUPERUSER sind aber nicht dasselbe:
+      # Superuser bringt zusätzlich COPY … TO PROGRAM, pg_read_file(),
+      # ALTER SYSTEM und Eigentümerrechte auf jedes Objekt mit — nichts davon
+      # braucht ein Cron-Job, und genau daraus bestand die Eskalationsstufe
+      # von S10-01 (beliebiges SQL aus einer Continuous-Audit-Regel auf genau
+      # diesem Pool). `grc_worker` ist NOSUPERUSER, NOCREATEDB, NOCREATEROLE,
+      # BYPASSRLS und wird von deploy/provision-grc-app.sh angelegt
+      # (GRC_WORKER_PASSWORD setzen). apps/worker/src/lib/db-role-guard.ts
+      # beendet den Prozess in Produktion, wenn er trotzdem als Superuser
+      # verbindet.
+      #
+      # ARCTOS_ALLOW_PRIVILEGED_DB bleibt nötig: die Startup-Assertion in
+      # packages/db (S01-10) verlangt sie für JEDE privilegierte Rolle, also
+      # auch für BYPASSRLS ohne Superuser. Genau so ist sie gemeint — die
+      # Entscheidung steht sichtbar und einzeln widerrufbar im Deployment.
+      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}@postgres:5432/grc_platform
+      ARCTOS_ALLOW_PRIVILEGED_DB: "true"
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
+      # ── Scheduler (WP9 · S10-02) ─────────────────────────────────────
+      # Der Worker hat jetzt einen eigenen In-Process-Scheduler; vor diesem
+      # Audit rief NIEMAND die 128 Cron-Endpunkte auf. Auf "false" setzen,
+      # wenn ausnahmsweise ein externer Scheduler die Endpunkte treibt —
+      # beide Wege nehmen denselben Advisory Lock und schließen sich
+      # gegenseitig aus, doppelte Läufe sind also auch im Mischbetrieb
+      # ausgeschlossen. Bei mehreren Worker-Instanzen kann der Scheduler in
+      # allen aktiv bleiben: der Lock entscheidet, wer läuft.
+      CRON_SCHEDULER_ENABLED: ${CRON_SCHEDULER_ENABLED:-true}
+      # Aufbewahrung des Laufprotokolls job_run (Tage; Fehlläufe doppelt).
+      JOB_RUN_RETENTION_DAYS: ${JOB_RUN_RETENTION_DAYS:-90}
+      # ── Audit-Verankerung (WP4 · S03-01/S03-10) ──────────────────────
+      # Ohne AUDIT_SEAL_KEY sind Anker-Siegel zwar verkettet, aber nicht
+      # signiert; /api/v1/audit-log/integrity meldet das als
+      # `anchor_unsealed`. Der Key gehört in die Secret-Rotation.
+      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — ohne ihn sind die Audit-Anker unsigniert (WP4/S03-01)}
+      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
+      FREETSA_CA_PEM: ${FREETSA_CA_PEM:-}
+      AUDIT_ANCHOR_RETRY_DAYS: ${AUDIT_ANCHOR_RETRY_DAYS:-14}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
@@ -330,6 +462,8 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
+      S3_SSE: ${S3_SSE:-}
+      S3_SSE_KMS_KEY_ID: ${S3_SSE_KMS_KEY_ID:-}
       PORT: "3001"
       # #SEC-F07: keep every transient write on the /tmp tmpfs so read_only
       # rootfs holds. `npx tsx` (CMD) + esbuild transpile-cache honour these.
@@ -339,6 +473,19 @@ services:
     volumes:
       # Gleiche Sicht auf lokale Uploads wie web (Retention-Purge/Erase)
       - uploads:/app/uploads
+    # [WP9 · S10-21] Vorher hatte weder `web` noch `worker` einen
+    # Healthcheck, und /health war eine Konstante: ein Worker mit totem
+    # Verbindungspool antwortete weiter "ok", und `restart: unless-stopped`
+    # griff nur bei einem Prozessabbruch, nie bei einem hängenden Prozess.
+    # /health prüft jetzt die Datenbank (SELECT 1) und antwortet sonst 503.
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://127.0.0.1:3001/health'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     depends_on:
       postgres:
         condition: service_healthy
@@ -348,11 +495,94 @@ services:
       - arctos
     # Kein Port exposed — nur intern via Docker-Netzwerk erreichbar
 
+  # ── Betriebsmetriken und Sicherheitsalarme ────────────────────
+  # [ARCTOS-FULL-2026-08-31 / WP10 · S13-11, S13-12; ADR-017 Phase 1]
+  #
+  # Vor diesem Audit gab es KEIN Monitoring: eine vollstaendige Suche nach
+  # healthchecks.io / alertmanager / prometheus / promtail / loki / sentry /
+  # opentelemetry / statsd / datadog ueber apps, packages, deploy, scripts,
+  # .github und beide Compose-Dateien ergab null Treffer. ADR-017 stand seit
+  # 4,5 Monaten auf "Proposed" und terminierte Phase 1 auf "Woche 1". Ein
+  # Ausfall wurde durch Nutzerreport entdeckt; die im DR-Playbook zugesagte
+  # RTO von 5 min beginnt bei "Incident Confirmed" — es gab nichts, was
+  # einen Incident bestaetigt.
+  #
+  # Ebenso wenig gab es einen Alarm auf ein sicherheitsrelevantes Ereignis
+  # (#S13-12): nicht auf fehlgeschlagene Logins, nicht auf Massenexporte,
+  # nicht auf einen Bruch der Audit-Hash-Kette, nicht auf Job-Fehler. Die
+  # DATEN lagen vor — niemand las sie.
+  #
+  # Dieser Dienst wertet sie aus und alarmiert. Er verbindet als
+  # `grc_worker` (BYPASSRLS, kein SUPERUSER), weil die Auswertung
+  # org-uebergreifend liest; die Web-App darf das absichtlich nicht (S01-10).
+  # Er ist NICHT nach aussen exponiert — kein `ports:`-Block, erreichbar nur
+  # im Docker-Netz unter http://ops-metrics:9105/metrics.
+  #
+  # Ohne ALERT_WEBHOOK_URL / HEALTHCHECKS_URL schreibt er die Alarme
+  # strukturiert nach stderr. Das ist der ehrliche Mindestzustand: sichtbar
+  # statt abwesend. Beide Ziele gehoeren in die Inbetriebnahme-Checkliste
+  # (docs/runbook.md §8).
+  ops-metrics:
+    logging: *default-logging # #S13-16
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    entrypoint: ["node", "/app/scripts/ops-metrics.mjs"]
+    environment:
+      NODE_ENV: production
+      # Lesend org-uebergreifend — dieselbe Rolle wie der Worker.
+      DATABASE_URL: postgresql://grc_worker:${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}@postgres:5432/grc_platform
+      ARCTOS_ALLOW_PRIVILEGED_DB: "true"
+      OPS_METRICS_PORT: "9105"
+      OPS_INTERVAL_SECONDS: ${OPS_INTERVAL_SECONDS:-60}
+      BACKUP_DIR: /backups
+      # Alarmkanal. Slack-, Teams-, Mattermost- und Alertmanager-Webhooks
+      # nehmen alle einen JSON-POST entgegen.
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      # Dead-Man's-Switch (ADR-017 Phase 1). Bleibt der Ping aus, alarmiert
+      # der Dienst — das faengt auch den Fall "Host komplett tot" ab, den
+      # ein Exporter auf demselben Host per Definition nicht melden kann.
+      HEALTHCHECKS_URL: ${HEALTHCHECKS_URL:-}
+      ALERT_FAILED_LOGINS_5M: ${ALERT_FAILED_LOGINS_5M:-20}
+      ALERT_EXPORT_ROWS_1H: ${ALERT_EXPORT_ROWS_1H:-50000}
+      ALERT_JOB_FAILURES_1H: ${ALERT_JOB_FAILURES_1H:-3}
+      TMPDIR: /tmp
+      XDG_CACHE_HOME: /tmp/.cache
+      NPM_CONFIG_CACHE: /tmp/.npm
+    volumes:
+      # Nur lesend: die Stempel von db-backup.sh, offsite-sync.sh und
+      # dr-restore-drill.sh sind die Grundlage von
+      # arctos_backup_age_seconds, arctos_offsite_backup_age_seconds und
+      # arctos_dr_drill_age_seconds.
+      - /opt/arctos/backups:/backups:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'node -e "fetch(''http://127.0.0.1:9105/readyz'').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"'
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - arctos
+
 volumes:
   pgdata:
   uploads:
   branding:
-  miniodata:      # wird nach der Garage-Migration entfernt
+  # #S06-09: minio und minio-init sind entfernt. Das Volume bleibt nur,
+  # bis die Daten nach Garage übernommen sind (deploy/MINIO-TO-GARAGE-
+  # MIGRATION.md) — danach `docker volume rm <projekt>_miniodata`.
+  miniodata:
   garagemeta:
   garagedata:
   clamdb:

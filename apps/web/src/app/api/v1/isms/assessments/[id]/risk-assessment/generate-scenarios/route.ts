@@ -31,9 +31,13 @@ import {
   assessmentRiskEval,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, inArray, or, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -52,7 +56,10 @@ const SEVERITY_ORDER: Record<string, number> = {
 };
 const MAX_SCENARIOS_PER_CALL = 10_000;
 
-export async function POST(req: Request, { params }: RouteParams) {
+export const POST = withErrorHandler(async function POST(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { id: runId } = await params;
 
   const ctx = await withAuth("admin", "risk_manager");
@@ -297,4 +304,4 @@ export async function POST(req: Request, { params }: RouteParams) {
           : "Alle Scenarios haben bereits Evals.",
     },
   });
-}
+});

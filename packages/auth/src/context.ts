@@ -33,8 +33,14 @@ export async function getCurrentOrgId(
   }
 
   // Fallback: first org in the user's roles
-  if (session?.user?.roles?.length) {
-    return session.user.roles[0].orgId;
+  // [OP-065] `roles.length` wurde geprüft, `roles[0]` dann ungeprüft gelesen.
+  // Der Wert statt der Länge: fehlt die erste Rolle, gibt es auch keine
+  // Organisation — und `null` ist die Antwort, die diese Funktion dafür schon
+  // kennt. Ein `!` hätte an dieser Stelle einen TypeError im Auth-Kontext
+  // erzeugt, also in jedem Request.
+  const firstRole = session?.user?.roles?.[0];
+  if (firstRole) {
+    return firstRole.orgId;
   }
 
   return null;

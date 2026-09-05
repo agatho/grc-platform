@@ -21,6 +21,9 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface NIS2Requirement {
   id: string;
@@ -214,6 +217,13 @@ function NIS2DashboardInner() {
               key={req.id}
               className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => router.push(`/isms/nis2?detail=${req.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () =>
+                  router.push(`/isms/nis2?detail=${req.id}`),
+                )
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">

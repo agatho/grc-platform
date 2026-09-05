@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Index idx_control_org_effectiveness zeigte auf die nicht existierende Spalte control.effectiveness_rating (42703) und brach die Datei ab.
 -- Sprint 27: Compliance Culture Index + Multi-Tenancy Performance Optimization
 -- Migration 365–372 (combined)
 -- CCI snapshot table, configuration, RLS, audit triggers, composite indexes
@@ -19,11 +24,15 @@ CREATE TABLE IF NOT EXISTS "compliance_culture_snapshot" (
   "created_at" timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS "ccs_org_period_entity_idx"
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Die Indexnamen ccs_* kollidierten
+-- schemaweit mit 0166_create_cloud_compliance_snapshot.sql. Solange 0039
+-- scheiterte, fiel das nicht auf; 0166 ist in allen Umgebungen gelaufen und
+-- behaelt daher seine Namen. Umbenannt auf cculture_*.
+CREATE UNIQUE INDEX IF NOT EXISTS "cculture_org_period_entity_idx"
   ON "compliance_culture_snapshot" ("org_id", "org_entity_id", "period");
-CREATE INDEX IF NOT EXISTS "ccs_org_idx"
+CREATE INDEX IF NOT EXISTS "cculture_org_idx"
   ON "compliance_culture_snapshot" ("org_id");
-CREATE INDEX IF NOT EXISTS "ccs_period_idx"
+CREATE INDEX IF NOT EXISTS "cculture_period_idx"
   ON "compliance_culture_snapshot" ("org_id", "period");
 
 -- ──────────────────────────────────────────────────────────────
@@ -98,9 +107,12 @@ CREATE INDEX IF NOT EXISTS "idx_risk_org_category"
   ON "risk" ("org_id", "risk_category")
   WHERE "deleted_at" IS NULL;
 
-CREATE INDEX IF NOT EXISTS "idx_control_org_effectiveness"
-  ON "control" ("org_id", "effectiveness_rating")
-  WHERE "deleted_at" IS NULL;
+-- [ARCTOS-FULL-2026-08-31 / S09-01] `control` hat keine Spalte
+-- `effectiveness_rating` — Wirksamkeit wird ueber control_test/test_result
+-- modelliert (src/schema/control.ts). Der Index war konzeptionell tot und
+-- brach die gesamte Datei ab; er zeigt jetzt auf die reale Modellierung.
+CREATE INDEX IF NOT EXISTS "idx_control_test_org_result"
+  ON "control_test" ("org_id", "status");
 
 CREATE INDEX IF NOT EXISTS "idx_incident_org_created"
   ON "security_incident" ("org_id", "created_at")

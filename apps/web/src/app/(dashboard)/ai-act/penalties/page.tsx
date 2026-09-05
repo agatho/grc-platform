@@ -65,7 +65,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function PenaltiesPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const [rows, setRows] = useState<AiPenalty[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);

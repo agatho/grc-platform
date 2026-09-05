@@ -31,7 +31,7 @@ export default function AssessmentListPage() {
 
 function AssessmentListInner() {
   const t = useTranslations("ismsAssessment");
-  const router = useRouter();
+  const _router = useRouter();
   const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);

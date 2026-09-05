@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Plus, Loader2, Box } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CatalogObjectType } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { useModalDialog } from "@/components/ui/modal-shell";
 
 interface ObjectRow {
   id: string;
@@ -43,11 +44,16 @@ const objectTypeColors: Record<string, string> = {
 export default function ObjectCatalogPage() {
   const t = useTranslations("catalogs");
   const { formatDate } = useDateFormat();
-  const router = useRouter();
+  const _router = useRouter();
   const [objects, setObjects] = useState<ObjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  // [WP12 · S14-13] Escape, focus trap and focus restoration for the
+  // hand-built create dialog below.
+  const createDialog = useModalDialog(showCreateDialog, () =>
+    setShowCreateDialog(false),
+  );
   const [creating, setCreating] = useState(false);
   const [newObject, setNewObject] = useState({
     name: "",
@@ -213,8 +219,17 @@ export default function ObjectCatalogPage() {
       {/* Create Dialog */}
       {showCreateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold">{t("createObject")}</h2>
+          {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-13] Hand-built dialog: no
+              role="dialog", no aria-modal, no aria-labelledby, no Escape, no
+              focus return, background stayed tabbable.
+              See components/ui/modal-shell.tsx. */}
+          <div
+            {...createDialog.dialogProps}
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl focus:outline-none"
+          >
+            <h2 id={createDialog.titleId} className="text-lg font-semibold">
+              {t("createObject")}
+            </h2>
             <div className="mt-4 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">

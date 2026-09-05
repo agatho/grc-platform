@@ -12,6 +12,8 @@ import {
 import { and, eq, isNull, sql, gte } from "drizzle-orm";
 import { matchesSeverityThreshold } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
 
 interface PlaybookSuggestionResult {
   processed: number;
@@ -104,31 +106,40 @@ export const processPlaybookSuggestion = withCronInstrumentation(
 
           // Find admin/risk_manager to notify
           const adminUsers = await db.execute(sql`
-          SELECT u.id FROM "user" u
+          -- [WP9 · S10-07] uor.deleted_at: a revoked org role is a soft
+          -- delete, and u.deleted_at alone does not exclude a person who
+          -- left this org but is still active in another one.
+          SELECT DISTINCT u.id FROM "user" u
           INNER JOIN user_organization_role uor ON u.id = uor.user_id
           WHERE uor.org_id = ${incident.orgId}
             AND uor.role IN ('admin', 'risk_manager')
+            AND uor.deleted_at IS NULL
+            AND u.is_active = true
             AND u.deleted_at IS NULL
         `);
 
           for (const row of adminUsers) {
             const userId = (row as { id: string }).id;
-            await db.insert(notification).values({
-              orgId: incident.orgId,
-              userId,
-              type: "status_change",
-              title: `Playbook recommended: "${bestMatch.name}"`,
-              message: `Incident "${incident.title}" matches the "${bestMatch.name}" playbook. Consider activating it to guide the response.`,
-              channel: "both",
-              entityType: "security_incident",
-              entityId: incident.id,
-            });
+            await insertNotification(
+              {
+                orgId: incident.orgId,
+                userId,
+                type: "status_change",
+                title: `Playbook recommended: "${bestMatch.name}"`,
+                message: `Incident "${incident.title}" matches the "${bestMatch.name}" playbook. Consider activating it to guide the response.`,
+                channel: "both",
+                entityType: "security_incident",
+                entityId: incident.id,
+              },
+              { job: "playbook-suggestion" },
+            );
           }
 
           suggested++;
         }
-      } catch {
-        // Wrapper logs structured error; loop continues.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError({ job: "playbook-suggestion", scope: "row" }, err);
       }
     }
 

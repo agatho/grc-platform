@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { FileText, Scale, Archive, Shield } from "lucide-react";
+import { FileText, Scale, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxCmsDashboard } from "@grc/shared";

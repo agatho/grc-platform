@@ -2,6 +2,11 @@ import { db, auditChecklist, auditChecklistItem, audit, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { toCsvCell } from "@/lib/import-export/csv-sanitizer";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = {
   params: Promise<{ id: string; checklistId: string }>;
@@ -20,7 +25,10 @@ type RouteParams = {
 //
 // Query-Parameter: `format=csv` (default) oder `format=json` für
 // maschinenlesbaren Export.
-export async function GET(req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { id, checklistId } = await params;
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -76,17 +84,13 @@ export async function GET(req: Request, { params }: RouteParams) {
   }
 
   // 3. CSV generieren
-  const csvEscape = (v: unknown): string => {
-    if (v === null || v === undefined) return "";
-    const s =
-      typeof v === "string"
-        ? v
-        : typeof v === "object"
-          ? JSON.stringify(v)
-          : String(v);
-    // Semicolon ist unser Separator — Excel-DE friendly. Quote + escape.
-    return '"' + s.replace(/"/g, '""') + '"';
-  };
+  // #S04-05 (ARCTOS-FULL-2026-08-31): the local escaper wrapped every value
+  // in quotes but never neutralized the Excel formula triggers `= + - @`.
+  // Auditor notes, criterion text and corrective-action proposals are free
+  // text and land in a file that is opened by exactly the people this
+  // attack targets. `toCsvCell` prefixes a dangerous leading character with
+  // `'` and then quotes for the `;` delimiter used here.
+  const csvEscape = (v: unknown): string => toCsvCell(v, ";");
 
   const headerCols = [
     "Nr",
@@ -150,4 +154,4 @@ export async function GET(req: Request, { params }: RouteParams) {
       "Content-Disposition": `attachment; filename="${filename}"`,
     },
   });
-}
+});

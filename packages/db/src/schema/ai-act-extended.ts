@@ -16,6 +16,7 @@ import {
   date,
   jsonb,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { aiSystem } from "./ai-act";
 
@@ -55,6 +56,24 @@ export const aiGpaiModel = pgTable("ai_gpai_model", {
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
   updatedBy: uuid("updated_by").references(() => user.id),
+  codeOfPracticeAdherence: boolean("code_of_practice_adherence").default(
+    sql`false`,
+  ),
+  euRepresentativeName: varchar("eu_representative_name", { length: 500 }),
+  isSystemicRisk: boolean("is_systemic_risk")
+    .notNull()
+    .default(sql`false`),
+  modelEvaluationResults: jsonb("model_evaluation_results").default(
+    sql`'{}'::jsonb`,
+  ),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  technicalDocumentation: jsonb("technical_documentation").default(
+    sql`'{}'::jsonb`,
+  ),
+  version: varchar("version", { length: 100 }),
 });
 
 export const aiIncident = pgTable("ai_incident", {
@@ -95,6 +114,11 @@ export const aiIncident = pgTable("ai_incident", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  affectedRights: text("affected_rights").array(),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });
 
 export const aiCorrectiveAction = pgTable("ai_corrective_action", {
@@ -139,6 +163,10 @@ export const aiCorrectiveAction = pgTable("ai_corrective_action", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });
 
 export const aiAuthorityCommunication = pgTable("ai_authority_communication", {
@@ -174,6 +202,10 @@ export const aiAuthorityCommunication = pgTable("ai_authority_communication", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });
 
 export const aiPenalty = pgTable("ai_penalty", {
@@ -207,6 +239,10 @@ export const aiPenalty = pgTable("ai_penalty", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });
 
 export const aiProhibitedScreening = pgTable("ai_prohibited_screening", {
@@ -256,6 +292,10 @@ export const aiProhibitedScreening = pgTable("ai_prohibited_screening", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });
 
 export const aiProviderQms = pgTable("ai_provider_qms", {
@@ -305,4 +345,8 @@ export const aiProviderQms = pgTable("ai_provider_qms", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+  tags: text("tags")
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
 });

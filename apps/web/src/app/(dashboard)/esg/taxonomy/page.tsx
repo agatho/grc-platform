@@ -146,7 +146,7 @@ export default function TaxonomyPage() {
 }
 
 function TaxonomyInner() {
-  const t = useTranslations("esg");
+  const _t = useTranslations("esg");
   const [activities, setActivities] = useState<TaxonomyActivity[]>([]);
   const [summary, setSummary] = useState<TaxonomySummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -416,7 +416,7 @@ function TaxonomyInner() {
                     className="px-4 py-12 text-center text-gray-400"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <Leaf size={32} className="text-gray-300" />
+                      <Leaf size={32} className="text-gray-500" />
                       <span>
                         Noch keine Taxonomie-Aktivit&auml;ten erfasst.
                       </span>
@@ -464,7 +464,7 @@ function BoolIcon({ value }: { value: boolean }) {
   return value ? (
     <CheckCircle2 size={16} className="inline text-green-600" />
   ) : (
-    <XCircle size={16} className="inline text-gray-300" />
+    <XCircle size={16} className="inline text-gray-500" />
   );
 }
 

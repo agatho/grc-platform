@@ -1,12 +1,16 @@
 {
   "name": "@grc/email",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@grc/shared": "^0.1.0",
     "@react-email/components": "^1.0.12",
     "react": "^19.2.6",
     "resend": "^6.17.2"

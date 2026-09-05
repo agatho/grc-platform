@@ -37,8 +37,18 @@ ON CONFLICT (source, version) DO NOTHING;
 --     "framework_refs": ["ISO 27001 9.3", "NIS2 Art. 20", ...]
 --   }
 
-INSERT INTO catalog_entry (catalog_id, code, title, description, metadata, module_scope, display_order)
-VALUES
+-- [ARCTOS-FULL-2026-08-31 / S09-01] catalog_entry hat weder `title` noch
+-- `module_scope` oder `display_order` (42703). Reale Spalten:
+-- id, catalog_id, parent_entry_id, code, name, name_de, description,
+-- description_de, level, sort_order, status, metadata, created_at.
+-- title -> name, display_order -> sort_order; der Modulbezug wandert
+-- verlustfrei in metadata.module_scope. Zusaetzlich wird der Seed zum
+-- No-Op, wenn der zugehoerige Katalog fehlt (S09-07).
+INSERT INTO catalog_entry (catalog_id, code, name, description, metadata, sort_order)
+SELECT v.catalog_id::uuid, v.code, v.name, v.description,
+       v.metadata || jsonb_build_object('module_scope', v.module_scope),
+       v.sort_order
+FROM (VALUES
   ('c1040000-0000-0000-0000-000000000000', 'MGMT_REVIEW_Q1',
    'ISMS Management Review (Q1)',
    'Vierteljaehrliches ISMS-Management-Review gemaess ISO 27001 Clause 9.3. Eingangsdaten: Audit-Ergebnisse, KRI-Trends, Risk-Appetite-Abweichungen.',
@@ -129,4 +139,6 @@ VALUES
    '{"event_type":"deadline","recurrence":"monthly","default_month":1,"default_day":1,"duration_days":1,"responsible_role":"admin","framework_refs":["ISO 27001 A.8.8","CIS IG1 7.1"]}'::jsonb,
    'isms', 15)
 
+) AS v(catalog_id, code, name, description, metadata, module_scope, sort_order)
+WHERE EXISTS (SELECT 1 FROM catalog c WHERE c.id = v.catalog_id::uuid)
 ON CONFLICT (catalog_id, code) DO NOTHING;

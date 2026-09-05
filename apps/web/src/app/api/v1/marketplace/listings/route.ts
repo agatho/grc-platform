@@ -1,9 +1,13 @@
-import { db, marketplaceListing } from "@grc/db";
+import { db, marketplaceListing, toNumericInput } from "@grc/db";
 import { eq, and, sql, desc, asc, ilike } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import {
-  createMarketplaceListingSchema,
+  // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `createMarketplaceListingSchema`
+  // gehoert zur Extension-/Plugin-Domaene (pluginId, title, screenshots).
+  // `marketplace_listing` verlangt publisherId, categoryId, name, slug,
+  // summary — dafuer existiert `createMktplaceListingSchema`.
+  createMktplaceListingSchema,
   listMarketplaceListingsQuerySchema,
 } from "@grc/shared";
 
@@ -72,7 +76,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
-  const body = createMarketplaceListingSchema.parse(await req.json());
+  const body = createMktplaceListingSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
@@ -80,6 +84,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         ...body,
+        priceAmount: toNumericInput(body.priceAmount),
         createdBy: ctx.userId,
       })
       .returning();

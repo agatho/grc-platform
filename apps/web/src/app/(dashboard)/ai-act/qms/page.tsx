@@ -76,7 +76,7 @@ const MATURITY_COLORS: Record<number, string> = {
 };
 
 function QmsPageInner() {
-  const t = useTranslations("aiAct");
+  const _t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<ProviderQms[]>([]);
   const [loading, setLoading] = useState(true);

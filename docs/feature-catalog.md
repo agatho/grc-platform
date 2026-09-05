@@ -1,5 +1,13 @@
 # Feature-Catalog
 
+> **[ARCTOS-FULL-2026-08-31 / WP12 · S14-23] Korrekturlauf 2026-09-01.**
+> Dieses Dokument stand in mehreren Punkten im direkten Widerspruch zu
+> `CLAUDE.md` und zu `docs/STATUS.md` — 31 gegen 46 Frameworks, 401 gegen ~960
+> Mappings, 160 gegen 99 gegen 111 TypeScript-Fehler —, und es führte ein
+> vorhandenes Feature als fehlend (`docs/openapi.yaml` existiert seit Monaten).
+> Ein Häkchen in der Sprint-Tabelle heißt ab jetzt: der Code ist da **und** tut,
+> was der Name sagt. Wo das nicht zutrifft, steht es hier.
+
 _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 
 ## 10 Management-System-Gruppen (Sidebar)
@@ -38,25 +46,70 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 
 ## Extended Platform (Sprints 10-86)
 
-| Range | Features                                                                                | Status                                          |
-| ----- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| 10–15 | Module-System, Assets, Work-Items                                                       | ✅                                              |
-| 16–19 | Incident-Playbooks, Compliance-Calendar, Dashboards, Bulk-Import/Export                 | ✅                                              |
-| 20–23 | SSO/SCIM, Multi-Language-CMS, Where-Used, Risk-Appetite                                 | ✅                                              |
-| 24–27 | NIS2-Tracker, FAIR, ISMS-Intelligence, Compliance-Culture                               | ✅                                              |
-| 28–30 | Workflow-Automation, Knowledge-Graph, Report-Engine                                     | ✅                                              |
-| 31–33 | Regulatory-Simulator, Risk-Propagation, Audit-Analytics                                 | ✅                                              |
-| 34–37 | ABAC, GRC-Agents (MCP), EAM Foundation + Advanced                                       | ✅                                              |
-| 38–42 | Platform/ERM/ICS/BCMS/DPMS Advanced                                                     | ✅                                              |
-| 43–47 | Audit/TPRM/ESG/Whistleblowing/BPM Advanced                                              | ✅                                              |
-| 48–53 | EAM Dashboards, Visualizations, Data Architecture, AI, Catalog, Governance              | ✅                                              |
-| 54–56 | ERM Evaluation UX, GRC UX Enhancements, BPM Derived Views                               | ✅                                              |
-| 57–61 | API Platform, Plugin Architecture, Onboarding, Mobile, SaaS Metering                    | ✅                                              |
-| 62–66 | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ✅                                              |
-| 67–71 | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ✅ Code; DB-Tables in Prod seit ADR-014 Phase 2 |
-| 72–76 | DORA, EU AI Act, Tax CMS, Horizon Scanner, Cert Wizard                                  | ✅ Code; DB seit ADR-014 Phase 2                |
-| 77–81 | BI Report Builder, Benchmarking, Risk Quantification, Data Sovereignty, Role Dashboards | ✅                                              |
-| 82–86 | Marketplace, Stakeholder Portals, GRC Academy, Simulation Engine, Community Edition     | ✅                                              |
+| Range | Features                                                                                | Status                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 10–15 | Module-System, Assets, Work-Items                                                       | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 16–19 | Incident-Playbooks, Compliance-Calendar, Dashboards, Bulk-Import/Export                 | ⚠️ **Bulk-Import fehlt.** Playbooks, Kalender und Dashboards sind da; `import-job-processor.ts` importiert nichts und markiert jeden Job als `failed` (Inventar unten). Der Export läuft.                                                                                                                                                                                                                                                                                               |
+| 20–23 | SSO/SCIM, Multi-Language-CMS, Where-Used, Risk-Appetite                                 | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 24–27 | NIS2-Tracker, FAIR, ISMS-Intelligence, Compliance-Culture                               | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 28–30 | Workflow-Automation, Knowledge-Graph, Report-Engine                                     | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 31–33 | Regulatory-Simulator, Risk-Propagation, Audit-Analytics                                 | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 34–37 | ABAC, GRC-Agents (MCP), EAM Foundation + Advanced                                       | ⚠️ **GRC-Agents (MCP) fehlen.** ABAC und EAM sind da. `grep -rn MCP apps packages --include='*.ts'` findet genau einen Treffer, und der ist ein Kommentar in `packages/db/src/schema/agents.ts:1` (S05-17, S14-23/B8).                                                                                                                                                                                                                                                                  |
+| 38–42 | Platform/ERM/ICS/BCMS/DPMS Advanced                                                     | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 43–47 | Audit/TPRM/ESG/Whistleblowing/BPM Advanced                                              | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 48–53 | EAM Dashboards, Visualizations, Data Architecture, AI, Catalog, Governance              | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 54–56 | ERM Evaluation UX, GRC UX Enhancements, BPM Derived Views                               | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 57–61 | API Platform, Plugin Architecture, Onboarding, Mobile, SaaS Metering                    | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 62–66 | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ⚠️ **Teilweise.** Schema, UI und API vorhanden; die Test-, Sync- und Health-Läufe erfanden bis 2026-09-01 ihre Ergebnisse und persistierten sie als Evidenz (S14-02). WP9 hat die Erfindung entfernt, **nicht die Funktion gebaut**: die vier Endpunkte antworten heute 501, `connector-schedule-runner` und `connector-health-monitor` melden Fehlschlag (Inventar unten). Ein Provider-Client existiert nicht. Die Framework-Coverage-Heatmap zeigte Zufallszahlen (S14-01, behoben). |
+| 67–71 | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ⚠️ **Drei von fünf fehlen.** Copilot ist seit WP6 echt, Regulatory Change läuft. **AI Evidence Review** (`evidence-review-processor.ts`), **Control Testing** (`connector-schedule-runner.ts`, `connectors/[id]/test-run`) und **Predictive Risk** (`predictive-risk-trainer.ts`) melden „nicht implementiert“ (Inventar unten).                                                                                                                                                        |
+| 72–76 | DORA, EU AI Act, Tax CMS, Horizon Scanner, Cert Wizard                                  | ✅ Code; DB seit ADR-014 Phase 2                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 77–81 | BI Report Builder, Benchmarking, Risk Quantification, Data Sovereignty, Role Dashboards | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 82–86 | Marketplace, Stakeholder Portals, GRC Academy, Simulation Engine, Community Edition     | ⚠️ **Simulation Engine fehlt, der Marketplace ist ungeprüft.** Portale, Academy und Community Edition sind da. `simulation-runner.ts` rechnet kein Monte-Carlo/VaR, `marketplace-security-scanner.ts` prüft keine Einreichung — beide melden Fehlschlag statt Freigabe (Inventar unten).                                                                                                                                                                                                |
+
+## Was sich ehrlich als „nicht implementiert“ meldet
+
+> **[Welle 5b · OP-104 / OP-103] Korrekturlauf 2026-09-05, HEAD `2f716205`.**
+> WP9 hat vierzehn Codepfade, die Prüfergebnisse erfanden, auf eine ehrliche
+> Antwort umgestellt — und die Statustabellen darüber blieben stehen. Das ist
+> der Kern von OP-104: **die Doku führte fertig, was der Code als fehlend
+> meldet.** Dieser Abschnitt ist ab jetzt die einzige Stelle, an der die Liste
+> gepflegt wird; `CLAUDE.md` und `docs/STATUS.md` verweisen hierher.
+>
+> **Die Zahl stimmte nicht.** `WP9.md` §5.3 und der Kopfkommentar von
+> `apps/worker/tests/no-fabricated-evidence.test.ts` sprechen von „vierzehn
+> Pfaden“; der Kommentar zählt selbst dreizehn auf. Am 2026-09-05 gegen den
+> Code nachgezählt sind es **19 adressierbare Pfade in 12 Dateien**: 4
+> HTTP-Endpunkte, 7 Cron-Jobs und 8 Modul-Hintergrundprozesse.
+> `apps/worker/tests/docs-vs-honest-refusals.test.ts` leitet die Liste aus dem
+> Quellcode ab und lässt diesen Abschnitt nicht mehr davondriften.
+
+<!-- OP-104:refusal-paths=19 -->
+
+| Pfad                                                           | Antwort                | Was es nicht gibt                                                                                                                                                                                                                                     |
+| -------------------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/api/v1/cloud-connectors/executions/route.ts` | HTTP 501               | Kein Provider-Client; eine Cloud-Test-Suite kann nicht ausgeführt werden                                                                                                                                                                              |
+| `apps/web/src/app/api/v1/connectors/[id]/test-run/route.ts`    | HTTP 501               | Kein Connector-Testlauf; früher ein `pass` je Testdefinition                                                                                                                                                                                          |
+| `apps/web/src/app/api/v1/connectors/[id]/health/route.ts`      | HTTP 501               | Keine Erreichbarkeitsprüfung; früher aus der eigenen `status`-Spalte abgeleitet                                                                                                                                                                       |
+| `apps/web/src/app/api/v1/identity-connectors/sync/route.ts`    | HTTP 501               | Kein Identity-Sync; früher vier Konstanten (`complianceRate: "95.00"`)                                                                                                                                                                                |
+| `apps/worker/src/crons/connector-health-monitor.ts`            | wirft, schreibt nichts | dito, als Cron                                                                                                                                                                                                                                        |
+| `apps/worker/src/crons/connector-schedule-runner.ts`           | Zeitplan → `failure`   | Kein Testlauf; `next_run_at` wird korrekt fortgeschrieben                                                                                                                                                                                             |
+| `apps/worker/src/crons/evidence-review-processor.ts`           | Review-Job → `failed`  | Keine KI-gestützte Evidenzprüfung                                                                                                                                                                                                                     |
+| `apps/worker/src/crons/import-job-processor.ts`                | Import-Job → `failed`  | Kein Import; `processedItems` bleibt 0                                                                                                                                                                                                                |
+| `apps/worker/src/crons/marketplace-security-scanner.ts`        | Scan → blockiert       | Keine statische Analyse, kein Dependency-Scan, keine Malware-Prüfung                                                                                                                                                                                  |
+| `apps/worker/src/crons/predictive-risk-trainer.ts`             | Modell → `degraded`    | Kein Modelltraining; `lastTrainedAt` wird bewusst nicht fortgeschrieben                                                                                                                                                                               |
+| `apps/worker/src/crons/simulation-runner.ts`                   | Lauf → `failed`        | Keine Monte-Carlo-/What-if-Simulation, kein VaR                                                                                                                                                                                                       |
+| `apps/worker/src/lib/module-aware-cron.ts`                     | 8 × wirft              | `kri-threshold-check`, `control-test-reminders`, `isms-review-cycle`, `bcms-test-scheduler`, `dpia-review-reminders`, `consent-expiry-check`, `audit-plan-reminders`, `finding-follow-up` — in `module_definition` deklariert, nirgends implementiert |
+
+**Nicht in dieser Liste, aber verwandt:** `GET /api/v1/isms/soa/diff` antwortet
+501, wenn `fromRunId`/`toRunId` gesetzt sind — die SoA ist mandantenglobal und
+nicht je Lauf versioniert. Das ist eine Teilverweigerung eines vorhandenen
+Endpunkts, keine fehlende Fähigkeit, und deshalb nicht mitgezählt.
+
+**Was das für einen Betreiber heißt:** ein Scheduler, der gegen
+`POST /crons/modules/consent-expiry-check` läuft, bekommt seit WP9 eine 500 und
+eine `job_run`-Zeile mit `status='failed'`. Das ist beabsichtigt. Vorher kam
+`{"success":true,"processed":0}` — und ablaufende Einwilligungen wurden nie
+geprüft.
 
 ## Cross-Cutting (post-Sprint 86)
 
@@ -70,8 +123,8 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 | ISO 27005 Kataloge (31 Bedrohungen + 23 Schwachstellen)                                 | ✅                                |
 | SoA mit 93 Annex A Kontrollen                                                           | ✅                                |
 | Hierarchical Budget Model + Cost Fields                                                 | ✅                                |
-| 31 Catalog Frameworks (~2,100 entries)                                                  | ✅                                |
-| 401 Cross-Framework Mappings                                                            | ✅                                |
+| 46 Catalog Frameworks (`ls packages/db/sql/seed_catalog_*.sql`, 2026-09-01)             | ✅                                |
+| Cross-Framework Mappings (Zahl nur in der DB belastbar, s. u.)                          | ✅                                |
 | Normenbasierte Testpläne (ISO 27001/31000, COSO/IIA, ISO 22301, DSGVO, ISO 27036, CSRD) | ✅                                |
 | **Audit-ERM Feedback-Loop**                                                             | ✅ Iter 1-3 (2026-04-18)          |
 | **Schema-Drift-Health-Check**                                                           | ✅ F-18 (2026-04-17)              |
@@ -81,14 +134,14 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 
 ## Outstanding / Known Gaps
 
-| Gap                                                | Severity | Owner / ADR                                |
-| -------------------------------------------------- | -------- | ------------------------------------------ |
-| 132 Tables ohne RLS-Policy (static analysis)       | P1       | tbd                                        |
-| 52 Tables ohne audit_trigger                       | P1       | tbd                                        |
-| 83 extra DB-Tabellen ohne Drizzle-Schema-Export    | P2       | ADR-014 Phase 3 (Schema-Export nachziehen) |
-| Copilot nicht vernetzt (Auth-Chain zum Claude-API) | P3       | User-decision pending                      |
-| 160 pre-existing TypeScript errors                 | P3       | Tech-Debt                                  |
-| OpenAPI 3.1 Spec nicht generiert                   | P2       | Backlog                                    |
+| Gap                                             | Severity | Owner / ADR                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ~~132 Tables ohne RLS-Policy~~                  | —        | **Widersprach `docs/STATUS.md`** (dort seit 2026-07-20: 0 RLS_MISSING). Maßgeblich ist der RLS-Coverage-Report; diese Zeile war eine veraltete statische Analyse.                                                                                                                                                   |
+| ~~52 Tables ohne audit_trigger~~                | —        | dito — `docs/STATUS.md`: AUDIT_MISSING 0, 4 dokumentierte Ausnahmen.                                                                                                                                                                                                                                                |
+| 83 extra DB-Tabellen ohne Drizzle-Schema-Export | P2       | ADR-014 Phase 3 (Schema-Export nachziehen)                                                                                                                                                                                                                                                                          |
+| ~~Copilot nicht vernetzt~~                      | —        | **Seit WP6 vernetzt**: echter, richtliniengebundener Aufruf mit RAG-Kontext statt eines Echos der Nutzereingabe. Diese Zeile stand im direkten Widerspruch zum Häkchen für Sprint 67–71 in `CLAUDE.md`, das seinerseits nicht stimmte (S14-23/B12).                                                                 |
+| ~~160 pre-existing TypeScript errors~~          | —        | **0 in allen 12 Workspaces** (2026-09-01). Für dieselbe Größe waren drei Zahlen im Umlauf: 160 hier, 99 in `docs/STATUS.md`, 111 in `docs/perf/ts-errors-report.md` (S14-23/A21–A23). CI prüft jetzt jedes Paket; die bewusst abgeschalteten Strengeflags sind in `packages/*/tsconfig.json` mit Zahl dokumentiert. |
+| ~~OpenAPI 3.1 Spec nicht generiert~~            | —        | **Falsch — sie existiert.** `docs/openapi.yaml`, erzeugt von `scripts/generate-openapi.mjs`, 1,4 MB, über 1.300 Pfade. Seit 2026-09-01 zusätzlich `docs/API_REFERENCE.md`, ebenfalls generiert. (S14-23/B11 — inverse Drift: ein vorhandenes Feature als fehlend geführt.)                                          |
 
 ## Integration-Status nach Framework
 
@@ -113,4 +166,23 @@ _Übersicht aller Module + Status. Stand: 2026-04-18 nach ADR-014 Phase 1+2._
 | ISAE 3402 / SOC 2      | ✅ 51 Einträge  | ✅              | ✅  | ✅          |
 | OWASP ASVS 4.0.3       | ✅ 106 Einträge | ✅              | ✅  | ✅          |
 
-Cross-framework mappings (401): siehe `packages/db/sql/seed_cross_framework_mappings*.sql`.
+Cross-framework mappings: siehe `packages/db/sql/seed_cross_framework_mappings*.sql`.
+
+> **[WP12 · S14-23/A15]** Hier stand 401, in `CLAUDE.md` rund 960 — für dieselbe
+> Größe, Faktor 2,4 auseinander, und keine der beiden Zahlen war aus dem
+> Repository reproduzierbar. Eine dritte Schätzung wäre keine Verbesserung. Wer
+> die Zahl braucht, zählt sie — aber nicht mit dem Befehl, der bis 2026-09-05
+> hier stand: `SELECT count(*) FROM cross_framework_mapping;` läuft in
+> `ERROR: relation "cross_framework_mapping" does not exist`. **Eine Tabelle
+> dieses Namens gibt es nicht.** Die Korrektur der Doku-Drift hatte selbst
+> gedriftet.
+>
+> ```
+> # in den Seeds (unabhängig vom Datenbankstand), 2026-09-05: 943
+> grep -ho 'SELECT insert_mapping(' packages/db/sql/seed_cross_framework_mappings*.sql | wc -l
+>
+> # in der Datenbank, nach `seed-all` — die Tabelle heisst framework_mapping
+> # (Migration 0107); catalog_entry_mapping ist der UUID-Vorgänger, den
+> # Migration 0106 hinüberbrückt
+> SELECT count(*) FROM framework_mapping;
+> ```

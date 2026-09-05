@@ -22,7 +22,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/dpms/ropa — Create RoPA entry
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo");
   if (ctx instanceof Response) return ctx;
 
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/dpms/ropa — List RoPA entries
 export const GET = withErrorHandler(async function GET(req: Request) {

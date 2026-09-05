@@ -3,18 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import {
   ArrowLeft,
   Zap,
   Loader2,
   AlertTriangle,
   Shield,
-  Bug,
   History,
   Activity,
   Calendar,
-  Pencil,
 } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +52,7 @@ function ThreatDetailInner() {
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const t = useTranslations("isms");
+  const _t = useTranslations("isms");
 
   const [threat, setThreat] = useState<Threat | null>(null);
   const [scenarios, setScenarios] = useState<RiskScenario[]>([]);

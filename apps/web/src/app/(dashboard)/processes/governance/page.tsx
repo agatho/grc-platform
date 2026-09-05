@@ -136,7 +136,7 @@ export default function GovernancePage() {
 function GovernanceCockpit() {
   const t = useTranslations("processGovernance");
   const tProcess = useTranslations("process");
-  const { formatDate } = useDateFormat();
+  const { formatDate: _formatDate } = useDateFormat();
 
   const [data, setData] = useState<GovernanceData | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
@@ -519,7 +519,7 @@ function DashboardTab({
 function RoadmapTab({
   items,
   loading,
-  t,
+  t: _t,
 }: {
   items: RoadmapItem[];
   loading: boolean;

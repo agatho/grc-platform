@@ -1,16 +1,15 @@
-import {
-  db,
-  connectorTestResult,
-  connectorTestDefinition,
-  evidenceConnector,
-} from "@grc/db";
+import { db, connectorTestDefinition, evidenceConnector } from "@grc/db";
 import { triggerTestRunSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, inArray } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/connectors/:id/test-run — Trigger manual test run
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -66,31 +65,30 @@ export async function POST(
     );
   }
 
-  // Execute tests (simulated — real implementation would call provider APIs)
-  const results = await withAuditContext(ctx, async (tx) => {
-    const testResults = [];
-    for (const testDef of testDefs) {
-      const [result] = await tx
-        .insert(connectorTestResult)
-        .values({
-          orgId: ctx.orgId,
-          connectorId: id,
-          testDefinitionId: testDef.id,
-          status: "pass", // placeholder — real execution would evaluate
-          result: { simulated: true },
-          findings: [],
-          resourcesScanned: 1,
-          resourcesFailed: 0,
-          durationMs: Math.floor(Math.random() * 500) + 100,
-        })
-        .returning();
-      testResults.push(result);
-    }
-    return testResults;
-  });
-
+  // ── [ARCTOS-FULL-2026-08-31 / WP9 · S14-02] ──────────────────────────
+  //
+  // This block inserted one `connector_test_result` per test definition
+  // with `status: "pass"`, `resourcesFailed: 0` and a `Math.random()`
+  // duration, under the comment "simulated — real implementation would call
+  // provider APIs". `connector_test_result` is precisely the table an
+  // ISO-27001 or SOC-2 assessor reads as evidence of continuous control
+  // effectiveness, and `result: { simulated: true }` sat in a JSONB detail
+  // field the UI does not render — the marker existed only for whoever
+  // opened the source file.
+  //
+  // No provider client exists in this build, so the honest answer is that
+  // no test ran. Nothing is persisted; the missing result stays visible.
   return Response.json(
-    { data: { testsRun: results.length, results } },
-    { status: 201 },
+    {
+      error: "Not implemented",
+      detail:
+        "Connector tests cannot be executed in this build: no provider " +
+        "client is wired up. Refusing to record an unmeasured result — a " +
+        "missing test result is auditable, a fabricated 'pass' is not.",
+      connectorId: id,
+      connectorType: connector.connectorType,
+      applicableTests: testDefs.map((t) => t.testKey),
+    },
+    { status: 501 },
   );
-}
+});

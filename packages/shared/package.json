@@ -1,9 +1,12 @@
 {
   "name": "@grc/shared",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
+    "./logger": "./src/logger.ts",
     "./lib/merkle-tree": "./src/lib/merkle-tree.ts",
     "./lib/freetsa": "./src/lib/freetsa.ts",
     "./lib/opentimestamps": "./src/lib/opentimestamps.ts",
@@ -14,10 +17,12 @@
     "./lib/clamav": "./src/lib/clamav.ts"
   },
   "scripts": {
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@grc/bpmn": "^0.1.0",
     "fast-xml-parser": "^5.10.1",
     "zod": "^3.24"
   },

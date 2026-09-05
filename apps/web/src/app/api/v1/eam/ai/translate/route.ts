@@ -1,26 +1,52 @@
-import { db, eamAiConfig, eamTranslation } from "@grc/db";
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-13.4, S05-06, S05-09, S05-10, S05-12]
+//
+// Die Route schrieb
+//     const translatedText = `[${targetLanguage.toUpperCase()}] ${sourceText}`;
+// mit `status: "ai_translated"` in die Datenbank — eine als KI-Übersetzung
+// ausgewiesene Zeile, die keine ist. Dasselbe Muster wie S14-02
+// (erfundene Nachweise), nur im Übersetzungsmodul. Jetzt echter,
+// richtliniengebundener Modellaufruf.
+
+import { db, eamTranslation } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { translateSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import {
+  aiCompleteGoverned,
+  buildTranslatePrompt,
+  isAiProvider,
+} from "@grc/ai";
+import { sanitizeTranslation } from "@grc/shared";
+import { loadEamAiConfig } from "../_shared/config";
+import {
+  aiRateLimit,
+  aiErrorResponse,
+  aiJson,
+} from "../../../ai/_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/eam/ai/translate — Translate field(s)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const config = await db
-    .select()
-    .from(eamAiConfig)
-    .where(
-      and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)),
-    )
-    .limit(1);
+  const limited = await aiRateLimit(ctx.userId, {
+    bucket: "translate",
+    capacity: 5,
+    windowSeconds: 300,
+  });
+  if (limited) return limited;
 
-  if (!config.length) {
+  const config = await loadEamAiConfig(ctx.orgId);
+
+  if (!config) {
     return Response.json(
       {
         error:
@@ -30,7 +56,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = translateSchema.safeParse(body);
   if (!parsed.success)
     return Response.json({ error: parsed.error.flatten() }, { status: 422 });
@@ -49,12 +75,36 @@ export async function POST(req: Request) {
     )
     .limit(1);
 
-  const decryptedConfig = JSON.parse(
-    Buffer.from(config[0].configEncrypted, "base64").toString(),
-  );
+  let ai;
+  try {
+    ai = await aiCompleteGoverned({
+      feature: "eam.translate",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: parsed.data.entityType,
+      entityId: parsed.data.entityId,
+      // EAM-Feldtexte enthalten regelmässig Namen von Verantwortlichen.
+      containsPersonalData: true,
+      requestedProvider: isAiProvider(config.provider) ? config.provider : null,
+      messages: buildTranslatePrompt(
+        parsed.data.sourceText,
+        "de",
+        parsed.data.targetLanguage,
+      ),
+      maxTokens: 4096,
+      temperature: 0.1,
+    });
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
 
-  // In production, the translated text would come from the LLM
-  const translatedText = `[${parsed.data.targetLanguage.toUpperCase()}] ${parsed.data.sourceText}`;
+  const translatedText = sanitizeTranslation(ai.text.trim());
+  if (!translatedText) {
+    return Response.json(
+      { error: "Das Modell hat keinen Übersetzungstext geliefert." },
+      { status: 422 },
+    );
+  }
 
   let result;
   if (existing.length) {
@@ -84,11 +134,12 @@ export async function POST(req: Request) {
       .returning();
   }
 
-  return Response.json({
-    data: {
+  return aiJson(
+    {
       ...result[0],
-      provider: decryptedConfig.provider,
-      model: decryptedConfig.model,
+      provider: ai.provider,
+      model: ai.model,
     },
-  });
-}
+    ai.disclosure,
+  );
+});

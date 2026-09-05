@@ -168,28 +168,13 @@ CREATE INDEX IF NOT EXISTS ses_status_idx ON scenario_engine_scenario(org_id, st
 CREATE INDEX IF NOT EXISTS ses_tag_idx ON scenario_engine_scenario(org_id, tag);
 
 -- ──────────────────────────────────────────────────────────────
--- simulation_run_result  (Sprint 85)  — FK to existing simulation_run
--- ──────────────────────────────────────────────────────────────
-
-CREATE TABLE IF NOT EXISTS simulation_run_result (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id          UUID NOT NULL REFERENCES organization(id),
-  run_id          UUID NOT NULL REFERENCES simulation_run(id) ON DELETE CASCADE,
-  metric_key      VARCHAR(200) NOT NULL,
-  metric_name     VARCHAR(300) NOT NULL,
-  mean_value      NUMERIC(20,6),
-  median_value    NUMERIC(20,6),
-  p5_value        NUMERIC(20,6),
-  p95_value       NUMERIC(20,6),
-  min_value       NUMERIC(20,6),
-  max_value       NUMERIC(20,6),
-  std_dev         NUMERIC(20,6),
-  histogram_json  JSONB NOT NULL DEFAULT '[]'::jsonb,
-  unit            VARCHAR(50),
-  created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS sres_org_idx ON simulation_run_result(org_id);
-CREATE INDEX IF NOT EXISTS sres_run_idx ON simulation_run_result(run_id);
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Der Block, der simulation_run_result
+-- anlegt, ist hierher entfernt und nach 0384_simulation_run_result.sql
+-- verschoben. Grund: zwischen dieser Datei und
+-- 0278_create_simulation_run.sql bestand ein Zyklus — 0099 erzeugt den
+-- Typ simulation_status, den 0278 fuer simulation_run braucht, und 0099
+-- brauchte umgekehrt bereits simulation_run fuer den FK von
+-- simulation_run_result. Kein Mehrpass-Lauf konnte das aufloesen.
 
 -- ──────────────────────────────────────────────────────────────
 -- process_simulation_result  (ABAC / BPM) — FK to existing simulation_scenario

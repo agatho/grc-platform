@@ -1,134 +1,157 @@
-# Migrations — Bekannte Schema-Drift-Altlasten
+# Migrationen — Stand und bekannte Grenzen
 
-Stand: 2026-04-20 nach Konsolidierung und Release-0.1-Alpha-Triage. Dieser Report listet die Migrationen, die beim frischen `migrate-all`-Lauf nach drei Pässen noch fehlschlagen, kategorisiert nach Ursache.
+**Stand: 2026-09-01, nach der Remediation `ARCTOS-FULL-2026-08-31` (WP1).**
 
-## Alpha-Triage-Status (Release 0.1)
+Dieses Dokument beschrieb bis zum Audit einen Zustand, den es nicht mehr gab,
+und wurde vom Produktions-Entrypoint als Rechtfertigung dafür zitiert, dass
+fehlgeschlagene Migrationen toleriert werden. Beides ist entfallen. Was hier
+steht, ist gemessen; jede Zahl lässt sich mit dem genannten Befehl
+reproduzieren.
 
-Von ursprünglich 79 → 37 → jetzt **≈30** noch fehlschlagenden Migrationen. Fix-Scope für Alpha:
+## Ist-Stand
 
-| Kategorie                 | Alpha-Status             | Aktion                                                                                                                                          |
-| ------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| A (Seed-FKs, 6)           | **Deferred**             | Demo-Seed-Daten; Produktions-Seed läuft über `db:seed`, nicht Migration.                                                                        |
-| B (Schema-Drift, 9)       | **1 fixed / 8 deferred** | 0025 (`polname` → `policyname`) ist gefixt. Rest: Ziel-Tabellen existieren via `create-missing-tables.ts` + RLS-Gap-Closure.                    |
-| C (Missing Relations, 11) | **deferred**             | Zieltabellen werden indirekt durch `create-missing-tables.ts` + `0288_rls_gap_closure_v3.sql` angelegt.                                         |
-| D (Enum, 2)               | **Both fixed**           | 0026 Template-Seeds entfernt (missbräuchliche `notification`-Inserts mit `type='system'` + `user_id=NULL`); 0096 nutzt bereits `IF NOT EXISTS`. |
-| E (Name-Kollision, 1)     | **Fixed**                | 0046 nutzt jetzt `bpm_simulation_result` statt `simulation_result` (von 0006 belegt).                                                           |
-| F (TimescaleDB, 2)        | **Both fixed**           | `create_hypertable()` in 0136 + 0153 in `DO $$`-Block gewickelt — ohne Extension Plain-Table-Fallback.                                          |
-| G (Subquery-Cast, 1)      | **Deferred**             | 0033 i18n-Content-Migration, nicht release-blockierend.                                                                                         |
+```
+$ createdb wp1
+$ psql -d wp1 -c 'CREATE EXTENSION pgcrypto; CREATE EXTENSION "uuid-ossp";
+                  CREATE EXTENSION vector;   CREATE EXTENSION timescaledb;'
+$ cd packages/db && DATABASE_URL=... npx tsx src/migrate-all.ts
 
-Die verbleibenden ~20 failing Migrationen werden als _Alpha-acceptable deferred_ dokumentiert (Ticket: `release/0.2-migration-cleanup`).
+Applying 360 migrations...
+  Pass 1: 356 succeeded, 4 deferred
+  Pass 2: 4 recovered, 0 still failing
 
-## Ursprüngliches Gesamtbild
+✓ 584 tables created
+✓ 360/360 migrations applied
 
-Von 79 fehlschlagenden Migrationen (Stand 2026-04-20 früh) sind nach Bereinigung von Duplikaten, Index-Namens-Kollisionen, enum/type-Konflikten und schema-drift-Fixes noch **37 übrig**. Die DB wächst von 416 auf **483 Tabellen** — die verbleibenden 37 Migrationen erstellen überwiegend Nebenprodukte (Seeds, bridges) oder alter-Operationen auf Schemata, die seither umstrukturiert wurden.
+All migrations applied successfully.
+```
 
-## Kategorie A — Seed-Data-FK-Violations (6 Dateien)
+Exit-Code 0. Ein zweiter Lauf ist ein No-Op (siehe „Applied-State"). Der
+Schema-Diff gegen das Drizzle-Schema ist leer:
 
-Ursache: Die Migration versucht Demo-/Referenzdaten zu INSERT'en, die einen `org_id` verwenden, der in diesem Stand nicht existiert. Der Seed-Referenz-`org_id` war in einer älteren Seed-Pipeline fest.
+```
+$ npx tsx tests/schema-drift-report.ts
+Drizzle tables: 574   DB tables: 577
+missing in DB : 0
+column drift  : 0
+duplicate defs: 0
+RLS drift     : 3        # access_log, audit_anchor, audit_log — Finding S01-06, offen bei WP2
+extra in DB   : 3        # _arctos_migrations, bpm_simulation_result, whistleblowing_audit_log
+```
 
-| Datei                                            | Betroffene Tabelle                                      |
-| ------------------------------------------------ | ------------------------------------------------------- |
-| `0086_isms_corrective_actions.sql`               | `isms_nonconformity`                                    |
-| `0087_isms_risk_scenarios.sql`                   | `risk_scenario`                                         |
-| `0088_risk_acceptance.sql`                       | `risk_acceptance_authority`                             |
-| `0091_erm_bridge_foundations.sql`                | `erm_sync_config`                                       |
-| `0103_default_kri_templates.sql`                 | `kri` (ungültiges UUID `k1000...`)                      |
-| `0104_default_compliance_calendar_templates.sql` | `compliance_calendar_template` (ON CONFLICT-Ziel fehlt) |
+## Was sich geändert hat
 
-**Fix-Pattern**: Entweder Seed-INSERTs entfernen und in den `db:seed`-Scripts platzieren (sauberer), oder `ON CONFLICT DO NOTHING` + `WHERE EXISTS (SELECT 1 FROM organization WHERE id = ...)` vor dem INSERT.
+| Vorher                                                                                                  | Jetzt                                                                                         |
+| ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 43 Migrationen liefen gegen eine leere Datenbank dauerhaft nicht (S09-01)                               | 0                                                                                             |
+| 533 Tabellen nach `migrate-all`, 576 nach dem CI-Pfad, wieder andere in Produktion (S09-02)             | ein Pfad, ein Schema: 584 Tabellen                                                            |
+| `create-missing-tables.ts` legte fehlende Tabellen ohne FK, Index, Constraint, Enum und RLS an (S09-03) | ersatzlos entfernt; CI baut das Schema aus den Migrationen                                    |
+| `0315_rls_gap_closure_v4.sql` brach auf Tabelle 1 von 142 ab, 570 Policies entstanden nie (S09-04)      | 2552 Policies auf 508 Tabellen                                                                |
+| Der Runner entfernte `BEGIN;`/`COMMIT;` und erzwang eine Transaktion pro Datei (S09-05)                 | der Runner respektiert die Transaktionssteuerung der Datei                                    |
+| Kein Applied-State für 329 von 354 Dateien (S09-06)                                                     | Ledger `_arctos_migrations` mit SHA-256 je Datei, von Runner und Entrypoint gemeinsam genutzt |
+| Entrypoint mit `ON_ERROR_STOP=0`, `2>/dev/null`, ohne Abbruch (S13-03)                                  | `ON_ERROR_STOP=1`, stderr erhalten, Exit ≠ 0, App startet nicht                               |
+| Drei Sortierungen (`sort`, `sort -V`, JS `.sort()`) (S09-15, S13-21)                                    | überall Byte-Reihenfolge (`LC_ALL=C sort` ≡ `Array.prototype.sort()`)                         |
 
-## Kategorie B — Schema-Drift (Spalte existiert nicht, 9 Dateien)
+## Applied-State
 
-Ursache: Die Migration referenziert einen Spaltennamen, der im aktuellen Schema anders heißt. Typischerweise wurde die Spalte in einer späteren Migration umbenannt oder aufgeteilt.
+`_arctos_migrations (filename, checksum, applied_at, applied_by, status)`.
+Runner und Entrypoint tragen jede erfolgreich angewendete Datei mit ihrer
+SHA-256-Prüfsumme ein und überspringen sie danach. Das ist die Voraussetzung
+dafür, dass ein Containerstart nicht mehr alle Migrationen erneut einspielt —
+Idempotenz ist bei den Altdateien nicht durchgängig gegeben (`0285` legt einen
+Trigger ohne Guard an, `0306` eine Policy).
 
-| Datei                                              | Erwartete Spalte                          | Vermutete aktuelle Entsprechung                     |
-| -------------------------------------------------- | ----------------------------------------- | --------------------------------------------------- |
-| `0025_sprint14_rcsa.sql`                           | `polname`                                 | Interner `pg_policies`-Zugriff, Syntax-Update nötig |
-| `0032_sprint20_sso_scim.sql`                       | `module_definition.key`                   | `module_definition.module_key`                      |
-| `0039_sprint27_compliance_culture_performance.sql` | `effectiveness_rating`                    | Spalte umbenannt oder entfernt                      |
-| `0042`, `0099`, `0100`, `0101` (Report Engine)     | `module_scope`                            | Column wurde in `reporting.ts` nicht übernommen     |
-| `0053_sprint41_bcms_advanced.sql`                  | `scheduled_date`                          | Vermutlich `exercise_date` in `bc_exercise`         |
-| `0061_sprint49_eam_visualizations.sql`             | `inherent_risk_level`                     | `risk_level` oder `inherent_score`                  |
-| `0064_sprint52_eam_catalog.sql`                    | `name`                                    | Auf einer Tabelle die kein `name`-Feld hat          |
-| `0071_predictive_risk_tables.sql`                  | `model_type`                              | Siehe `risk_prediction_model` schema                |
-| `0092_tcfd_climate_risk_scenario.sql`              | `o.slug`                                  | Vermutlich `o.code` oder kein alias                 |
-| `0102_f08_catalog_dedupe.sql`                      | `catalog_entry_reference.source_entry_id` | Tabelle umstrukturiert                              |
+Trifft der Entrypoint eine **bereits deployte** Datenbank ohne Ledger an, läuft
+er einmal im Adoptionsmodus: Fehler der Form „already exists" gelten dann als
+Beleg, dass die Datei ihre Wirkung schon hat, und werden als `status='adopted'`
+verbucht; jeder andere Fehler bleibt fatal. Abschaltbar mit
+`MIGRATION_ADOPT_EXISTING=false`.
 
-**Fix-Pattern**: Pro Datei die Ziel-Spalte identifizieren (Schema vs Migration), ALTER-Statement anpassen.
+`drizzle/meta/_journal.json` enthält weiterhin nur die 25 von `drizzle-kit
+generate` erzeugten Einträge (`0000`–`0024`). Das ist **kein** Applied-State
+mehr, sondern die Historie des Generators; `drizzle-kit migrate` ist aus allen
+Schemabau-Pfaden entfernt. Neue Migrationen sind SQL-Dateien in `drizzle/` mit
+dem ADR-023-Metadaten-Header — das prüft
+`.github/workflows/migration-policy.yml`.
 
-## Kategorie C — Relation existiert nicht (8 Dateien)
+## Bekannte Grenzen (nicht behoben, bewusst)
 
-Ursache: Vorausgesetzte Tabelle wurde entweder umbenannt oder ist Teil eines abgebrochenen Features.
+1. **Vier Dateien brauchen einen zweiten Pass.** `0068`/`0069` referenzieren
+   `catalog`/`catalog_entry` aus `0075`, `0071` eine Spalte, die eine spätere
+   Datei ergänzt, `0106` `framework_mapping` aus `0107`. Die Reihenfolge ist
+   also nicht topologisch. Runner und Entrypoint konvergieren darüber in
+   höchstens drei Pässen und brechen ab, wenn danach noch etwas offen ist. Eine
+   echte topologische Sortierung hätte Änderungen an Migrationen erfordert, die
+   erfolgreich ausgeliefert sind — nach ADR-014 unzulässig.
 
-| Datei                                     | Erwartete Relation        | Anmerkung                                                |
-| ----------------------------------------- | ------------------------- | -------------------------------------------------------- |
-| `0029_sprint17_compliance_calendar.sql`   | `rcsa_campaign`           | 0025 sollte diese anlegen, failed zuerst                 |
-| `0050_sprint38_platform_advanced.sql`     | `incident`                | Vermutlich `isms_incident`                               |
-| `0077_global_tag_system.sql`              | `search_index`            | Nie angelegt                                             |
-| `0085_ai_act_complete.sql`                | `ai_gpai_model`           | Nie angelegt (in Schema deklariert aber keine Migration) |
-| `0085_ai_act_full_compliance.sql`         | `ai_system`               | Abhängigkeit aus 0085                                    |
-| `0090_ai_act_documentation_lifecycle.sql` | `ai_system`               | Abhängigkeit aus 0085                                    |
-| `0093_rls_gap_closure.sql`                | `grc_report_template`     | Vermutlich `report_template`                             |
-| `0105_phase3_rls_audit_triggers.sql`      | `ai_gpai_model`           | Abhängigkeit aus 0085                                    |
-| `0124_seed_isms_bcm_dashboards.sql`       | `dashboard_widget_config` | Feature-Tabelle fehlt                                    |
-| `0130_add_emergency_officer.sql`          | `bc_process`              | Abhängigkeit                                             |
-| `0279_create_simulation_parameter.sql`    | `simulation_scenario`     | Failure-Kaskade aus 0278                                 |
+2. **21 Indexnamen sind über Tabellen hinweg doppelt vergeben**, jeweils mit
+   `IF NOT EXISTS`. Sie brechen keine Migration, aber der zweite Index entsteht
+   still nicht; `node tests/check-migration-index-names.mjs` listet sie als
+   Warnung. Die betroffenen `org_id`-Indizes zieht
+   `0387_fk_and_org_id_indexes.sql` generisch nach; der Rest ist Aufräumarbeit
+   ohne Funktionsbezug.
 
-**Fix-Pattern**: Voraussetzende Tabelle einzeln anlegen (mit Drizzle-Schema-Auszug), danach das Abhängigkeits-Migration rehydrieren.
+3. **31 Nummernlücken** (`0147`, `0181`–`0185`, `0208`–`0210`, `0217`–`0222`,
+   `0250`, `0272`–`0277`, `0280`, `0358`, `0359`, `0364`–`0366`, `0370`–`0372`).
+   Harmlos, verhindern aber die Aussage „alle Migrationen bis N sind
+   eingespielt". Das Ledger ersetzt diese Aussage; ein Sequenz-Gate gibt es
+   bewusst nicht. Die Nummern sind seit dieser Remediation eindeutig — `0085`
+   und `0349` waren doppelt vergeben, `0085_ai_act_full_compliance.sql` heißt
+   jetzt `0085a_ai_act_full_compliance.sql`.
 
-## Kategorie D — Enum-Value-Mismatch (2 Dateien)
+4. **`dashboard_widget_config` existiert nicht.**
+   `0124_seed_isms_bcm_dashboards.sql` und die Seed-Skripte
+   `src/seeds/isms-bcm-dashboards.ts` und `src/seeds/erm-dashboards.ts`
+   schreiben in eine Tabelle, die es in keiner Migration, keiner
+   `pgTable`-Definition und keiner Umgebung gibt. Der Seed in der Migration ist
+   mit einem `to_regclass`-Guard versehen und damit ein No-Op. Die real
+   vorhandenen Ablagen (`custom_dashboard`, `custom_dashboard_widget`,
+   `role_dashboard_config`, `user_dashboard_layout`) sind alle org-gebunden und
+   damit keine Ablage für die hier gemeinten plattformweiten System-Dashboards.
+   **Offene fachliche Klärung**, kein technischer Defekt mehr.
 
-| Datei                                     | Enum                | Fehlender Wert                                                                       |
-| ----------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| `0026_sprint15_policy_acknowledgment.sql` | `notification_type` | `system`                                                                             |
-| `0096_additional_system_roles.sql`        | `user_role`         | `ciso` (unsichere Verwendung — ALTER TYPE ADD VALUE + Transaktion-Isolation-Problem) |
+5. **`notification_template` existiert nicht.** Gleiche Lage in
+   `0025_sprint14_rcsa.sql`: drei E-Mail-Vorlagen für RCSA sind geguarded und
+   werden nicht angelegt. Kein Code liest die Tabelle.
 
-**Fix-Pattern**: `ALTER TYPE X ADD VALUE IF NOT EXISTS 'y'` in eigener Transaktion _vor_ dem INSERT.
+6. **Drei Log-Tabellen ohne RLS** — `access_log`, `audit_anchor`, `audit_log`.
+   Das ist Finding S01-06 und gehört zu WP2. Der Drift-Report meldet sie; das
+   CI-Gate schaltet sie über `--fail-on-rls` scharf, sobald WP2 gelandet ist.
 
-## Kategorie E — Name-Kollision (1 Datei)
+7. **Fünf Spalten, in denen die Datenbank strenger ist als der Code** —
+   `{audit,process,vendor}_sign_off.ip_address` (`inet` statt `varchar`) und
+   `catalog_entry_mapping.{relationship,mapping_source}` (Enum statt
+   `varchar`). Sie stehen begründet in `tests/schema-drift.ts`
+   (`ACCEPTED_TYPE_DRIFT`); angeglichen gehört hier die Code-Seite, und die
+   liegt bei den Paketen, die diese Module besitzen.
 
-| Datei                                   | Problem                                                                                                                             |
-| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `0046_sprint34_abac_simulation_dmn.sql` | Erstellt `simulation_result`, das bereits von `0006_friendly_the_spike.sql` angelegt wurde. Unterschiedliche Tabellen-Definitionen. |
+8. **TimescaleDB wird nicht genutzt.** Die beiden `create_hypertable()`-Aufrufe
+   in `0136` und `0153` sind entfernt (S09-18): sie schlugen mit `TS103` fehl,
+   sobald die Extension vorhanden war, weil beide Tabellen einen einspaltigen
+   Primärschlüssel auf `id` haben — die Dateien waren also überall dort grün,
+   wo TimescaleDB fehlte, und genau dann rot, wenn jemand die Extension
+   aktivierte. Es gibt weiterhin null Hypertables und null anwendungsbezogene
+   Retention-Policies. Ob das Produktions-Image `timescale/timescaledb` bleibt,
+   ist eine Betriebsentscheidung (WP10).
 
-**Fix**: Entscheiden, welche Definition die gültige ist. Dubletten-Migration um die doppelte CREATE-Anweisung bereinigen.
+## Zur früheren Fassung dieses Dokuments
 
-## Kategorie F — PostgreSQL-Feature fehlt (2 Dateien)
+Die alte Einteilung (Kategorien A–G, „≈30 fehlschlagend", „483 Tabellen") war
+zum Zeitpunkt des Audits in sieben Punkten sachlich falsch:
 
-| Datei                           | Abhängigkeit                      | Status                                   |
-| ------------------------------- | --------------------------------- | ---------------------------------------- |
-| `0136_create_api_usage_log.sql` | TimescaleDB `create_hypertable()` | Extension nicht im Dev-Setup installiert |
-| `0153_create_usage_meter.sql`   | TimescaleDB `create_hypertable()` | s.o.                                     |
+- Kategorie D („Enum, both fixed") — `IF NOT EXISTS` adressiert `55P04`
+  („unsafe use of new value") nicht; `0096` scheiterte weiterhin.
+- Kategorie F („TimescaleDB, both fixed") — der `DO`-Block fängt nur die
+  _fehlende_ Extension ab; ist sie da, schlagen beide Dateien fehl.
+- Kategorie B („Ziel-Tabellen existieren via `create-missing-tables.ts`") — die
+  so erzeugten Tabellen hatten weder FKs noch Indizes, Constraints oder RLS.
+- `0053` → vermutet `exercise_date`, real `planned_date`.
+- `0092` → vermutet `o.code`, real `org_code`.
+- `0061` → vermutet `risk_level`/`inherent_score`, real `risk_score_inherent`.
+- `0064` → „auf einer Tabelle die kein `name`-Feld hat", konkret
+  `business_capability`, Zeile 99.
 
-**Fix**: Entweder TimescaleDB installieren (prod-Empfehlung, ADR-005) oder die `SELECT create_hypertable(...)`-Zeilen bedingt machen (`DO $$ IF ... THEN ... END IF; $$`).
-
-## Kategorie G — Subquery-Cast-Restriction (1 Datei)
-
-| Datei                                      | Problem                                                                                                                                             |
-| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0033_sprint21_multi_language_content.sql` | "Unteranfragen können in Umwandlungsausdrücken nicht verwendet werden" — eine CAST-Expression enthält eine SELECT. PostgreSQL 16+ striktere Regeln. |
-
-**Fix**: Subquery in eine CTE auslagern, oder als Spalten-Default evaluieren.
-
-## Was ist bereits gefixt (Overnight 2026-04-20)
-
-Für Kontext — das folgende wurde in der Session _vorher_ bereits gelöst:
-
-- ✅ `src/migrations/` archiviert nach `src/migrations-archive/` mit README
-- ✅ 171 Sprint-Migrationen nach `drizzle/0113-0283` übertragen
-- ✅ 18 byte-identische Duplikat-Files gelöscht (academy, framework*mapping, ai*\_, simulation\_\_, import_job, risk_appetite_threshold)
-- ✅ `migrate-all.ts` mit echter `client.begin()`-Transaktion pro File — keine partielle Anwendung mehr möglich
-- ✅ 11 Index-Namens-Kollisionen gefixt (`ar_*` → `agent_registration_*`, `ae_*` → `architecture_element_*` / `academy_enrollment_*`, `ac_*` → `academy_course_*`, `al_*` → `academy_lesson_*`, `cm_*` → `copilot_message_*`, `cte_*` → `control_test_execution_*`, `cts_*` → `control_test_script_*`, `ma_*` → `maturity_assessment_*`, `dr_*`/`rtc_*` → `data_region_*`/`region_tenant_config_*`, `rdc_*` → `role_dashboard_config_*`, `pc_*` → `portal_config_*`)
-- ✅ `report_template`-TYPE vs `report_template`-TABLE-Kollision aufgelöst (TYPE in `branding_template_style` umbenannt)
-- ✅ `crisis_severity::text`-Cast in 0091, um enum-vs-text Vergleich zu erlauben
-
-## Messgrößen
-
-| Metrik                               | Vorher                                 | Jetzt                    |
-| ------------------------------------ | -------------------------------------- | ------------------------ |
-| Tables in fresh DB via `migrate-all` | 416 (nur durch manuelles psql möglich) | **483**                  |
-| Failing Migrations                   | 79                                     | **37**                   |
-| Migrationsordner                     | 2                                      | **1 (drizzle/)**         |
-| Byte-identische Duplikat-Files       | 18                                     | 0                        |
-| Index-Namens-Kollisionen             | ≥11                                    | 0                        |
-| Pipeline-Atomarität                  | ❌ silent errors                       | ✅ per-file transactions |
+Die Einteilung ist ersatzlos entfallen, weil es die Fehlschläge nicht mehr
+gibt. Die vollständige Einzelanalyse der 43 Dateien liegt in
+`/work/audit/evidence/S09-migration-defects.md`, die Umsetzung in
+`/work/audit/remediation/WP1.md`.

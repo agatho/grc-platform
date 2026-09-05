@@ -1,11 +1,28 @@
-import { db, control, finding, controlTest, aiPromptLog } from "@grc/db";
+// POST /api/v1/ai/test-plan — AI-generated test plan for a control
+//
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06, S05-09, S05-10, S05-11, S05-12]
+// Vorher: Inline-Prompt mit Kontroll-, Test- und Feststellungstexten im
+// Fliesstext, kein Rate-Limit, `testPlan = { error: "Failed to parse AI
+// response" }` als Ergebnisobjekt im Erfolgspfad.
+
+import { db, control, finding, controlTest } from "@grc/db";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { requireModule } from "@grc/auth";
 import { aiTestPlanSchema } from "@grc/shared";
-import { aiComplete } from "@grc/ai";
+import {
+  aiCompleteGoverned,
+  buildTestPlanPrompt,
+  testPlanSchema,
+  safeJsonParse,
+} from "@grc/ai";
+import { aiRateLimit, aiErrorResponse, aiJson } from "../_shared/ai-route";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-// POST /api/v1/ai/test-plan — AI-generated test plan for a control
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -14,7 +31,13 @@ export async function POST(req: Request) {
   );
   if (ctx instanceof Response) return ctx;
 
-  const body = aiTestPlanSchema.safeParse(await req.json());
+  const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const limited = await aiRateLimit(ctx.userId);
+  if (limited) return limited;
+
+  const body = aiTestPlanSchema.safeParse(await req.json().catch(() => null));
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -22,7 +45,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Fetch control details
   const [ctrl] = await db
     .select({
       id: control.id,
@@ -49,7 +71,6 @@ export async function POST(req: Request) {
     return Response.json({ error: "Control not found" }, { status: 404 });
   }
 
-  // Fetch recent test history
   const recentTests = await db
     .select({
       testDate: controlTest.testDate,
@@ -64,7 +85,6 @@ export async function POST(req: Request) {
     .orderBy(desc(controlTest.testDate))
     .limit(5);
 
-  // Fetch recent findings
   const recentFindings = await db
     .select({
       title: finding.title,
@@ -82,79 +102,44 @@ export async function POST(req: Request) {
     .orderBy(desc(finding.createdAt))
     .limit(5);
 
-  const prompt = `You are a GRC auditor. Generate a structured test plan for this internal control.
-
-Control: "${ctrl.title}"
-Description: "${ctrl.description ?? "N/A"}"
-Type: ${ctrl.controlType}
-Frequency: ${ctrl.frequency}
-Automation: ${ctrl.automationLevel}
-Objective: "${ctrl.objective ?? "N/A"}"
-Assertions: ${ctrl.assertions?.join(", ") ?? "N/A"}
-Existing test instructions: "${ctrl.testInstructions ?? "None"}"
-
-Recent test results: ${recentTests.length > 0 ? JSON.stringify(recentTests) : "None"}
-Recent findings: ${recentFindings.length > 0 ? JSON.stringify(recentFindings) : "None"}
-
-Return JSON:
-{
-  "objective": string,
-  "scope": string,
-  "approach": string,
-  "sampleSize": string,
-  "steps": [{"step": number, "action": string, "expectedEvidence": string}],
-  "focusAreas": [string],
-  "riskBasedConsiderations": string,
-  "estimatedDuration": string
-}`;
-
-  const startMs = Date.now();
-
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a GRC audit expert. Respond with valid JSON only, no markdown.",
-      },
-      { role: "user", content: prompt },
-    ],
-    maxTokens: 3000,
-    temperature: 0.3,
-  });
-
-  const latencyMs = Date.now() - startMs;
-
-  await db.insert(aiPromptLog).values({
-    orgId: ctx.orgId,
-    userId: ctx.userId,
-    promptTemplate: "test-plan",
-    inputTokens: aiResponse.usage?.inputTokens ?? 0,
-    outputTokens: aiResponse.usage?.outputTokens ?? 0,
-    model: aiResponse.model,
-    latencyMs,
-    costUsd: String(
-      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
-    ),
-    cachedResult: false,
-  });
-
-  let testPlan: unknown;
   try {
-    const cleaned = aiResponse.text.replace(/```json\n?|\n?```/g, "").trim();
-    testPlan = JSON.parse(cleaned);
-  } catch {
-    testPlan = { error: "Failed to parse AI response" };
-  }
+    const result = await aiCompleteGoverned({
+      feature: "ai.test_plan",
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      entityType: "control",
+      entityId: ctrl.id,
+      messages: buildTestPlanPrompt({
+        control: {
+          title: ctrl.title,
+          description: ctrl.description,
+          controlType: ctrl.controlType,
+          frequency: ctrl.frequency,
+          automationLevel: ctrl.automationLevel,
+          objective: ctrl.objective,
+          testInstructions: ctrl.testInstructions,
+          assertions: ctrl.assertions ?? null,
+        },
+        recentTests,
+        recentFindings,
+      }),
+      maxTokens: 3000,
+      temperature: 0.3,
+      parse: (raw) => safeJsonParse(raw),
+      outputSchema: testPlanSchema,
+    });
 
-  return Response.json({
-    data: {
-      controlId: body.data.controlId,
-      controlTitle: ctrl.title,
-      testPlan,
-      model: aiResponse.model,
-      provider: aiResponse.provider,
-    },
-  });
-}
+    return aiJson(
+      {
+        controlId: body.data.controlId,
+        controlTitle: ctrl.title,
+        testPlan: result.data,
+        model: result.model,
+        provider: result.provider,
+      },
+      result.disclosure,
+    );
+  } catch (err) {
+    return aiErrorResponse(err);
+  }
+});

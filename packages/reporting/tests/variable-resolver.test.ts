@@ -153,3 +153,44 @@ describe("validateVariables", () => {
     expect(result.missing).toContain("title");
   });
 });
+
+// [Welle 4b, Strang 6 · OP-065] Prototyp-Eigenschaften sind keine Variablen.
+//
+// `getNestedValue` griff mit `(current as Record<string, unknown>)[part]` zu
+// und fragte damit die Prototypenkette mit. Gemessen am 2026-09-03 gegen
+// 01d0e4cc mit `{ org: { name: "ACME" } }`:
+//
+//   {{org.constructor}} → "function Object() { [native code] }"
+//   {{org.__proto__}}   → "[object Object]"
+//
+// Der Text einer Berichtsvorlage ist damit ein Weg, Fremdes in einen
+// erzeugten Bericht zu schreiben — ausgerechnet in einer Funktion, deren
+// Kopfkommentar „Safely resolve nested property" sagt.
+describe("getNestedValue — Prototyp-Eigenschaften", () => {
+  // `user` steht NICHT in ALLOWED_NAMESPACES (Zeile 7 ff.) — deshalb `author`.
+  const ctx = {
+    org: { name: "ACME", id: "org-1" },
+    author: { name: "Ada", email: "ada@example.org" },
+  };
+
+  it.each([
+    "constructor",
+    "__proto__",
+    "toString",
+    "valueOf",
+    "hasOwnProperty",
+  ])("löst {{org.%s}} nicht auf", (key) => {
+    const out = resolveVariables(`{{org.${key}}}`, ctx);
+    expect(out).not.toContain("native code");
+    expect(out).not.toContain("[object Object]");
+    // Gleiche Antwort wie für jede andere unbekannte Eigenschaft eines
+    // erlaubten Namensraums: der leere String.
+    expect(out).toBe("");
+  });
+
+  it("lässt echte Eigenschaften unverändert", () => {
+    expect(resolveVariables("{{org.name}} / {{author.name}}", ctx)).toBe(
+      "ACME / Ada",
+    );
+  });
+});

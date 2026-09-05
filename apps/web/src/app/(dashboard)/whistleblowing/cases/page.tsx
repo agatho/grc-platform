@@ -4,14 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Loader2,
-  RefreshCcw,
-  AlertTriangle,
-  Shield,
-  Clock,
-  Filter,
-} from "lucide-react";
+import { Loader2, RefreshCcw, Shield, Filter } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";

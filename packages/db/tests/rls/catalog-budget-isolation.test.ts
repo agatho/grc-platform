@@ -5,6 +5,8 @@ import {
   setRlsContext,
   clearRlsContext,
   schema,
+  requireRow,
+  requireAt,
 } from "../helpers";
 
 /**
@@ -46,35 +48,62 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
     appDb = createAppDb();
 
     // Create two test organizations
-    const [orgA] = await adminDb.client`
+    const orgA = requireRow(
+      await adminDb.client`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Catalog Org A " + suffix}, 'subsidiary', 'DEU')
       RETURNING id
-    `;
-    const [orgB] = await adminDb.client`
+    `,
+      "orgA",
+    );
+    const orgB = requireRow(
+      await adminDb.client`
       INSERT INTO organization (name, type, country)
       VALUES (${"RLS Catalog Org B " + suffix}, 'subsidiary', 'AUT')
       RETURNING id
-    `;
+    `,
+      "orgB",
+    );
     orgAId = orgA.id;
     orgBId = orgB.id;
 
     // Create two test users
-    const [uA] = await adminDb.client`
+    const uA = requireRow(
+      await adminDb.client`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-cat-a-" + suffix + "@test.dev"}, 'Cat User A', 'x')
       RETURNING id
-    `;
-    const [uB] = await adminDb.client`
+    `,
+      "uA",
+    );
+    const uB = requireRow(
+      await adminDb.client`
       INSERT INTO "user" (email, name, password_hash)
       VALUES (${"rls-cat-b-" + suffix + "@test.dev"}, 'Cat User B', 'x')
       RETURNING id
-    `;
+    `,
+      "uB",
+    );
     userAId = uA.id;
     userBId = uB.id;
 
@@ -91,40 +120,52 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       SELECT id FROM catalog LIMIT 1
     `;
     if (existing.length > 0) {
-      catalogId = existing[0].id;
+      catalogId = requireAt(existing, 0, "existing").id;
     } else {
-      const [cat] = await adminDb.client<{ id: string }[]>`
+      const cat = requireRow(
+        await adminDb.client<{ id: string }[]>`
         INSERT INTO catalog (name, catalog_type, source, scope, version)
         VALUES (${"RLS Test Catalog " + suffix}, 'control', 'rls-test', 'platform', '1.0.0')
         RETURNING id
-      `;
+      `,
+        "cat",
+      );
       catalogId = cat.id;
     }
 
     // --- Seed test data for Org A ---
 
     // Activate a catalog for Org A
-    const [ac] = await adminDb.client`
+    const ac = requireRow(
+      await adminDb.client`
       INSERT INTO org_active_catalog (org_id, catalog_type, catalog_id, enforcement_level)
       VALUES (${orgAId}, 'control', ${catalogId}, 'mandatory')
       RETURNING id
-    `;
+    `,
+      "ac",
+    );
     activeCatalogId = ac.id;
 
     // Create a budget for Org A
-    const [b] = await adminDb.client`
+    const b = requireRow(
+      await adminDb.client`
       INSERT INTO grc_budget (org_id, year, total_amount, currency, status, name, created_by)
       VALUES (${orgAId}, 2026, 50000.00, 'EUR', 'draft', ${"RLS Test Budget " + suffix}, ${userAId})
       RETURNING id
-    `;
+    `,
+      "b",
+    );
     budgetId = b.id;
 
     // Create a cost entry for Org A
-    const [ce] = await adminDb.client`
+    const ce = requireRow(
+      await adminDb.client`
       INSERT INTO grc_cost_entry (org_id, entity_type, entity_id, cost_category, cost_type, amount, currency, period_start, period_end, created_by)
       VALUES (${orgAId}, 'budget', ${budgetId}, 'tools', 'actual', 12500.00, 'EUR', '2026-01-01', '2026-12-31', ${userAId})
       RETURNING id
-    `;
+    `,
+      "ce",
+    );
     costEntryId = ce.id;
   });
 
@@ -217,7 +258,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM org_active_catalog
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -227,18 +268,32 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, catalog_type, enforcement_level FROM org_active_catalog
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(activeCatalogId);
-      expect(result[0].catalog_type).toBe("control");
-      expect(result[0].enforcement_level).toBe("mandatory");
+      expect(requireAt(result, 0, "result").id).toBe(activeCatalogId);
+      expect(requireAt(result, 0, "result").catalog_type).toBe("control");
+      expect(requireAt(result, 0, "result").enforcement_level).toBe(
+        "mandatory",
+      );
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access active catalogs", async () => {
-      // RLS policies cast app.current_org_id to UUID; an empty/unset value
-      // causes a cast error, which effectively denies access — correct behavior.
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`,
-      ).rejects.toThrow();
+    // [ARCTOS-FULL-2026-08-31 / WP2 · S01-18] Diese Erwartung hat sich
+    // geaendert. Sie lautete: "RLS policies cast app.current_org_id to UUID;
+    // an empty/unset value causes a cast error, which effectively denies
+    // access — correct behavior." Eine Exception ist aber KEINE
+    // Zugriffskontrolle, sondern ein Verfuegbarkeitsdefekt: 445 Tabellen
+    // trugen mindestens eine Policy, die den GUC ohne NULLIF-Guard nach
+    // ::uuid castet, und weil alle Policies PERMISSIVE sind und per OR
+    // ausgewertet werden, genuegte eine davon, um die ganze Abfrage mit
+    // HTTP 500 scheitern zu lassen. Die gesamte Zwei-Pool-Konstruktion in
+    // packages/db existierte nur, um das zu umschiffen.
+    // Migration 0397 bringt jede Policy auf die NULLIF-Form: der Ausdruck
+    // ist bei jedem GUC-Zustand definiert, ein fehlender Kontext liefert
+    // NULL und damit ZERO ROWS. Fail-closed bleibt es — jetzt ohne Fehler.
+    it("without RLS context, non-superuser sees zero active catalogs (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -259,7 +314,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM grc_budget
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -269,16 +324,18 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, year, total_amount, status, name FROM grc_budget
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(budgetId);
-      expect(result[0].year).toBe(2026);
-      expect(result[0].status).toBe("draft");
+      expect(requireAt(result, 0, "result").id).toBe(budgetId);
+      expect(requireAt(result, 0, "result").year).toBe(2026);
+      expect(requireAt(result, 0, "result").status).toBe("draft");
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access budgets", async () => {
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`,
-      ).rejects.toThrow();
+    // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
+    it("without RLS context, non-superuser sees zero budgets (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -299,7 +356,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const result = await appDb.client`
         SELECT count(*)::int AS cnt FROM grc_cost_entry
       `;
-      expect(result[0].cnt).toBe(0);
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
       await clearRlsContext(appDb.client);
     });
 
@@ -309,17 +366,19 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT id, entity_type, cost_category, cost_type, amount FROM grc_cost_entry
       `;
       expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(costEntryId);
-      expect(result[0].entity_type).toBe("budget");
-      expect(result[0].cost_category).toBe("tools");
-      expect(result[0].cost_type).toBe("actual");
+      expect(requireAt(result, 0, "result").id).toBe(costEntryId);
+      expect(requireAt(result, 0, "result").entity_type).toBe("budget");
+      expect(requireAt(result, 0, "result").cost_category).toBe("tools");
+      expect(requireAt(result, 0, "result").cost_type).toBe("actual");
       await clearRlsContext(appDb.client);
     });
 
-    it("without RLS context, non-superuser cannot access cost entries", async () => {
-      await expect(
-        appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`,
-      ).rejects.toThrow();
+    // [WP2 · S01-18] siehe die Begruendung bei den Katalogen oben.
+    it("without RLS context, non-superuser sees zero cost entries (no error)", async () => {
+      await clearRlsContext(appDb.client);
+      const result =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
+      expect(requireAt(result, 0, "result").cnt).toBe(0);
     });
   });
 
@@ -336,9 +395,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const costs =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
-      expect(catalogs[0].cnt).toBe(1);
-      expect(budgets[0].cnt).toBe(1);
-      expect(costs[0].cnt).toBe(1);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(1);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(1);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(1);
 
       await clearRlsContext(appDb.client);
     });
@@ -353,9 +412,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       const costs =
         await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
-      expect(catalogs[0].cnt).toBe(0);
-      expect(budgets[0].cnt).toBe(0);
-      expect(costs[0].cnt).toBe(0);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(0);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(0);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(0);
 
       await clearRlsContext(appDb.client);
     });
@@ -371,9 +430,9 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
         SELECT count(*)::int AS cnt FROM grc_cost_entry WHERE id = ${costEntryId}
       `;
 
-      expect(catalogs[0].cnt).toBe(1);
-      expect(budgets[0].cnt).toBe(1);
-      expect(costs[0].cnt).toBe(1);
+      expect(requireAt(catalogs, 0, "catalogs").cnt).toBe(1);
+      expect(requireAt(budgets, 0, "budgets").cnt).toBe(1);
+      expect(requireAt(costs, 0, "costs").cnt).toBe(1);
     });
   });
 });

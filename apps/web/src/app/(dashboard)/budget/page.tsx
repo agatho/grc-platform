@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -21,7 +23,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -69,8 +70,12 @@ interface BudgetNode extends GrcBudget {
 }
 
 export default function BudgetOverviewPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("budget");
-  const router = useRouter();
   const [budgets, setBudgets] = useState<GrcBudget[]>([]);
   const [usageMap, setUsageMap] = useState<Record<string, BudgetUsage>>({});
   const [loading, setLoading] = useState(true);
@@ -400,10 +405,14 @@ export default function BudgetOverviewPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label
+                  htmlFor={`${a11yId}-currency`}
+                  className="text-sm font-medium text-gray-700"
+                >
                   Currency
                 </label>
                 <input
+                  id={`${a11yId}-currency`}
                   type="text"
                   maxLength={3}
                   value={formCurrency}
@@ -498,7 +507,6 @@ export default function BudgetOverviewPage() {
               onToggle={toggleExpand}
               usageMap={usageMap}
               t={t}
-              router={router}
             />
           ))}
         </div>
@@ -510,7 +518,6 @@ export default function BudgetOverviewPage() {
               budget={budget}
               usage={usageMap[budget.id]}
               t={t}
-              router={router}
             />
           ))}
         </div>
@@ -528,7 +535,6 @@ function BudgetTreeNode({
   onToggle,
   usageMap,
   t,
-  router,
 }: {
   node: BudgetNode;
   depth: number;
@@ -536,7 +542,6 @@ function BudgetTreeNode({
   onToggle: (id: string) => void;
   usageMap: Record<string, BudgetUsage>;
   t: (key: string) => string;
-  router: ReturnType<typeof useRouter>;
 }) {
   const hasChildren = node.children.length > 0;
   const isExpanded = expandedIds.has(node.id);
@@ -549,7 +554,6 @@ function BudgetTreeNode({
           budget={node}
           usage={usage}
           t={t}
-          router={router}
           hasChildren={hasChildren}
           isExpanded={isExpanded}
           onToggle={() => onToggle(node.id)}
@@ -566,7 +570,6 @@ function BudgetTreeNode({
               onToggle={onToggle}
               usageMap={usageMap}
               t={t}
-              router={router}
             />
           ))}
         </div>
@@ -581,7 +584,6 @@ function BudgetRow({
   budget,
   usage,
   t,
-  router,
   hasChildren,
   isExpanded,
   onToggle,
@@ -589,11 +591,13 @@ function BudgetRow({
   budget: GrcBudget;
   usage?: BudgetUsage;
   t: (key: string) => string;
-  router: ReturnType<typeof useRouter>;
   hasChildren?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Betraege standen fest im deutschen
+  // Format; `formatCurrency` nimmt das Gebietsschema jetzt entgegen.
+  const { locale: numberLocale } = useDateFormat();
   const planned = Number(budget.totalAmount);
   const used = usage ? Number(usage.totalUsed) : 0;
   const remaining = planned - used;
@@ -608,20 +612,43 @@ function BudgetRow({
         : "bg-green-500";
 
   return (
-    <button
-      type="button"
-      onClick={() => router.push(`/budget/${budget.year}`)}
-      className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left hover:shadow-md transition-shadow"
-    >
+    // [ARCTOS-FULL-2026-08-31 · OP-157] Die ganze Zeile war ein <button> und
+    // trug drei weitere Bedienelemente in sich. Warum das nicht nur formal
+    // falsch war: der HTML-Parser darf ein <button> nicht schachteln, er
+    // SCHLIESST das äussere beim inneren. Serverseitig gerendert kommt beim
+    // Browser also eine andere Baumform an als die, die React beim
+    // Hydrieren aufbaut (createElement/appendChild kennt die Regel nicht) —
+    // dieselbe Zeile hat vor und nach der Hydrierung eine andere Struktur,
+    // und der Text hinter dem inneren Element rutscht aus der Kachel heraus.
+    // axe meldet dieselbe Stelle als `nested-interactive`, Schweregrad
+    // `serious`; das ist genau die Schwelle, ab der die a11y-Suite bricht.
+    //
+    // Aufgelöst wie im Register entschieden: eine Kachel mit einem BENANNTEN
+    // Link als Titel statt einer flächig klickbaren Fläche. Der Gewinn ist
+    // nicht nur Gültigkeit — vorher hiess das einzige Ziel der Tastatur
+    // "Budget 2026 Betrieb ISO 27001 aktiv 2026 verbraucht: 12.000,00 EUR /
+    // …", also die vorgelesene Gesamtsumme aller Texte der Zeile; jetzt
+    // heisst der Link wie das Budget, und die zwei Aktionen behalten ihre
+    // eigenen Namen. Das ist auch der Grund, aus dem der `stopPropagation`
+    // auf den inneren Schaltern entfallen kann: es gibt keinen äusseren
+    // Klick mehr, der abgefangen werden müsste.
+    <div className="w-full rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md focus-within:shadow-md">
       <div className="flex items-start gap-3">
         {/* Expand toggle */}
         {hasChildren !== undefined && (
-          <div
-            className="mt-1 flex-shrink-0 cursor-pointer rounded p-0.5 hover:bg-gray-100"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggle?.();
-            }}
+          // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] A real <button>, not a
+          // <div role="button">: it gets Enter AND Space, the correct focus
+          // ring and the disabled semantics for free — a leaf node with no
+          // children is not a control, and announcing it as one would be a
+          // lie. `aria-expanded` is what a screen reader needs to know which
+          // state the row is in; the chevron alone is invisible to it.
+          <button
+            type="button"
+            className="mt-1 flex-shrink-0 cursor-pointer rounded p-0.5 hover:bg-gray-100 disabled:cursor-default disabled:hover:bg-transparent"
+            disabled={!hasChildren}
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-label={isExpanded ? t("collapseRow") : t("expandRow")}
+            onClick={() => onToggle?.()}
           >
             {hasChildren ? (
               isExpanded ? (
@@ -632,16 +659,24 @@ function BudgetRow({
             ) : (
               <div className="w-4" />
             )}
-          </div>
+          </button>
         )}
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-semibold text-gray-900 truncate">
+              {/* [ARCTOS-FULL-2026-08-31 · OP-157] Der Titel IST das Ziel.
+                  Ein echtes <a href> statt eines programmatischen
+                  router.push: Mittelklick, "in neuem Tab öffnen" und die
+                  Statuszeile des Browsers funktionieren damit wieder, und
+                  der Link heisst wie das Budget statt wie die ganze Zeile. */}
+              <Link
+                href={`/budget/${budget.year}`}
+                className="truncate font-semibold text-gray-900 hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-950 rounded-sm"
+              >
                 {budget.name}
-              </span>
+              </Link>
               <Badge variant="outline" className="text-xs flex-shrink-0">
                 {t(`typeLabels.${budget.budgetType}`)}
               </Badge>
@@ -664,11 +699,13 @@ function BudgetRow({
           <div className="mt-2">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
               <span>
-                {t("used")}: {formatCurrency(used, budget.currency)} /{" "}
-                {formatCurrency(planned, budget.currency)}
+                {t("used")}:{" "}
+                {formatCurrency(numberLocale, used, budget.currency)} /{" "}
+                {formatCurrency(numberLocale, planned, budget.currency)}
               </span>
               <span className={remaining < 0 ? "text-red-600 font-medium" : ""}>
-                {t("remaining")}: {formatCurrency(remaining, budget.currency)}
+                {t("remaining")}:{" "}
+                {formatCurrency(numberLocale, remaining, budget.currency)}
               </span>
             </div>
             <div className="relative w-full h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -697,33 +734,25 @@ function BudgetRow({
         </div>
 
         {/* Actions */}
+        {/* [ARCTOS-FULL-2026-08-31 · OP-157] `asChild` statt <Link><Button>:
+            der Slot legt die Button-Klassen auf das <a>, es entsteht EIN
+            Element statt eines <button> im <a>. Damit ist auch das zweite
+            Muster derselben Klasse hier nicht mehr vertreten — die 110
+            übrigen Fundstellen im Baum listet
+            `__tests__/a11y/nested-interactive.baseline.json`. */}
         <div className="flex-shrink-0 flex gap-1 mt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/budget/${budget.year}`);
-            }}
-          >
-            {t("matrix.title")}
+          <Button variant="outline" size="sm" className="text-xs" asChild>
+            <Link href={`/budget/${budget.year}`}>{t("matrix.title")}</Link>
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/budget/${budget.year}/dashboard`);
-            }}
-          >
-            <BarChart3 size={12} className="mr-1" />
-            {t("dashboard.title")}
+          <Button variant="outline" size="sm" className="text-xs" asChild>
+            <Link href={`/budget/${budget.year}/dashboard`}>
+              <BarChart3 size={12} className="mr-1" />
+              {t("dashboard.title")}
+            </Link>
           </Button>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -784,6 +813,17 @@ function NavCard({
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function formatCurrency(value: number, currency: string): string {
-  return `${value.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Das Gebietsschema ist jetzt ein Parameter
+ * und keine Konstante mehr. Die Funktion steht ausserhalb der Komponente, kann
+ * also keinen Hook lesen — der Aufrufer reicht durch, was `useDateFormat`
+ * ihm gibt. Betraege standen bis hierher immer im deutschen Format, auch auf
+ * einer sonst vollstaendig englischen Seite.
+ */
+function formatCurrency(
+  locale: string,
+  value: number,
+  currency: string,
+): string {
+  return `${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }

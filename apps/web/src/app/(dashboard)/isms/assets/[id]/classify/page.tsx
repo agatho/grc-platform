@@ -315,7 +315,7 @@ function ClassifyInner() {
 }
 
 function CiaStep({
-  dimension,
+  dimension: _dimension,
   label,
   description,
   level,

@@ -4,7 +4,9 @@
 import { db, ddSession, notification, vendor } from "@grc/db";
 import { and, sql, eq, isNull, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface DdReminderResult {
   processed: number;
   notified: number;
@@ -43,7 +45,7 @@ export const processDdReminder = withCronInstrumentation(
       );
 
     if (activeSessions.length === 0) {
-      console.log("[cron:dd-reminder] No active DD sessions found");
+      log.info("[cron:dd-reminder] No active DD sessions found");
       return { processed: 0, notified: 0 };
     }
 
@@ -71,27 +73,30 @@ export const processDdReminder = withCronInstrumentation(
 
         // Create notification for the internal user who created the session
         if (session.createdBy) {
-          await db.insert(notification).values({
-            userId: session.createdBy,
-            orgId: session.orgId,
-            type: "deadline_approaching" as const,
-            entityType: "dd_session",
-            entityId: session.sessionId,
-            title: `DD reminder: ${session.vendorName} — ${daysUntilDeadline} days remaining`,
-            message: `The due diligence questionnaire for "${session.vendorName}" (${session.supplierEmail}) is due in ${daysUntilDeadline} day(s). Current progress: ${session.progressPercent}%.`,
-            channel: "both" as const,
-            templateKey: "dd_session_reminder",
-            templateData: {
-              sessionId: session.sessionId,
-              vendorName: session.vendorName,
-              supplierEmail: session.supplierEmail,
-              daysRemaining: daysUntilDeadline,
-              progressPercent: session.progressPercent,
-              deadline: deadline.toISOString(),
+          await insertNotification(
+            {
+              userId: session.createdBy,
+              orgId: session.orgId,
+              type: "deadline_approaching" as const,
+              entityType: "dd_session",
+              entityId: session.sessionId,
+              title: `DD reminder: ${session.vendorName} — ${daysUntilDeadline} days remaining`,
+              message: `The due diligence questionnaire for "${session.vendorName}" (${session.supplierEmail}) is due in ${daysUntilDeadline} day(s). Current progress: ${session.progressPercent}%.`,
+              channel: "both" as const,
+              templateKey: "dd_session_reminder",
+              templateData: {
+                sessionId: session.sessionId,
+                vendorName: session.vendorName,
+                supplierEmail: session.supplierEmail,
+                daysRemaining: daysUntilDeadline,
+                progressPercent: session.progressPercent,
+                deadline: deadline.toISOString(),
+              },
+              createdAt: now,
+              updatedAt: now,
             },
-            createdAt: now,
-            updatedAt: now,
-          });
+            { job: "dd-reminder" },
+          );
         }
 
         // Update last reminder timestamp
@@ -103,10 +108,10 @@ export const processDdReminder = withCronInstrumentation(
         notified++;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:dd-reminder] Failed for session ${session.sessionId}:`,
-          message,
-        );
+        log.error("[cron:dd-reminder] Failed for session", {
+          ddSessionId: session.sessionId,
+          err: message,
+        });
       }
     }
 

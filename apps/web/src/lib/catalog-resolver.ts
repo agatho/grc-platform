@@ -7,6 +7,7 @@
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 // Short code → list of search tokens to match against catalog.source / name.
 const FRAMEWORK_TOKENS: Record<string, string[]> = {
@@ -90,7 +91,7 @@ export async function resolveCatalogEntry(
   `),
   );
 
-  const row = (result as any[])[0];
+  const row = (result as UnvalidatedJson[])[0];
   if (!row) {
     cache.set(cacheKey, null);
     return null;

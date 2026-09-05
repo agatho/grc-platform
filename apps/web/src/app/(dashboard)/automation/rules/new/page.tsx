@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Save, Play, Loader2 } from "lucide-react";
@@ -241,14 +241,14 @@ export default function NewRulePage() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder={t("designer.ruleName")}
-          className="w-full text-lg font-semibold border-none outline-none text-gray-900 placeholder-gray-300"
+          className="w-full text-lg font-semibold border-none outline-none text-gray-900 placeholder-gray-500"
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t("designer.ruleDescription")}
           rows={2}
-          className="w-full text-sm border-none outline-none text-gray-600 placeholder-gray-300 resize-none"
+          className="w-full text-sm border-none outline-none text-gray-600 placeholder-gray-500 resize-none"
         />
       </div>
 

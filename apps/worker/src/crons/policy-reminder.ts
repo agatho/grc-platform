@@ -10,7 +10,9 @@ import {
 } from "@grc/db";
 import { eq, and, sql, gt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
+import { log } from "../lib/logger";
 interface PolicyReminderResult {
   processed: number;
   remindersSent: number;
@@ -31,7 +33,7 @@ export const processPolicyReminder = withCronInstrumentation(
       .where(eq(policyDistribution.status, "active"));
 
     if (activeDistributions.length === 0) {
-      console.log("[cron:policy-reminder] No active distributions found");
+      log.info("[cron:policy-reminder] No active distributions found");
       return { processed: 0, remindersSent: 0, errors: [] };
     }
 
@@ -61,25 +63,28 @@ export const processPolicyReminder = withCronInstrumentation(
 
         for (const ack of pendingAcks) {
           try {
-            await db.insert(notification).values({
-              userId: ack.userId,
-              orgId: dist.orgId,
-              type: "deadline_approaching",
-              entityType: "policy_distribution",
-              entityId: dist.id,
-              title: `Reminder: Policy acknowledgment due in ${daysUntilDeadline} day(s)`,
-              message: `Please read and acknowledge "${dist.title}" by ${deadlineDate.toLocaleDateString("de-DE")}.`,
-              channel: "both",
-              templateKey: "policy_reminder",
-              templateData: {
-                policyTitle: dist.title,
-                deadline: dist.deadline,
-                daysRemaining: daysUntilDeadline,
-                distributionId: dist.id,
+            await insertNotification(
+              {
+                userId: ack.userId,
+                orgId: dist.orgId,
+                type: "deadline_approaching",
+                entityType: "policy_distribution",
+                entityId: dist.id,
+                title: `Reminder: Policy acknowledgment due in ${daysUntilDeadline} day(s)`,
+                message: `Please read and acknowledge "${dist.title}" by ${deadlineDate.toLocaleDateString("de-DE")}.`,
+                channel: "both",
+                templateKey: "policy_reminder",
+                templateData: {
+                  policyTitle: dist.title,
+                  deadline: dist.deadline,
+                  daysRemaining: daysUntilDeadline,
+                  distributionId: dist.id,
+                },
+                createdAt: now,
+                updatedAt: now,
               },
-              createdAt: now,
-              updatedAt: now,
-            });
+              { job: "policy-reminder" },
+            );
 
             await db
               .update(policyAcknowledgment)

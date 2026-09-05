@@ -5,14 +5,11 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   Puzzle,
-  Plus,
   Store,
   Settings,
   Loader2,
   Download,
-  Star,
   CheckCircle2,
-  XCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

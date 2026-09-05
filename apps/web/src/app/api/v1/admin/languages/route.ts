@@ -2,16 +2,20 @@
 // GET /api/v1/admin/languages — get org language config
 // PUT /api/v1/admin/languages — update org language config
 
-import { db, organization } from "@grc/db";
+import { db } from "@grc/db";
 import {
   updateOrgLanguagesSchema,
   SUPPORTED_LANGUAGES,
   LANGUAGE_LABELS,
 } from "@grc/shared";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -62,9 +66,8 @@ export async function GET(req: Request) {
       supportedLanguages: SUPPORTED_LANGUAGES,
     },
   });
-}
-
-export async function PUT(req: Request) {
+});
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -75,11 +78,6 @@ export async function PUT(req: Request) {
       { status: 422 },
     );
   }
-
-  const updates: Record<string, unknown> = {
-    updatedAt: new Date(),
-    updatedBy: ctx.userId,
-  };
 
   if (body.data.defaultLanguage) {
     // Default language must be in active languages
@@ -123,4 +121,4 @@ export async function PUT(req: Request) {
       activeLanguages: body.data.activeLanguages,
     },
   });
-}
+});

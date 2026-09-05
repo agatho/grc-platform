@@ -6,7 +6,6 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface PortalConfigDetail {

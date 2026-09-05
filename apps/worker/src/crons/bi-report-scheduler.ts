@@ -5,6 +5,7 @@ import { db, biScheduledReport, biReportExecution } from "@grc/db";
 import { eq, and, lte, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface BiReportSchedulerResult {
   checked: number;
   triggered: number;
@@ -75,10 +76,10 @@ export const processBiReportScheduler = withCronInstrumentation(
 
         result.triggered++;
       } catch (err) {
-        console.error(
-          `[worker] bi-report-scheduler: Failed for schedule ${schedule.id}:`,
+        log.error("[worker] bi-report-scheduler: Failed for schedule", {
+          scheduleId: schedule.id,
           err,
-        );
+        });
         result.errors++;
       }
     }

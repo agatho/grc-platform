@@ -3,16 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  ArrowLeft,
-  RefreshCcw,
-  Download,
-  TrendingUp,
-  Shield,
-  AlertTriangle,
-  BarChart3,
-} from "lucide-react";
+import { Loader2, ArrowLeft, RefreshCcw, BarChart3 } from "lucide-react";
 import {
   BarChart,
   Bar,

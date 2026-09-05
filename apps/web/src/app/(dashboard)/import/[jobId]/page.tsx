@@ -3,24 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import {
-  Download,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Download, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ImportLogEntry, ValidationError } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 

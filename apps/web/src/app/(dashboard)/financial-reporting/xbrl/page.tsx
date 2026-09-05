@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
 import {
   Loader2,
   Plus,
@@ -41,6 +41,11 @@ interface XbrlKpis {
 }
 
 export default function XbrlTaggingPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
   const [tags, setTags] = useState<XbrlTag[]>([]);
   const [kpis, setKpis] = useState<XbrlKpis | null>(null);
@@ -212,8 +217,14 @@ export default function XbrlTaggingPage() {
 
       {/* Taxonomy Selector */}
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700">Taxonomie:</label>
+        <label
+          htmlFor={`${a11yId}-taxonomie`}
+          className="text-sm font-medium text-gray-700"
+        >
+          Taxonomie:
+        </label>
         <select
+          id={`${a11yId}-taxonomie`}
           value={selectedTaxonomy}
           onChange={(e) => setSelectedTaxonomy(e.target.value)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm"

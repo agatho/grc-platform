@@ -23,24 +23,10 @@ import { useDateFormat } from "@/lib/format-date";
 import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import type {
-  Control,
-  ControlTest,
-  Finding,
-  ControlStatus,
-  ControlType,
-  ControlAssertion,
-  TestResult,
-} from "@grc/shared";
+import type { Control, ControlTest, Finding, TestResult } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
