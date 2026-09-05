@@ -983,6 +983,9 @@ function MeasuresStep({
   dpiaId: string;
   onUpdated: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Kosten der Massnahmen standen fest im
+  // deutschen Zahlenformat.
+  const { locale: numberLocale } = useDateFormat();
   // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
   // instance, so every <label htmlFor> below points at its own control
   // even when this component is rendered more than once on a page.
@@ -1209,13 +1212,14 @@ function MeasuresStep({
                   {m.costOnetime && Number(m.costOnetime) > 0 && (
                     <Badge variant="outline" className="text-[10px]">
                       Einmalkosten:{" "}
-                      {Number(m.costOnetime).toLocaleString("de-DE")}{" "}
+                      {Number(m.costOnetime).toLocaleString(numberLocale)}{" "}
                       {m.costCurrency ?? "EUR"}
                     </Badge>
                   )}
                   {m.costAnnual && Number(m.costAnnual) > 0 && (
                     <Badge variant="outline" className="text-[10px]">
-                      Jaehrlich: {Number(m.costAnnual).toLocaleString("de-DE")}{" "}
+                      Jaehrlich:{" "}
+                      {Number(m.costAnnual).toLocaleString(numberLocale)}{" "}
                       {m.costCurrency ?? "EUR"}
                     </Badge>
                   )}

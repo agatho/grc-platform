@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useId } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -594,6 +595,9 @@ function BudgetRow({
   isExpanded?: boolean;
   onToggle?: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Betraege standen fest im deutschen
+  // Format; `formatCurrency` nimmt das Gebietsschema jetzt entgegen.
+  const { locale: numberLocale } = useDateFormat();
   const planned = Number(budget.totalAmount);
   const used = usage ? Number(usage.totalUsed) : 0;
   const remaining = planned - used;
@@ -695,11 +699,13 @@ function BudgetRow({
           <div className="mt-2">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
               <span>
-                {t("used")}: {formatCurrency(used, budget.currency)} /{" "}
-                {formatCurrency(planned, budget.currency)}
+                {t("used")}:{" "}
+                {formatCurrency(numberLocale, used, budget.currency)} /{" "}
+                {formatCurrency(numberLocale, planned, budget.currency)}
               </span>
               <span className={remaining < 0 ? "text-red-600 font-medium" : ""}>
-                {t("remaining")}: {formatCurrency(remaining, budget.currency)}
+                {t("remaining")}:{" "}
+                {formatCurrency(numberLocale, remaining, budget.currency)}
               </span>
             </div>
             <div className="relative w-full h-2 rounded-full bg-gray-100 overflow-hidden">
@@ -807,6 +813,17 @@ function NavCard({
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function formatCurrency(value: number, currency: string): string {
-  return `${value.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Das Gebietsschema ist jetzt ein Parameter
+ * und keine Konstante mehr. Die Funktion steht ausserhalb der Komponente, kann
+ * also keinen Hook lesen — der Aufrufer reicht durch, was `useDateFormat`
+ * ihm gibt. Betraege standen bis hierher immer im deutschen Format, auch auf
+ * einer sonst vollstaendig englischen Seite.
+ */
+function formatCurrency(
+  locale: string,
+  value: number,
+  currency: string,
+): string {
+  return `${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 
 interface HeatmapCell {
@@ -72,6 +73,10 @@ export function HeatmapWidget({
   isLoading,
   error,
 }: WidgetProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Leerzustand („Keine Daten
+  // verfuegbar") stand in SIEBEN Kachelbausteinen wortgleich und fest
+  // verdrahtet im Quelltext — und zwar mit „verfuegbar" statt „verfügbar".
+  const t = useTranslations("dashboard.widget");
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -93,7 +98,7 @@ export function HeatmapWidget({
   if (cells.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Keine Daten verfuegbar
+        {t("dataUnavailable")}
       </div>
     );
   }

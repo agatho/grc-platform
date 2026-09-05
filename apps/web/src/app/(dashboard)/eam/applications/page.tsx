@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -37,6 +38,9 @@ export default function ApplicationsPage() {
 }
 
 function ApplicationsInner() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Betraege standen fest im deutschen
+  // Zahlenformat, obwohl die Seite uebersetzt ist.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("eam");
   const [apps, setApps] = useState<UnvalidatedJson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,7 +162,7 @@ function ApplicationsInner() {
                   {app.portfolio?.annualCost && (
                     <span className="text-sm font-medium">
                       {Number(app.portfolio.annualCost).toLocaleString(
-                        "de-DE",
+                        numberLocale,
                         { style: "currency", currency: "EUR" },
                       )}
                     </span>

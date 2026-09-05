@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -43,6 +44,10 @@ const COST_CATEGORIES: CostCategory[] = [
 const COST_TYPES: CostType[] = ["planned", "actual", "forecast"];
 
 export default function CostListPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
   const [costs, setCosts] = useState<(GrcCostEntry & { grcArea?: GrcArea })[]>(
@@ -260,7 +265,7 @@ export default function CostListPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {Number(cost.amount).toLocaleString("de-DE", {
+                        {Number(cost.amount).toLocaleString(numberLocale, {
                           minimumFractionDigits: 2,
                         })}{" "}
                         {cost.currency}

@@ -164,8 +164,16 @@ jobs:
       # (`ermEvaluation`, `bpmDerived`, `grcUx`, `frameworks` und Teile von
       # `abac`) nachweislich unerreicht -- das ist Katalogpflege und gehoert
       # nicht in diese Welle; siehe docs/UMSETZUNG-WELLE-4C.md §4.
+      #
+      # [Welle 5a · OP-070] 2166 -> 2133. Reine Absenkung durch Arbeit:
+      # 185 der gezaehlten Schluessel standen wortgleich als Literal in
+      # genau den Seiten, die die zweite Ratsche als "ohne i18n" fuehrt --
+      # `portal.*` (41), `wbPortal.*` (23) und `ddResults.*` (4) waren
+      # vollstaendig in beiden Sprachen da und von NULL Aufrufstellen
+      # erreicht. Das ist der dritte unabhaengige Grund, warum die Liste
+      # aus OP-073 keine Loeschliste ist.
       - name: Unused-key ratchet
-        run: node scripts/audit-i18n-usage.mjs --max-unused 2166
+        run: node scripts/audit-i18n-usage.mjs --max-unused 2133
 
       # [WP12 - S14-14] Zweite Ratsche: Dateien, die Text zeigen, ihn aber nicht
       # uebersetzen. Stand 2026-09-02: 78 von 482 Pages und 73 von 134
@@ -182,8 +190,15 @@ jobs:
       # satzfoermiges Literal); siehe `showsLiteralText` in
       # scripts/audit-i18n-usage.mjs. Real uebersetzt wurde in diesem Schritt
       # `components/bpmn/grc-view-select.tsx`.
+      #
+      # [Welle 5a · OP-070] 151 -> 131 (20 Dateien umgestellt). Beide
+      # Werte sind nachgeprueft: gruen beim gesetzten Wert, rot eins
+      # darunter. Die ehrliche Restschuld ist 118, nicht 131: 13 der
+      # gezaehlten Dateien zeigen gar keinen Text, der Zaehler nimmt dort
+      # Tailwind-Klassenketten fuer Saetze. Das ist beziffert statt
+      # behoben -- siehe docs/UMSETZUNG-WELLE-5A.md.
       - name: i18n-Abdeckungs-Ratsche
-        run: node scripts/audit-i18n-usage.mjs --max-untranslated 151
+        run: node scripts/audit-i18n-usage.mjs --max-untranslated 131
 
       # [OP-072] Hier stand ein Schritt "messages/{de,en}.json muessen
       # reproduzierbar sein", der `git diff` auf genau diese zwei Dateien rief.

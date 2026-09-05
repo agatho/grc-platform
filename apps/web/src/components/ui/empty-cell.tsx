@@ -14,26 +14,32 @@
 //   - aria-label so screen readers say "kein Wert" instead of dictating
 //     a long horizontal-bar character
 
+import { useTranslations } from "next-intl";
 import { cn } from "@grc/ui";
 
 interface EmptyCellProps {
   /** Override the visible glyph. Defaults to em-dash (U+2014). */
   glyph?: string;
-  /** Override the screen-reader label. Defaults to "kein Wert". */
+  /**
+   * Override the screen-reader label.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-070] Ohne Ueberschreibung kommt der Name
+   * jetzt aus dem Katalog (`a11y.noValue`) statt aus einer fest verdrahteten
+   * deutschen Vorgabe. Leere Zellen sind in den Listenansichten die haeufigste
+   * Einzelmeldung ueberhaupt, die ein Screenreader vorliest.
+   */
   srLabel?: string;
   /** Extra Tailwind classes for layout/colour overrides at the call site. */
   className?: string;
 }
 
-export function EmptyCell({
-  glyph = "—",
-  srLabel = "kein Wert",
-  className,
-}: EmptyCellProps) {
+export function EmptyCell({ glyph = "—", srLabel, className }: EmptyCellProps) {
+  const t = useTranslations("a11y");
+  const label = srLabel ?? t("noValue");
   return (
     <span
-      aria-label={srLabel}
-      title={srLabel}
+      aria-label={label}
+      title={label}
       className={cn(
         // Slightly larger + wider letter-spacing so the em-dash reads as
         // a deliberate single character rather than three ASCII hyphens.

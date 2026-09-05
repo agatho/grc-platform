@@ -13,6 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
@@ -32,9 +33,12 @@ interface DataTableProps<TData, TValue> {
   toolbar?: React.ReactNode;
   /**
    * [E2E-TRIAGE-2026-09-02 · C-13] Accessible names for the icon-only
-   * pagination buttons. Defaults match the rest of this component, whose
-   * chrome ("Page x of y", "row(s)", "No results.") is untranslated English;
-   * callers with a translation context can pass localised labels.
+   * pagination buttons.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-070] Sie sind jetzt optional im Wortsinn:
+   * fehlt der Wert, kommt er aus dem Katalog (`table.previousPage` /
+   * `table.nextPage`) statt aus einer englischen Vorgabe im Code. Dasselbe
+   * gilt fuer `searchPlaceholder`.
    */
   previousPageLabel?: string;
   nextPageLabel?: string;
@@ -44,12 +48,19 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   searchKey,
-  searchPlaceholder = "Filter...",
+  searchPlaceholder,
   pageSize = 10,
   toolbar,
-  previousPageLabel = "Previous page",
-  nextPageLabel = "Next page",
+  previousPageLabel,
+  nextPageLabel,
 }: DataTableProps<TData, TValue>) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Rahmen dieser Tabelle war fest auf
+  // ENGLISCH verdrahtet — „No results.", „row(s)", „Page x of y",
+  // „Filter..." — in einem Produkt, dessen Vorgabesprache Deutsch ist. Der
+  // Fehler lief also in beide Richtungen: der englische Nutzer sah Deutsch,
+  // der deutsche sah hier Englisch. 27 Dateien binden diese Komponente ein,
+  // die Korrektur steht deshalb einmal hier statt 27-mal an den Aufrufstellen.
+  const t = useTranslations("table");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
@@ -74,7 +85,7 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center justify-between gap-4">
         {searchKey && (
           <input
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t("filterPlaceholder")}
             value={
               (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
             }
@@ -126,7 +137,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center text-gray-500"
                 >
-                  No results.
+                  {t("noResults")}
                 </TableCell>
               </TableRow>
             )}
@@ -136,11 +147,17 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>{table.getFilteredRowModel().rows.length} row(s)</span>
+        <span>
+          {t("rowCount", {
+            count: String(table.getFilteredRowModel().rows.length),
+          })}
+        </span>
         <div className="flex items-center gap-2">
           <span>
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            {t("pageOf", {
+              page: String(table.getState().pagination.pageIndex + 1),
+              total: String(table.getPageCount()),
+            })}
           </span>
           {/* [E2E-TRIAGE-2026-09-02 · C-13] These two carry an icon and
               nothing else, so their accessible name was empty and axe reports
@@ -151,8 +168,8 @@ export function DataTable<TData, TValue>({
               the icon font from being announced alongside the label. */}
           <button
             type="button"
-            aria-label={previousPageLabel}
-            title={previousPageLabel}
+            aria-label={previousPageLabel ?? t("previousPage")}
+            title={previousPageLabel ?? t("previousPage")}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
@@ -161,8 +178,8 @@ export function DataTable<TData, TValue>({
           </button>
           <button
             type="button"
-            aria-label={nextPageLabel}
-            title={nextPageLabel}
+            aria-label={nextPageLabel ?? t("nextPage")}
+            title={nextPageLabel ?? t("nextPage")}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"

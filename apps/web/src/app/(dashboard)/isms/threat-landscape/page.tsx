@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -36,6 +37,10 @@ import type {
 } from "@grc/shared";
 
 export default function ThreatLandscapePage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("reporting");
 
   const [kpis, setKpis] = useState<ThreatDashboardKPIs | null>(null);
@@ -401,7 +406,7 @@ export default function ThreatLandscapePage() {
                                 <span className="text-[10px] text-muted-foreground">
                                   {new Date(
                                     item.publishedAt,
-                                  ).toLocaleDateString("de-DE")}
+                                  ).toLocaleDateString(numberLocale)}
                                 </span>
                               )}
                             </div>

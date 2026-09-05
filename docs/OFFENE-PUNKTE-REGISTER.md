@@ -612,6 +612,51 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-05 — Welle 5a: OP-070, und wofür die Übersetzungen schon da waren
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5A.md`.
+
+**Auch hier stimmte die Registerzahl nicht.** „96 Seiten" ist seit WP12 alt;
+selbst gemessen waren es **151 Dateien** (78 Seiten + 73 Komponenten) mit rund
+3.059 Zeichenketten — die Ratsche stand exakt ausgereizt. Nachher: **131**
+(72 + 59), rund 2.833 Zeichenketten. Beide CI-Ratschen sind nachgezogen
+(`--max-unused 2166 → 2133`, `--max-untranslated 151 → 131`) und in beide
+Richtungen nachgeprüft: grün beim gesetzten Wert, rot eins darunter.
+
+**Der Befund, der drei Punkte miteinander verbindet: die Übersetzungen
+existierten längst.** 185 der 2.166 „toten" Katalogschlüssel standen **wortgleich
+als Literal** in genau den Seiten, die als „ohne i18n" gezählt werden.
+`portal.*` (41), `wbPortal.*` (23) und `ddResults.*` (4) waren vollständig in
+beiden Sprachen da — und von **null** Aufrufstellen erreicht. Das ist der
+**dritte unabhängige Grund**, warum die Liste aus OP-073 keine Löschliste ist:
+Nach den Phantomen aus der doppelten `common.json` und der variabel
+durchgereichten Navigation nun Schlüssel, die nicht tot sind, sondern nur noch
+nicht angeschlossen. Wer diese Liste abgearbeitet hätte, hätte die fertige
+Übersetzung gelöscht und die hartcodierte Fassung stehen lassen.
+
+**Sechs Defekte, die dabei sichtbar wurden:**
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                | Art              | Stand              |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ------------------ |
+| OP-188 | **`DataTable` zeigte deutschen Nutzern Englisch** — „No results.", „Page x of y", „row(s)" in **27 Listenansichten**. Der Kopfkommentar der Datei beschrieb den Zustand und bot den Aufrufern einen Ausweg an; **keiner der 27 hat ihn genommen**.                                                                                                 | Produkt          | behoben            |
+| OP-189 | **Externe Besucher konnten die Sprache gar nicht wählen.** `NEXT_LOCALE` wird erst beim Speichern des Profils gesetzt, also nach der Anmeldung. Die Endseiten des Lieferantenportals (`dd/expired`, `dd/complete`) sind fest **englisch** — ohne Sprachwähler wäre ihr Übersetzen eine Verschlechterung für englischsprachige Lieferanten gewesen. | Produkt          | behoben            |
+| OP-190 | **87 Fundstellen formatieren fest `de-DE`**, 12 davon in Dateien, die der Ratsche als übersetzt gelten — sieben im Budgetmodul, also **Geldbeträge auf englischen Seiten**. `lib/format-date.ts` gibt es seit FE-HIGH-2 genau dafür und war dort nicht angeschlossen. Im Bildschirmbereich 70 → 2.                                                 | Produkt          | weitgehend behoben |
+| OP-191 | **Der HinSchG-Meldekanal hatte neun Wörter falsch geschrieben** („Identitaet", „geschuetzt", „verschluesselt" …). Der Katalog schreibt sie richtig — die transliterierten Umlaute waren eine Folge der Hartcodierung.                                                                                                                              | Produkt          | behoben            |
+| OP-192 | **Vier Bedienelemente ohne zugänglichen Namen** (Tag entfernen, Antwort senden, Beweismittel hochladen, drei Werkzeugknöpfe). Im Meldekanal ist das der Unterschied zwischen bedienbar und nicht.                                                                                                                                                  | Barrierefreiheit | behoben            |
+| —      | **13 der 151 gezählten Dateien zeigen gar keinen Text** — der Zähler nimmt dort Tailwind-Klassenketten für Sätze. Die ehrliche Restschuld ist damit **118, nicht 131**. Beziffert statt behoben (`scripts/**` lag ausserhalb der Dateihoheit dieses Strangs).                                                                                      | Tor              | offen              |
+
+**Bewusst nicht übersetzt:** `legal/imprint` und `legal/privacy` (133
+Zeichenketten). Gesetzliche Pflichtangaben mit massgeblicher deutscher Fassung;
+eine englische Fassung ist eine Rechtsentscheidung mit Prüfvorbedingung, keine
+Behebung. Die Fusszeile darüber ist umgestellt, der **Weg** zu den Dokumenten
+also zweisprachig.
+
+**Offen, in dieser Reihenfolge:** `ai-act` (10 Dateien, 494 Zeichenketten) →
+`settings` (3, 298) → `admin` (12, 297) → `admin/rls-audit`. Die Teiländerung
+an der letzten wurde **zurückgenommen**, weil sie die Datei inkonsistent
+gemacht hätte — eine halb umgestellte Datei ist schlechter als eine ganz
+hartcodierte.
+
 ### Nachtrag 2026-09-04 — OP-079/OP-116, und der schwerste Befund des Audits
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-4B-7.md`.

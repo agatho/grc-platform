@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 
@@ -52,6 +53,9 @@ function parseKPIData(data: unknown): KPIData {
 }
 
 export function KPICardWidget({ data, config, isLoading, error }: WidgetProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Das Gebietsschema stand fest auf
+  // `de-DE`: der englische Leser sah „1.234,5" statt „1,234.5".
+  const locale = useLocale();
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -94,7 +98,7 @@ export function KPICardWidget({ data, config, isLoading, error }: WidgetProps) {
     <div className="flex h-full flex-col items-center justify-center p-2">
       <div className="text-3xl font-bold tabular-nums" style={{ color }}>
         {typeof kpi.value === "number"
-          ? kpi.value.toLocaleString("de-DE")
+          ? kpi.value.toLocaleString(locale)
           : kpi.value}
         {kpi.unit && (
           <span className="ml-1 text-lg font-normal text-muted-foreground">

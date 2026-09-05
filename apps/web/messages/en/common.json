@@ -750,7 +750,22 @@
     "revoking": "Revoking...",
     "revokeSuccess": "Invitation revoked",
     "revokeError": "Failed to revoke invitation",
-    "sendError": "Failed to send invitation"
+    "sendError": "Failed to send invitation",
+    "acceptTitle": "Accept invitation",
+    "acceptWelcome": "Welcome to ARCTOS",
+    "acceptDone": "Your invitation has been accepted. You can sign in now.",
+    "acceptGoToLogin": "Go to sign-in",
+    "acceptSubmit": "Accept invitation",
+    "yourName": "Your name",
+    "namePlaceholder": "Jane Doe",
+    "password": "Password",
+    "passwordPlaceholder": "At least {count} characters",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least {count} characters long",
+    "acceptError": "The invitation could not be accepted",
+    "selfHostedNote": "Self-hosted. ISO 27001 compliant. Your data stays with you."
   },
   "accessLog": {
     "title": "Access Log",
@@ -3797,7 +3812,7 @@
     "expiredContact": "Please contact {orgName} at {email} for a deadline extension.",
     "completeMessage": "Your questionnaire has been submitted successfully.",
     "completeSummary": "You answered {answered} questions across {sections} sections.",
-    "completeClose": "You may close this window. For questions, contact {email}.",
+    "completeClose": "You may close this window. For questions, contact <mail>{email}</mail>.",
     "deadline": "Deadline",
     "daysRemaining": "{count} days remaining",
     "estimatedTime": "Estimated time: {minutes} minutes",
@@ -3831,7 +3846,18 @@
     "acceptAssessment": "Accept Assessment",
     "requestClarification": "Request Clarification",
     "exportPdf": "Export PDF",
-    "comparison": "Comparison with Previous"
+    "comparison": "Comparison with Previous",
+    "poweredBy": "Powered by ARCTOS",
+    "expiredNoContact": "Please contact the requesting organization for a deadline extension. They can issue a new invitation link.",
+    "completeSubmissionSummary": "Submission Summary",
+    "completeThanks": "Your questionnaire has been submitted successfully. Thank you for your time and cooperation.",
+    "fieldQuestionnaire": "Questionnaire",
+    "fieldVendor": "Vendor",
+    "fieldSubmitted": "Submitted",
+    "fieldQuestionsAnswered": "Questions Answered",
+    "fieldEvidenceFiles": "Evidence Files",
+    "completeCloseNoContact": "You may close this window.",
+    "documentTitle": "ARCTOS — Supplier Portal"
   },
   "ddResults": {
     "title": "Due Diligence Results",
@@ -4261,7 +4287,59 @@
     "noMessages": "No messages yet",
     "replyPlaceholder": "Your reply...",
     "evidence": "Evidence",
-    "encrypted": "All data is end-to-end encrypted"
+    "encrypted": "All data is end-to-end encrypted",
+    "categories": {
+      "fraud": {
+        "label": "Fraud",
+        "description": "Financial fraud, accounting manipulation, embezzlement"
+      },
+      "corruption": {
+        "label": "Corruption",
+        "description": "Bribery, improper advantages"
+      },
+      "discrimination": {
+        "label": "Discrimination",
+        "description": "Discrimination, harassment, bullying"
+      },
+      "privacy": {
+        "label": "Privacy",
+        "description": "GDPR violations, data misuse"
+      },
+      "environmental": {
+        "label": "Environmental",
+        "description": "Pollution, illegal disposal"
+      },
+      "health_safety": {
+        "label": "Health & Safety",
+        "description": "Unsafe conditions, workplace accidents"
+      },
+      "other": {
+        "label": "Other",
+        "description": "Other violations of laws or policies"
+      }
+    },
+    "copy": "Copy",
+    "copied": "Copied",
+    "minChars": "min. {count} characters",
+    "charCount": "{used}/{max}",
+    "orgNotFound": "Organization not found",
+    "connectionError": "Connection error",
+    "submitError": "Submission failed",
+    "codeValidUntil": "The code is valid until {date}. Without this code, access is not possible.",
+    "requiredMark": "Required field",
+    "statusSteps": {
+      "received": "Received",
+      "acknowledged": "Acknowledged",
+      "investigating": "Investigating",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "invalidOrExpired": "Invalid or expired",
+    "mailboxNotFound": "Mailbox not found",
+    "daysRemaining": "{count} days",
+    "sendReply": "Send reply",
+    "uploadEvidence": "Upload evidence",
+    "fileSizeKb": "{size} KB"
   },
   "budget": {
     "title": "GRC Budget",
@@ -5126,5 +5204,64 @@
     "disclosureLabel": "AI transparency notice",
     "providerLine": "Provider: {provider} · Model: {model} · Processed in: {country}",
     "humanReviewRequired": "The result is a suggestion and must be reviewed before it is accepted."
+  },
+  "table": {
+    "noResults": "No entries found.",
+    "rowCount": "{count} rows",
+    "pageOf": "Page {page} of {total}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "filterPlaceholder": "Filter …"
+  },
+  "footer": {
+    "copyright": "© {year} ARCTOS — Audit, Risk, Compliance & Trust OS",
+    "imprint": "Imprint",
+    "privacy": "Privacy"
+  },
+  "a11y": {
+    "toggleMenu": "Toggle menu",
+    "close": "Close",
+    "noValue": "no value"
+  },
+  "tags": {
+    "addPlaceholder": "Add tag …",
+    "createNew": "Create \"{input}\" as a new tag",
+    "searchHint": "Type to search or create tags",
+    "remove": "Remove tag \"{tag}\""
+  },
+  "localeSwitch": {
+    "label": "Choose language",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "trust": {
+    "notFoundTitle": "Trust Center not found",
+    "notFoundBody": "The requested organization does not exist.",
+    "subtitle": "Trust Center — security and compliance status",
+    "statusActive": "Compliance status: active",
+    "statusCounts": "{frameworks} active frameworks · {modules} security modules enabled",
+    "statusEmptyTitle": "No information published yet",
+    "statusEmptyBody": "No active frameworks and no enabled security modules are currently recorded for this organization.",
+    "certifications": "Certifications & mandatory standards",
+    "frameworks": "Active compliance frameworks",
+    "modules": "Enabled security modules",
+    "source": "Source: {source}",
+    "activatedOn": "Activated: {date}",
+    "practices": "Security practices",
+    "lastUpdated": "Powered by the ARCTOS GRC platform · Last updated: {date}",
+    "practice": {
+      "dataProcessingTitle": "Data processing",
+      "dataProcessingDesc": "All data is processed and stored within the EU.",
+      "accessControlTitle": "Access control",
+      "accessControlDesc": "Role-based access control with Three Lines of Defense.",
+      "auditTrailTitle": "Audit trail",
+      "auditTrailDesc": "Cryptographically secured audit trail (SHA-256 hash chain).",
+      "encryptionTitle": "Encryption",
+      "encryptionDesc": "Transport encryption with TLS 1.3. Particularly sensitive data — whistleblower reports and connector credentials — is additionally encrypted at the application level with AES-256-GCM. Disk encryption and, where the object store supports it, server-side encryption of the document store are configured by the operator of the installation.",
+      "incidentTitle": "Incident response",
+      "incidentDesc": "Defined incident response process with a 24-hour reporting obligation.",
+      "continuityTitle": "Business continuity",
+      "continuityDesc": "Tested business continuity plans and disaster recovery."
+    }
   }
 }

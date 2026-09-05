@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Loader2,
   CheckCircle2,
@@ -40,14 +41,18 @@ interface MailboxData {
   evidence: MailboxEvidence[];
 }
 
-const STATUS_STEPS = ["received", "acknowledged", "investigating", "resolved"];
-const STATUS_LABELS: Record<string, { de: string; en: string }> = {
-  received: { de: "Eingegangen", en: "Received" },
-  acknowledged: { de: "Bestaetigt", en: "Acknowledged" },
-  investigating: { de: "In Bearbeitung", en: "Investigating" },
-  resolved: { de: "Geloest", en: "Resolved" },
-  closed: { de: "Geschlossen", en: "Closed" },
-};
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Nur noch die Abfolge der Schritte; die
+ * Beschriftungen stehen unter `wbPortal.statusSteps.<key>` in beiden
+ * Katalogen. Die frueheren deutschen Fassungen schrieben „Bestaetigt" und
+ * „Geloest" — der Katalog schreibt „Bestätigt" und „Gelöst".
+ */
+const STATUS_STEPS = [
+  "received",
+  "acknowledged",
+  "investigating",
+  "resolved",
+] as const;
 
 export default function MailboxPage() {
   const { token } = useParams<{ token: string }>();
@@ -56,9 +61,13 @@ export default function MailboxPage() {
   const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
-  const [language, setLanguage] = useState<"de" | "en">("de");
 
-  const t = (de: string, en: string) => (language === "de" ? de : en);
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Wie im Meldeformular: eigener
+  // Sprachzustand, eigener Umschalter, beide Textfassungen im Quelltext —
+  // waehrend `wbPortal.*` seit jeher in beiden Katalogen liegt und von keiner
+  // Aufrufstelle erreicht wurde. Der Umschalter sitzt jetzt im Portalrahmen.
+  const t = useTranslations("wbPortal");
+  const locale = useLocale();
 
   const fetchMailbox = useCallback(async () => {
     try {
@@ -67,14 +76,14 @@ export default function MailboxPage() {
         const json = await res.json();
         setData(json.data);
       } else {
-        setError(t("Ungueltig oder abgelaufen", "Invalid or expired"));
+        setError(t("invalidOrExpired"));
       }
     } catch {
-      setError(t("Verbindungsfehler", "Connection error"));
+      setError(t("connectionError"));
     } finally {
       setLoading(false);
     }
-  }, [token, language]);
+  }, [token, t]);
 
   useEffect(() => {
     fetchMailbox();
@@ -130,16 +139,26 @@ export default function MailboxPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
-          <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
-          <p className="text-gray-600">
-            {error || t("Postfach nicht gefunden", "Mailbox not found")}
-          </p>
+          <AlertTriangle
+            className="h-12 w-12 text-red-400 mx-auto mb-4"
+            aria-hidden="true"
+          />
+          <p className="text-gray-600">{error || t("mailboxNotFound")}</p>
         </div>
       </div>
     );
   }
 
-  const currentStepIdx = STATUS_STEPS.indexOf(data.status);
+  // `STATUS_STEPS` ist seit der Umstellung `as const` — das ist gewollt (es
+  // macht `t(`statusSteps.${step}`)` typsicher), verengt aber auch den
+  // Parametertyp von `indexOf`. `data.status` kommt aus der Route und ist
+  // `string`: der Vergleich muss ihn erst als einen der vier Schritte
+  // erkennen. `indexOf` auf der breiten Sicht liefert dieselbe Zahl und
+  // meldet -1 fuer jeden unbekannten Status — das ist genau das Verhalten,
+  // auf das die Anzeige unten baut.
+  const currentStepIdx = (STATUS_STEPS as readonly string[]).indexOf(
+    data.status,
+  );
 
   const daysUntilAck = Math.ceil(
     (new Date(data.acknowledgeDeadline).getTime() - Date.now()) /
@@ -156,25 +175,11 @@ export default function MailboxPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {t("Anonymes Postfach", "Anonymous Mailbox")}
+            {t("mailboxTitle")}
           </h1>
           <p className="text-sm text-gray-500">
-            {t("Vorgang", "Case")}: {data.caseNumber}
+            {t("case")}: {data.caseNumber}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLanguage("de")}
-            className={`px-3 py-1 text-sm rounded-md ${language === "de" ? "bg-blue-100 text-blue-900 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
-          >
-            DE
-          </button>
-          <button
-            onClick={() => setLanguage("en")}
-            className={`px-3 py-1 text-sm rounded-md ${language === "en" ? "bg-blue-100 text-blue-900 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
-          >
-            EN
-          </button>
         </div>
       </div>
 
@@ -199,13 +204,13 @@ export default function MailboxPage() {
                     }`}
                   >
                     {isCompleted ? (
-                      <CheckCircle2 className="h-5 w-5" />
+                      <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                     ) : (
-                      <Circle className="h-5 w-5" />
+                      <Circle className="h-5 w-5" aria-hidden="true" />
                     )}
                   </div>
                   <span className="text-xs text-gray-500 mt-1 text-center">
-                    {STATUS_LABELS[step]?.[language] ?? step}
+                    {t(`statusSteps.${step}`)}
                   </span>
                 </div>
                 {idx < STATUS_STEPS.length - 1 && (
@@ -223,13 +228,11 @@ export default function MailboxPage() {
         {/* Deadlines */}
         <div className="flex items-center gap-6 text-sm">
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400" />
+            <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
             <span className="text-gray-600">
-              {t("Eingangsbestaetigung", "Acknowledgment")}:{" "}
+              {t("acknowledgment")}:{" "}
               {data.acknowledgedAt ? (
-                <span className="text-green-600 font-medium">
-                  {t("Erledigt", "Done")}
-                </span>
+                <span className="text-green-600 font-medium">{t("done")}</span>
               ) : daysUntilAck > 0 ? (
                 <span
                   className={
@@ -238,19 +241,17 @@ export default function MailboxPage() {
                       : "text-gray-900"
                   }
                 >
-                  {daysUntilAck} {t("Tage", "days")}
+                  {t("daysRemaining", { count: String(daysUntilAck) })}
                 </span>
               ) : (
-                <span className="text-red-600 font-medium">
-                  {t("Ueberfaellig", "Overdue")}
-                </span>
+                <span className="text-red-600 font-medium">{t("overdue")}</span>
               )}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-gray-400" />
+            <Clock className="h-4 w-4 text-gray-400" aria-hidden="true" />
             <span className="text-gray-600">
-              {t("Rueckmeldung", "Response")}:{" "}
+              {t("response")}:{" "}
               {daysUntilResponse > 0 ? (
                 <span
                   className={
@@ -259,12 +260,10 @@ export default function MailboxPage() {
                       : "text-gray-900"
                   }
                 >
-                  {daysUntilResponse} {t("Tage", "days")}
+                  {t("daysRemaining", { count: String(daysUntilResponse) })}
                 </span>
               ) : (
-                <span className="text-red-600 font-medium">
-                  {t("Ueberfaellig", "Overdue")}
-                </span>
+                <span className="text-red-600 font-medium">{t("overdue")}</span>
               )}
             </span>
           </div>
@@ -274,12 +273,12 @@ export default function MailboxPage() {
       {/* Message thread */}
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         <h2 className="text-sm font-medium text-gray-700 mb-4">
-          {t("Nachrichten", "Messages")}
+          {t("messages")}
         </h2>
 
         {data.messages.length === 0 ? (
           <p className="text-sm text-gray-400 text-center py-8">
-            {t("Noch keine Nachrichten", "No messages yet")}
+            {t("noMessages")}
           </p>
         ) : (
           <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -297,9 +296,7 @@ export default function MailboxPage() {
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(msg.createdAt).toLocaleString(
-                      language === "de" ? "de-DE" : "en-US",
-                    )}
+                    {new Date(msg.createdAt).toLocaleString(locale)}
                   </p>
                 </div>
               </div>
@@ -315,23 +312,33 @@ export default function MailboxPage() {
               onChange={(e) => setReply(e.target.value)}
               rows={2}
               maxLength={5000}
-              placeholder={t("Ihre Antwort...", "Your reply...")}
+              placeholder={t("replyPlaceholder")}
               className="flex-1 rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
             />
             <div className="flex flex-col gap-2">
               <button
                 type="submit"
                 disabled={sending || !reply.trim()}
+                // [OP-070] Nebenbefund: beide Bedienelemente tragen nur ein
+                // Symbol und hatten keinen zugaenglichen Namen — dieselbe
+                // Fehlerklasse wie C-13. In einem Meldekanal, den auch
+                // Menschen mit Screenreader nutzen muessen, ist das der
+                // Unterschied zwischen bedienbar und nicht bedienbar.
+                aria-label={t("sendReply")}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
               >
                 {sending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2
+                    className="h-4 w-4 animate-spin"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               <label className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition flex items-center justify-center">
-                <Upload className="h-4 w-4 text-gray-500" />
+                <Upload className="h-4 w-4 text-gray-500" aria-hidden="true" />
+                <span className="sr-only">{t("uploadEvidence")}</span>
                 <input
                   type="file"
                   className="hidden"
@@ -350,7 +357,7 @@ export default function MailboxPage() {
       {data.evidence.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
           <h2 className="text-sm font-medium text-gray-700 mb-3">
-            {t("Beweismittel", "Evidence")}
+            {t("evidence")}
           </h2>
           <div className="space-y-2">
             {data.evidence.map((ev, idx) => (
@@ -360,7 +367,7 @@ export default function MailboxPage() {
               >
                 <span className="text-gray-700">{ev.fileName}</span>
                 <span className="text-gray-400">
-                  {(ev.fileSize / 1024).toFixed(0)} KB
+                  {t("fileSizeKb", { size: (ev.fileSize / 1024).toFixed(0) })}
                 </span>
               </div>
             ))}
@@ -371,11 +378,8 @@ export default function MailboxPage() {
       {/* Privacy footer */}
       <div className="text-center pb-8">
         <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-          <Shield className="h-3 w-3" />
-          {t(
-            "Alle Daten sind Ende-zu-Ende verschluesselt",
-            "All data is end-to-end encrypted",
-          )}
+          <Shield className="h-3 w-3" aria-hidden="true" />
+          {t("encrypted")}
         </div>
       </div>
     </div>

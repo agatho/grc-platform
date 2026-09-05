@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -52,6 +53,11 @@ interface ReportData {
 }
 
 export default function ExecutiveReportPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const params = useParams();
   const router = useRouter();
@@ -216,7 +222,7 @@ export default function ExecutiveReportPage() {
             {t("report.costPerEmployee")}
           </p>
           <p className="text-2xl font-bold text-gray-900">
-            {d.costPerEmployee.toLocaleString("de-DE", {
+            {d.costPerEmployee.toLocaleString(numberLocale, {
               minimumFractionDigits: 2,
             })}{" "}
             {t("currency")}
@@ -271,7 +277,8 @@ export default function ExecutiveReportPage() {
                     {inv.entityTitle}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
-                    {inv.investmentCost.toLocaleString("de-DE")} {t("currency")}
+                    {inv.investmentCost.toLocaleString(numberLocale)}{" "}
+                    {t("currency")}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span
@@ -302,7 +309,7 @@ export default function ExecutiveReportPage() {
         </div>
         <p className="text-sm text-red-700 mb-4">
           {t("report.roniRecommendation", {
-            ale: d.roniHighlight.totalAle.toLocaleString("de-DE"),
+            ale: d.roniHighlight.totalAle.toLocaleString(numberLocale),
           })}
         </p>
         <div className="space-y-2">
@@ -313,7 +320,7 @@ export default function ExecutiveReportPage() {
             >
               <span className="text-sm text-gray-900">{risk.title}</span>
               <span className="text-sm font-medium text-red-600">
-                {risk.ale.toLocaleString("de-DE")} {t("currency")}
+                {risk.ale.toLocaleString(numberLocale)} {t("currency")}
               </span>
             </div>
           ))}
@@ -352,14 +359,15 @@ export default function ExecutiveReportPage() {
                     {row.entityTitle}
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
-                    {row.cost.toLocaleString("de-DE")} {t("currency")}
+                    {row.cost.toLocaleString(numberLocale)} {t("currency")}
                   </td>
                   <td className="px-4 py-3 text-right text-green-600 font-medium">
-                    {row.expectedBenefit.toLocaleString("de-DE")}{" "}
+                    {row.expectedBenefit.toLocaleString(numberLocale)}{" "}
                     {t("currency")}
                   </td>
                   <td className="px-4 py-3 text-right text-red-600 font-medium">
-                    {row.roniIfDeferred.toLocaleString("de-DE")} {t("currency")}
+                    {row.roniIfDeferred.toLocaleString(numberLocale)}{" "}
+                    {t("currency")}
                   </td>
                 </tr>
               ))}
@@ -380,7 +388,7 @@ export default function ExecutiveReportPage() {
                 {t("report.previousYear")}
               </p>
               <p className="text-xl font-bold text-gray-700">
-                {d.previousYear.totalActual.toLocaleString("de-DE")}{" "}
+                {d.previousYear.totalActual.toLocaleString(numberLocale)}{" "}
                 {t("currency")}
               </p>
             </div>
@@ -389,7 +397,7 @@ export default function ExecutiveReportPage() {
                 {t("report.currentYear")}
               </p>
               <p className="text-xl font-bold text-gray-900">
-                {d.totalActual.toLocaleString("de-DE")} {t("currency")}
+                {d.totalActual.toLocaleString(numberLocale)} {t("currency")}
               </p>
             </div>
             <div>
@@ -404,7 +412,7 @@ export default function ExecutiveReportPage() {
                   className={`text-xl font-bold ${budgetChange > 0 ? "text-red-600" : "text-green-600"}`}
                 >
                   {budgetChange > 0 ? "+" : ""}
-                  {budgetChange.toLocaleString("de-DE")} {t("currency")}
+                  {budgetChange.toLocaleString(numberLocale)} {t("currency")}
                   <span className="text-sm ml-1">
                     ({budgetChangePercent.toFixed(1)}%)
                   </span>
@@ -431,6 +439,9 @@ function SummaryCard({
   highlight?: boolean;
   prefix?: string;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   return (
     <div
       className={`rounded-lg border bg-white p-4 ${highlight ? "border-red-300 bg-red-50" : "border-gray-200"}`}
@@ -440,7 +451,8 @@ function SummaryCard({
         className={`text-xl font-bold ${highlight ? "text-red-700" : "text-gray-900"}`}
       >
         {prefix}
-        {value.toLocaleString("de-DE", { minimumFractionDigits: 2 })} {currency}
+        {value.toLocaleString(numberLocale, { minimumFractionDigits: 2 })}{" "}
+        {currency}
       </p>
     </div>
   );

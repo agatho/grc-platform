@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -182,9 +183,15 @@ const ACTION_COLORS: Record<string, string> = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema als Parameter statt als
+ * Konstante. Das Protokoll ist die Ansicht, in der Zeitstempel am dichtesten
+ * stehen — sie alle im deutschen Format auszugeben, waehrend die Spalten
+ * daneben englisch beschriftet sind, ist die sichtbarste Form dieses Mangels.
+ */
+function formatTimestamp(locale: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -466,6 +473,9 @@ function ChangeDetailDialog({
   canTombstone: boolean;
   onTombstoned: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   const [tombstoneOpen, setTombstoneOpen] = useState(false);
   const [tombstoneReason, setTombstoneReason] = useState<string>("gdpr_art_17");
   const [tombstoneBusy, setTombstoneBusy] = useState(false);
@@ -618,7 +628,7 @@ function ChangeDetailDialog({
               <>
                 <dt className="text-gray-500">{t("tombstonedAt")}</dt>
                 <dd className="font-mono text-xs text-purple-700">
-                  {formatTimestamp(entry.piiTombstonedAt!)}
+                  {formatTimestamp(numberLocale, entry.piiTombstonedAt!)}
                 </dd>
 
                 <dt className="text-gray-500">{t("tombstoneReason")}</dt>
@@ -720,6 +730,7 @@ function ChangeDetailDialog({
 // ──────────────────────────────────────────────────────────────
 
 export default function AuditLogPage() {
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("auditLog");
   const { data: session } = useSession();
 
@@ -956,7 +967,7 @@ export default function AuditLogPage() {
         ),
         cell: ({ getValue }) => (
           <span className="whitespace-nowrap text-xs text-gray-600">
-            {formatTimestamp(getValue() as string)}
+            {formatTimestamp(numberLocale, getValue() as string)}
           </span>
         ),
       },

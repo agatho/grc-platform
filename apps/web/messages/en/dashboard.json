@@ -115,5 +115,18 @@
     "updated": "Dashboard updated",
     "deleted": "Dashboard deleted"
   },
-  "widgetsLabel": "widgets"
+  "widgetsLabel": "widgets",
+  "widget": {
+    "retry": "Retry",
+    "configure": "Configure",
+    "remove": "Remove",
+    "moduleUnavailable": "Module not available",
+    "dataUnavailable": "Data not available",
+    "today": "Today",
+    "overdueDays": "{days}d overdue",
+    "inDays": "{days}d",
+    "yes": "Yes",
+    "no": "No",
+    "noUpcomingDeadlines": "No upcoming deadlines"
+  }
 }

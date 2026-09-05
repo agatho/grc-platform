@@ -30,6 +30,17 @@
  * have exposed every organisation of the installation without a login.
  *
  * The status tile no longer claims "Aktiv" regardless of content (see below).
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist die oeffentliche
+ * Selbstauskunft einer Organisation gegenueber ihren Kunden und Partnern —
+ * genau die Leserschaft, die am wenigsten zwingend Deutsch spricht. Sie stand
+ * vollstaendig auf Deutsch.
+ *
+ * Ein zweiter Mangel steckte in den DATEN, nicht im Text: die Modulnamen
+ * wurden als `displayNameDe ?? displayNameEn` gerendert. Das Schema fuehrt
+ * beide Spalten, die deutsche gewann aber immer — die englische Bezeichnung
+ * war in der Datenbank vorhanden und unerreichbar. Jetzt entscheidet das
+ * Gebietsschema, welche Spalte fuehrt, mit der jeweils anderen als Rueckfall.
  */
 import {
   db,
@@ -41,6 +52,7 @@ import {
   moduleDefinition,
 } from "@grc/db";
 import { eq, and } from "drizzle-orm";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   Shield,
   CheckCircle2,
@@ -57,6 +69,8 @@ interface Props {
 
 export default async function TrustCenterPage({ params }: Props) {
   const { orgCode } = await params;
+  const t = await getTranslations("trust");
+  const locale = await getLocale();
 
   // Find org by short name (used as public URL slug)
   const [org] = await db
@@ -72,13 +86,14 @@ export default async function TrustCenterPage({ params }: Props) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Shield className="h-12 w-12 text-gray-500 mx-auto mb-4" />
+          <Shield
+            className="h-12 w-12 text-gray-500 mx-auto mb-4"
+            aria-hidden="true"
+          />
           <h1 className="text-2xl font-bold text-gray-900">
-            Trust Center nicht gefunden
+            {t("notFoundTitle")}
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Die angeforderte Organisation existiert nicht.
-          </p>
+          <p className="text-sm text-gray-500 mt-2">{t("notFoundBody")}</p>
         </div>
       </div>
     );
@@ -138,13 +153,11 @@ export default async function TrustCenterPage({ params }: Props) {
         <div className="max-w-4xl mx-auto px-6 py-8">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white">
-              <Shield className="h-7 w-7" />
+              <Shield className="h-7 w-7" aria-hidden="true" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{org.name}</h1>
-              <p className="text-sm text-gray-500">
-                Trust Center — Sicherheits- und Compliance-Status
-              </p>
+              <p className="text-sm text-gray-500">{t("subtitle")}</p>
             </div>
           </div>
         </div>
@@ -158,14 +171,19 @@ export default async function TrustCenterPage({ params }: Props) {
         {hasPublishedStatus ? (
           <div className="rounded-xl bg-green-50 border border-green-200 p-6">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <CheckCircle2
+                className="h-6 w-6 text-green-600"
+                aria-hidden="true"
+              />
               <div>
                 <p className="text-lg font-semibold text-green-900">
-                  Compliance-Status: Aktiv
+                  {t("statusActive")}
                 </p>
                 <p className="text-sm text-green-700 mt-0.5">
-                  {activeCatalogs.length} aktive Frameworks · {modules.length}{" "}
-                  Sicherheitsmodule aktiviert
+                  {t("statusCounts", {
+                    frameworks: String(activeCatalogs.length),
+                    modules: String(modules.length),
+                  })}
                 </p>
               </div>
             </div>
@@ -176,14 +194,13 @@ export default async function TrustCenterPage({ params }: Props) {
             className="rounded-xl bg-gray-50 border border-gray-200 p-6"
           >
             <div className="flex items-center gap-3">
-              <Clock className="h-6 w-6 text-gray-600" />
+              <Clock className="h-6 w-6 text-gray-600" aria-hidden="true" />
               <div>
                 <p className="text-lg font-semibold text-gray-900">
-                  Noch keine Angaben veröffentlicht
+                  {t("statusEmptyTitle")}
                 </p>
                 <p className="text-sm text-gray-600 mt-0.5">
-                  Für diese Organisation sind derzeit keine aktiven Frameworks
-                  und keine aktivierten Sicherheitsmodule hinterlegt.
+                  {t("statusEmptyBody")}
                 </p>
               </div>
             </div>
@@ -194,8 +211,8 @@ export default async function TrustCenterPage({ params }: Props) {
         {certifications.length > 0 && (
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Lock className="h-5 w-5 text-blue-600" />
-              Zertifizierungen & verpflichtende Standards
+              <Lock className="h-5 w-5 text-blue-600" aria-hidden="true" />
+              {t("certifications")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {certifications.map((cert, i) => (
@@ -204,19 +221,25 @@ export default async function TrustCenterPage({ params }: Props) {
                   className="rounded-lg border border-blue-200 bg-blue-50/50 p-4"
                 >
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600 shrink-0" />
+                    <CheckCircle2
+                      className="h-4 w-4 text-blue-600 shrink-0"
+                      aria-hidden="true"
+                    />
                     <p className="text-sm font-semibold text-gray-900">
                       {cert.catalogName}
                     </p>
                   </div>
                   <p className="text-xs text-gray-500 mt-1 ml-6">
-                    Quelle: {cert.source}
+                    {t("source", { source: cert.source })}
                   </p>
                   {cert.activatedAt && (
                     <p className="text-xs text-gray-400 mt-0.5 ml-6 flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      Aktiviert:{" "}
-                      {new Date(cert.activatedAt).toLocaleDateString("de-DE")}
+                      <Clock className="h-3 w-3" aria-hidden="true" />
+                      {t("activatedOn", {
+                        date: new Date(cert.activatedAt).toLocaleDateString(
+                          locale,
+                        ),
+                      })}
                     </p>
                   )}
                 </div>
@@ -229,8 +252,11 @@ export default async function TrustCenterPage({ params }: Props) {
         {recommendedFrameworks.length > 0 && (
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-indigo-600" />
-              Aktive Compliance-Frameworks
+              <BookOpen
+                className="h-5 w-5 text-indigo-600"
+                aria-hidden="true"
+              />
+              {t("frameworks")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {recommendedFrameworks.map((fw, i) => (
@@ -253,8 +279,8 @@ export default async function TrustCenterPage({ params }: Props) {
         {/* Enabled Security Modules */}
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Globe className="h-5 w-5 text-teal-600" />
-            Aktivierte Sicherheitsmodule
+            <Globe className="h-5 w-5 text-teal-600" aria-hidden="true" />
+            {t("modules")}
           </h2>
           <div className="flex flex-wrap gap-2">
             {modules.map((mod) => (
@@ -262,7 +288,9 @@ export default async function TrustCenterPage({ params }: Props) {
                 key={mod.moduleKey}
                 className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200"
               >
-                {mod.displayNameDe ?? mod.displayNameEn ?? mod.moduleKey}
+                {(locale === "de"
+                  ? (mod.displayNameDe ?? mod.displayNameEn)
+                  : (mod.displayNameEn ?? mod.displayNameDe)) ?? mod.moduleKey}
               </span>
             ))}
           </div>
@@ -271,56 +299,41 @@ export default async function TrustCenterPage({ params }: Props) {
         {/* Security Practices */}
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <FileText className="h-5 w-5 text-orange-600" />
-            Sicherheitspraktiken
+            <FileText className="h-5 w-5 text-orange-600" aria-hidden="true" />
+            {t("practices")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              {
-                title: "Datenverarbeitung",
-                desc: "Alle Daten werden in der EU verarbeitet und gespeichert.",
-              },
-              {
-                title: "Zugriffskontrolle",
-                desc: "Rollenbasierte Zugriffskontrolle mit Three Lines of Defense.",
-              },
-              {
-                title: "Audit-Trail",
-                desc: "Kryptographisch gesicherter Audit-Trail (SHA-256 Hash-Chain).",
-              },
-              {
-                // #S06-11 (ARCTOS-FULL-2026-08-31): der frühere Text
-                // versprach „im Transit (TLS 1.3) und at Rest (AES-256)"
-                // als Produktzusage. At Rest war für den Dokumentenspeicher
-                // NICHT implementiert: kein SSE-Header beim PUT, keine
-                // applikative Verschlüsselung, das lokale Backend schreibt
-                // Klartextdateien. Die Zusage wird auf das zurückgenommen,
-                // was das Produkt selbst leistet, und der betrieblich
-                // erbrachte Teil wird als solcher benannt.
-                title: "Verschlüsselung",
-                desc: "Transportverschlüsselung mit TLS 1.3. Besonders schutzbedürftige Daten — Hinweisgebermeldungen und Zugangsdaten von Konnektoren — sind zusätzlich applikativ mit AES-256-GCM verschlüsselt. Die Verschlüsselung des Datenträgers und, wo der Objektspeicher es unterstützt, die serverseitige Verschlüsselung des Dokumentenspeichers werden vom Betreiber der Installation konfiguriert.",
-              },
-              {
-                title: "Incident Response",
-                desc: "Definierter Incident-Response-Prozess mit 24h-Meldepflicht.",
-              },
-              {
-                title: "Business Continuity",
-                desc: "Getestete Business-Continuity-Pläne und Disaster Recovery.",
-              },
+              "dataProcessing",
+              "accessControl",
+              "auditTrail",
+              // #S06-11 (ARCTOS-FULL-2026-08-31): der frühere Text versprach
+              // „im Transit (TLS 1.3) und at Rest (AES-256)" als
+              // Produktzusage. At Rest war für den Dokumentenspeicher NICHT
+              // implementiert. Die Zusage steht jetzt unter
+              // `trust.practice.encryptionDesc` — in BEIDEN Sprachen auf
+              // demselben, zurückgenommenen Stand. Eine Produktzusage, die
+              // sich zwischen zwei Sprachfassungen unterscheidet, wäre genau
+              // der Defekt, den S06-11 beschrieben hat.
+              "encryption",
+              "incident",
+              "continuity",
             ].map((practice) => (
               <div
-                key={practice.title}
+                key={practice}
                 className="rounded-lg border border-gray-200 bg-white p-4"
               >
                 <div className="flex items-start gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <CheckCircle2
+                    className="h-4 w-4 text-green-500 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      {practice.title}
+                      {t(`practice.${practice}Title`)}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      {practice.desc}
+                      {t(`practice.${practice}Desc`)}
                     </p>
                   </div>
                 </div>
@@ -332,8 +345,9 @@ export default async function TrustCenterPage({ params }: Props) {
         {/* Footer */}
         <footer className="border-t border-gray-200 pt-6 pb-8 text-center">
           <p className="text-xs text-gray-400">
-            Powered by ARCTOS GRC Platform · Zuletzt aktualisiert:{" "}
-            {new Date().toLocaleDateString("de-DE")}
+            {t("lastUpdated", {
+              date: new Date().toLocaleDateString(locale),
+            })}
           </p>
         </footer>
       </main>
