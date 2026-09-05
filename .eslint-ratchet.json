@@ -1,6 +1,6 @@
 {
   "_comment": "#S13-17 ESLint-Ratsche über alle zwölf Workspaces, getrennt nach Bereich (je Bereich eine eigene Flat Config, siehe _scopes). Zahlen dürfen nur SINKEN, und sie werden NICHT über Bereiche hinweg aufgerechnet. Neu setzen: node scripts/lint-ratchet.mjs --update. Eine Anhebung — oder das Entfernen eines Bereichs — verlangt zusätzlich --reason und wird in _history festgehalten.",
-  "_updatedAt": "2026-09-03",
+  "_updatedAt": "2026-09-05",
   "_scopes": {
     "root": {
       "cwd": ".",
@@ -21,7 +21,6 @@
   },
   "counts": {
     "root": {
-      "(fatal-or-directive)": 1,
       "@typescript-eslint/no-explicit-any": 26,
       "@typescript-eslint/no-require-imports": 1,
       "@typescript-eslint/no-unused-vars": 249,
@@ -54,6 +53,14 @@
         "apps/web: Bereich NEU aufgenommen (0 Befunde, 2277 Dateien)"
       ],
       "reason": "Welle 4b-5 / OP-173: apps/web — der groesste Workspace des Repositories, 2.277 gelintete Dateien — wird erstmals gezaehlt. Er stand auf diesem Branch mit zwei Fehlern rot (no-constant-binary-expression in grc-maintenance-surface.test.ts:263, @typescript-eslint/no-require-imports in bpmn-moddle-declaration.test.ts:105); beide sind behoben, sein Bestand betraegt jetzt 0 und wird bei 0 gedeckelt. Die Zahlen der beiden Bereiche werden GETRENNT gefuehrt, damit ein Rueckgang im einen keinen Anstieg im anderen decken kann. Die Zahlen fuer 'root' sind unveraendert (283)."
+    },
+    {
+      "date": "2026-09-05",
+      "total": 282,
+      "changed": [
+        "root · (fatal-or-directive): 1 → 0"
+      ],
+      "reason": "Welle 5c: (fatal-or-directive) 1 -> 0. Die Fundstelle war eine ungenutzte eslint-disable-Direktive; sie ist entfallen, nicht ausgenommen. Reine Absenkung durch Arbeit."
     }
   ]
 }

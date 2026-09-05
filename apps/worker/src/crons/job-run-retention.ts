@@ -1,9 +1,24 @@
 // job-run-retention.ts
 //
 // [ARCTOS-FULL-2026-08-31 / WP9 · S10-02] Housekeeping for `job_run`, the
-// operational log the new scheduler writes (migration 0435). 129 jobs, some
-// at minute cadence, produce roughly 40k rows a day; without a purge the
-// table would outgrow everything it is meant to make observable.
+// operational log the new scheduler writes (migration 0435).
+//
+// [Welle 5c] Der Kopf nannte „129 jobs, some at minute cadence, produce
+// roughly 40k rows a day". Beide Zahlen sind falsch. Nachgemessen am
+// 2026-09-05, aus `JOB_REGISTRY` und den 131 Cron-Ausdrücken ausgezählt:
+//
+//   registrierte Jobs                                    131  (nicht 129)
+//   Läufe pro Tag                                      4.053  (nicht 40.000)
+//   Jobs mit einer Taktung unter fünf Minuten               1  (webhook-dispatch)
+//
+// „some at minute cadence" beschreibt genau einen Job. Die Hochrechnung
+// war offenbar „viele Jobs im Minutentakt" und liegt um den Faktor zehn
+// daneben. Die Aufräumentscheidung selbst bleibt richtig — 4.053 Zeilen am
+// Tag sind über das 90-Tage-Fenster rund 365.000 Zeilen, und ohne Purge
+// wächst die Tabelle weiter über alles hinaus, was sie beobachtbar machen
+// soll. Aber eine Begründung mit einer zehnfach zu hohen Zahl ist keine.
+// `apps/worker/tests/lib/job-catchup.test.ts` rechnet beide Werte bei
+// jedem Lauf neu aus und hält diesen Kommentar daran fest.
 //
 // `job_run` is NOT evidence — it records that a job ran, not what it found —
 // so a 90-day window is a retention decision, not an audit-trail question.

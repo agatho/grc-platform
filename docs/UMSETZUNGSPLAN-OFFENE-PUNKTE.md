@@ -76,6 +76,68 @@ OP-070 (96 Seiten ohne i18n, XL), OP-104 (Doku führt mehr als fertig, was ehrli
 
 **Ressourcen, nicht Zeit** — aufwendig, aber machbar, sobald eine Umgebung da ist: OP-062 (EN 301 549 mit Browserlauf), OP-035 (Screenreader), OP-146/OP-164 (Staging-Lauf), OP-166 (Penetrationstest).
 
+## 10. Stand nach der Abarbeitung (2026-09-05)
+
+Alle geplanten Wellen sind gelaufen: 0, 1a–1c, 2a–2b, 3, 4a, 4b (sieben
+Stränge), 4c, 5a, 5b, 5c. Der Verlauf steht in `docs/UMSETZUNG-WELLE-*.md`,
+die Befunde als Nachträge in `docs/OFFENE-PUNKTE-REGISTER.md`.
+
+**Gemessen am Ende:** 428/428 Migrationen von Null (617 Tabellen), 13
+Typprüfungen ohne Fehler, 7.616 Tests grün in 13/13 Tasks, RLS-Suite 186/186,
+und zehn Tore — Prettier, Lint (zwei Bereiche), Coverage, Tor-Eingaben,
+Dead-Exports, i18n (zwei Ratschen), DB-Integrität, Geheimnisse, Audit —
+allesamt grün und jedes durch künstliche Verletzung als auslösefähig
+nachgewiesen.
+
+**Was der Plan nicht vorhergesehen hat, und die eigentliche Ausbeute ist:**
+
+Der Plan war nach 166 Punkten gebaut. Die Arbeit an ihnen hat **weitere 29
+Punkte** (OP-167 bis OP-195) hervorgebracht, darunter einen Sicherheits- und
+zwei Schwerbefunde, die in keinem der 17 Ausgangsberichte standen. Sie kamen
+fast alle auf demselben Weg: **nicht durch Suchen, sondern durch Einschalten**.
+Eine abgeschaltete Lint-Regel, ein abgeschalteter Compiler-Schalter, ein
+Testkanal auf der falschen Rolle — jedes Mal lag darunter Produktcode, den
+niemand je hatte scheitern sehen.
+
+**Die Zahl, die dieser Plan im Rückblick am meisten unterschätzt hat, ist
+nicht die der Defekte, sondern die der Tore, die nicht auslösen konnten: zehn.**
+
+Eine ignorierte Tor-Eingabe; ein `git diff` auf ungetrackte Pfade; ein `tee`
+ohne `pipefail`; ein Datenbanktest, der an seiner eigenen Vorbedingung starb
+(OP-168); eine Suite, die ihre Voraussetzung erriet und dabei gegen eine
+andere Datenbank lief (OP-170); eine `allow`-Liste, die genau das Gefährliche
+durchliess (OP-171); ein Prettier-Lauf, der die falsche Dateimenge prüfte
+(OP-183); eine Smoke-Suite, die einen Befund ausdrücklich als zulässig führte;
+ein Geheimnis-Scanner mit `continue-on-error: true` **und** `|| true`
+(OP-193); und ein Platzhalterfilter, der die ganze Zeile prüfte, so dass ein
+echter Schlüssel neben einem `example.com` unsichtbar war (OP-194). Dazu ein
+Tor, das zum Löschen benutzter Exporte aufgefordert hätte (OP-195), und eine
+„Löschliste" von 6.796 Übersetzungsschlüsseln, deren Abarbeitung die
+Hauptnavigation entbeschriftet hätte (OP-073).
+
+**Die Regel aus Abschnitt 9 hat sich in jeder Welle bestätigt** — und eine
+zweite ist dazugekommen, die der Plan noch nicht kannte:
+
+> Die Wache über der Sache war öfter kaputt als die Sache. Wer ein Tor grün
+> sieht, hat noch nichts gemessen; er hat gesehen, dass es nicht rot war.
+
+**Dreimal ist derselbe Fehler in dieser Arbeit selbst passiert** und steht
+benannt im Register: ein „Compiled successfully" als Beleg für einen behobenen
+Absturz gelesen (OP-167), ein Coverage-Tor gegen einen veralteten Bericht
+grün gemeldet, und ein Geheimnis-Report, der vor der Zeile erzeugt wurde, die
+er hätte finden müssen. Jedes Mal ein Artefakt als Ergebnis gelesen — dieselbe
+Fehlerform, gegen die dieses Register angetreten ist.
+
+**Was offen bleibt**, unverändert nach Abschnitt 8 sortiert: die Zeitkriterien
+(OP-161, OP-162, OP-097), die Entscheidungen des Eigentümers (20 Punkte), die
+ressourcengebundenen Punkte (OP-062, OP-035, OP-146/164, OP-166) — und neu:
+der blockierte Produktionsbau (OP-167, Fremdfehler, mit sechs trennscharfen
+Messungen belegt), OP-112 (eine fehlende Zeile in einem Manifest), die
+restliche i18n (`ai-act`, `settings`, `admin`), die 255 rohen Query-Leser aus
+OP-116, und der QA-Bewertungspfad, der gar nicht verdrahtet ist.
+
+---
+
 ## 9. Arbeitsweise
 
 Wie bei der Remediation: Wellen mit Dateihoheit je Strang, keine Testabschwächung, jede Änderung mit Nachweis, Ratschen werden gemessen und nicht geraten. Nach jeder Welle: Migrationen von Null, Typecheck über alle Projekte, alle Testsuiten, Playwright, die Tore — und ein Commit, damit ein Abbruch nichts kostet.

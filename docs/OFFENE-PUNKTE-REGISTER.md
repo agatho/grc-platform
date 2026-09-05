@@ -612,6 +612,51 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-05 — Welle 5c: die Folgearbeiten, und ein zehnter stummer Bereich
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5C.md`. Abgearbeitet wurden die
+Codeänderungen, die Welle 5b gemessen, benannt und wegen fremder Dateihoheit
+liegen gelassen hatte.
+
+| OP     | Ergebnis                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-114 | **behoben** — `excel-to-bpmn.ts` liest über `stream.xlsx.WorkbookReader` mit Zeilen- (10.000) und Zellgrenze. Gemessen an einer 7,72-MB-Tabelle mit 200.000 Zeilen: **756 MB / 5.409 ms → 178 MB / 767 ms**. Der alte Stand wandelte bei `maxRows: 5` klaglos 12 Zeilen um.                                                                                                                                       |
+| OP-128 | **behoben** — `scripts/reseal-wb-secrets.mjs`, gegen `grc_v4c` mit echtem Bestandsfall gelaufen: 4 Werte umgeschlüsselt, zweiter Lauf 0 (idempotent), falscher PREVIOUS-Schlüssel → „4 UNREADABLE", Exit 1. **Falle dabei:** `WB_PSEUDONYM_KEY` wird aus `WB_ENCRYPTION_KEY` abgeleitet — eine Rotation zerstört still alle `wb_report.ip_hash`. Das Skript verweigert deshalb ohne gesetztes `WB_PSEUDONYM_KEY`. |
+| OP-100 | **behoben** — `findMissedRuns`/`reconcileMissedRuns` gegen `job_run`; gegen die laufende Datenbank: kein Nachholen ohne Historie, ein zwei Tage alter Lauf → 1 nachgeholt mit `trigger_source='catchup'`, zweiter Aufruf 0.                                                                                                                                                                                       |
+| OP-112 | **nicht gebaut, mit Messung.** Der Dispatcher trägt (pinnendes `connect.lookup`, nachgemessen gegen `rebind.invalid`) — aber `npm ls undici --all --omit=dev` ergibt **`(empty)`**: undici kommt nur über `jsdom`, eine devDependency. Ein Import in produktivem Code bräche jeden ausgehenden Aufruf. Es fehlt genau eine Zeile in `packages/shared/package.json`; Rezept und Messung stehen im Code.            |
+
+**Die beiden Kommentarzahlen stimmten nicht — und hatten Nachbarn.**
+„fourteen" → **13 Dateien / 24 Pfade / 12 Modulprozesse**; „129 jobs" → **131**,
+und ungefragt gleich mit: „roughly 40k rows a day" → gemessen **4.053**
+(Faktor 10) und „some at minute cadence" → **genau einer**. Die „129" stand
+ausserdem an zwei weiteren Stellen. Die Tests rechnen alle diese Zahlen jetzt
+nach, statt sie zu behaupten.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                    | Beleg                     | Art | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --- | ------- |
+| OP-194 | **Der Platzhalterfilter des Geheimnis-Scanners prüfte die GANZE ZEILE.** Ein echter Schlüssel neben einem `example.com` war damit unsichtbar. Gemessen: alter Stand 0 Funde / Exit 0, neuer Stand 1 Fund / Exit 1. Die Umstellung auf musterbegrenzte Prüfung kostet gegen den heutigen Baum **nichts**.                               | Eigene Messung 2026-09-05 | Tor | behoben |
+| OP-195 | **`audit-dead-exports.mjs` hielt jede Prüfnaht für toten Code**, die nur aus Tests heraus benutzt wird — der Import-Index las ausschliesslich `SRC_DIRS`. Das Tor forderte wörtlich „Entfernen, nicht in die Ratsche aufnehmen", hätte also zum **Löschen benutzter Exporte** aufgefordert. Korrigiert: 2767 in 471 → **2464 in 458**. | Eigene Messung 2026-09-05 | Tor | behoben |
+
+Damit ist OP-194 **der zehnte** Fall in diesem Audit, in dem ein Tor nicht
+auslösen konnte, und OP-195 einer, in dem ein Tor zur falschen Handlung
+aufgefordert hätte. Beide Ratschen sind auf den gemessenen Stand
+nachgezogen — `(fatal-or-directive)` 1 → 0 und Dead-Exports 2765/470 →
+2464/458, letztere ausdrücklich als **Werkzeugkorrektur** und nicht als
+Arbeitsergebnis begründet — und beide anschliessend durch künstliche
+Verletzung geprüft.
+
+**Und noch einmal derselbe eigene Fehler, diesmal von einem Strang selbst
+gefunden:** Der Geheimnis-Scanner war rot, weil `docs/UMSETZUNG-WELLE-5B.md`
+den Fund erklärt und dabei das Muster ausschreibt — der eingecheckte Report
+war **vor** dieser Zeile erzeugt worden. „Artefakt statt Messung", in genau
+dem Dokument, das diesen Fehler anprangert. Behoben über ein neues,
+**musterbegrenztes** Ausnahmefeld; gegengeprüft, dass ein anderer Fund in
+derselben Datei weiterhin Exit 1 meldet.
+
+**Nebenbefund:** Der Kommentar in `index.ts:452` („node: bricht den
+Client-Bundle") ist Webpack-Überlieferung. Gegen dasselbe `next@16.2.11` mit
+Turbopack in drei Varianten gemessen: **alle Exit 0**.
+
 ### Nachtrag 2026-09-05 — Welle 5b: die Doku, und ein neuntes Tor
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-5B.md`. Erledigt: OP-104 (Kern), OP-051,

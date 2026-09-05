@@ -36,7 +36,12 @@ import {
   getAutomationEngine,
 } from "./crons/automation-engine-init";
 import { registerModuleCrons } from "./lib/module-aware-cron";
-import { JOB_REGISTRY, JOB_PATH_ALIASES, findJob } from "./lib/job-registry";
+import {
+  JOB_REGISTRY,
+  JOB_PATH_ALIASES,
+  findJob,
+  reconcileMissedRuns,
+} from "./lib/job-registry";
 import { runJob, startScheduler, type JobRunOutcome } from "./lib/scheduler";
 import { processDailyAuditAnchor } from "./crons/daily-audit-anchor";
 import { assertWorkerDbRole } from "./lib/db-role-guard";
@@ -62,8 +67,29 @@ initAutomationEngine();
 registerWebhookEnqueueHandler();
 
 // [S10-02] The scheduler. Everything above this line existed before; this
-// line is what makes the 129 registered jobs actually run.
+// line is what makes the 131 registered jobs actually run.
+//
+// [Welle 5c] Die Zahl stand seit WP9 auf „129" — hier, in
+// `crons/job-run-retention.ts` und in `tests/lib/job-registry.test.ts`.
+// `JOB_REGISTRY.length` ist 131 (gemessen 2026-09-05); der Test hält sie
+// ab jetzt fest, statt sie in drei Kommentaren zu wiederholen.
 const scheduler = startScheduler(JOB_REGISTRY);
+
+// [OP-100 · Welle 5c] Nachholabgleich gegen `job_run`: ein Job, dessen
+// Solltermin in ein Neustartfenster fiel, läuft heute gar nicht und
+// hinterlässt keine Spur. Nur wenn der Scheduler wirklich läuft — bei
+// `CRON_SCHEDULER_ENABLED != true` ist auch das Nachholen abgeschaltet.
+// Bewusst nicht awaited: der Worker muss seinen Port binden, während die
+// nachgeholten Läufe im Hintergrund abarbeiten.
+if (scheduler) {
+  void reconcileMissedRuns(JOB_REGISTRY).catch((err: unknown) => {
+    emitCronEvent("error", {
+      cron: "scheduler",
+      phase: "catchup-failed",
+      message: err instanceof Error ? err.message : String(err),
+    });
+  });
+}
 
 // ──────────────────────────────────────────────────────────────
 // Authentication for every non-public surface

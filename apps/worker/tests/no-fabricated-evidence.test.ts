@@ -4,7 +4,7 @@
 // *no job persists a result it did not actually measure.*
 //
 // The defect was not a bug in one place — it was a pattern repeated across
-// fourteen code paths, always the same shape: write a passing result, mark
+// thirteen files, always the same shape: write a passing result, mark
 // the entity complete, return success, and note the truth in a source
 // comment the auditor never sees:
 //
@@ -21,6 +21,26 @@
 //   connectors/[id]/test-run    status: "pass", result: { simulated: true }
 //   connectors/[id]/health      healthy iff our own status column says active
 //   identity-connectors/sync    complianceRate: "95.00", totalUsers: 100
+//
+// [Welle 5c] Der Kopf sagte „fourteen code paths" und zählte darunter
+// dreizehn Zeilen auf. Beide Zahlen nachgemessen am 2026-09-05:
+//
+//   Dateien in dieser Liste (= CASES.length)                      13
+//   davon adressierbare Pfade                                     24
+//     — zwölf Dateien mit je einem Pfad                           12
+//     — module-aware-cron.ts mit zwölf Modulprozessen             12
+//
+// „Vierzehn" war weder das eine noch das andere. Die Liste ist eine
+// DATEI-Liste — deshalb steht jetzt „dreizehn Dateien" da, und der Test
+// unten rechnet CASES.length nach, statt die Zahl im Fliesstext zu führen.
+//
+// Nicht zu verwechseln mit den 19 Pfaden in 12 Dateien aus Welle 5b
+// (`docs/feature-catalog.md`): das ist eine andere Frage — was sich HEUTE
+// ehrlich als „nicht implementiert" meldet — und deshalb eine andere
+// Menge. `executive-kpi-snapshot.ts` etwa steht hier, weil es einmal
+// erfunden hat, und dort nicht, weil es inzwischen misst. Umgekehrt zählt
+// 5b von den zwölf Prozessen in `module-aware-cron.ts` nur die acht, die
+// heute noch verweigern; die anderen vier sind delegiert.
 //
 // A test that asserts specific behaviour per path would need thirteen
 // fixtures. What actually has to hold is simpler and checkable at the
@@ -195,5 +215,30 @@ describe("no fabricated evidence (S14-02, S10-06, S10-15)", () => {
     ]) {
       expect(typeof registry[name], name).toBe("function");
     }
+  });
+
+  // [Welle 5c] Die Zahlen im Kopf dieser Datei, nachgerechnet statt
+  // fortgeschrieben. „Fourteen code paths" über einer Liste mit dreizehn
+  // Einträgen war jahrelang unbemerkt, weil nichts sie geprüft hat.
+  it("rechnet die Zahlen im Kopfkommentar nach", async () => {
+    expect(CASES.length, "Dateien in der Fundliste").toBe(13);
+
+    const { registerModuleCrons } =
+      await import("../src/lib/module-aware-cron");
+    const moduleProcesses = Object.keys(registerModuleCrons()).length;
+    expect(moduleProcesses, "Modulprozesse in module-aware-cron.ts").toBe(12);
+
+    // Adressierbare Pfade: zwölf Dateien mit je einem, plus die
+    // Modulprozesse aus der dreizehnten.
+    expect(CASES.length - 1 + moduleProcesses).toBe(24);
+
+    const header = readFileSync(
+      join(REPO, "apps/worker/tests/no-fabricated-evidence.test.ts"),
+      "utf8",
+    ).slice(0, 4000);
+    expect(
+      header,
+      "Der Kopfkommentar nennt wieder eine Zahl, die nicht CASES.length ist",
+    ).toContain("pattern repeated across\n// thirteen files");
   });
 });

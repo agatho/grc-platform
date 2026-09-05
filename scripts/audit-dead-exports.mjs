@@ -74,6 +74,30 @@ const SRC_DIRS = [
   join(ROOT, "packages/events/src"),
   join(ROOT, "packages/automation/src"),
 ];
+
+// [Welle 5c] Verzeichnisse, die nur den IMPORT-Index speisen: ihre Exporte
+// werden nicht gezaehlt, ihre Importe zaehlen aber als Benutzung.
+//
+// Warum das noetig ist: bis hierher hiess "tot" wortwoertlich "kein
+// import-Statement in SRC_DIRS". Ein Symbol, das eine Testsuite einfuehrt,
+// um eine reine Entscheidungsfunktion ohne Datenbank pruefen zu koennen,
+// galt damit als toter Export — und der Autor hatte genau zwei Auswege:
+// die Pruefnaht wieder entfernen oder die Ratsche hochstellen. CONTRIBUTING
+// nennt beides als abzulehnende Abkuerzung, und der Kopf dieser Datei
+// nennt "Falsch-Positive moeglich" ohnehin schon als bekannte Schwaeche.
+// Ein Symbol, das ein Test importiert, IST importiert.
+//
+// Die Exporte der Testdateien selbst bleiben ungezaehlt: `walk()` laeuft
+// dafuer weiterhin nur ueber SRC_DIRS.
+const IMPORT_ONLY_DIRS = [
+  join(ROOT, "apps/web/tests"),
+  join(ROOT, "apps/worker/tests"),
+  join(ROOT, "packages/shared/tests"),
+  join(ROOT, "packages/db/tests"),
+  join(ROOT, "packages/auth/tests"),
+  join(ROOT, "packages/events/tests"),
+  join(ROOT, "packages/automation/tests"),
+];
 const OUT_DIR = join(ROOT, "docs/perf");
 const OUT_MD = join(OUT_DIR, "dead-exports-report.md");
 const BASELINE = join(ROOT, ".dead-exports-ratchet.json");
@@ -206,7 +230,15 @@ async function measure() {
     allFiles.push(...(await walk(d)));
   }
 
-  const importCounts = await buildImportIndex(allFiles);
+  const importOnlyFiles = [];
+  for (const d of IMPORT_ONLY_DIRS) {
+    importOnlyFiles.push(...(await walk(d)));
+  }
+
+  const importCounts = await buildImportIndex([
+    ...allFiles,
+    ...importOnlyFiles,
+  ]);
 
   const dead = [];
   for (const f of allFiles) {

@@ -16,6 +16,7 @@
 import { readFile, readdir, stat, writeFile, mkdir } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { join, relative } from "node:path";
+import { format as prettierFormat, resolveConfig } from "prettier";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(
   /^\/([A-Za-z]:)/,
@@ -226,6 +227,12 @@ const PATTERNS = [
 // Grund, warum der Report dauerhaft dieselben sechs "medium"-Treffer zeigte
 // und deshalb nicht mehr gelesen wurde. Sie erscheinen jetzt in einem
 // eigenen Report-Abschnitt, nicht in der Fundliste.
+//
+// [Welle 5c] Neu: das optionale Feld `patterns`. Ein Eintrag OHNE dieses
+// Feld nimmt eine Datei fuer ALLE Muster aus der Fundliste — bei einer
+// Testfixture ist das richtig, bei einer Prosadatei zu grob. Mit
+// `patterns` gilt die Ausnahme nur fuer die dort benannten Muster; jedes
+// andere schlaegt in derselben Datei weiterhin an.
 const KNOWN_TEST_FIXTURES = [
   {
     path: "packages/shared/tests/schemas.test.ts",
@@ -283,6 +290,26 @@ const KNOWN_TEST_FIXTURES = [
       // genau diese Erkennung.
       "Eingabewerte des Scrubbing-Tests: erfundene Muster ohne " +
       "Schluesselmaterial, die der Test als erkennbar nachweist.",
+  },
+  {
+    // [Welle 5c] Die Wellendokumentation dieses Audits ZITIERT die
+    // PEM-Kopfzeile, um zu erklaeren, was Welle 5b in
+    // packages/shared/tests/logger-scrubbing.test.ts gefunden hat. Der
+    // eingecheckte Report vom 2026-09-05T01:17 meldete dafuer "0 Funde" —
+    // er war VOR dieser Zeile erzeugt worden und damit ein Artefakt aus
+    // einem frueheren Lauf, nicht eine Messung des Baums, den er begleitet.
+    // Neu erzeugt meldete derselbe Scanner zwei CRITICAL auf der Datei, die
+    // das erklaert.
+    //
+    // Die Ausnahme ist auf die beiden Muster begrenzt, die auf einen
+    // PEM-Kopf ohne Schluesselmaterial anschlagen. Ein Token, ein Passwort
+    // oder eine Verbindungszeichenkette in derselben Datei wird weiterhin
+    // gemeldet.
+    path: "docs/UMSETZUNG-WELLE-5B.md",
+    patterns: ["Private Key Header", "Certificate/Key file content"],
+    reason:
+      "Wellendokumentation, die die PEM-Kopfzeile aus dem Scrubbing-Test " +
+      "zitiert — Kopfzeile ohne Schluesselmaterial, kein Geheimnis.",
   },
   {
     path: "apps/web/e2e/document-signature.spec.ts",
@@ -444,7 +471,17 @@ async function main() {
             /^[0-9a-f]{40}$/i.test(m[0])
           )
             continue; // SHA-1 hash
-          if (/placeholder|example|dummy|changeme|xxxxx/i.test(line)) continue;
+          // [Welle 5c] Diese Regel prueft jetzt den TREFFER, nicht die
+          // ganze ZEILE. Vorher genuegte das Wort "example" irgendwo in
+          // derselben Zeile, um jeden Fund darin zu verwerfen — ein echter
+          // Schluessel neben einer example.com-Adresse, einem
+          // `# Beispiel:`-Kommentar oder einem Platzhalter in derselben
+          // Tabellenzeile war unsichtbar. Gemessen am 2026-09-05: gegen den
+          // heutigen Baum verwirft die Zeilenfassung NICHTS (Fundzahl 0 mit
+          // und ohne sie), sie schuetzt also nichts und verdeckt nur.
+          // Die Treffer-Fassung laesst `AKIAPLACEHOLDER…`, `sk-dummy…` und
+          // `password: "changeme"` weiterhin durch — das war der Zweck.
+          if (/placeholder|example|dummy|changeme|xxxxx/i.test(m[0])) continue;
           // #S08-14: sed-/grep-Ausdruecke, die eine Verbindungszeichenkette
           // ZERLEGEN, sind keine Fundstellen. Erkennbar an Regex-Metazeichen
           // im "Passwort"-Teil.
@@ -458,7 +495,13 @@ async function main() {
           // #S08-14 (4): bekannte Testfixtures raus aus der Fundliste, rein
           // in den eigenen Report-Abschnitt. Ein Report, der dauerhaft
           // dieselben sechs Falsch-Positive zeigt, wird nicht mehr gelesen.
-          let fixture = KNOWN_TEST_FIXTURES.find((f) => rel === f.path);
+          // [Welle 5c] `patterns` grenzt eine Ausnahme auf einzelne Muster
+          // ein. Ohne das Feld gilt sie wie bisher fuer die ganze Datei.
+          let fixture = KNOWN_TEST_FIXTURES.find(
+            (f) =>
+              rel === f.path &&
+              (f.patterns === undefined || f.patterns.includes(pat.name)),
+          );
           // #S08-14 / #S08-18: Eine Verbindungszeichenkette gegen `localhost`,
           // `127.0.0.1` oder einen Compose-Servicenamen (Hostname ohne Punkt)
           // kann per Konstruktion keinen Produktivbezug haben. Sie bleibt im
@@ -569,7 +612,18 @@ async function main() {
       `(gitleaks über alle Refs, Ergebnis als Artefakt, 90 Tage) — ` +
       `siehe #S08-14 und #S08-15.`,
   );
-  await writeFile(OUT, md.join("\n") + "\n");
+  // [Welle 5c] Durch Prettier, wie es audit-dead-exports.mjs schon tut.
+  // Ohne das erzeugt eine gewachsene Ausnahmetabelle Zeilen, die
+  // `npx prettier --check .` beanstandet — der Report waere dann bei jedem
+  // Lauf ein Grund, warum das Formattor rot ist, und die naheliegende
+  // Reaktion darauf ist, den Scanner nicht mehr laufen zu lassen.
+  const cfg = (await resolveConfig(OUT)) ?? {};
+  const formatted = await prettierFormat(md.join("\n") + "\n", {
+    ...cfg,
+    filepath: OUT,
+    parser: "markdown",
+  });
+  await writeFile(OUT, formatted);
   console.log(`→ Wrote ${OUT}`);
   console.log(`  Findings: ${findings.length}`);
   if (findings.length > 0) {

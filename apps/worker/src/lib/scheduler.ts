@@ -150,6 +150,36 @@ export function nextRunAfter(parsed: ParsedSchedule, from: Date): Date | null {
   return null;
 }
 
+/**
+ * Last minute at or before `from` at which the expression matched.
+ *
+ * [OP-100 · Welle 5c] Das Gegenstück zu {@link nextRunAfter} und die
+ * Grundlage des Nachholabgleichs: „wann hätte dieser Job zuletzt laufen
+ * sollen?" ist die Frage, gegen die `job_run` verglichen wird.
+ *
+ * „At or before", nicht „strictly before": fällt `from` selbst auf eine
+ * Trefferminute, ist das der letzte Solltermin. Sonst würde ein Neustart
+ * exakt in der Minute eines Jobs dessen eigenen Termin überspringen und
+ * den davor melden.
+ *
+ * Suchhorizont: 366 Tage. `null` heisst, dass der Ausdruck im letzten Jahr
+ * nie zutraf — für einen Nachholabgleich bedeutet das „nichts versäumt",
+ * nicht „sofort laufen".
+ */
+export function previousRunAtOrBefore(
+  parsed: ParsedSchedule,
+  from: Date,
+): Date | null {
+  const cursor = new Date(from.getTime());
+  cursor.setUTCSeconds(0, 0);
+  const limit = 366 * 24 * 60;
+  for (let i = 0; i < limit; i++) {
+    if (cronMatches(parsed, cursor)) return new Date(cursor.getTime());
+    cursor.setUTCMinutes(cursor.getUTCMinutes() - 1);
+  }
+  return null;
+}
+
 // ──────────────────────────────────────────────────────────────
 // Run accounting (S10-12)
 // ──────────────────────────────────────────────────────────────
@@ -201,7 +231,7 @@ export interface JobRunOutcome {
  */
 export async function runJob(
   job: JobDefinition,
-  triggerSource: "scheduler" | "http" | "manual" = "scheduler",
+  triggerSource: "scheduler" | "http" | "manual" | "catchup" = "scheduler",
 ): Promise<JobRunOutcome> {
   const startedAt = Date.now();
   let runId: string | null = null;

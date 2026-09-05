@@ -33,8 +33,9 @@ function hostForUrl(hostname: string): string {
  *
  * Caveats:
  * - Small TOCTOU window between this lookup and `fetch`'s own DNS
- *   resolution. Robust fix needs a custom undici Agent that pins the
- *   IP from this lookup (follow-up). Current implementation is
+ *   resolution. The robust fix needs a custom undici Agent that pins the
+ *   IP from this lookup; the measured reason it is NOT built here stands
+ *   at the bottom of this file (OP-112). Current implementation is
  *   nonetheless much stronger than the literal-hostname check alone,
  *   which is trivially bypassed by `aaa.example.com` → A 10.0.0.5.
  *
@@ -104,6 +105,57 @@ export async function checkResolvedHostIsPublic(
 // Remaining, documented residual risk: the TOCTOU window between our
 // `lookup()` and the one `fetch()` performs internally. Pinning the
 // resolved IP needs a custom undici dispatcher; see WP5.md.
+//
+// ── [OP-112 · Welle 5c] Warum der Dispatcher hier NICHT steht ──────────
+//
+// Gemessen am 2026-09-05, nicht geschätzt.
+//
+// Der Weg selbst trägt. Nachweis (kleiner HTTP-Server auf 127.0.0.1, ein
+// Hostname, den kein Resolver kennt, und ein Agent, dessen `connect.lookup`
+// die Adresse festnagelt):
+//
+//   const agent = new Agent({ connect: { lookup: pinned } });
+//   await fetch("http://rebind.invalid:PORT/", { dispatcher: agent });
+//   → status: 200 | body: host=rebind.invalid:35463
+//   → lookup calls: [{"hostname":"rebind.invalid",
+//                     "opts":{"hints":32,"all":true}}]
+//
+// Node 22.22.2 nimmt den fremden Dispatcher an, `Host` und TLS-SNI bleiben
+// der Hostname (das Zertifikat wird also weiter gegen ihn geprüft), und
+// `lookup` wird mit `all: true` gerufen — die Rückgabe muss deshalb ein
+// Array sein, sonst endet der Aufruf in „Invalid IP address: undefined".
+//
+// Woran es scheitert, ist die Abhängigkeit:
+//
+//   $ npm ls undici --all
+//   `-- @grc/web@0.1.0 -> ./apps/web
+//     `-- jsdom@29.1.1
+//       `-- undici@7.29.0 overridden
+//   $ npm ls undici --all --omit=dev
+//   `-- (empty)
+//
+// `undici` liegt im Baum ausschliesslich als ENTWICKLUNGSabhängigkeit von
+// `jsdom` (devDependency von apps/web, für die Testumgebung). Eine
+// Produktionsinstallation (`npm ci --omit=dev`) hat es nicht. Diese Datei
+// läuft aber in Produktion — sie hängt an `safeFetch` in
+// `packages/auth/src/oidc/discovery.ts`, `…/saml/metadata-parser.ts` und
+// `apps/worker/src/crons/threat-feed-sync.ts`. Ein `import`/`await import`
+// auf undici würde dort mit ERR_MODULE_NOT_FOUND enden und JEDEN
+// ausgehenden Aufruf brechen — aus einer Härtung würde ein Ausfall.
+//
+// Ein optionaler Import mit stillem Rückfall auf ungepinntes `fetch` wäre
+// die schlechtere Variante desselben Fehlers: eine Schranke, die in
+// Produktion abgeschaltet ist und nichts davon meldet. Dieser Audit hat
+// neun Tore gefunden, die genau so gebaut waren.
+//
+// Was fehlt, ist deshalb kein Code, sondern EINE ZEILE ausserhalb der
+// Dateihoheit dieser Welle: `"undici": "^7.29.0"` in den `dependencies`
+// von `packages/shared/package.json`, plus der zugehörige
+// `package-lock.json`-Eintrag (Tor-Eingabe von
+// scripts/check-gate-inputs.mjs). Danach ist der Dispatcher oben
+// wörtlich einsetzbar: die aufgelösten Adressen aus
+// `checkResolvedHostIsPublic` in ein `lookup` schliessen, das `all: true`
+// beachtet, und den Agent je Aufruf an `fetch` übergeben.
 
 export interface SafeFetchOptions extends OutboundUrlCheckOptions {
   /** Maximum redirect hops to follow. 0 disables redirect following. */

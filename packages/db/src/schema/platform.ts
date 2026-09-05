@@ -621,7 +621,17 @@ export const jobRun = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     jobName: varchar("job_name", { length: 120 }).notNull(),
-    /** scheduler | http | manual */
+    /**
+     * scheduler | http | manual | catchup
+     *
+     * [Welle 5c · OP-100] `catchup` kam mit dem Nachholabgleich in
+     * `apps/worker/src/lib/job-registry.ts` dazu: ein Lauf, den der
+     * Scheduler versaeumt hat und der beim Start nachgeholt wurde. Ohne
+     * eigene Kennung waere im Betriebsprotokoll nicht unterscheidbar, was
+     * planmaessig und was nachgeholt lief. Die Spalte ist ein varchar ohne
+     * CHECK-Constraint (Migration 0435), der Wert brauchte deshalb keine
+     * Migration.
+     */
     triggerSource: varchar("trigger_source", { length: 20 })
       .notNull()
       .default("scheduler"),

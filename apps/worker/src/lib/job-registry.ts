@@ -36,7 +36,19 @@
 // without talking to it: `daily-audit-anchor` at 00:05 UTC and
 // `audit-chain-verify` at 02:00 UTC (WP4 / ADR-011 rev.4, S03-10, S03-12).
 
+import { db, jobRun } from "@grc/db";
+import { max } from "drizzle-orm";
+
 import type { JobDefinition } from "./scheduler";
+// [OP-100] Der Nachholabgleich am Ende dieser Datei. `scheduler.ts`
+// importiert nichts aus dieser Datei — die Richtung bleibt eindeutig.
+import {
+  parseCron,
+  nextRunAfter,
+  previousRunAtOrBefore,
+  runJob,
+} from "./scheduler";
+import { emitCronEvent } from "./cron-instrument";
 
 import { processAcademyOverdueCheck } from "../crons/academy-overdue-check";
 import { processAgentScheduler } from "../crons/agent-scheduler";
@@ -848,4 +860,176 @@ export const JOB_PATH_ALIASES: Record<string, string> = {
 export function findJob(name: string): JobDefinition | undefined {
   const canonical = JOB_PATH_ALIASES[name] ?? name;
   return JOB_REGISTRY.find((j) => j.name === canonical);
+}
+
+// ──────────────────────────────────────────────────────────────
+// Nachholabgleich gegen `job_run` (OP-100)
+// ──────────────────────────────────────────────────────────────
+//
+// [ARCTOS-FULL-2026-08-31 · Welle 5c · OP-100]
+//
+// Der Scheduler aus S10-02 feuert einen Job, wenn die laufende Minute auf
+// seinen Ausdruck passt — und nur dann. Ein Job, dessen einzige tägliche
+// Minute in ein Neustart-, Deploy- oder Ausfallfenster fiel, läuft an
+// diesem Tag GAR NICHT, und niemand erfährt es: `job_run` bekommt keine
+// Zeile, es gibt also auch nichts, worüber ein Alarm stolpern könnte.
+// `docs/runbook.md` §8 nennt eine Ersatzabfrage, die aber nur Jobs findet,
+// die schon einmal liefen — und genau das ist der Punkt: die Lücke ist
+// eine FEHLENDE Zeile, keine auffällige.
+//
+// Dieser Abgleich beantwortet beim Start eine einzige Frage je Job:
+// „Liegt der letzte Solltermin nach dem letzten aufgezeichneten Lauf?"
+// Wenn ja, wird der Lauf einmal nachgeholt.
+//
+// Drei bewusste Grenzen, damit daraus kein Selbstbeschuss wird:
+//
+//   1. Ein Job OHNE jede Zeile in `job_run` wird nicht nachgeholt. Beim
+//      ersten Start einer Installation ist nichts versäumt worden, und
+//      131 Jobs gleichzeitig gegen eine frische Datenbank zu fahren wäre
+//      der Thundering Herd, den die gestaffelten Zeitpläne vermeiden.
+//   2. Jobs mit einer Taktung UNTER einer Stunde werden nicht nachgeholt.
+//      `webhook-dispatch` (`*/2`) heilt sich binnen zwei Minuten selbst;
+//      ein Nachholen bei jedem Rolling Deploy brächte nichts und würde
+//      die Warteschlangen-Prozessoren doppelt anstossen.
+//   3. `runJob` nimmt für jeden Lauf dieselbe Advisory-Lock wie der
+//      Scheduler. Zwei gleichzeitig hochfahrende Container holen denselben
+//      Job deshalb nicht zweimal nach — der zweite bekommt
+//      `skipped_locked`.
+//
+// Die Entscheidung selbst (`findMissedRuns`) ist absichtlich rein: sie
+// bekommt Zeitpläne, letzte Läufe und „jetzt" und gibt eine Liste zurück.
+// So ist sie ohne Datenbank prüfbar — `apps/worker/tests/lib/job-catchup.test.ts`.
+
+/** Unter dieser Taktung wird nicht nachgeholt (siehe Grenze 2). */
+const MIN_CATCH_UP_INTERVAL_MS = 60 * 60 * 1000;
+
+export interface MissedRun {
+  job: JobDefinition;
+  /** Solltermin, der ohne Lauf verstrichen ist. */
+  dueAt: Date;
+  /** Letzter aufgezeichneter Lauf dieses Jobs. */
+  lastRunAt: Date;
+  /** Eigene Taktung des Jobs an diesem Termin. */
+  intervalMs: number;
+}
+
+/**
+ * Vergleicht Soll-Zeitplan und aufgezeichnete Läufe.
+ *
+ * @param lastRunByJob Letztes `job_run.started_at` je Jobname. Ein Job,
+ *   der hier fehlt, hat keine Historie und wird übersprungen (Grenze 1).
+ */
+export function findMissedRuns(
+  jobs: readonly JobDefinition[],
+  lastRunByJob: ReadonlyMap<string, Date>,
+  now: Date,
+  minIntervalMs: number = MIN_CATCH_UP_INTERVAL_MS,
+): MissedRun[] {
+  const missed: MissedRun[] = [];
+
+  for (const job of jobs) {
+    const lastRunAt = lastRunByJob.get(job.name);
+    if (lastRunAt === undefined) continue;
+
+    let parsed;
+    try {
+      parsed = parseCron(job.schedule);
+    } catch {
+      // Ein unlesbarer Ausdruck lässt `startScheduler` schon beim Start
+      // werfen; hier ist er kein Grund, den Abgleich der übrigen Jobs
+      // abzubrechen.
+      continue;
+    }
+
+    const dueAt = previousRunAtOrBefore(parsed, now);
+    if (dueAt === null) continue;
+
+    const following = nextRunAfter(parsed, dueAt);
+    if (following === null) continue;
+    const intervalMs = following.getTime() - dueAt.getTime();
+    if (intervalMs < minIntervalMs) continue;
+
+    if (lastRunAt.getTime() < dueAt.getTime()) {
+      missed.push({ job, dueAt, lastRunAt, intervalMs });
+    }
+  }
+
+  return missed;
+}
+
+/**
+ * Liest je Job den letzten aufgezeichneten Lauf aus `job_run`.
+ *
+ * Eine Abfrage über den vorhandenen Index `job_run_name_started_idx`,
+ * nicht 131 Einzelabfragen.
+ */
+async function loadLastRuns(): Promise<Map<string, Date>> {
+  const rows = await db
+    .select({ jobName: jobRun.jobName, lastRunAt: max(jobRun.startedAt) })
+    .from(jobRun)
+    .groupBy(jobRun.jobName);
+
+  const out = new Map<string, Date>();
+  for (const row of rows) {
+    if (row.lastRunAt !== null) out.set(row.jobName, row.lastRunAt);
+  }
+  return out;
+}
+
+/**
+ * Startzeit-Abgleich: versäumte Läufe einmal nachholen.
+ *
+ * Fehler sind hier nie fatal — der Worker muss auch dann hochkommen, wenn
+ * `job_run` gerade nicht lesbar ist. Der Abgleich meldet sich dann über
+ * `emitCronEvent` und die regulären Zeitpläne laufen unverändert weiter.
+ */
+export async function reconcileMissedRuns(
+  jobs: readonly JobDefinition[] = JOB_REGISTRY,
+  now: Date = new Date(),
+): Promise<MissedRun[]> {
+  let lastRuns: Map<string, Date>;
+  try {
+    lastRuns = await loadLastRuns();
+  } catch (err) {
+    emitCronEvent("error", {
+      cron: "scheduler",
+      phase: "catchup-query-failed",
+      message: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
+
+  const missed = findMissedRuns(jobs, lastRuns, now);
+  if (missed.length === 0) {
+    emitCronEvent("info", { cron: "scheduler", phase: "catchup", missed: 0 });
+    return [];
+  }
+
+  // Stufe `error`, nicht `info`: ein versäumter Lauf ist ein
+  // Betriebsvorfall — `emitCronEvent` schreibt `error` auf stderr, wo der
+  // Alarmpfad aus ADR-017 hinsieht. `emitCronEvent` kennt bewusst nur
+  // `info` und `error`; eine dritte Stufe einzuführen hätte die
+  // stdout/stderr-Zuordnung für alle Cron-Ereignisse verändert.
+  emitCronEvent("error", {
+    cron: "scheduler",
+    phase: "catchup",
+    missed: missed.length,
+    jobs: missed.map((m) => m.job.name).join(","),
+  });
+
+  for (const entry of missed) {
+    emitCronEvent("error", {
+      cron: entry.job.name,
+      phase: "catchup-run",
+      dueAt: entry.dueAt.toISOString(),
+      lastRunAt: entry.lastRunAt.toISOString(),
+    });
+    // Sequenziell: ein Nachholstoss darf die Datenbank nicht mit 131
+    // gleichzeitigen Jobs treffen. `runJob` protokolliert jeden Lauf in
+    // `job_run` mit `trigger_source = 'catchup'`, damit im Betriebslog
+    // unterscheidbar bleibt, was planmäßig und was nachgeholt lief.
+    await runJob(entry.job, "catchup");
+  }
+
+  return missed;
 }
