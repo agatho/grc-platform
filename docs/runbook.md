@@ -159,7 +159,12 @@ Eingriffe:
 ## §5 Wartungsfenster für schemaverändernde Releases
 
 > **[WP1-Übergabe an WP10]** Die Remediations-Migrationen `0383`, `0385`
-> und `0386` tragen `-- Breaking: true`, und `0387` legt **450 Indizes** an.
+> und `0386` tragen einen `-- Breaking:`-Header (`yes-breaking` bzw.
+> `yes-backfill`), und `0387` legt seine Indizes **dynamisch** an — die Zahl
+> steht nicht in der Datei. Gemessen gegen die voll migrierte `grc_v4c` am
+> 2026-09-05 tragen **509** Indizes seine Namensmuster (439 `idx_*_fk`, 70
+> `idx_*_org_id`); `-- Estimated-Duration: 120` unterschätzt das auf einer
+> befüllten Datenbank deutlich.
 > Auf einer leeren Datenbank ist das folgenlos; auf einer befüllten braucht
 > es ein Wartungsfenster mit Backup. Dieser Abschnitt beschreibt es.
 
@@ -169,7 +174,9 @@ Index-Migration enthält. `migration-policy.yml` erzwingt den
 Metadaten-Header, aus dem sich das ablesen lässt:
 
 ```bash
-grep -l '^-- Breaking: *true' packages/db/drizzle/*.sql
+# ACHTUNG: der Header schreibt `yes-breaking` / `yes-backfill`, nicht `true`.
+# Ein `grep '-- Breaking: *true'` findet nichts und liest sich wie Entwarnung.
+grep -lE '^-- Breaking: *yes' packages/db/drizzle/*.sql
 grep -H '^-- Estimated-Duration:' packages/db/drizzle/038[3-7]*.sql
 ```
 
@@ -214,8 +221,100 @@ grep -H '^-- Estimated-Duration:' packages/db/drizzle/038[3-7]*.sql
    ```
 
 **Wenn es schiefgeht:** `deploy/rollback.sh --db <pre-migration-backup>`.
-Das ist der einzige Weg zurück — es gibt bewusst keine `down`-Migrationen
-(ADR-023 §2).
+Ein Restore ist der Weg zurück, wenn die Migration **abgebrochen** ist. Wenn
+sie **durchlief und trotzdem falsch war**, ist der Restore die teuerste
+Antwort — dann gilt der nächste Abschnitt. `down`-Migrationen gibt es
+bewusst nicht (ADR-023 §2).
+
+### §5.1 Kompensationsmigration — der Rückweg für eine Migration, die durchlief
+
+> **[Welle 5b · OP-133, 2026-09-05]** ADR-023 §2 und §5 beschließen diesen
+> Ablauf seit 2026-09-01 als **Normalfall** („schneller, sicherer"), und
+> `migration-policy.yml` erzwingt dafür seit WP1 den Header
+> `-- Compensating-Required:` in jeder neuen Migration. Der Ablauf selbst stand
+> nirgends. Ohne ihn bleibt einem Betreiber um 02:00 nur der Restore — also der
+> Verlust aller Schreibvorgänge seit dem Backup, für einen Fehler, der eine
+> einzelne `ALTER TABLE` weit gewesen wäre.
+
+**Wann kompensieren statt zurückrollen.** Drei Fragen, in dieser Reihenfolge:
+
+| Frage                                                                                                                                            | Ja → Weg                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ist die Migration **abgebrochen** (Runner-Exit ≠ 0)?                                                                                             | Restore aus dem Pre-Deploy-Backup, oder Fehler beheben und erneut laufen lassen — der Ledger `_arctos_migrations` sagt, was angewendet wurde. |
+| Lief sie durch, und **drohen Datenverluste** (`DROP COLUMN`, `DROP TABLE`, ein `UPDATE`, das Werte überschrieben hat)?                           | Restore. Eine Kompensation kann gelöschte Werte nicht zurückholen.                                                                            |
+| Lief sie durch, und ist der Schaden **strukturell** (falscher Typ, fehlender Index, zu enger Constraint, falsche RLS-Policy, fehlender Default)? | **Kompensationsmigration** — dieser Abschnitt.                                                                                                |
+
+**Ablauf.**
+
+1. **Feststellen, was angewendet ist.** Der Ledger ist maßgeblich, nicht das
+   Dateisystem:
+
+   ```bash
+   docker compose -f docker-compose.production.yml exec -T postgres \
+     psql -U grc -d grc_platform -c \
+     "SELECT name, applied_at FROM _arctos_migrations ORDER BY applied_at DESC LIMIT 5;"
+   ```
+
+2. **Die fehlerhafte Migration NICHT ändern.** `migration-policy.yml` lehnt
+   jede Änderung an einer ausgelieferten Migration ab (ADR-014, forward-only),
+   und auf jeder Datenbank, die sie schon angewendet hat, hätte die Änderung
+   ohnehin keine Wirkung mehr.
+
+3. **Die nächste freie Nummer schreiben.** Die Kompensation ist eine ganz
+   normale Migration mit dem Header nach ADR-023 §4 — und mit `yes` in der
+   Zeile, die es dafür gibt:
+
+   ```sql
+   -- Migration: 0479_compensate_0478_matview_grants
+   -- Breaking: no
+   -- Estimated-Duration: 5
+   -- Locking: short
+   -- Compensating-Required: no
+   -- Compensates: 0478_op089_matviews_to_invoker_views
+   -- Reviewer: <github-handle>
+   ```
+
+   `-- Compensates:` benennt die Migration, die repariert wird. Das ist die
+   einzige revisionssichere Spur des Vorgangs — ADR-023 §2 begründet die
+   Vorwärts-nur-Politik genau damit.
+
+4. **Idempotent schreiben.** Sie läuft gegen Datenbanken in zwei Zuständen:
+   Haupt-DB (kaputt) und frisch angelegte Mandanten (nie kaputt gewesen).
+   `IF EXISTS` / `IF NOT EXISTS`, `DROP … IF EXISTS` vor `CREATE`, und ein
+   `DO $$ … END $$`-Block für alles, was sich nicht anders bedingt ausdrücken
+   lässt. Das Repo hat dafür Muster: `0360_risk_acceptance_repair.sql`
+   (Tabellen idempotent nachziehen), `0106_framework_mapping_bridge.sql`
+   (Datenbrücke zwischen zwei Modellen).
+
+5. **Gegen eine Kopie prüfen, bevor sie an die Produktion geht.** In einer
+   Transaktion mit `ROLLBACK` am Ende — dasselbe Verfahren, das
+   `0375_document_signature.sql` dokumentiert:
+
+   ```bash
+   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction \
+     -f packages/db/drizzle/0479_compensate_0478_matview_grants.sql \
+     -c 'ROLLBACK'
+   ```
+
+6. **Ausrollen wie jede andere Migration** — über §5 Schritt 2 bis 7. Auch die
+   Kompensation braucht ein Backup vorher; sie ist kein Sonderfall.
+
+7. **Nachprüfen und protokollieren:**
+
+   ```bash
+   DATABASE_URL=… node scripts/verify-db-integrity.mjs
+   ```
+
+   Der Vorgang gehört in `CHANGELOG.md` unter `[Unreleased]`, mit beiden
+   Nummern. Ein Kompensationsschritt, den nur der Ledger kennt, ist für den
+   nächsten Betreiber unsichtbar.
+
+**Was ausdrücklich nicht kompensierbar ist:** eine Migration, die Zeilen oder
+Spaltenwerte gelöscht hat. Deshalb tragen `DROP COLUMN` und `DROP TABLE` nach
+ADR-023 §2 eine 30-tägige Abkühlperiode nach dem Rollout — die Spalte bleibt
+zunächst stehen, unbenutzt, und wird erst danach in einer eigenen Migration
+entfernt. In diesem Fenster ist der Rückweg eine Kompensation; danach ist er
+ein Restore.
 
 ## §7 Vernichtung des Pseudonymisierungsschlüssels (DSGVO-Löschpfad)
 
@@ -461,6 +560,61 @@ DATABASE_URL=… node /opt/arctos/scripts/ops-metrics.mjs --check   # Exit 1 bei
 | `offsite_stale` / `_failed`                                      | Off-Site-Stempel                            | 26 h                                               |
 | `dr_drill_overdue` / `_failed`                                   | Drill-Stempel                               | 40 Tage                                            |
 | `migrations_failed`                                              | Einträge im Ledger != `applied`             | **0**                                              |
+
+### `job_run` — Betriebsprotokoll, kein Nachweis
+
+> **[Welle 5b · OP-106/OP-100, 2026-09-05]** Die Tabelle `job_run` (Migration
+> `0435`) ist die einzige Stelle, an der ablesbar ist, ob ein Hintergrundjob
+> gelaufen ist. Genau deshalb wird sie irgendwann für eine Compliance-Aussage
+> herangezogen werden — und dafür taugt sie nicht. Das steht bisher nur im
+> Prüfbericht.
+
+**Was sie ist.** Ein Betriebsprotokoll: eine Zeile je Lauf mit `status`
+(`success`, `failed`, `partial`, `running`, `skipped_locked`), Start, Ende und
+Fehlertext. 132 Cron-Dateien, einige im Minutentakt, erzeugen rund 40 000
+Zeilen am Tag.
+
+**Was sie nicht ist.**
+
+| Erwartung an einen Nachweis          | `job_run`                                                                                             |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| Unveränderlich, an der Audit-Kette   | **nein** — bewusst nicht angehängt; kein Hash, keine Kettenprüfung                                    |
+| Dauerhaft aufbewahrt                 | **nein** — `job-run-retention.ts` löscht nach 90 Tagen (`JOB_RUN_RETENTION_DAYS`), Fehlläufe nach 180 |
+| Lückenlos                            | **nein** — siehe „Verpasste Läufe" unten                                                              |
+| Sagt aus, _was_ ein Job gefunden hat | **nein** — nur, dass er lief und wie er endete                                                        |
+
+Wer aus `job_run` eine Aussage wie „die Kontrolle wurde täglich geprüft"
+ableiten will, braucht dafür eine eigene Begründung — und im Zweifel den
+fachlichen Datensatz, den der Job geschrieben hat, nicht die Protokollzeile.
+
+**Verpasste Läufe werden nicht nachgeholt (OP-100).** Der Scheduler läuft im
+Worker-Prozess. Stirbt der Worker, laufen die Jobs dieser Minute nicht — und
+es gibt keinen Nachholmechanismus. Für die täglichen Jobs holt der nächste Lauf
+auf, für die Minutentakt-Queues ebenfalls; für einen Job, dessen einzige
+tägliche Minute in ein Neustartfenster fiel, entsteht eine Lücke, die niemand
+meldet. Was dagegen wirkt: der Compose-Healthcheck plus
+`restart: unless-stopped` (das Fenster wird kurz). Was fehlt: ein Abgleich
+zwischen Soll-Zeitplan und `job_run`, der eine ausgefallene Minute erkennt.
+
+**Wonach ein Betreiber tatsächlich sucht:**
+
+```sql
+-- Fehlgeschlagene Läufe der letzten 24 h, nach Job gruppiert
+SELECT job_name, count(*), max(started_at) AS zuletzt
+  FROM job_run
+ WHERE status = 'failed' AND started_at > now() - interval '24 hours'
+ GROUP BY job_name ORDER BY 2 DESC;
+
+-- Jobs, die seit über einem Tag gar nicht mehr gelaufen sind
+SELECT job_name, max(started_at) AS zuletzt
+  FROM job_run GROUP BY job_name
+HAVING max(started_at) < now() - interval '25 hours'
+ ORDER BY 2;
+```
+
+Die zweite Abfrage ist der Ersatz für den fehlenden Nachholmechanismus, solange
+es ihn nicht gibt. Sie findet nur Jobs, die schon einmal liefen — ein Job, der
+seit dem Deploy nie startete, taucht in `job_run` überhaupt nicht auf.
 
 ### Zustellung — der Betreiberschritt
 

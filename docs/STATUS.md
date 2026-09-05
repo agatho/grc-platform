@@ -133,7 +133,16 @@ Der Wave-19-Scope-Decision-Report (`docs/qa-reports/wave19-n7-dms-scope-decision
 - **APIs** (alle `withAuth` + `requireModule('dms')`): `POST/GET /documents/[id]/signature-requests` (POST rollen-beschränkt wie approval-steps; nur Dokumente mit Datei, 422 sonst) · `GET /signature-requests/[requestId]` · `POST …/sign` (403 fremder User, 409 sequential-Verletzung/State/Race, **422 wenn `document_version.file_sha256` nicht mehr dem eingefrorenen Hash entspricht**) · `POST …/decline` (Pflicht-Begründung) · `POST …/cancel` (nur Ersteller/Admin, nur pending) · `GET …/verify` (Verifikationsbericht je Glied + Datei-Integrität) · `GET …/certificate` (**Signatur-Zertifikat als PDF** via pdfkit/`lib/pdf.ts`: Dokument, Version, SHA-256, je Signer Name/Zeitpunkt/IP/Chain-Hash, Verifikationsergebnis) · `GET /documents/my-pending-signatures` (inkl. `isMyTurn` bei sequential). Notifications (approval_request/status_change) an Signer/Ersteller bei Anforderung, Reihum-Weitergabe, Abschluss, Ablehnung, Storno.
 - **UI**: Dokument-Detailseite Tab „Signaturen" (`components/documents/document-signatures-tab.tsx`): Requests mit Signer-Fortschritt, „Signatur anfordern"-Dialog (geordnete Multi-Auswahl mit Up/Down, sequential-Toggle, Nachricht, Frist), prominenter Sign-/Decline-Bereich für zuständige Signer mit eIDAS-Hinweistext (Bestätigungs-Dialog), Verify-Button mit Ergebnis-Anzeige, Zertifikat-Download; Header-Badge „Signiert" bei completed Request für die aktuelle Version. i18n-Namespace `document-signature` DE/EN (registriert in `i18n/request.ts`, Bundles neu gebaut).
 - **Tests (grün 2026-07-11)**: `__tests__/lib/document-signature-chain.test.ts` (9 — Kette bauen/verifizieren, Payload-Tamper, Re-Hash, gelöschtes/umsortiertes Glied) + `__tests__/api/document-signature-requests.test.ts` (17 — 401, 404, 422 ohne Datei/fremder Signer/Body, 403 Nicht-Signer, 409 sequential/State, 422 fileSha256-Mismatch, Happy-Path bis completed inkl. Chain-Anker + Creator-Notification, decline, Zertifikat `%PDF`). `all-routes-smoke` + `all-mutating-routes-auth-smoke` (3.538 Tests) + documents-Bestandstests grün; `tsc --noEmit` grün.
-- **Offen**: kein QES/HSM (bewusst, siehe Scope-Report); kein Worker-Cron für Due-Date-Eskalation ausstehender Signaturen; `document_signature_requested/_completed/_declined/_cancelled` E-Mail-Templates nutzen den generischen Notification-Pfad (kein dediziertes React-Email-Template).
+- **Offen**: kein QES/HSM (bewusst, siehe Scope-Report); `document_signature_requested/_completed/_declined/_cancelled` E-Mail-Templates nutzen den generischen Notification-Pfad (kein dediziertes React-Email-Template).
+  <!-- [Welle 5b · OP-130, 2026-09-05] Hier stand zusätzlich „kein Worker-Cron
+  für Due-Date-Eskalation ausstehender Signaturen". Das ist falsch:
+  `apps/worker/src/crons/signature-due-reminder.ts` gibt es seit
+  W21-DMS-MULTISIGN-02, er ist in `apps/worker/src/lib/job-registry.ts:713`
+  unter dem Namen `signature-due-reminder` registriert und leistet beides —
+  gestufte Erinnerungen (3 Tage vorher, am Fälligkeitstag) und eine einmalige
+  Eskalation an Ersteller und Dokumenteigner ab 3 Tagen Überfälligkeit. Es war
+  die letzte offene Fundstelle aus S10-27; die Cron-Zahl (132) und das
+  Caddy-Limit in ADR-019 waren bereits von WP12 bzw. WP10 korrigiert. -->
 
 ## Wave 24 — Alpha-Quality-Closure 2026-05-20 (PR #218, awaiting CI)
 
@@ -318,17 +327,28 @@ Vollständige Übersicht in [`docs/feature-catalog.md`](./feature-catalog.md). H
 | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- | ---------- |
 | Foundation (Auth, RBAC, Audit, Multi-Entity)                                                                                                           | 1–1.4     | ✅         |
 | Core GRC (ERM, BPMN, ICS+DMS, Catalog, ISMS, BCMS, DPMS, Audit, TPRM)                                                                                  | 2–9       | ✅         |
-| Erweiterte Plattform (Module, Playbooks, Calendar, SSO/SCIM, NIS2, FAIR, Knowledge-Graph, …)                                                           | 10–37     | ✅         |
+| Erweiterte Plattform (Module, Playbooks, Calendar, SSO/SCIM, NIS2, FAIR, Knowledge-Graph, …)                                                           | 10–37     | ⚠️         |
 | Advanced-Module pro Domain (Platform/ERM/ICS/BCMS/DPMS/Audit/TPRM/ESG/Whistleblowing/BPM Advanced)                                                     | 38–47     | ✅         |
 | EAM komplett (Foundation, Dashboards, Visualizations, Data-Architecture, AI, Catalog, Governance)                                                      | 34, 48–53 | ✅         |
 | API-Platform, Plugins, Onboarding, Mobile, SaaS-Metering                                                                                               | 57–61     | ✅         |
-| Connectors (Evidence, Cloud, Identity, DevOps), Cross-Framework-Mapping                                                                                | 62–66     | ✅         |
-| GRC Copilot, AI Evidence Review, Regulatory Change, Predictive Risk, Control Testing                                                                   | 67–71     | ✅         |
+| Connectors (Evidence, Cloud, Identity, DevOps), Cross-Framework-Mapping                                                                                | 62–66     | ⚠️         |
+| GRC Copilot, AI Evidence Review, Regulatory Change, Predictive Risk, Control Testing                                                                   | 67–71     | ⚠️         |
 | DORA, EU AI Act (vollständig), Tax CMS, Horizon Scanner, Cert Wizard                                                                                   | 72–76     | ✅         |
 | BI Report Builder, Benchmarking, Risk Quantification, Data Sovereignty, Role Dashboards                                                                | 77–81     | ✅         |
-| Marketplace, Stakeholder Portals, Academy, Simulation Engine, Community Edition                                                                        | 82–86     | ✅         |
+| Marketplace, Stakeholder Portals, Academy, Simulation Engine, Community Edition                                                                        | 82–86     | ⚠️         |
 | Cross-Cutting post-86 (Audit-Hash-Chain, RLS-Gap-Closure, ISMS-CAP, Risk Acceptance, ISO-27005-Kataloge, SoA, Programme Cockpit, Stakeholder Register) | post-86   | ✅ laufend |
 
+> ⚠️ **[Welle 5b · OP-104, 2026-09-05]** Vier Zeilen dieser Tabelle stehen seit
+> heute auf ⚠️, nicht mehr auf ✅. Grund: WP9 hat 19 Codepfade, die
+> Prüfergebnisse erfanden, auf eine ehrliche Antwort umgestellt (501 bzw.
+> `failed`), und diese Tabelle blieb stehen. Betroffen sind Bulk-Import und die
+> GRC-Agents (10–37), sämtliche Connector-Läufe (62–66), AI Evidence Review,
+> Control Testing und Predictive Risk (67–71) sowie Simulation Engine und
+> Marketplace-Scanner (82–86). Die vollständige Liste mit Datei und Wirkung
+> steht in [`docs/feature-catalog.md`](./feature-catalog.md) unter „Was sich
+> ehrlich als ‚nicht implementiert‘ meldet"; sie wird von
+> `apps/worker/tests/docs-vs-honest-refusals.test.ts` gegen den Code gehalten.
+>
 > ⚠️ Realitäts-Audit 2026-07-10: Das ✅ für **Risk Acceptance** war bis 2026-07-10 **falsch** — es existierten nur Schema-/Migrationsdateien (und selbst die Tabellen fehlten auf der Dev-DB wegen des 0088-Rollbacks), keine API, keine UI. Seit 2026-07-10 ist das Modul real (Migration `0360`, API, UI, Cron, Tests — siehe Abschnitt oben). Lehre: ✅ in dieser Tabelle heißt „behauptet", nicht „verifiziert" — im Zweifel Route/Page im Code prüfen.
 
 ## Modul-Reifegrad-Matrix

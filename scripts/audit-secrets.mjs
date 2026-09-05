@@ -268,6 +268,23 @@ const KNOWN_TEST_FIXTURES = [
       "Zod-Schema-Test der Passwortregeln — der Wert IST der Testgegenstand.",
   },
   {
+    path: "packages/shared/tests/logger-scrubbing.test.ts",
+    reason:
+      // [Welle 5b] Eingeschleppt von Welle 4b-2 (OP-152) und zwei Wellen
+      // lang unsichtbar, weil dieser Scanner in der CI mit
+      // `continue-on-error: true` UND `|| true` lief — das neunte Tor
+      // dieses Audits, das nicht ausloesen konnte.
+      //
+      // Die Werte sind die EINGABEN des Tests, der beweist, dass der
+      // Scrubber sie schwaerzt: ein erfundener JWT-Kopf, ein `sk-`-Muster
+      // aus dem Alphabet, eine Verbindungszeichenkette, deren Passwort das
+      // Wort `geheim` IST, und eine PEM-Kopfzeile ohne Schluesselmaterial.
+      // Faende der Scanner sie nicht, waere der Test wertlos — er prueft
+      // genau diese Erkennung.
+      "Eingabewerte des Scrubbing-Tests: erfundene Muster ohne " +
+      "Schluesselmaterial, die der Test als erkennbar nachweist.",
+  },
+  {
     path: "apps/web/e2e/document-signature.spec.ts",
     reason:
       "Playwright-Zugangsdaten fuer das Demo-Seed-Konto der Wegwerf-E2E-DB. " +

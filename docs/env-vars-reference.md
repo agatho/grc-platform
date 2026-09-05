@@ -174,6 +174,14 @@ dem Anschluss an einen externen Log-Empfänger sind sie umzustellen.
 
 ## Uploads / Reporting
 
+> **[Welle 5b · OP-115/OP-117]** Was die Upload- und Egress-Pruefungen
+> garantieren — und was ausdruecklich nicht — steht in
+> [`security/schutzgrenzen.md`](./security/schutzgrenzen.md). Kurzfassung:
+> Magic Bytes pruefen das Format, nicht den Inhalt; ClamAV ist ohne
+> `CLAMAV_HOST` gar nicht aktiv und ohne `CLAMAV_FAIL_CLOSED=1` fail-open;
+> `WEBHOOK_ALLOW_HTTP=1` oeffnet Klartext-HTTP fuer **alle** ausgehenden
+> Aufrufe, nicht nur fuer Webhooks.
+
 | Variable            | req/opt | Default               | Beschreibung                                      |
 | ------------------- | ------- | --------------------- | ------------------------------------------------- |
 | `UPLOAD_DIR`        | opt     | `/data/uploads`       | Pfad fuer hochgeladene Dokumente (Docker-Volume!) |

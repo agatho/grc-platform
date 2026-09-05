@@ -612,6 +612,68 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-05 — Welle 5b: die Doku, und ein neuntes Tor
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-5B.md`. Erledigt: OP-104 (Kern), OP-051,
+OP-133, OP-134, OP-115, OP-114 (dokumentarisch), OP-112, OP-117, OP-106,
+OP-100 (dokumentarisch), OP-130, OP-151, OP-159, OP-053. Bereits vorher
+erledigt und nur noch nachgetragen: OP-131, OP-132, OP-138.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                    | Beleg                     | Art | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | --- | ------- |
+| OP-193 | **Das Geheimnis-Tor lief mit `continue-on-error: true` UND `\|\| true`.** Beide Abschaltungen zusammen haben den Exit-1 des Skripts verworfen; der eingecheckte Report stammte vom 2026-09-01 und meldete „3901 Dateien, 0 Funde". Neu erzeugt: **4420 Dateien, 2 CRITICAL** — beide in `packages/shared/tests/logger-scrubbing.test.ts:100`, **eingeschleppt von Welle 4b-2 (OP-152) dieses Audits** und zwei Wellen lang unsichtbar. | Eigene Messung 2026-09-05 | Tor | behoben |
+
+Das ist **das neunte Tor in diesem Audit, das nicht auslösen konnte** — und
+das erste, das einen Befund aus der eigenen Arbeit verdeckt hat. Die zwei
+Treffer waren die Eingabewerte des Tests, der beweist, dass der Scrubber sie
+schwärzt (ein erfundener JWT-Kopf, ein `sk-`-Muster, eine Verbindungszeichen-
+kette mit dem Passwort `geheim`, eine PEM-Kopfzeile ohne Schlüsselmaterial) —
+fände der Scanner sie nicht, wäre der Test wertlos. Sie stehen jetzt als
+bewertete Ausnahme in `KNOWN_TEST_FIXTURES`, der Schritt ist scharf, und die
+Gegenprobe in einer verfolgten Datei ergibt 2 CRITICAL / Exit 1. Der
+Kommentar im Workflow schreibt die PEM-Kopfzeile bewusst **nicht** aus —
+sonst meldet der Scanner seine eigene Dokumentation als Fund; genau so
+gemessen, die Treffer wanderten nach dem Eintragen der Ausnahme auf die
+Workflow-Datei.
+
+**OP-104 — was nachweislich falsch war.** Zwölf `✅ Done`-Zeilen in
+`CLAUDE.md`, `STATUS.md` und `feature-catalog.md` standen auf Fähigkeiten, die
+501 antworten oder `failed` melden. Dazu Zahlen, die sich **innerhalb
+derselben Datei** widersprachen:
+
+- `CLAUDE.md:135` „31 catalog frameworks" gegen Zeile 21 „46" → gemessen **46**
+- `CLAUDE.md:136` „401 cross-framework mappings" → gemessen **943**
+- `CLAUDE.md:63` „0001–0361, 340 files" gegen Zeile 18 „402" → gemessen **428**
+- Die Zähltabelle „re-measured 2026-09-01": **8 von 12 Zeilen überholt**
+- `docs/feature-catalog.md:130` nennt einen Prüfbefehl
+  `SELECT count(*) FROM cross_framework_mapping;` → `ERROR: relation does not
+exist` (die Tabelle heisst `framework_mapping`). **Die Doku-Drift-Korrektur
+  war selbst gedriftet.**
+- `docs/runbook.md` §5: Der dokumentierte Prüfbefehl
+  `grep -l '^-- Breaking: *true'` findet **nichts**, weil der Header
+  `yes-breaking` schreibt — er gab **vor einem Breaking-Rollout Entwarnung**.
+  Korrigiert findet er 0383/0385/0386.
+
+Auch hier stimmten die Registerzahlen nicht: OP-103 „vierzehn Pfade" →
+**19 in 12 Dateien**; OP-145 „acht" Dependabot-Branches → **10**.
+
+**Codeänderungen, die nötig sind und bewusst NICHT gemacht wurden** (Quellcode
+lag ausserhalb der Dateihoheit dieses Strangs) — in dieser Reihenfolge:
+
+1. **OP-114**: `packages/shared/src/lib/excel-to-bpmn.ts:54` — `wb.xlsx.load()`
+   auf `WorkbookReader` umstellen. Dieser Pfad hat als **einziger keine zweite
+   Schicht**, entgegen dem bisherigen Registertext.
+2. **OP-128**: ein Re-Seal-Skript für `WB_ENCRYPTION_KEY`.
+3. **OP-112**: undici-Dispatcher mit IP-Pinning in `url-safety-server.ts`.
+4. **OP-100**: Nachholabgleich gegen `job_run` in `job-registry.ts`.
+5. Zwei Kommentare tragen falsche Zahlen weiter:
+   `no-fabricated-evidence.test.ts:11` („fourteen", zählt 13) und
+   `job-run-retention.ts:4` („129 jobs" gegen 132).
+
+**OP-136 ist bestätigt und eine fachliche Entscheidung:**
+`dashboard_widget_config` und `notification_template` existieren gar nicht —
+die zugehörigen Seeds sind No-Ops.
+
 ### Nachtrag 2026-09-05 — Welle 5a: OP-070, und wofür die Übersetzungen schon da waren
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-5A.md`.

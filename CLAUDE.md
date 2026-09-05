@@ -6,29 +6,33 @@
 
 A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform.
 
-**Counts, re-measured 2026-09-01** (ARCTOS-FULL-2026-08-31 / WP12 · S14-23 — the
-previous set was measured 2026-07-10 and every figure below had drifted; four
-were wrong by more than 25 %):
+**Counts, re-measured 2026-09-05 at `2f716205`** (Welle 5b · OP-104; die
+vorherige Messung stammt vom 2026-09-01 und war nach den Wellen 0 bis 5a in
+acht von zwölf Zeilen überholt — die Migrationen um 26, die Testdateien um 116).
+Jede Zeile trägt ihren Messbefehl; wer die Zahl anzweifelt, führt ihn aus:
 
 | Thing | Count | How to re-measure |
 |---|---:|---|
-| Drizzle schema files | 113 | `find packages/db/src/schema -name '*.ts' \| wc -l` |
-| `pgTable()` definitions | 581 | `grep -rho 'pgTable(' packages/db/src/schema \| wc -l` |
-| SQL migration files | 402 | `ls packages/db/drizzle/*.sql \| wc -l` |
-| latest migration | `0437_grc_worker_grants.sql` | `ls packages/db/drizzle/*.sql \| sort -V \| tail -1` |
-| `route.ts` files | 1 362 (1 360 under `/api/v1`) | `find apps/web/src/app/api -name route.ts \| wc -l` |
-| Next.js pages | 482 | `find apps/web/src/app -name page.tsx \| wc -l` |
+| Drizzle schema files | 116 | `find packages/db/src/schema -name '*.ts' \| wc -l` |
+| `pgTable()` definitions | 592 | `grep -rho 'pgTable(' packages/db/src/schema \| wc -l` |
+| SQL migration files | 428 | `ls packages/db/drizzle/*.sql \| wc -l` |
+| latest migration | `0478_op089_matviews_to_invoker_views.sql` | `ls packages/db/drizzle/*.sql \| sort -V \| tail -1` |
+| `route.ts` files | 1 372 (1 370 under `/api/v1`) | `find apps/web/src/app/api -name route.ts \| wc -l` |
+| Next.js pages | 486 | `find apps/web/src/app -name page.tsx \| wc -l` |
 | catalog frameworks | 46 | `ls packages/db/sql/seed_catalog_*.sql \| wc -l` |
-| i18n namespace files per locale | 78 | `ls apps/web/messages/de/*.json \| wc -l` |
+| i18n namespace files per locale | 79 | `ls apps/web/messages/de/*.json \| wc -l` |
 | worker cron files | 132 | `find apps/worker/src/crons -name '*.ts' \| wc -l` |
-| unit/integration test files | 451 | `find . -path ./node_modules -prune -o \( -name '*.test.ts*' -o -name '*.spec.ts*' \) -print \| grep -v node_modules \| wc -l` |
+| unit/integration test files | 567 | `find . -path ./node_modules -prune -o \( -name '*.test.ts*' -o -name '*.spec.ts*' \) -print \| grep -v node_modules \| wc -l` |
 | Playwright E2E specs | 67 (47 `tests/e2e/regression/` + 20 `apps/web/e2e/`) | see the two paths |
 | ADR documents in `docs/` | 15 | `ls docs/ADR-*.md \| wc -l` |
 
-The "~960 cross-framework mappings" figure is **removed rather than corrected**:
-`docs/feature-catalog.md` said 401 and this file said ~960 for the same
-quantity, neither was reproducible from the repository, and a third guess would
-not be an improvement. Whoever needs the number should count it in the database.
+Zu den Cross-Framework-Mappings: WP12 hat die Zahl hier entfernt statt
+korrigiert („removed rather than corrected") — und **liess dabei zwei Zeilen
+weiter unten in derselben Datei „401 cross-framework mappings" stehen**. Die
+Zahl ist reproduzierbar, man muss nur die Seeds zählen statt zu schätzen:
+`grep -ho 'SELECT insert_mapping(' packages/db/sql/seed_cross_framework_mappings*.sql | wc -l`
+→ **943** (2026-09-05). In der Datenbank landen sie erst nach `seed-all`; die
+Tabelle heisst `framework_mapping`, nicht `cross_framework_mapping`.
 
 Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 24**
 (closed 2026-05-21). For current work see [`docs/STATUS.md`](./docs/STATUS.md).
@@ -60,7 +64,7 @@ arctos/
 ├── packages/
 │   ├── db/           → Drizzle Schema, Migrations, Seed
 │   │   ├── src/schema/  → platform.ts, risk.ts, process.ts, task.ts, asset.ts, control.ts, work-item.ts, budget.ts, catalog.ts, ...
-│   │   ├── drizzle/     → SQL migrations (0001–0361, 340 files)
+│   │   ├── drizzle/     → SQL migrations (0001–0478, 428 files)
 │   │   └── sql/         → Seed data (catalogs, reference data, cross-framework mappings)
 │   ├── ui/           → shadcn/ui Components
 │   ├── shared/       → Zod Schemas, Types, Constants
@@ -102,22 +106,32 @@ arctos/
 | Sprint Range | Features                                                                                | Status  |
 | ------------ | --------------------------------------------------------------------------------------- | ------- |
 | 10–15        | Module System, Assets, Work Items                                                       | ✅ Done |
-| 16–19        | Incident Playbooks, Compliance Calendar, Custom Dashboards, Bulk Import/Export          | ✅ Done |
+| 16–19        | Incident Playbooks, Compliance Calendar, Custom Dashboards, Bulk Import/Export          | ⚠️ Bulk-Import fehlt |
 | 20–23        | SSO/SCIM, Multi-Language CMS, Where-Used Tracking, Risk Appetite Framework              | ✅ Done |
 | 24–27        | NIS2 Tracker, FAIR Quantification, ISMS Intelligence, Compliance Culture                | ✅ Done |
 | 28–30        | Workflow Automation, Knowledge Graph, Report Engine                                     | ✅ Done |
 | 31–33        | Regulatory Simulator, Risk Propagation, Audit Analytics                                 | ✅ Done |
-| 34–37        | ABAC, GRC Agents (MCP), EAM Foundation + Advanced                                       | ✅ Done |
+| 34–37        | ABAC, GRC Agents (MCP), EAM Foundation + Advanced                                       | ⚠️ MCP-Agents fehlen |
 | 38–42        | Platform/ERM/ICS/BCMS/DPMS Advanced modules                                             | ✅ Done |
 | 43–47        | Audit/TPRM/ESG/Whistleblowing/BPM Advanced                                              | ✅ Done |
 | 48–53        | EAM Dashboards, Visualizations, Data Architecture, AI, Catalog, Governance              | ✅ Done |
 | 54–56        | ERM Evaluation UX, GRC UX Enhancements, BPM Derived Views                               | ✅ Done |
 | 57–61        | API Platform, Plugin Architecture, Onboarding, Mobile, SaaS Metering                    | ✅ Done |
-| 62–66        | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ✅ Done |
-| 67–71        | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ✅ Done |
+| 62–66        | Evidence Connectors, Cloud/Identity/DevOps Connectors, Cross-Framework Mapping          | ⚠️ kein Provider-Client |
+| 67–71        | GRC Copilot, AI Evidence Review, Regulatory Change, Control Testing, Predictive Risk    | ⚠️ 3 von 5 fehlen |
 | 72–76        | DORA, EU AI Act, Tax CMS, Horizon Scanner, Cert Wizard                                  | ✅ Done |
 | 77–81        | BI Report Builder, Benchmarking, Risk Quantification, Data Sovereignty, Role Dashboards | ✅ Done |
-| 82–86        | Marketplace, Stakeholder Portals, GRC Academy, Simulation Engine, Community Edition     | ✅ Done |
+| 82–86        | Marketplace, Stakeholder Portals, GRC Academy, Simulation Engine, Community Edition     | ⚠️ Simulation fehlt |
+
+> **[Welle 5b · OP-104, 2026-09-05]** Fünf Zeilen dieser Tabelle standen bis
+> heute auf „✅ Done", obwohl der Code die jeweilige Fähigkeit ausdrücklich als
+> *nicht implementiert* meldet — 19 Pfade in 12 Dateien, umgestellt von WP9,
+> ohne dass diese Tabelle nachgezogen wurde. Ein Häkchen hier heisst: der Code
+> ist da **und** tut, was der Name sagt. Die vollständige Liste mit Datei,
+> Antwortverhalten und Wirkung steht in
+> [`docs/feature-catalog.md`](./docs/feature-catalog.md) unter „Was sich ehrlich
+> als ‚nicht implementiert' meldet". `apps/worker/tests/docs-vs-honest-refusals.test.ts`
+> leitet sie aus dem Quellcode ab und lässt diese Tabelle nicht mehr davondriften.
 
 ### Cross-Cutting Features (post-Sprint 86)
 
@@ -132,8 +146,8 @@ arctos/
 | **SoA mit 93 Annex A Kontrollen** (control_catalog_entry verknüpft)                                                  | ✅ Done |
 | Management-system sidebar navigation (10 groups)                                                                     | ✅ Done |
 | Hierarchical budget model + cost fields on entities                                                                  | ✅ Done |
-| 31 catalog frameworks (~2,100 entries) + target_modules                                                              | ✅ Done |
-| 401 cross-framework mappings + Framework Coverage UI                                                                 | ✅ Done |
+| 46 catalog frameworks + target_modules (gemessen 2026-09-05: `ls packages/db/sql/seed_catalog_*.sql \| wc -l`; hier stand 31, im Gegensatz zur Zähltabelle oben in derselben Datei) | ✅ Done |
+| 943 Cross-Framework-Mappings in den Seed-Dateien + Framework Coverage UI (gemessen 2026-09-05: `grep -ho 'SELECT insert_mapping(' packages/db/sql/seed_cross_framework_mappings*.sql \| wc -l`; hier stand 401, während dieselbe Datei oben erklärt, die Zahl sei „removed rather than corrected") | ✅ Done |
 | ISMS Protection Needs (Schutzbedarf from BIA)                                                                        | ✅ Done |
 | Unified catalog API (generic catalog table)                                                                          | ✅ Done |
 | Catalog activation UI with module filtering                                                                          | ✅ Done |
@@ -246,7 +260,7 @@ Config: `apps/web/src/components/layout/nav-config.ts`
 
 **Bridge** (migration `0106_framework_mapping_bridge.sql`): backfills the legacy `catalog_entry_mapping` (UUID-keyed, populated by seeds) into the API-side `framework_mapping` (string-keyed, used by the Framework-Coverage UI). Without the bridge the API saw 0 of the 600+ seeded mappings. The view `framework_mapping_full` joins with live catalog titles for read-side display.
 
-Seed files: `packages/db/sql/seed_catalog_*.sql`, `seed_cross_framework_mappings*.sql` (v1, v2, v3, v4)
+Seed files: `packages/db/sql/seed_catalog_*.sql` (46 Dateien), `seed_cross_framework_mappings*.sql` — **fünf** Dateien (v1 bis v5, 943 `insert_mapping`-Aufrufe); hier standen bis 2026-09-05 vier.
 
 ## Budget & Cost Model
 

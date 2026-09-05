@@ -198,8 +198,27 @@ Neues Kapitel in `docs/runbook.md`:
 
 ## Implementation-Plan
 
-- [ ] Phase 1: ON_ERROR_STOP=1 in docker-entrypoint.sh (Risiko: neue
-      Failure-Modes sichtbar werden -- erst in Staging testen)
-- [ ] Phase 2: Metadata-Header + CI-Check
-- [ ] Phase 3: Staging-Rehearsal-Workflow
-- [ ] Phase 4: Runbook-Update mit Compensating-Migration-Flow
+> **[Welle 5b · OP-132/OP-133, 2026-09-05]** Der Status dieser ADR steht seit
+> 2026-09-01 auf **Accepted**, die Umsetzungsliste stand danach noch komplett
+> auf offen. Nachgemessen gegen `2f716205`:
+
+- [x] Phase 1: ON_ERROR_STOP=1 in docker-entrypoint.sh —
+      `scripts/docker-entrypoint.sh:77` (`$PSQL -v ON_ERROR_STOP=1`)
+- [x] Phase 2: Metadata-Header + CI-Check —
+      `.github/workflows/migration-policy.yml:71` prueft alle sechs
+      Header-Zeilen an jeder NEUEN Migration. 49 der 428 Migrationen tragen
+      den Header; alle 49 mit `Compensating-Required: no`. Die 379 aelteren
+      sind ausgeliefert und werden nach ADR-014 nicht mehr angefasst.
+- [x] Phase 3: Migration-Rehearsal — umgesetzt, aber **nicht** als eigener
+      `migration-rehearsal.yml`, wie §3 es beschreibt, sondern als Job in
+      `.github/workflows/migration-policy.yml` (volle Sequenz gegen eine leere
+      DB, zweiter Lauf als No-Op, Schema-Diff leer). §3 ist damit nicht mehr
+      „geplant"; der Restore eines Produktions-Backups nach Staging ist es
+      weiterhin.
+- [x] Phase 4: Runbook-Update mit Compensating-Migration-Flow —
+      [`runbook.md` §5.1](./runbook.md)
+
+**Was die CI hier nicht leisten kann:** `migration-policy.yml` laeuft auf
+`pull_request`. Ein direkter Push auf `main` umgeht den Header-Zwang und die
+Forward-only-Pruefung vollstaendig. Die Wirkung dieses Gates haengt an der
+Branch-Protection — siehe OP-150/OP-151, eine Entscheidung des Eigentuemers.
