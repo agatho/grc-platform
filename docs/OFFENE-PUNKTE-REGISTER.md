@@ -612,6 +612,59 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-07 — Welle 6b: zwei Tore, mit einem Zeichen ausgehebelt
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-6B.md`. `ai-act`, `settings`, `admin`
+und `admin/rls-audit` sind fertig — `ai-act` **vollständig** (21 statt der
+gelisteten 10 Dateien), sichtbare Zeichenketten dort 516 → **0**. Damit ist
+`toLocale*("xx-XX")` im Bildschirmbereich auf 0 und die namentliche Ausnahme
+in `wave5a-surfaces.test.ts` gestrichen.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                     | Art     | Stand                 |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------- | --------------------- |
+| OP-202 | **19 Dateien banden next-intl an `_t` und benutzten die Bindung nie.** Für die i18n-Ratsche galten sie als übersetzt (sie sucht das blosse _Vorkommen_ von `useTranslations`), und der führende Unterstrich brachte zugleich `no-unused-vars` zum Schweigen. **Zwei Tore mit einem einzigen Zeichen ausgehebelt** — auf dem Bildschirm stand fest verdrahtetes Deutsch. Sieben davon im regulatorisch exponiertesten Modul des Produkts. | Eigene Messung 2026-09-07 | Tor     | behoben               |
+| OP-203 | **`Intl.NumberFormat("de-DE", { style: "currency" })` an 20 Fundstellen in 19 Dateien**, ausnahmslos Geld. Der Wachposten aus Welle 5a kennt nur `toLocale*`; sein „70 → 2" war für seine Regel richtig und für die Sache unvollständig. Für Geld gab es überhaupt kein gemeinsames Mittel — jetzt `formatCurrency`.                                                                                                                     | Eigene Messung 2026-09-07 | Produkt | 1 behoben, 18 benannt |
+
+Das sind **das zwölfte und dreizehnte Tor** in diesem Audit, die nicht
+auslösen konnten. OP-202 ist die unangenehmste Variante bisher: Welle 5a hatte
+vor genau dieser Fehlerform gewarnt („ein `useTranslations`, das niemand
+benutzt, senkt die Ratsche und ändert am Bildschirm nichts") — sie war da
+schon real, nur ungezählt.
+
+**Der Zähler ist präzisiert, und die Ratschenzahl STEIGT deshalb: 107 → 118.**
+Angebunden ist eine Datei jetzt erst, wenn mindestens eine Bindung auch
+**aufgerufen** wird (`bindsButNeverCalls`). 118 ist die erste ehrliche Zahl
+dieser Ratsche; beide Richtungen geprüft, grün bei 118 und rot bei 117.
+Geprüft wird der Bezeichner, nicht der Unterstrich — `_t` ist nicht das
+Problem, der ungenutzte Aufruf ist es.
+
+**Das Phänomen aus Welle 5a wiederholte sich hier nicht.** Gegen alle 79
+Namensräume gemessen: 398 Treffer, davon nur 6 mehrwortig (Navigations-
+beschriftungen). Für diese Bereiche war OP-070 wirklich Übersetzungs- und
+nicht Verkabelungsarbeit. Es kam allerdings in zwei Gestalten wieder, die kein
+Textabgleich findet: `admin/connectors` baute `common.dashboard.timeAgo.*`
+von Hand nach, samt selbstgebauter Mehrzahl.
+
+**Weitere Befunde:** `badge: "neu"` als Text statt Schlüssel (englische Nutzer
+lasen „NEU"); **60 Auswahlknöpfe der Rollen-Berechtigungsmatrix ohne
+zugänglichen Namen**, dazu `<td>` statt `<th scope="row">`; `toFixed(1)`
+gebietsschemablind (deutsch „12.5 %"); rohe ISO-Daten; vier von Hand gebaute
+Mehrzahlen; HTML-Entitäten (`Verst&ouml;&szlig;e`); durchgehend abgeschnittene
+Umlaute (dieselbe Klasse wie OP-191) — und **sechs gerenderte englische
+`HTTP ${status}`-Meldungen**, die der Test nebenbei fand.
+
+**Methodisch bemerkenswert:** Drei Renderprüfungen fielen gegen den alten
+Stand zunächst **nicht** — weil `settings` und `rls-audit` für den Nutzer
+schon zweisprachig waren. Statt die Regel weich zu lesen, sind sie so
+umgeschnitten worden, dass jede eine vorher falsche Aussage trägt. Erst das
+hat den `settings`-Befund scharf gemacht. Von 56 Zusicherungen fallen 55
+gegen `e084dc26`; die eine, die auf dem alten Stand leer wahr ist, ist als
+solche offengelegt.
+
+**Offen:** die 18 verbliebenen Geldformatierer, zwölf Dateien mit
+Scheinbindung ausserhalb `ai-act` (70 Textknoten) — jetzt aber **gezählt**,
+und englischer Text, der aus `api/**` kommt.
+
 ### Nachtrag 2026-09-05 — Welle 6a: elf Jobs, die Erfolg meldeten
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-6A.md`. Erledigt: OP-112, N-1, N-2;

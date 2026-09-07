@@ -198,7 +198,18 @@ jobs:
       # Tailwind-Klassenketten fuer Saetze. Das ist beziffert statt
       # behoben -- siehe docs/UMSETZUNG-WELLE-5A.md.
       - name: i18n-Abdeckungs-Ratsche
-        run: node scripts/audit-i18n-usage.mjs --max-untranslated 131
+        #
+        # [Welle 6b] 107 -> 118. Die Zahl STEIGT, und das ist der Fortschritt:
+        # Der Zaehler hielt bisher jede Datei fuer uebersetzt, in der das Wort
+        # `useTranslations` VORKAM. 19 Dateien schrieben
+        # `const _t = useTranslations("aiAct");` und benutzten die Bindung nie
+        # — der fuehrende Unterstrich brachte zugleich `no-unused-vars` zum
+        # Schweigen. Zwei Tore mit EINEM Zeichen ausgehebelt. Angebunden ist
+        # eine Datei jetzt erst, wenn mindestens eine Bindung auch AUFGERUFEN
+        # wird; siehe `bindsButNeverCalls` in scripts/audit-i18n-usage.mjs.
+        # 118 ist damit die erste ehrliche Zahl dieser Ratsche. Beide
+        # Richtungen geprueft: gruen bei 118, rot bei 117.
+        run: node scripts/audit-i18n-usage.mjs --max-untranslated 118
 
       # [OP-072] Hier stand ein Schritt "messages/{de,en}.json muessen
       # reproduzierbar sein", der `git diff` auf genau diese zwei Dateien rief.

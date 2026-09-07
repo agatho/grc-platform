@@ -25,8 +25,17 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch mit
+ * transliterierten Umlauten ("Rueckruf", "Nichtkonformitaet", "Prioritaet",
+ * "Faelligkeitsdatum", "Ausserbetriebnahme"); der Katalog schreibt sie
+ * richtig. Die gemeinsamen Beschriftungen (Titel, Beschreibung, Status,
+ * Metadaten) kommen aus `aiAct.shared`, damit nicht drei Detailseiten drei
+ * Schluessel fuer dasselbe Wort fuehren.
+ */
 interface CorrectiveAction {
   id: string;
   ai_system_id: string | null;
@@ -73,6 +82,8 @@ const STATUS_COLORS: Record<string, string> = {
 
 function CorrectiveActionDetailInner() {
   const _router = useRouter();
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { id } = useParams<{ id: string }>();
   const { formatDate } = useDateFormat();
   const [data, setData] = useState<CorrectiveAction | null>(null);
@@ -127,7 +138,7 @@ function CorrectiveActionDetailInner() {
   if (!data) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        Korrekturmassnahme nicht gefunden
+        {t("correctiveAction.notFound")}
       </div>
     );
   }
@@ -146,7 +157,7 @@ function CorrectiveActionDetailInner() {
           href="/ai-act/corrective-actions"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
+          <ArrowLeft className="h-4 w-4" /> {t("shared.backToList")}
         </Link>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
@@ -154,7 +165,7 @@ function CorrectiveActionDetailInner() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Speichern
+          {tCommon("actions.save")}
         </Button>
       </div>
 
@@ -168,34 +179,38 @@ function CorrectiveActionDetailInner() {
         </Badge>
         {data.is_recall && (
           <Badge className="bg-red-600 text-white">
-            <ShieldAlert className="h-3 w-3 mr-1" /> Rueckruf
+            <ShieldAlert className="h-3 w-3 mr-1" />{" "}
+            {t("correctiveAction.recall")}
           </Badge>
         )}
         {data.is_withdrawal && (
           <Badge className="bg-orange-600 text-white">
-            <AlertTriangle className="h-3 w-3 mr-1" /> Ruecknahme
+            <AlertTriangle className="h-3 w-3 mr-1" />{" "}
+            {t("correctiveAction.withdrawal")}
           </Badge>
         )}
         {isOverdue && (
-          <Badge className="bg-red-600 text-white">Überfällig</Badge>
+          <Badge className="bg-red-600 text-white">
+            {t("correctiveAction.overdue")}
+          </Badge>
         )}
       </div>
 
       {/* Stammdaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Stammdaten</CardTitle>
+          <CardTitle>{t("shared.masterData")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label>Titel</Label>
+            <Label>{t("shared.title")}</Label>
             <Input
               value={form.title ?? ""}
               onChange={(e) => set("title", e.target.value)}
             />
           </div>
           <div className="md:col-span-2">
-            <Label>Beschreibung</Label>
+            <Label>{t("shared.description")}</Label>
             <Textarea
               value={form.description ?? ""}
               onChange={(e) => set("description", e.target.value)}
@@ -203,7 +218,7 @@ function CorrectiveActionDetailInner() {
             />
           </div>
           <div className="md:col-span-2">
-            <Label>Nichtkonformitaet</Label>
+            <Label>{t("correctiveAction.nonConformity")}</Label>
             <Textarea
               value={form.non_conformity_description ?? ""}
               onChange={(e) =>
@@ -213,7 +228,7 @@ function CorrectiveActionDetailInner() {
             />
           </div>
           <div>
-            <Label>Massnahmentyp</Label>
+            <Label>{t("correctiveAction.actionType")}</Label>
             <Select
               value={form.action_type ?? "corrective"}
               onValueChange={(v) => set("action_type", v)}
@@ -222,17 +237,29 @@ function CorrectiveActionDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="corrective">Korrektur</SelectItem>
-                <SelectItem value="preventive">Praevention</SelectItem>
-                <SelectItem value="recall">Rueckruf</SelectItem>
-                <SelectItem value="withdrawal">Ruecknahme</SelectItem>
-                <SelectItem value="modification">Aenderung</SelectItem>
-                <SelectItem value="decommission">Ausserbetriebnahme</SelectItem>
+                <SelectItem value="corrective">
+                  {t("correctiveAction.typeOption.corrective")}
+                </SelectItem>
+                <SelectItem value="preventive">
+                  {t("correctiveAction.typeOption.preventive")}
+                </SelectItem>
+                <SelectItem value="recall">
+                  {t("correctiveAction.typeOption.recall")}
+                </SelectItem>
+                <SelectItem value="withdrawal">
+                  {t("correctiveAction.typeOption.withdrawal")}
+                </SelectItem>
+                <SelectItem value="modification">
+                  {t("correctiveAction.typeOption.modification")}
+                </SelectItem>
+                <SelectItem value="decommission">
+                  {t("correctiveAction.typeOption.decommission")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Prioritaet</Label>
+            <Label>{t("correctiveAction.priority")}</Label>
             <Select
               value={form.priority ?? "medium"}
               onValueChange={(v) => set("priority", v)}
@@ -241,15 +268,23 @@ function CorrectiveActionDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="critical">Kritisch</SelectItem>
-                <SelectItem value="high">Hoch</SelectItem>
-                <SelectItem value="medium">Mittel</SelectItem>
-                <SelectItem value="low">Niedrig</SelectItem>
+                <SelectItem value="critical">
+                  {t("incidentDetail.severityOption.critical")}
+                </SelectItem>
+                <SelectItem value="high">
+                  {t("incidentDetail.severityOption.high")}
+                </SelectItem>
+                <SelectItem value="medium">
+                  {t("incidentDetail.severityOption.medium")}
+                </SelectItem>
+                <SelectItem value="low">
+                  {t("incidentDetail.severityOption.low")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Status</Label>
+            <Label>{t("shared.status")}</Label>
             <Select
               value={form.status ?? "open"}
               onValueChange={(v) => set("status", v)}
@@ -258,16 +293,26 @@ function CorrectiveActionDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="open">Offen</SelectItem>
-                <SelectItem value="in_progress">In Bearbeitung</SelectItem>
-                <SelectItem value="completed">Abgeschlossen</SelectItem>
-                <SelectItem value="verified">Verifiziert</SelectItem>
-                <SelectItem value="closed">Geschlossen</SelectItem>
+                <SelectItem value="open">
+                  {t("correctiveAction.statusOption.open")}
+                </SelectItem>
+                <SelectItem value="in_progress">
+                  {t("correctiveAction.statusOption.in_progress")}
+                </SelectItem>
+                <SelectItem value="completed">
+                  {t("correctiveAction.statusOption.completed")}
+                </SelectItem>
+                <SelectItem value="verified">
+                  {t("correctiveAction.statusOption.verified")}
+                </SelectItem>
+                <SelectItem value="closed">
+                  {t("incidentDetail.statusOption.closed")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Faelligkeitsdatum</Label>
+            <Label>{t("correctiveAction.dueDate")}</Label>
             <Input
               type="date"
               value={form.due_date ?? ""}
@@ -280,7 +325,7 @@ function CorrectiveActionDetailInner() {
       {/* Rueckruf / Ruecknahme */}
       <Card>
         <CardHeader>
-          <CardTitle>Rueckruf / Ruecknahme (Art. 16/20)</CardTitle>
+          <CardTitle>{t("correctiveAction.recallSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-6">
@@ -289,19 +334,19 @@ function CorrectiveActionDetailInner() {
                 checked={form.is_recall ?? false}
                 onCheckedChange={(v) => set("is_recall", v)}
               />
-              <Label>Rueckruf</Label>
+              <Label>{t("correctiveAction.recall")}</Label>
             </div>
             <div className="flex items-center gap-3">
               <Switch
                 checked={form.is_withdrawal ?? false}
                 onCheckedChange={(v) => set("is_withdrawal", v)}
               />
-              <Label>Ruecknahme vom Markt</Label>
+              <Label>{t("correctiveAction.withdrawalFromMarket")}</Label>
             </div>
           </div>
           {(form.is_recall || form.is_withdrawal) && (
             <div>
-              <Label>Begruendung</Label>
+              <Label>{t("correctiveAction.recallReason")}</Label>
               <Textarea
                 value={form.recall_reason ?? ""}
                 onChange={(e) => set("recall_reason", e.target.value)}
@@ -315,7 +360,7 @@ function CorrectiveActionDetailInner() {
       {/* Behoerdenbenachrichtigung */}
       <Card>
         <CardHeader>
-          <CardTitle>Behoerdenbenachrichtigung</CardTitle>
+          <CardTitle>{t("incidentDetail.authoritySection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
@@ -323,12 +368,12 @@ function CorrectiveActionDetailInner() {
               checked={form.authority_notified ?? false}
               onCheckedChange={(v) => set("authority_notified", v)}
             />
-            <Label>Behoerde benachrichtigt</Label>
+            <Label>{t("correctiveAction.authorityNotified")}</Label>
           </div>
           {form.authority_notified && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Benachrichtigt am</Label>
+                <Label>{t("correctiveAction.notifiedOn")}</Label>
                 <Input
                   type="datetime-local"
                   value={
@@ -342,7 +387,7 @@ function CorrectiveActionDetailInner() {
                 />
               </div>
               <div>
-                <Label>Aktenzeichen Behoerde</Label>
+                <Label>{t("incidentDetail.authorityReference")}</Label>
                 <Input
                   value={form.authority_reference ?? ""}
                   onChange={(e) => set("authority_reference", e.target.value)}
@@ -356,7 +401,7 @@ function CorrectiveActionDetailInner() {
       {/* Verifizierung */}
       <Card>
         <CardHeader>
-          <CardTitle>Verifizierung</CardTitle>
+          <CardTitle>{t("correctiveAction.verificationSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
@@ -364,10 +409,10 @@ function CorrectiveActionDetailInner() {
               checked={form.verification_required ?? true}
               onCheckedChange={(v) => set("verification_required", v)}
             />
-            <Label>Verifizierung erforderlich</Label>
+            <Label>{t("correctiveAction.verificationRequired")}</Label>
           </div>
           <div>
-            <Label>Verifizierungsnotizen</Label>
+            <Label>{t("correctiveAction.verificationNotes")}</Label>
             <Textarea
               value={form.verification_notes ?? ""}
               onChange={(e) => set("verification_notes", e.target.value)}
@@ -375,26 +420,34 @@ function CorrectiveActionDetailInner() {
             />
           </div>
           <div>
-            <Label>Wirksamkeitsbewertung</Label>
+            <Label>{t("correctiveAction.effectiveness")}</Label>
             <Select
               value={form.effectiveness_rating ?? ""}
               onValueChange={(v) => set("effectiveness_rating", v || null)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Noch nicht bewertet" />
+                <SelectValue placeholder={t("correctiveAction.notRatedYet")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="effective">Wirksam</SelectItem>
-                <SelectItem value="partially_effective">
-                  Teilweise wirksam
+                <SelectItem value="effective">
+                  {t("correctiveAction.effectivenessOption.effective")}
                 </SelectItem>
-                <SelectItem value="ineffective">Unwirksam</SelectItem>
+                <SelectItem value="partially_effective">
+                  {t(
+                    "correctiveAction.effectivenessOption.partially_effective",
+                  )}
+                </SelectItem>
+                <SelectItem value="ineffective">
+                  {t("correctiveAction.effectivenessOption.ineffective")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           {data.verified_at && (
             <p className="text-sm text-muted-foreground">
-              Verifiziert am: {formatDate(data.verified_at)}
+              {t("correctiveAction.verifiedAt", {
+                value: formatDate(data.verified_at),
+              })}
             </p>
           )}
         </CardContent>
@@ -403,33 +456,40 @@ function CorrectiveActionDetailInner() {
       {/* Metadaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Metadaten</CardTitle>
+          <CardTitle>{t("shared.metadata")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("shared.createdAt")}
+            </span>{" "}
             {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
-              Aktualisiert am:
+              {t("shared.updatedAt")}
             </span>{" "}
             {formatDate(data.updated_at)}
           </div>
           {data.completed_at && (
             <div>
               <span className="font-medium text-foreground">
-                Abgeschlossen am:
+                {t("correctiveAction.completedAt")}
               </span>{" "}
               {formatDate(data.completed_at)}
             </div>
           )}
           <div>
-            <span className="font-medium text-foreground">Quellentyp:</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("correctiveAction.sourceType")}
+            </span>{" "}
             {data.source_type}
           </div>
           <div>
-            <span className="font-medium text-foreground">ID:</span> {data.id}
+            <span className="font-medium text-foreground">
+              {t("shared.id")}
+            </span>{" "}
+            {data.id}
           </div>
         </CardContent>
       </Card>

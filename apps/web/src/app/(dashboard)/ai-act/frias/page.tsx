@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useDateFormat } from "@/lib/format-date";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ const IMPACT_COLORS: Record<string, string> = {
 
 export default function AiFriasPage() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AiFria[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -43,7 +45,7 @@ export default function AiFriasPage() {
         <h1 className="text-2xl font-bold">{t("nav.frias")}</h1>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          New FRIA
+          {t("friaList.create")}
         </Button>
       </div>
       <div className="space-y-2">
@@ -54,13 +56,15 @@ export default function AiFriasPage() {
                 <p className="font-medium">{fria.assessmentCode}</p>
                 <p className="text-sm text-muted-foreground">
                   {fria.nextReviewDate
-                    ? `Next review: ${fria.nextReviewDate}`
+                    ? t("friaList.nextReview", {
+                        value: formatDate(fria.nextReviewDate),
+                      })
                     : ""}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Badge className={IMPACT_COLORS[fria.overallImpact] ?? ""}>
-                  {fria.overallImpact}
+                  {t(`fria.impact.${fria.overallImpact}`)}
                 </Badge>
                 <Badge variant="outline">{fria.status}</Badge>
               </div>
@@ -69,7 +73,7 @@ export default function AiFriasPage() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            No Fundamental Rights Impact Assessments yet
+            {t("friaList.empty")}
           </p>
         )}
       </div>

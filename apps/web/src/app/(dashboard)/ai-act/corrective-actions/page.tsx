@@ -28,6 +28,12 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. `const _t = useTranslations(…)`
+ * ohne Benutzung — fuer die Ratsche uebersetzt, auf dem Bildschirm fest
+ * verdrahtetes Deutsch mit abgeschnittenen Umlauten („Korrekturmasnahmen",
+ * „Ruckruf", „Prioritat", „Falligkeitsdatum").
+ */
 interface CorrectiveAction {
   id: string;
   title: string;
@@ -55,7 +61,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function CorrectiveActionsInner() {
-  const _t = useTranslations("aiAct");
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<CorrectiveAction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,30 +130,32 @@ function CorrectiveActionsInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Korrekturmasnahmen</h1>
-          <p className="text-muted-foreground">Art. 20-21 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("correctiveList.title")}</h1>
+          <p className="text-muted-foreground">
+            {t("correctiveList.description")}
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Masnahme anlegen
+              {t("correctiveList.create")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Korrekturmasnahme</DialogTitle>
+              <DialogTitle>{t("correctiveList.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Titel</Label>
+                <Label>{t("shared.title")}</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </div>
               <div>
-                <Label>Beschreibung</Label>
+                <Label>{t("shared.description")}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) =>
@@ -155,7 +164,7 @@ function CorrectiveActionsInner() {
                 />
               </div>
               <div>
-                <Label>KI-System ID (optional)</Label>
+                <Label>{t("incidentList.systemIdOptional")}</Label>
                 <Input
                   value={form.ai_system_id}
                   onChange={(e) =>
@@ -164,7 +173,7 @@ function CorrectiveActionsInner() {
                 />
               </div>
               <div>
-                <Label>Art der Masnahme</Label>
+                <Label>{t("correctiveAction.actionType")}</Label>
                 <Select
                   value={form.action_type}
                   onValueChange={(v) => setForm({ ...form, action_type: v })}
@@ -173,15 +182,23 @@ function CorrectiveActionsInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="corrective">Korrektur</SelectItem>
-                    <SelectItem value="preventive">Pravention</SelectItem>
-                    <SelectItem value="recall">Ruckruf</SelectItem>
-                    <SelectItem value="withdrawal">Rucknahme</SelectItem>
+                    <SelectItem value="corrective">
+                      {t("correctiveAction.typeOption.corrective")}
+                    </SelectItem>
+                    <SelectItem value="preventive">
+                      {t("correctiveAction.typeOption.preventive")}
+                    </SelectItem>
+                    <SelectItem value="recall">
+                      {t("correctiveAction.typeOption.recall")}
+                    </SelectItem>
+                    <SelectItem value="withdrawal">
+                      {t("correctiveAction.typeOption.withdrawal")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Prioritat</Label>
+                <Label>{t("correctiveAction.priority")}</Label>
                 <Select
                   value={form.priority}
                   onValueChange={(v) => setForm({ ...form, priority: v })}
@@ -190,15 +207,23 @@ function CorrectiveActionsInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="critical">Kritisch</SelectItem>
-                    <SelectItem value="high">Hoch</SelectItem>
-                    <SelectItem value="medium">Mittel</SelectItem>
-                    <SelectItem value="low">Niedrig</SelectItem>
+                    <SelectItem value="critical">
+                      {t("incidentDetail.severityOption.critical")}
+                    </SelectItem>
+                    <SelectItem value="high">
+                      {t("incidentDetail.severityOption.high")}
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      {t("incidentDetail.severityOption.medium")}
+                    </SelectItem>
+                    <SelectItem value="low">
+                      {t("incidentDetail.severityOption.low")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Falligkeitsdatum</Label>
+                <Label>{t("correctiveAction.dueDate")}</Label>
                 <Input
                   type="date"
                   value={form.due_date}
@@ -212,7 +237,7 @@ function CorrectiveActionsInner() {
                   checked={form.is_recall}
                   onCheckedChange={(v) => setForm({ ...form, is_recall: v })}
                 />
-                <Label>Ruckruf</Label>
+                <Label>{t("correctiveAction.recall")}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch
@@ -221,14 +246,14 @@ function CorrectiveActionsInner() {
                     setForm({ ...form, is_withdrawal: v })
                   }
                 />
-                <Label>Rucknahme vom Markt</Label>
+                <Label>{t("correctiveAction.withdrawalFromMarket")}</Label>
               </div>
               <Button
                 className="w-full"
                 onClick={handleSubmit}
                 disabled={!form.title || !form.action_type || !form.priority}
               >
-                Speichern
+                {tCommon("actions.save")}
               </Button>
             </div>
           </DialogContent>
@@ -249,19 +274,27 @@ function CorrectiveActionsInner() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {a.action_type}
-                    {a.due_date ? ` | Fallig: ${formatDate(a.due_date)}` : ""}
+                    {t(`correctiveAction.typeOption.${a.action_type}`)}
+                    {a.due_date
+                      ? t("correctiveList.dueSuffix", {
+                          value: formatDate(a.due_date),
+                        })
+                      : ""}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   {a.is_recall && (
-                    <Badge className="bg-red-600 text-white">Ruckruf</Badge>
+                    <Badge className="bg-red-600 text-white">
+                      {t("correctiveAction.recall")}
+                    </Badge>
                   )}
                   {a.is_withdrawal && (
-                    <Badge className="bg-red-600 text-white">Rucknahme</Badge>
+                    <Badge className="bg-red-600 text-white">
+                      {t("correctiveAction.withdrawal")}
+                    </Badge>
                   )}
                   <Badge className={PRIORITY_COLORS[a.priority] ?? ""}>
-                    {a.priority}
+                    {t(`incidentDetail.severityOption.${a.priority}`)}
                   </Badge>
                   <Badge
                     className={STATUS_COLORS[a.status] ?? ""}
@@ -276,7 +309,7 @@ function CorrectiveActionsInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Keine Korrekturmasnahmen vorhanden
+            {t("correctiveList.empty")}
           </p>
         )}
       </div>

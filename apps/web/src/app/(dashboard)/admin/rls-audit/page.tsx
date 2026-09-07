@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Shield,
   ShieldCheck,
@@ -23,6 +24,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Die LETZTE Datei mit festem
+ * Gebietsschema. Welle 5a hatte hier eine Teilaenderung ZURUECKGENOMMEN: die
+ * Datei fuehrte ihre eigene Zweisprachigkeit (`const t = (de, en) => …`) und
+ * waehlte in JEDEM der beiden Zweige das passende Tag — `de-DE` im deutschen,
+ * `en-US` im englischen. Ein `numberLocale` nur an einer Stelle haette sie
+ * inkonsistent gemacht: der deutsche Zweig waere dem Cookie gefolgt, der
+ * englische fest geblieben. Deshalb galt: ganz oder gar nicht.
+ *
+ * Jetzt ganz. Die Seite bindet den Katalog, das Datum kommt aus
+ * `useDateFormat()` — und damit ist die Zahl der Fundstellen mit festem
+ * Gebietsschema im Bildschirmbereich auf NULL.
+ *
+ * Mitgenommen: Die Haken und Kreuze in den Spalten RLS und FORCE waren reine
+ * Symbole ohne zugaenglichen Namen. Ein Screenreader las eine Zeile als
+ * "org_unit, tenant, (nichts), (nichts), SELECT INSERT, OK" — die beiden
+ * Spalten, um die es auf dieser Seite geht, fehlten. Sie tragen jetzt einen.
+ */
 interface TableStatus {
   tableName: string;
   scope: "platform" | "tenant";
@@ -56,13 +75,13 @@ interface AuditReport {
 type FilterMode = "gaps" | "tenant" | "all";
 
 export default function RlsAuditPage() {
-  const locale = useLocale();
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
+  const { formatDateTime } = useDateFormat();
   const [report, setReport] = useState<AuditReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterMode>("gaps");
-
-  const t = (de: string, en: string) => (locale === "de" ? de : en);
 
   async function fetchReport() {
     setLoading(true);
@@ -70,7 +89,7 @@ export default function RlsAuditPage() {
     try {
       const res = await fetch("/api/v1/admin/rls-audit");
       if (res.status !== 200 && res.status !== 503) {
-        throw new Error(`HTTP ${res.status}`);
+        throw new Error(tCommon("common.httpError", { status: res.status }));
       }
       const json = (await res.json()) as { data: AuditReport };
       setReport(json.data);
@@ -115,13 +134,10 @@ export default function RlsAuditPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              {t("RLS-Audit", "RLS audit")}
+              {t("rlsAudit.title")}
             </h1>
             <p className="mt-0.5 text-sm text-gray-500">
-              {t(
-                "Deckung der Row-Level-Security-Policies über alle mandantenbezogenen Tabellen. ADR-001 erzwingt Isolation je org_id auf der Datenbankschicht.",
-                "Coverage of Row-Level-Security policies across every tenant-scoped table. ADR-001 enforces org_id isolation at the database layer.",
-              )}
+              {t("rlsAudit.description")}
             </p>
           </div>
         </div>
@@ -137,7 +153,7 @@ export default function RlsAuditPage() {
           ) : (
             <RefreshCw size={14} />
           )}
-          {t("Erneut prüfen", "Re-run")}
+          {t("rlsAudit.rerun")}
         </button>
       </div>
 
@@ -161,20 +177,19 @@ export default function RlsAuditPage() {
           <div className="flex-1">
             <div className="text-lg font-semibold">
               {allGood
-                ? t(
-                    "Alle Mandanten-Tabellen sind RLS-geschützt",
-                    "All tenant tables are RLS-protected",
-                  )
-                : t(
-                    `${report.counts.tenantTables - report.counts.tenantsOk} von ${report.counts.tenantTables} Mandanten-Tabellen haben Lücken`,
-                    `${report.counts.tenantTables - report.counts.tenantsOk} of ${report.counts.tenantTables} tenant tables have gaps`,
-                  )}
+                ? t("rlsAudit.allProtected")
+                : t("rlsAudit.gapsFound", {
+                    gaps: report.counts.tenantTables - report.counts.tenantsOk,
+                    total: report.counts.tenantTables,
+                  })}
             </div>
             <div className="mt-1 text-sm opacity-90">
-              {t(
-                `Geprüft am ${new Date(report.generatedAt).toLocaleString("de-DE")}. Gesamt ${report.counts.totalTables} Tabellen, davon ${report.counts.tenantTables} mandantenbezogen und ${report.counts.platformTables} plattform-global.`,
-                `Checked at ${new Date(report.generatedAt).toLocaleString("en-US")}. Total ${report.counts.totalTables} tables — ${report.counts.tenantTables} tenant-scoped, ${report.counts.platformTables} platform-global.`,
-              )}
+              {t("rlsAudit.checkedAt", {
+                value: formatDateTime(report.generatedAt),
+                total: report.counts.totalTables,
+                tenant: report.counts.tenantTables,
+                platform: report.counts.platformTables,
+              })}
             </div>
           </div>
         </div>
@@ -192,31 +207,31 @@ export default function RlsAuditPage() {
       {report && (
         <div className="flex flex-wrap items-center gap-2">
           <CountChip
-            label={t("OK", "OK")}
+            label={t("rlsAudit.chip.ok")}
             count={report.counts.tenantsOk}
             tone="green"
             icon={<CheckCircle size={12} />}
           />
           <CountChip
-            label={t("RLS fehlt", "RLS missing")}
+            label={t("rlsAudit.chip.missingRls")}
             count={report.counts.tenantsMissingRls}
             tone="red"
             icon={<XCircle size={12} />}
           />
           <CountChip
-            label={t("FORCE fehlt", "FORCE missing")}
+            label={t("rlsAudit.chip.missingForce")}
             count={report.counts.tenantsMissingForce}
             tone="amber"
             icon={<AlertTriangle size={12} />}
           />
           <CountChip
-            label={t("Policies fehlen", "Policies missing")}
+            label={t("rlsAudit.chip.missingPolicies")}
             count={report.counts.tenantsMissingPolicies}
             tone="amber"
             icon={<AlertTriangle size={12} />}
           />
           <CountChip
-            label={t("Plattform-Tabellen", "Platform tables")}
+            label={t("rlsAudit.chip.platformTables")}
             count={report.counts.platformTables}
             tone="gray"
             icon={<Info size={12} />}
@@ -226,13 +241,7 @@ export default function RlsAuditPage() {
 
       {/* Filter tabs */}
       <div className="flex items-center gap-2">
-        {(
-          [
-            ["gaps", t("Nur Lücken", "Gaps only")],
-            ["tenant", t("Alle Mandanten-Tabellen", "All tenant tables")],
-            ["all", t("Alles", "Everything")],
-          ] as const
-        ).map(([mode, label]) => (
+        {(["gaps", "tenant", "all"] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setFilter(mode)}
@@ -242,7 +251,7 @@ export default function RlsAuditPage() {
                 : "border-gray-200 bg-white text-gray-600 hover:border-blue-200"
             }`}
           >
-            {label}
+            {t(`rlsAudit.filter.${mode}`)}
           </button>
         ))}
       </div>
@@ -252,12 +261,12 @@ export default function RlsAuditPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("Tabelle", "Table")}</TableHead>
-              <TableHead>{t("Scope", "Scope")}</TableHead>
-              <TableHead>RLS</TableHead>
-              <TableHead>FORCE</TableHead>
-              <TableHead>{t("Policies", "Policies")}</TableHead>
-              <TableHead>{t("Status", "Status")}</TableHead>
+              <TableHead>{t("rlsAudit.column.table")}</TableHead>
+              <TableHead>{t("rlsAudit.column.scope")}</TableHead>
+              <TableHead>{t("rlsAudit.column.rls")}</TableHead>
+              <TableHead>{t("rlsAudit.column.force")}</TableHead>
+              <TableHead>{t("rlsAudit.column.policies")}</TableHead>
+              <TableHead>{t("rlsAudit.column.status")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -268,8 +277,8 @@ export default function RlsAuditPage() {
                   className="text-center text-sm text-gray-500"
                 >
                   {filter === "gaps"
-                    ? t("Keine Lücken — gut gemacht.", "No gaps — well done.")
-                    : t("Keine Einträge.", "No entries.")}
+                    ? t("rlsAudit.noGaps")
+                    : t("rlsAudit.noEntries")}
                 </TableCell>
               </TableRow>
             ) : (
@@ -308,18 +317,19 @@ function CountChip({
 }
 
 function AuditRow({ row }: { row: TableStatus }) {
+  const t = useTranslations("admin");
   const statusBadge = (() => {
     switch (row.status) {
       case "ok":
         return (
           <Badge className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-800 shadow-none">
-            <CheckCircle size={10} /> OK
+            <CheckCircle size={10} /> {t("rlsAudit.status.ok")}
           </Badge>
         );
       case "missing_rls":
         return (
           <Badge variant="destructive" className="gap-1">
-            <XCircle size={10} /> RLS missing
+            <XCircle size={10} /> {t("rlsAudit.status.missing_rls")}
           </Badge>
         );
       case "missing_force":
@@ -328,7 +338,7 @@ function AuditRow({ row }: { row: TableStatus }) {
             variant="outline"
             className="gap-1 border-amber-200 bg-amber-50 text-amber-800"
           >
-            <AlertTriangle size={10} /> FORCE missing
+            <AlertTriangle size={10} /> {t("rlsAudit.status.missing_force")}
           </Badge>
         );
       case "missing_policies":
@@ -337,7 +347,7 @@ function AuditRow({ row }: { row: TableStatus }) {
             variant="outline"
             className="gap-1 border-amber-200 bg-amber-50 text-amber-800"
           >
-            <AlertTriangle size={10} /> Policies missing
+            <AlertTriangle size={10} /> {t("rlsAudit.status.missing_policies")}
           </Badge>
         );
       case "platform_ignored":
@@ -346,7 +356,7 @@ function AuditRow({ row }: { row: TableStatus }) {
             variant="outline"
             className="gap-1 border-gray-200 bg-gray-50 text-gray-600"
           >
-            <Info size={10} /> Platform
+            <Info size={10} /> {t("rlsAudit.status.platform_ignored")}
           </Badge>
         );
     }
@@ -364,25 +374,47 @@ function AuditRow({ row }: { row: TableStatus }) {
               : "border-gray-200 bg-gray-50 text-gray-600"
           }
         >
-          {row.scope}
+          {t(`rlsAudit.scope.${row.scope}`)}
         </Badge>
       </TableCell>
       <TableCell>
         {row.rlsEnabled ? (
-          <CheckCircle size={14} className="text-emerald-600" />
+          <CheckCircle
+            size={14}
+            className="text-emerald-600"
+            aria-label={t("rlsAudit.cell.rlsOn")}
+          />
         ) : row.scope === "tenant" ? (
-          <XCircle size={14} className="text-red-600" />
+          <XCircle
+            size={14}
+            className="text-red-600"
+            aria-label={t("rlsAudit.cell.rlsOff")}
+          />
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-gray-400">
+            <span aria-hidden="true">—</span>
+            <span className="sr-only">{t("rlsAudit.cell.notApplicable")}</span>
+          </span>
         )}
       </TableCell>
       <TableCell>
         {row.rlsForced ? (
-          <CheckCircle size={14} className="text-emerald-600" />
+          <CheckCircle
+            size={14}
+            className="text-emerald-600"
+            aria-label={t("rlsAudit.cell.forceOn")}
+          />
         ) : row.rlsEnabled ? (
-          <AlertTriangle size={14} className="text-amber-600" />
+          <AlertTriangle
+            size={14}
+            className="text-amber-600"
+            aria-label={t("rlsAudit.cell.forceOff")}
+          />
         ) : (
-          <span className="text-xs text-gray-400">—</span>
+          <span className="text-xs text-gray-400">
+            <span aria-hidden="true">—</span>
+            <span className="sr-only">{t("rlsAudit.cell.notApplicable")}</span>
+          </span>
         )}
       </TableCell>
       <TableCell>

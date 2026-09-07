@@ -19,8 +19,20 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Die Seite stand fest auf
+ * Deutsch — mit transliterierten Umlauten ("Zurueck", "Bitte waehlen",
+ * "In Pruefung", "Begruendung", "Ausserbetrieb"), also derselben Fehlerform,
+ * die Welle 5a im Meldekanal gefunden hat (OP-191). Der Katalog schreibt sie
+ * richtig; die Umstellung nimmt den Textfehler mit.
+ *
+ * Die Schaltflaeche "Speichern" kommt aus `common.actions.save` und nicht aus
+ * einem neuen `aiAct`-Schluessel: ein zweiter Schluessel fuer denselben Text
+ * macht die Sache schlechter (Welle 5a, §3.1).
+ */
 interface AiSystemDetail {
   id: string;
   systemCode: string;
@@ -51,6 +63,8 @@ const RISK_COLORS: Record<string, string> = {
 
 function SystemDetailInner() {
   const _router = useRouter();
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AiSystemDetail | null>(null);
@@ -105,7 +119,7 @@ function SystemDetailInner() {
   if (!data) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        KI-System nicht gefunden
+        {t("systemDetail.notFound")}
       </div>
     );
   }
@@ -120,7 +134,7 @@ function SystemDetailInner() {
           href="/ai-act/systems"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
+          <ArrowLeft className="h-4 w-4" /> {t("shared.backToList")}
         </Link>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
@@ -128,7 +142,7 @@ function SystemDetailInner() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Speichern
+          {tCommon("actions.save")}
         </Button>
       </div>
 
@@ -145,25 +159,25 @@ function SystemDetailInner() {
       {/* Stammdaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Stammdaten</CardTitle>
+          <CardTitle>{t("shared.masterData")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Systemcode</Label>
+            <Label>{t("systemDetail.systemCode")}</Label>
             <Input
               value={form.systemCode ?? ""}
               onChange={(e) => set("systemCode", e.target.value)}
             />
           </div>
           <div>
-            <Label>Name</Label>
+            <Label>{t("shared.name")}</Label>
             <Input
               value={form.name ?? ""}
               onChange={(e) => set("name", e.target.value)}
             />
           </div>
           <div className="md:col-span-2">
-            <Label>Beschreibung</Label>
+            <Label>{t("shared.description")}</Label>
             <Textarea
               value={form.description ?? ""}
               onChange={(e) => set("description", e.target.value)}
@@ -171,7 +185,7 @@ function SystemDetailInner() {
             />
           </div>
           <div className="md:col-span-2">
-            <Label>Zweck</Label>
+            <Label>{t("systemDetail.purpose")}</Label>
             <Textarea
               value={form.purpose ?? ""}
               onChange={(e) => set("purpose", e.target.value)}
@@ -179,28 +193,38 @@ function SystemDetailInner() {
             />
           </div>
           <div>
-            <Label>KI-Technik</Label>
+            <Label>{t("systemDetail.aiTechnique")}</Label>
             <Select
               value={form.aiTechnique ?? ""}
               onValueChange={(v) => set("aiTechnique", v)}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Bitte waehlen" />
+                <SelectValue placeholder={t("shared.selectPlaceholder")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="machine_learning">
-                  Machine Learning
+                  {t("systemDetail.technique.machine_learning")}
                 </SelectItem>
-                <SelectItem value="deep_learning">Deep Learning</SelectItem>
-                <SelectItem value="nlp">NLP</SelectItem>
-                <SelectItem value="computer_vision">Computer Vision</SelectItem>
-                <SelectItem value="expert_system">Expertensystem</SelectItem>
-                <SelectItem value="generative_ai">Generative KI</SelectItem>
+                <SelectItem value="deep_learning">
+                  {t("systemDetail.technique.deep_learning")}
+                </SelectItem>
+                <SelectItem value="nlp">
+                  {t("systemDetail.technique.nlp")}
+                </SelectItem>
+                <SelectItem value="computer_vision">
+                  {t("systemDetail.technique.computer_vision")}
+                </SelectItem>
+                <SelectItem value="expert_system">
+                  {t("systemDetail.technique.expert_system")}
+                </SelectItem>
+                <SelectItem value="generative_ai">
+                  {t("systemDetail.technique.generative_ai")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Status</Label>
+            <Label>{t("shared.status")}</Label>
             <Select
               value={form.status ?? "draft"}
               onValueChange={(v) => set("status", v)}
@@ -209,12 +233,24 @@ function SystemDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Entwurf</SelectItem>
-                <SelectItem value="registered">Registriert</SelectItem>
-                <SelectItem value="under_review">In Pruefung</SelectItem>
-                <SelectItem value="compliant">Konform</SelectItem>
-                <SelectItem value="non_compliant">Nicht konform</SelectItem>
-                <SelectItem value="decommissioned">Ausserbetrieb</SelectItem>
+                <SelectItem value="draft">
+                  {t("systemDetail.systemStatus.draft")}
+                </SelectItem>
+                <SelectItem value="registered">
+                  {t("systemDetail.systemStatus.registered")}
+                </SelectItem>
+                <SelectItem value="under_review">
+                  {t("systemDetail.systemStatus.under_review")}
+                </SelectItem>
+                <SelectItem value="compliant">
+                  {t("systemDetail.systemStatus.compliant")}
+                </SelectItem>
+                <SelectItem value="non_compliant">
+                  {t("systemDetail.systemStatus.non_compliant")}
+                </SelectItem>
+                <SelectItem value="decommissioned">
+                  {t("systemDetail.systemStatus.decommissioned")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -224,11 +260,11 @@ function SystemDetailInner() {
       {/* Risikoklassifikation */}
       <Card>
         <CardHeader>
-          <CardTitle>Risikoklassifikation (Art. 6)</CardTitle>
+          <CardTitle>{t("systemDetail.riskSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Risikoklasse</Label>
+            <Label>{t("systemDetail.riskClass")}</Label>
             <Select
               value={form.riskClassification ?? "minimal"}
               onValueChange={(v) => set("riskClassification", v)}
@@ -238,18 +274,22 @@ function SystemDetailInner() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unacceptable">
-                  Unannehmbares Risiko (Art. 5)
+                  {t("systemDetail.riskOption.unacceptable")}
                 </SelectItem>
-                <SelectItem value="high">Hohes Risiko (Art. 6)</SelectItem>
+                <SelectItem value="high">
+                  {t("systemDetail.riskOption.high")}
+                </SelectItem>
                 <SelectItem value="limited">
-                  Begrenztes Risiko (Art. 50)
+                  {t("systemDetail.riskOption.limited")}
                 </SelectItem>
-                <SelectItem value="minimal">Minimales Risiko</SelectItem>
+                <SelectItem value="minimal">
+                  {t("systemDetail.riskOption.minimal")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Begruendung der Risikoklassifikation</Label>
+            <Label>{t("systemDetail.riskJustification")}</Label>
             <Textarea
               value={form.riskJustification ?? ""}
               onChange={(e) => set("riskJustification", e.target.value)}
@@ -257,7 +297,7 @@ function SystemDetailInner() {
             />
           </div>
           <div>
-            <Label>Anhang-Kategorie</Label>
+            <Label>{t("systemDetail.annexCategory")}</Label>
             <Select
               value={form.annexCategory ?? "none"}
               onValueChange={(v) => set("annexCategory", v)}
@@ -266,11 +306,21 @@ function SystemDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="annex_i">Anhang I</SelectItem>
-                <SelectItem value="annex_ii">Anhang II</SelectItem>
-                <SelectItem value="annex_iii">Anhang III</SelectItem>
-                <SelectItem value="annex_iv">Anhang IV</SelectItem>
-                <SelectItem value="none">Keiner</SelectItem>
+                <SelectItem value="annex_i">
+                  {t("systemDetail.annex.annex_i")}
+                </SelectItem>
+                <SelectItem value="annex_ii">
+                  {t("systemDetail.annex.annex_ii")}
+                </SelectItem>
+                <SelectItem value="annex_iii">
+                  {t("systemDetail.annex.annex_iii")}
+                </SelectItem>
+                <SelectItem value="annex_iv">
+                  {t("systemDetail.annex.annex_iv")}
+                </SelectItem>
+                <SelectItem value="none">
+                  {t("systemDetail.annex.none")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -280,11 +330,11 @@ function SystemDetailInner() {
       {/* Anbieter / Betreiber */}
       <Card>
         <CardHeader>
-          <CardTitle>Anbieter / Betreiber</CardTitle>
+          <CardTitle>{t("systemDetail.providerSection")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Rolle</Label>
+            <Label>{t("systemDetail.role")}</Label>
             <Select
               value={form.providerOrDeployer ?? "deployer"}
               onValueChange={(v) => set("providerOrDeployer", v)}
@@ -293,28 +343,34 @@ function SystemDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="provider">Anbieter</SelectItem>
-                <SelectItem value="deployer">Betreiber</SelectItem>
-                <SelectItem value="both">Beides</SelectItem>
+                <SelectItem value="provider">
+                  {t("systemDetail.roleOption.provider")}
+                </SelectItem>
+                <SelectItem value="deployer">
+                  {t("systemDetail.roleOption.deployer")}
+                </SelectItem>
+                <SelectItem value="both">
+                  {t("systemDetail.roleOption.both")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Name des Anbieters</Label>
+            <Label>{t("systemDetail.providerName")}</Label>
             <Input
               value={form.providerName ?? ""}
               onChange={(e) => set("providerName", e.target.value)}
             />
           </div>
           <div>
-            <Label>Jurisdiktion des Anbieters</Label>
+            <Label>{t("systemDetail.providerJurisdiction")}</Label>
             <Input
               value={form.providerJurisdiction ?? ""}
               onChange={(e) => set("providerJurisdiction", e.target.value)}
             />
           </div>
           <div>
-            <Label>Bereitstellungsdatum</Label>
+            <Label>{t("systemDetail.deploymentDate")}</Label>
             <Input
               type="date"
               value={form.deploymentDate ?? ""}
@@ -327,7 +383,7 @@ function SystemDetailInner() {
       {/* Menschliche Aufsicht */}
       <Card>
         <CardHeader>
-          <CardTitle>Menschliche Aufsicht (Art. 14)</CardTitle>
+          <CardTitle>{t("systemDetail.oversightSection")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3">
@@ -335,7 +391,7 @@ function SystemDetailInner() {
               checked={form.humanOversightRequired ?? false}
               onCheckedChange={(v) => set("humanOversightRequired", v)}
             />
-            <Label>Menschliche Aufsicht erforderlich</Label>
+            <Label>{t("systemDetail.oversightRequired")}</Label>
           </div>
         </CardContent>
       </Card>
@@ -343,21 +399,26 @@ function SystemDetailInner() {
       {/* Metadaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Metadaten</CardTitle>
+          <CardTitle>{t("shared.metadata")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("shared.createdAt")}
+            </span>{" "}
             {formatDate(data.createdAt)}
           </div>
           <div>
             <span className="font-medium text-foreground">
-              Aktualisiert am:
+              {t("shared.updatedAt")}
             </span>{" "}
             {formatDate(data.updatedAt)}
           </div>
           <div>
-            <span className="font-medium text-foreground">ID:</span> {data.id}
+            <span className="font-medium text-foreground">
+              {t("shared.id")}
+            </span>{" "}
+            {data.id}
           </div>
         </CardContent>
       </Card>

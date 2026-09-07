@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   Bell,
   BookOpen,
@@ -27,313 +27,209 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Diese Seite war bereits
+ * zweisprachig — ueber `titleDe`/`titleEn`-Paare und `locale === "de" ? …`,
+ * also an der i18n-Infrastruktur vorbei. Fuer den Nutzer wirkte der
+ * Sprachwaehler; die Arbeit hier ist Vereinheitlichung, nicht Reparatur.
+ *
+ * EINE Sache war dabei doch kaputt: das Abzeichen `badge` trug den fertigen
+ * TEXT ("neu"), nicht seinen Schluessel — ein englischsprachiger Nutzer las
+ * auf der englischen Seite „NEU". Es fuehrt jetzt den Schluessel und wird
+ * ueber `settings.hub.badge.*` aufgeloest.
+ */
 interface SettingsCard {
   href: string;
   icon: LucideIcon;
-  titleDe: string;
-  titleEn: string;
-  descriptionDe: string;
-  descriptionEn: string;
-  badge?: "neu" | "admin";
+  /** Schluessel unter `settings.hub.card.*` in beiden Katalogen. */
+  key: string;
+  badge?: "new" | "admin";
 }
 
 interface SettingsSection {
-  titleDe: string;
-  titleEn: string;
+  /** Schluessel unter `settings.hub.section.*` in beiden Katalogen. */
+  key: string;
   cards: SettingsCard[];
 }
 
 const SECTIONS: SettingsSection[] = [
   {
-    titleDe: "Plattform & Organisation",
-    titleEn: "Platform & organization",
+    key: "platform",
     cards: [
       {
         href: "/organizations",
         icon: Building2,
-        titleDe: "Organisationen",
-        titleEn: "Organizations",
-        descriptionDe:
-          "Mandanten, Corporate-Hierarchie und Stammdaten verwalten.",
-        descriptionEn: "Manage tenants, corporate hierarchy, and master data.",
+        key: "organizations",
       },
       {
         href: "/settings/branding",
         icon: Palette,
-        titleDe: "Branding & Theme",
-        titleEn: "Branding & theme",
-        descriptionDe:
-          "Logo, Farben und E-Mail-Kopf für Reports und Benachrichtigungen.",
-        descriptionEn:
-          "Logo, colors and email header for reports and notifications.",
+        key: "branding",
       },
       {
         href: "/settings/calendar",
         icon: Calendar,
-        titleDe: "Kalender & Feiertage",
-        titleEn: "Calendar & holidays",
-        descriptionDe: "Geschäftsjahr, Feiertagskalender und Fristberechnung.",
-        descriptionEn:
-          "Fiscal year, holiday calendar, and deadline calculation.",
+        key: "calendar",
       },
       {
         href: "/admin/languages",
         icon: Languages,
-        titleDe: "Sprachen & Übersetzungen",
-        titleEn: "Languages & translations",
-        descriptionDe:
-          "Verfügbare UI-Sprachen und AI-gestützte Übersetzungspipelines.",
-        descriptionEn:
-          "Available UI languages and AI-assisted translation pipelines.",
+        key: "languages",
       },
     ],
   },
   {
-    titleDe: "Nutzer, Rollen & Zugriff",
-    titleEn: "Users, roles & access",
+    key: "access",
     cards: [
       {
         href: "/users",
         icon: Users,
-        titleDe: "Nutzerverwaltung",
-        titleEn: "User management",
-        descriptionDe: "Nutzer einladen, deaktivieren, MFA erzwingen.",
-        descriptionEn: "Invite, deactivate users, enforce MFA.",
+        key: "users",
       },
       {
         href: "/admin/roles",
         icon: ShieldCheck,
-        titleDe: "Rollen & Berechtigungen",
-        titleEn: "Roles & permissions",
-        descriptionDe:
-          "Three-Lines-of-Defense-Rollenmatrix und benutzerdefinierte Rollen.",
-        descriptionEn: "Three-lines-of-defense role matrix and custom roles.",
+        key: "roles",
       },
       {
         href: "/admin/abac",
         icon: Scale,
-        titleDe: "ABAC-Richtlinien",
-        titleEn: "ABAC policies",
-        descriptionDe:
-          "Attributbasierte Zugriffskontrolle und Policy-Simulator.",
-        descriptionEn: "Attribute-based access control and policy simulator.",
+        key: "abac",
       },
       {
         href: "/admin/sso",
         icon: KeyRound,
-        titleDe: "SSO (SAML / OIDC)",
-        titleEn: "SSO (SAML / OIDC)",
-        descriptionDe:
-          "Enterprise-SSO pro Organisation (Okta, Azure AD, Keycloak, Google).",
-        descriptionEn:
-          "Enterprise SSO per organization (Okta, Azure AD, Keycloak, Google).",
+        key: "sso",
       },
       {
         href: "/admin/scim",
         icon: Users,
-        titleDe: "SCIM-Provisioning",
-        titleEn: "SCIM provisioning",
-        descriptionDe:
-          "Automatisches Anlegen, Sperren und Rollenabgleich aus dem IdP.",
-        descriptionEn: "Automatic user lifecycle and role sync from the IdP.",
+        key: "scim",
       },
     ],
   },
   {
-    titleDe: "Compliance & Methodik",
-    titleEn: "Compliance & methodology",
+    key: "compliance",
     cards: [
       {
         href: "/settings/risk-methodology",
         icon: Target,
-        titleDe: "Risiko-Methodik",
-        titleEn: "Risk methodology",
-        descriptionDe:
-          "Skalen, Matrix, Toleranzen und FAIR-Parameter je Organisation.",
-        descriptionEn:
-          "Scales, matrix, tolerances and FAIR parameters per organization.",
+        key: "risk_methodology",
       },
       {
         href: "/settings/catalogs",
         icon: BookOpen,
-        titleDe: "Kataloge & Frameworks",
-        titleEn: "Catalogs & frameworks",
-        descriptionDe: "46 Frameworks aktivieren, ausschließen, überschreiben.",
-        descriptionEn: "Activate, exclude, override 46 frameworks.",
+        key: "catalogs",
       },
       {
         href: "/catalogs/mappings",
         icon: FileSignature,
-        titleDe: "Framework-Coverage",
-        titleEn: "Framework coverage",
-        descriptionDe: "Cross-Framework-Mapping-Pflege und Gap-Analyse.",
-        descriptionEn: "Cross-framework mapping and gap analysis.",
+        key: "catalogsMappings",
       },
       {
         href: "/admin/review-cycles",
         icon: Calendar,
-        titleDe: "Review-Zyklen",
-        titleEn: "Review cycles",
-        descriptionDe:
-          "Periodische Prüfungen (SoA, RCSA, Assessments) automatisch starten.",
-        descriptionEn: "Automatic periodic reviews (SoA, RCSA, assessments).",
+        key: "review_cycles",
       },
     ],
   },
   {
-    titleDe: "Module, Automatisierung & AI",
-    titleEn: "Modules, automation & AI",
+    key: "modules",
     cards: [
       {
         href: "/admin/modules",
         icon: Puzzle,
-        titleDe: "Module aktivieren",
-        titleEn: "Enable modules",
-        descriptionDe: "15 Kernmodule je Mandant aktivieren / deaktivieren.",
-        descriptionEn: "Enable/disable the 15 core modules per tenant.",
+        key: "modules",
       },
       {
         href: "/settings/ai-providers",
         icon: Sparkles,
-        titleDe: "KI-Anbieter",
-        titleEn: "AI providers",
-        descriptionDe:
-          "Anthropic, OpenAI, Gemini, Ollama, LM Studio konfigurieren und Privacy-Routing festlegen.",
-        descriptionEn:
-          "Configure Anthropic, OpenAI, Gemini, Ollama, LM Studio and privacy routing.",
-        badge: "neu",
+        key: "ai_providers",
+        badge: "new",
       },
       {
         href: "/admin/ai-usage",
         icon: Zap,
-        titleDe: "KI-Nutzung & Kosten",
-        titleEn: "AI usage & cost",
-        descriptionDe: "Tokens, Kosten pro Modell, Cache-Trefferquote.",
-        descriptionEn: "Tokens, cost per model, cache hit ratio.",
+        key: "ai_usage",
       },
       {
         href: "/automation",
         icon: Zap,
-        titleDe: "Automatisierung",
-        titleEn: "Automation",
-        descriptionDe: "Regel-Engine, Ereignistrigger und Workflow-Vorlagen.",
-        descriptionEn: "Rule engine, event triggers, and workflow templates.",
+        key: "automation",
       },
       {
         href: "/admin/webhooks",
         icon: Webhook,
-        titleDe: "Webhooks",
-        titleEn: "Webhooks",
-        descriptionDe: "HMAC-signierte Outbound-Webhooks pro Ereignis-Typ.",
-        descriptionEn: "HMAC-signed outbound webhooks per event type.",
+        key: "webhooks",
       },
       {
         href: "/connectors",
         icon: Puzzle,
-        titleDe: "Konnektoren",
-        titleEn: "Connectors",
-        descriptionDe: "Cloud-, IAM- und DevOps-Evidence-Konnektoren.",
-        descriptionEn: "Cloud, IAM, and DevOps evidence connectors.",
+        key: "connectors",
       },
     ],
   },
   {
-    titleDe: "Kommunikation & Benachrichtigungen",
-    titleEn: "Communication & notifications",
+    key: "communication",
     cards: [
       {
         href: "/settings/notifications",
         icon: Bell,
-        titleDe: "Benachrichtigungseinstellungen",
-        titleEn: "Notification preferences",
-        descriptionDe: "E-Mail, In-App, Slack-Routing und Ruhezeiten.",
-        descriptionEn: "Email, in-app, Slack routing, and quiet hours.",
+        key: "notifications",
       },
       {
         href: "/admin/messaging",
         icon: Bell,
-        titleDe: "Messaging-Kanäle",
-        titleEn: "Messaging channels",
-        descriptionDe: "Slack / Teams / Webex Bot-Anbindung.",
-        descriptionEn: "Slack / Teams / Webex bot integration.",
+        key: "messaging",
       },
       {
         href: "/admin/reminders",
         icon: Calendar,
-        titleDe: "Erinnerungen",
-        titleEn: "Reminders",
-        descriptionDe:
-          "Globale Erinnerungsregeln (Controls, Evidence, Assessments).",
-        descriptionEn:
-          "Global reminder rules (controls, evidence, assessments).",
+        key: "reminders",
       },
       {
         href: "/settings/export-schedules",
         icon: Upload,
-        titleDe: "Export-Zeitpläne",
-        titleEn: "Export schedules",
-        descriptionDe:
-          "Wiederkehrende PDF/Excel-Exporte für Executive / Audit.",
-        descriptionEn: "Recurring PDF/Excel exports for executive / audit use.",
+        key: "export_schedules",
       },
     ],
   },
   {
-    titleDe: "Sicherheit, Audit & Datenschutz",
-    titleEn: "Security, audit & privacy",
+    key: "security",
     cards: [
       {
         href: "/audit-log",
         icon: History,
-        titleDe: "Audit-Log",
-        titleEn: "Audit log",
-        descriptionDe: "Append-only Änderungshistorie mit SHA-256 Hash-Chain.",
-        descriptionEn: "Append-only change history with SHA-256 hash chain.",
+        key: "audit_log",
       },
       {
         href: "/access-log",
         icon: KeyRound,
-        titleDe: "Access-Log",
-        titleEn: "Access log",
-        descriptionDe: "Login-, Session- und Berechtigungsereignisse.",
-        descriptionEn: "Login, session, and permission events.",
+        key: "access_log",
       },
       {
         href: "/data-sovereignty",
         icon: Lock,
-        titleDe: "Datensouveränität",
-        titleEn: "Data sovereignty",
-        descriptionDe:
-          "Hosting-Region, Export-Richtlinien, Third-Country-Transfers.",
-        descriptionEn:
-          "Hosting region, export policies, third-country transfers.",
+        key: "data_sovereignty",
       },
       {
         href: "/dpms/retention",
         icon: FileText,
-        titleDe: "Aufbewahrung (GDPR Art. 5)",
-        titleEn: "Retention (GDPR Art. 5)",
-        descriptionDe: "Löschfristen je Entitätstyp — Speicherbegrenzung.",
-        descriptionEn:
-          "Deletion deadlines per entity type — storage limitation.",
+        key: "dpmsRetention",
       },
       {
         href: "/admin/events",
         icon: Zap,
-        titleDe: "Event-Bus",
-        titleEn: "Event bus",
-        descriptionDe:
-          "Domain-Events, Dead-Letter-Queue und Retry-Konfiguration.",
-        descriptionEn:
-          "Domain events, dead-letter queue, and retry configuration.",
+        key: "events",
       },
     ],
   },
 ];
 
-function Card({ card, locale }: { card: SettingsCard; locale: string }) {
-  const title = locale === "de" ? card.titleDe : card.titleEn;
-  const description = locale === "de" ? card.descriptionDe : card.descriptionEn;
+function Card({ card }: { card: SettingsCard }) {
+  const t = useTranslations("common");
+  const title = t(`settings.hub.card.${card.key}.title`);
+  const description = t(`settings.hub.card.${card.key}.description`);
   const Icon = card.icon;
   return (
     <Link
@@ -346,7 +242,7 @@ function Card({ card, locale }: { card: SettingsCard; locale: string }) {
         </div>
         {card.badge && (
           <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-700">
-            {card.badge}
+            {t(`settings.hub.badge.${card.badge}`)}
           </span>
         )}
       </div>
@@ -363,7 +259,7 @@ function Card({ card, locale }: { card: SettingsCard; locale: string }) {
 }
 
 export default function SettingsPage() {
-  const locale = useLocale();
+  const t = useTranslations("common");
 
   return (
     <div className="space-y-8">
@@ -374,25 +270,23 @@ export default function SettingsPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {locale === "de" ? "Plattform-Einstellungen" : "Platform settings"}
+            {t("settings.hub.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {locale === "de"
-              ? "Zentrale Konfiguration für Organisation, Zugriff, Compliance-Methodik, Module und Integrationen."
-              : "Central configuration for organization, access, compliance methodology, modules, and integrations."}
+            {t("settings.hub.description")}
           </p>
         </div>
       </div>
 
       {/* Sections */}
       {SECTIONS.map((section) => (
-        <section key={section.titleEn} className="space-y-3">
+        <section key={section.key} className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            {locale === "de" ? section.titleDe : section.titleEn}
+            {t(`settings.hub.section.${section.key}`)}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {section.cards.map((card) => (
-              <Card key={card.href} card={card} locale={locale} />
+              <Card key={card.href} card={card} />
             ))}
           </div>
         </section>
@@ -400,9 +294,7 @@ export default function SettingsPage() {
 
       {/* Footer / help */}
       <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-xs text-gray-500">
-        {locale === "de"
-          ? `Einstellungen, die sich auf einzelne Module beziehen, werden über „Module aktivieren" je Mandant konfiguriert. Alle Änderungen werden automatisch im Audit-Log protokolliert.`
-          : `Module-specific settings are configured per tenant via "Enable modules". All changes are automatically recorded in the audit log.`}
+        {t("settings.hub.footer")}
       </div>
     </div>
   );

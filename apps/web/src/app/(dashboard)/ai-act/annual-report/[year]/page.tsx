@@ -30,7 +30,19 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useTranslations } from "next-intl";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Der Jahresbericht ist das
+ * Dokument, das die Organisation nach aussen gibt — und er war Mischtext:
+ * "Overall Compliance Score" neben "Kritische Befunde", "Gemeldet" neben
+ * "Serious".
+ *
+ * Ein Fallstrick aus Welle 5a wiederholt sich hier woertlich: Das Jahr geht
+ * als ZEICHENKETTE in `t("annualReport.title", { year: String(year) })`. Als
+ * Zahl uebergeben schickt ICU es durch `Intl.NumberFormat` und der deutsche
+ * Leser saehe „2.026".
+ */
 interface SectionHealth {
   healthScore: number;
   narrative: string;
@@ -86,42 +98,12 @@ interface AnnualReportResponse {
 }
 
 const SECTION_META = [
-  {
-    key: "systems" as const,
-    label: "AI Systems",
-    icon: Brain,
-    description: "Portfolio + Risk-Klassifikation + Compliance-Status.",
-  },
-  {
-    key: "conformity" as const,
-    label: "Conformity Assessments",
-    icon: FileCheck,
-    description: "Art. 43 Assessments + Pass/Fail-Rate.",
-  },
-  {
-    key: "incidents" as const,
-    label: "Post-Market Incidents",
-    icon: FileWarning,
-    description: "Art. 73 Incidents + Art. 33 Notification-Timings.",
-  },
-  {
-    key: "fria" as const,
-    label: "FRIA",
-    icon: ShieldCheck,
-    description: "Art. 27 Fundamental-Rights-Impact-Assessments.",
-  },
-  {
-    key: "qms" as const,
-    label: "Quality Management System",
-    icon: Settings2,
-    description: "Art. 17 QMS Maturity + CE-Readiness.",
-  },
-  {
-    key: "gpai" as const,
-    label: "GPAI Models",
-    icon: Cpu,
-    description: "Art. 51-55 GPAI + Systemic-Risk-Designation.",
-  },
+  { key: "systems" as const, icon: Brain },
+  { key: "conformity" as const, icon: FileCheck },
+  { key: "incidents" as const, icon: FileWarning },
+  { key: "fria" as const, icon: ShieldCheck },
+  { key: "qms" as const, icon: Settings2 },
+  { key: "gpai" as const, icon: Cpu },
 ];
 
 function scoreStatus(score: number): "green" | "amber" | "red" {
@@ -164,6 +146,8 @@ function scoreBar(score: number) {
 }
 
 export default function AiActAnnualReportPage() {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const router = useRouter();
   const { year: yearParam } = useParams<{ year: string }>();
   const year = parseInt(yearParam, 10) || new Date().getUTCFullYear();
@@ -176,15 +160,16 @@ export default function AiActAnnualReportPage() {
     setError(null);
     try {
       const res = await fetch(`/api/v1/ai-act/annual-report/${year}`);
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      if (!res.ok)
+        throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = await res.json();
       setData(json.data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler beim Laden");
+      setError(e instanceof Error ? e.message : t("annualReport.loadFailed"));
     } finally {
       setLoading(false);
     }
-  }, [year]);
+  }, [year, t, tCommon]);
 
   useEffect(() => {
     void fetchData();
@@ -203,7 +188,7 @@ export default function AiActAnnualReportPage() {
     // ErrorRetry component adds it back end-to-end.
     return (
       <ErrorRetry
-        title="Annual Report konnte nicht geladen werden"
+        title={t("annualReport.loadError")}
         message={error}
         onRetry={fetchData}
       />
@@ -228,10 +213,10 @@ export default function AiActAnnualReportPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2 print:hidden"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zur AI-Act-Uebersicht
+            {t("annualReport.backToOverview")}
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">
-            AI-Act Annual Report {year}
+            {t("annualReport.title", { year: String(year) })}
           </h1>
           <p className="text-muted-foreground mt-1">{data.organization.name}</p>
         </div>
@@ -251,7 +236,7 @@ export default function AiActAnnualReportPage() {
           </select>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="h-4 w-4 mr-2" />
-            Drucken
+            {t("annualReport.print")}
           </Button>
           <Button
             size="sm"
@@ -260,7 +245,7 @@ export default function AiActAnnualReportPage() {
             }}
           >
             <Printer className="h-4 w-4 mr-2" />
-            PDF herunterladen
+            {t("annualReport.downloadPdf")}
           </Button>
         </div>
       </div>
@@ -279,11 +264,10 @@ export default function AiActAnnualReportPage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">
-                Overall Compliance Score
+                {t("annualReport.overallScore")}
               </CardTitle>
               <CardDescription>
-                Gewichteter Composite: Systems 25% / Conformity 20% / Incidents
-                15% / FRIA 15% / QMS 15% / GPAI 10%.
+                {t("annualReport.overallScoreDescription")}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -293,7 +277,7 @@ export default function AiActAnnualReportPage() {
                   className="bg-emerald-100 text-emerald-800 border-emerald-300"
                 >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Einreichbar
+                  {t("annualReport.submittable")}
                 </Badge>
               ) : (
                 <Badge
@@ -301,7 +285,7 @@ export default function AiActAnnualReportPage() {
                   className="bg-red-100 text-red-800 border-red-300"
                 >
                   <AlertTriangle className="h-3 w-3 mr-1" />
-                  Nicht einreichbar
+                  {t("annualReport.notSubmittable")}
                 </Badge>
               )}
             </div>
@@ -325,7 +309,9 @@ export default function AiActAnnualReportPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
-                Kritische Befunde ({data.criticalFindings.length})
+                {t("annualReport.criticalFindings", {
+                  count: data.criticalFindings.length,
+                })}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -346,7 +332,9 @@ export default function AiActAnnualReportPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Sparkles className="h-4 w-4 text-emerald-600" />
-                Highlights ({data.highlights.length})
+                {t("annualReport.highlights", {
+                  count: data.highlights.length,
+                })}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -375,9 +363,11 @@ export default function AiActAnnualReportPage() {
                   <div className="flex items-center gap-2">
                     <Icon className="h-5 w-5 text-primary" />
                     <div>
-                      <CardTitle className="text-base">{meta.label}</CardTitle>
+                      <CardTitle className="text-base">
+                        {t(`annualReport.section.${meta.key}.label`)}
+                      </CardTitle>
                       <CardDescription className="text-xs">
-                        {meta.description}
+                        {t(`annualReport.section.${meta.key}.description`)}
                       </CardDescription>
                     </div>
                   </div>
@@ -400,77 +390,102 @@ export default function AiActAnnualReportPage() {
         <CardHeader>
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">Zahlen-Drill-Down</CardTitle>
+            <CardTitle className="text-base">
+              {t("annualReport.drillDown")}
+            </CardTitle>
           </div>
           <CardDescription>
-            Rohdaten aus den Aggregations-Queries fuer
-            Auditor-Nachvollziehbarkeit.
+            {t("annualReport.drillDownDescription")}
           </CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
           <div>
-            <p className="font-medium mb-1">Systems</p>
+            <p className="font-medium mb-1">
+              {t("annualReport.section.systems.label")}
+            </p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.total")}
+                </span>
                 <span>{data.rawInput.systems.total}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">High-Risk</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.highRisk")}
+                </span>
                 <span>{data.rawInput.systems.byRisk.high}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Unacceptable</span>
+                <span>{t("annualReport.figure.unacceptable")}</span>
                 <span>{data.rawInput.systems.byRisk.unacceptable}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Compliant</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.compliant")}
+                </span>
                 <span>{data.rawInput.systems.compliant}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Non-Compliant</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.nonCompliant")}
+                </span>
                 <span>{data.rawInput.systems.nonCompliant}</span>
               </div>
             </div>
           </div>
           <div>
-            <p className="font-medium mb-1">Conformity</p>
+            <p className="font-medium mb-1">
+              {t("annualReport.figure.conformity")}
+            </p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Completed</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.completed")}
+                </span>
                 <span>{data.rawInput.conformityAssessments.completed}</span>
               </div>
               <div className="flex justify-between text-emerald-700">
-                <span>Passed</span>
+                <span>{t("annualReport.figure.passed")}</span>
                 <span>{data.rawInput.conformityAssessments.passed}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Failed</span>
+                <span>{t("annualReport.figure.failed")}</span>
                 <span>{data.rawInput.conformityAssessments.failed}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Pending</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.pending")}
+                </span>
                 <span>{data.rawInput.conformityAssessments.pending}</span>
               </div>
             </div>
           </div>
           <div>
-            <p className="font-medium mb-1">Incidents</p>
+            <p className="font-medium mb-1">
+              {t("annualReport.figure.incidents")}
+            </p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Gemeldet</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.reported")}
+                </span>
                 <span>{data.rawInput.incidents.totalReported}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Serious</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.serious")}
+                </span>
                 <span>{data.rawInput.incidents.seriousIncidents}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Überfällig (Art. 73)</span>
+                <span>{t("annualReport.figure.overdueArt73")}</span>
                 <span>{data.rawInput.incidents.overdueNotifications}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Avg. Notify (h)</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.avgNotify")}
+                </span>
                 <span>
                   {data.rawInput.incidents.averageTimeToNotifyHours ?? "—"}
                 </span>
@@ -478,65 +493,79 @@ export default function AiActAnnualReportPage() {
             </div>
           </div>
           <div>
-            <p className="font-medium mb-1">FRIA</p>
+            <p className="font-medium mb-1">
+              {t("annualReport.section.fria.label")}
+            </p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Erforderlich</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.required")}
+                </span>
                 <span>{data.rawInput.fria.required}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Completed</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.completed")}
+                </span>
                 <span>{data.rawInput.fria.completed}</span>
               </div>
               <div className="flex justify-between text-emerald-700">
-                <span>Approved</span>
+                <span>{t("annualReport.figure.approved")}</span>
                 <span>{data.rawInput.fria.approved}</span>
               </div>
             </div>
           </div>
           <div>
-            <p className="font-medium mb-1">QMS</p>
+            <p className="font-medium mb-1">{t("annualReport.figure.qms")}</p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Avg. Maturity</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.avgMaturity")}
+                </span>
                 <span>{data.rawInput.qms.avgMaturity}%</span>
               </div>
               <div className="flex justify-between text-emerald-700">
-                <span>CE-ready</span>
+                <span>{t("annualReport.figure.ceReady")}</span>
                 <span>{data.rawInput.qms.readyForCe}</span>
               </div>
               <div className="flex justify-between text-amber-700">
-                <span>Nicht CE-ready</span>
+                <span>{t("annualReport.figure.notCeReady")}</span>
                 <span>{data.rawInput.qms.notReadyForCe}</span>
               </div>
             </div>
           </div>
           <div>
-            <p className="font-medium mb-1">GPAI</p>
+            <p className="font-medium mb-1">{t("annualReport.figure.gpai")}</p>
             <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Gesamt</span>
+                <span className="text-muted-foreground">
+                  {t("annualReport.figure.total")}
+                </span>
                 <span>{data.rawInput.gpai.total}</span>
               </div>
               <div className="flex justify-between text-amber-700">
-                <span>Systemic</span>
+                <span>{t("annualReport.figure.systemic")}</span>
                 <span>{data.rawInput.gpai.systemic}</span>
               </div>
             </div>
           </div>
           <div className="col-span-3">
-            <p className="font-medium mb-1">Corrective Actions</p>
+            <p className="font-medium mb-1">
+              {t("annualReport.figure.correctiveActions")}
+            </p>
             <div className="grid grid-cols-3 gap-4 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Offen</span>
+                <span className="text-muted-foreground">
+                  {t("correctiveAction.statusOption.open")}
+                </span>
                 <span>{data.rawInput.correctiveActions.open}</span>
               </div>
               <div className="flex justify-between text-emerald-700">
-                <span>Geschlossen</span>
+                <span>{t("incidentDetail.statusOption.closed")}</span>
                 <span>{data.rawInput.correctiveActions.closed}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Überfällig</span>
+                <span>{t("correctiveAction.overdue")}</span>
                 <span>{data.rawInput.correctiveActions.overdue}</span>
               </div>
             </div>

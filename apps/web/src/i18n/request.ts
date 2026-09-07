@@ -75,6 +75,9 @@ async function loadIndividualFiles(locale: string) {
     ["horizon-scanner", "horizonScanner"],
     ["cert-wizard", "certWizard"],
     ["abac", "abac"],
+    // [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b: die Verwaltungsansichten
+    // unter `app/(dashboard)/admin/**`, bis dahin durchgehend fest verdrahtet.
+    ["admin", "admin"],
     ["agents", "agents"],
     ["extensions", "extensions"],
     ["translations", "translations"],

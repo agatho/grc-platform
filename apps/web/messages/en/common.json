@@ -518,6 +518,160 @@
         "cancelled": "Cancelled",
         "failed": "Failed"
       }
+    },
+    "hub": {
+      "section": {
+        "platform": "Platform & organization",
+        "access": "Users, roles & access",
+        "compliance": "Compliance & methodology",
+        "modules": "Modules, automation & AI",
+        "communication": "Communication & notifications",
+        "security": "Security, audit & privacy"
+      },
+      "card": {
+        "organizations": {
+          "title": "Organizations",
+          "description": "Manage tenants, corporate hierarchy, and master data."
+        },
+        "branding": {
+          "title": "Branding & theme",
+          "description": "Logo, colors and email header for reports and notifications."
+        },
+        "calendar": {
+          "title": "Calendar & holidays",
+          "description": "Fiscal year, holiday calendar, and deadline calculation."
+        },
+        "languages": {
+          "title": "Languages & translations",
+          "description": "Available UI languages and AI-assisted translation pipelines."
+        },
+        "users": {
+          "title": "User management",
+          "description": "Invite, deactivate users, enforce MFA."
+        },
+        "roles": {
+          "title": "Roles & permissions",
+          "description": "Three-lines-of-defense role matrix and custom roles."
+        },
+        "abac": {
+          "title": "ABAC policies",
+          "description": "Attribute-based access control and policy simulator."
+        },
+        "sso": {
+          "title": "SSO (SAML / OIDC)",
+          "description": "Enterprise SSO per organization (Okta, Azure AD, Keycloak, Google)."
+        },
+        "scim": {
+          "title": "SCIM provisioning",
+          "description": "Automatic user lifecycle and role sync from the IdP."
+        },
+        "risk_methodology": {
+          "title": "Risk methodology",
+          "description": "Scales, matrix, tolerances and FAIR parameters per organization."
+        },
+        "catalogs": {
+          "title": "Catalogs & frameworks",
+          "description": "Activate, exclude, override 46 frameworks."
+        },
+        "catalogsMappings": {
+          "title": "Framework coverage",
+          "description": "Cross-framework mapping and gap analysis."
+        },
+        "review_cycles": {
+          "title": "Review cycles",
+          "description": "Automatic periodic reviews (SoA, RCSA, assessments)."
+        },
+        "modules": {
+          "title": "Enable modules",
+          "description": "Enable/disable the 15 core modules per tenant."
+        },
+        "ai_providers": {
+          "title": "AI providers",
+          "description": "Configure Anthropic, OpenAI, Gemini, Ollama, LM Studio and privacy routing."
+        },
+        "ai_usage": {
+          "title": "AI usage & cost",
+          "description": "Tokens, cost per model, cache hit ratio."
+        },
+        "automation": {
+          "title": "Automation",
+          "description": "Rule engine, event triggers, and workflow templates."
+        },
+        "webhooks": {
+          "title": "Webhooks",
+          "description": "HMAC-signed outbound webhooks per event type."
+        },
+        "connectors": {
+          "title": "Connectors",
+          "description": "Cloud, IAM, and DevOps evidence connectors."
+        },
+        "notifications": {
+          "title": "Notification preferences",
+          "description": "Email, in-app, Slack routing, and quiet hours."
+        },
+        "messaging": {
+          "title": "Messaging channels",
+          "description": "Slack / Teams / Webex bot integration."
+        },
+        "reminders": {
+          "title": "Reminders",
+          "description": "Global reminder rules (controls, evidence, assessments)."
+        },
+        "export_schedules": {
+          "title": "Export schedules",
+          "description": "Recurring PDF/Excel exports for executive / audit use."
+        },
+        "audit_log": {
+          "title": "Audit log",
+          "description": "Append-only change history with SHA-256 hash chain."
+        },
+        "access_log": {
+          "title": "Access log",
+          "description": "Login, session, and permission events."
+        },
+        "data_sovereignty": {
+          "title": "Data sovereignty",
+          "description": "Hosting region, export policies, third-country transfers."
+        },
+        "dpmsRetention": {
+          "title": "Retention (GDPR Art. 5)",
+          "description": "Deletion deadlines per entity type — storage limitation."
+        },
+        "events": {
+          "title": "Event bus",
+          "description": "Domain events, dead-letter queue, and retry configuration."
+        }
+      },
+      "title": "Platform settings",
+      "description": "Central configuration for organization, access, compliance methodology, modules, and integrations.",
+      "footer": "Module-specific settings are configured per tenant via “Enable modules”. All changes are automatically recorded in the audit log.",
+      "badge": {
+        "new": "new",
+        "admin": "admin"
+      }
+    },
+    "aiProviders": {
+      "title": "AI providers",
+      "description": "Configuration for the available large language model providers. Keys and endpoints are read from environment variables so secrets never land in the database or the browser.",
+      "loadError": "The provider list could not be loaded",
+      "defaultProvider": "Default provider",
+      "defaultProviderHint": "Provider selected by default when no explicit provider is requested.",
+      "privacyRouting": "Privacy routing",
+      "privacyRoutingHint": "When containsPersonalData=true, requests are automatically routed to Ollama or LM Studio.",
+      "enabled": "enabled",
+      "disabled": "disabled",
+      "default": "Default",
+      "type": {
+        "cloud": "Cloud",
+        "local": "Local",
+        "subscription": "Subscription"
+      },
+      "model": "Model",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "envVars": "Environment variables",
+      "footerTitle": "Updating keys and endpoints",
+      "footerBody": "Set the values in the deployment's .env file and restart the Node process. This page only shows the configuration status — no keys are ever displayed or editable. That protects against accidental exposure via browser cache, screenshots, or support sessions."
     }
   },
   "actions": {
@@ -653,7 +807,8 @@
     "entries": "entries",
     "errorTitle": "Something went wrong",
     "loadError": "Failed to load data",
-    "retry": "Retry"
+    "retry": "Retry",
+    "httpError": "Error {status}"
   },
   "auditLog": {
     "title": "Audit Trail",
@@ -804,7 +959,232 @@
       "addon": "Add-on",
       "enterprise": "Enterprise"
     },
-    "configure": "Settings"
+    "configure": "Settings",
+    "detail": {
+      "module": {
+        "erm": {
+          "description": "Enterprise risk management — register, KRIs, assessment methodology.",
+          "links": {
+            "settings_risk_methodology": {
+              "label": "Risk methodology",
+              "description": "Assessment scales, matrix, FAIR parameters."
+            },
+            "erm_risk_appetite": {
+              "label": "Risk appetite",
+              "description": "Appetite statements and tolerance thresholds per category."
+            },
+            "catalogs_module_erm": {
+              "label": "Risk catalogs",
+              "description": "Cambridge, WEF, MITRE ATT&CK, BSI threats."
+            }
+          }
+        },
+        "isms": {
+          "description": "Information security management — ISO 27001 / 27002, SoA, risks, maturity.",
+          "links": {
+            "isms_soa": {
+              "label": "Statement of Applicability",
+              "description": "Activate/exclude 93 Annex A controls with rationale."
+            },
+            "isms_reviews": {
+              "label": "Management review cycles",
+              "description": "ISO 27001 clause 9.3 cadence and participants."
+            },
+            "catalogs_module_isms": {
+              "label": "ISMS catalogs",
+              "description": "ISO 27002, BSI, NIST CSF, TISAX, 27017/27018/27701."
+            }
+          }
+        },
+        "ics": {
+          "description": "Internal control system — controls, tests, evidence, RCM.",
+          "links": {
+            "controls": {
+              "label": "Control library",
+              "description": "Custom and framework-based controls."
+            },
+            "admin_review_cycles": {
+              "label": "Test cycles",
+              "description": "Automatic control test campaigns (monthly, quarterly, yearly)."
+            }
+          }
+        },
+        "dpms": {
+          "description": "Privacy management — GDPR Art. 30 RoPA, DPIA, data subject rights.",
+          "links": {
+            "dpms_retention": {
+              "label": "Retention (Art. 5)",
+              "description": "Deletion deadlines per data category — storage limitation."
+            },
+            "dpms_tia": {
+              "label": "Transfer impact assessments",
+              "description": "Schrems II third-country transfer assessments."
+            },
+            "dpms_consent": {
+              "label": "Consent management",
+              "description": "Consent records per subject, withdrawal workflows."
+            }
+          }
+        },
+        "bcms": {
+          "description": "Business continuity — ISO 22301, BIA, BCP, crises, exercises.",
+          "links": {
+            "bcms_bia": {
+              "label": "BIA methodology",
+              "description": "RTO/RPO, MTPD and MBCO per process."
+            },
+            "bcms_exercises": {
+              "label": "Exercise plan",
+              "description": "ISO 22301 clause 8.5 — at least annual exercises."
+            }
+          }
+        },
+        "audit": {
+          "description": "Audit management — IIA standards, universe, plan, execution, QA.",
+          "links": {
+            "audit_universe": {
+              "label": "Audit universe",
+              "description": "Auditable units and risk score per unit."
+            },
+            "audit_plans": {
+              "label": "Annual audit plan",
+              "description": "Risk-based annual plan with CAE approval."
+            }
+          }
+        },
+        "tprm": {
+          "description": "Third-party risk — vendors, DD, concentration, LkSG supply chain.",
+          "links": {
+            "tprm_lksg": {
+              "label": "LkSG assessments",
+              "description": "Supply chain due diligence — annual assessments."
+            },
+            "tprm_concentration": {
+              "label": "Concentration risks",
+              "description": "Thresholds for vendor and cluster dependency."
+            }
+          }
+        },
+        "contract": {
+          "description": "Contract management — lifecycle, SLA, obligations.",
+          "links": {
+            "contracts_sla": {
+              "label": "SLA templates",
+              "description": "Standard SLA clauses for audit, security, DR."
+            },
+            "contracts_obligations": {
+              "label": "Obligation library",
+              "description": "Recurring contract obligations per contract type."
+            }
+          }
+        },
+        "esg": {
+          "description": "ESG & sustainability — ESRS/CSRD, materiality, metrics.",
+          "links": {
+            "esg_materiality": {
+              "label": "Double materiality",
+              "description": "Impact and financial materiality per ESRS."
+            },
+            "esg_datapoints": {
+              "label": "ESRS datapoints",
+              "description": "Mandatory and voluntary datapoints per standard."
+            }
+          }
+        },
+        "bpm": {
+          "description": "Process management — BPMN 2.0, governance, mining.",
+          "links": {
+            "processes_governance": {
+              "label": "Process governance",
+              "description": "Approval workflows, process owners, review cycles."
+            }
+          }
+        },
+        "dms": {
+          "description": "Document management — versioning, approvals, distribution lists.",
+          "links": {
+            "documents_compliance": {
+              "label": "Compliance documents",
+              "description": "Binding policies with read receipts."
+            }
+          }
+        },
+        "whistleblowing": {
+          "description": "Whistleblowing — HinSchG-compliant, isolated, role-locked.",
+          "links": {
+            "whistleblowing_statistics": {
+              "label": "Reporting parameters",
+              "description": "Anonymisation rules and statistics export."
+            }
+          }
+        },
+        "eam": {
+          "description": "Enterprise architecture management — capabilities, apps, data, tech radar.",
+          "links": {
+            "eam_governance": {
+              "label": "Architecture governance",
+              "description": "Architecture board, review queues, exceptions."
+            },
+            "eam_tech_radar": {
+              "label": "Technology radar",
+              "description": "Adopt/Trial/Assess/Hold per technology."
+            }
+          }
+        },
+        "reporting": {
+          "description": "Reporting engine — templates, scheduling, distribution.",
+          "links": {
+            "settings_export_schedules": {
+              "label": "Export schedules",
+              "description": "Recurring PDF/Excel reports."
+            }
+          }
+        },
+        "academy": {
+          "description": "GRC Academy — trainings, onboarding, certificates.",
+          "links": {
+            "academy": {
+              "label": "Course management",
+              "description": "Custom trainings, mandatory training per role."
+            }
+          }
+        },
+        "community": {
+          "description": "Community edition — open-source contributions, extensions, shared content."
+        },
+        "marketplace": {
+          "description": "Marketplace — extensions, connectors, templates.",
+          "links": {
+            "marketplace": {
+              "label": "Open marketplace",
+              "description": "Browse available extensions."
+            }
+          }
+        },
+        "simulations": {
+          "description": "Simulation engine — scenarios, Monte Carlo, stress tests."
+        },
+        "portals": {
+          "description": "Stakeholder portals — vendor, customer, regulator portals.",
+          "links": {
+            "portals": {
+              "label": "Manage portals",
+              "description": "Portal configuration, branding, access."
+            }
+          }
+        }
+      },
+      "backToOverview": "Back to module overview",
+      "overview": "Module overview",
+      "noConfig": "No configuration exists for this module key in this tenant.",
+      "purpose": "Module purpose",
+      "configuration": "Module configuration",
+      "noPages": "This module currently has no dedicated configuration pages.",
+      "rawConfig": "Advanced: raw config (JSON)",
+      "dependencies": "Dependencies",
+      "dependenciesHint": "This module requires the following modules to be enabled:",
+      "loadError": "The module configuration could not be loaded"
+    }
   },
   "assets": {
     "title": "Assets",

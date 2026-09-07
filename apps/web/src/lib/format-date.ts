@@ -93,11 +93,41 @@ export function formatNumber(
 }
 
 /**
+ * Format a monetary amount with the active locale.
+ *
+ * [ARCTOS-FULL-2026-08-31 · OP-070/OP-190, Welle 6b] `formatNumber` gab es
+ * seit FE-HIGH-2; fuer GELD gab es nichts, und genau deshalb steht in 19
+ * Bildschirmdateien `new Intl.NumberFormat("de-DE", { style: "currency" })`.
+ * Diese Form sieht weder der Detektor in `scripts/audit-i18n-usage.mjs` noch
+ * der Wachposten aus Welle 5a: beide kennen nur `toLocale*("xx-XX")`. Die
+ * Fundstellen sind in `docs/UMSETZUNG-WELLE-6B.md` beziffert; das Mittel
+ * steht ab hier bereit, damit die Umstellung eine Zeile und keine
+ * Entscheidung ist.
+ *
+ * Der Waehrungscode ist bewusst ein Pflichtargument: „EUR" ist eine
+ * Eigenschaft des Betrags, nicht des Gebietsschemas.
+ */
+export function formatCurrency(
+  locale: SupportedLocale | string,
+  value: number | null | undefined,
+  currency: string,
+  opts?: Intl.NumberFormatOptions,
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return value.toLocaleString(tag(locale), {
+    style: "currency",
+    currency,
+    ...opts,
+  });
+}
+
+/**
  * React hook — returns memoised date/number formatters that
  * already know the active locale. Use inside any "use client"
  * component:
  *
- *   const { formatDate, formatDateTime, formatNumber } = useDateFormat();
+ *   const { formatDate, formatDateTime, formatNumber, formatCurrency } =
+ *     useDateFormat();
  *   return <span>{formatDate(row.createdAt)}</span>;
  *
  * For server components: import the bare functions and pass
@@ -119,6 +149,11 @@ export function useDateFormat() {
         n: number | null | undefined,
         opts?: Intl.NumberFormatOptions,
       ) => formatNumber(locale, n, opts),
+      formatCurrency: (
+        n: number | null | undefined,
+        currency: string,
+        opts?: Intl.NumberFormatOptions,
+      ) => formatCurrency(locale, n, currency, opts),
       locale,
     }),
     [locale],

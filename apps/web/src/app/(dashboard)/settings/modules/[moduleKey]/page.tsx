@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { useLocale } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
   ArrowLeft,
@@ -19,384 +19,220 @@ import {
 import { getLucideIcon } from "@/components/module/icon-map";
 import type { ModuleConfig, ModuleKey } from "@grc/shared";
 
-// Curated per-module deep-links to existing settings UIs.
-// These already exist in the app — we just expose them from one place.
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Diese Seite war bereits
+ * zweisprachig — ueber `labelDe`/`labelEn`-Paare und eine seitenlokale
+ * Hilfsfunktion `const t = (de, en) => locale === "de" ? de : en`. Fuer den
+ * Nutzer wirkte das; fuer jede Ratsche, jedes Werkzeug und jede
+ * Uebersetzungsschleife war es unsichtbar. 157 Zeichenketten lagen so
+ * ausserhalb des Katalogs.
+ *
+ * Kuratierte Verweise je Modul auf bestehende Einstellungsseiten. Die
+ * Beschriftungen stehen jetzt unter `modules.detail.module.<modul>.*` in
+ * BEIDEN Katalogen; hier bleibt nur noch der Schluessel.
+ *
+ * `useLocale` bleibt: die Anzeigenamen der Module kommen aus der DATENBANK
+ * (`displayNameDe`/`displayNameEn` in `module_config`) und nicht aus dem
+ * Katalog. Das ist kein Restbestand, sondern mandantenspezifischer Inhalt.
+ */
 const MODULE_SETTINGS: Record<
   string,
   {
-    description: { de: string; en: string };
-    links: {
-      href: string;
-      labelDe: string;
-      labelEn: string;
-      descriptionDe: string;
-      descriptionEn: string;
-    }[];
+    /** Verweise auf `modules.detail.module.<modul>.links.<key>` im Katalog. */
+    links: { href: string; key: string }[];
   }
 > = {
   erm: {
-    description: {
-      de: "Enterprise-Risk-Management — Risikoregister, KRIs, Bewertungsmethodik.",
-      en: "Enterprise risk management — register, KRIs, assessment methodology.",
-    },
     links: [
       {
         href: "/settings/risk-methodology",
-        labelDe: "Risiko-Methodik",
-        labelEn: "Risk methodology",
-        descriptionDe: "Bewertungsskalen, Matrix, FAIR-Parameter.",
-        descriptionEn: "Assessment scales, matrix, FAIR parameters.",
+        key: "settings_risk_methodology",
       },
       {
         href: "/erm/risk-appetite",
-        labelDe: "Risikoappetit",
-        labelEn: "Risk appetite",
-        descriptionDe: "Appetitdeklaration und Toleranzschwellen je Kategorie.",
-        descriptionEn:
-          "Appetite statements and tolerance thresholds per category.",
+        key: "erm_risk_appetite",
       },
       {
         href: "/catalogs?module=erm",
-        labelDe: "Risikokataloge",
-        labelEn: "Risk catalogs",
-        descriptionDe:
-          "Cambridge, WEF, MITRE ATT&CK, BSI Elementargefährdungen.",
-        descriptionEn: "Cambridge, WEF, MITRE ATT&CK, BSI threats.",
+        key: "catalogs_module_erm",
       },
     ],
   },
   isms: {
-    description: {
-      de: "Information Security Management — ISO 27001 / 27002, SoA, Risiken, Reife.",
-      en: "Information security management — ISO 27001 / 27002, SoA, risks, maturity.",
-    },
     links: [
       {
         href: "/isms/soa",
-        labelDe: "Statement of Applicability",
-        labelEn: "Statement of Applicability",
-        descriptionDe:
-          "93 Annex-A-Kontrollen aktivieren / ausschließen + Begründung.",
-        descriptionEn: "Activate/exclude 93 Annex A controls with rationale.",
+        key: "isms_soa",
       },
       {
         href: "/isms/reviews",
-        labelDe: "Management-Review-Zyklen",
-        labelEn: "Management review cycles",
-        descriptionDe: "ISO 27001 Kap. 9.3 Turnusse und Teilnehmer.",
-        descriptionEn: "ISO 27001 clause 9.3 cadence and participants.",
+        key: "isms_reviews",
       },
       {
         href: "/catalogs?module=isms",
-        labelDe: "ISMS-Kataloge",
-        labelEn: "ISMS catalogs",
-        descriptionDe: "ISO 27002, BSI, NIST CSF, TISAX, 27017/27018/27701.",
-        descriptionEn: "ISO 27002, BSI, NIST CSF, TISAX, 27017/27018/27701.",
+        key: "catalogs_module_isms",
       },
     ],
   },
   ics: {
-    description: {
-      de: "Internes Kontrollsystem — Kontrollen, Tests, Evidence, RCM.",
-      en: "Internal control system — controls, tests, evidence, RCM.",
-    },
     links: [
       {
         href: "/controls",
-        labelDe: "Kontrollbibliothek",
-        labelEn: "Control library",
-        descriptionDe: "Eigene und framework-basierte Kontrollen.",
-        descriptionEn: "Custom and framework-based controls.",
+        key: "controls",
       },
       {
         href: "/admin/review-cycles",
-        labelDe: "Test-Zyklen",
-        labelEn: "Test cycles",
-        descriptionDe:
-          "Automatische Kontrolltest-Kampagnen (monatlich, quartalsweise, jährlich).",
-        descriptionEn:
-          "Automatic control test campaigns (monthly, quarterly, yearly).",
+        key: "admin_review_cycles",
       },
     ],
   },
   dpms: {
-    description: {
-      de: "Datenschutz-Managementsystem — GDPR Art. 30 RoPA, DPIA, Betroffenenrechte.",
-      en: "Privacy management — GDPR Art. 30 RoPA, DPIA, data subject rights.",
-    },
     links: [
       {
         href: "/dpms/retention",
-        labelDe: "Aufbewahrungsfristen (Art. 5)",
-        labelEn: "Retention (Art. 5)",
-        descriptionDe: "Löschfristen je Datenkategorie — Speicherbegrenzung.",
-        descriptionEn:
-          "Deletion deadlines per data category — storage limitation.",
+        key: "dpms_retention",
       },
       {
         href: "/dpms/tia",
-        labelDe: "Transfer-Impact-Assessments",
-        labelEn: "Transfer impact assessments",
-        descriptionDe: "Schrems II Drittlandtransfer-Bewertungen.",
-        descriptionEn: "Schrems II third-country transfer assessments.",
+        key: "dpms_tia",
       },
       {
         href: "/dpms/consent",
-        labelDe: "Einwilligungsverwaltung",
-        labelEn: "Consent management",
-        descriptionDe: "Consent-Records je Betroffenen, Rückruf-Workflows.",
-        descriptionEn: "Consent records per subject, withdrawal workflows.",
+        key: "dpms_consent",
       },
     ],
   },
   bcms: {
-    description: {
-      de: "Business Continuity — ISO 22301, BIA, BCP, Krisen, Übungen.",
-      en: "Business continuity — ISO 22301, BIA, BCP, crises, exercises.",
-    },
     links: [
       {
         href: "/bcms/bia",
-        labelDe: "BIA-Methodik",
-        labelEn: "BIA methodology",
-        descriptionDe: "RTO/RPO, MTPD und MBCO pro Prozess.",
-        descriptionEn: "RTO/RPO, MTPD and MBCO per process.",
+        key: "bcms_bia",
       },
       {
         href: "/bcms/exercises",
-        labelDe: "Übungsplan",
-        labelEn: "Exercise plan",
-        descriptionDe: "ISO 22301 Kap. 8.5 — mindestens jährliche Übungen.",
-        descriptionEn: "ISO 22301 clause 8.5 — at least annual exercises.",
+        key: "bcms_exercises",
       },
     ],
   },
   audit: {
-    description: {
-      de: "Audit-Management — IIA Standards, Universe, Plan, Durchführung, QA.",
-      en: "Audit management — IIA standards, universe, plan, execution, QA.",
-    },
     links: [
       {
         href: "/audit/universe",
-        labelDe: "Audit-Universe",
-        labelEn: "Audit universe",
-        descriptionDe: "Prüfbare Einheiten und Risiko-Score je Einheit.",
-        descriptionEn: "Auditable units and risk score per unit.",
+        key: "audit_universe",
       },
       {
         href: "/audit/plans",
-        labelDe: "Jahres-Auditplan",
-        labelEn: "Annual audit plan",
-        descriptionDe: "Risikoorientierter Jahresplan mit CAE-Freigabe.",
-        descriptionEn: "Risk-based annual plan with CAE approval.",
+        key: "audit_plans",
       },
     ],
   },
   tprm: {
-    description: {
-      de: "Third-Party Risk Management — Vendoren, DD, Konzentrationsrisiken, LkSG.",
-      en: "Third-party risk — vendors, DD, concentration, LkSG supply chain.",
-    },
     links: [
       {
         href: "/tprm/lksg",
-        labelDe: "LkSG-Assessments",
-        labelEn: "LkSG assessments",
-        descriptionDe: "Lieferkettensorgfaltspflichten — jährliche Bewertung.",
-        descriptionEn: "Supply chain due diligence — annual assessments.",
+        key: "tprm_lksg",
       },
       {
         href: "/tprm/concentration",
-        labelDe: "Konzentrationsrisiken",
-        labelEn: "Concentration risks",
-        descriptionDe: "Schwellenwerte für Vendor- und Cluster-Abhängigkeit.",
-        descriptionEn: "Thresholds for vendor and cluster dependency.",
+        key: "tprm_concentration",
       },
     ],
   },
   contract: {
-    description: {
-      de: "Vertragsmanagement — Lifecycle, SLA, Obligations.",
-      en: "Contract management — lifecycle, SLA, obligations.",
-    },
     links: [
       {
         href: "/contracts/sla",
-        labelDe: "SLA-Vorlagen",
-        labelEn: "SLA templates",
-        descriptionDe: "Standard-SLA-Klauseln für Audit, Security, DR.",
-        descriptionEn: "Standard SLA clauses for audit, security, DR.",
+        key: "contracts_sla",
       },
       {
         href: "/contracts/obligations",
-        labelDe: "Pflichtenbibliothek",
-        labelEn: "Obligation library",
-        descriptionDe: "Wiederkehrende Vertragspflichten je Vertragstyp.",
-        descriptionEn: "Recurring contract obligations per contract type.",
+        key: "contracts_obligations",
       },
     ],
   },
   esg: {
-    description: {
-      de: "ESG & Nachhaltigkeit — ESRS/CSRD, Materialität, Metriken.",
-      en: "ESG & sustainability — ESRS/CSRD, materiality, metrics.",
-    },
     links: [
       {
         href: "/esg/materiality",
-        labelDe: "Doppelte Wesentlichkeit",
-        labelEn: "Double materiality",
-        descriptionDe: "Impact- und Finanz-Materialität nach ESRS.",
-        descriptionEn: "Impact and financial materiality per ESRS.",
+        key: "esg_materiality",
       },
       {
         href: "/esg/datapoints",
-        labelDe: "ESRS-Datenpunkte",
-        labelEn: "ESRS datapoints",
-        descriptionDe: "Pflicht- und Wahldatenpunkte pro Standard.",
-        descriptionEn: "Mandatory and voluntary datapoints per standard.",
+        key: "esg_datapoints",
       },
     ],
   },
   bpm: {
-    description: {
-      de: "Prozessmanagement — BPMN 2.0, Governance, Mining.",
-      en: "Process management — BPMN 2.0, governance, mining.",
-    },
     links: [
       {
         href: "/processes/governance",
-        labelDe: "Prozess-Governance",
-        labelEn: "Process governance",
-        descriptionDe: "Genehmigungs-Workflows, Prozess-Owner, Review-Zyklen.",
-        descriptionEn: "Approval workflows, process owners, review cycles.",
+        key: "processes_governance",
       },
     ],
   },
   dms: {
-    description: {
-      de: "Dokumentenmanagement — Versionierung, Genehmigungen, Verteilerlisten.",
-      en: "Document management — versioning, approvals, distribution lists.",
-    },
     links: [
       {
         href: "/documents/compliance",
-        labelDe: "Compliance-Dokumente",
-        labelEn: "Compliance documents",
-        descriptionDe: "Verbindliche Policies mit Read-Receipt.",
-        descriptionEn: "Binding policies with read receipts.",
+        key: "documents_compliance",
       },
     ],
   },
   whistleblowing: {
-    description: {
-      de: "Hinweisgebersystem — HinSchG-konform, isoliert und rollenbeschränkt.",
-      en: "Whistleblowing — HinSchG-compliant, isolated, role-locked.",
-    },
     links: [
       {
         href: "/whistleblowing/statistics",
-        labelDe: "Berichtsparameter",
-        labelEn: "Reporting parameters",
-        descriptionDe: "Anonymisierungsregeln und Statistik-Export.",
-        descriptionEn: "Anonymisation rules and statistics export.",
+        key: "whistleblowing_statistics",
       },
     ],
   },
   eam: {
-    description: {
-      de: "Enterprise Architecture Management — Capabilities, Apps, Daten, Tech-Radar.",
-      en: "Enterprise architecture management — capabilities, apps, data, tech radar.",
-    },
     links: [
       {
         href: "/eam/governance",
-        labelDe: "Architektur-Governance",
-        labelEn: "Architecture governance",
-        descriptionDe: "Architecture-Board, Review-Queues, Ausnahmen.",
-        descriptionEn: "Architecture board, review queues, exceptions.",
+        key: "eam_governance",
       },
       {
         href: "/eam/tech-radar",
-        labelDe: "Technologie-Radar",
-        labelEn: "Technology radar",
-        descriptionDe: "Adopt/Trial/Assess/Hold je Technologie.",
-        descriptionEn: "Adopt/Trial/Assess/Hold per technology.",
+        key: "eam_tech_radar",
       },
     ],
   },
   reporting: {
-    description: {
-      de: "Report-Engine — Templates, Planung, Verteilung.",
-      en: "Reporting engine — templates, scheduling, distribution.",
-    },
     links: [
       {
         href: "/settings/export-schedules",
-        labelDe: "Export-Zeitpläne",
-        labelEn: "Export schedules",
-        descriptionDe: "Wiederkehrende PDF/Excel-Reports.",
-        descriptionEn: "Recurring PDF/Excel reports.",
+        key: "settings_export_schedules",
       },
     ],
   },
   academy: {
-    description: {
-      de: "GRC Academy — Trainings, Onboarding, Zertifikate.",
-      en: "GRC Academy — trainings, onboarding, certificates.",
-    },
     links: [
       {
         href: "/academy",
-        labelDe: "Kursverwaltung",
-        labelEn: "Course management",
-        descriptionDe: "Eigene Trainings, Pflichtschulungen je Rolle.",
-        descriptionEn: "Custom trainings, mandatory training per role.",
+        key: "academy",
       },
     ],
   },
   community: {
-    description: {
-      de: "Community Edition — Open-Source-Beiträge, Extensions, Shared-Content.",
-      en: "Community edition — open-source contributions, extensions, shared content.",
-    },
     links: [],
   },
   marketplace: {
-    description: {
-      de: "Marketplace — Erweiterungen, Konnektoren, Templates.",
-      en: "Marketplace — extensions, connectors, templates.",
-    },
     links: [
       {
         href: "/marketplace",
-        labelDe: "Marktplatz öffnen",
-        labelEn: "Open marketplace",
-        descriptionDe: "Browse verfügbare Erweiterungen.",
-        descriptionEn: "Browse available extensions.",
+        key: "marketplace",
       },
     ],
   },
   simulations: {
-    description: {
-      de: "Simulation Engine — Szenarien, Monte-Carlo, Stress-Tests.",
-      en: "Simulation engine — scenarios, Monte Carlo, stress tests.",
-    },
     links: [],
   },
   portals: {
-    description: {
-      de: "Stakeholder-Portale — Vendor-, Kunden-, Regulator-Portale.",
-      en: "Stakeholder portals — vendor, customer, regulator portals.",
-    },
     links: [
       {
         href: "/portals",
-        labelDe: "Portale verwalten",
-        labelEn: "Manage portals",
-        descriptionDe: "Portal-Konfiguration, Branding, Zugriffe.",
-        descriptionEn: "Portal configuration, branding, access.",
+        key: "portals",
       },
     ],
   },
@@ -406,6 +242,7 @@ export default function ModuleSettingsPage() {
   const params = useParams<{ moduleKey: string }>();
   const moduleKey = params.moduleKey as ModuleKey;
   const locale = useLocale();
+  const t = useTranslations("common");
   const { data: session } = useSession();
   const [configs, setConfigs] = useState<ModuleConfig[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -423,11 +260,15 @@ export default function ModuleSettingsPage() {
         const res = await fetch(
           `/api/v1/organizations/${currentOrgId}/modules`,
         );
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok)
+          throw new Error(t("common.httpError", { status: res.status }));
         const json = await res.json();
         if (!cancelled) setConfigs(json.data ?? json);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Load error");
+        if (!cancelled)
+          setError(
+            e instanceof Error ? e.message : t("modules.detail.loadError"),
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -436,14 +277,12 @@ export default function ModuleSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentOrgId]);
+  }, [currentOrgId, t]);
 
   const config = useMemo(
     () => configs?.find((c) => c.moduleKey === moduleKey) ?? null,
     [configs, moduleKey],
   );
-
-  const t = (de: string, en: string) => (locale === "de" ? de : en);
 
   const moduleInfo = MODULE_SETTINGS[moduleKey];
 
@@ -471,13 +310,10 @@ export default function ModuleSettingsPage() {
           className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800"
         >
           <ArrowLeft size={14} />
-          {t("Zurück zur Modul-Übersicht", "Back to module overview")}
+          {t("modules.detail.backToOverview")}
         </Link>
         <div className="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-600">
-          {t(
-            "Für diesen Modulschlüssel existiert keine Konfiguration in diesem Mandanten.",
-            "No configuration exists for this module key in this tenant.",
-          )}
+          {t("modules.detail.noConfig")}
         </div>
       </div>
     );
@@ -490,7 +326,11 @@ export default function ModuleSettingsPage() {
     locale === "de" ? config.descriptionDe : config.descriptionEn;
 
   const settingsLinks = moduleInfo?.links ?? [];
-  const moduleDescription = moduleInfo?.description;
+  // `MODULE_SETTINGS` fuehrt genau die Module, fuer die eine Zweckbeschreibung
+  // im Katalog liegt — die Existenz des Eintrags ist die Bedingung.
+  const moduleDescription = moduleInfo
+    ? t(`modules.detail.module.${moduleKey}.description`)
+    : null;
 
   const isEnabled = config.uiStatus === "enabled";
   const isPreview = config.uiStatus === "preview";
@@ -504,7 +344,7 @@ export default function ModuleSettingsPage() {
         className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800"
       >
         <ArrowLeft size={14} />
-        {t("Modul-Übersicht", "Module overview")}
+        {t("modules.detail.overview")}
       </Link>
 
       {/* Header */}
@@ -546,11 +386,9 @@ export default function ModuleSettingsPage() {
       {moduleDescription && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900">
-            {t("Zweck dieses Moduls", "Module purpose")}
+            {t("modules.detail.purpose")}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {locale === "de" ? moduleDescription.de : moduleDescription.en}
-          </p>
+          <p className="mt-2 text-sm text-gray-600">{moduleDescription}</p>
         </div>
       )}
 
@@ -558,7 +396,7 @@ export default function ModuleSettingsPage() {
       {settingsLinks.length > 0 ? (
         <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-            {t("Modul-Einstellungen", "Module configuration")}
+            {t("modules.detail.configuration")}
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {settingsLinks.map((l) => (
@@ -573,12 +411,16 @@ export default function ModuleSettingsPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-700">
-                      {locale === "de" ? l.labelDe : l.labelEn}
+                      {t(
+                        `modules.detail.module.${moduleKey}.links.${l.key}.label`,
+                      )}
                     </h3>
                     <ExternalLink size={12} className="text-gray-400" />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">
-                    {locale === "de" ? l.descriptionDe : l.descriptionEn}
+                    {t(
+                      `modules.detail.module.${moduleKey}.links.${l.key}.description`,
+                    )}
                   </p>
                 </div>
               </Link>
@@ -588,20 +430,14 @@ export default function ModuleSettingsPage() {
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-xs text-gray-500">
           <Info size={14} className="mb-1 inline-block" />{" "}
-          {t(
-            "Für dieses Modul sind aktuell keine spezifischen Konfigurationsseiten verfügbar.",
-            "This module currently has no dedicated configuration pages.",
-          )}
+          {t("modules.detail.noPages")}
         </div>
       )}
 
       {/* Raw config */}
       <details className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-700">
-          {t(
-            "Erweitert: Rohkonfiguration (JSON)",
-            "Advanced: raw config (JSON)",
-          )}
+          {t("modules.detail.rawConfig")}
         </summary>
         <pre className="overflow-x-auto border-t border-gray-100 bg-gray-50 p-4 font-mono text-[11px] text-gray-700">
           {JSON.stringify(config.config ?? {}, null, 2)}
@@ -612,13 +448,10 @@ export default function ModuleSettingsPage() {
       {config.requiresModules && config.requiresModules.length > 0 && (
         <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-gray-900">
-            {t("Abhängigkeiten", "Dependencies")}
+            {t("modules.detail.dependencies")}
           </h2>
           <p className="mt-1 text-xs text-gray-500">
-            {t(
-              "Dieses Modul setzt voraus, dass folgende Module aktiv sind:",
-              "This module requires the following modules to be enabled:",
-            )}
+            {t("modules.detail.dependenciesHint")}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {config.requiresModules.map((dep) => (

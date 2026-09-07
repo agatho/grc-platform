@@ -24,7 +24,21 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Diese Seite galt der
+ * i18n-Ratsche als UEBERSETZT: sie band `useTranslations("aiAct")` — an
+ * `_t`, und benutzte die Bindung nie. Der Unterstrich sorgte zugleich dafuer,
+ * dass `no-unused-vars` schwieg. Auf dem Bildschirm stand durchgehend fest
+ * verdrahtetes Deutsch, mit abgeschnittenen Umlauten („Behorde", „Geldbusse",
+ * „Marktbeschrankung", „Verstose", „Bussgeldrahmen").
+ *
+ * Dazu ein zweiter Befund derselben Klasse wie OP-190, den der Wachposten aus
+ * Welle 5a NICHT sehen konnte: `new Intl.NumberFormat("de-DE", { style:
+ * "currency" })`. Die Pruefung dort kennt nur `toLocale*("xx-XX")`. Ein
+ * englischsprachiger Nutzer sah auf dieser Seite deutsche Geldbetraege.
+ */
 interface AiPenalty {
   id: string;
   authority: string;
@@ -39,21 +53,9 @@ interface AiPenalty {
 }
 
 const PENALTY_BRACKETS = [
-  {
-    label: "Art. 99 Abs. 3 — Verbotene Praktiken",
-    max: "35 Mio. EUR / 7% Umsatz",
-    color: "bg-red-100 text-red-900",
-  },
-  {
-    label: "Art. 99 Abs. 4 — Pflichten Hochrisiko-KI",
-    max: "15 Mio. EUR / 3% Umsatz",
-    color: "bg-orange-100 text-orange-900",
-  },
-  {
-    label: "Art. 99 Abs. 5 — Sonstige Verstose",
-    max: "7,5 Mio. EUR / 1% Umsatz",
-    color: "bg-yellow-100 text-yellow-900",
-  },
+  { key: "para3", color: "bg-red-100 text-red-900" },
+  { key: "para4", color: "bg-orange-100 text-orange-900" },
+  { key: "para5", color: "bg-yellow-100 text-yellow-900" },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -65,7 +67,9 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 function PenaltiesPageInner() {
-  const _t = useTranslations("aiAct");
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatCurrency } = useDateFormat();
   const [rows, setRows] = useState<AiPenalty[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -117,11 +121,6 @@ function PenaltiesPageInner() {
     }
   };
 
-  const formatCurrency = (amount: number, currency: string) =>
-    new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(
-      amount,
-    );
-
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">
@@ -134,23 +133,23 @@ function PenaltiesPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Sanktionsverfolgung</h1>
-          <p className="text-muted-foreground">Art. 99 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("penalties.title")}</h1>
+          <p className="text-muted-foreground">{t("penalties.description")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Sanktion erfassen
+              {t("penalties.create")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Sanktion erfassen</DialogTitle>
+              <DialogTitle>{t("penalties.create")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Behorde</Label>
+                <Label>{t("penalties.authority")}</Label>
                 <Input
                   value={form.authority}
                   onChange={(e) =>
@@ -159,7 +158,7 @@ function PenaltiesPageInner() {
                 />
               </div>
               <div>
-                <Label>Sanktionstyp</Label>
+                <Label>{t("penalties.type")}</Label>
                 <Select
                   value={form.penalty_type}
                   onValueChange={(v) => setForm({ ...form, penalty_type: v })}
@@ -168,20 +167,24 @@ function PenaltiesPageInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="fine">Geldbusse</SelectItem>
-                    <SelectItem value="warning">Verwarnung</SelectItem>
+                    <SelectItem value="fine">
+                      {t("penalties.typeOption.fine")}
+                    </SelectItem>
+                    <SelectItem value="warning">
+                      {t("penalties.typeOption.warning")}
+                    </SelectItem>
                     <SelectItem value="market_restriction">
-                      Marktbeschrankung
+                      {t("penalties.typeOption.market_restriction")}
                     </SelectItem>
                     <SelectItem value="withdrawal_order">
-                      Rucknahmeanordnung
+                      {t("penalties.typeOption.withdrawal_order")}
                     </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label>Betrag</Label>
+                  <Label>{t("penalties.amount")}</Label>
                   <Input
                     type="number"
                     value={form.fine_amount}
@@ -191,7 +194,7 @@ function PenaltiesPageInner() {
                   />
                 </div>
                 <div>
-                  <Label>Wahrung</Label>
+                  <Label>{t("penalties.currency")}</Label>
                   <Select
                     value={form.fine_currency}
                     onValueChange={(v) =>
@@ -209,17 +212,17 @@ function PenaltiesPageInner() {
                 </div>
               </div>
               <div>
-                <Label>Artikelreferenz</Label>
+                <Label>{t("penalties.articleReference")}</Label>
                 <Input
                   value={form.article_reference}
                   onChange={(e) =>
                     setForm({ ...form, article_reference: e.target.value })
                   }
-                  placeholder="z.B. Art. 99 Abs. 3"
+                  placeholder={t("penalties.articlePlaceholder")}
                 />
               </div>
               <div>
-                <Label>Beschreibung</Label>
+                <Label>{t("shared.description")}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) =>
@@ -232,7 +235,7 @@ function PenaltiesPageInner() {
                 onClick={handleSubmit}
                 disabled={!form.authority || !form.penalty_type}
               >
-                Speichern
+                {tCommon("actions.save")}
               </Button>
             </div>
           </DialogContent>
@@ -244,13 +247,16 @@ function PenaltiesPageInner() {
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
             <Scale className="h-4 w-4" />
-            Bussgeldrahmen Art. 99
+            {t("penalties.brackets")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
           {PENALTY_BRACKETS.map((b) => (
-            <div key={b.label} className={`p-2 rounded text-sm ${b.color}`}>
-              <span className="font-medium">{b.label}</span> — bis zu {b.max}
+            <div key={b.key} className={`p-2 rounded text-sm ${b.color}`}>
+              <span className="font-medium">
+                {t(`penalties.bracket.${b.key}.label`)}
+              </span>{" "}
+              {t(`penalties.bracket.${b.key}.max`)}
             </div>
           ))}
         </CardContent>
@@ -275,7 +281,9 @@ function PenaltiesPageInner() {
                   {p.status}
                 </Badge>
                 {p.appeal_status !== "none" && (
-                  <Badge variant="outline">Einspruch: {p.appeal_status}</Badge>
+                  <Badge variant="outline">
+                    {t("penalties.appeal", { status: p.appeal_status })}
+                  </Badge>
                 )}
               </div>
             </CardContent>
@@ -283,7 +291,7 @@ function PenaltiesPageInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Keine Sanktionen erfasst
+            {t("penalties.empty")}
           </p>
         )}
       </div>

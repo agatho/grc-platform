@@ -22,7 +22,28 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch —
+ * und ein Fall der Sorte, die Welle 5a beschrieben hat: `timeAgo` baute
+ * „vor 3 Std." und „vor 2 Tagen" von Hand nach, obwohl
+ * `common.dashboard.timeAgo.*` seit jeher in BEIDEN Sprachen im Katalog
+ * steht — mit korrekten ICU-Mehrzahlformen. Die Uebersetzung war da, die
+ * Seite hat sie ignoriert und daneben eine deutsche Zweitfassung gefuehrt.
+ * Auch „Nie" stand schon als `common.users.never`.
+ *
+ * Die Kategoriebezeichnungen kommen als englische Bezeichner AUS DER
+ * SCHNITTSTELLE (`ct.category`). Die neun bekannten werden gegen den Katalog
+ * aufgeloest, unbekannte unveraendert durchgereicht.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie `timeAgo` braucht. */
+type Translate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -83,6 +104,19 @@ const CATEGORY_COLORS: Record<CategoryKey, string> = {
   Messaging: "bg-indigo-100 text-indigo-800",
 };
 
+/** Katalogtaugliche Schluessel fuer die Kategorienamen aus der Schnittstelle. */
+const CATEGORY_SLUG: Record<CategoryKey, string> = {
+  ERP: "erp",
+  HCM: "hcm",
+  CRM: "crm",
+  ITSM: "itsm",
+  "Cloud Security": "cloud_security",
+  Vulnerability: "vulnerability",
+  Utility: "utility",
+  ESG: "esg",
+  Messaging: "messaging",
+};
+
 const CATEGORY_ORDER: CategoryKey[] = [
   "ERP",
   "HCM",
@@ -95,21 +129,25 @@ const CATEGORY_ORDER: CategoryKey[] = [
   "Messaging",
 ];
 
-function timeAgo(dateStr: string | null): string {
-  if (!dateStr) return "Nie";
+function timeAgo(dateStr: string | null, tCommon: Translate): string {
+  if (!dateStr) return tCommon("users.never");
   const diff = Date.now() - new Date(dateStr).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Gerade eben";
-  if (minutes < 60) return `vor ${minutes} Min.`;
+  if (minutes < 1) return tCommon("dashboard.timeAgo.justNow");
+  if (minutes < 60)
+    return tCommon("dashboard.timeAgo.minutesAgo", { count: minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `vor ${hours} Std.`;
+  if (hours < 24)
+    return tCommon("dashboard.timeAgo.hoursAgo", { count: hours });
   const days = Math.floor(hours / 24);
-  return `vor ${days} Tag${days > 1 ? "en" : ""}`;
+  return tCommon("dashboard.timeAgo.daysAgo", { count: days });
 }
 
 // ── Component ─────────────────────────────────────────────────
 
 export default function ConnectorManagementPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDateTime, formatNumber } = useDateFormat();
   const [connectorTypes, setConnectorTypes] = useState<ConnectorType[]>([]);
   const [instances, setInstances] = useState<ConnectorInstance[]>([]);
@@ -131,13 +169,11 @@ export default function ConnectorManagementPage() {
       setConnectorTypes(typesJson.data ?? []);
       setInstances(instancesJson.data ?? []);
     } catch {
-      setError(
-        "Konnektor-Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
-      );
+      setError(t("connectors.loadError"));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -193,16 +229,15 @@ export default function ConnectorManagementPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             <Cable className="h-6 w-6" />
-            Enterprise-Konnektoren
+            {t("connectors.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Anbindung an SAP, Oracle, Workday, Salesforce, Cloud-Security und
-            weitere Systeme
+            {t("connectors.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchData}>
           <RefreshCw className="mr-1.5 h-4 w-4" />
-          Aktualisieren
+          {tCommon("actions.refresh")}
         </Button>
       </div>
 
@@ -221,21 +256,27 @@ export default function ConnectorManagementPage() {
             <p className="mt-1 text-lg font-semibold">
               {connectorTypes.length}
             </p>
-            <p className="text-xs text-muted-foreground">Verfügbare Typen</p>
+            <p className="text-xs text-muted-foreground">
+              {t("connectors.kpi.availableTypes")}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" />
             <p className="mt-1 text-lg font-semibold">{totalConfigured}</p>
-            <p className="text-xs text-muted-foreground">Konfiguriert</p>
+            <p className="text-xs text-muted-foreground">
+              {tCommon("settings.aiProviders.configured")}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <Cloud className="mx-auto h-5 w-5 text-blue-500" />
             <p className="mt-1 text-lg font-semibold">{activeSyncs}</p>
-            <p className="text-xs text-muted-foreground">Aktive Syncs</p>
+            <p className="text-xs text-muted-foreground">
+              {t("connectors.kpi.activeSyncs")}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -248,7 +289,9 @@ export default function ConnectorManagementPage() {
             >
               {failedSyncs}
             </p>
-            <p className="text-xs text-muted-foreground">Fehlgeschlagen</p>
+            <p className="text-xs text-muted-foreground">
+              {t("syncLog.status.failed")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -258,10 +301,8 @@ export default function ConnectorManagementPage() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Cable className="mx-auto mb-3 h-10 w-10 opacity-50" />
-            <p className="font-medium">Keine Konnektor-Typen verfügbar</p>
-            <p className="mt-1 text-sm">
-              Konnektor-Typen werden über die API bereitgestellt.
-            </p>
+            <p className="font-medium">{t("connectors.empty")}</p>
+            <p className="mt-1 text-sm">{t("connectors.emptyHint")}</p>
           </CardContent>
         </Card>
       )}
@@ -277,10 +318,13 @@ export default function ConnectorManagementPage() {
           <div key={category} className="space-y-3">
             <div className="flex items-center gap-2">
               <CatIcon className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">{category}</h2>
+              <h2 className="text-lg font-semibold">
+                {CATEGORY_ORDER.includes(catKey)
+                  ? t(`connectors.category.${CATEGORY_SLUG[catKey]}`)
+                  : category}
+              </h2>
               <Badge variant="outline" className="text-xs">
-                {types.length}{" "}
-                {types.length === 1 ? "Konnektor" : "Konnektoren"}
+                {t("connectors.connectorCount", { count: types.length })}
               </Badge>
             </div>
 
@@ -305,7 +349,13 @@ export default function ConnectorManagementPage() {
                               variant="outline"
                               className={`mt-1 text-[10px] ${catColor}`}
                             >
-                              {ct.category}
+                              {CATEGORY_ORDER.includes(
+                                ct.category as CategoryKey,
+                              )
+                                ? t(
+                                    `connectors.category.${CATEGORY_SLUG[ct.category as CategoryKey]}`,
+                                  )
+                                : ct.category}
                             </Badge>
                           </div>
                         </div>
@@ -317,7 +367,9 @@ export default function ConnectorManagementPage() {
                               : "text-muted-foreground"
                           }
                         >
-                          {isConfigured ? "Konfiguriert" : "Verfügbar"}
+                          {isConfigured
+                            ? tCommon("settings.aiProviders.configured")
+                            : t("connectors.available")}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -331,7 +383,7 @@ export default function ConnectorManagementPage() {
                       {ct.authMethods && ct.authMethods.length > 0 && (
                         <div>
                           <p className="mb-1 text-xs font-medium text-muted-foreground">
-                            Auth-Methoden
+                            {t("connectors.authMethods")}
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {ct.authMethods.map((m) => (
@@ -352,7 +404,7 @@ export default function ConnectorManagementPage() {
                         ct.supportedEntities.length > 0 && (
                           <div>
                             <p className="mb-1 text-xs font-medium text-muted-foreground">
-                              Unterstützte Entitäten
+                              {t("connectors.supportedEntities")}
                             </p>
                             <div className="flex flex-wrap gap-1">
                               {ct.supportedEntities.map((e) => (
@@ -372,8 +424,9 @@ export default function ConnectorManagementPage() {
                       {ctInstances.length > 0 && (
                         <div className="space-y-2 rounded-md border bg-muted/30 p-2">
                           <p className="text-xs font-medium">
-                            {ctInstances.length} konfigurierte{" "}
-                            {ctInstances.length === 1 ? "Instanz" : "Instanzen"}
+                            {t("connectors.instanceCount", {
+                              count: ctInstances.length,
+                            })}
                           </p>
                           {ctInstances.map((inst) => (
                             <div
@@ -385,7 +438,9 @@ export default function ConnectorManagementPage() {
                                   {inst.name}
                                 </span>
                                 <span className="text-muted-foreground">
-                                  {formatNumber(inst.recordCount)} Datensätze
+                                  {t("connectors.recordCount", {
+                                    value: formatNumber(inst.recordCount),
+                                  })}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
@@ -395,7 +450,7 @@ export default function ConnectorManagementPage() {
                                     className="border-green-200 bg-green-50 text-green-700 text-[10px]"
                                   >
                                     <CheckCircle2 className="mr-0.5 h-3 w-3" />
-                                    Sync OK
+                                    {t("connectors.syncOk")}
                                   </Badge>
                                 ) : inst.lastSyncStatus === "failed" ? (
                                   <Badge
@@ -403,14 +458,14 @@ export default function ConnectorManagementPage() {
                                     className="border-red-200 bg-red-50 text-red-700 text-[10px]"
                                   >
                                     <XCircle className="mr-0.5 h-3 w-3" />
-                                    Fehlgeschlagen
+                                    {t("syncLog.status.failed")}
                                   </Badge>
                                 ) : (
                                   <Badge
                                     variant="outline"
                                     className="text-[10px]"
                                   >
-                                    Ausstehend
+                                    {t("approvalRequests.status.pending")}
                                   </Badge>
                                 )}
                                 <span
@@ -418,7 +473,7 @@ export default function ConnectorManagementPage() {
                                   title={formatDateTime(inst.lastSyncAt)}
                                 >
                                   <Clock className="mr-0.5 inline h-3 w-3" />
-                                  {timeAgo(inst.lastSyncAt)}
+                                  {timeAgo(inst.lastSyncAt, tCommon)}
                                 </span>
                               </div>
                             </div>
@@ -434,8 +489,8 @@ export default function ConnectorManagementPage() {
                       >
                         <Plus className="mr-1.5 h-4 w-4" />
                         {isConfigured
-                          ? "Weitere Instanz einrichten"
-                          : "Konnektor einrichten"}
+                          ? t("connectors.addInstance")
+                          : t("connectors.setUp")}
                       </Button>
                     </CardContent>
                   </Card>

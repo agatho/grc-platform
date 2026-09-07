@@ -34,23 +34,26 @@ interface ProhibitedScreening {
   created_at: string;
 }
 
-const PROHIBITED_LABELS: Record<string, string> = {
-  social_scoring: "Social Scoring (Art. 5 Abs. 1 lit. c)",
-  real_time_biometric: "Echtzeit-Biometrie (Art. 5 Abs. 1 lit. h)",
-  emotion_recognition:
-    "Emotionserkennung am Arbeitsplatz (Art. 5 Abs. 1 lit. f)",
-  predictive_policing: "Predictive Policing (Art. 5 Abs. 1 lit. d)",
-  untargeted_scraping: "Ungezieltes Gesichts-Scraping (Art. 5 Abs. 1 lit. e)",
-  subliminal_manipulation:
-    "Unterschwellige Manipulation (Art. 5 Abs. 1 lit. a)",
-  exploiting_vulnerabilities:
-    "Ausnutzen von Vulnerabilitaten (Art. 5 Abs. 1 lit. b)",
-  biometric_categorization:
-    "Biometrische Kategorisierung (Art. 5 Abs. 1 lit. g)",
-};
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Die acht Verbotstatbestaende
+ * des Art. 5 standen als fertige deutsche BESCHRIFTUNG in einer Tabelle; die
+ * Seite band `useTranslations("aiAct")` an `_t` und benutzte es nie. Fuer die
+ * Ratsche galt sie damit als uebersetzt. Jetzt fuehrt die Tabelle nur noch
+ * die Schluessel.
+ */
+const PROHIBITED_KEYS = [
+  "social_scoring",
+  "real_time_biometric",
+  "emotion_recognition",
+  "predictive_policing",
+  "untargeted_scraping",
+  "subliminal_manipulation",
+  "exploiting_vulnerabilities",
+  "biometric_categorization",
+] as const;
 
 function ProhibitedPageInner() {
-  const _t = useTranslations("aiAct");
+  const t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<ProhibitedScreening[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,25 +128,23 @@ function ProhibitedPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Verbotene Praktiken</h1>
-          <p className="text-muted-foreground">
-            Art. 5 KI-Verordnung - Screening
-          </p>
+          <h1 className="text-2xl font-bold">{t("prohibited.title")}</h1>
+          <p className="text-muted-foreground">{t("prohibited.description")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Screening durchfuhren
+              {t("prohibited.runScreening")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Verbotsprufung Art. 5</DialogTitle>
+              <DialogTitle>{t("prohibited.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>KI-System ID</Label>
+                <Label>{t("qms.systemId")}</Label>
                 <Input
                   value={form.ai_system_id}
                   onChange={(e) =>
@@ -151,7 +152,7 @@ function ProhibitedPageInner() {
                   }
                 />
               </div>
-              {Object.entries(PROHIBITED_LABELS).map(([key, label]) => (
+              {PROHIBITED_KEYS.map((key) => (
                 <div key={key} className="flex items-center gap-2">
                   <Switch
                     checked={
@@ -159,7 +160,9 @@ function ProhibitedPageInner() {
                     }
                     onCheckedChange={(v) => setForm({ ...form, [key]: v })}
                   />
-                  <Label className="text-sm">{label}</Label>
+                  <Label className="text-sm">
+                    {t(`prohibited.practice.${key}`)}
+                  </Label>
                 </div>
               ))}
               <div
@@ -168,12 +171,12 @@ function ProhibitedPageInner() {
                 {isAnyProhibited ? (
                   <>
                     <ShieldX className="h-5 w-5 inline mr-2" />
-                    VERBOTEN
+                    {t("prohibited.verdictProhibited")}
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="h-5 w-5 inline mr-2" />
-                    Kein Verbot
+                    {t("prohibited.verdictAllowed")}
                   </>
                 )}
               </div>
@@ -182,7 +185,7 @@ function ProhibitedPageInner() {
                 onClick={handleSubmit}
                 disabled={!form.ai_system_id}
               >
-                Ergebnis speichern
+                {t("prohibited.saveResult")}
               </Button>
             </div>
           </DialogContent>
@@ -195,9 +198,13 @@ function ProhibitedPageInner() {
             <Card key={s.id}>
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
-                  <p className="font-medium">System: {s.ai_system_id}</p>
+                  <p className="font-medium">
+                    {t("qms.systemLine", { id: s.ai_system_id })}
+                  </p>
                   <p className="text-sm text-muted-foreground">
-                    Gepruft am {formatDate(s.created_at)}
+                    {t("prohibited.checkedAt", {
+                      value: formatDate(s.created_at),
+                    })}
                   </p>
                 </div>
                 <Badge
@@ -210,12 +217,12 @@ function ProhibitedPageInner() {
                   {prohibited ? (
                     <>
                       <ShieldX className="h-3 w-3 mr-1" />
-                      VERBOTEN
+                      {t("prohibited.verdictProhibited")}
                     </>
                   ) : (
                     <>
                       <ShieldCheck className="h-3 w-3 mr-1" />
-                      Kein Verbot
+                      {t("prohibited.verdictAllowed")}
                     </>
                   )}
                 </Badge>
@@ -225,7 +232,7 @@ function ProhibitedPageInner() {
         })}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Noch keine Verbotsprufungen durchgefuhrt
+            {t("prohibited.empty")}
           </p>
         )}
       </div>

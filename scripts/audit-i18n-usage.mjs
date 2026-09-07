@@ -354,11 +354,42 @@ function showsLiteralText(source) {
   return false;
 }
 
+// [Welle 6b · OP-070] Das blosse VORKOMMEN von `useTranslations` genuegt
+// nicht mehr. Gemessen am 2026-09-07: 19 Dateien schrieben
+// `const _t = useTranslations("aiAct");` und benutzten die Bindung nie. Fuer
+// diesen Zaehler galten sie als uebersetzt, auf dem Bildschirm stand fest
+// verdrahtetes Deutsch — und der fuehrende Unterstrich sorgte zugleich
+// dafuer, dass `no-unused-vars` schwieg. Zwei Tore mit EINEM Zeichen
+// ausgehebelt; das zwoelfte Tor dieses Audits, das nicht ausloesen konnte.
+//
+// Angebunden ist eine Datei jetzt erst, wenn mindestens eine Bindung auch
+// AUFGERUFEN wird. Geprueft wird der Bezeichner, nicht der Unterstrich:
+// `_t` ist nicht das Problem, der ungenutzte Aufruf ist es.
+function bindsButNeverCalls(source) {
+  const bindings = [
+    ...source.matchAll(
+      /(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+)?(?:useTranslations|getTranslations)\s*\(/g,
+    ),
+  ].map((m) => m[1]);
+  if (bindings.length === 0) return false;
+  return bindings.every((name) => {
+    const calls = [
+      ...source.matchAll(
+        new RegExp(`(?<![\\w$.])${name.replace(/\$/g, "\\$")}\\s*\\(`, "g"),
+      ),
+    ].length;
+    return calls === 0;
+  });
+}
+
 function countWithoutI18n(dir, filter) {
   const files = walk(dir, filter);
   const without = files.filter((f) => {
     const source = fs.readFileSync(f, "utf8");
-    if (/useTranslations|getTranslations/.test(source)) return false;
+    if (/useTranslations|getTranslations/.test(source)) {
+      // Scheinbindung: zaehlt weiterhin als NICHT uebersetzt.
+      if (!bindsButNeverCalls(source)) return false;
+    }
     return showsLiteralText(source);
   });
   return { total: files.length, without };

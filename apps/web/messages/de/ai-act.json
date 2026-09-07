@@ -29,5 +29,618 @@
     "high": "Hoch",
     "limited": "Begrenzt",
     "minimal": "Minimal"
+  },
+  "systemDetail": {
+    "notFound": "KI-System nicht gefunden",
+    "systemCode": "Systemcode",
+    "purpose": "Zweck",
+    "aiTechnique": "KI-Technik",
+    "technique": {
+      "machine_learning": "Machine Learning",
+      "deep_learning": "Deep Learning",
+      "nlp": "Verarbeitung natürlicher Sprache (NLP)",
+      "computer_vision": "Bildverarbeitung",
+      "expert_system": "Expertensystem",
+      "generative_ai": "Generative KI"
+    },
+    "systemStatus": {
+      "draft": "Entwurf",
+      "registered": "Registriert",
+      "under_review": "In Prüfung",
+      "compliant": "Konform",
+      "non_compliant": "Nicht konform",
+      "decommissioned": "Ausser Betrieb"
+    },
+    "riskSection": "Risikoklassifikation (Art. 6)",
+    "riskClass": "Risikoklasse",
+    "riskOption": {
+      "unacceptable": "Unannehmbares Risiko (Art. 5)",
+      "high": "Hohes Risiko (Art. 6)",
+      "limited": "Begrenztes Risiko (Art. 50)",
+      "minimal": "Minimales Risiko"
+    },
+    "riskJustification": "Begründung der Risikoklassifikation",
+    "annexCategory": "Anhang-Kategorie",
+    "annex": {
+      "annex_i": "Anhang I",
+      "annex_ii": "Anhang II",
+      "annex_iii": "Anhang III",
+      "annex_iv": "Anhang IV",
+      "none": "Keiner"
+    },
+    "providerSection": "Anbieter / Betreiber",
+    "role": "Rolle",
+    "roleOption": {
+      "provider": "Anbieter",
+      "deployer": "Betreiber",
+      "both": "Beides"
+    },
+    "providerName": "Name des Anbieters",
+    "providerJurisdiction": "Jurisdiktion des Anbieters",
+    "deploymentDate": "Bereitstellungsdatum",
+    "oversightSection": "Menschliche Aufsicht (Art. 14)",
+    "oversightRequired": "Menschliche Aufsicht erforderlich"
+  },
+  "monitor": {
+    "title": "Vorfall-Überwachung",
+    "description": "Fristenüberwachung nach Art. 73 für alle KI-Vorfälle. Die Eskalationsstufe richtet sich nach der verbleibenden Zeit bis zur Frist (kritisch bei mehr als 48 Stunden Überschreitung).",
+    "backToIncidents": "Zurück zur Vorfallliste",
+    "loadError": "Überwachung konnte nicht geladen werden",
+    "pdf": "PDF",
+    "serious": "schwerwiegend",
+    "empty": "Keine KI-Vorfälle erfasst.",
+    "detectedAt": "Erkannt: {value}",
+    "deadlineAt": "Frist: {value}",
+    "authorityNotified": "✓ Behörde benachrichtigt am {value}",
+    "overdueBy": "{value} überfällig",
+    "remainingUntilDeadline": "{value} bis zur Frist",
+    "hoursShort": "{hours} Std.",
+    "daysShort": "{days} Tg.",
+    "daysHoursShort": "{days} Tg. {hours} Std.",
+    "level": {
+      "critical_overdue": "KRITISCH ÜBERFÄLLIG",
+      "overdue": "ÜBERFÄLLIG",
+      "approaching": "FRIST NAHT",
+      "none": "OK"
+    },
+    "kpi": {
+      "criticalOverdue": "Kritisch überfällig",
+      "criticalOverdueHint": "mehr als 48 Std. überfällig",
+      "overdue": "Überfällig",
+      "overdueHint": "0–48 Std. überfällig",
+      "approaching": "Frist naht",
+      "approachingHint": "weniger als 24 Std. bis zur Frist",
+      "ok": "OK",
+      "okHint": "benachrichtigt oder mehr als 24 Std. verbleibend"
+    },
+    "criticalSectionTitle": "Kritisch überfällig — Sofortmeldung!",
+    "criticalSectionDescription": "Die Frist nach Art. 73 ist um mehr als 48 Stunden überschritten. Regulatorisches Risiko — Leitungsebene sofort informieren.",
+    "overdueSectionTitle": "Überfällig (weniger als 48 Std.)",
+    "approachingSectionTitle": "Frist naht (weniger als 24 Std.)",
+    "okSectionTitle": "OK ({count})"
+  },
+  "shared": {
+    "backToList": "Zurück zur Liste",
+    "masterData": "Stammdaten",
+    "metadata": "Metadaten",
+    "createdAt": "Erstellt am:",
+    "updatedAt": "Aktualisiert am:",
+    "id": "ID:",
+    "title": "Titel",
+    "name": "Name",
+    "description": "Beschreibung",
+    "status": "Status",
+    "selectPlaceholder": "Bitte wählen"
+  },
+  "incidentDetail": {
+    "notFound": "Vorfall nicht gefunden",
+    "serious": "Schwerwiegend",
+    "days": "{days} Tagen",
+    "hours": "{hours} Stunden",
+    "deadlineOverdue": "Meldefrist überschritten seit {span}",
+    "deadlineRemaining": "Meldefrist: noch {span}",
+    "deadlineAt": "Frist: {value}",
+    "deadlineWindowSerious": " (2 Tage – schwerwiegend)",
+    "deadlineWindowStandard": " (15 Tage – Standard)",
+    "severity": "Schweregrad",
+    "severityOption": {
+      "critical": "Kritisch",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    },
+    "statusOption": {
+      "detected": "Erkannt",
+      "investigating": "Untersuchung",
+      "mitigating": "Eindämmung",
+      "resolved": "Behoben",
+      "closed": "Geschlossen"
+    },
+    "seriousIncident": "Schwerwiegender Vorfall (Art. 73 Abs. 4)",
+    "affectedPersons": "Betroffene Personen (Anzahl)",
+    "detectedAt": "Erkannt am",
+    "harmSection": "Schaden und Ursachenanalyse",
+    "harmType": "Art des Schadens",
+    "rootCauseCategory": "Ursachenkategorie",
+    "harmDescription": "Schadensbeschreibung",
+    "rootCause": "Ursachenanalyse",
+    "measuresSection": "Massnahmen",
+    "remediationActions": "Sofortmassnahmen",
+    "preventiveMeasures": "Präventivmassnahmen",
+    "lessonsLearned": "Erkenntnisse (Lessons Learned)",
+    "authoritySection": "Behördenbenachrichtigung",
+    "authorityNotifiedAt": "Behörde benachrichtigt am",
+    "authorityReference": "Aktenzeichen der Behörde",
+    "resolvedAt": "Behoben am:"
+  },
+  "correctiveAction": {
+    "notFound": "Korrekturmassnahme nicht gefunden",
+    "recall": "Rückruf",
+    "withdrawal": "Rücknahme",
+    "overdue": "Überfällig",
+    "nonConformity": "Nichtkonformität",
+    "actionType": "Massnahmentyp",
+    "typeOption": {
+      "corrective": "Korrektur",
+      "preventive": "Prävention",
+      "recall": "Rückruf",
+      "withdrawal": "Rücknahme",
+      "modification": "Änderung",
+      "decommission": "Ausserbetriebnahme"
+    },
+    "priority": "Priorität",
+    "statusOption": {
+      "open": "Offen",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "verified": "Verifiziert"
+    },
+    "dueDate": "Fälligkeitsdatum",
+    "recallSection": "Rückruf / Rücknahme (Art. 16/20)",
+    "withdrawalFromMarket": "Rücknahme vom Markt",
+    "recallReason": "Begründung",
+    "authorityNotified": "Behörde benachrichtigt",
+    "notifiedOn": "Benachrichtigt am",
+    "verificationSection": "Verifizierung",
+    "verificationRequired": "Verifizierung erforderlich",
+    "verificationNotes": "Verifizierungsnotizen",
+    "effectiveness": "Wirksamkeitsbewertung",
+    "notRatedYet": "Noch nicht bewertet",
+    "effectivenessOption": {
+      "effective": "Wirksam",
+      "partially_effective": "Teilweise wirksam",
+      "ineffective": "Unwirksam"
+    },
+    "verifiedAt": "Verifiziert am: {value}",
+    "completedAt": "Abgeschlossen am:",
+    "sourceType": "Quellentyp:"
+  },
+  "fria": {
+    "loadError": "FRIA konnte nicht geladen werden",
+    "notFound": "Nicht gefunden",
+    "backToList": "Zurück zur FRIA-Liste",
+    "subtitle": "Grundrechte-Folgenabschätzung nach Art. 27 — verknüpft mit dem KI-System",
+    "qualityCheck": "Qualitätsprüfung",
+    "overallImpact": "Gesamtauswirkung: {value}",
+    "impactPill": "Auswirkung: {value}",
+    "residualPill": "Restrisiko: {value}",
+    "mitigation": "Massnahme:",
+    "impact": {
+      "high": "hoch",
+      "medium": "mittel",
+      "low": "gering",
+      "negligible": "vernachlässigbar"
+    },
+    "right": {
+      "dignity": "Menschenwürde",
+      "equality_non_discrimination": "Gleichheit / Nichtdiskriminierung",
+      "privacy_data_protection": "Privatsphäre / Datenschutz",
+      "freedom_expression": "Meinungsfreiheit",
+      "freedom_assembly": "Versammlungsfreiheit",
+      "freedom_movement": "Freizügigkeit",
+      "access_to_justice": "Zugang zum Recht",
+      "workers_rights": "Arbeitnehmerrechte",
+      "consumer_protection": "Verbraucherschutz",
+      "child_protection": "Kinderschutz"
+    },
+    "rightsTitle": "Bewertete Grundrechte ({count})",
+    "rightsDescription": "Eine vollständige Grundrechte-Folgenabschätzung sollte mindestens 5 der 10 Kernrechte behandeln.",
+    "rightsEmpty": "Noch keine Grundrechte erfasst. Die Bewertungen werden über das FRIA-Formular gepflegt (Detailbearbeitung).",
+    "flagsTitle": "Qualitätsmerkmale",
+    "flagsDescription": "Die bewertende Person bestätigt, welche Teilbereiche dokumentiert und geprüft wurden.",
+    "flag": {
+      "discrimination": "Diskriminierungsanalyse",
+      "discriminationHint": "Verzerrungen und Ungleichbehandlung systematisch bewertet.",
+      "dataProtection": "Datenschutz-Folgen",
+      "dataProtectionHint": "Datenschutzfolgen separat dokumentiert (gegebenenfalls mit Verknüpfung zur DSFA).",
+      "accessToJustice": "Analyse zum Zugang zum Recht",
+      "accessToJusticeHint": "Rechtsschutz, Beschwerdewege und Widerrufsmöglichkeiten geprüft.",
+      "consultation": "Konsultation der Betroffenen",
+      "consultationHint": "Betroffene Personen oder deren Vertretung in den Prozess einbezogen.",
+      "overallImpactStatement": "Gesamtbewertung",
+      "overallImpactStatementHint": "Abschliessende Bewertung liegt vor.",
+      "mitigationDocumented": "Massnahmen dokumentiert",
+      "mitigationDocumentedHint": "Konkrete Massnahmen für jedes erkannte Risiko."
+    },
+    "resultTitle": "Ergebnis der Qualitätsprüfung",
+    "approvable": "Genehmigungsfähig",
+    "notApprovable": "Nicht genehmigungsfähig",
+    "rightsCoverage": "Abdeckung der Grundrechte (10 Kernrechte)",
+    "qualityChecks": "Qualitätsmerkmale (6)",
+    "highResidualTitle": "Hohes Restrisiko bei folgenden Grundrechten:",
+    "highResidualHint": "Das blockiert die Genehmigung. Massnahmen verstärken oder das System nicht einsetzen.",
+    "missingChecks": "Fehlende Qualitätsmerkmale:",
+    "approvalRequirements": "Für die Genehmigung nötig: mindestens 5 erfasste Grundrechte, alle 6 Qualitätsmerkmale erfüllt, kein hohes Restrisiko.",
+    "nextReview": "Nächste Überprüfung",
+    "aiSystem": "KI-System"
+  },
+  "gpai": {
+    "notFound": "GPAI-Modell nicht gefunden",
+    "systemicRisk": "Systemisches Risiko",
+    "modelType": "Modelltyp",
+    "modelTypeOption": {
+      "general_purpose": "Allzweckmodell",
+      "foundation": "Basismodell",
+      "fine_tuned": "Feinabgestimmtes Modell",
+      "open_source": "Quelloffenes Modell"
+    },
+    "version": "Version",
+    "releaseDate": "Veröffentlichungsdatum",
+    "systemicRiskSection": "Systemisches Risiko (Art. 51)",
+    "systemicRiskJustification": "Begründung des systemischen Risikos",
+    "technicalSection": "Technische Angaben (Art. 52–53)",
+    "trainingData": "Zusammenfassung der Trainingsdaten",
+    "computationalResources": "Rechenressourcen",
+    "energyConsumption": "Energieverbrauch (kWh)",
+    "capabilities": "Fähigkeiten",
+    "limitations": "Einschränkungen",
+    "intendedUse": "Vorgesehene Verwendung",
+    "cybersecurityMeasures": "Cybersicherheitsmassnahmen",
+    "euRepresentativeSection": "EU-Bevollmächtigter (Art. 54)",
+    "euRepresentativeName": "Name des EU-Bevollmächtigten",
+    "euRepresentativeContact": "Kontakt des EU-Bevollmächtigten",
+    "codeOfPracticeSection": "Verhaltenskodex (Art. 56)",
+    "codeOfPracticeAdherence": "Einhaltung des Verhaltenskodex",
+    "adherenceDate": "Datum der Zusage:",
+    "art56Title": "Anforderungen nach Art. 56 KI-Verordnung",
+    "art56": {
+      "transparency_obligations": "Transparenzpflichten nach Art. 53 eingehalten",
+      "copyright_policy": "Urheberrechtsrichtlinie und Zusammenfassung der Trainingsdaten dokumentiert",
+      "risk_identification": "Systemische Risiken erkannt und bewertet",
+      "risk_mitigation": "Massnahmen zur Risikominderung umgesetzt",
+      "incident_reporting": "Verfahren zur Meldung schwerwiegender Vorfälle eingerichtet",
+      "cybersecurity_measures": "Angemessene Cybersicherheitsmassnahmen umgesetzt",
+      "energy_reporting": "Energieverbrauch und Rechenressourcen dokumentiert"
+    },
+    "art56Progress": "{done} von {total} Anforderungen erfüllt",
+    "codeOfPracticeNotes": "Anmerkungen zum Verhaltenskodex",
+    "codeOfPracticeNotesPlaceholder": "Weitere Anmerkungen zur Einhaltung des Verhaltenskodex …"
+  },
+  "gpaiWizard": {
+    "backToModels": "Zurück zu den GPAI-Modellen",
+    "title": "GPAI-Konformitätsassistent",
+    "description": "Prüfungen nach Art. 51–55: Klassifizierung des systemischen Risikos sowie Pflichten nach Art. 53 (Standard) und Art. 55 (systemisch).",
+    "runBoth": "Beide Prüfungen ausführen",
+    "running": "Läuft …",
+    "tier": {
+      "systemic": "SYSTEMISCH",
+      "high_capability": "HOHE LEISTUNGSFÄHIGKEIT",
+      "standard": "STANDARD"
+    },
+    "compliant": "Konform",
+    "gaps": "Lücken",
+    "classifyTitle": "Klassifizierung des systemischen Risikos (Art. 51)",
+    "classifyDescription": "Rechenleistungsschwelle (10^25 FLOPs), Einstufung durch die Kommission und Fähigkeiten mit hoher Wirkung.",
+    "classifyAction": "Klassifizieren",
+    "flopsLabel": "Trainings-Rechenleistung (FLOPs) — systemische Schwelle: 10^25",
+    "parametersLabel": "Anzahl Parameter (optional)",
+    "reasoning": "Begründung:",
+    "flag": {
+      "designated": "Von der EU-Kommission als systemisch eingestuft",
+      "highImpact": "Fähigkeiten mit hoher Wirkung (Benchmarks)",
+      "advancedReasoning": "Fortgeschrittenes Schlussfolgern",
+      "multimodal": "Multimodale Fähigkeiten",
+      "systemicModel": "Systemisches Modell (aus der Klassifizierung übernommen)",
+      "nonEuProvider": "Anbieter ausserhalb der EU (benötigt EU-Bevollmächtigten)",
+      "copyright": "Urheberrechtsrichtlinie nach Art. 53 Abs. 1 Buchst. c eingehalten",
+      "downstream": "Informationen für nachgelagerte Anbieter nach Art. 53 geteilt",
+      "modelEvaluations": "Modellbewertungen nach Art. 55 Abs. 1 Buchst. a durchgeführt",
+      "systemicRiskAssessment": "Bewertung des systemischen Risikos nach Art. 55 Abs. 1 Buchst. b"
+    },
+    "obligationsTitle": "Pflichtenprüfung nach Art. 53 und Art. 55",
+    "obligationsDescription": "Technische Dokumentation, Zusammenfassung der Trainingsdaten, Urheberrecht, Informationen für nachgelagerte Anbieter, EU-Bevollmächtigter (ausserhalb der EU) sowie Art. 55 bei systemischem Risiko.",
+    "checkAction": "Prüfen",
+    "standardProgress": "Art. 53 Standard ({met} erfüllt)",
+    "systemicProgress": "Art. 55 systemisch ({met} erfüllt)",
+    "missingObligations": "Fehlende Pflichten:"
+  },
+  "systemWizard": {
+    "backToSystem": "Zurück zum KI-System",
+    "title": "KI-Verordnung: Konformitätsassistent",
+    "description": "Führt alle einschlägigen Konformitätsprüfungen für das KI-System aus: Datenqualität (Art. 10), technische Dokumentation nach Anhang IV (Art. 11), Protokollierung (Art. 12), menschliche Aufsicht (Art. 14) und die CE-Kennzeichnung (Art. 43).",
+    "runAll": "Alle Prüfungen ausführen",
+    "check": "Prüfen",
+    "coverage": "Abdeckung",
+    "missing": "Fehlend:",
+    "networkError": "Netzwerkfehler",
+    "apiError": "Fehler der Schnittstelle {status}: {err}",
+    "status": {
+      "pass": "Bestanden",
+      "fail": "Nicht bestanden",
+      "warning": "Warnung",
+      "running": "Läuft …",
+      "not_run": "Nicht ausgeführt"
+    },
+    "dg": {
+      "title": "Daten-Governance (Art. 10)",
+      "description": "Qualität der Trainingsdaten, Verzerrungstests, Herkunft und Rechtsgrundlage.",
+      "trainingDataDescription": "Beschreibung der Trainingsdaten vorhanden",
+      "collectionProcess": "Erhebungsprozess der Daten dokumentiert",
+      "labelingProcess": "Annotationsprozess dokumentiert",
+      "cleaningSteps": "Schritte der Datenbereinigung dokumentiert",
+      "demographicCoverage": "Demografische Abdeckung analysiert",
+      "biasTesting": "Verzerrungstests durchgeführt",
+      "provenance": "Datenherkunft dokumentiert",
+      "legalBasis": "Rechtsgrundlage für das Training",
+      "datasetSize": "Umfang des Datenbestands (Anzahl Datensätze)"
+    },
+    "annexIv": {
+      "title": "Technische Dokumentation (Art. 11 und Anhang IV)",
+      "description": "Neun Abschnitte mit je mindestens 200 Zeichen.",
+      "section1_GeneralDescription": "Abschnitt 1: Allgemeine Beschreibung",
+      "section2_DetailedElements": "Abschnitt 2: Einzelheiten und Entwicklungsprozess",
+      "section3_Monitoring": "Abschnitt 3: Überwachung und Funktionsweise",
+      "section4_PerformanceMetrics": "Abschnitt 4: Leistungskennzahlen",
+      "section5_RiskManagement": "Abschnitt 5: Risikomanagementsystem",
+      "section6_LifecycleChanges": "Abschnitt 6: Änderungen im Lebenszyklus",
+      "section7_HarmonisedStandards": "Abschnitt 7: Harmonisierte Normen",
+      "section8_DeclarationOfConformity": "Abschnitt 8: Kopie der Konformitätserklärung",
+      "section9_PostMarketMonitoring": "Abschnitt 9: Beobachtung nach dem Inverkehrbringen"
+    },
+    "logging": {
+      "title": "Automatische Protokollierung (Art. 12)",
+      "description": "Automatische Protokolle, 180 Tage Aufbewahrung, Manipulationssicherheit und Ausleitung.",
+      "automatic": "Automatische Protokollierung aktiv",
+      "tamperEvident": "Manipulationssicher (Hash-Kette / WORM)",
+      "exportable": "Protokolle für Behörden ausleitbar",
+      "input": "Eingabedaten protokolliert",
+      "output": "Ausgabeentscheidungen protokolliert",
+      "incident": "Vorfälle protokolliert",
+      "retention": "Aufbewahrung (Tage, mindestens 180 bei hohem Risiko)"
+    },
+    "oversight": {
+      "title": "Menschliche Aufsicht (Art. 14)",
+      "description": "Prüfung der Auslegung: Eingriff, Abschaltung, verständliche Ausgaben, Schulung zur Automatisierungsverzerrung.",
+      "understandableOutputs": "Verständliche Ausgaben",
+      "override": "Eingriffsmöglichkeit",
+      "stopFunction": "Abschaltfunktion",
+      "automationBiasTraining": "Schulung zur Automatisierungsverzerrung",
+      "definedRoles": "Rollen definiert",
+      "personnel": "Qualifiziertes Aufsichtspersonal (Anzahl)"
+    },
+    "ce": {
+      "title": "CE-Kennzeichnung (Art. 43 und 47)",
+      "description": "Zusammenfassende Prüfung aller Voraussetzungen für die CE-Kennzeichnung.",
+      "procedure": "Konformitätsbewertungsverfahren",
+      "annexVi": "Anhang VI (interne Kontrolle)",
+      "annexVii": "Anhang VII (notifizierte Stelle)",
+      "declarationSigned": "Konformitätserklärung unterzeichnet",
+      "notifiedBodyCertificate": "Bescheinigung der notifizierten Stelle vorhanden",
+      "euDatabase": "In der EU-Datenbank registriert",
+      "postMarketPlan": "Plan zur Beobachtung nach dem Inverkehrbringen vorhanden",
+      "annexIvComplete": "Vollständige Abschnitte nach Anhang IV (0–9)"
+    }
+  },
+  "annualReport": {
+    "loadFailed": "Fehler beim Laden",
+    "loadError": "Der Jahresbericht konnte nicht geladen werden",
+    "backToOverview": "Zurück zur Übersicht der KI-Verordnung",
+    "title": "Jahresbericht zur KI-Verordnung {year}",
+    "print": "Drucken",
+    "downloadPdf": "PDF herunterladen",
+    "overallScore": "Gesamtbewertung der Konformität",
+    "overallScoreDescription": "Gewichteter Gesamtwert: KI-Systeme 25 % / Konformitätsbewertungen 20 % / Vorfälle 15 % / FRIA 15 % / QMS 15 % / GPAI 10 %.",
+    "submittable": "Einreichbar",
+    "notSubmittable": "Nicht einreichbar",
+    "criticalFindings": "Kritische Befunde ({count})",
+    "highlights": "Positive Befunde ({count})",
+    "drillDown": "Zahlen im Einzelnen",
+    "drillDownDescription": "Rohdaten der Aggregationsabfragen zur Nachvollziehbarkeit für die Prüfung.",
+    "section": {
+      "systems": {
+        "label": "KI-Systeme",
+        "description": "Bestand, Risikoklassifizierung und Konformitätsstand."
+      },
+      "conformity": {
+        "label": "Konformitätsbewertungen",
+        "description": "Bewertungen nach Art. 43 und deren Bestehensquote."
+      },
+      "incidents": {
+        "label": "Vorfälle nach dem Inverkehrbringen",
+        "description": "Vorfälle nach Art. 73 und Meldezeiten nach Art. 33."
+      },
+      "fria": {
+        "label": "FRIA",
+        "description": "Grundrechte-Folgenabschätzungen nach Art. 27."
+      },
+      "qms": {
+        "label": "Qualitätsmanagementsystem",
+        "description": "Reifegrad des QMS nach Art. 17 und Bereitschaft zur CE-Kennzeichnung."
+      },
+      "gpai": {
+        "label": "GPAI-Modelle",
+        "description": "GPAI nach Art. 51–55 und Einstufung als systemisches Risiko."
+      }
+    },
+    "figure": {
+      "total": "Gesamt",
+      "highRisk": "Hohes Risiko",
+      "unacceptable": "Unannehmbar",
+      "compliant": "Konform",
+      "nonCompliant": "Nicht konform",
+      "conformity": "Konformität",
+      "completed": "Abgeschlossen",
+      "passed": "Bestanden",
+      "failed": "Nicht bestanden",
+      "pending": "Ausstehend",
+      "incidents": "Vorfälle",
+      "reported": "Gemeldet",
+      "serious": "Schwerwiegend",
+      "overdueArt73": "Überfällig (Art. 73)",
+      "avgNotify": "Ø Meldedauer (Std.)",
+      "required": "Erforderlich",
+      "approved": "Genehmigt",
+      "qms": "QMS",
+      "avgMaturity": "Ø Reifegrad",
+      "ceReady": "CE-bereit",
+      "notCeReady": "Nicht CE-bereit",
+      "gpai": "GPAI",
+      "systemic": "Systemisch",
+      "correctiveActions": "Korrekturmassnahmen"
+    }
+  },
+  "penalties": {
+    "title": "Sanktionsverfolgung",
+    "description": "Art. 99 KI-Verordnung",
+    "create": "Sanktion erfassen",
+    "authority": "Behörde",
+    "type": "Sanktionstyp",
+    "typeOption": {
+      "fine": "Geldbusse",
+      "warning": "Verwarnung",
+      "market_restriction": "Marktbeschränkung",
+      "withdrawal_order": "Rücknahmeanordnung"
+    },
+    "amount": "Betrag",
+    "currency": "Währung",
+    "articleReference": "Artikelreferenz",
+    "articlePlaceholder": "z. B. Art. 99 Abs. 3",
+    "brackets": "Bussgeldrahmen nach Art. 99",
+    "bracket": {
+      "para3": {
+        "label": "Art. 99 Abs. 3 — Verbotene Praktiken",
+        "max": "— bis zu 35 Mio. EUR oder 7 % des Umsatzes"
+      },
+      "para4": {
+        "label": "Art. 99 Abs. 4 — Pflichten für Hochrisiko-KI",
+        "max": "— bis zu 15 Mio. EUR oder 3 % des Umsatzes"
+      },
+      "para5": {
+        "label": "Art. 99 Abs. 5 — Sonstige Verstösse",
+        "max": "— bis zu 7,5 Mio. EUR oder 1 % des Umsatzes"
+      }
+    },
+    "appeal": "Einspruch: {status}",
+    "empty": "Keine Sanktionen erfasst"
+  },
+  "authority": {
+    "title": "Behördenkommunikation",
+    "description": "Art. 73–78 KI-Verordnung",
+    "create": "Kommunikation erfassen",
+    "subject": "Betreff",
+    "direction": "Richtung",
+    "outgoing": "Ausgehend",
+    "incoming": "Eingehend",
+    "date": "Datum",
+    "responseDeadline": "Antwortfrist",
+    "content": "Inhalt",
+    "deadlineExpired": "Frist abgelaufen",
+    "daysRemainingShort": "noch {days} Tg.",
+    "daysRemaining": "{days, plural, one {# Tag} other {# Tage}}",
+    "empty": "Keine Behördenkommunikation erfasst"
+  },
+  "qms": {
+    "title": "Qualitätsmanagementsystem des Anbieters",
+    "description": "Art. 16–17 KI-Verordnung",
+    "create": "QMS erfassen",
+    "checklist": "QMS-Checkliste",
+    "systemId": "Kennung des KI-Systems",
+    "maturityLabel": "Reifegrad (0–5)",
+    "nextAudit": "Nächstes Audit",
+    "nextAuditSuffix": " | Nächstes Audit: {value}",
+    "systemLine": "System: {id}",
+    "proceduresMet": "{done} von {total} Verfahren erfüllt",
+    "maturity": "Reifegrad {level}",
+    "empty": "Noch keine QMS-Bewertungen",
+    "procedure": {
+      "risk_management_procedure": "Risikomanagementsystem (Art. 9)",
+      "data_governance_procedure": "Daten-Governance (Art. 10)",
+      "technical_documentation_procedure": "Technische Dokumentation (Art. 11)",
+      "record_keeping_procedure": "Aufzeichnungspflichten (Art. 12)",
+      "transparency_procedure": "Transparenzpflichten (Art. 13)",
+      "human_oversight_procedure": "Menschliche Aufsicht (Art. 14)",
+      "accuracy_procedure": "Genauigkeit und Robustheit (Art. 15)",
+      "cybersecurity_procedure": "Cybersicherheit (Art. 15)",
+      "conformity_procedure": "Konformitätsbewertung (Art. 43)",
+      "post_market_procedure": "Beobachtung nach dem Inverkehrbringen (Art. 72)"
+    }
+  },
+  "prohibited": {
+    "title": "Verbotene Praktiken",
+    "description": "Art. 5 KI-Verordnung — Prüfung",
+    "runScreening": "Prüfung durchführen",
+    "dialogTitle": "Verbotsprüfung nach Art. 5",
+    "verdictProhibited": "VERBOTEN",
+    "verdictAllowed": "Kein Verbot",
+    "saveResult": "Ergebnis speichern",
+    "checkedAt": "Geprüft am {value}",
+    "empty": "Noch keine Verbotsprüfungen durchgeführt",
+    "practice": {
+      "social_scoring": "Soziale Bewertung (Art. 5 Abs. 1 Buchst. c)",
+      "real_time_biometric": "Biometrische Echtzeit-Fernidentifizierung (Art. 5 Abs. 1 Buchst. h)",
+      "emotion_recognition": "Emotionserkennung am Arbeitsplatz (Art. 5 Abs. 1 Buchst. f)",
+      "predictive_policing": "Vorausschauende Polizeiarbeit (Art. 5 Abs. 1 Buchst. d)",
+      "untargeted_scraping": "Ungezieltes Auslesen von Gesichtsbildern (Art. 5 Abs. 1 Buchst. e)",
+      "subliminal_manipulation": "Unterschwellige Beeinflussung (Art. 5 Abs. 1 Buchst. a)",
+      "exploiting_vulnerabilities": "Ausnutzen von Schutzbedürftigkeit (Art. 5 Abs. 1 Buchst. b)",
+      "biometric_categorization": "Biometrische Kategorisierung (Art. 5 Abs. 1 Buchst. g)"
+    }
+  },
+  "gpaiList": {
+    "title": "GPAI-Modellregister",
+    "description": "Art. 51–56 KI-Verordnung",
+    "create": "Modell erfassen",
+    "dialogTitle": "GPAI-Modell erfassen",
+    "systemic": "Systemisch",
+    "empty": "Noch keine GPAI-Modelle erfasst"
+  },
+  "incidentList": {
+    "title": "KI-Vorfallmeldung",
+    "description": "Art. 62–63 KI-Verordnung",
+    "report": "Vorfall melden",
+    "dialogTitle": "KI-Vorfall melden",
+    "systemIdOptional": "Kennung des KI-Systems (optional)",
+    "seriousLabel": "Schwerwiegend (Tod oder schwere Schäden)",
+    "deadlineSerious": "Meldefrist: 2 Tage nach Erkennung",
+    "deadlineStandard": "Meldefrist: 15 Tage nach Erkennung",
+    "hoursRemaining": "noch {hours} Std.",
+    "empty": "Keine KI-Vorfälle gemeldet"
+  },
+  "correctiveList": {
+    "title": "Korrekturmassnahmen",
+    "description": "Art. 20–21 KI-Verordnung",
+    "create": "Massnahme anlegen",
+    "dialogTitle": "Korrekturmassnahme",
+    "dueSuffix": " | Fällig: {value}",
+    "empty": "Keine Korrekturmassnahmen vorhanden"
+  },
+  "friaList": {
+    "create": "Neue FRIA",
+    "nextReview": "Nächste Überprüfung: {value}",
+    "empty": "Noch keine Grundrechte-Folgenabschätzungen"
+  },
+  "conformityList": {
+    "create": "Neue Bewertung",
+    "selfAssessed": "Eigenbewertung",
+    "validUntil": "Gültig bis {value}",
+    "empty": "Noch keine Konformitätsbewertungen"
+  },
+  "oversightList": {
+    "create": "Aufsicht protokollieren",
+    "empty": "Noch keine Aufsichtsprotokolle"
+  },
+  "mappingList": {
+    "create": "Zuordnung hinzufügen",
+    "empty": "Noch keine Framework-Zuordnungen. Ordnen Sie Kontrollen aus ISO 42001 oder dem NIST AI RMF zu."
   }
 }

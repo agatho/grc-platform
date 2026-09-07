@@ -21,7 +21,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch, eine
+ * von Hand gebaute Mehrzahl (`Anfrage{… ? "n" : ""}`) und eine
+ * gebietsschemablinde Zahl (`avgResponseTimeDays.toFixed(1)` → immer
+ * Dezimalpunkt). Beides ist jetzt Sache des Katalogs bzw. von
+ * `formatNumber` aus `lib/format-date.ts`.
+ */
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -61,13 +70,6 @@ function statusBadgeClass(status: string): string {
   }
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  open: "Offen",
-  overdue: "Überfällig",
-  answered: "Beantwortet",
-  cancelled: "Abgebrochen",
-};
-
 function priorityBadgeClass(priority: string): string {
   switch (priority) {
     case "critical":
@@ -83,17 +85,12 @@ function priorityBadgeClass(priority: string): string {
   }
 }
 
-const PRIORITY_LABELS: Record<string, string> = {
-  critical: "Kritisch",
-  high: "Hoch",
-  medium: "Mittel",
-  low: "Niedrig",
-};
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ContentRequestsPage() {
-  const { formatDate } = useDateFormat();
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
+  const { formatDate, formatNumber } = useDateFormat();
   const [requests, setRequests] = useState<ContentRequest[]>([]);
   const [stats, setStats] = useState<ContentRequestStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,10 +138,10 @@ export default function ContentRequestsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Inhaltliche Anfragen
+            {t("contentRequests.title")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Strukturierte Datenanfragen an Fachabteilungen mit Tracking
+            {t("contentRequests.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -155,10 +152,11 @@ export default function ContentRequestsPage() {
             disabled={loading}
           >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
-            Anfrage erstellen
+            {t("contentRequests.create")}
           </Button>
         </div>
       </div>
@@ -166,7 +164,7 @@ export default function ContentRequestsPage() {
       {/* Error State */}
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Fehler beim Laden der Anfragen. Bitte erneut versuchen.
+          {t("contentRequests.loadError")}
         </div>
       )}
 
@@ -177,7 +175,9 @@ export default function ContentRequestsPage() {
             <CardContent className="py-4 text-center">
               <Inbox className="mx-auto h-5 w-5 text-blue-500" />
               <p className="mt-1 text-2xl font-bold">{stats.open}</p>
-              <p className="text-xs text-gray-500">Offen</p>
+              <p className="text-xs text-gray-500">
+                {t("contentRequests.status.open")}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -194,24 +194,33 @@ export default function ContentRequestsPage() {
               >
                 {stats.overdue}
               </p>
-              <p className="text-xs text-gray-500">Überfällig</p>
+              <p className="text-xs text-gray-500">
+                {t("contentRequests.status.overdue")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4 text-center">
               <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" />
               <p className="mt-1 text-2xl font-bold">{stats.answered}</p>
-              <p className="text-xs text-gray-500">Beantwortet</p>
+              <p className="text-xs text-gray-500">
+                {t("contentRequests.status.answered")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="py-4 text-center">
               <Clock className="mx-auto h-5 w-5 text-gray-400" />
               <p className="mt-1 text-2xl font-bold">
-                {stats.avgResponseTimeDays.toFixed(1)}d
+                {t("contentRequests.daysShort", {
+                  value: formatNumber(stats.avgResponseTimeDays, {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  }),
+                })}
               </p>
               <p className="text-xs text-gray-500">
-                Durchschnittl. Antwortzeit
+                {t("contentRequests.avgResponseTime")}
               </p>
             </CardContent>
           </Card>
@@ -224,21 +233,19 @@ export default function ContentRequestsPage() {
           <CardContent className="flex flex-col items-center justify-center py-16">
             <FileQuestion size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
-              Keine Anfragen vorhanden
+              {t("approvalRequests.empty")}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Erstellen Sie eine Anfrage, um Daten von Fachabteilungen
-              einzuholen.
+              {t("contentRequests.emptyHint")}
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Alle Anfragen</CardTitle>
+            <CardTitle>{t("contentRequests.allRequests")}</CardTitle>
             <CardDescription>
-              {requests.length} Anfrage{requests.length !== 1 ? "n" : ""}{" "}
-              insgesamt
+              {t("contentRequests.requestCount", { count: requests.length })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -247,25 +254,25 @@ export default function ContentRequestsPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Titel
+                      {t("approvalRequests.column.title")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Entität
+                      {t("reviewCycles.column.entity")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Angefordert von
+                      {t("contentRequests.column.requestedBy")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Empfänger
+                      {t("contentRequests.column.recipient")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Frist
+                      {t("reviewCycles.column.deadline")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Priorität
+                      {t("contentRequests.column.priority")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Status
+                      {t("reminders.column.status")}
                     </th>
                   </tr>
                 </thead>
@@ -295,7 +302,7 @@ export default function ContentRequestsPage() {
                           variant="outline"
                           className={priorityBadgeClass(req.priority)}
                         >
-                          {PRIORITY_LABELS[req.priority] ?? req.priority}
+                          {t(`dataQuality.severity.${req.priority}`)}
                         </Badge>
                       </td>
                       <td className="py-3 px-3">
@@ -303,7 +310,7 @@ export default function ContentRequestsPage() {
                           variant="outline"
                           className={statusBadgeClass(req.status)}
                         >
-                          {STATUS_LABELS[req.status] ?? req.status}
+                          {t(`contentRequests.status.${req.status}`)}
                         </Badge>
                       </td>
                     </tr>

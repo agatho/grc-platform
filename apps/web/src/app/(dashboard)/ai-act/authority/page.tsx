@@ -26,6 +26,22 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Auch diese Seite galt der
+ * Ratsche als uebersetzt — `const _t = useTranslations("aiAct")`, nie
+ * benutzt — und stand vollstaendig auf fest verdrahtetem Deutsch mit
+ * abgeschnittenen Umlauten („Behordenkommunikation", „Behorde").
+ *
+ * `getDeadlineInfo` ist eine Funktion, keine Komponente, und darf deshalb
+ * keinen Hook lesen; sie nimmt die Uebersetzungsfunktion als Parameter.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie `getDeadlineInfo` braucht. */
+type Translate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
 interface AuthorityCommunication {
   id: string;
   authority_name: string;
@@ -38,7 +54,7 @@ interface AuthorityCommunication {
   created_at: string;
 }
 
-function getDeadlineInfo(deadline: string | null) {
+function getDeadlineInfo(deadline: string | null, t: Translate) {
   if (!deadline) return null;
   const now = new Date();
   const dl = new Date(deadline);
@@ -48,26 +64,27 @@ function getDeadlineInfo(deadline: string | null) {
     return (
       <Badge className="bg-red-600 text-white">
         <Clock className="h-3 w-3 mr-1" />
-        Frist abgelaufen
+        {t("authority.deadlineExpired")}
       </Badge>
     );
   if (diffDays < 3)
     return (
       <Badge className="bg-red-100 text-red-900">
         <Clock className="h-3 w-3 mr-1" />
-        {diffDays}d verbleibend
+        {t("authority.daysRemainingShort", { days: diffDays })}
       </Badge>
     );
   return (
     <Badge className="bg-yellow-100 text-yellow-900">
       <Clock className="h-3 w-3 mr-1" />
-      {diffDays} Tage
+      {t("authority.daysRemaining", { days: diffDays })}
     </Badge>
   );
 }
 
 function AuthorityPageInner() {
-  const _t = useTranslations("aiAct");
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AuthorityCommunication[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,23 +149,23 @@ function AuthorityPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Behordenkommunikation</h1>
-          <p className="text-muted-foreground">Art. 73-78 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("authority.title")}</h1>
+          <p className="text-muted-foreground">{t("authority.description")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Kommunikation erfassen
+              {t("authority.create")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Behordenkommunikation</DialogTitle>
+              <DialogTitle>{t("authority.title")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Behorde</Label>
+                <Label>{t("penalties.authority")}</Label>
                 <Input
                   value={form.authority_name}
                   onChange={(e) =>
@@ -157,7 +174,7 @@ function AuthorityPageInner() {
                 />
               </div>
               <div>
-                <Label>Betreff</Label>
+                <Label>{t("authority.subject")}</Label>
                 <Input
                   value={form.subject}
                   onChange={(e) =>
@@ -166,7 +183,7 @@ function AuthorityPageInner() {
                 />
               </div>
               <div>
-                <Label>Richtung</Label>
+                <Label>{t("authority.direction")}</Label>
                 <Select
                   value={form.direction}
                   onValueChange={(v) => setForm({ ...form, direction: v })}
@@ -175,13 +192,17 @@ function AuthorityPageInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="outgoing">Ausgehend</SelectItem>
-                    <SelectItem value="incoming">Eingehend</SelectItem>
+                    <SelectItem value="outgoing">
+                      {t("authority.outgoing")}
+                    </SelectItem>
+                    <SelectItem value="incoming">
+                      {t("authority.incoming")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label>Datum</Label>
+                <Label>{t("authority.date")}</Label>
                 <Input
                   type="date"
                   value={form.communication_date}
@@ -191,7 +212,7 @@ function AuthorityPageInner() {
                 />
               </div>
               <div>
-                <Label>Antwortfrist</Label>
+                <Label>{t("authority.responseDeadline")}</Label>
                 <Input
                   type="date"
                   value={form.response_deadline}
@@ -201,7 +222,7 @@ function AuthorityPageInner() {
                 />
               </div>
               <div>
-                <Label>Inhalt</Label>
+                <Label>{t("authority.content")}</Label>
                 <Textarea
                   value={form.content}
                   onChange={(e) =>
@@ -214,7 +235,7 @@ function AuthorityPageInner() {
                 onClick={handleSubmit}
                 disabled={!form.authority_name || !form.subject}
               >
-                Speichern
+                {tCommon("actions.save")}
               </Button>
             </div>
           </DialogContent>
@@ -238,9 +259,11 @@ function AuthorityPageInner() {
                   </div>
                   <div className="flex gap-2">
                     {c.response_deadline &&
-                      getDeadlineInfo(c.response_deadline)}
+                      getDeadlineInfo(c.response_deadline, t)}
                     <Badge variant="outline">
-                      {c.direction === "outgoing" ? "Ausgehend" : "Eingehend"}
+                      {c.direction === "outgoing"
+                        ? t("authority.outgoing")
+                        : t("authority.incoming")}
                     </Badge>
                     <Badge variant="outline">{c.status}</Badge>
                   </div>
@@ -255,7 +278,7 @@ function AuthorityPageInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8 pl-6">
-            Keine Behordenkommunikation erfasst
+            {t("authority.empty")}
           </p>
         )}
       </div>

@@ -20,7 +20,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch,
+ * einschliesslich einer von Hand gebauten Mehrzahl
+ * (`Zyklus{… ? "en" : ""}`) — jetzt ein ICU-`plural` im Katalog.
+ */
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -54,17 +61,11 @@ function statusBadgeClass(status: string): string {
   }
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Ausstehend",
-  in_review: "In Prüfung",
-  approved: "Genehmigt",
-  rejected: "Abgelehnt",
-  escalated: "Eskaliert",
-};
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ReviewCyclesPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const [cycles, setCycles] = useState<ReviewCycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,9 +104,11 @@ export default function ReviewCyclesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Review-Zyklen</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("reviewCycles.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Strukturierte Freigabeprozesse mit Eskalation bei Zeitüberschreitung
+            {t("reviewCycles.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -116,10 +119,11 @@ export default function ReviewCyclesPage() {
             disabled={loading}
           >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
-            Review-Zyklus erstellen
+            {t("reviewCycles.create")}
           </Button>
         </div>
       </div>
@@ -127,7 +131,7 @@ export default function ReviewCyclesPage() {
       {/* Error State */}
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Fehler beim Laden der Review-Zyklen. Bitte erneut versuchen.
+          {t("reviewCycles.loadError")}
         </div>
       )}
 
@@ -137,20 +141,19 @@ export default function ReviewCyclesPage() {
           <CardContent className="flex flex-col items-center justify-center py-16">
             <ClipboardCheck size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
-              Keine Review-Zyklen vorhanden
+              {t("reviewCycles.empty")}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Erstellen Sie den ersten Review-Zyklus, um strukturierte
-              Freigabeprozesse zu starten.
+              {t("reviewCycles.emptyHint")}
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Alle Review-Zyklen</CardTitle>
+            <CardTitle>{t("reviewCycles.allCycles")}</CardTitle>
             <CardDescription>
-              {cycles.length} Zyklus{cycles.length !== 1 ? "en" : ""} insgesamt
+              {t("reviewCycles.cycleCount", { count: cycles.length })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -159,30 +162,30 @@ export default function ReviewCyclesPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Name
+                      {t("reminders.column.name")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Entität
+                      {t("reviewCycles.column.entity")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
                       <div className="flex items-center gap-1">
                         <Users size={14} />
-                        Reviewer
+                        {t("reviewCycles.column.reviewers")}
                       </div>
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Status
+                      {t("reminders.column.status")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
                       <div className="flex items-center gap-1">
                         <Clock size={14} />
-                        Frist
+                        {t("reviewCycles.column.deadline")}
                       </div>
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
                       <div className="flex items-center gap-1">
                         <AlertTriangle size={14} />
-                        Eskalation (Tage)
+                        {t("reviewCycles.column.escalation")}
                       </div>
                     </th>
                   </tr>
@@ -207,14 +210,16 @@ export default function ReviewCyclesPage() {
                           variant="outline"
                           className={statusBadgeClass(cycle.status)}
                         >
-                          {STATUS_LABELS[cycle.status] ?? cycle.status}
+                          {t(`reviewCycles.status.${cycle.status}`)}
                         </Badge>
                       </td>
                       <td className="py-3 px-3 text-gray-600">
                         {formatDate(cycle.deadline)}
                       </td>
                       <td className="py-3 px-3 text-gray-600">
-                        {cycle.escalationDays} Tage
+                        {t("reviewCycles.days", {
+                          count: cycle.escalationDays,
+                        })}
                       </td>
                     </tr>
                   ))}

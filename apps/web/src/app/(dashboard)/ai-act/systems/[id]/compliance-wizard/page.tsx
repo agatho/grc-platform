@@ -31,7 +31,22 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "next-intl";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Der groesste Einzelblock des
+ * Punktes (738 Zeilen) und durchgehend Mischtext: "Fuehrt alle relevanten
+ * Compliance-Checks gegen das AI-System aus", "Training-Daten-Beschreibung
+ * vorhanden", "Logs exportierbar fuer Behoerden".
+ *
+ * `statusPill` steht ausserhalb der Komponente und nimmt die
+ * Uebersetzungsfunktion jetzt als Parameter. Die neun Anhang-IV-Abschnitte
+ * fuehren nur noch ihren Schluessel; die Beschriftung kommt ueber ein
+ * Template aus dem Katalog.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie `statusPill` braucht. */
+type Translate = (key: string) => string;
 type CheckStatus = "not_run" | "running" | "pass" | "fail" | "warning";
 
 interface CheckResult {
@@ -42,7 +57,7 @@ interface CheckResult {
   raw?: Record<string, unknown>;
 }
 
-function statusPill(status: CheckStatus) {
+function statusPill(status: CheckStatus, t: Translate) {
   if (status === "pass") {
     return (
       <Badge
@@ -50,7 +65,7 @@ function statusPill(status: CheckStatus) {
         className="bg-emerald-100 text-emerald-800 border-emerald-300"
       >
         <CheckCircle2 className="h-3 w-3 mr-1" />
-        Pass
+        {t("systemWizard.status.pass")}
       </Badge>
     );
   }
@@ -61,7 +76,7 @@ function statusPill(status: CheckStatus) {
         className="bg-red-100 text-red-800 border-red-300"
       >
         <XCircle className="h-3 w-3 mr-1" />
-        Fail
+        {t("systemWizard.status.fail")}
       </Badge>
     );
   }
@@ -72,7 +87,7 @@ function statusPill(status: CheckStatus) {
         className="bg-amber-100 text-amber-800 border-amber-300"
       >
         <AlertTriangle className="h-3 w-3 mr-1" />
-        Warnung
+        {t("systemWizard.status.warning")}
       </Badge>
     );
   }
@@ -80,14 +95,15 @@ function statusPill(status: CheckStatus) {
     return (
       <Badge variant="outline">
         <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-        Laeuft...
+        {t("systemWizard.status.running")}
       </Badge>
     );
   }
-  return <Badge variant="outline">Nicht ausgefuehrt</Badge>;
+  return <Badge variant="outline">{t("systemWizard.status.not_run")}</Badge>;
 }
 
 export default function ComplianceWizardPage() {
+  const t = useTranslations("aiAct");
   const { id } = useParams<{ id: string }>();
 
   // ─── Data Governance ──────────────────────────────────────
@@ -176,7 +192,7 @@ export default function ComplianceWizardPage() {
           const err = await res.text();
           setResult({
             status: "fail",
-            warnings: [`API error ${res.status}: ${err}`],
+            warnings: [t("systemWizard.apiError", { status: res.status, err })],
           });
           return;
         }
@@ -212,11 +228,13 @@ export default function ComplianceWizardPage() {
       } catch (e) {
         setResult({
           status: "fail",
-          warnings: [e instanceof Error ? e.message : "Netzwerkfehler"],
+          warnings: [
+            e instanceof Error ? e.message : t("systemWizard.networkError"),
+          ],
         });
       }
     },
-    [],
+    [t],
   );
 
   const runDg = () =>
@@ -308,13 +326,13 @@ export default function ComplianceWizardPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {statusPill(result.status)}
+              {statusPill(result.status, t)}
               <Button
                 size="sm"
                 onClick={onRun}
                 disabled={result.status === "running"}
               >
-                Pruefen
+                {t("systemWizard.check")}
               </Button>
             </div>
           </div>
@@ -326,7 +344,7 @@ export default function ComplianceWizardPage() {
               {typeof result.score === "number" && (
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span>Coverage</span>
+                    <span>{t("systemWizard.coverage")}</span>
                     <span className="font-medium">{result.score}%</span>
                   </div>
                   <Progress value={result.score} className="h-2" />
@@ -334,7 +352,9 @@ export default function ComplianceWizardPage() {
               )}
               {result.missing && result.missing.length > 0 && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Fehlend:</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {t("systemWizard.missing")}
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {result.missing.map((m, i) => (
                       <Badge key={i} variant="outline" className="text-xs">
@@ -388,82 +408,80 @@ export default function ComplianceWizardPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zu System
+            {t("systemWizard.backToSystem")}
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">
-            AI-Act Compliance Wizard
+            {t("systemWizard.title")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Fuehrt alle relevanten Compliance-Checks gegen das AI-System aus:
-            Art. 10 Data-Governance, Art. 11 Annex IV, Art. 12 Logging, Art. 14
-            Oversight, Art. 43 CE-Marking-Gate.
+            {t("systemWizard.description")}
           </p>
         </div>
         <Button onClick={runAll}>
           <FileCheck className="h-4 w-4 mr-2" />
-          Alle Checks ausfuehren
+          {t("systemWizard.runAll")}
         </Button>
       </div>
 
       {/* Section 1: Data Governance */}
       {section(
-        "Art. 10 Data-Governance",
-        "Training-Daten-Qualitaet, Bias-Testing, Provenance + Legal-Basis.",
+        t("systemWizard.dg.title"),
+        t("systemWizard.dg.description"),
         Database,
         dgResult,
         runDg,
         <div className="grid md:grid-cols-2 gap-2">
           {boolRow(
             "dg-desc",
-            "Training-Daten-Beschreibung vorhanden",
+            t("systemWizard.dg.trainingDataDescription"),
             dg.hasTrainingDataDescription,
             (v) => setDg({ ...dg, hasTrainingDataDescription: v }),
           )}
           {boolRow(
             "dg-coll",
-            "Daten-Erhebungsprozess dokumentiert",
+            t("systemWizard.dg.collectionProcess"),
             dg.hasDataCollectionProcess,
             (v) => setDg({ ...dg, hasDataCollectionProcess: v }),
           )}
           {boolRow(
             "dg-lab",
-            "Labeling-Prozess dokumentiert",
+            t("systemWizard.dg.labelingProcess"),
             dg.hasLabelingProcess,
             (v) => setDg({ ...dg, hasLabelingProcess: v }),
           )}
           {boolRow(
             "dg-clean",
-            "Data-Cleaning Steps dokumentiert",
+            t("systemWizard.dg.cleaningSteps"),
             dg.hasDataCleaningSteps,
             (v) => setDg({ ...dg, hasDataCleaningSteps: v }),
           )}
           {boolRow(
             "dg-demo",
-            "Demographische Abdeckung analysiert",
+            t("systemWizard.dg.demographicCoverage"),
             dg.hasDemographicCoverage,
             (v) => setDg({ ...dg, hasDemographicCoverage: v }),
           )}
           {boolRow(
             "dg-bias",
-            "Bias-Testing durchgefuehrt",
+            t("systemWizard.dg.biasTesting"),
             dg.hasBiasTestingDone,
             (v) => setDg({ ...dg, hasBiasTestingDone: v }),
           )}
           {boolRow(
             "dg-prov",
-            "Data-Provenance dokumentiert",
+            t("systemWizard.dg.provenance"),
             dg.hasDataProvenance,
             (v) => setDg({ ...dg, hasDataProvenance: v }),
           )}
           {boolRow(
             "dg-legal",
-            "Rechtsgrundlage fuer Training",
+            t("systemWizard.dg.legalBasis"),
             dg.hasLegalBasisForTraining,
             (v) => setDg({ ...dg, hasLegalBasisForTraining: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="dg-size" className="text-xs">
-              Dataset-Groesse (Anzahl Datensaetze)
+              {t("systemWizard.dg.datasetSize")}
             </Label>
             <Input
               id="dg-size"
@@ -481,41 +499,34 @@ export default function ComplianceWizardPage() {
 
       {/* Section 2: Annex IV */}
       {section(
-        "Art. 11 + Annex IV Technical Documentation",
-        "9 Sections mit je mindestens 200 Zeichen.",
+        t("systemWizard.annexIv.title"),
+        t("systemWizard.annexIv.description"),
         FileText,
         annexIvResult,
         runAnnexIv,
         <div className="space-y-3">
           {(
             [
-              ["section1_GeneralDescription", "Section 1: General description"],
-              [
-                "section2_DetailedElements",
-                "Section 2: Detailed elements + dev process",
-              ],
-              ["section3_Monitoring", "Section 3: Monitoring + functioning"],
-              ["section4_PerformanceMetrics", "Section 4: Performance metrics"],
-              ["section5_RiskManagement", "Section 5: Risk management system"],
-              ["section6_LifecycleChanges", "Section 6: Lifecycle changes"],
-              [
-                "section7_HarmonisedStandards",
-                "Section 7: Harmonised standards",
-              ],
-              ["section8_DeclarationOfConformity", "Section 8: DoC copy"],
-              [
-                "section9_PostMarketMonitoring",
-                "Section 9: Post-market monitoring",
-              ],
+              "section1_GeneralDescription",
+              "section2_DetailedElements",
+              "section3_Monitoring",
+              "section4_PerformanceMetrics",
+              "section5_RiskManagement",
+              "section6_LifecycleChanges",
+              "section7_HarmonisedStandards",
+              "section8_DeclarationOfConformity",
+              "section9_PostMarketMonitoring",
             ] as const
-          ).map(([key, label]) => {
+          ).map((key) => {
             const v = annexIv[key as keyof typeof annexIv];
             const charCount = v.length;
             const ok = charCount >= 200;
             return (
               <div key={key} className="space-y-1">
                 <div className="flex justify-between">
-                  <Label className="text-xs">{label}</Label>
+                  <Label className="text-xs">
+                    {t(`systemWizard.annexIv.${key}`)}
+                  </Label>
                   <span
                     className={`text-xs font-mono ${ok ? "text-emerald-600" : "text-muted-foreground"}`}
                   >
@@ -538,51 +549,51 @@ export default function ComplianceWizardPage() {
 
       {/* Section 3: Logging */}
       {section(
-        "Art. 12 Automatic Logging",
-        "Auto-Logging + 180d Retention + Tamper-Evidenz + Export.",
+        t("systemWizard.logging.title"),
+        t("systemWizard.logging.description"),
         Radio,
         loggingResult,
         runLogging,
         <div className="grid md:grid-cols-2 gap-2">
           {boolRow(
             "log-auto",
-            "Automatisches Logging aktiv",
+            t("systemWizard.logging.automatic"),
             logging.hasAutomaticLogging,
             (v) => setLogging({ ...logging, hasAutomaticLogging: v }),
           )}
           {boolRow(
             "log-tamper",
-            "Tamper-evident (Hash-Chain / WORM)",
+            t("systemWizard.logging.tamperEvident"),
             logging.tamperEvidentStorage,
             (v) => setLogging({ ...logging, tamperEvidentStorage: v }),
           )}
           {boolRow(
             "log-export",
-            "Logs exportierbar fuer Behoerden",
+            t("systemWizard.logging.exportable"),
             logging.logsExportable,
             (v) => setLogging({ ...logging, logsExportable: v }),
           )}
           {boolRow(
             "log-input",
-            "Input-Daten geloggt",
+            t("systemWizard.logging.input"),
             logging.includeInput,
             (v) => setLogging({ ...logging, includeInput: v }),
           )}
           {boolRow(
             "log-output",
-            "Output-Entscheidungen geloggt",
+            t("systemWizard.logging.output"),
             logging.includeOutput,
             (v) => setLogging({ ...logging, includeOutput: v }),
           )}
           {boolRow(
             "log-incident",
-            "Incidents geloggt",
+            t("systemWizard.logging.incident"),
             logging.includeIncident,
             (v) => setLogging({ ...logging, includeIncident: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="log-retention" className="text-xs">
-              Retention (Tage, min. 180 fuer High-Risk)
+              {t("systemWizard.logging.retention")}
             </Label>
             <Input
               id="log-retention"
@@ -603,42 +614,45 @@ export default function ComplianceWizardPage() {
 
       {/* Section 4: Oversight */}
       {section(
-        "Art. 14 Human-Oversight",
-        "Design-Check: Override, Stop, verstaendliche Outputs, Bias-Training.",
+        t("systemWizard.oversight.title"),
+        t("systemWizard.oversight.description"),
         Eye,
         oversightResult,
         runOversight,
         <div className="grid md:grid-cols-2 gap-2">
           {boolRow(
             "ov-outputs",
-            "Verstaendliche Outputs",
+            t("systemWizard.oversight.understandableOutputs"),
             oversight.hasUnderstandableOutputs,
             (v) => setOversight({ ...oversight, hasUnderstandableOutputs: v }),
           )}
           {boolRow(
             "ov-override",
-            "Override-Capability",
+            t("systemWizard.oversight.override"),
             oversight.hasOverrideCapability,
             (v) => setOversight({ ...oversight, hasOverrideCapability: v }),
           )}
-          {boolRow("ov-stop", "Stop-Funktion", oversight.hasStopFunction, (v) =>
-            setOversight({ ...oversight, hasStopFunction: v }),
+          {boolRow(
+            "ov-stop",
+            t("systemWizard.oversight.stopFunction"),
+            oversight.hasStopFunction,
+            (v) => setOversight({ ...oversight, hasStopFunction: v }),
           )}
           {boolRow(
             "ov-bias",
-            "Automation-Bias-Training",
+            t("systemWizard.oversight.automationBiasTraining"),
             oversight.hasAutomationBiasTraining,
             (v) => setOversight({ ...oversight, hasAutomationBiasTraining: v }),
           )}
           {boolRow(
             "ov-roles",
-            "Rollen definiert",
+            t("systemWizard.oversight.definedRoles"),
             oversight.hasDefinedRoles,
             (v) => setOversight({ ...oversight, hasDefinedRoles: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="ov-personnel" className="text-xs">
-              Qualifiziertes Oversight-Personal (Anzahl)
+              {t("systemWizard.oversight.personnel")}
             </Label>
             <Input
               id="ov-personnel"
@@ -659,15 +673,15 @@ export default function ComplianceWizardPage() {
 
       {/* Section 5: CE Marking Gate */}
       {section(
-        "Art. 43 + 47 CE-Marking Gate",
-        "Aggregierte Pruefung aller Bedingungen fuer CE-Marking.",
+        t("systemWizard.ce.title"),
+        t("systemWizard.ce.description"),
         Gavel,
         ceResult,
         runCe,
         <div className="grid md:grid-cols-2 gap-2">
           <div className="col-span-2">
             <Label htmlFor="ce-procedure" className="text-xs">
-              Conformity-Procedure
+              {t("systemWizard.ce.procedure")}
             </Label>
             <select
               id="ce-procedure"
@@ -680,38 +694,38 @@ export default function ComplianceWizardPage() {
                 })
               }
             >
-              <option value="annex_vi">Annex VI (Self-Assessment)</option>
-              <option value="annex_vii">Annex VII (Notified Body)</option>
+              <option value="annex_vi">{t("systemWizard.ce.annexVi")}</option>
+              <option value="annex_vii">{t("systemWizard.ce.annexVii")}</option>
             </select>
           </div>
           {boolRow(
             "ce-doc",
-            "Declaration-of-Conformity unterzeichnet",
+            t("systemWizard.ce.declarationSigned"),
             ceGate.hasSignedDeclarationOfConformity,
             (v) =>
               setCeGate({ ...ceGate, hasSignedDeclarationOfConformity: v }),
           )}
           {boolRow(
             "ce-nb",
-            "Notified-Body Certificate vorhanden",
+            t("systemWizard.ce.notifiedBodyCertificate"),
             ceGate.hasNotifiedBodyCertificate,
             (v) => setCeGate({ ...ceGate, hasNotifiedBodyCertificate: v }),
           )}
           {boolRow(
             "ce-eudb",
-            "Registriert in EU-Database",
+            t("systemWizard.ce.euDatabase"),
             ceGate.registeredInEuDatabase,
             (v) => setCeGate({ ...ceGate, registeredInEuDatabase: v }),
           )}
           {boolRow(
             "ce-pmm",
-            "Post-Market-Monitoring-Plan vorhanden",
+            t("systemWizard.ce.postMarketPlan"),
             ceGate.hasPostMarketMonitoringPlan,
             (v) => setCeGate({ ...ceGate, hasPostMarketMonitoringPlan: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="ce-annex" className="text-xs">
-              Annex IV Sections komplett (0-9)
+              {t("systemWizard.ce.annexIvComplete")}
             </Label>
             <Input
               id="ce-annex"

@@ -178,18 +178,18 @@ describe("[OP-070] Welle 5a — die umgestellten Oberflaechen", () => {
       }
     };
     roots.forEach(walk);
-    // Namentliche Ausnahme mit Grund: `admin/rls-audit` fuehrt seine eigene
-    // Zweisprachigkeit (`const t = (de, en) => …`) und waehlt in JEDEM der
-    // beiden Zweige das passende Tag — `de-DE` im deutschen, `en-US` im
-    // englischen. Ein `numberLocale` an dieser Stelle machte die Datei nicht
-    // richtiger, sondern inkonsistent: der deutsche Zweig folgte dann dem
-    // Cookie, der englische bliebe fest. Die Datei gehoert vollstaendig auf
-    // den Katalog umgestellt; das ist ein eigener Schnitt und steht als
-    // solcher in `docs/UMSETZUNG-WELLE-5A.md`.
-    const EXEMPT = ["app/(dashboard)/admin/rls-audit/page.tsx"];
-    expect(
-      offenders.filter((o) => !EXEMPT.some((e) => o.startsWith(e))),
-    ).toEqual([]);
+    // [Welle 6b] Hier stand eine namentliche Ausnahme: `admin/rls-audit`
+    // fuehrte seine eigene Zweisprachigkeit (`const t = (de, en) => …`) und
+    // waehlte in JEDEM der beiden Zweige das passende Tag — `de-DE` im
+    // deutschen, `en-US` im englischen. Ein `numberLocale` an dieser Stelle
+    // machte die Datei nicht richtiger, sondern inkonsistent, und Welle 5a hat
+    // ihre Teilaenderung dort deshalb zurueckgenommen: ganz oder gar nicht.
+    //
+    // Welle 6b hat sie ganz umgestellt. Die Ausnahme ist damit gegenstandslos
+    // und GESTRICHEN — nicht auskommentiert, nicht auf `[]` gesetzt. Eine
+    // Ausnahmeliste, die niemand mehr braucht, ist eine Einladung, die
+    // naechste Ausnahme hineinzuschreiben.
+    expect(offenders).toEqual([]);
   });
 
   // ── §3 ───────────────────────────────────────────────────────────────────

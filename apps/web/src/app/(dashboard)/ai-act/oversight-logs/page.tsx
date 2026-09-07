@@ -38,7 +38,7 @@ export default function AiOversightLogsPage() {
         <h1 className="text-2xl font-bold">{t("nav.oversightLogs")}</h1>
         <Button>
           <Plus className="h-4 w-4 mr-2" />
-          Log Oversight
+          {t("oversightList.create")}
         </Button>
       </div>
       <div className="space-y-2">
@@ -59,7 +59,7 @@ export default function AiOversightLogsPage() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            No oversight logs yet
+            {t("oversightList.empty")}
           </p>
         )}
       </div>

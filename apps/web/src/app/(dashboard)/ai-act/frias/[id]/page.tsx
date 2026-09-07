@@ -26,7 +26,25 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useTranslations } from "next-intl";
+import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Diese Seite war zur Haelfte
+ * englisch und zur Haelfte deutsch, oft im selben Satz ("Ein vollstaendiger
+ * FRIA sollte mindestens 5 der 10 Core Rights adressieren"). Beide
+ * Sprachgruppen lasen also Mischtext.
+ *
+ * Zwei Nebenbefunde, die dabei mitgehen:
+ *   • `nextReviewDate` wurde als ROHE ISO-Zeichenkette gerendert
+ *     ("2026-11-30"), obwohl `lib/format-date.ts` seit FE-HIGH-2 genau
+ *     dafuer da ist — dieselbe Form wie OP-190 aus Welle 5a.
+ *   • `quality.missing` kommt als Liste englischer Bezeichner AUS DER API
+ *     (`app/api/v1/ai-act/frias/[id]/quality-check`) und wird unveraendert
+ *     angezeigt — auch im deutschen Gebietsschema. Die Route liegt ausserhalb
+ *     der Dateihoheit dieser Welle, der Befund ist deshalb beziffert und
+ *     nicht behoben: die Liste bleibt englisch, alles darum herum nicht.
+ */
 type FundamentalRight =
   | "dignity"
   | "equality_non_discrimination"
@@ -68,19 +86,6 @@ interface QualityResult {
   isApprovable: boolean;
 }
 
-const RIGHT_LABEL: Record<FundamentalRight, string> = {
-  dignity: "Dignity",
-  equality_non_discrimination: "Equality / Non-Discrimination",
-  privacy_data_protection: "Privacy / Data Protection",
-  freedom_expression: "Freedom of Expression",
-  freedom_assembly: "Freedom of Assembly",
-  freedom_movement: "Freedom of Movement",
-  access_to_justice: "Access to Justice",
-  workers_rights: "Workers' Rights",
-  consumer_protection: "Consumer Protection",
-  child_protection: "Child Protection",
-};
-
 const IMPACT_PILL: Record<RightImpact, string> = {
   high: "bg-red-100 text-red-800 border-red-300",
   medium: "bg-amber-100 text-amber-800 border-amber-300",
@@ -89,6 +94,9 @@ const IMPACT_PILL: Record<RightImpact, string> = {
 };
 
 export default function FriaDetailPage() {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [fria, setFria] = useState<FriaDetail | null>(null);
   const [quality, setQuality] = useState<QualityResult | null>(null);
@@ -110,7 +118,8 @@ export default function FriaDetailPage() {
     setError(null);
     try {
       const res = await fetch(`/api/v1/ai-act/frias/${id}`);
-      if (!res.ok) throw new Error(`API ${res.status}`);
+      if (!res.ok)
+        throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = await res.json();
       const data = json.data ?? json;
       setFria({
@@ -126,11 +135,11 @@ export default function FriaDetailPage() {
         nextReviewDate: data.nextReviewDate ?? null,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
+      setError(e instanceof Error ? e.message : tCommon("common.error"));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, tCommon]);
 
   const runQualityCheck = useCallback(async () => {
     setRunningQuality(true);
@@ -144,11 +153,11 @@ export default function FriaDetailPage() {
       const json = await res.json();
       setQuality(json.data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
+      setError(e instanceof Error ? e.message : tCommon("common.error"));
     } finally {
       setRunningQuality(false);
     }
-  }, [id, quality_flags]);
+  }, [id, quality_flags, tCommon]);
 
   useEffect(() => {
     void fetchFria();
@@ -190,9 +199,11 @@ export default function FriaDetailPage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-2 text-red-800">
               <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">FRIA konnte nicht geladen werden</p>
+              <p className="font-medium">{t("fria.loadError")}</p>
             </div>
-            <p className="text-sm text-red-700 mt-2">{error ?? "Not found"}</p>
+            <p className="text-sm text-red-700 mt-2">
+              {error ?? t("fria.notFound")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -209,7 +220,7 @@ export default function FriaDetailPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zur FRIA-Liste
+            {t("fria.backToList")}
           </Link>
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">
@@ -219,13 +230,14 @@ export default function FriaDetailPage() {
               variant="outline"
               className={IMPACT_PILL[fria.overallImpact]}
             >
-              Overall: {fria.overallImpact}
+              {t("fria.overallImpact", {
+                value: t(`fria.impact.${fria.overallImpact}`),
+              })}
             </Badge>
             <Badge variant="outline">{fria.status}</Badge>
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
-            Art. 27 Fundamental-Rights-Impact-Assessment — verlinkt mit
-            AI-System{" "}
+            {t("fria.subtitle")}{" "}
             <Link
               href={`/ai-act/systems/${fria.aiSystemId}`}
               className="text-primary hover:underline"
@@ -240,7 +252,7 @@ export default function FriaDetailPage() {
           ) : (
             <ClipboardCheck className="h-4 w-4 mr-2" />
           )}
-          Quality Check
+          {t("fria.qualityCheck")}
         </Button>
       </div>
 
@@ -249,18 +261,14 @@ export default function FriaDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <ShieldCheck className="h-5 w-5 text-primary" />
-            Assessed Fundamental Rights ({fria.rightsAssessed.length})
+            {t("fria.rightsTitle", { count: fria.rightsAssessed.length })}
           </CardTitle>
-          <CardDescription>
-            Ein vollstaendiger FRIA sollte mindestens 5 der 10 Core Rights
-            adressieren.
-          </CardDescription>
+          <CardDescription>{t("fria.rightsDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
           {fria.rightsAssessed.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              Noch keine Rights erfasst. Rights-Assessments werden ueber das
-              FRIA-Formular eingepflegt (Detail-Edit).
+              {t("fria.rightsEmpty")}
             </p>
           ) : (
             <div className="space-y-3">
@@ -268,26 +276,32 @@ export default function FriaDetailPage() {
                 <div key={i} className="border rounded p-3">
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-medium text-sm">
-                      {RIGHT_LABEL[r.right] ?? r.right}
+                      {t(`fria.right.${r.right}`)}
                     </p>
                     <div className="flex items-center gap-1">
                       <Badge
                         variant="outline"
                         className={`text-xs ${IMPACT_PILL[r.impact]}`}
                       >
-                        Impact: {r.impact}
+                        {t("fria.impactPill", {
+                          value: t(`fria.impact.${r.impact}`),
+                        })}
                       </Badge>
                       <Badge
                         variant="outline"
                         className={`text-xs ${IMPACT_PILL[r.residualRisk]}`}
                       >
-                        Residual: {r.residualRisk}
+                        {t("fria.residualPill", {
+                          value: t(`fria.impact.${r.residualRisk}`),
+                        })}
                       </Badge>
                     </div>
                   </div>
                   {r.mitigation && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      <span className="font-medium">Mitigation:</span>{" "}
+                      <span className="font-medium">
+                        {t("fria.mitigation")}
+                      </span>{" "}
                       {r.mitigation}
                     </p>
                   )}
@@ -303,18 +317,15 @@ export default function FriaDetailPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <UserCheck className="h-5 w-5 text-primary" />
-            Quality Flags
+            {t("fria.flagsTitle")}
           </CardTitle>
-          <CardDescription>
-            Assessor bestaetigt welche Teilbereiche dokumentiert und geprueft
-            wurden.
-          </CardDescription>
+          <CardDescription>{t("fria.flagsDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-0">
           {boolRow(
             "q-disc",
-            "Discrimination-Analyse",
-            "Bias + Ungleichbehandlung systematisch bewertet.",
+            t("fria.flag.discrimination"),
+            t("fria.flag.discriminationHint"),
             quality_flags.hasDiscriminationAnalysis,
             (v) =>
               setQualityFlags({
@@ -324,16 +335,16 @@ export default function FriaDetailPage() {
           )}
           {boolRow(
             "q-dpi",
-            "Data-Protection-Impact",
-            "Datenschutz-Folgen separat dokumentiert (ggf. DPIA-Verknuepfung).",
+            t("fria.flag.dataProtection"),
+            t("fria.flag.dataProtectionHint"),
             quality_flags.hasDataProtectionImpact,
             (v) =>
               setQualityFlags({ ...quality_flags, hasDataProtectionImpact: v }),
           )}
           {boolRow(
             "q-atj",
-            "Access-to-Justice-Analyse",
-            "Rechtsschutz, Beschwerden, Widerrufsmoeglichkeiten geprueft.",
+            t("fria.flag.accessToJustice"),
+            t("fria.flag.accessToJusticeHint"),
             quality_flags.hasAccessToJusticeAnalysis,
             (v) =>
               setQualityFlags({
@@ -343,8 +354,8 @@ export default function FriaDetailPage() {
           )}
           {boolRow(
             "q-cons",
-            "Betroffenen-Konsultation",
-            "Affected persons oder deren Vertreter in den Prozess einbezogen.",
+            t("fria.flag.consultation"),
+            t("fria.flag.consultationHint"),
             quality_flags.hasAffectedPersonsConsultation,
             (v) =>
               setQualityFlags({
@@ -354,8 +365,8 @@ export default function FriaDetailPage() {
           )}
           {boolRow(
             "q-oi",
-            "Overall-Impact-Statement",
-            "Abschliessende Bewertung liegt vor.",
+            t("fria.flag.overallImpactStatement"),
+            t("fria.flag.overallImpactStatementHint"),
             quality_flags.hasOverallImpactStatement,
             (v) =>
               setQualityFlags({
@@ -365,8 +376,8 @@ export default function FriaDetailPage() {
           )}
           {boolRow(
             "q-mit",
-            "Mitigation-Measures dokumentiert",
-            "Konkrete Massnahmen fuer jedes identifizierte Risiko.",
+            t("fria.flag.mitigationDocumented"),
+            t("fria.flag.mitigationDocumentedHint"),
             quality_flags.hasMitigationMeasuresDocumented,
             (v) =>
               setQualityFlags({
@@ -394,21 +405,21 @@ export default function FriaDetailPage() {
                 ) : (
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
                 )}
-                Quality-Check Ergebnis
+                {t("fria.resultTitle")}
               </CardTitle>
               {quality.isApprovable ? (
                 <Badge
                   variant="outline"
                   className="bg-emerald-100 text-emerald-800 border-emerald-300"
                 >
-                  Approvable
+                  {t("fria.approvable")}
                 </Badge>
               ) : (
                 <Badge
                   variant="outline"
                   className="bg-amber-100 text-amber-800 border-amber-300"
                 >
-                  Nicht approvable
+                  {t("fria.notApprovable")}
                 </Badge>
               )}
             </div>
@@ -417,14 +428,14 @@ export default function FriaDetailPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span>Rights Coverage (10 core)</span>
+                  <span>{t("fria.rightsCoverage")}</span>
                   <span className="font-medium">{quality.rightsCoverage}%</span>
                 </div>
                 <Progress value={quality.rightsCoverage} className="h-2" />
               </div>
               <div>
                 <div className="flex justify-between text-xs mb-1">
-                  <span>Quality-Checks (6)</span>
+                  <span>{t("fria.qualityChecks")}</span>
                   <span className="font-medium">
                     {quality.qualityChecksPercent}%
                   </span>
@@ -440,7 +451,7 @@ export default function FriaDetailPage() {
               <div className="border border-red-300 bg-red-50 dark:bg-red-950/20 rounded p-3">
                 <p className="text-sm font-medium text-red-800 flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" />
-                  High-Residual-Risk auf folgenden Rights:
+                  {t("fria.highResidualTitle")}
                 </p>
                 <div className="flex flex-wrap gap-1 mt-2">
                   {quality.highResidualRights.map((r, i) => (
@@ -449,13 +460,12 @@ export default function FriaDetailPage() {
                       variant="outline"
                       className="bg-red-100 text-red-800 border-red-300 text-xs"
                     >
-                      {RIGHT_LABEL[r] ?? r}
+                      {t(`fria.right.${r}`)}
                     </Badge>
                   ))}
                 </div>
                 <p className="text-xs text-red-700 mt-2">
-                  Blockt die Approval. Mitigation-Massnahmen verstaerken oder
-                  System nicht einsetzen.
+                  {t("fria.highResidualHint")}
                 </p>
               </div>
             )}
@@ -463,7 +473,7 @@ export default function FriaDetailPage() {
             {quality.missing.length > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">
-                  Fehlende Quality-Checks:
+                  {t("fria.missingChecks")}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {quality.missing.map((m, i) => (
@@ -477,8 +487,7 @@ export default function FriaDetailPage() {
 
             {!quality.isApprovable && !quality.hasHighResidualRisk && (
               <p className="text-sm text-muted-foreground">
-                Zum Approval noetig: &ge; 5 Rights erfasst, alle 6
-                Quality-Checks erfuellt, keine High-Residual-Risks.
+                {t("fria.approvalRequirements")}
               </p>
             )}
           </CardContent>
@@ -491,15 +500,17 @@ export default function FriaDetailPage() {
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
               <p className="text-xs text-muted-foreground mb-1">
-                Naechste Review
+                {t("fria.nextReview")}
               </p>
               <p className="flex items-center gap-1 text-sm">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                {fria.nextReviewDate ?? "—"}
+                {fria.nextReviewDate ? formatDate(fria.nextReviewDate) : "—"}
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">AI-System</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("fria.aiSystem")}
+              </p>
               <Link
                 href={`/ai-act/systems/${fria.aiSystemId}`}
                 className="text-sm text-primary hover:underline"
@@ -508,7 +519,9 @@ export default function FriaDetailPage() {
               </Link>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Status</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("shared.status")}
+              </p>
               <Badge variant="outline">{fria.status}</Badge>
             </div>
           </div>

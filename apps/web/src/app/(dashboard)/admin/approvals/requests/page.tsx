@@ -7,7 +7,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch mit
+ * transliterierten Umlauten ("Entitaetstyp", "Faellig", "ausgewaehlten").
+ * `statusLabel` stand ausserhalb der Komponente und lieferte die fertige
+ * Beschriftung; aufgeloest wird jetzt ueber ein Template aus dem Katalog.
+ */
 import {
   Select,
   SelectContent,
@@ -52,19 +60,6 @@ function statusBadgeClass(status: string): string {
   }
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case "pending":
-      return "Ausstehend";
-    case "approved":
-      return "Genehmigt";
-    case "rejected":
-      return "Abgelehnt";
-    default:
-      return status;
-  }
-}
-
 function dueDateClass(dueDate: string | null): string {
   if (!dueDate) return "text-muted-foreground";
   const due = new Date(dueDate);
@@ -81,6 +76,8 @@ function dueDateClass(dueDate: string | null): string {
 // ---------------------------------------------------------------------------
 
 export default function ApprovalRequestsPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const [requests, setRequests] = useState<ApprovalRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,22 +113,24 @@ export default function ApprovalRequestsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <ClipboardCheck className="h-6 w-6" />
-            Offene Anfragen
+            {t("approvals.openRequests")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Freigabeanfragen einsehen und bearbeiten
+            {t("approvalRequests.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Status filtern" />
+              <SelectValue placeholder={t("approvalRequests.filterStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Alle Status</SelectItem>
+              <SelectItem value="__all__">
+                {t("approvalRequests.allStatuses")}
+              </SelectItem>
               {STATUSES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {statusLabel(s)}
+                  {t(`approvalRequests.status.${s}`)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -145,12 +144,12 @@ export default function ApprovalRequestsPage() {
             <RefreshCcw
               className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
             />
-            Aktualisieren
+            {tCommon("actions.refresh")}
           </Button>
           <Link href="/admin/approvals">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Workflows
+              {t("approvalRequests.workflows")}
             </Button>
           </Link>
         </div>
@@ -169,22 +168,22 @@ export default function ApprovalRequestsPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Titel
+                      {t("approvalRequests.column.title")}
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Entitaetstyp
+                      {t("approvalRequests.column.entityType")}
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Aktueller Schritt
+                      {t("approvalRequests.column.currentStep")}
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Antragsteller
+                      {t("approvalRequests.column.requester")}
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Faellig
+                      {t("approvalRequests.column.dueDate")}
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-medium">
-                      Status
+                      {t("approvalRequests.column.status")}
                     </th>
                   </tr>
                 </thead>
@@ -219,7 +218,7 @@ export default function ApprovalRequestsPage() {
                           variant="outline"
                           className={statusBadgeClass(request.status)}
                         >
-                          {statusLabel(request.status)}
+                          {t(`approvalRequests.status.${request.status}`)}
                         </Badge>
                       </td>
                     </tr>
@@ -234,12 +233,12 @@ export default function ApprovalRequestsPage() {
           <CardContent className="flex flex-col items-center justify-center py-16">
             <ClipboardCheck className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium mb-1">
-              Keine Anfragen vorhanden
+              {t("approvalRequests.empty")}
             </h3>
             <p className="text-sm text-muted-foreground">
               {statusFilter !== "__all__"
-                ? "Keine Anfragen mit dem ausgewaehlten Status gefunden. Versuchen Sie einen anderen Filter."
-                : "Es liegen derzeit keine Freigabeanfragen vor."}
+                ? t("approvalRequests.emptyFiltered")
+                : t("approvalRequests.emptyHint")}
             </p>
           </CardContent>
         </Card>

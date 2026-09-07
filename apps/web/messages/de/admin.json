@@ -1,0 +1,347 @@
+{
+  "approvals": {
+    "title": "Freigabe-Workflows",
+    "description": "Freigabe-Workflows verwalten und konfigurieren",
+    "openRequests": "Offene Anfragen",
+    "create": "Workflow erstellen",
+    "type": {
+      "sequential": "Sequenziell",
+      "parallel": "Parallel"
+    },
+    "entityType": "Entitätstyp:",
+    "steps": "Schritte:",
+    "createdAt": "Erstellt: {value}",
+    "empty": "Keine Workflows vorhanden",
+    "emptyHint": "Erstellen Sie Ihren ersten Freigabe-Workflow, um Genehmigungsprozesse zu automatisieren."
+  },
+  "approvalRequests": {
+    "description": "Freigabeanfragen einsehen und bearbeiten",
+    "filterStatus": "Status filtern",
+    "allStatuses": "Alle Status",
+    "workflows": "Workflows",
+    "status": {
+      "pending": "Ausstehend",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt"
+    },
+    "column": {
+      "title": "Titel",
+      "entityType": "Entitätstyp",
+      "currentStep": "Aktueller Schritt",
+      "requester": "Antragsteller",
+      "dueDate": "Fällig",
+      "status": "Status"
+    },
+    "empty": "Keine Anfragen vorhanden",
+    "emptyFiltered": "Keine Anfragen mit dem ausgewählten Status gefunden. Versuchen Sie einen anderen Filter.",
+    "emptyHint": "Es liegen derzeit keine Freigabeanfragen vor."
+  },
+  "reminders": {
+    "title": "Erinnerungsregeln",
+    "description": "Automatische Benachrichtigungen vor Fristablauf oder bei Statusänderungen",
+    "create": "Regel erstellen",
+    "loadError": "Fehler beim Laden der Erinnerungsregeln. Bitte erneut versuchen.",
+    "empty": "Keine Erinnerungsregeln vorhanden",
+    "emptyHint": "Erstellen Sie eine Regel, um automatische Benachrichtigungen einzurichten.",
+    "allRules": "Alle Regeln",
+    "ruleCount": "{count, plural, one {# Regel konfiguriert} other {# Regeln konfiguriert}}",
+    "column": {
+      "name": "Name",
+      "entityType": "Entitätstyp",
+      "condition": "Bedingung",
+      "channel": "Kanal",
+      "status": "Status"
+    },
+    "channel": {
+      "in_app": "In-App",
+      "email": "E-Mail",
+      "slack": "Slack"
+    }
+  },
+  "reviewCycles": {
+    "title": "Review-Zyklen",
+    "description": "Strukturierte Freigabeprozesse mit Eskalation bei Zeitüberschreitung",
+    "create": "Review-Zyklus erstellen",
+    "loadError": "Fehler beim Laden der Review-Zyklen. Bitte erneut versuchen.",
+    "empty": "Keine Review-Zyklen vorhanden",
+    "emptyHint": "Erstellen Sie den ersten Review-Zyklus, um strukturierte Freigabeprozesse zu starten.",
+    "allCycles": "Alle Review-Zyklen",
+    "cycleCount": "{count, plural, one {# Zyklus insgesamt} other {# Zyklen insgesamt}}",
+    "column": {
+      "entity": "Entität",
+      "reviewers": "Prüfende",
+      "deadline": "Frist",
+      "escalation": "Eskalation (Tage)"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "in_review": "In Prüfung",
+      "approved": "Genehmigt",
+      "rejected": "Abgelehnt",
+      "escalated": "Eskaliert"
+    },
+    "days": "{count, plural, one {# Tag} other {# Tage}}"
+  },
+  "messaging": {
+    "title": "Messaging-Integrationen",
+    "description": "Slack, Microsoft Teams und Webhook-Anbindungen für Benachrichtigungen",
+    "add": "Integration hinzufügen",
+    "loadError": "Fehler beim Laden der Integrationen. Bitte erneut versuchen.",
+    "empty": "Keine Integrationen konfiguriert",
+    "emptyHint": "Verbinden Sie Slack, Microsoft Teams oder einen Webhook, um Benachrichtigungen zu versenden.",
+    "provider": {
+      "slack": "Slack",
+      "teams": "Microsoft Teams",
+      "webhook": "Webhook"
+    },
+    "eventTypes": "Ereignistypen",
+    "noEvents": "Keine Ereignisse konfiguriert",
+    "lastSent": "Letzter Versand",
+    "errorCount": "Fehleranzahl"
+  },
+  "dataLinks": {
+    "title": "Live-Datenverknüpfungen",
+    "description": "Automatische Aktualisierung verknüpfter Datenpunkte über Module hinweg",
+    "create": "Verknüpfung erstellen",
+    "kpi": {
+      "activeLinks": "Aktive Verknüpfungen",
+      "modulesLinked": "Module verknüpft",
+      "lastSync": "Letzte Synchronisation"
+    },
+    "bidirectional": "Bidirektional",
+    "unidirectional": "Unidirektional",
+    "tableTitle": "Datenverknüpfungen ({count})",
+    "empty": "Keine Verknüpfungen vorhanden",
+    "emptyHint": "Erstellen Sie automatische Datenverknüpfungen zwischen Modulen.",
+    "column": {
+      "source": "Quelle",
+      "target": "Ziel",
+      "type": "Typ",
+      "direction": "Richtung"
+    },
+    "linkType": {
+      "reference": "Referenz",
+      "aggregate": "Aggregation",
+      "mirror": "Spiegelung"
+    },
+    "status": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "error": "Fehler"
+    }
+  },
+  "dataQuality": {
+    "title": "Datenqualitätsregeln",
+    "description": "Automatische Plausibilitätsprüfungen auf eingegebene Daten",
+    "percent": "{value} %",
+    "kpi": {
+      "activeRules": "Aktive Regeln",
+      "lastCheck": "Letzte Prüfung",
+      "errorRate": "Fehlerquote",
+      "openViolations": "Verstösse offen"
+    },
+    "tableTitle": "Validierungsregeln ({count})",
+    "empty": "Keine Regeln konfiguriert",
+    "emptyHint": "Definieren Sie Plausibilitätsprüfungen für Ihre Dateneingaben.",
+    "column": {
+      "field": "Feld",
+      "ruleType": "Regeltyp",
+      "severity": "Schweregrad",
+      "violations": "Verstösse"
+    },
+    "ruleType": {
+      "range": "Wertebereich",
+      "pattern": "Muster",
+      "required": "Pflichtfeld",
+      "unique": "Eindeutig"
+    },
+    "severity": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "critical": "Kritisch"
+    }
+  },
+  "contentRequests": {
+    "title": "Inhaltliche Anfragen",
+    "description": "Strukturierte Datenanfragen an Fachabteilungen mit Nachverfolgung",
+    "create": "Anfrage erstellen",
+    "loadError": "Fehler beim Laden der Anfragen. Bitte erneut versuchen.",
+    "status": {
+      "open": "Offen",
+      "overdue": "Überfällig",
+      "answered": "Beantwortet",
+      "cancelled": "Abgebrochen"
+    },
+    "daysShort": "{value} Tg.",
+    "avgResponseTime": "Durchschnittl. Antwortzeit",
+    "emptyHint": "Erstellen Sie eine Anfrage, um Daten von Fachabteilungen einzuholen.",
+    "allRequests": "Alle Anfragen",
+    "requestCount": "{count, plural, one {# Anfrage insgesamt} other {# Anfragen insgesamt}}",
+    "column": {
+      "requestedBy": "Angefordert von",
+      "recipient": "Empfänger",
+      "priority": "Priorität"
+    }
+  },
+  "syncLog": {
+    "title": "Synchronisations-Protokoll",
+    "description": "Verlauf aller Konnektor-Synchronisationen",
+    "loadError": "Synchronisations-Protokoll konnte nicht geladen werden.",
+    "status": {
+      "success": "Erfolgreich",
+      "failed": "Fehlgeschlagen",
+      "running": "Aktiv"
+    },
+    "kpi": {
+      "total": "Gesamt"
+    },
+    "filterConnector": "Konnektor:",
+    "filterStatus": "Status:",
+    "allConnectors": "Alle Konnektoren",
+    "empty": "Keine Synchronisationen gefunden",
+    "emptyHint": "Sobald Konnektoren synchronisieren, erscheinen die Einträge hier.",
+    "tableTitle": "Synchronisations-Verlauf",
+    "column": {
+      "connector": "Konnektor",
+      "pulled": "Gezogen",
+      "written": "Geschrieben",
+      "errors": "Fehler",
+      "duration": "Dauer",
+      "timestamp": "Zeitpunkt"
+    },
+    "duration": {
+      "ms": "{value} ms",
+      "s": "{value} s",
+      "ms_s": "{minutes} Min. {seconds} Sek.",
+      "h_m": "{hours} Std. {minutes} Min."
+    }
+  },
+  "connectors": {
+    "title": "Enterprise-Konnektoren",
+    "description": "Anbindung an SAP, Oracle, Workday, Salesforce, Cloud-Sicherheit und weitere Systeme",
+    "loadError": "Konnektor-Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "kpi": {
+      "availableTypes": "Verfügbare Typen",
+      "activeSyncs": "Aktive Synchronisationen"
+    },
+    "empty": "Keine Konnektor-Typen verfügbar",
+    "emptyHint": "Konnektor-Typen werden über die Schnittstelle bereitgestellt.",
+    "available": "Verfügbar",
+    "connectorCount": "{count, plural, one {# Konnektor} other {# Konnektoren}}",
+    "instanceCount": "{count, plural, one {# konfigurierte Instanz} other {# konfigurierte Instanzen}}",
+    "recordCount": "{value} Datensätze",
+    "authMethods": "Authentifizierungsverfahren",
+    "supportedEntities": "Unterstützte Entitäten",
+    "syncOk": "Sync OK",
+    "addInstance": "Weitere Instanz einrichten",
+    "setUp": "Konnektor einrichten",
+    "category": {
+      "erp": "ERP",
+      "hcm": "Personalwesen",
+      "crm": "CRM",
+      "itsm": "IT-Service-Management",
+      "cloud_security": "Cloud-Sicherheit",
+      "vulnerability": "Schwachstellen",
+      "utility": "Werkzeuge",
+      "esg": "ESG",
+      "messaging": "Nachrichten"
+    }
+  },
+  "roles": {
+    "title": "Rollenverwaltung",
+    "description": "System- und benutzerdefinierte Rollen mit Modul-Berechtigungen",
+    "createNew": "Neue Rolle erstellen",
+    "systemRoles": "Systemrollen ({count})",
+    "customRoles": "Benutzerdefinierte Rollen ({count})",
+    "noCustomRoles": "Keine benutzerdefinierten Rollen erstellt",
+    "system": "System",
+    "deleteConfirm": "Rolle „{name}“ wirklich löschen?",
+    "editRole": "Rolle {name} bearbeiten",
+    "deleteRole": "Rolle {name} löschen",
+    "noPermissions": "Keine Berechtigungen",
+    "action": {
+      "admin": "Admin",
+      "write": "Schreiben",
+      "read": "Lesen",
+      "none": "Kein Zugriff"
+    },
+    "module": {
+      "erm": "ERM",
+      "isms": "ISMS",
+      "ics": "IKS",
+      "dpms": "DSMS",
+      "bcms": "BCMS",
+      "audit": "Revision",
+      "tprm": "TPRM",
+      "contract": "Verträge",
+      "esg": "ESG",
+      "bpm": "BPM",
+      "eam": "EAM",
+      "reporting": "Berichtswesen",
+      "whistleblowing": "Hinweisgebersystem",
+      "dms": "DMS",
+      "academy": "Academy"
+    },
+    "form": {
+      "name": "Rollenname *",
+      "namePlaceholder": "z. B. Compliance-Manager",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Kurzbeschreibung …",
+      "color": "Farbe",
+      "permissionMatrix": "Berechtigungen pro Modul",
+      "module": "Modul",
+      "permissionOption": "{module}: {action}",
+      "create": "Rolle erstellen",
+      "update": "Aktualisieren"
+    }
+  },
+  "rlsAudit": {
+    "title": "RLS-Audit",
+    "description": "Deckung der Row-Level-Security-Policies über alle mandantenbezogenen Tabellen. ADR-001 erzwingt Isolation je org_id auf der Datenbankschicht.",
+    "rerun": "Erneut prüfen",
+    "allProtected": "Alle Mandanten-Tabellen sind RLS-geschützt",
+    "gapsFound": "{gaps} von {total} Mandanten-Tabellen haben Lücken",
+    "checkedAt": "Geprüft am {value}. Gesamt {total} Tabellen, davon {tenant} mandantenbezogen und {platform} plattform-global.",
+    "chip": {
+      "ok": "OK",
+      "missingRls": "RLS fehlt",
+      "missingForce": "FORCE fehlt",
+      "missingPolicies": "Policies fehlen",
+      "platformTables": "Plattform-Tabellen"
+    },
+    "filter": {
+      "gaps": "Nur Lücken",
+      "tenant": "Alle Mandanten-Tabellen",
+      "all": "Alles"
+    },
+    "column": {
+      "table": "Tabelle",
+      "scope": "Geltungsbereich",
+      "rls": "RLS",
+      "force": "FORCE",
+      "policies": "Policies",
+      "status": "Status"
+    },
+    "scope": {
+      "tenant": "mandantenbezogen",
+      "platform": "plattform-global"
+    },
+    "status": {
+      "ok": "OK",
+      "missing_rls": "RLS fehlt",
+      "missing_force": "FORCE fehlt",
+      "missing_policies": "Policies fehlen",
+      "platform_ignored": "Plattform"
+    },
+    "cell": {
+      "rlsOn": "RLS aktiviert",
+      "rlsOff": "RLS fehlt",
+      "forceOn": "FORCE aktiviert",
+      "forceOff": "FORCE fehlt",
+      "notApplicable": "nicht anwendbar"
+    },
+    "noGaps": "Keine Lücken — gut gemacht.",
+    "noEntries": "Keine Einträge."
+  }
+}
