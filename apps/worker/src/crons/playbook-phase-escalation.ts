@@ -10,7 +10,6 @@ import {
   playbookPhase,
   task,
   incidentTimelineEntry,
-  notification,
 } from "@grc/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";

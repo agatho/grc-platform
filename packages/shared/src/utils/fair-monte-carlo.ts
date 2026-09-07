@@ -272,8 +272,14 @@ function computeSensitivity(
 ): SensitivityEntry[] {
   const subIterations = Math.min(iterations, 2000); // Reduced for speed
 
-  // Baseline: all at most-likely
-  const baselineAle = params.lefMostLikely * params.lmMostLikely;
+  // [N-2 · Welle 6a] Hier stand `const baselineAle = lefMostLikely *
+  // lmMostLikely` — berechnet und nie gelesen. Der Rest der Funktion misst
+  // die Empfindlichkeit ueber die STREUUNG je Parameter (`stdDev`) und
+  // normiert auf deren Summe; ein Bezugswert kommt darin nicht vor. Die
+  // Zeile ist ein Ueberbleibsel der klassischen Tornado-Form
+  // (Abweichung relativ zum Basisfall) und wurde entfernt, statt sie
+  // stehen zu lassen und den Eindruck zu erwecken, sie ginge in die
+  // Rechnung ein. Das Ergebnis aendert sich dadurch nicht.
 
   // Vary LEF with LM fixed at mode
   const lefAleValues: number[] = [];

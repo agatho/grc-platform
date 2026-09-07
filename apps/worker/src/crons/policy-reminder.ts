@@ -2,13 +2,8 @@
 // DAILY at 08:00 — Send reminders for pending acknowledgments approaching deadline
 // Checks: configurable days before deadline (default 7d, 3d, 1d)
 
-import {
-  db,
-  policyDistribution,
-  policyAcknowledgment,
-  notification,
-} from "@grc/db";
-import { eq, and, sql, gt } from "drizzle-orm";
+import { db, policyDistribution, policyAcknowledgment } from "@grc/db";
+import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 

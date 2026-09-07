@@ -2,7 +2,7 @@
 // Runs daily — analyzes test execution history and updates learning patterns
 
 import { db, controlTestExecution, controlTestLearning } from "@grc/db";
-import { eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processControlTestLearning = withCronInstrumentation(

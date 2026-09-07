@@ -1,8 +1,8 @@
 // Sprint 46: Whistleblower Retaliation Check (Weekly)
 // Check new protection events against retaliation indicator rules
 
-import { db, wbProtectionCase, wbProtectionEvent, notification } from "@grc/db";
-import { and, eq, sql } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";
@@ -17,26 +17,30 @@ export const processWbRetaliationCheck = withCronInstrumentation(
   async (): Promise<RetaliationCheckResult> => {
     let alerts = 0;
 
-    // Default retaliation indicator rules
-    const rules = [
-      {
-        eventType: "performance_review",
-        timeWindowMonths: 6,
-        severity: "suspicious",
-      },
-      { eventType: "termination", timeWindowMonths: 0, severity: "critical" },
-      { eventType: "role_change", timeWindowMonths: 3, severity: "suspicious" },
-      {
-        eventType: "salary_change",
-        timeWindowMonths: 6,
-        severity: "suspicious",
-      },
-      {
-        eventType: "assignment_change",
-        timeWindowMonths: 3,
-        severity: "suspicious",
-      },
-    ];
+    // ── [N-2 · Welle 6a] BEFUND: die Indikatorregeln wurden nie angewandt
+    //
+    // Hier stand eine Liste `rules` mit fuenf Eintraegen — Ereignisart,
+    // Zeitfenster in Monaten und Schwere:
+    //
+    //   performance_review / 6 Monate  / suspicious
+    //   termination        / 0 Monate  / critical
+    //   role_change        / 3 Monate  / suspicious
+    //   salary_change      / 6 Monate  / suspicious
+    //   assignment_change  / 3 Monate  / suspicious
+    //
+    // Keine Zeile darunter hat sie gelesen. Der Job liest stattdessen
+    // Ereignisse, deren Spalte `flag` bereits auf `suspicious` oder
+    // `critical` steht, und leitet sie weiter. Er ERKENNT also keine
+    // Repressalie; er stellt zu, was jemand anders schon markiert hat.
+    // Das Zeitfenster gegenueber `protection_start_date` — der Kern des
+    // Indikators nach HinSchG § 36 — wird nirgends geprueft, obwohl die
+    // Abfrage die Spalte sogar mitliest.
+    //
+    // Die tote Liste ist entfernt, damit sie nicht als Umsetzung gelesen
+    // wird. Sie durch eine echte Auswertung zu ersetzen ist ein Feature mit
+    // fachlicher Festlegung (welche Ereignisart in welchem Fenster welche
+    // Schwere ergibt) und steht als Befund in
+    // `docs/UMSETZUNG-WELLE-6A.md` §5.
 
     // Find recent suspicious/critical events from the last week
     const recentEvents = await db.execute(

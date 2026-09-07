@@ -3,7 +3,11 @@
 
 import { db, applicationInterface } from "@grc/db";
 import { isNotNull, eq } from "drizzle-orm";
-import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
+import {
+  checkResolvedHostIsPublic,
+  fetchResolvedHost,
+  type ResolvedAddress,
+} from "@grc/shared/lib/url-safety-server";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processInterfaceHealthCheck = withCronInstrumentation(
@@ -29,6 +33,10 @@ export const processInterfaceHealthCheck = withCronInstrumentation(
         const url = iface.healthCheckUrl!;
 
         // Validate URL (reject private IPs)
+        // [OP-112] Das Ergebnis der Pruefung wird gebraucht, nicht nur
+        // ihr Ja/Nein: die geprueften Adressen gehen als Pin in den
+        // `fetch`. Deshalb steht es ausserhalb des try-Blocks.
+        let checked: readonly ResolvedAddress[];
         try {
           const parsed = new URL(url);
           if (parsed.protocol !== "https:") {
@@ -53,6 +61,7 @@ export const processInterfaceHealthCheck = withCronInstrumentation(
               previousStatus: iface.healthStatus,
             };
           }
+          checked = safetyCheck.addresses;
         } catch {
           return {
             id: iface.id,
@@ -65,10 +74,14 @@ export const processInterfaceHealthCheck = withCronInstrumentation(
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 5000);
 
-          const response = await fetch(url, {
-            method: "HEAD",
-            signal: controller.signal,
-          });
+          // [OP-112] Auf die geprueften Adressen festgenagelt. Ohne Pin
+          // loest `fetch` erneut auf; ein Resolver, der danach umschwenkt,
+          // haette die Pruefung darueber vollstaendig umgangen.
+          const response = await fetchResolvedHost(
+            url,
+            { addresses: checked },
+            { method: "HEAD", signal: controller.signal },
+          );
           clearTimeout(timeout);
 
           const status = response.status;
@@ -103,7 +116,7 @@ export const processInterfaceHealthCheck = withCronInstrumentation(
     // Update statuses
     for (const result of results) {
       if (result.status === "fulfilled") {
-        const { id, status, previousStatus } = result.value;
+        const { id, status } = result.value;
         await db
           .update(applicationInterface)
           .set({ healthStatus: status, lastHealthCheck: new Date() })
@@ -113,9 +126,26 @@ export const processInterfaceHealthCheck = withCronInstrumentation(
         else if (status === "degraded") degraded++;
         else down++;
 
-        // Status-change hook: real notification dispatch happens in the
-        // interface-notification cron downstream; this loop only updates the
-        // status fields. Wrapper records the aggregate counts.
+        // ── [N-2 · Welle 6a] Der Satz, der hier stand, war falsch ──────
+        //
+        // „real notification dispatch happens in the interface-notification
+        // cron downstream". Gemessen am 2026-09-07:
+        //
+        //   $ grep -rn "interface-notification" --include=*.ts apps packages
+        //   apps/worker/src/crons/interface-health-check.ts:129  (dieser Satz)
+        //   $ ls apps/worker/src/crons/ | grep -i interface
+        //   interface-health-check.ts
+        //
+        // Es gibt keinen solchen Cron und keinen Eintrag dafuer in
+        // `JOB_REGISTRY`. `previousStatus` wurde von den drei Rueckgabewegen
+        // oben mitgefuehrt, hier entnommen — und fallen gelassen. Faellt eine
+        // Anwendungsschnittstelle aus, erfaehrt es niemand; die Zahl steht nur
+        // im Sammelergebnis des Laufs.
+        //
+        // Die Entnahme ist entfernt (sie tat nichts). Die Felder auf dem
+        // Rueckgabewert bleiben — sie sind genau das, was ein Versand
+        // braeuchte. Der Befund steht in `docs/UMSETZUNG-WELLE-6A.md` §5:
+        // wer benachrichtigt werden soll, ist eine fachliche Festlegung.
       }
     }
 

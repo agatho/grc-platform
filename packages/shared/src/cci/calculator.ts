@@ -6,7 +6,6 @@ import type {
   CCIFactorWeights,
   CCIFactorScores,
   CCIRawMetrics,
-  CCIRawMetricDetail,
   CCITrend,
   CCICalculationResult,
 } from "../types/compliance-culture";

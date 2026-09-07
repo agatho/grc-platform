@@ -1,8 +1,8 @@
 // Sprint 78: Benchmark Pool Aggregator
 // Aggregates anonymized submissions into benchmark pools
 
-import { db, benchmarkSubmission, benchmarkPool } from "@grc/db";
-import { eq, and, sql } from "drizzle-orm";
+import { db, benchmarkPool } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 

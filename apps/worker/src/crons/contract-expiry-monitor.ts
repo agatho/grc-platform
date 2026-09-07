@@ -1,7 +1,7 @@
 // Cron Job: Contract Expiry Monitor (Daily)
 // Alerts at notice_period, auto-transitions expired/renewal contracts.
 
-import { db, contract, notification } from "@grc/db";
+import { db, contract } from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

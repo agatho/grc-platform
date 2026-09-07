@@ -2,7 +2,7 @@
 // Runs weekly (Monday 8:00) — generates weekly regulatory digests
 
 import { db, regulatoryChange, regulatoryDigest } from "@grc/db";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { gte, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 

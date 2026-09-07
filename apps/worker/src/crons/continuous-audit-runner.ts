@@ -6,11 +6,11 @@ import {
   continuousAuditRule,
   continuousAuditResult,
   continuousAuditException,
-  notification,
 } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 import { validateCustomAuditSql } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { NotImplementedEvidenceError } from "../lib/job-runtime";
 
 interface ContinuousAuditRunnerResult {
   processed: number;
@@ -118,14 +118,29 @@ export const processContinuousAuditRunner = withCronInstrumentation(
   },
 );
 
+// ── [N-2 · Welle 6a] Eine eingebaute Regel bestand immer, ohne Pruefung ──
+//
+// Aufgefallen ueber `noUnusedLocals`: `checkType` wurde aus
+// `rule.dataSource.check_type` gelesen und nie verwendet. Darunter stand
+// „Built-in rule implementations would go here / For now, return empty
+// (pass)" — die Funktion gab `[]` zurueck, und ein leeres Ergebnis heisst
+// in diesem Laeufer „keine Ausnahmen", also BESTANDEN.
+//
+// Eine kontinuierliche Pruefung vom Typ `builtin` hat damit bei jedem Lauf
+// ein sauberes Ergebnis geschrieben, ohne irgendetwas geprueft zu haben.
+// Genau die Fehlerklasse aus `tests/no-fabricated-evidence.test.ts`.
+// Sie verweigert jetzt, statt zu bestehen.
 async function executeBuiltinRule(
   rule: typeof continuousAuditRule.$inferSelect,
-) {
+): Promise<never> {
   const dataSource = rule.dataSource as Record<string, unknown>;
-  const checkType = dataSource?.check_type as string;
-  // Built-in rule implementations would go here
-  // For now, return empty (pass)
-  return [];
+  const checkType = (dataSource?.check_type as string | undefined) ?? "unknown";
+  throw new NotImplementedEvidenceError(
+    "continuous audit built-in rule",
+    `Rule "${rule.name}" requests built-in check "${checkType}". ` +
+      `No built-in check is implemented, so no result is persisted — ` +
+      `an empty exception list would have been recorded as "passed".`,
+  );
 }
 
 // #S04-01 (ARCTOS-FULL-2026-08-31, Critical) — arbitrary SQL execution as

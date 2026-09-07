@@ -4,7 +4,7 @@
 
 import type { GrcEvent } from "@grc/events";
 import { db, automationRule, automationRuleExecution } from "@grc/db";
-import { eq, and, sql, desc, gte } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type {
   AutomationTriggerConfig,
   ConditionGroup,
@@ -72,7 +72,18 @@ export class AutomationEngine {
     if (!this.matchesTrigger(rule, event)) return;
 
     // 2. Check cooldown
-    if (this.isInCooldown(rule.id, event.entityId)) {
+    // [N-2 · Welle 6a] `rule.cooldownMinutes` wird jetzt tatsaechlich
+    // gelesen. Bis hierher rief diese Stelle die Zwei-Argument-Form, die
+    // eine Stunde fest verdrahtet hatte — `automation_rule.cooldown_minutes`
+    // war damit eine Einstellung ohne Wirkung. Der Fallback 60 ist der
+    // DEFAULT der Spalte (`packages/db/src/schema/automation.ts:36`), die
+    // NULL zulaesst; die Zeile aendert also fuer eine Regel ohne gesetzten
+    // Wert nichts. Die Ratenschranke eine Zeile tiefer hat ihren
+    // Konfigurationswert immer schon durchgereicht — genau daran war der
+    // Unterschied zu sehen.
+    if (
+      this.isInCooldown(rule.id, event.entityId, rule.cooldownMinutes ?? 60)
+    ) {
       await this.logExecution({
         ruleId: rule.id,
         orgId: event.orgId,
@@ -246,25 +257,26 @@ export class AutomationEngine {
 
   /**
    * Check if a rule is in cooldown for a given entity.
+   *
+   * [N-2 · Welle 6a] Vorher standen hier ZWEI Methoden: `isInCooldown`
+   * (eine Stunde fest verdrahtet, mit dem Kommentar „Default cooldown:
+   * check against rule (retrieved from DB inline) / For now use the cache
+   * timestamp approach") und `isInCooldownWithMinutes`, die den
+   * konfigurierten Wert nahm. Der Produktionspfad rief die erste, und die
+   * zweite hatte ausserhalb der Tests keinen Aufrufer —
+   * `automation_rule.cooldown_minutes` war eine Einstellung ohne Wirkung.
+   * Zwei Methoden fuer dieselbe Frage sind die Ursache; deshalb steht hier
+   * nur noch eine.
+   *
+   * Bewusst NICHT geaendert: der Zwischenspeicher ist prozesslokal. Bei
+   * mehreren Worker-Containern gilt die Sperre je Prozess, nicht je Regel.
+   * Eine belastbare Sperre laege in `automation_rule_execution`
+   * (`gte(executedAt, jetzt - cooldown)`) und ist ein eigener Umbau.
    */
-  isInCooldown(ruleId: string, entityId: string): boolean {
-    const key = `${ruleId}:${entityId}`;
-    const lastExec = this.cooldownCache.get(key);
-    if (!lastExec) return false;
-
-    // Default cooldown: check against rule (retrieved from DB inline)
-    // For now use the cache timestamp approach
-    const cooldownMs = 60 * 60 * 1000; // 1 hour default
-    return Date.now() - lastExec.getTime() < cooldownMs;
-  }
-
-  /**
-   * Check if a rule is in cooldown for a given entity, with custom minutes.
-   */
-  isInCooldownWithMinutes(
+  isInCooldown(
     ruleId: string,
     entityId: string,
-    cooldownMinutes: number,
+    cooldownMinutes = 60,
   ): boolean {
     const key = `${ruleId}:${entityId}`;
     const lastExec = this.cooldownCache.get(key);

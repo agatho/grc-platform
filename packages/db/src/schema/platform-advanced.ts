@@ -12,7 +12,6 @@ import {
   pgEnum,
   index,
   uniqueIndex,
-  date,
 } from "drizzle-orm/pg-core";
 import { tsvector } from "./custom-types";
 import { relations, sql } from "drizzle-orm";

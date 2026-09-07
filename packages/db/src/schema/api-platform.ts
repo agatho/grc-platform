@@ -12,7 +12,6 @@ import {
   jsonb,
   index,
   uniqueIndex,
-  bigint,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 

@@ -612,6 +612,70 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-05 — Welle 6a: elf Jobs, die Erfolg meldeten
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-6A.md`. Erledigt: OP-112, N-1, N-2;
+N-3 begründet **nicht** verdrahtet.
+
+**OP-112 ist scharf.** `npm ls undici --all --omit=dev` ging von `(empty)` auf
+`@grc/shared@0.1.0 → undici@7.29.0`. Eigener Rebinding-Versuch mit zwei Servern
+auf demselben Port und einem umschwenkenden Resolver: **ungepinnt →
+`server=B-rebind-ziel`, gepinnt → `server=A-oeffentlich-validiert`**, null
+Resolver-Aufrufe des Agents. Vier Aufrufer pinnen jetzt.
+
+**N-1 — Migration 0479**, `CHECK (weight > 0)`. Selbst gegen eine frische
+Datenbank von Null nachgeprüft: **429/429, 617 Tabellen**, und die Bedingung
+steht als `audit_qa_checklist_item_weight_positive` im Schema.
+
+**N-2 waren nicht „ca. 75", sondern 265** — 127 in elf Paketen und **138 in
+`apps/worker`**, das in Welle 4b-6 gar nicht gezählt worden war. Alle
+abgetragen, ohne `!` und ohne `as`; der Schalter steht jetzt in 12 von 12
+Projekten. Die Lint-Ratsche fällt **282 → 45** (`no-unused-vars` 249 → 12).
+
+**Und genau wie in Welle 4b-3 war die Regel ein Defektdetektor.** Elf
+Produktdefekte, die schwersten zuerst:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                           | Art                  | Stand            |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------- |
+| OP-196 | **Jede eingebaute Dauerprüfungsregel schrieb „bestanden", ohne zu prüfen.** `executeBuiltinRule` gab `[]` zurück, mit dem Kommentar „For now, return empty (pass)"; der Aufrufer macht daraus `resultStatus = "pass"` und legt das als **unveränderliches** Ergebnis ab. In einem GRC-Produkt ist das erfundener Prüfnachweis. Selbst nachgemessen am alten Stand `dcded077`. | **Produkt/Nachweis** | verweigert jetzt |
+| OP-197 | **`risk-prediction-weekly` quittierte jede Woche `status:"success"`** — der Rumpf war `return {0,0,0}`. Der zugehörige Test bestand aus `expect(threw).toBe(false)` und deckte damit den Stub.                                                                                                                                                                                | Produkt/Nachweis     | verweigert jetzt |
+| OP-198 | **`fetchPostureScore` schrieb `value: 0, trend: "stable"` in jeden ISMS-Bericht**, ohne je Daten zu lesen. Meldet jetzt `"n/a"`.                                                                                                                                                                                                                                              | Produkt/Nachweis     | behoben          |
+| OP-199 | **`tech-radar-migration-alerts` meldete `alertsCreated` als Zahl der Kandidaten** und erzeugte nie eine Warnung.                                                                                                                                                                                                                                                              | Produkt/Nachweis     | verweigert jetzt |
+| OP-200 | **`automation_rule.cooldown_minutes` war ohne Wirkung** — es gab zwei Cooldown-Methoden, und der Produktionspfad rief die mit fest verdrahteter Stunde. Die zugehörige Suite lief nur gegen einen leeren Cache und konnte den Cooldown nie prüfen: **das elfte Tor in diesem Audit, das nicht auslösen konnte.**                                                              | Produkt              | behoben          |
+| OP-201 | **Eine zweite, verdeckte `ADEQUACY_COUNTRIES`-Liste** mit dem Nicht-ISO-Code `"UK"` statt `GB`. Eine **dritte** Kopie in der TPRM-Route weicht wieder ab — **ihr fehlen die USA**. Zwei entfernt, die dritte benannt.                                                                                                                                                         | Produkt              | teilweise        |
+
+Dazu vier fachliche Festlegungen, die benannt und nicht geraten wurden:
+Der Berichtszeitraum wird in drei Vorlagen gedruckt (`Period: {{period.label}}`),
+aber von **keiner** der 16 Datenquellen gelesen; `architecture_rule.condition`
+wird nie ausgewertet (eine Einstellung ohne Wirkung); ein Kommentar nannte
+einen `interface-notification`-Cron, den es nicht gibt — **ein
+Schnittstellenausfall benachrichtigt niemanden**; und `wb-retaliation-check`
+wendet seine HinSchG-Indikatoren nie an, es stellt nur zu, was ohnehin schon
+markiert war.
+
+**N-3 — die Entscheidung, und warum sie so lautet.** `computeQaScore` hat null
+Aufrufer, `updateQaChecklistSchema` keine Route, `overall_score` ist in 0 von 0
+Zeilen gefüllt, die Seite zeigt ein festes `--`. Verdrahtet wurde **nicht** —
+und zwar nicht aus Bequemlichkeit: Gemessen an genau der Checkliste, die die
+POST-Route anlegt (15 Positionen, `compliance` durchweg NULL, weil es keinen
+Schreibweg gibt), liefert die Funktion `{"score":0,"rating":"red"}`. **Jede
+QA-Bewertung im Produkt trüge die Note „rot"** — nicht weil geprüft wurde,
+sondern weil nichts geprüft werden kann. Eine leere Spalte ist sichtbar
+unfertig; eine konstante rote Bewertung sieht aus wie ein Befund.
+
+Beim Nachmessen kam der Defekt heraus, den N-3 gar nicht nannte: **1 von 15
+bewertet ergab `{"score":100,"rating":"green"}`**, identisch mit 15 von 15 —
+`compliance = null` („noch nicht bewertet") wurde wie `not_applicable`
+behandelt. Derselbe Hebel auf Grün wie das negative Gewicht aus Welle 4b-6.
+Das Ergebnis trägt jetzt `assessed`/`total`.
+
+**Ein Grenzübertritt, ausdrücklich benannt:** Der Strang hat
+`docs/feature-catalog.md` angefasst (drei Inventarzeilen, Zähler 19 → 22),
+obwohl die Datei nicht in seiner Hoheit stand. Sie ist Tor-Eingabe von
+`docs-vs-honest-refusals.test.ts`; die Alternativen waren ein rotes Tor oder
+das Zurücknehmen von OP-196/197/199 — also das **Wiederherstellen erfundener
+Nachweise**. Die Entscheidung war richtig und gehört trotzdem benannt.
+
 ### Nachtrag 2026-09-05 — Welle 5c: die Folgearbeiten, und ein zehnter stummer Bereich
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-5C.md`. Abgearbeitet wurden die

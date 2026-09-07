@@ -4,7 +4,6 @@ import {
   createAppDb,
   setRlsContext,
   clearRlsContext,
-  schema,
   requireRow,
   requireAt,
 } from "../helpers";

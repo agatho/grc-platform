@@ -12,11 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { organization, user } from "./platform";
-import {
-  architectureElement,
-  applicationPortfolio,
-  businessCapability,
-} from "./eam";
+import { applicationPortfolio } from "./eam";
 
 // ──────────────────────────────────────────────────────────────
 // Application Assessment History

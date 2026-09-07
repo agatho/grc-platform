@@ -2,7 +2,7 @@
 // Checks bi_scheduled_report.next_run_at and triggers report generation
 
 import { db, biScheduledReport, biReportExecution } from "@grc/db";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { eq, and, lte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 import { log } from "../lib/logger";

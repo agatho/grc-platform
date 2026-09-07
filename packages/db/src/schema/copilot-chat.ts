@@ -13,7 +13,6 @@ import {
   jsonb,
   index,
   uniqueIndex,
-  numeric,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { organization, user } from "./platform";

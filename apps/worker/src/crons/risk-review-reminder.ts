@@ -2,7 +2,7 @@
 // Finds risks where review_date is within the next 14 days and
 // creates notifications for the risk owner.
 
-import { db, risk, notification } from "@grc/db";
+import { db, risk } from "@grc/db";
 import { and, isNull, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

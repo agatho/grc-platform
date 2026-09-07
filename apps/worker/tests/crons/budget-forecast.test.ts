@@ -7,6 +7,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { chainable, makeMockDb, type MockDb } from "../helpers/mock-db";
 
+// [N-2 · Welle 6a] Die Attrappen hatten eine dritte `select`-Antwort
+// („budget lines"). Die zugehoerige Abfrage im Job las ihr Ergebnis nie —
+// eine Datenbankrunde je Budget und Lauf fuer nichts. Sie ist entfernt, und
+// mit ihr die Antwort hier. Die ERWARTUNGEN sind unveraendert: derselbe
+// Aufbau, dasselbe Ergebnis, eine Abfrage weniger.
+
 let mockDb: MockDb;
 
 vi.mock("@grc/db", () => ({
@@ -75,7 +81,6 @@ describe("processBudgetForecast", () => {
     mockDb.select
       .mockReturnValueOnce(chainable([{ id: "org-1" }]))
       .mockReturnValueOnce(chainable([{ id: "bud-1", totalAmount: "120000" }]))
-      .mockReturnValueOnce(chainable([])) // budget lines
       .mockReturnValueOnce(
         chainable([{ costCategory: "licenses", total: "40000" }]),
       );
@@ -100,7 +105,6 @@ describe("processBudgetForecast", () => {
     mockDb.select
       .mockReturnValueOnce(chainable([{ id: "org-1" }]))
       .mockReturnValueOnce(chainable([{ id: "bud-1", totalAmount: "1" }]))
-      .mockReturnValueOnce(chainable([]))
       .mockReturnValueOnce(
         chainable([
           { costCategory: "licenses", total: "100" },
@@ -128,7 +132,6 @@ describe("processBudgetForecast", () => {
         throw new Error("statement timeout");
       })
       .mockReturnValueOnce(chainable([{ id: "bud-2", totalAmount: "10" }]))
-      .mockReturnValueOnce(chainable([]))
       .mockReturnValueOnce(
         chainable([{ costCategory: "tooling", total: "100" }]),
       );

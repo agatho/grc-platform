@@ -1,14 +1,6 @@
 "use client";
 
-import React from "react";
 import { cn } from "../../utils";
-
-interface ValueRange {
-  range: string;
-  label: string;
-  count: number;
-  color: string;
-}
 
 interface RiskValueBarChartProps {
   distribution: { range: string; count: number }[];

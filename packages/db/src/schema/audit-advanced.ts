@@ -1,6 +1,7 @@
 // Sprint 43: Audit Advanced — Working Papers, Resource Planning,
 // Continuous Auditing, QA Review, External Auditor Portal
 
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   uuid,
@@ -14,10 +15,10 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { audit } from "./audit-mgmt";
-import { finding } from "./control";
 
 // ──────────────────────────────────────────────────────────────
 // 43.1 audit_wp_folder — Self-referencing hierarchy per audit
@@ -388,7 +389,17 @@ export const auditQaChecklistItem = pgTable(
     weight: integer("weight").notNull().default(3),
     reviewerComment: text("reviewer_comment"),
   },
-  (table) => [index("aqci_review_idx").on(table.qaReviewId)],
+  (table) => [
+    index("aqci_review_idx").on(table.qaReviewId),
+    // [N-1 · Welle 6a] Migration 0479. Ein Gewicht <= 0 ist kein Gewicht:
+    // fachlich heisst es „zaehlt nicht", und dafuer traegt `compliance`
+    // bereits den Wert `not_applicable`. Ohne diesen Constraint war ein
+    // negatives Gewicht ein Hebel, mit dem sich eine gruene QA-Bewertung
+    // erzeugen liess, obwohl eine Position nicht konform ist (gemessen in
+    // Welle 4b-6: score 125, rating "green"). `computeQaScore` faengt das
+    // seit 4b-6 in der Anwendung ab — hier steht die Schicht darunter.
+    check("audit_qa_checklist_item_weight_positive", sql`${table.weight} > 0`),
+  ],
 );
 
 // ──────────────────────────────────────────────────────────────

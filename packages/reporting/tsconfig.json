@@ -31,9 +31,14 @@
   //   ui                  0              0           0
   //
   // Alle abgetragen; `noUncheckedIndexedAccess` steht deshalb wieder auf dem
-  // ererbten `true` aus tsconfig.base.json. `noUnusedLocals` bleibt vorerst
-  // aus — das ist eine andere Fehlerklasse und ein eigener Punkt.
-  // Belege und die dabei gefundenen Produktdefekte: docs/UMSETZUNG-WELLE-4B-6.md
+  // ererbten `true` aus tsconfig.base.json.
+  // Belege: docs/UMSETZUNG-WELLE-4B-6.md
+  //
+  // [N-2 · Welle 6a] `noUnusedLocals` steht jetzt ebenfalls auf dem ererbten
+  // `true`. Gemessen am 2026-09-07: 9 eigene Fundstelle(n) in diesem Paket,
+  // alle abgetragen — keine per `!`, keine per `as`, keine per
+  // `// @ts-expect-error`. Belege und die dabei freigelegten Produktdefekte:
+  // docs/UMSETZUNG-WELLE-6A.md
 
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
@@ -41,8 +46,7 @@
     "declaration": false,
     "declarationMap": false,
     "types": ["node"],
-    "module": "preserve",
-    "noUnusedLocals": false
+    "module": "preserve"
   },
   "include": ["src"]
 }

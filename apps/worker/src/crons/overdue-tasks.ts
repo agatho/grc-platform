@@ -2,7 +2,7 @@
 // Finds tasks past their due date and marks them overdue,
 // then creates notifications for assignees and task creators.
 
-import { db, task, notification, user } from "@grc/db";
+import { db, task } from "@grc/db";
 import { eq, and, lt, isNull, notInArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

@@ -1,7 +1,6 @@
 // Sprint 20: Group-to-Role Mapping Resolution
 // Maps IdP group names to ARCTOS roles with priority-based resolution
 
-import type { UserRole } from "@grc/shared";
 import type { GroupRoleMappingEntry } from "@grc/shared";
 
 /**

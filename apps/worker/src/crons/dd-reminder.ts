@@ -1,8 +1,8 @@
 // Cron Job: DD Session Reminder (Daily)
 // Sends reminder emails when DD session deadline is in 7d, 3d, or 1d.
 
-import { db, ddSession, notification, vendor } from "@grc/db";
-import { and, sql, eq, isNull, inArray } from "drizzle-orm";
+import { db, ddSession, vendor } from "@grc/db";
+import { and, sql, eq, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 

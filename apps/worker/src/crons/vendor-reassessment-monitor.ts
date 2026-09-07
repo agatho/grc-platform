@@ -1,7 +1,7 @@
 // Cron Job: Vendor Reassessment Monitor (Weekly)
 // Creates notification tasks when nextAssessmentDate is overdue.
 
-import { db, vendor, notification } from "@grc/db";
+import { db, vendor } from "@grc/db";
 import { and, sql, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

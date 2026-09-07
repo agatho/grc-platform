@@ -6,7 +6,7 @@
 // stage, tracked via document.last_reminder_sent_at
 // (@grc/shared shouldSendReviewReminder).
 
-import { db, document, notification } from "@grc/db";
+import { db, document } from "@grc/db";
 import { and, isNull, isNotNull, inArray, eq, sql } from "drizzle-orm";
 import {
   shouldSendReviewReminder,

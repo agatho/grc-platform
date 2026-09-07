@@ -3,7 +3,7 @@
 // Parses feed items and stores in threat_feed_item table
 
 import { db, threatFeedSource, threatFeedItem } from "@grc/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 // #S04-03: SSRF guard. The worker connects as the DB superuser `grc` and
 // sits inside the private network, so an unguarded outbound fetch on an
 // org-supplied URL is the strongest SSRF position in the product.

@@ -4,8 +4,8 @@
 // 3. Flag SLA breaches for acknowledgment
 // 4. Flag SLA breaches for response
 
-import { db, wbCase, notification, user } from "@grc/db";
-import { and, sql, eq, isNull, inArray } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";

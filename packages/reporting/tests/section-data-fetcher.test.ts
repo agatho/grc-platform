@@ -149,3 +149,24 @@ describe("fetchKPIValue", () => {
     }
   });
 });
+
+// ── [N-2 · Welle 6a] Keine erfundene Kennzahl im Bericht ───────────────
+//
+// `fetchPostureScore` gab bis hierher `{ value: 0, label: "Security Posture
+// Score", trend: "stable" }` zurueck, ohne je Daten zu lesen — erkennbar
+// daran, dass sie ihr `ctx`-Argument nicht anfasste. In einem erzeugten
+// ISMS-Bericht stand damit eine Sicherheitsbewertung, die niemand gemessen
+// hatte, ununterscheidbar von einer echten.
+describe("isms.posture_score meldet keine Zahl, die es nicht gemessen hat", () => {
+  it("gibt keinen numerischen Wert und keinen Trend zurueck", async () => {
+    const result = await fetchKPIValue("isms.posture_score", ctx);
+    expect(typeof result.value).not.toBe("number");
+    expect(result.trend).toBeUndefined();
+  });
+
+  it("sagt im Etikett, dass die Kennzahl nicht berechnet ist", () => {
+    return fetchKPIValue("isms.posture_score", ctx).then((result) => {
+      expect(String(result.label).toLowerCase()).toContain("not computed");
+    });
+  });
+});

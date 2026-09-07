@@ -2,7 +2,7 @@
 // Flags applications not assessed in 12+ months
 
 import { db, applicationPortfolio, architectureElement } from "@grc/db";
-import { and, lte, eq, sql, isNull, or } from "drizzle-orm";
+import { and, lte, eq, isNull, or } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 import { log } from "../lib/logger";

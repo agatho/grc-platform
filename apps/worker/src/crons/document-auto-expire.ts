@@ -5,7 +5,7 @@
 // published → expired). The linked work item goes to 'obsolete' (same
 // mapping as the manual status route) and the owner is notified.
 
-import { db, document, workItem, notification } from "@grc/db";
+import { db, document, workItem } from "@grc/db";
 import { and, isNull, isNotNull, eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

@@ -13,7 +13,7 @@
 // Pattern follows calendar-overdue-check: iterate orgs, set
 // app.current_org_id per org (transaction-local), work inside that scope.
 
-import { db, risk, riskAcceptance, notification } from "@grc/db";
+import { db, risk, riskAcceptance } from "@grc/db";
 import { and, eq, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

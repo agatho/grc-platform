@@ -2,15 +2,7 @@
 // When FAIR methodology is active, checks if any risk's ALE P50 exceeds
 // the max_residual_ale threshold from risk_appetite_threshold
 
-import {
-  db,
-  riskAppetiteThreshold,
-  fairSimulationResult,
-  risk,
-  organization,
-  notification,
-  userOrganizationRole,
-} from "@grc/db";
+import { db, riskAppetiteThreshold, organization } from "@grc/db";
 import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

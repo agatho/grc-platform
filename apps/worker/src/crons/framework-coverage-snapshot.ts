@@ -2,7 +2,7 @@
 // Takes weekly coverage snapshot across all frameworks
 
 import { db, frameworkGapAnalysis, frameworkCoverageSnapshot } from "@grc/db";
-import { eq, desc } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const frameworkCoverageSnapshotCron = "0 3 * * 0"; // Weekly Sunday at 3 AM

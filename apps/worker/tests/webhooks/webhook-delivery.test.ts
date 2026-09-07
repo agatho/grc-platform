@@ -19,8 +19,27 @@ vi.mock("@grc/db", async () => {
 
 // Layer-2 DNS check is mocked so tests are deterministic (no real DNS).
 const { dnsCheckMock } = vi.hoisted(() => ({ dnsCheckMock: vi.fn() }));
+// [OP-112] Die Attrappe bildet den ECHTEN Vertrag nach: die Pruefung gibt
+// die geprueften Adressen heraus, und die Zustellung geht ueber
+// `fetchResolvedHost`, das darauf festnagelt. `pinnedAddresses` haelt fest,
+// worauf tatsaechlich gepinnt wurde — waere die Zustellung wieder ein
+// blankes `fetch`, bliebe die Liste leer und die Zusicherung faellt.
+const { pinnedAddresses } = vi.hoisted(() => ({
+  pinnedAddresses: [] as unknown[],
+}));
 vi.mock("@grc/shared/lib/url-safety-server", () => ({
   checkResolvedHostIsPublic: dnsCheckMock,
+  fetchResolvedHost: (
+    url: string,
+    check: { addresses: unknown[] },
+    init: unknown,
+  ) => {
+    pinnedAddresses.push(check.addresses);
+    return (globalThis.fetch as (u: string, i: unknown) => Promise<Response>)(
+      url,
+      init,
+    );
+  },
 }));
 
 import { resetMockDb } from "../helpers/db-proxy";
@@ -78,9 +97,11 @@ describe("processWebhookDelivery — SSRF guard layers", () => {
     delete process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS;
     fetchMock.mockReset();
     dnsCheckMock.mockReset();
+    pinnedAddresses.length = 0;
     dnsCheckMock.mockResolvedValue({
       ok: true,
       url: new URL("https://hooks.example.com"),
+      addresses: [{ address: "93.184.216.34", family: 4 }],
     });
   });
 
@@ -166,6 +187,12 @@ describe("processWebhookDelivery — SSRF guard layers", () => {
 
     await processWebhookDelivery({ webhookId: "wh-1", event });
 
+    // [OP-112] Die Zustellung ist auf genau die Adressen festgenagelt, die
+    // die Rebinding-Pruefung eine Zeile vorher geprueft hat. Ohne Pin
+    // loeste `fetch` erneut auf und die Pruefung waere wirkungslos.
+    expect(pinnedAddresses).toEqual([
+      [{ address: "93.184.216.34", family: 4 }],
+    ]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [calledUrl, init] = fetchMock.mock.calls[0] as [
       string,

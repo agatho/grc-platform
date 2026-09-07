@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 interface CopyRecommendedRisksButtonProps {
   assetId: string;
   onCopy: (riskCatalogEntryIds: string[]) => void;

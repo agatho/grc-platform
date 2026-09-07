@@ -1,13 +1,7 @@
 // Cron Job: Budget Forecast (Weekly)
 // Extrapolates burn rate from actual costs and planned costs to produce a forecast.
 
-import {
-  db,
-  grcBudget,
-  grcBudgetLine,
-  grcCostEntry,
-  organization,
-} from "@grc/db";
+import { db, grcBudget, grcCostEntry, organization } from "@grc/db";
 import { eq, and, isNull, sql, lte, gte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
@@ -47,15 +41,15 @@ export const processBudgetForecast = withCronInstrumentation(
 
         if (!budget) continue;
 
-        // Get all budget lines for this budget
-        const lines = await db
-          .select({
-            grcArea: grcBudgetLine.grcArea,
-            costCategory: grcBudgetLine.costCategory,
-            plannedAmount: grcBudgetLine.plannedAmount,
-          })
-          .from(grcBudgetLine)
-          .where(eq(grcBudgetLine.budgetId, budget.id));
+        // [N-2 · Welle 6a] Hier stand eine zweite Abfrage auf
+        // `grc_budget_line` (grcArea, costCategory, plannedAmount), deren
+        // Ergebnis keine Zeile darunter gelesen hat — eine
+        // Datenbankrunde je Budget und Lauf, fuer nichts. Die Prognose
+        // rechnet ausschliesslich mit den Ist-Kosten unten. Die Aufteilung
+        // nach Bereich und Kostenart, fuer die die Abfrage gedacht war,
+        // gibt es nicht; sie zu erfinden waere eine fachliche Festlegung.
+        // Die Abfrage ist entfernt, der Befund steht in
+        // `docs/UMSETZUNG-WELLE-6A.md` §5.
 
         // Get actual costs year-to-date grouped by category
         const yearStart = `${currentYear}-01-01`;

@@ -7,7 +7,6 @@ import {
   securityIncident,
   playbookActivation,
   playbookTemplate,
-  notification,
 } from "@grc/db";
 import { and, eq, isNull, sql, gte } from "drizzle-orm";
 import { matchesSeverityThreshold } from "@grc/shared";

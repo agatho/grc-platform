@@ -16,7 +16,7 @@
 
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "fs";
-import { join, sep } from "path";
+import { join } from "path";
 import { USER_ROLES, isUserRole } from "../src/types/platform";
 
 const REPO_ROOT = join(__dirname, "../../..");

@@ -1,8 +1,8 @@
 // Sprint 69: Regulatory Source Fetcher Worker
 // Runs every hour — fetches new regulatory changes from configured sources
 
-import { db, regulatorySource, regulatoryChange } from "@grc/db";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { db, regulatorySource } from "@grc/db";
+import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processRegulatorySources = withCronInstrumentation(

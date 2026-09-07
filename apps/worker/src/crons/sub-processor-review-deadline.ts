@@ -1,8 +1,8 @@
 // Sprint 44: Sub-Processor Review Deadline Monitor (Daily)
 // Alert DPO when review deadline is approaching
 
-import { db, vendorSubProcessorNotification, notification } from "@grc/db";
-import { and, eq, sql } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";

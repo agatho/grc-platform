@@ -6,18 +6,8 @@
 // Sprint 3b addition: Also checks process_review_schedule records
 // for schedules where nextReviewDate is approaching (30 days, 0 days, overdue).
 
-import { db, process, processReviewSchedule, notification } from "@grc/db";
-import {
-  and,
-  isNull,
-  sql,
-  isNotNull,
-  or,
-  inArray,
-  eq,
-  lte,
-  gte,
-} from "drizzle-orm";
+import { db, process, processReviewSchedule } from "@grc/db";
+import { and, isNull, sql, isNotNull, or, inArray, eq, lte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";
@@ -135,7 +125,9 @@ export const processReviewReminders = withCronInstrumentation(
     // - Past dates (overdue — creates task)
 
     const thirtyDaysFromNow = new Date(now.getTime() + 30 * 86400000);
-    const todayStr = now.toISOString().split("T")[0];
+    // [N-2 · Welle 6a] `todayStr` war tot. Es gibt bewusst KEINE untere
+    // Schranke auf `nextReviewDate` — sonst fielen genau die ueberfaelligen
+    // Termine heraus, um die es hier geht (`isOverdue` weiter unten).
 
     const scheduleReviews = await db
       .select({

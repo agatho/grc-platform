@@ -22,7 +22,6 @@ import { renderReportDocumentPdf } from "./renderers/pdfkit-renderer";
 import { renderExcel } from "./renderers/excel-renderer";
 import * as fs from "fs/promises";
 import * as path from "path";
-import * as crypto from "crypto";
 
 const REPORT_OUTPUT_DIR =
   process.env.REPORT_OUTPUT_DIR || "/tmp/arctos-reports";

@@ -2,7 +2,7 @@
 // Runs weekly — checks for applications approaching EOL
 
 import { db, applicationPortfolio, architectureElement } from "@grc/db";
-import { and, lte, eq, sql } from "drizzle-orm";
+import { and, lte, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processEamLifecycleMonitor = withCronInstrumentation(

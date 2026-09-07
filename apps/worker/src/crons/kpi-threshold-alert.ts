@@ -1,13 +1,8 @@
 // Sprint 47: KPI Threshold Alert (on measurement INSERT / daily check)
 // Alert process owners when KPIs cross thresholds
 
-import {
-  db,
-  processKpiDefinition,
-  processKpiMeasurement,
-  notification,
-} from "@grc/db";
-import { eq, sql, desc } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";

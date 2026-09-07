@@ -31,7 +31,7 @@ import {
   processEventTransitionMap,
   processStep,
 } from "@grc/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ConformanceResult {

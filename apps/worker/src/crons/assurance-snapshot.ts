@@ -7,7 +7,6 @@ import {
   control,
   controlTest,
   evidence,
-  finding,
   moduleConfig,
   organization,
 } from "@grc/db";

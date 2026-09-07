@@ -5,14 +5,12 @@
 import {
   pgTable,
   uuid,
-  varchar,
   text,
   integer,
   numeric,
   timestamp,
   jsonb,
   index,
-  unique,
   pgEnum,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";

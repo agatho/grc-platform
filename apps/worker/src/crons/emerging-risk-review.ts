@@ -1,8 +1,8 @@
 // Sprint 39: Emerging Risk Review Reminder Worker
 // WEEKLY — Check emerging risks where next_review_date is within 14 days
 
-import { db, emergingRisk, notification } from "@grc/db";
-import { and, isNotNull, sql, isNull } from "drizzle-orm";
+import { db, emergingRisk } from "@grc/db";
+import { and, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 
@@ -14,7 +14,8 @@ interface ReviewResult {
 export const processEmergingRiskReviews = withCronInstrumentation(
   "emerging-risk-review",
   async (): Promise<ReviewResult> => {
-    const now = new Date();
+    // [N-2 · Welle 6a] `const now = new Date()` war tot — der Vergleich
+    // laeuft in SQL gegen `CURRENT_DATE`. Entfernt.
     let notified = 0;
 
     const upcomingReviews = await db

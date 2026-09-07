@@ -114,12 +114,6 @@ export const scimSyncLogFilterSchema = z.object({
 
 // ─── SCIM Protocol Schemas (RFC 7644) ───────────────────────
 
-const scimSchemaUri = "urn:ietf:params:scim:schemas:core:2.0:User" as const;
-const scimGroupSchemaUri =
-  "urn:ietf:params:scim:schemas:core:2.0:Group" as const;
-const scimPatchSchemaUri =
-  "urn:ietf:params:scim:api:messages:2.0:PatchOp" as const;
-
 export const scimCreateUserSchema = z.object({
   schemas: z.array(z.string()).min(1),
   externalId: z.string().max(200).optional(),

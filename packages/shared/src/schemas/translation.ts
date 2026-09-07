@@ -18,13 +18,6 @@ const translationStatusValues = [
   "verified",
   "outdated",
 ] as const;
-const translationMethodValues = [
-  "manual",
-  "ai_claude",
-  "ai_ollama",
-  "xliff_import",
-  "csv_import",
-] as const;
 const translatableEntityTypes = [
   "risk",
   "control",

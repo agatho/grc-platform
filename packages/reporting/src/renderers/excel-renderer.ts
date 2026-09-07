@@ -1,8 +1,7 @@
 // Sprint 30: Excel Renderer — ExcelJS workbook generation
 // Renders resolved sections into formatted Excel workbook
 
-import type { ReportSectionConfig } from "@grc/shared";
-import type { TableData, ChartData, KPIData } from "../section-data-fetcher";
+import type { TableData, ChartData } from "../section-data-fetcher";
 import type { ResolvedSection } from "./pdf-renderer";
 import ExcelJS from "exceljs";
 

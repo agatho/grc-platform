@@ -18,7 +18,10 @@ import {
   webhookDeliveryLog,
 } from "@grc/db";
 import { checkWebhookUrl } from "@grc/shared";
-import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
+import {
+  checkResolvedHostIsPublic,
+  fetchResolvedHost,
+} from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { resolveOrgRecipients } from "../lib/recipients";
@@ -332,7 +335,10 @@ const automationActionServices: ActionServices = {
       let deliveryStatus: "delivered" | "failed" = "failed";
 
       try {
-        const response = await fetch(webhook.url, {
+        // [OP-112] Auf die von `hostCheck` geprueften Adressen
+        // festgenagelt; ohne Pin loest `fetch` erneut auf und die
+        // Rebinding-Pruefung eine Zeile darueber ist wirkungslos.
+        const response = await fetchResolvedHost(webhook.url, hostCheck, {
           method: "POST",
           headers: {
             ...formatted.headers,

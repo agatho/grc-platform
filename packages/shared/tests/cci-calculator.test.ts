@@ -13,7 +13,6 @@ import {
   getPeriodRange,
   getTopImprovementAreas,
   DEFAULT_CCI_WEIGHTS,
-  CCI_FACTOR_KEYS,
 } from "../src/cci/calculator";
 import type {
   CCIFactorScores,

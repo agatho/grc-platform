@@ -14,13 +14,6 @@ const processStatusValues = [
   "published",
   "archived",
 ] as const;
-const stepTypeValues = [
-  "task",
-  "gateway",
-  "event",
-  "subprocess",
-  "call_activity",
-] as const;
 // Prozesslandkarte: value-chain band (management / core / support)
 const processMapCategoryValues = ["management", "core", "support"] as const;
 

@@ -21,7 +21,6 @@ import {
   document,
   documentSignature,
   documentSignatureRequest,
-  notification,
 } from "@grc/db";
 import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
 import {

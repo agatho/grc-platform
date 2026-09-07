@@ -17,16 +17,6 @@ export const importEntityTypeValues = [
   "ropa_entry",
 ] as const;
 
-const importJobStatusValues = [
-  "uploaded",
-  "mapping",
-  "validating",
-  "validated",
-  "executing",
-  "completed",
-  "failed",
-] as const;
-
 const exportFormatValues = ["csv", "xlsx", "pdf"] as const;
 
 // ─── Import Upload ──────────────────────────────────────────

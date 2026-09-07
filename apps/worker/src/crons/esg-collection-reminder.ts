@@ -1,12 +1,7 @@
 // Sprint 45: ESG Data Collection Reminder (Daily)
 // Send reminders for upcoming collection deadlines
 
-import {
-  db,
-  esgCollectionCampaign,
-  esgCollectionAssignment,
-  notification,
-} from "@grc/db";
+import { db, esgCollectionCampaign, esgCollectionAssignment } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

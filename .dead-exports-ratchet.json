@@ -1,8 +1,8 @@
 {
   "_comment": "[OP-075] Ratsche über scripts/audit-dead-exports.mjs. Zahlen dürfen nur SINKEN. Geprüft mit `node scripts/audit-dead-exports.mjs --check`; neu gesetzt mit `--update-baseline`. Eine Anhebung verlangt zusätzlich --reason und wird in _history festgehalten. Die Datei liegt in der Wurzel, nicht unter docs/, damit sie nicht wie in C-15/OP-066 durch eine .gitignore-Regel aus dem Repository fällt; scripts/check-gate-inputs.mjs prüft das.",
-  "_updatedAt": "2026-09-05",
-  "total": 2464,
-  "files": 458,
+  "_updatedAt": "2026-09-07",
+  "total": 2469,
+  "files": 459,
   "counts": {
     "apps/web/src/__tests__/api/helpers/db-proxy.ts": 1,
     "apps/web/src/__tests__/api/helpers/mock-context.ts": 1,
@@ -159,6 +159,7 @@
     "packages/db/src/schema/approval-workflow.ts": 7,
     "packages/db/src/schema/asset.ts": 2,
     "packages/db/src/schema/audit-advanced.ts": 4,
+    "packages/db/src/schema/audit-analytics.ts": 1,
     "packages/db/src/schema/audit-chain.ts": 4,
     "packages/db/src/schema/audit-extras.ts": 3,
     "packages/db/src/schema/audit-mgmt.ts": 12,
@@ -166,7 +167,7 @@
     "packages/db/src/schema/bcms.ts": 9,
     "packages/db/src/schema/benchmarking.ts": 6,
     "packages/db/src/schema/bi-reporting.ts": 8,
-    "packages/db/src/schema/bpm-advanced.ts": 1,
+    "packages/db/src/schema/bpm-advanced.ts": 2,
     "packages/db/src/schema/branding.ts": 3,
     "packages/db/src/schema/budget.ts": 4,
     "packages/db/src/schema/calendar.ts": 2,
@@ -189,7 +190,7 @@
     "packages/db/src/schema/dora.ts": 6,
     "packages/db/src/schema/dpms-advanced.ts": 11,
     "packages/db/src/schema/dpms.ts": 8,
-    "packages/db/src/schema/eam-advanced.ts": 7,
+    "packages/db/src/schema/eam-advanced.ts": 8,
     "packages/db/src/schema/eam-ai.ts": 6,
     "packages/db/src/schema/eam-catalog.ts": 2,
     "packages/db/src/schema/eam-dashboards.ts": 1,
@@ -234,10 +235,10 @@
     "packages/db/src/schema/supplier-portal.ts": 3,
     "packages/db/src/schema/task.ts": 2,
     "packages/db/src/schema/tax-cms.ts": 5,
-    "packages/db/src/schema/tprm-advanced.ts": 1,
+    "packages/db/src/schema/tprm-advanced.ts": 2,
     "packages/db/src/schema/tprm.ts": 9,
     "packages/db/src/schema/translation.ts": 2,
-    "packages/db/src/schema/whistleblowing-advanced.ts": 3,
+    "packages/db/src/schema/whistleblowing-advanced.ts": 4,
     "packages/db/src/schema/whistleblowing.ts": 4,
     "packages/db/src/schema/work-item.ts": 1,
     "packages/db/src/seed-demo.ts": 1,
@@ -566,6 +567,19 @@
         "packages/shared/src/utils/xliff.ts: 2 → 1"
       ],
       "reason": "Welle 5c: 2765/470 -> 2464/458. Keine Absenkung durch Arbeit, sondern eine WERKZEUGKORREKTUR: der Import-Index las nur SRC_DIRS und hielt damit jede Pruefnaht, die nur aus Tests heraus benutzt wird, fuer toten Code. Das Tor forderte woertlich 'Entfernen, nicht in die Ratsche aufnehmen' — es haette also zum Loeschen benutzter Exporte aufgefordert. Die Zahl faellt, weil der Zaehler jetzt stimmt."
+    },
+    {
+      "date": "2026-09-07",
+      "total": 2469,
+      "files": 459,
+      "changed": [
+        "packages/db/src/schema/audit-analytics.ts: 0 → 1",
+        "packages/db/src/schema/bpm-advanced.ts: 1 → 2",
+        "packages/db/src/schema/eam-advanced.ts: 7 → 8",
+        "packages/db/src/schema/tprm-advanced.ts: 1 → 2",
+        "packages/db/src/schema/whistleblowing-advanced.ts: 3 → 4"
+      ],
+      "reason": "Welle 6a / N-2: fuenf Drizzle-Tabellendefinitionen verlieren ihren letzten TS-Importeur, weil in fuenf Crons ein ungenutzter Import entfernt wurde (risk_prediction_alert, process_kpi_measurement, technology_application_link, vendor_sub_processor_notification, wb_protection_event). Alle fuenf Tabellen EXISTIEREN in der Datenbank (gemessen 2026-09-07 gegen grc_v4c, je 1 Treffer in information_schema.tables); ihre Definitionen zu loeschen erzeugte genau die Schema-Drift, gegen die ADR-014 geschrieben wurde. Der Import war die Taeuschung, nicht die Definition."
     }
   ]
 }

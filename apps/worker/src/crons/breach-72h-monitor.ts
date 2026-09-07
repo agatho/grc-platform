@@ -2,7 +2,7 @@
 // Checks Art. 33 GDPR 72h notification deadline for active breaches.
 // Warns at 48h, 24h, and 0h remaining.
 
-import { db, dataBreach, notification } from "@grc/db";
+import { db, dataBreach } from "@grc/db";
 import { and, isNull, sql, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

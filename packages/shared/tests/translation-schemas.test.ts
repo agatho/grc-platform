@@ -280,3 +280,65 @@ describe("translatableFieldSchema", () => {
     expect(result.success).toBe(false);
   });
 });
+
+// ── [N-2 · Welle 6a] Drei Schemata standen in der Importliste dieser Suite
+// und wurden von keiner Zusicherung angefasst — ein Import ist keine
+// Abdeckung. Statt sie aus der Liste zu streichen, stehen die fehlenden
+// Pruefungen jetzt hier.
+describe("updateTranslationStatusSchema", () => {
+  const gueltig = {
+    entityType: "risk",
+    entityId: "11111111-1111-1111-1111-111111111111",
+    field: "title",
+    language: "de",
+    status: "verified",
+  };
+
+  it("nimmt einen vollstaendigen Statuswechsel an", () => {
+    expect(updateTranslationStatusSchema.safeParse(gueltig).success).toBe(true);
+  });
+
+  it("weist einen unbekannten Status ab", () => {
+    expect(
+      updateTranslationStatusSchema.safeParse({
+        ...gueltig,
+        status: "irgendwas",
+      }).success,
+    ).toBe(false);
+  });
+
+  it("weist eine entityId ab, die keine UUID ist", () => {
+    expect(
+      updateTranslationStatusSchema.safeParse({ ...gueltig, entityId: "1" })
+        .success,
+    ).toBe(false);
+  });
+});
+
+describe("xliffImportSchema / csvImportSchema — die 50-MB-Schranke", () => {
+  for (const [name, schema] of [
+    ["xliff", xliffImportSchema],
+    ["csv", csvImportSchema],
+  ] as const) {
+    it(`${name}: nimmt Inhalt an und setzt dryRun auf false`, () => {
+      const r = schema.safeParse({ content: "<xliff/>" });
+      expect(r.success).toBe(true);
+      if (r.success) expect(r.data.dryRun).toBe(false);
+    });
+
+    it(`${name}: weist leeren Inhalt ab`, () => {
+      expect(schema.safeParse({ content: "" }).success).toBe(false);
+    });
+
+    it(`${name}: weist Inhalt oberhalb von 50 MB ab`, () => {
+      // Die Schranke ist die einzige Schutzschicht dieses Schemas; ohne sie
+      // haenge an einer Importroute ein unbegrenzter String.
+      expect(
+        schema.safeParse({ content: "x".repeat(52_428_801) }).success,
+      ).toBe(false);
+      expect(
+        schema.safeParse({ content: "x".repeat(52_428_800) }).success,
+      ).toBe(true);
+    });
+  }
+});

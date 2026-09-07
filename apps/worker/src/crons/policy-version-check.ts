@@ -1,8 +1,8 @@
 // Cron Job: Policy Version Check
 // DAILY — Check if documents have new versions, flag distributions as needing re-acknowledgment
 
-import { db, policyDistribution, document, notification } from "@grc/db";
-import { eq, and, sql, ne } from "drizzle-orm";
+import { db } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 

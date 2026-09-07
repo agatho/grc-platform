@@ -1,4 +1,4 @@
-import { Section, Text, Button } from "@react-email/components";
+import { Section, Text } from "@react-email/components";
 import * as React from "react";
 import { EmailLayout, styles } from "./_shared";
 interface Props {

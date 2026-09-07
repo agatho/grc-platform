@@ -14,7 +14,7 @@ import {
   rcsaCampaign,
   rcsaAssignment,
 } from "@grc/db";
-import { eq, and, sql, isNull, isNotNull, gte, lt, desc } from "drizzle-orm";
+import { eq, and, sql, isNull, gte, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import {
   DEFAULT_CCI_WEIGHTS,
@@ -22,8 +22,6 @@ import {
   getPeriodString,
   getPreviousPeriod,
   getPeriodRange,
-  calcPercentageScore,
-  calcIncidentResponseScore,
 } from "@grc/shared";
 import type {
   CCIFactorWeights,

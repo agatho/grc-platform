@@ -8,7 +8,6 @@
 
 import {
   db,
-  notification,
   programmeJourney,
   programmeJourneyEvent,
   programmeJourneyStep,

@@ -2,13 +2,8 @@
 // Runs every minute, checks report_schedule.next_run_at
 // Generates reports and emails them to recipients
 
-import {
-  db,
-  reportSchedule,
-  reportGenerationLog,
-  reportTemplate,
-} from "@grc/db";
-import { eq, and, lte, sql } from "drizzle-orm";
+import { db, reportSchedule, reportGenerationLog } from "@grc/db";
+import { eq, and, lte } from "drizzle-orm";
 import { reportGenerator } from "@grc/reporting";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

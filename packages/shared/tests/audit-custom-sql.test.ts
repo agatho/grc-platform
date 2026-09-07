@@ -237,13 +237,13 @@ describe("computeQaScore — gewichtete QA-Bewertung", () => {
         { compliance: "compliant", weight: 3 },
         { compliance: "compliant", weight: 1 },
       ]),
-    ).toEqual({ score: 100, rating: "green" });
+    ).toEqual({ score: 100, rating: "green", assessed: 2, total: 2 });
   });
 
   it("wertet teilweise konform mit der Hälfte", () => {
     expect(
       computeQaScore([{ compliance: "partially_compliant", weight: 1 }]),
-    ).toEqual({ score: 50, rating: "red" });
+    ).toEqual({ score: 50, rating: "red", assessed: 1, total: 1 });
   });
 
   it("gewichtet — dieselben Antworten, andere Gewichte, anderes Ergebnis", () => {
@@ -255,27 +255,41 @@ describe("computeQaScore — gewichtete QA-Bewertung", () => {
       { compliance: "compliant", weight: 1 },
       { compliance: "non_compliant", weight: 3 },
     ]);
-    expect(leicht).toEqual({ score: 75, rating: "yellow" });
-    expect(schwer).toEqual({ score: 25, rating: "red" });
+    expect(leicht).toEqual({
+      score: 75,
+      rating: "yellow",
+      assessed: 2,
+      total: 2,
+    });
+    expect(schwer).toEqual({ score: 25, rating: "red", assessed: 2, total: 2 });
   });
 
   it("lässt not_applicable und null unbewertet, statt sie als 0 zu zählen", () => {
     // Der Unterschied ist erheblich: als 0 gezählt würde jede nicht
     // anwendbare Frage die Bewertung drücken.
+    //
+    // [Welle 6a · N-3] Der Quotient bleibt 100 — und genau deshalb steht
+    // sein Nenner jetzt daneben: `assessed: 2` von `total: 3`. Die eine
+    // unbewertete Position ist im `score` unsichtbar, im Ergebnis nicht.
     expect(
       computeQaScore([
         { compliance: "compliant", weight: 1 },
         { compliance: "not_applicable", weight: 5 },
         { compliance: null, weight: 5 },
       ]),
-    ).toEqual({ score: 100, rating: "green" });
+    ).toEqual({ score: 100, rating: "green", assessed: 2, total: 3 });
   });
 
   it("gibt 0/red zurück, wenn nichts zu bewerten ist", () => {
-    expect(computeQaScore([])).toEqual({ score: 0, rating: "red" });
+    expect(computeQaScore([])).toEqual({
+      score: 0,
+      rating: "red",
+      assessed: 0,
+      total: 0,
+    });
     expect(
       computeQaScore([{ compliance: "not_applicable", weight: 1 }]),
-    ).toEqual({ score: 0, rating: "red" });
+    ).toEqual({ score: 0, rating: "red", assessed: 1, total: 1 });
   });
 
   it("setzt die Schwellen bei 80 (green) und 60 (yellow)", () => {
@@ -395,13 +409,15 @@ describe("computeQaScore — F-5: Bewertungen ohne Zahl", () => {
       { compliance: "non_compliant", weight: 0 },
     ]);
     expect(Number.isNaN(res.score)).toBe(false);
-    expect(res).toEqual({ score: 0, rating: "red" });
+    expect(res).toEqual({ score: 0, rating: "red", assessed: 2, total: 2 });
   });
 
   it("gibt 0/red bei einer einzigen Position mit Gewicht 0", () => {
     expect(computeQaScore([{ compliance: "compliant", weight: 0 }])).toEqual({
       score: 0,
       rating: "red",
+      assessed: 1,
+      total: 1,
     });
   });
 
@@ -413,7 +429,7 @@ describe("computeQaScore — F-5: Bewertungen ohne Zahl", () => {
       { compliance: "non_compliant", weight: 1 },
     ]);
     expect(Number.isFinite(res.score)).toBe(true);
-    expect(res).toEqual({ score: 0, rating: "red" });
+    expect(res).toEqual({ score: 0, rating: "red", assessed: 2, total: 2 });
   });
 
   it("erzeugt aus einem negativen Gewicht kein grünes Ergebnis", () => {
@@ -425,13 +441,18 @@ describe("computeQaScore — F-5: Bewertungen ohne Zahl", () => {
         { compliance: "compliant", weight: -2 },
         { compliance: "compliant", weight: 1 },
       ]),
-    ).toEqual({ score: 100, rating: "green" });
+    ).toEqual({ score: 100, rating: "green", assessed: 2, total: 2 });
     const gedreht = computeQaScore([
       { compliance: "compliant", weight: 5 },
       { compliance: "non_compliant", weight: -1 },
     ]);
     expect(gedreht.score).toBeLessThanOrEqual(100);
-    expect(gedreht).toEqual({ score: 100, rating: "green" });
+    expect(gedreht).toEqual({
+      score: 100,
+      rating: "green",
+      assessed: 2,
+      total: 2,
+    });
   });
 
   it("hält die Bewertung in jedem Fall zwischen 0 und 100", () => {
@@ -454,5 +475,64 @@ describe("computeQaScore — F-5: Bewertungen ohne Zahl", () => {
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(100);
     }
+  });
+
+  describe("computeQaScore — N-3: eine halb ausgefuellte Bewertung ist keine gruene", () => {
+    // Gemessen am 2026-09-07 an genau der Checkliste, die die POST-Route aus
+    // QA_CHECKLIST_TEMPLATE anlegt (15 Positionen, Gewichte 3–5,
+    // `compliance` durchweg NULL, weil es dafuer keinen Schreibweg gibt):
+    //
+    //   1 von 15 als compliant bewertet  -> {"score":100,"rating":"green"}
+    //   15 von 15 als compliant bewertet -> {"score":100,"rating":"green"}
+    //
+    // Ununterscheidbar. Der Quotient ist nicht falsch — 100 % der BEWERTETEN
+    // Positionen sind konform —, aber ohne seinen Nenner ist er ein Hebel:
+    // ein Haken genuegte fuer „gruen".
+    const VORLAGE = [4, 3, 4, 3, 3, 4, 5, 4, 3, 3, 5, 4, 3, 3, 4];
+
+    function checkliste(bewertet: number) {
+      return VORLAGE.map((weight, n) => ({
+        compliance: n < bewertet ? "compliant" : (null as string | null),
+        weight,
+      }));
+    }
+
+    it("unterscheidet eine bewertete Position von fuenfzehn", () => {
+      const eine = computeQaScore(checkliste(1));
+      const alle = computeQaScore(checkliste(15));
+
+      // Der Quotient bleibt in beiden Faellen 100 …
+      expect(eine.score).toBe(100);
+      expect(alle.score).toBe(100);
+      // … die Ergebnisse sind trotzdem nicht mehr dieselben.
+      expect(eine).not.toEqual(alle);
+      expect(eine.assessed).toBe(1);
+      expect(eine.total).toBe(15);
+      expect(alle.assessed).toBe(15);
+      expect(alle.total).toBe(15);
+    });
+
+    it("zaehlt `not_applicable` als bewertet — es ist eine bezogene Position", () => {
+      const res = computeQaScore([
+        { compliance: "not_applicable", weight: 3 },
+        { compliance: "compliant", weight: 3 },
+        { compliance: null, weight: 3 },
+      ]);
+      expect(res.assessed).toBe(2);
+      expect(res.total).toBe(3);
+    });
+
+    it("meldet die Checkliste, wie die Route sie anlegt, als unbewertet", () => {
+      // Alle 15 Positionen mit `compliance = NULL`: `assessed` ist 0, und ein
+      // Aufrufer, der `rating` ohne `assessed` anzeigt, zeigt „red" fuer eine
+      // Bewertung, die niemand begonnen hat.
+      const frisch = computeQaScore(checkliste(0));
+      expect(frisch).toEqual({
+        score: 0,
+        rating: "red",
+        assessed: 0,
+        total: 15,
+      });
+    });
   });
 });

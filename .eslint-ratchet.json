@@ -1,6 +1,6 @@
 {
   "_comment": "#S13-17 ESLint-Ratsche über alle zwölf Workspaces, getrennt nach Bereich (je Bereich eine eigene Flat Config, siehe _scopes). Zahlen dürfen nur SINKEN, und sie werden NICHT über Bereiche hinweg aufgerechnet. Neu setzen: node scripts/lint-ratchet.mjs --update. Eine Anhebung — oder das Entfernen eines Bereichs — verlangt zusätzlich --reason und wird in _history festgehalten.",
-  "_updatedAt": "2026-09-05",
+  "_updatedAt": "2026-09-07",
   "_scopes": {
     "root": {
       "cwd": ".",
@@ -23,7 +23,7 @@
     "root": {
       "@typescript-eslint/no-explicit-any": 26,
       "@typescript-eslint/no-require-imports": 1,
-      "@typescript-eslint/no-unused-vars": 249,
+      "@typescript-eslint/no-unused-vars": 12,
       "no-control-regex": 3,
       "no-empty": 2,
       "no-useless-escape": 1
@@ -61,6 +61,22 @@
         "root · (fatal-or-directive): 1 → 0"
       ],
       "reason": "Welle 5c: (fatal-or-directive) 1 -> 0. Die Fundstelle war eine ungenutzte eslint-disable-Direktive; sie ist entfallen, nicht ausgenommen. Reine Absenkung durch Arbeit."
+    },
+    {
+      "date": "2026-09-07",
+      "total": 49,
+      "changed": [
+        "root · @typescript-eslint/no-unused-vars: 249 → 16"
+      ],
+      "reason": "Welle 6a / N-2: noUnusedLocals in allen elf Paketen und in apps/worker eingeschaltet; 265 ungenutzte Bindungen abgetragen. no-unused-vars faellt dadurch von 249 auf 16 (gemessen 2026-09-07)."
+    },
+    {
+      "date": "2026-09-07",
+      "total": 45,
+      "changed": [
+        "root · @typescript-eslint/no-unused-vars: 16 → 12"
+      ],
+      "reason": "Welle 6a / N-2 (Nachtrag): zwei weitere ungenutzte Test-Bindungen im Worker abgetragen (gemessen 2026-09-07)."
     }
   ]
 }

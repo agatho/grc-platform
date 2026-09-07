@@ -6,7 +6,6 @@ import {
   generateCsv,
   parseCsv,
   type XliffDocument,
-  type XliffTranslationUnit,
   type CsvRow,
 } from "../src/utils/xliff";
 

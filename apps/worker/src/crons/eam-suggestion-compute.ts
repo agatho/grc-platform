@@ -1,13 +1,8 @@
 // Sprint 51: EAM Suggestion Compute Worker — Daily
 // Rule-based, NO LLM needed — computes suggestions from EOL dates, risk counts, assessment gaps
 
-import {
-  db,
-  applicationPortfolio,
-  architectureElement,
-  eamObjectSuggestion,
-} from "@grc/db";
-import { eq, and, sql, lte, isNull, or } from "drizzle-orm";
+import { db, eamObjectSuggestion } from "@grc/db";
+import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processEamSuggestionCompute = withCronInstrumentation(

@@ -2,7 +2,7 @@
 // Fetches regulatory items from active horizon scan sources.
 
 import { db, horizonScanSource } from "@grc/db";
-import { and, eq, sql, lte, or, isNull } from "drizzle-orm";
+import { and, eq, sql, or, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface HorizonFetchResult {

@@ -1,7 +1,7 @@
 // Sprint 40: Deficiency Escalation Worker
 // WEEKLY — Check for overdue remediation deadlines and escalate
 
-import { db, controlDeficiency, notification } from "@grc/db";
+import { db, controlDeficiency } from "@grc/db";
 import { and, sql, inArray } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
@@ -14,7 +14,9 @@ interface EscalationResult {
 export const processDeficiencyEscalation = withCronInstrumentation(
   "deficiency-escalation",
   async (): Promise<EscalationResult> => {
-    const now = new Date();
+    // [N-2 · Welle 6a] `const now = new Date()` stand hier und wurde nie
+    // gelesen: der Faelligkeitsvergleich passiert in SQL gegen
+    // `CURRENT_DATE` (Zeile darunter). Entfernt.
     let escalated = 0;
 
     // Find deficiencies with overdue remediation deadlines

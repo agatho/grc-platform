@@ -1,7 +1,7 @@
 // Cron Job: RCSA Overdue Check
 // DAILY at 09:00 — Mark overdue assignments and escalate to campaign creator
 
-import { db, rcsaCampaign, rcsaAssignment, notification } from "@grc/db";
+import { db, rcsaCampaign, rcsaAssignment } from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

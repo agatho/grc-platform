@@ -1,13 +1,6 @@
 // Sprint 61: Worker — Generate monthly invoices for active subscriptions
-import {
-  db,
-  orgSubscription,
-  subscriptionPlan,
-  billingInvoice,
-  usageRecord,
-  usageMeter,
-} from "@grc/db";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { db, orgSubscription, subscriptionPlan, billingInvoice } from "@grc/db";
+import { eq, and, lte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 

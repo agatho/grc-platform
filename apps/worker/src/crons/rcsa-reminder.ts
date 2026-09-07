@@ -2,7 +2,7 @@
 // DAILY at 08:00 — Send reminders for pending assignments approaching deadline
 // Checks: 7d, 3d, 1d before deadline based on campaign's reminderDaysBefore setting
 
-import { db, rcsaCampaign, rcsaAssignment, notification, user } from "@grc/db";
+import { db, rcsaCampaign, rcsaAssignment } from "@grc/db";
 import { eq, and, sql, lt, gt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

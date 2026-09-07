@@ -2,7 +2,7 @@
 // Serious incidents: 15-day deadline. Death/widespread: 2-day immediate.
 // Warns at 48h, 24h, 0h remaining, then daily when overdue.
 
-import { db, aiIncident, notification } from "@grc/db";
+import { db, aiIncident } from "@grc/db";
 import { and, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import { useRef } from "react";
 
 interface MetroStation {
   processId: string;

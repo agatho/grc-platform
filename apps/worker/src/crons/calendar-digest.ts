@@ -27,7 +27,7 @@
 // the `deleted_at` filter (S10-07), and errors were returned inside an
 // HTTP-200 `success: true` body (S10-12).
 
-import { db, notification } from "@grc/db";
+import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { withOrgContext } from "../lib/org-context";

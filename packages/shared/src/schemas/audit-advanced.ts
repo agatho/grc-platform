@@ -210,9 +210,39 @@ export const updateQaChecklistSchema = z.object({
 // Damit gilt die Invariante: alle `w_i > 0` und alle `s_i ∈ {0, 50, 100}`,
 // also 0 ≤ Σ(s_i·w_i) ≤ 100·Σw_i = totalWeight, und der Quotient liegt
 // beweisbar in [0, 1] — `score` ist immer eine ganze Zahl in [0, 100].
+//
+// ── [Welle 6a · N-3] Der Hebel, der nach der Behebung von F-5 stehen blieb ──
+//
+// `compliance === null` heisst „noch nicht bewertet" — die Spalte kennt fuer
+// „zaehlt nicht" den eigenen Wert `not_applicable`. Beide fielen bis hierher
+// gleichermassen aus `applicable` heraus, eine unbewertete Position wurde
+// also wie eine ausgenommene behandelt. Gemessen am 2026-09-07 an genau der
+// Checkliste, die `QA_CHECKLIST_TEMPLATE` der POST-Route anlegt (15
+// Positionen, Gewichte 3–5):
+//
+//   1 von 15 als `compliant` bewertet   -> {"score":100,"rating":"green"}
+//   15 von 15 als `compliant` bewertet  -> {"score":100,"rating":"green"}
+//
+// Eine QA-Bewertung, an der genau ein Haken gesetzt ist, liest sich damit
+// wie eine vollstaendig durchgefuehrte. Das ist dieselbe Fehlerklasse wie das
+// negative Gewicht aus F-5: ein Hebel, mit dem sich „gruen" erzeugen laesst,
+// ohne die Arbeit zu tun.
+//
+// Der Quotient selbst ist NICHT falsch — 100 % der bewerteten Positionen sind
+// konform. Falsch ist, ihn ohne seinen Nenner herauszugeben. Das Ergebnis
+// traegt deshalb `assessed` und `total`; ein Aufrufer, der `rating` anzeigt,
+// ohne `assessed === total` zu pruefen, zeigt eine Zahl, die nicht bedeutet,
+// was sie zu bedeuten scheint. Bewusst NICHT getan: unbewertete Positionen
+// mit 0 zu verrechnen — das waere eine fachliche Festlegung („nicht bewertet
+// = nicht konform"), und sie gehoert dem Eigentuemer, nicht dieser Funktion.
 export function computeQaScore(
   items: Array<{ compliance: string | null; weight: number }>,
-): { score: number; rating: string } {
+): { score: number; rating: string; assessed: number; total: number } {
+  const total = items.length;
+  // Bewertet heisst: der Pruefer hat eine Position bezogen — auch
+  // `not_applicable` ist eine.
+  const assessed = items.filter((i) => i.compliance != null).length;
+
   const applicable = items.filter(
     (i) =>
       i.compliance !== "not_applicable" &&
@@ -237,11 +267,11 @@ export function computeQaScore(
   // Kein Gewicht heisst: es gibt nichts zu bewerten. Das ist derselbe
   // Zustand wie eine leere Liste oder eine reine `not_applicable`-Liste und
   // wird auch so beantwortet — 0/red, nicht NaN/red.
-  if (totalWeight <= 0) return { score: 0, rating: "red" };
+  if (totalWeight <= 0) return { score: 0, rating: "red", assessed, total };
 
   const score = Math.round((weightedSum / totalWeight) * 100);
   const rating = score >= 80 ? "green" : score >= 60 ? "yellow" : "red";
-  return { score, rating };
+  return { score, rating, assessed, total };
 }
 
 // ─── External Auditor Share ─────────────────────────────────

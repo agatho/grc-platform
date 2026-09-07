@@ -2,11 +2,49 @@
 // Each section type (table/chart/kpi) fetches from existing DB tables
 
 import { db } from "@grc/db";
-import { sql, eq, and, gte, lte, count as countFn } from "drizzle-orm";
-import type { ReportSectionConfig } from "@grc/shared";
+import { sql } from "drizzle-orm";
 
 export interface FetchContext {
   orgId: string;
+  /**
+   * ── [N-2 · Welle 6a] BEFUND: dieses Feld wird von KEINER Datenquelle
+   * gelesen. ───────────────────────────────────────────────────────────
+   *
+   * Gemessen am 2026-09-07:
+   *
+   *   $ grep -c "parameters" packages/reporting/src/section-data-fetcher.ts
+   *   1        (genau diese Deklaration)
+   *
+   * Auf den Fund gestossen bin ich ueber `noUnusedLocals`: die Datei
+   * importierte `eq, and, gte, lte, count` aus drizzle und benutzte keinen
+   * einzigen davon — die Operatoren fuer genau die Filter, die hier fehlen.
+   *
+   * Warum das mehr ist als toter Code: fuenf der Standardvorlagen erklaeren
+   * einen Parameter `period` vom Typ `daterange`
+   * (`default-templates.ts:61,147,212,263,321,351`), und DREI von ihnen
+   * schreiben ihn in den Berichtstext:
+   *
+   *   "Report generated on {{report.date}}. Period: {{period.label}}."
+   *   "Audit summary report for {{period.label}}. Generated {{report.date}}."
+   *   "Sustainability and ESG compliance report for {{period.label}}. …"
+   *
+   * `generator.ts:90-94` fuellt diese Variablen und reicht dieselben
+   * Parameter als `FetchContext.parameters` weiter — und keine der 16
+   * Datenquellen unten sieht sie an. Ein erzeugter Bericht NENNT damit
+   * einen Berichtszeitraum und zeigt Zahlen, die ihn nicht einhalten.
+   * `fetchRiskTrend` verdrahtet sogar ein eigenes Fenster
+   * (`interval '12 months'`), unabhaengig von jedem Parameter.
+   *
+   * Warum es hier NICHT behoben wird: die 16 Quellen zerfallen in
+   * Bestandsgroessen (Risikoregister, Kontrollbestand, Ø-CES: der Stand
+   * HEUTE — ein Zeitraumfilter auf `created_at` wuerde bestehende Risiken
+   * ausblenden und den Bericht falsch machen) und Ereignisgroessen
+   * (Neuzugaenge, Vorfaelle im Zeitraum). Welche Quelle zu welcher Klasse
+   * gehoert und auf welcher Datumsspalte sie filtert, ist eine fachliche
+   * Festlegung; sie im Vorbeigehen zu raten wuerde die Zahlen JEDES
+   * bestehenden Berichts still veraendern. Der Befund steht deshalb hier
+   * und in `docs/UMSETZUNG-WELLE-6A.md` §5, statt halb behoben zu werden.
+   */
   parameters: Record<string, unknown>;
 }
 
@@ -352,12 +390,29 @@ async function fetchThreatCount(ctx: FetchContext): Promise<KPIData> {
   };
 }
 
-async function fetchPostureScore(ctx: FetchContext): Promise<KPIData> {
-  // Posture score is a composite metric — return placeholder if no data
+// ── [N-2 · Welle 6a] BEFUND: eine erfundene Kennzahl im Bericht ────────
+//
+// Gefunden ueber denselben Regelkreis wie der Rest von N-2 — die
+// Lint-Ratsche meldete `ctx` als ungenutztes Argument. Eine Datenquelle,
+// die ihren Kontext nicht anfasst, liest nichts; die Funktion gab
+// `value: 0`, `label: "Security Posture Score"`, `trend: "stable"` zurueck,
+// mit dem Kommentar „return placeholder if no data" — und ohne je nach
+// Daten gefragt zu haben.
+//
+// Damit stand in jedem erzeugten ISMS-Bericht eine Sicherheitsbewertung
+// von 0 mit stabilem Trend, ununterscheidbar von einer gemessenen. Das ist
+// dieselbe Fehlerklasse wie `auditSlaCompliance: 0 // Placeholder` aus
+// `executive-kpi-snapshot.ts`, die `no-fabricated-evidence.test.ts`
+// namentlich fuehrt.
+//
+// Ein Wurf ist hier falsch — er wuerde den ganzen Bericht abbrechen, statt
+// einen Abschnitt ehrlich zu machen. `KPIData.value` ist `number | string`;
+// die Kennzahl meldet deshalb, dass sie nicht berechnet ist, und `trend`
+// bleibt weg, weil es keinen gibt.
+async function fetchPostureScore(): Promise<KPIData> {
   return {
-    value: 0,
-    label: "Security Posture Score",
-    trend: "stable",
+    value: "n/a",
+    label: "Security Posture Score (not computed)",
   };
 }
 

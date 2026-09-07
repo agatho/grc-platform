@@ -20,7 +20,6 @@ import {
   auditChecklist,
   auditChecklistItem,
   finding,
-  notification,
 } from "@grc/db";
 import { and, isNull, isNotNull, lt, eq, inArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";

@@ -17,7 +17,7 @@ import {
   inet,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organization, user } from "./platform";
+import { organization } from "./platform";
 import { process, processVersion } from "./process";
 import { ropaLegalBasisEnum, dpia, ropaEntry } from "./dpms";
 

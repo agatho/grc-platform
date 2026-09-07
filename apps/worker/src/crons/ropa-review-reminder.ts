@@ -1,7 +1,7 @@
 // Cron Job: RoPA Review Reminder (Monthly)
 // Reminds responsible users 14 days before next_review_date.
 
-import { db, ropaEntry, notification } from "@grc/db";
+import { db, ropaEntry } from "@grc/db";
 import { and, isNull, sql, isNotNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

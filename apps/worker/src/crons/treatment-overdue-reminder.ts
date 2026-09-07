@@ -2,7 +2,7 @@
 // Finds risk_treatments where due_date has passed and status is not
 // completed or cancelled, then creates notifications for the responsible person.
 
-import { db, riskTreatment, risk, notification } from "@grc/db";
+import { db, riskTreatment, risk } from "@grc/db";
 import { and, isNull, isNotNull, notInArray, lt, sql, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

@@ -1,7 +1,7 @@
 // Cron Job: DORA ICT Incident Reporting Deadline Monitor
 // Checks for incidents where reporting deadlines (4h/72h/1M) are approaching or overdue.
 
-import { db, doraIctIncident, notification } from "@grc/db";
+import { db, doraIctIncident } from "@grc/db";
 import { and, sql, isNull, isNotNull, ne } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

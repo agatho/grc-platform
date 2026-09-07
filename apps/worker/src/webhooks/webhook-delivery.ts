@@ -7,7 +7,10 @@ import { formatWebhookPayload, signPayload } from "@grc/events";
 import { and, asc, eq, isNotNull, lte } from "drizzle-orm";
 import type { GrcEvent } from "@grc/events";
 import { checkWebhookUrl } from "@grc/shared";
-import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
+import {
+  checkResolvedHostIsPublic,
+  fetchResolvedHost,
+} from "@grc/shared/lib/url-safety-server";
 
 // Retry backoff intervals in milliseconds: 60s, 300s, 1800s
 const RETRY_DELAYS = [60_000, 300_000, 1_800_000];
@@ -128,7 +131,12 @@ export async function processWebhookDelivery(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), DELIVERY_TIMEOUT);
 
-    const response = await fetch(webhook.url, {
+    // [OP-112] Die Zustellung faehrt ueber genau die Adressen, die
+    // `safetyCheck` oben geprueft hat. Ohne diesen Pin loest `fetch`
+    // erneut auf, und ein Resolver, der nach der Pruefung umschwenkt,
+    // umgeht sie vollstaendig — das ist derselbe DNS-Rebinding-Angriff,
+    // gegen den die Pruefung ueberhaupt erst eingebaut wurde.
+    const response = await fetchResolvedHost(webhook.url, safetyCheck, {
       method: "POST",
       headers: {
         ...formatted.headers,

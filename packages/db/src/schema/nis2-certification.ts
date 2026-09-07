@@ -12,7 +12,6 @@ import {
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { securityIncident } from "./isms";
 

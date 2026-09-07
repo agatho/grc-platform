@@ -1,13 +1,7 @@
 // Cron Job: SLA Measurement Reminder
 // Per measurement frequency: remind responsible users to submit SLA measurements.
 
-import {
-  db,
-  contract,
-  contractSla,
-  contractSlaMeasurement,
-  notification,
-} from "@grc/db";
+import { db, contract, contractSla, contractSlaMeasurement } from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

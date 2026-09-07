@@ -1,13 +1,7 @@
 // Cron Job: Policy Overdue Escalation
 // WEEKLY — Mark overdue acknowledgments, escalate to distribution creator
 
-import {
-  db,
-  policyDistribution,
-  policyAcknowledgment,
-  notification,
-  user,
-} from "@grc/db";
+import { db, policyDistribution, policyAcknowledgment } from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

@@ -1,6 +1,5 @@
 // Sprint 29: What-If Scenario Engine — read-only projection, no actual mutations
 import { getSubgraph } from "./traversal";
-import { enrichGraphNodes } from "./enrichment";
 import { analyzeImpact } from "./impact-analyzer";
 import type {
   WhatIfResult,
@@ -43,14 +42,12 @@ export async function runWhatIf(
   const after = applyScenarioMultiplier(before, multiplier);
 
   // 3. Compute the delta
-  const delta = computeDelta(
-    before,
-    after,
-    orgId,
-    entityId,
-    entityType,
-    maxDepth,
-  );
+  // [N-2 · Welle 6a] `computeDelta` nahm `maxDepth` entgegen und benutzte
+  // es nicht: die gekappten Kanten sind definitionsgemaess die DIREKT am
+  // Szenario-Element haengenden, also Tiefe 1 (`getSubgraph(..., 1)` weiter
+  // unten). Der Parameter ist entfernt, statt eine Tiefe vorzutaeuschen,
+  // die nicht wirkt.
+  const delta = computeDelta(before, after, orgId, entityId, entityType);
 
   return {
     scenario,
@@ -97,7 +94,6 @@ async function computeDelta(
   orgId: string,
   entityId: string,
   entityType: string,
-  maxDepth: number,
 ): Promise<DeltaResult> {
   const beforeMap = new Map(
     before.affectedEntities.map((e) => [e.entityId, e]),

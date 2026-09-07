@@ -8,9 +8,8 @@ import {
   esrsDatapointDefinition,
   esrsMetric,
   esgMeasurement,
-  notification,
 } from "@grc/db";
-import { and, eq, sql, isNull, count } from "drizzle-orm";
+import { and, eq, sql, count } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 

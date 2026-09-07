@@ -2,8 +2,8 @@
 // Checks 30-day deadlines for open DSRs.
 // Warns at 20d, 25d, and 28d remaining (i.e. 10d, 5d, 2d before deadline).
 
-import { db, dsr, notification } from "@grc/db";
-import { and, sql, isNotNull } from "drizzle-orm";
+import { db, dsr } from "@grc/db";
+import { and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";
 

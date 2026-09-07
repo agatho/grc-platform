@@ -14,7 +14,6 @@ import {
   numeric,
   pgEnum,
   index,
-  unique,
   jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";

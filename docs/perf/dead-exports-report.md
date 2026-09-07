@@ -1,6 +1,6 @@
 # Dead-Exports-Report
 
-_Generated: 2026-09-05T02:55:06.514Z_
+_Generated: 2026-09-07T19:17:40.112Z_
 
 Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuristik, nicht vollstaendig:
 
@@ -12,7 +12,7 @@ Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuris
 - `export default` in Route/Page-Files (ignoriert)
 - Vitest-Tests in tests/ (nicht im Scan)
 
-**2464 potenziell tote Exports** in 458 Dateien.
+**2469 potenziell tote Exports** in 459 Dateien.
 
 ## Top-20 Hot-Spots (>=3 dead exports)
 
@@ -216,6 +216,7 @@ Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuris
 - `packages/db/src/schema/approval-workflow.ts` -- `approvalWorkflow`, `approvalRequest`, `approvalDecision`, `reviewCycle`, `reviewDecision`, `attestationCampaign`, `attestationResponse`
 - `packages/db/src/schema/asset.ts` -- `assetTierEnum`, `assetCiaProfile`
 - `packages/db/src/schema/audit-advanced.ts` -- `auditWpReviewNote`, `auditWpReviewNoteReply`, `auditTimeEntry`, `externalAuditorActivity`
+- `packages/db/src/schema/audit-analytics.ts` -- `riskPredictionAlert`
 - `packages/db/src/schema/audit-chain.ts` -- `auditAnchorSeal`, `auditChainVerification`, `auditSensitiveColumn`, `auditLogWriteAttempt`
 - `packages/db/src/schema/audit-extras.ts` -- `auditSample`, `boardReport`, `exceptionReport`
 - `packages/db/src/schema/audit-mgmt.ts` -- `auditTypeEnum`, `auditStatusEnum`, `auditPlanStatusEnum`, `checklistResultEnum`, `auditMethodValues`, `AuditMethodValue`, `auditRiskRatingValues`, `AuditRiskRatingValue`, `auditConclusionEnum`, `universeEntityTypeEnum`, `checklistSourceTypeEnum`, `auditEvidence`
@@ -223,7 +224,7 @@ Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuris
 - `packages/db/src/schema/bcms.ts` -- `biaStatusEnum`, `bcpStatusEnum`, `crisisSeverityEnum`, `crisisStatusEnum`, `exerciseTypeEnum`, `exerciseStatusEnum`, `strategyTypeEnum`, `resourceTypeEnum`, `biaProcessImpactRelations`
 - `packages/db/src/schema/benchmarking.ts` -- `maturityLevelEnum`, `maturityModuleKeyEnum`, `maturityAssessmentStatusEnum`, `roadmapItemStatusEnum`, `roadmapItemPriorityEnum`, `benchmarkIndustryEnum`
 - `packages/db/src/schema/bi-reporting.ts` -- `biReportStatusEnum`, `biWidgetTypeEnum`, `biDataSourceTypeEnum`, `biQueryStatusEnum`, `biShareAccessEnum`, `biScheduleFrequencyEnum`, `biExecutionStatusEnum`, `biOutputFormatEnum`
-- `packages/db/src/schema/bpm-advanced.ts` -- `processMiningSuggestion`
+- `packages/db/src/schema/bpm-advanced.ts` -- `processMiningSuggestion`, `processKpiMeasurement`
 - `packages/db/src/schema/branding.ts` -- `reportTemplateEnum`, `orgBrandingRelations`, `userDashboardLayoutRelations`
 - `packages/db/src/schema/budget.ts` -- `budgetStatusEnum`, `budgetTypeEnum`, `costTypeEnum`, `roiMethodEnum`
 - `packages/db/src/schema/calendar.ts` -- `calendarEventTypeEnum`, `calendarRecurrenceEnum`
@@ -246,7 +247,7 @@ Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuris
 - `packages/db/src/schema/dora.ts` -- `doraIctRiskRelations`, `doraTlptPlanRelations`, `doraIctIncidentRelations`, `doraIctProviderRelations`, `doraInformationSharingRelations`, `doraNis2CrossRefRelations`
 - `packages/db/src/schema/dpms-advanced.ts` -- `transferImpactAssessment`, `subProcessorNotification`, `retentionScheduleRelations`, `retentionExceptionRelations`, `deletionRequestRelations`, `transferImpactAssessmentRelations`, `processorAgreementRelations`, `subProcessorNotificationRelations`, `pbdAssessmentRelations`, `consentTypeRelations`, `consentRecordRelations`
 - `packages/db/src/schema/dpms.ts` -- `ropaStatusEnum`, `dpiaStatusEnum`, `dsrTypeEnum`, `dsrStatusEnum`, `breachSeverityEnum`, `breachStatusEnum`, `tiaLegalBasisEnum`, `tiaRiskRatingEnum`
-- `packages/db/src/schema/eam-advanced.ts` -- `dataFlowRelations`, `applicationInterfaceRelations`, `technologyEntryRelations`, `technologyApplicationLinkRelations`, `architectureChangeRequestRelations`, `architectureChangeVoteRelations`, `architectureHealthSnapshotRelations`
+- `packages/db/src/schema/eam-advanced.ts` -- `dataFlowRelations`, `applicationInterfaceRelations`, `technologyEntryRelations`, `technologyApplicationLink`, `technologyApplicationLinkRelations`, `architectureChangeRequestRelations`, `architectureChangeVoteRelations`, `architectureHealthSnapshotRelations`
 - `packages/db/src/schema/eam-ai.ts` -- `eamAiConfigRelations`, `eamAiPromptTemplateRelations`, `eamAiSuggestionLogRelations`, `eamTranslationRelations`, `eamChatSessionRelations`, `eamObjectSuggestionRelations`
 - `packages/db/src/schema/eam-catalog.ts` -- `eamKeywordRelations`, `eamHomepageLayoutRelations`
 - `packages/db/src/schema/eam-dashboards.ts` -- `applicationAssessmentHistoryRelations`
@@ -291,10 +292,10 @@ Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuris
 - `packages/db/src/schema/supplier-portal.ts` -- `questionnaireTemplateStatusEnum`, `questionTypeEnum`, `ddSessionStatusEnum`
 - `packages/db/src/schema/task.ts` -- `taskStatusEnum`, `taskPriorityEnum`
 - `packages/db/src/schema/tax-cms.ts` -- `taxCmsElementRelations`, `taxRiskRelations`, `taxGobdArchiveRelations`, `taxIcfrControlRelations`, `taxAuditPrepRelations`
-- `packages/db/src/schema/tprm-advanced.ts` -- `vendorScorecardHistory`
+- `packages/db/src/schema/tprm-advanced.ts` -- `vendorScorecardHistory`, `vendorSubProcessorNotification`
 - `packages/db/src/schema/tprm.ts` -- `vendorStatusEnum`, `vendorTierEnum`, `vendorCategoryEnum`, `ddStatusEnum`, `contractStatusEnum`, `contractTypeEnum`, `obligationStatusEnum`, `obligationTypeEnum`, `vendorDueDiligenceQuestion`
 - `packages/db/src/schema/translation.ts` -- `translationStatusValueEnum`, `translationMethodEnum`
-- `packages/db/src/schema/whistleblowing-advanced.ts` -- `wbEvidence`, `wbInterview`, `wbOmbudspersonActivity`
+- `packages/db/src/schema/whistleblowing-advanced.ts` -- `wbEvidence`, `wbInterview`, `wbProtectionEvent`, `wbOmbudspersonActivity`
 - `packages/db/src/schema/whistleblowing.ts` -- `wbCategoryEnum`, `wbCaseStatusEnum`, `wbPriorityEnum`, `wbResolutionCategoryEnum`
 - `packages/db/src/schema/work-item.ts` -- `workItemStatusGenericEnum`
 - `packages/db/src/seed-demo.ts` -- `demoSeedFiles`

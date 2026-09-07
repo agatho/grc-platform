@@ -27,12 +27,6 @@ const vendorCategoryValues = [
   "hr_services",
   "other",
 ] as const;
-const ddStatusValues = [
-  "pending",
-  "in_progress",
-  "completed",
-  "expired",
-] as const;
 const contractStatusValues = [
   "draft",
   "negotiation",

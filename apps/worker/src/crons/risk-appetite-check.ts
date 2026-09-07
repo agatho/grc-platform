@@ -7,12 +7,11 @@ import {
   risk,
   organization,
   task,
-  notification,
   user,
   userOrganizationRole,
 } from "@grc/db";
 import { eq, and, isNull, isNotNull, gt, sql } from "drizzle-orm";
-import { isAppetiteBreach, computeBreachDelta } from "@grc/shared";
+import { computeBreachDelta } from "@grc/shared";
 import type { RiskCategory, UserRole } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

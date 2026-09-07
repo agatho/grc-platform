@@ -2,21 +2,8 @@ import { z } from "zod";
 
 // Sprint 10: ESG/CSRD Module schemas
 
-const materialityStatusValues = ["draft", "in_progress", "completed"] as const;
 const dataQualityValues = ["measured", "estimated", "calculated"] as const;
 const targetTypeValues = ["absolute", "intensity", "relative"] as const;
-const targetStatusValues = [
-  "on_track",
-  "at_risk",
-  "off_track",
-  "achieved",
-] as const;
-const reportStatusValues = [
-  "draft",
-  "in_review",
-  "approved",
-  "published",
-] as const;
 const esgFrequencyValues = ["annual", "semi_annual", "quarterly"] as const;
 const voterTypeValues = [
   "internal",

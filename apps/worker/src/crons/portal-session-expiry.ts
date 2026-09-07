@@ -2,7 +2,7 @@
 // Runs every 15 minutes — expires stale portal sessions
 
 import { db, portalSession } from "@grc/db";
-import { eq, and, lt, sql } from "drizzle-orm";
+import { eq, and, lt } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processPortalSessionExpiry = withCronInstrumentation(

@@ -2,14 +2,8 @@
 // Recalculates target status (on_track / at_risk / off_track / achieved)
 // based on current metric measurements vs. expected trajectory.
 
-import {
-  db,
-  esgTarget,
-  esrsMetric,
-  esgMeasurement,
-  notification,
-} from "@grc/db";
-import { and, eq, sql, desc } from "drizzle-orm";
+import { db, esgTarget, esrsMetric, esgMeasurement } from "@grc/db";
+import { eq, sql, desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";

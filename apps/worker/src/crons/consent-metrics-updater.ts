@@ -2,7 +2,7 @@
 // DAILY at 05:00 — Recompute consent metrics for all consent types
 // Alert if withdrawal rate exceeds configurable threshold (default 30%)
 
-import { db, consentType, consentRecord, notification } from "@grc/db";
+import { db, consentType, consentRecord } from "@grc/db";
 import { eq, and, isNotNull, count } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { insertNotification } from "../lib/notify";

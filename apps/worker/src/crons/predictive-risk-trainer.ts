@@ -2,7 +2,7 @@
 // Runs daily — retrains models and generates new predictions
 
 import { db, riskPredictionModel } from "@grc/db";
-import { eq, and, sql, lte } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { claimRow, createRunReport } from "../lib/job-runtime";
 

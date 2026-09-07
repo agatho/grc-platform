@@ -3,12 +3,7 @@
 // Flags open nonconformities + corrective actions whose due_date has passed.
 // Fires one notification at 3d remaining, at-deadline, and every 7d while overdue.
 
-import {
-  db,
-  ismsNonconformity,
-  ismsCorrectiveAction,
-  notification,
-} from "@grc/db";
+import { db, ismsNonconformity, ismsCorrectiveAction } from "@grc/db";
 import { and, eq, not, inArray, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";

@@ -7,12 +7,7 @@ import {
   uuid,
   varchar,
   text,
-  boolean,
-  smallint,
-  numeric,
   timestamp,
-  date,
-  jsonb,
   index,
   unique,
 } from "drizzle-orm/pg-core";

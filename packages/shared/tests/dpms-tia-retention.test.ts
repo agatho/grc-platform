@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readdirSync, readFileSync, statSync } from "fs";
+import { join } from "path";
 import {
   validateTiaQuality,
   assessTransferRisk,
@@ -210,5 +212,59 @@ describe("isConsentStillValid", () => {
         expiresAt: past,
       }),
     ).toBe(false);
+  });
+});
+
+// ── [N-2 · Welle 6a] `ADEQUACY_COUNTRIES` stand in der Importliste dieser
+// Suite und wurde von keiner Zusicherung angefasst. Beim Nachziehen der
+// fehlenden Pruefung kam der Befund heraus, der in
+// `src/types/eam-advanced.ts` dokumentiert ist: es gab eine zweite,
+// verdeckte Liste mit dem Nicht-ISO-Code "UK".
+describe("ADEQUACY_COUNTRIES — ISO 3166-1 alpha-2, und nur einmal", () => {
+  it("fuehrt das Vereinigte Koenigreich als GB, nicht als UK", () => {
+    expect(ADEQUACY_COUNTRIES.has("GB")).toBe(true);
+    // "UK" ist kein ISO-3166-1-alpha-2-Code. Stuende er hier, traefe ihn
+    // kein Laendercode aus der Datenbank.
+    expect(ADEQUACY_COUNTRIES.has("UK")).toBe(false);
+  });
+
+  it("besteht ausschliesslich aus zweistelligen Grossbuchstaben-Codes", () => {
+    for (const code of ADEQUACY_COUNTRIES) {
+      expect(code).toMatch(/^[A-Z]{2}$/);
+    }
+  });
+
+  it("stimmt mit der Entscheidung von assessTransferRisk ueberein", () => {
+    // Die Liste und die Funktion duerfen nicht auseinanderlaufen — genau
+    // das war der Befund an der zweiten Kopie.
+    for (const code of ADEQUACY_COUNTRIES) {
+      expect(assessTransferRisk(code).hasAdequacy).toBe(true);
+    }
+    expect(assessTransferRisk("RU").hasAdequacy).toBe(false);
+  });
+});
+
+describe("ADEQUACY_COUNTRIES — genau eine Deklaration im Paket", () => {
+  // Der eigentliche Befund war nicht der Inhalt, sondern die ZAHL: derselbe
+  // Name wurde zweimal exportiert, der Stern-Export aus `types.ts` vom
+  // namentlichen Export in `index.ts` verdeckt, und die verdeckte Kopie war
+  // die falsche. Eine Zusicherung auf den Inhalt haette das nie gesehen —
+  // sie las ja die richtige Liste. Diese hier zaehlt.
+  function alleQuelldateien(dir: string, acc: string[] = []): string[] {
+    for (const eintrag of readdirSync(dir)) {
+      const p = join(dir, eintrag);
+      if (statSync(p).isDirectory()) alleQuelldateien(p, acc);
+      else if (p.endsWith(".ts") || p.endsWith(".tsx")) acc.push(p);
+    }
+    return acc;
+  }
+
+  it("wird in packages/shared/src genau einmal deklariert", () => {
+    const treffer = alleQuelldateien(join(__dirname, "../src")).filter((f) =>
+      /^\s*export const ADEQUACY_COUNTRIES\b/m.test(readFileSync(f, "utf8")),
+    );
+    expect(treffer.map((f) => f.replace(/.*\/src\//, "src/"))).toEqual([
+      "src/state-machines/dpms-tia.ts",
+    ]);
   });
 });

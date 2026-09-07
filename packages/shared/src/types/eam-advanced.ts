@@ -248,23 +248,29 @@ export const EU_EEA_COUNTRIES = [
   "NO",
 ] as const;
 
-export const ADEQUACY_COUNTRIES = [
-  "AD",
-  "AR",
-  "CA",
-  "FO",
-  "GG",
-  "IL",
-  "IM",
-  "JP",
-  "JE",
-  "NZ",
-  "KR",
-  "CH",
-  "UY",
-  "UK",
-  "US",
-] as const;
+// [N-2 · Welle 6a] Hier stand eine ZWEITE Liste der Angemessenheitsbeschluesse
+// (`ADEQUACY_COUNTRIES`), und sie war falsch.
+//
+// Gemessen am 2026-09-07: derselbe Name wird von
+// `src/state-machines/dpms-tia.ts:114` als `Set` exportiert und in
+// `src/index.ts:259` NAMENTLICH aus dem Barrel gereicht. Ein namentlicher
+// Export verdeckt den gleichnamigen Stern-Export aus `types.ts:39` — was aus
+// `@grc/shared` herauskam, war also immer die andere Liste:
+//
+//   import { ADEQUACY_COUNTRIES } from "@grc/shared"
+//   -> [object Set], enthaelt GB: true | enthaelt UK: false, Anzahl: 15
+//
+// Die Liste hier hatte keinen einzigen Verwender und trug fuer das
+// Vereinigte Koenigreich den Code `"UK"`. Das ist kein ISO-3166-1-alpha-2-
+// Code (das ist `GB`); ein Laendercode aus der Datenbank haette sie nie
+// getroffen. Eine verdeckte, nie erreichte und zusaetzlich falsche Kopie
+// einer rechtlich relevanten Liste ist schlimmer als keine — sie ist
+// entfernt. Die eine gueltige Liste steht in `state-machines/dpms-tia.ts`.
+//
+// Was dabei offen bleibt und NICHT hier zu beheben ist: eine DRITTE Kopie
+// liegt inline in `apps/web/src/app/api/v1/tprm/sub-processors/route.ts:90`
+// und weicht ihrerseits ab — ihr fehlen die USA. Derselbe Sachverhalt
+// bekommt dort also eine andere Antwort als aus `assessTransferRisk`.
 
 export const ACR_STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["submitted"],

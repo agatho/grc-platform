@@ -2,8 +2,8 @@
 // Finds KRIs where alert_enabled=true and measurement is overdue based on
 // frequency, then creates notifications for risk_managers and admins in that org.
 
-import { db, kri, notification, userOrganizationRole } from "@grc/db";
-import { eq, and, isNull, lt, inArray, sql } from "drizzle-orm";
+import { db, kri, userOrganizationRole } from "@grc/db";
+import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 import { reportJobError } from "../lib/job-runtime";
 import { insertNotification } from "../lib/notify";
