@@ -224,6 +224,7 @@ export function ArctosBpmnCanvas({
   readOnly: _readOnly,
   onElementClick,
   onNavigateToProcess,
+  onChanged,
   riskOverlayData,
   controlCoverageOverlayData,
   lodOverlayData,
@@ -263,6 +264,25 @@ export function ArctosBpmnCanvas({
   onElementClickRef.current = onElementClick;
   const onNavigateToProcessRef = useRef(onNavigateToProcess);
   onNavigateToProcessRef.current = onNavigateToProcess;
+  /**
+   * [WELLE-6C · 2026-09-08] `onChanged` — die Meldung, die es nie gab.
+   *
+   * `ArctosBpmnCanvasProps` erbt `onChanged` von `BpmnEditorProps`, und
+   * `processes/[id]/page.tsx` reicht es durch (`onChanged={markChanged}`).
+   * Diese Komponente hat es bisher **nicht ausgelesen** — der Legacy-Editor
+   * tut es (`bpmn-editor-legacy.tsx:160`, `commandStack.changed`), die eigene
+   * Engine nicht. Folge: `hasChanges` blieb auf der eigenen Engine für immer
+   * `false`, und `BpmnToolbar` lässt den Speichern-Knopf genau daran hängen
+   * (`disabled={!hasChanges || saving}`).
+   *
+   * Gemessen am Stand `f512c704`: nach Setzen einer Aufgabe und Ziehen eines
+   * Sequenzflusses meldete der Knopf weiterhin `disabled` — **auf der eigenen
+   * Engine liess sich eine Zeichnung nicht speichern**. `BpmnCanvas` feuert
+   * `commandStack.changed` (BpmnCanvas.ts:220) und stellt `on()` bereit; es
+   * fehlte allein das Abonnement.
+   */
+  const onChangedRef = useRef(onChanged);
+  onChangedRef.current = onChanged;
   const callTargetsRef = useRef<Map<string, string>>(new Map());
   /**
    * [ARCTOS-FULL-2026-08-31 · OP-029] Der Arbeitsstand über den Moduswechsel
@@ -422,6 +442,11 @@ export function ArctosBpmnCanvas({
         };
         canvas.on("plane.changed", () => {
           readPath();
+        });
+        // Siehe {@link onChangedRef}: jede Änderung an der Kommandokette ist
+        // eine ungespeicherte Änderung. Dieselbe Quelle wie im Legacy-Editor.
+        canvas.on("commandStack.changed", () => {
+          onChangedRef.current?.();
         });
         readPath();
 

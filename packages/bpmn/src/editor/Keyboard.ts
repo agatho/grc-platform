@@ -125,6 +125,8 @@ export class EditorKeyboard {
   ];
 
   private readonly onKeyDown: (event: KeyboardEvent) => void;
+  /** Tasten, die auf dem Fokuswirt der Fläche landen statt im Container. */
+  private readonly onHostKeyDown: (event: KeyboardEvent) => void;
   private bendpointState: BendpointState | null = null;
   private destroyed = false;
 
@@ -143,6 +145,51 @@ export class EditorKeyboard {
       this.handle(event);
     };
     canvas.getContainer().addEventListener("keydown", this.onKeyDown);
+
+    // [WELLE-6C · 2026-09-08] Die zweite Hälfte des Weges — der Tastendruck,
+    // der den Container gar nicht erreicht.
+    //
+    // Der Tabstopp der Fläche sitzt auf einem VORFAHREN von
+    // `canvas.getContainer()`: `GraphA11y` (`viewer/a11y.ts`) setzt ihn auf den
+    // äusseren `<div>`, und `focusDiagram` sucht ihn genau deshalb aufwärts.
+    // Ein `keydown` steigt aber auf und nicht ab — ein Tastendruck des
+    // Benutzers, dessen Fokus auf diesem `<div>` liegt, erreichte den Zuhörer
+    // am Container nie. Gemessen im Browser am Stand `f512c704`: aktive
+    // Verbindungs-Betriebsart, Ziel angesagt („Ziel 1 von 1: Aufgabe Task_1"),
+    // `Enter` ohne jede Wirkung. Die Einheitstests schicken ihre Ereignisse
+    // direkt an den Container und konnten das nicht sehen.
+    //
+    // Der Wirt kann bei der Konstruktion noch nicht feststehen — `GraphA11y`
+    // läuft erst nach dem Import —, deshalb wird nicht auf einen Knoten
+    // gebunden, sondern am Dokument geprüft, ob das Ziel der FOKUSWIRT dieser
+    // Fläche ist: ein Vorfahr des Containers mit eigenem `tabindex`. `body`
+    // und `html` haben keinen und werden damit nicht eingesammelt; Tasten aus
+    // dem Rest der Seite bleiben unberührt.
+    this.onHostKeyDown = (event) => {
+      // Nur, solange eine Betriebsart wirklich auf Tasten wartet. Sonst
+      // gehören Pfeiltasten, `Enter` und `Escape` weiterhin der
+      // Zugänglichkeitsschicht, und die Behebung bliebe nicht die Behebung
+      // EINES Fehlers.
+      if (!this.modeActive()) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const container = this.canvas.getContainer();
+      // Aus dem Container selbst: der Zuhörer dort hat es schon.
+      if (container.contains(target)) return;
+      if (!target.contains(container)) return;
+      if (!target.hasAttribute("tabindex")) return;
+      this.handle(event);
+    };
+    // `capture: true`. Der Zuhörer muss VOR dem der Zugänglichkeitsschicht
+    // laufen: `GraphA11y` (`viewer/a11y.ts:129`) hängt am selben äusseren
+    // `<div>` und beendet `Enter`, `Escape` und die Pfeiltasten mit
+    // `event.stopPropagation()` (`a11y.ts:346`). In der Blasenphase kam hier
+    // deshalb nichts an — gemessen: der Zuhörer wurde nie aufgerufen. Greift
+    // die Betriebsart, ruft `handle` seinerseits `stopPropagation`, sodass die
+    // Zugänglichkeitsschicht die verbrauchte Taste nicht zweimal deutet.
+    canvas
+      .getContainer()
+      .ownerDocument.addEventListener("keydown", this.onHostKeyDown, true);
     eventBus.on("diagram.destroy", () => {
       this.destroy();
     });
@@ -151,7 +198,13 @@ export class EditorKeyboard {
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
-    this.canvas.getContainer().removeEventListener("keydown", this.onKeyDown);
+    const container = this.canvas.getContainer();
+    container.removeEventListener("keydown", this.onKeyDown);
+    container.ownerDocument.removeEventListener(
+      "keydown",
+      this.onHostKeyDown,
+      true,
+    );
   }
 
   /** Die Stützpunkt-Betriebsart — für Tests und Ansagen. */
@@ -204,6 +257,24 @@ export class EditorKeyboard {
   // -------------------------------------------------------------------------
   // Betriebsarten (Verbinden, Stützpunkte) haben Vorrang
   // -------------------------------------------------------------------------
+
+  /**
+   * Wartet gerade eine Betriebsart auf Tasten?
+   *
+   * [WELLE-6C · 2026-09-08] Nur dann greift die Brücke im Konstruktor auf den
+   * Fokuswirt zu. Die Aufzählung ist dieselbe wie in {@link handleModes} — was
+   * dort Vorrang hat, ist hier die Bedingung.
+   */
+  private modeActive(): boolean {
+    if (this.destroyed || !this.config.editable) return false;
+    if (this.bendpointState) return true;
+    if (this.service<EditorTools>("editorTools")?.active() != null) return true;
+    if (this.service<ConnectMode>("connectMode")?.isActive() === true)
+      return true;
+    if (this.service<ContainerMode>("containerMode")?.isActive() === true)
+      return true;
+    return false;
+  }
 
   private handleModes(event: KeyboardEvent): boolean {
     // [ARCTOS-FULL-2026-08-31 · OP-031] Ein aktives Werkzeug hat Vorrang vor

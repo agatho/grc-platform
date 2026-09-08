@@ -95,13 +95,6 @@ const REFERENCE_SEEDS = [
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
   "seed_tag_definitions.sql",
-  // `seed_catalog_iso27001_annex_a.sql` fills `catalog_entry`. `soa_entry`
-  // (seed_demo_01) has a foreign key into `control_catalog_entry`, which is a
-  // different table and which nothing populated — so demo_01 died on
-  // `soa_entry_catalog_entry_id_control_catalog_entry_id_fk` and took its
-  // assets, threats and vulnerabilities down with it. This projection file
-  // exists for exactly that and was never wired into any seed command.
-  "fix_soa_annex_a.sql",
 ];
 
 /**
@@ -110,6 +103,37 @@ const REFERENCE_SEEDS = [
  */
 const DEMO_SEEDS = [
   "seed_demo_00_platform.sql",
+  // [WELLE-6C · 2026-09-07] `fix_soa_annex_a.sql` stand bis hierher in
+  // REFERENCE_SEEDS, also VOR `seed_demo_00_platform.sql` — und das war auf
+  // einer von Null migrierten Datenbank reproduzierbar falsch.
+  //
+  // Die Datei tut zweierlei: Schritt 1/2 projizieren die Annex-A-Einträge aus
+  // `catalog_entry` nach `control_catalog_entry` (Referenzdaten, mandanten-
+  // unabhängig), Schritt 3 legt für die Demo-Organisation
+  // `c2446a5c-64f1-40a7-862a-8ab084f66f41` 93 `soa_entry`-Zeilen an — und
+  // diese Organisation entsteht erst in `seed_demo_00_platform.sql`. Schritt 3
+  // verletzte deshalb `soa_entry_org_id_organization_id_fk`, und weil der
+  // Runner jede Datei in EINER Transaktion ausführt, wurden Schritt 1 und 2
+  // mit zurückgerollt. Gemessen am 2026-09-07 gegen `grc_e2e6c` (429/429
+  // Migrationen von Null):
+  //
+  //   FAIL  fix_soa_annex_a.sql: insert or update on table "soa_entry"
+  //         violates foreign key constraint "soa_entry_org_id_organization_id_fk"
+  //   FAIL  seed_demo_01_assets_isms.sql: null value in column
+  //         "catalog_entry_id" of relation "soa_entry" violates not-null constraint
+  //   FAIL  seed_demo_15_cve.sql: expected the CPE cross product to yield at
+  //         least 40 matches, found 0 — did seed_demo_01_assets_isms.sql run?
+  //
+  // Ein Fehler, drei tote Dateien: ohne `control_catalog_entry` findet der
+  // SoA-Teil von `demo_01` nichts, bricht die Datei ab und nimmt Assets,
+  // Bedrohungen und Schwachstellen mit — worauf `demo_15` keine CPE-Treffer
+  // mehr bilden kann. Auf der Maschine des Eigentümers lief die Datei durch,
+  // weil die Demo-Organisation dort aus einem FRÜHEREN Lauf schon existierte.
+  // Genau die Klasse von Fehler, die nur eine Datenbank von Null zeigt.
+  //
+  // Hierher verschoben, nicht umgeschrieben: die Datei gehört fachlich nach
+  // 00_platform und vor 01_assets_isms.
+  "fix_soa_annex_a.sql",
   "seed_demo_data.sql", // budgets, risks, controls, treatments (base)
   "seed_demo_09_processes.sql", // processes — BCMS references them
   "seed_demo_08_documents.sql", // documents

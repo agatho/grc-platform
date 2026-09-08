@@ -198,16 +198,43 @@ export class RovingFocus {
  * **ohne** einen zweiten Tabstopp in die Seite zu setzen.
  */
 export function focusDiagram(container: HTMLElement): HTMLElement {
+  const host = keyboardHost(container);
+  if (host === container && !container.hasAttribute("tabindex")) {
+    container.tabIndex = -1;
+  }
+  host.focus();
+  return host;
+}
+
+/**
+ * [WELLE-6C · 2026-09-08] Der Knoten, der die Tasten der Fläche bekommt.
+ *
+ * Genau der Knoten, den {@link focusDiagram} fokussiert — und das ist der
+ * Punkt: ein `keydown` steigt **auf**, nicht ab. Solange der Tabstopp auf einem
+ * VORFAHREN des Canvas-Containers sitzt (im Produkt tut er das: `GraphA11y`
+ * setzt ihn auf den äusseren `<div>`, `src/viewer/a11y.ts`), erreicht ein
+ * Tastendruck einen Zuhörer am Container nie.
+ *
+ * Gemessen am Stand `f512c704` im Browser: Nach „Verbinden" im Kontextmenü war
+ * `document.activeElement` der äussere `<div class="h-full w-full …">`, die
+ * Betriebsart lief ausweislich der Statusansage („Ziel 1 von 1: Aufgabe
+ * Task_1"), und `Enter` erzeugte keine Kante — der Zuhörer sass auf
+ * `.djs-container`, einem KIND dieses `<div>`. Die Tastaturbedienung der
+ * eigenen Engine war im Browser wirkungslos.
+ *
+ * Warum die Einheitstests das nicht zeigten: sie schicken ihre Ereignisse
+ * direkt an `canvas.getContainer()`. Dort greift der Zuhörer, weil das Ziel
+ * der Zuhörerknoten selbst ist — ein Tor, das nur unter seiner eigenen
+ * Annahme auslöst.
+ */
+export function keyboardHost(container: HTMLElement): HTMLElement {
   let node: HTMLElement | null = container;
   while (node) {
     if (node.hasAttribute("tabindex")) {
-      node.focus();
       return node;
     }
     node = node.parentElement;
   }
-  container.tabIndex = -1;
-  container.focus();
   return container;
 }
 

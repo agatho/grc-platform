@@ -612,6 +612,54 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-08 — Welle 6c: OP-027 geschlossen, und die Blockade, die es nie gab
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-6C.md`.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                     | Art                      | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------------ | ------- |
+| OP-204 | **Der Playwright-Lauf war nie durch OP-167 blockiert.** `playwright.config.ts` startet ausserhalb von CI `npm run dev`, nicht `next start`. Gemessen: Dev-Server `✓ Ready in 1667ms`, danach vier Anmeldungen und 135 Web- plus 26 Regressionstests gegen denselben Server. Die Begründung „ohne Produktionsbau nicht möglich" hat **vier Punkte lahmgelegt** (OP-027, OP-036, OP-080 und den Lauf selbst) und war nie nachgeprüft.                                                                      | Eigene Messung 2026-09-08 | Tor                      | behoben |
+| OP-205 | **Die eigene BPMN-Engine zeichnete jede Form neben ihre eigene Klickfläche.** `g.djs-visual` bei `439,761` gegen `rect.djs-hit` bei `260,602` — Differenz **179/159**, exakt die Modellkoordinaten von `StartEvent_1`. Ursache: doppelte Verschiebung (der Renderer zeichnet absolut, `diagram-js` verschiebt die Gruppe zusätzlich). Folge: Ein Klick auf das sichtbare Element traf leere Fläche, es gab keine Auswahl, kein Kontextmenü — und damit **keinen Weg, auf dieser Fläche zu modellieren**. | Eigene Messung 2026-09-08 | Produkt                  | behoben |
+| OP-206 | **Tastaturbedienung der Fläche im Browser wirkungslos.** Die Zuhörer sassen auf `.djs-container`, der Tabstopp auf dessen Elternknoten; `keydown` steigt auf, nicht ab. Beleg: Statusansage „Ziel 1 von 1: Aufgabe Task_1", `Enter` → **0 Kanten**; dasselbe Ereignis synthetisch an `.djs-container` → 1 Kante. Die Einheitstests schicken genau dorthin.                                                                                                                                               | Eigene Messung 2026-09-08 | Produkt/Barrierefreiheit | behoben |
+| OP-207 | **Gezeichnetes liess sich nicht speichern.** `onChanged` wird durchgereicht, aber von `ArctosBpmnCanvas` nie ausgelesen — `hasChanges` bleibt `false`, `Save` dauerhaft `disabled`.                                                                                                                                                                                                                                                                                                                      | Eigene Messung 2026-09-08 | Produkt                  | behoben |
+| OP-208 | **Der Demo-Seed war auf einer Datenbank von Null dreifach tot.** `fix_soa_annex_a.sql` lief vor `seed_demo_00_platform.sql`, also bevor es die Organisation gab → FK-Verletzung → Rollback der ganzen Datei, und `seed_demo_01_assets_isms` sowie `seed_demo_15_cve` fielen mit. `3 of 56 seed file(s) failed` → nach dem Verschieben **56/56 ok**, `soa_entry` 0 → 101, `cve_asset_match` 0 → 54.                                                                                                       | Eigene Messung 2026-09-08 | Produkt                  | behoben |
+
+**OP-204 ist das vierzehnte Tor dieses Audits, das nicht auslösen konnte** —
+und die unangenehmste Bauart bisher: keine falsch-grüne Prüfung, sondern eine
+**Begründung**, die vier Punkte stilllegte und die niemand nachgemessen hat.
+Ehrlich dazu gehört: `next dev` prerendert nicht, kann OP-167 also weder
+finden noch widerlegen, und taugt nicht als Messumgebung — OP-036 hängt
+weiterhin am Produktionsbau, OP-167 blockiert weiterhin das **Deployment**.
+Aber eben nur das.
+
+**OP-205 ist das fünfzehnte blinde Tor, und das lehrreichste.** Keiner der 40
+Formtests konnte den Fehler sehen, weil `test/draw/helpers/render.ts` jede
+Form mit `x: overrides.x ?? 0, y: overrides.y ?? 0` anlegt — **bei (0,0) ist
+die doppelte Verschiebung die Identität**. Das gesamte Formtestwerk war gegen
+genau diesen Defekt blind. Die Behebung bleibt entsprechend klein: Der
+Renderer bleibt absolut (der statische Weg, die Prüfbilder und die vierzig
+Tests hängen daran), nur der `diagram-js`-Weg schiebt die Gruppe um `(-x, -y)`
+zurück.
+
+**OP-027 ist geschlossen.** `apps/web/e2e/bpmn-canvas-modeling.spec.ts`, zwei
+Tests als `process_owner`: eine Aufgabe aus dem Vorrat setzen, über das
+Kontextmenü mit dem Startereignis verbinden, speichern — und die **im DOM
+gelesenen** Bezeichner im zurückgelesenen XML wiederfinden, mit
+`sourceRef`/`targetRef` und als abgeleiteter `process_step`. Dass die
+schwächere Fassung nicht genügt hätte, ist gemessen: Die erste Version
+speicherte `sourceRef="Activity_…" targetRef="Activity_…"` — eine Schleife auf
+sich selbst, die ein „es gibt eine Kante" bestanden hätte.
+
+**Zählung, ehrlich:** `web` **135/135 grün** in 22 Spezifikationen plus vier
+Anmeldungen, kein `skip`. Vom `regression`-Projekt sind **26 von 62 gemessen,
+alle grün; 36 Tests in 22 Spezifikationen sind ungemessen — nicht rot.** Der
+Gegner war die Maschine: `next-server` wächst auf 5,2 GB, danach Lastmittel 22
+bei 99 % Systemzeit. Sechs Ausfälle im Abschnittslauf waren maschinenbedingt
+und isoliert alle grün.
+
+**Was das für OP-080 heisst:** Die Begründung „ohne E2E nicht verifizierbar"
+ist entfallen. Der Punkt ist damit nicht erledigt, aber nicht mehr blockiert.
+
 ### Nachtrag 2026-09-07 — Welle 6b: zwei Tore, mit einem Zeichen ausgehebelt
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-6B.md`. `ai-act`, `settings`, `admin`

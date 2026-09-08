@@ -26,6 +26,7 @@
 
 import { getTypeLabel } from "../draw/semantic";
 import type { EditorAnnouncer } from "./announce";
+import { focusDiagram } from "./dom";
 import { describe } from "./ElementCreation";
 import type {
   BpmnConnection,
@@ -175,6 +176,22 @@ export class ConnectMode {
     }
     this.active = { mode, candidates, index: 0 };
     this.mark(true);
+    // [WELLE-6C · 2026-09-08] Der Fokus muss auf die Zeichenfläche.
+    //
+    // Diese Betriebsart wird mit `←`/`→`/`Enter` bedient, und `EditorKeyboard`
+    // hört am Behälter der Fläche — ignoriert dort aber ausdrücklich alles,
+    // was aus `.djs-palette` oder `.djs-context-pad` kommt (`OWNED_BY_OTHERS`).
+    // Wer „Verbinden" im Kontextmenü ANKLICKT, lässt den Fokus damit genau in
+    // dem Bereich stehen, dessen Tasten der Editor absichtlich nicht
+    // verarbeitet: die Ziele wurden markiert und angesagt, aber weder
+    // Pfeiltaste noch `Enter` kamen an. Gemessen am Stand `f512c704` im
+    // E2E-Lauf: die Aufgabe war als `arctos-connect-candidate` markiert und
+    // `Enter` erzeugte keine Kante — die Betriebsart war mit der Maus
+    // startbar und nicht abschliessbar.
+    //
+    // Der Tastaturweg (`c` auf der Fläche) verliert dadurch nichts: dort ist
+    // der Fokus bereits auf der Fläche, und `focusDiagram` lässt ihn stehen.
+    focusDiagram(this.canvas.getContainer());
     this.announcer.announce(`${message()} ${this.describeCurrent()}`);
     return true;
   }

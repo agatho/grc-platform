@@ -13,10 +13,22 @@ test.describe("Sidebar Navigation", () => {
     const nav = page.locator("nav, aside").first();
     await expect(nav).toBeVisible();
 
-    // Should have multiple links
+    // Should have multiple links.
+    //
+    // [WELLE-6C · 2026-09-08] `await links.count()` liest EINMAL und
+    // `expect(zahl)` wiederholt nichts. Unter Last hat dieser Test die
+    // Seitenleiste mitten im Aufbau erwischt und 5 statt 38 Verweisen gezählt
+    // — gemessen im Abschnittslauf: `Expected: > 5, Received: 5`, während
+    // dieselbe Seite unmittelbar danach 38 lieferte. Die Schwelle bleibt, was
+    // sie war; nur das Lesen wartet jetzt, statt zu stichproben.
     const links = nav.locator("a");
-    const count = await links.count();
-    expect(count).toBeGreaterThan(5);
+    await expect
+      .poll(async () => await links.count(), {
+        message:
+          "die Seitenleiste zeigt dauerhaft fünf oder weniger Verweise — " +
+          "entweder ist sie nicht aufgebaut oder die Module fehlen",
+      })
+      .toBeGreaterThan(5);
   });
 
   test("navigates to risk register from sidebar", async ({ page }) => {
