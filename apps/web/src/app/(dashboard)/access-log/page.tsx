@@ -209,7 +209,13 @@ export default function AccessLogPage() {
         },
       },
     ],
-    [t],
+    // [Welle 7a · OP-080] `numberLocale` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, numberLocale],
   );
 
   // Toolbar with event type filter

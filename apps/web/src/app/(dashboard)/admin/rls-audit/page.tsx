@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 import {
@@ -83,7 +83,7 @@ export default function RlsAuditPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterMode>("gaps");
 
-  async function fetchReport() {
+  const fetchReport = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -98,11 +98,14 @@ export default function RlsAuditPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [tCommon]);
 
+  // [Welle 7a · OP-080] `fetchReport` steht jetzt in `useCallback` und in den
+  // Abhaengigkeiten des Effekts. Die leere Liste war eine Behauptung ueber
+  // eine Funktion, die bei jedem Rendern neu entsteht.
   useEffect(() => {
     void fetchReport();
-  }, []);
+  }, [fetchReport]);
 
   const filtered = useMemo(() => {
     if (!report) return [];

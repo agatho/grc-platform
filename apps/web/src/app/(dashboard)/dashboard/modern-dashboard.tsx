@@ -18,6 +18,7 @@ import {
   Inbox,
 } from "lucide-react";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
+import { useNow } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
@@ -178,6 +179,15 @@ export function ModernDashboard({
   timeAgo,
 }: ModernDashboardProps) {
   const { formatDate } = useDateFormat();
+  // [Welle 7a · OP-080] `Date.now()` stand an drei Stellen im Renderpfad —
+  // einmal fuer die Zahl der ueberfaelligen Aufgaben und zweimal in DERSELBEN
+  // Bedingung („ueberfaellig" / „faellig in <= 3 Tagen"), also zwei Ablesungen
+  // der Uhr in einem Ausdruck. Unrein: derselbe Rendervorgang kann zwei Werte
+  // sehen, Server- und Browserdurchlauf sehen ohnehin verschiedene — das ist
+  // die Klasse, aus der Abweichungen beim Anhydrieren entstehen. `useNow()`
+  // aus next-intl gibt EINEN Zeitpunkt je Einhaengung, aus demselben
+  // Anbieter, den die Seite fuer Sprache und Zeitzone schon benutzt.
+  const nowMs = useNow().getTime();
   // Derived stats
   const complianceScore = (() => {
     if (!ermEnabled || !riskSummary) return null;
@@ -197,7 +207,7 @@ export function ModernDashboard({
     ermEnabled && riskSummary ? riskSummary.appetiteExceededCount : null;
 
   const overdueTasks = myTasks.filter(
-    (task) => task.dueDate && new Date(task.dueDate).getTime() < Date.now(),
+    (task) => task.dueDate && new Date(task.dueDate).getTime() < nowMs,
   );
 
   return (
@@ -514,12 +524,11 @@ export function ModernDashboard({
               ) : (
                 myTasks.map((task) => {
                   const isOverdue =
-                    task.dueDate &&
-                    new Date(task.dueDate).getTime() < Date.now();
+                    task.dueDate && new Date(task.dueDate).getTime() < nowMs;
                   const isDueSoon =
                     task.dueDate &&
                     !isOverdue &&
-                    (new Date(task.dueDate).getTime() - Date.now()) /
+                    (new Date(task.dueDate).getTime() - nowMs) /
                       (1000 * 60 * 60 * 24) <=
                       3;
                   return (

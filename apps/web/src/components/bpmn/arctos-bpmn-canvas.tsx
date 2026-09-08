@@ -247,8 +247,12 @@ export function ArctosBpmnCanvas({
    * Dokument mit nur einer `BPMNPlane` — dann wird auch nichts gezeigt, statt
    * eine Zeile „Prozess" ohne Bedeutung über jedes Diagramm zu setzen.
    */
+  // [Welle 7a · OP-080] `label: null` heisst „die Ebene hat keinen eigenen
+  // Namen". Der Ersatztext wird beim RENDERN uebersetzt, nicht beim Lesen der
+  // Ebene: sonst haette der Effekt `t` gebraucht, und der Ersatztext waere in
+  // der Sprache eingefroren, die beim Aufbau der Flaeche galt.
   const [planePath, setPlanePath] = useState<
-    ReadonlyArray<{ index: number; label: string }>
+    ReadonlyArray<{ index: number; label: string | null }>
   >([]);
   /**
    * Wie viele Ebenen das Dokument überhaupt hat. Die Brotkrume hängt an
@@ -259,6 +263,14 @@ export function ArctosBpmnCanvas({
   const [planeCount, setPlaneCount] = useState(0);
   const t = useTranslations("bpmn");
   const describedById = useId();
+  // [Welle 7a · OP-080] Nur fuer die eine Konstruktionsoption der Engine,
+  // siehe die Begruendung an der Fundstelle. Nachgezogen im Effekt, nicht
+  // beim Rendern — ein Schreibzugriff auf einen Verweis waehrend des Renderns
+  // wirkt auch aus einem verworfenen Rendervorgang.
+  const tRef = useRef(t);
+  useEffect(() => {
+    tRef.current = t;
+  }, [t]);
 
   const onElementClickRef = useRef(onElementClick);
   onElementClickRef.current = onElementClick;
@@ -324,7 +336,16 @@ export function ArctosBpmnCanvas({
           chrome: chrome ?? defaultChromeFor(mode),
           editor: {
             chrome: chrome ?? defaultChromeFor(mode),
-            disabledReason: t("chrome.disabledReason"),
+            // [Welle 7a · OP-080] Diese eine Zeichenkette nimmt die Engine
+            // als KONSTRUKTIONSOPTION entgegen; sie laesst sich nachtraeglich
+            // nicht wechseln. Sie ueber `t` in die Abhaengigkeiten dieses
+            // Effekts zu nehmen hiesse, die Flaeche bei jedem Sprachwechsel
+            // abzureissen und neu aufzubauen — Blickausschnitt, Auswahl und
+            // Ebene mitsamt. Ehrlich benannt statt verschwiegen: dieser
+            // Hinweistext bleibt in der Sprache stehen, die beim Aufbau galt.
+            // Der zugaengliche Name der Flaeche folgt der Sprache (eigener
+            // Effekt weiter unten), dieser Hinweis nicht.
+            disabledReason: tRef.current("chrome.disabledReason"),
           },
           // Die Modellschicht ausdrücklich mitgeben: `BpmnCanvas` würde sie
           // sonst über einen dynamischen Modulpfad nachladen, der sich mit
@@ -359,12 +380,13 @@ export function ArctosBpmnCanvas({
         await canvas.importXml(xml);
         if (destroyed) return;
 
-        // Der zugängliche Name kommt weiterhin aus den Übersetzungen, damit
-        // der Wechsel der Engine an der Vorlesereihenfolge nichts ändert.
-        // `role`, `aria-roledescription` und `tabindex` setzt die
-        // a11y-Schicht der Engine selbst (S14-10).
-        container.setAttribute("aria-label", t("a11y.canvasLabel"));
-        container.setAttribute("aria-describedby", describedById);
+        // [Welle 7a · OP-080] Der zugängliche Name und die Beschreibung
+        // standen hier — in einem Effekt, der nur bei `[xml, mode, chrome]`
+        // erneut läuft. `t("a11y.canvasLabel")` ist übersetzter Text: nach
+        // einem Sprachwechsel behielt die Zeichenfläche ihren alten
+        // deutschen Namen, während die übrige Oberfläche englisch war. Sie
+        // sind jetzt ein eigener Effekt weiter unten, mit `t` und
+        // `describedById` in den Abhängigkeiten.
 
         // `readModelElements` erwartet die bpmn-js-Zusicherung, dass jedes
         // Element einen `type` trägt. `diagram-js` selbst kennt zusätzlich das
@@ -432,11 +454,7 @@ export function ArctosBpmnCanvas({
           setPlanePath(
             canvas.getPlanePath().map((plane) => ({
               index: plane.index,
-              label:
-                plane.rootName ??
-                plane.rootId ??
-                plane.rootType ??
-                t("plane.label"),
+              label: plane.rootName ?? plane.rootId ?? plane.rootType ?? null,
             })),
           );
         };
@@ -484,6 +502,20 @@ export function ArctosBpmnCanvas({
     // Moduswechsel, weil die Modulliste eine andere ist. Was dabei erhalten
     // bleibt, regelt `restoreRef` (OP-029).
   }, [xml, mode, chrome]);
+
+  // [Welle 7a · OP-080] Der zugängliche Name der Zeichenfläche, als eigener
+  // Effekt. Er hängt an `t` und `describedById` und nicht am Aufbau der
+  // Fläche — deshalb folgt er jetzt einem Sprachwechsel, bei dem der Aufbau
+  // gerade NICHT wiederholt wird (`router.refresh()` hängt Clientkomponenten
+  // nicht neu ein). `ready` steht in der Liste, weil vorher kein Container
+  // beschrieben werden kann; `role`, `aria-roledescription` und `tabindex`
+  // setzt weiterhin die a11y-Schicht der Engine selbst (S14-10).
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !ready) return;
+    container.setAttribute("aria-label", t("a11y.canvasLabel"));
+    container.setAttribute("aria-describedby", describedById);
+  }, [ready, t, describedById]);
 
   // -------------------------------------------------------------------------
   // Die GRC-Schicht (`src/grc`, 23 Layer) — ins SVG gezeichnet, nicht als
@@ -754,7 +786,7 @@ export function ArctosBpmnCanvas({
                 {position > 0 && <span aria-hidden="true">/</span>}
                 {last ? (
                   <span aria-current="step" className="font-semibold">
-                    {plane.label}
+                    {plane.label ?? t("plane.label")}
                   </span>
                 ) : (
                   <button
@@ -764,7 +796,7 @@ export function ArctosBpmnCanvas({
                       canvasRef.current?.showPlane(plane.index);
                     }}
                   >
-                    {plane.label}
+                    {plane.label ?? t("plane.label")}
                   </button>
                 )}
               </span>
@@ -968,7 +1000,16 @@ function useOverlayChannel<T extends { bpmnElementId: string }>(
   ) => { html: HTMLElement; position: Record<string, number> } | null,
 ): void {
   const buildRef = useRef(build);
-  buildRef.current = build;
+  // [Welle 7a · OP-080] Der Verweis wird im EFFEKT nachgezogen, nicht mehr
+  // beim Rendern. Ein Schreibzugriff waehrend des Renderns wirkt auch dann,
+  // wenn React den Rendervorgang wieder verwirft (Uebergaenge, Suspense,
+  // doppeltes Rendern im Strict Mode) — der Kanal haette dann mit einem
+  // `build` gearbeitet, das nie festgeschrieben wurde. Dieser Effekt steht
+  // VOR dem Kanal-Effekt und laeuft in jeder Festschreibung; der Kanal liest
+  // `buildRef.current` also immer aus derselben Festschreibung.
+  useEffect(() => {
+    buildRef.current = build;
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -24,7 +24,13 @@ import {
  * actual icon components. This avoids dynamic imports and keeps the
  * bundle deterministic.
  */
-const ICON_MAP: Record<string, LucideIcon> = {
+/**
+ * [Welle 7a · OP-080] Ausgelagert, damit `module-icon.tsx` die Zuordnung
+ * DIREKT indizieren kann. `react-hooks/static-components` kann einem
+ * Nachschlag im Rumpf folgen (`ICON_MAP[name] ?? Box`), aber nicht ueber die
+ * Grenze eines Funktionsaufrufs — siehe den Kopf von `module-icon.tsx`.
+ */
+export const ICON_MAP: Record<string, LucideIcon> = {
   ShieldAlert,
   Workflow,
   ShieldCheck,

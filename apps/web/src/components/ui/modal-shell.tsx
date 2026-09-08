@@ -77,7 +77,16 @@ export function useModalDialog(
   const panelRef = React.useRef<HTMLDivElement | null>(null);
   const titleId = `${React.useId()}-dialog-title`;
   const onCloseRef = React.useRef(onClose);
-  onCloseRef.current = onClose;
+  // [Welle 7a · OP-080] Der Verweis wird im EFFEKT nachgezogen, nicht beim
+  // Rendern. Ein Schreibzugriff waehrend des Renderns wirkt auch aus einem
+  // Rendervorgang, den React wieder verwirft (Uebergaenge, Suspense, doppeltes
+  // Rendern im Strict Mode); der Dialog haette dann bei `Escape` ein
+  // `onClose` gerufen, das nie festgeschrieben wurde. Dieser Effekt steht VOR
+  // dem Tastatureffekt und laeuft in jeder Festschreibung — der Zuhoerer liest
+  // `onCloseRef.current` also stets aus derselben Festschreibung.
+  React.useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   React.useEffect(() => {
     if (!open) return;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
@@ -72,7 +72,7 @@ export default function MyWorkPage() {
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [msTypeFilter, setMsTypeFilter] = useState<string>("");
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
     try {
       const params = new URLSearchParams();
@@ -85,11 +85,16 @@ export default function MyWorkPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }
-
-  useEffect(() => {
-    load();
   }, [includeCompleted, msTypeFilter]);
+
+  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
+  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
+  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
+  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
+  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (error) {
     return (

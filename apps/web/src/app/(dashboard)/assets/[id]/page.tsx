@@ -428,7 +428,11 @@ export default function AssetDetailPage() {
     void fetchAsset();
   }, [fetchAsset]);
 
-  // Register tab when asset loads
+  // Register tab when asset loads.
+  // [Welle 7a · OP-080] `assetId` fehlte, obwohl Kennung UND Ziel des
+  // Reiters daraus gebaut werden: bei einem Wechsel zwischen zwei Objekten,
+  // ohne dass `asset` sich in der Zwischenzeit auf `null` setzt, wurde der
+  // Reiter unter der ALTEN Kennung mit dem NEUEN Namen angemeldet.
   useEffect(() => {
     if (asset) {
       openTab({
@@ -443,7 +447,7 @@ export default function AssetDetailPage() {
               : "Database",
       });
     }
-  }, [asset]);
+  }, [asset, assetId, openTab]);
 
   const handleCiaUpdate = async (field: string, value: number | null) => {
     if (!asset) return;

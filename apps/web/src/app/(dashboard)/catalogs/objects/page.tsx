@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -61,11 +61,17 @@ export default function ObjectCatalogPage() {
     description: "",
   });
 
-  useEffect(() => {
-    fetchObjects();
-  }, [typeFilter]);
-
-  const fetchObjects = async () => {
+  // [Welle 7a · OP-080] Zwei Befunde an derselben Stelle: der Effekt stand
+  // VOR der Erklaerung von `fetchObjects` und rief eine Bindung auf, die zum
+  // Zeitpunkt des Renderns noch in der zeitlichen Totzone lag
+  // (`react-hooks/immutability`), und `fetchObjects` fehlte in seinen
+  // Abhaengigkeiten (`react-hooks/exhaustive-deps`). Beides ist derselbe
+  // Fehler: die Abhaengigkeitsliste `[typeFilter]` behauptete, der Effekt
+  // haenge nur am Filter, obwohl er eine bei jedem Rendern neu gebaute
+  // Funktion aufruft. Die Funktion steht jetzt vor dem Effekt, ist in
+  // `useCallback` mit ihrer wirklichen Abhaengigkeit gefasst, und der Effekt
+  // nennt sie.
+  const fetchObjects = useCallback(async () => {
     setLoading(true);
     const params = new URLSearchParams({ limit: "100" });
     if (typeFilter) params.set("objectType", typeFilter);
@@ -73,7 +79,11 @@ export default function ObjectCatalogPage() {
     const json = await res.json();
     setObjects(json.data ?? []);
     setLoading(false);
-  };
+  }, [typeFilter]);
+
+  useEffect(() => {
+    void fetchObjects();
+  }, [fetchObjects]);
 
   const handleCreate = async () => {
     if (!newObject.name.trim()) return;
@@ -164,7 +174,13 @@ export default function ObjectCatalogPage() {
         cell: ({ row }) => formatDate(row.original.updatedAt),
       },
     ],
-    [t],
+    // [Welle 7a · OP-080] `formatDate` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, formatDate],
   );
 
   if (loading && objects.length === 0) {

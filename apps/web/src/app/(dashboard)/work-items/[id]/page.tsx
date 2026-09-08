@@ -651,7 +651,8 @@ export default function WorkItemDetailPage() {
     void fetchItem();
   }, [fetchItem]);
 
-  // Register tab when item loads
+  // Register tab when item loads.
+  // [Welle 7a · OP-080] `itemId` fehlte — siehe /assets/[id].
   useEffect(() => {
     if (item) {
       const _IconComp = item.typeIcon ? getLucideIcon(item.typeIcon) : null;
@@ -662,7 +663,7 @@ export default function WorkItemDetailPage() {
         icon: item.typeIcon,
       });
     }
-  }, [item]);
+  }, [item, itemId, openTab]);
 
   const handleTransition = async (newStatus: string) => {
     setTransitioning(true);

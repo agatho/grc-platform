@@ -104,6 +104,19 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
     // bpmnElementId → calledProcessId for the dblclick drill-down
     const callTargetsRef = useRef<Map<string, string>>(new Map());
 
+    // [Welle 7a · OP-080] `initialXml` und `readOnly` waren im Einhaeng-Effekt
+    // gelesen, standen aber nicht in seinen Abhaengigkeiten — die leere Liste
+    // war eine BEHAUPTUNG, keine Aussage ueber den Code. Sie in die Liste
+    // aufzunehmen waere hier falsch: `initialXml` aendert sich nach jedem
+    // Speichern (die Seite laedt `process` neu), und ein erneutes
+    // `importXML` wuerde den Blickausschnitt zuruecksetzen und die gerade
+    // gespeicherte Fassung durch dieselbe Fassung ersetzen. Beide sind
+    // wirklich ANFANGSWERTE. Sie wandern deshalb — wie die vier Rueckrufe
+    // darueber — in Verweise; damit ist die leere Abhaengigkeitsliste
+    // nachpruefbar wahr statt stillgelegt.
+    const initialXmlRef = useRef(initialXml);
+    const readOnlyRef = useRef(readOnly);
+
     // Dynamic import and init — runs once on mount
     useEffect(() => {
       let destroyed = false;
@@ -113,7 +126,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
 
         try {
           // Dynamic import of bpmn-js to avoid SSR
-          const BpmnModule = readOnly
+          const BpmnModule = readOnlyRef.current
             ? await import("bpmn-js/lib/NavigatedViewer")
             : await import("bpmn-js/lib/Modeler");
 
@@ -138,7 +151,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           modelerRef.current = instance;
 
           // Import BPMN XML
-          await instance.importXML(initialXml);
+          await instance.importXML(initialXmlRef.current);
 
           // Fit viewport
           const canvas = instance.get("canvas") as {
@@ -153,7 +166,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           if (!destroyed) setModelElements(readModelElements(elementRegistry));
 
           // Edit-mode event listeners
-          if (!readOnly) {
+          if (!readOnlyRef.current) {
             const eventBus = instance.get("eventBus") as {
               on: (event: string, callback: () => void) => void;
             };
@@ -202,7 +215,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           // element with a linked child process navigates into it. In edit
           // mode dblclick keeps its bpmn-js default (label editing) — the
           // overlay badge is the navigation affordance there.
-          if (readOnly) {
+          if (readOnlyRef.current) {
             eventBus2.on("element.dblclick", (e) => {
               const element = e.element;
               if (!element) return;
@@ -235,10 +248,22 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           modelerRef.current = null;
         }
       };
-      // Only mount once — readOnly and initialXml are treated as initial values
+      // Only mount once — readOnly and initialXml are treated as initial
+      // values and are read through refs (see the note above).
     }, []);
 
-    // Apply risk overlays when data changes
+    // Apply risk overlays when data changes.
+    //
+    // [Welle 7a · OP-080] Diese fuenf Einblendungs-Effekte hatten `t` nicht in
+    // den Abhaengigkeiten. Die Beschriftungen, die sie setzen, SIND
+    // uebersetzter Text (`makeInteractiveOverlay({ label: t(...) })`). Der
+    // Sprachwaehler setzt nur einen Keks und ruft `router.refresh()` —
+    // Clientkomponenten werden dabei nicht neu eingehaengt —, also blieben die
+    // zugaenglichen Namen der Abzeichen nach einem Sprachwechsel in der alten
+    // Sprache stehen, waehrend die uebrige Oberflaeche wechselte. Jeder dieser
+    // Effekte raeumt seine eigenen Einblendungen zuerst ab
+    // (`overlays.remove({ type: … })`) und ist damit wiederholbar; `t` in den
+    // Abhaengigkeiten ist gefahrlos.
     useEffect(() => {
       const instance = modelerRef.current;
       if (!instance || loading || !riskOverlayData?.length) return;
@@ -288,7 +313,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       } catch {
         // Overlays may fail if elements don't exist in the diagram
       }
-    }, [riskOverlayData, loading]);
+    }, [riskOverlayData, loading, t]);
 
     // BPM Overhaul A5: control-coverage overlay
     useEffect(() => {
@@ -337,7 +362,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       } catch {
         /* element may be missing */
       }
-    }, [controlCoverageOverlayData, loading]);
+    }, [controlCoverageOverlayData, loading, t]);
 
     // BPM Overhaul A4: LoD overlay (left edge accent)
     useEffect(() => {
@@ -383,7 +408,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       } catch {
         /* */
       }
-    }, [lodOverlayData, loading]);
+    }, [lodOverlayData, loading, t]);
 
     // BPM Overhaul Phase 6: findings overlay (bottom badge)
     useEffect(() => {
@@ -428,7 +453,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       } catch {
         /* */
       }
-    }, [findingsOverlayData, loading]);
+    }, [findingsOverlayData, loading, t]);
 
     // Call-Activity Drill-Down: badge on elements with a linked child
     // process; clicking the badge navigates to the child's detail page.
@@ -485,7 +510,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       } catch {
         /* element may be missing */
       }
-    }, [callActivityOverlayData, loading]);
+    }, [callActivityOverlayData, loading, t]);
 
     // Imperative handle for parent components
     useImperativeHandle(ref, () => {
@@ -551,7 +576,7 @@ export const BpmnEditorLegacy = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           }
         },
       };
-    }, [loading]);
+    }, []);
 
     // [WP12 · S14-10] Arrow keys pan, +/- zoom, 0 fits. bpmn-js already binds
     // its own editor shortcuts via `keyboard: { bindTo: document }`; these are

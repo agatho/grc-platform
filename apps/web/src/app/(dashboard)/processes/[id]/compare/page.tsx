@@ -82,17 +82,29 @@ function CompareContent() {
         setVersions(
           versionsList.sort((a, b) => b.versionNumber - a.versionNumber),
         );
-        if (!versionFrom && versionsList.length >= 2) {
-          const sorted = [...versionsList].sort(
-            (a, b) => a.versionNumber - b.versionNumber,
-          );
-          setVersionFrom(String(sorted[sorted.length - 2].versionNumber));
-          setVersionTo(String(sorted[sorted.length - 1].versionNumber));
-        }
       })
       .catch(() => setVersions([]))
       .finally(() => setVersionsLoading(false));
   }, [processId]);
+
+  // [Welle 7a · OP-080] Die Vorbelegung der beiden Versionsfelder stand bis
+  // Welle 7a IM Ladeeffekt und las dort `versionFrom`, ohne dass der Wert in
+  // dessen Abhaengigkeitsliste stand. Beide Auswege waren dort falsch:
+  // `versionFrom` in die Liste aufzunehmen haette bei JEDER Auswahl eines
+  // Vergleichsstandes einen neuen Abruf von `/api/v1/processes/[id]`
+  // ausgeloest, und ein funktionaler Aktualisierer haette die beiden Felder
+  // nicht paarweise setzen koennen. Die Vorbelegung ist deshalb ein eigener
+  // Effekt: er haengt an den geladenen Versionen UND an `versionFrom`, sagt
+  // damit die Wahrheit, und belegt weiterhin nur vor, solange der Nutzer
+  // nichts gewaehlt hat.
+  useEffect(() => {
+    if (versionFrom || versions.length < 2) return;
+    const sorted = [...versions].sort(
+      (a, b) => a.versionNumber - b.versionNumber,
+    );
+    setVersionFrom(String(sorted[sorted.length - 2].versionNumber));
+    setVersionTo(String(sorted[sorted.length - 1].versionNumber));
+  }, [versions, versionFrom]);
 
   // Fetch comparison
   const fetchComparison = useCallback(async () => {

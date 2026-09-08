@@ -612,6 +612,63 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-08 — Welle 7a: OP-080, die Regeln sind an
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-7A.md`. Die Begründung für den Aufschub
+lautete wörtlich, eine Umstellung sei „eine Verhaltensänderung in 18/19 Seiten,
+die dieses Paket ohne die E2E-Suite nicht verifizieren kann" — seit OP-204 ist
+sie hinfällig, und die Verhaltensänderungen sind genau so verifiziert worden,
+wie es die Begründung verlangt hat.
+
+**Und wieder stimmten die Registerzahlen nicht.** „23 bzw. 36" sind gemessen
+**37 bzw. 39**; vier der acht Einzelzahlen waren zu niedrig.
+
+| Regel                         | notiert | gemessen | nachher |            |
+| ----------------------------- | ------: | -------: | ------: | ---------- |
+| `exhaustive-deps`             |      23 |   **37** |   **0** | an         |
+| `purity`                      |       8 |        8 |   **0** | an         |
+| `static-components`           |       3 |        3 |   **0** | an         |
+| `immutability`                |       2 |    **3** |   **0** | an         |
+| `preserve-manual-memoization` |       1 |        1 |   **0** | an         |
+| `refs`                        |       1 |    **2** |   **0** | an         |
+| `set-state-in-effect`         |      19 |   **20** |      20 | bleibt aus |
+| `incompatible-library`        |       2 |        2 |       2 | bleibt aus |
+
+**Sechs von acht Regeln sind an, ohne ein einziges `eslint-disable`.**
+
+**Produktdefekte:**
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                      | Art     | Stand   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| OP-209 | **Der Schlagwortfilter der Suche erreichte die Anfrage nie.** `handleSearch` war mit `[query, scope]` gemerkt, las aber `tagFilter`. Folge: Suchbegriff tippen, dann Schlagwort setzen → die Anfrage geht **ohne `tags`** hinaus; bei leerer Suchzeile tut die Suche **gar nichts**.                                                                                                     | Produkt | behoben |
+| OP-210 | **Ein offener Reiter wurde nie aktualisiert** (`openTab` gab `prev` zurück). Die Beschriftung blieb nach einem Sprachwechsel deutsch — und wanderte falschsprachig in den Sitzungsspeicher; nach dem Umbenennen eines Assets blieb der alte Name stehen. Der Defekt hatte **zwei Hälften**: die fehlende Abhängigkeit _und_ `openTab` selbst — die Regel allein hätte ihn nicht behoben. | Produkt | behoben |
+| OP-211 | **Die Reiterleiste zeigte nie die Seite, mit der sie geöffnet wurde.** Der Provider setzte `setTabs(hydrated)` mit festem Wert; Kindeffekte laufen vor Elterneffekten, also warf er die Anmeldung der Seite weg. Gemessen bei leerem Speicher: `tabs.length` 0 (alt) gegen 1 (neu). Aufgefallen ist er nur, **weil eine andere Prüfung zunächst nicht fallen konnte**.                   | Produkt | behoben |
+
+Dazu 14 Fundstellen, die übersetzten Text einfroren (BPMN-Einblendungsnamen,
+`aria-label` der Zeichenfläche, Datums- und Zahlenspalten in vier Tabellen —
+dieselbe Klasse wie OP-202/203), und drei Verweise, die **beim Rendern**
+geschrieben wurden und damit auch aus verworfenen Rendervorgängen wirken.
+
+**Zwei Regeln verdeckten einander**, in beide Richtungen gemessen:
+`immutability` brach die Compilation von `catalogs/objects` und `field.tsx` ab,
+sodass `set-state-in-effect` beziehungsweise `refs` dort **nie gemeldet**
+wurden. Eine abgeschaltete Regel kann also nicht nur selbst schweigen, sondern
+eine andere mit zum Schweigen bringen.
+
+**Was mit Begründung aus bleibt.** `set-state-in-effect` (20): Die alte
+Begründung („alle sind Abruf beim Einhängen, react-query löst es") trifft auf
+**9 von 20** zu. Es sind vier verschiedene Gestalten — Abruf (9),
+Formular-Reset (4), Browserspeicher (5), Übergangszustand (2) —, und sie
+verlangen eine eigene Welle mit eigenem Vorher-/Nachher-Lauf.
+`incompatible-library` (2): beide `useReactTable`, eine Mitteilung über eine
+fremde Bibliothek, von hier aus ohne Bibliothekswechsel nicht behebbar.
+
+**Nachgezogen bei der Abnahme:** Die Umstellung auf eine Modulkomponente liess
+`getWidgetRenderer` ohne Aufrufer zurück — nur noch von einem Sammelexport
+geführt, den niemand importiert. Das Dead-Exports-Tor hat das gemeldet; es
+fordert wörtlich „Entfernen, nicht in die Ratsche aufnehmen", also ist die
+Funktion entfallen und die Ratsche steht unverändert.
+
 ### Nachtrag 2026-09-08 — Welle 6c: OP-027 geschlossen, und die Blockade, die es nie gab
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-6C.md`.

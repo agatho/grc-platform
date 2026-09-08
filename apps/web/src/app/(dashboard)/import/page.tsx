@@ -185,6 +185,47 @@ export default function ImportWizardPage() {
     [],
   );
 
+  // ─── Step 3: Validate ─────────────────────────────────────
+  // Steht der Reihenfolge nach vor Schritt 2, weil `handleConfirmMapping`
+  // diese Funktion aufruft — siehe die Anmerkung dort.
+
+  const handleValidate = useCallback(async () => {
+    if (!uploadResult) return;
+
+    setValidating(true);
+    try {
+      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mapping, dryRun: true }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Validation failed");
+        return;
+      }
+
+      const data: ValidationResponse = await res.json();
+      setValidationResult(data);
+    } catch (_err) {
+      toast.error("Validation failed");
+    } finally {
+      setValidating(false);
+    }
+  }, [uploadResult, mapping]);
+
+  // ─── Step 2 (Fortsetzung): Zuordnung bestaetigen ───────────
+  //
+  // [Welle 7a · OP-080] `handleValidate` stand bis Welle 7a UNTER
+  // `handleConfirmMapping`, das es aufruft, und fehlte dort in den
+  // Abhaengigkeiten. Der Aufruf griff damit auf eine Bindung zu, die zum
+  // Zeitpunkt der Erzeugung des Rueckrufs noch nicht belegt war, und die
+  // Abhaengigkeitsliste sagte nichts darueber. Dass daraus heute kein
+  // veralteter Aufruf folgt, ist ein Zufall der Listen — die von
+  // `handleConfirmMapping` ist eine Obermenge der von `handleValidate` —
+  // und keine Eigenschaft, auf die sich der naechste Bearbeiter verlassen
+  // koennte. Reihenfolge und Liste sagen jetzt dasselbe wie der Code.
   const handleConfirmMapping = useCallback(async () => {
     if (!uploadResult) return;
 
@@ -212,35 +253,7 @@ export default function ImportWizardPage() {
     } catch (_err) {
       toast.error("Failed to confirm mapping");
     }
-  }, [uploadResult, mapping, saveMappingName]);
-
-  // ─── Step 3: Validate ─────────────────────────────────────
-
-  const handleValidate = useCallback(async () => {
-    if (!uploadResult) return;
-
-    setValidating(true);
-    try {
-      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mapping, dryRun: true }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error || "Validation failed");
-        return;
-      }
-
-      const data: ValidationResponse = await res.json();
-      setValidationResult(data);
-    } catch (_err) {
-      toast.error("Validation failed");
-    } finally {
-      setValidating(false);
-    }
-  }, [uploadResult, mapping]);
+  }, [uploadResult, mapping, saveMappingName, handleValidate]);
 
   // ─── Step 4: Execute ──────────────────────────────────────
 

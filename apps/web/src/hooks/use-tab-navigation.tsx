@@ -102,15 +102,44 @@ export function TabProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
-  // Hydrate from sessionStorage on mount
+  // Hydrate from sessionStorage on mount.
+  //
+  // [Welle 7a · OP-080] PRODUKTDEFEKT, aufgefallen beim Versuch, die
+  // Reiterbeschriftung zu pruefen: **die Reiterleiste zeigte nie die Seite,
+  // mit der sie geoeffnet wurde.**
+  //
+  // Hier stand `setTabs(hydrated)` — ein fester Wert. Die Seiten, die ihren
+  // Reiter anmelden (`/assets`, `/assets/[id]`, `/work-items`,
+  // `/work-items/[id]`), sind KINDER dieses Anbieters
+  // (`(dashboard)/layout.tsx`), und Kindeffekte laufen VOR den Effekten des
+  // Elternteils. Beim ersten Aufbau lief also erst `openTab(...)` und
+  // unmittelbar danach dieses `setTabs(hydrated)`, das die soeben
+  // angemeldete Anmeldung wieder wegwarf. Gemessen (jsdom, ein Aufbau):
+  //
+  //   leerer Sitzungsspeicher       → tabs.length = 0   (Reiter weg)
+  //   vorbefuellter Sitzungsspeicher → tabs.length = 1, und zwar der
+  //                                    GESPEICHERTE; der eigene fehlte
+  //
+  // Sichtbar wurde es erst nach einer Navigation im Browser, weil `openTab`
+  // dann in einer spaeteren Festschreibung laeuft.
+  //
+  // Der funktionale Aktualisierer behebt es: was zwischen Rendern und diesem
+  // Effekt bereits angemeldet wurde, bleibt bestehen und gewinnt bei
+  // gleicher Kennung (es ist der frischere Stand); die Anheftung kommt in
+  // beiden Faellen aus dem dauerhaften Speicher.
   useEffect(() => {
     const stored = loadSessionTabs();
     const pinnedIds = loadPinnedIds();
-    const hydrated = stored.map((t) => ({
-      ...t,
-      pinned: pinnedIds.has(t.id),
-    }));
-    setTabs(hydrated);
+    setTabs((registered) => {
+      const registeredIds = new Set(registered.map((t) => t.id));
+      const hydrated = stored
+        .filter((t) => !registeredIds.has(t.id))
+        .map((t) => ({ ...t, pinned: pinnedIds.has(t.id) }));
+      return [
+        ...hydrated,
+        ...registered.map((t) => ({ ...t, pinned: pinnedIds.has(t.id) })),
+      ];
+    });
     setInitialized(true);
   }, []);
 
@@ -135,10 +164,47 @@ export function TabProvider({ children }: { children: ReactNode }) {
   const openTab = useCallback(
     (newTab: Omit<TabItem, "pinned" | "openedAt">) => {
       setTabs((prev) => {
-        // If tab already exists, just activate it
+        // [Welle 7a · OP-080] Ein bereits offener Reiter wird AKTUALISIERT,
+        // nicht nur aktiviert.
+        //
+        // Vorher stand hier `return prev` — der Reiter behielt Beschriftung,
+        // Ziel und Sinnbild aus dem Augenblick seiner Anlage, fuer immer.
+        // Das traf zwei Faelle, die beide auf dem Bildschirm sichtbar sind:
+        //
+        //   * Sprachwechsel. Die Seiten melden ihren Reiter mit `t("title")`
+        //     an. Der Sprachwaehler setzt nur einen Keks und ruft
+        //     `router.refresh()`; Clientkomponenten werden dabei NICHT neu
+        //     eingehaengt, der Zustand dieses Providers bleibt bestehen. Die
+        //     Reiterleiste blieb deshalb deutsch, waehrend die ganze uebrige
+        //     Oberflaeche englisch war — und `saveSessionTabs` schrieb den
+        //     falschsprachigen Text zusaetzlich in den Sitzungsspeicher, wo
+        //     er den Rest der Sitzung ueberlebte.
+        //   * Umbenennen. `/assets/[id]` und `/work-items/[id]` melden den
+        //     Namen des Objekts als Beschriftung an. Nach einer Umbenennung
+        //     stand im Reiter weiter der alte Name.
+        //
+        // `prev` wird unveraendert zurueckgegeben, wenn sich nichts geaendert
+        // hat: sonst erzeugte jeder Aufruf ein neues Feld, und der
+        // Persistenz-Effekt (`[tabs, initialized]`) liefe in eine Schleife.
         const existing = prev.find((t) => t.id === newTab.id);
         if (existing) {
-          return prev;
+          if (
+            existing.label === newTab.label &&
+            existing.href === newTab.href &&
+            existing.icon === newTab.icon
+          ) {
+            return prev;
+          }
+          return prev.map((t) =>
+            t.id === newTab.id
+              ? {
+                  ...t,
+                  label: newTab.label,
+                  href: newTab.href,
+                  icon: newTab.icon,
+                }
+              : t,
+          );
         }
 
         const tab: TabItem = {

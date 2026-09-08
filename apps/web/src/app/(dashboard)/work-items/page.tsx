@@ -372,7 +372,8 @@ export default function WorkItemsPage() {
     void fetchData();
   }, [fetchData]);
 
-  // Register page tab
+  // Register page tab.
+  // [Welle 7a · OP-080] Siehe /assets: `t` gehoert in die Abhaengigkeiten.
   useEffect(() => {
     openTab({
       id: "work-items",
@@ -380,7 +381,7 @@ export default function WorkItemsPage() {
       href: "/work-items",
       icon: "Layers",
     });
-  }, []);
+  }, [openTab, t]);
 
   // Filter logic
   const filtered = workItems.filter((wi) => {

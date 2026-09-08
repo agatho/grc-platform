@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { WidgetConfig } from "@grc/shared";
-import { getWidgetRenderer } from "./widget-registry";
+import { WidgetRenderer } from "./widget-registry";
 
 interface DashboardWidgetFrameProps {
   widgetId: string;
@@ -49,7 +49,6 @@ export function DashboardWidgetFrame({
   // Deutsch. Die Fehlermeldung schrieb ausserdem „verfuegbar" statt
   // „verfügbar".
   const t = useTranslations("dashboard.widget");
-  const WidgetRenderer = getWidgetRenderer(definitionKey, widgetType);
   const displayTitle = config?.displayOptions?.title ?? title;
 
   return (
@@ -114,6 +113,8 @@ export function DashboardWidgetFrame({
           </div>
         ) : (
           <WidgetRenderer
+            definitionKey={definitionKey}
+            widgetType={widgetType}
             data={data}
             config={config}
             isLoading={isLoading}

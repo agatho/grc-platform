@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useNow, useTranslations } from "next-intl";
 import { Calendar, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
@@ -55,9 +55,16 @@ export default function LifecycleRoadmapPage() {
     }),
   );
 
-  const minDate = allDates.length > 0 ? Math.min(...allDates) : Date.now();
+  // [Welle 7a · OP-080] `Date.now()` im Renderpfad ist unrein: derselbe
+  // Rendervorgang kann bei zwei Aufrufen zwei Werte sehen, und Server- und
+  // Browserdurchlauf sehen ohnehin verschiedene — das ist die Klasse, aus der
+  // Abweichungen beim Anhydrieren entstehen. `useNow()` aus next-intl liefert
+  // EINEN Zeitpunkt je Einhaengung, aus demselben Anbieter, den die Seite
+  // fuer Sprache und Zeitzone ohnehin schon benutzt.
+  const nowMs = useNow().getTime();
+  const minDate = allDates.length > 0 ? Math.min(...allDates) : nowMs;
   const maxDate =
-    allDates.length > 0 ? Math.max(...allDates) : Date.now() + 365 * 86400000;
+    allDates.length > 0 ? Math.max(...allDates) : nowMs + 365 * 86400000;
   const totalRange = Math.max(maxDate - minDate, 86400000 * 30);
 
   const getBarPosition = (start: string, end: string | null) => {

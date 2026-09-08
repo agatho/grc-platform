@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAllModuleConfigs } from "@/hooks/use-module-config";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { ModuleIcon } from "@/components/module/module-icon";
 import type { ModuleConfig, ModuleKey, ModuleUiStatus } from "@grc/shared";
 
 // ── Status badge config ──────────────────────────────────────────────
@@ -96,7 +96,6 @@ function ModuleCard({
   const t = useTranslations();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const Icon = getLucideIcon(mod.icon);
   const displayName = locale === "de" ? mod.displayNameDe : mod.displayNameEn;
   const description = locale === "de" ? mod.descriptionDe : mod.descriptionEn;
 
@@ -136,7 +135,10 @@ function ModuleCard({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-                <Icon size={20} />
+                {/* [Welle 7a · OP-080] `<ModuleIcon>` statt eines
+                Nachschlags im Rumpf, der als JSX-Typ eingesetzt wird — siehe
+                den Kopf von `components/module/module-icon.tsx`. */}
+                <ModuleIcon name={mod.icon} size={20} />
               </div>
               <div>
                 <CardTitle className="text-base">{displayName}</CardTitle>

@@ -51,10 +51,19 @@ function EsgYoyInner() {
         const json = await res.json();
         const data: YoyMetric[] = json.data ?? [];
         setMetrics(data);
-        // Extract unique ESRS standards for filter
+        // Extract unique ESRS standards for filter.
+        // [Welle 7a · OP-080] Der Wachtposten las vorher `standards` aus der
+        // Umgebung dieses Rueckrufs, ohne dass der Wert in seiner
+        // Abhaengigkeitsliste stand — die Liste `[filter]` behauptete also,
+        // der Rueckruf haenge nur am Filter. Der funktionale Aktualisierer
+        // liest den Bestand dort, wo er wirklich aktuell ist, und die Liste
+        // stimmt wieder. Absicht unveraendert: die Auswahlliste wird EINMAL
+        // aus dem ungefilterten Ergebnis gefuellt und danach nicht mehr
+        // ueberschrieben — sonst schruempfte sie auf den gerade gewaehlten
+        // Standard zusammen und der Nutzer kaeme nicht mehr zurueck.
         const unique = [...new Set(data.map((m) => m.esrsStandard))].sort();
-        if (standards.length === 0 && unique.length > 0) {
-          setStandards(unique);
+        if (unique.length > 0) {
+          setStandards((prev) => (prev.length === 0 ? unique : prev));
         }
       }
     } finally {

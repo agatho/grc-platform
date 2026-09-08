@@ -33,6 +33,25 @@ import { useRouter } from "next/navigation";
 const LOCALES = ["de", "en"] as const;
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
+/**
+ * [Welle 7a · OP-080] Das Schreiben des Kekses steht auf Modulebene, nicht im
+ * Rumpf der Komponente.
+ *
+ * `react-hooks/immutability` meldete die Zuweisung an `document.cookie`
+ * innerhalb des Komponentenrumpfes („Modifying a variable defined outside a
+ * component or hook is not allowed"). Die Regel kann nicht sehen, dass
+ * `choose` nur aus einem Ereignisbehandler heraus laeuft — sie sieht eine
+ * Zuweisung an einen Wert von aussen im Rumpf einer Komponente, und das ist
+ * die Form, aus der bei einem verworfenen Rendervorgang ein Seiteneffekt ohne
+ * Festschreibung wird. Nachgemessen: dieselbe Zuweisung in einer Funktion auf
+ * Modulebene meldet die Regel NICHT — und dort gehoert sie ohnehin hin, weil
+ * Name und Eigenschaften des Kekses eine Angelegenheit fuer sich sind und
+ * nicht die einer Schaltflaechenreihe.
+ */
+function writeLocaleCookie(locale: string): void {
+  document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+}
+
 export function LocaleSwitcher() {
   const active = useLocale();
   // `localeSwitch.de` / `.en` sind ENDONYME — „Deutsch" und „English" stehen
@@ -44,7 +63,7 @@ export function LocaleSwitcher() {
   const [pending, startTransition] = useTransition();
 
   function choose(locale: string) {
-    document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+    writeLocaleCookie(locale);
     // `refresh()` laesst den Server-Baum neu rendern; der neue Cookie-Wert
     // liegt bei diesem Umlauf bereits an, also greift `getRequestConfig`.
     startTransition(() => router.refresh());

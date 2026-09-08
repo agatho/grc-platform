@@ -110,6 +110,19 @@ function SearchPageInner() {
       .catch(() => {});
   }, []);
 
+  // [Welle 7a · OP-080] PRODUKTDEFEKT: `tagFilter` wurde hier an zwei
+  // Stellen gelesen — im Wachtposten und beim Bauen der Abfrage —, stand aber
+  // nicht in der Abhaengigkeitsliste. `useCallback` gibt bei unveraendertem
+  // `[query, scope]` die ALTE Funktion zurueck, also die mit dem Stand von
+  // `tagFilter` aus dem Augenblick, in dem zuletzt getippt oder der
+  // Suchbereich gewechselt wurde. Zwei sichtbare Folgen:
+  //
+  //   * Leere Suchzeile, Schlagwort gewaehlt, „Suchen" gedrueckt: im alten
+  //     Abschluss ist `tagFilter` noch leer, der Wachtposten greift, und die
+  //     Schaltflaeche tut GAR NICHTS.
+  //   * Suchbegriff getippt, DANACH ein Schlagwort gesetzt: die Anfrage geht
+  //     ohne `tags`-Parameter hinaus — die Ergebnisse ignorieren den Filter,
+  //     den der Nutzer auf dem Bildschirm gesetzt sieht.
   const handleSearch = useCallback(async () => {
     if (!query.trim() && tagFilter.length === 0) return;
     setLoading(true);
@@ -127,7 +140,7 @@ function SearchPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [query, scope]);
+  }, [query, scope, tagFilter]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") void handleSearch();

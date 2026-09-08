@@ -202,11 +202,17 @@ function ProcessLandscape() {
     });
   }, []);
 
-  // Auto-expand root nodes on load
+  // Auto-expand root nodes on load.
+  // [Welle 7a · OP-080] `expandedIds` wurde hier gelesen, stand aber nicht in
+  // der Abhaengigkeitsliste. Der funktionale Aktualisierer liest den Bestand
+  // im Aktualisierungsschritt statt aus der Umgebung des Effekts; damit
+  // stimmt die Liste, und die Absicht bleibt dieselbe — einmal aufklappen,
+  // und nicht erneut, nachdem der Nutzer alles zugeklappt hat.
   useEffect(() => {
-    if (treeData.length > 0 && expandedIds.size === 0) {
-      setExpandedIds(new Set(treeData.map((n) => n.id)));
-    }
+    if (treeData.length === 0) return;
+    setExpandedIds((prev) =>
+      prev.size === 0 ? new Set(treeData.map((n) => n.id)) : prev,
+    );
   }, [treeData]);
 
   // Bulk selection

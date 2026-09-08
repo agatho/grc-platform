@@ -3582,7 +3582,7 @@ function FindingsTab({ auditId }: { auditId: string }) {
   const [saving, setSaving] = useState(false);
   const [risks, setRisks] = useState<Array<{ id: string; title: string }>>([]);
 
-  const fetchFindings = async () => {
+  const fetchFindings = useCallback(async () => {
     setLoading(true);
     try {
       // F-14: proper server-side filter (auditId was client-side filtered
@@ -3595,8 +3595,13 @@ function FindingsTab({ auditId }: { auditId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [auditId]);
 
+  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
+  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
+  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
+  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
+  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
   useEffect(() => {
     void fetchFindings();
     // Load risks for the optional risk-link picker
@@ -3612,7 +3617,7 @@ function FindingsTab({ auditId }: { auditId: string }) {
         console.error("audit/executions: Risikoliste nicht geladen", err);
       }
     })();
-  }, [auditId]);
+  }, [auditId, fetchFindings]);
 
   const handleAdd = async (formData: FormData) => {
     setSaving(true);

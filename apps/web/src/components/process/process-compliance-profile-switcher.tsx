@@ -36,10 +36,14 @@ export function ProcessComplianceProfileSwitcher({
   const [profile, setProfile] = useState(initialProfile ?? "standard");
   const [pending, setPending] = useState(false);
 
+  // [Welle 7a · OP-080] `profile` wurde hier gelesen, stand aber nicht in der
+  // Abhaengigkeitsliste; der Kommentar „Only react to initialProfile changes"
+  // beschrieb die Absicht und nicht den Code. Der funktionale Aktualisierer
+  // liest den Bestand dort, wo er wirklich aktuell ist — damit stimmt die
+  // Liste, und die Absicht bleibt Wort fuer Wort dieselbe.
   useEffect(() => {
-    if (initialProfile && initialProfile !== profile)
-      setProfile(initialProfile);
-    // Only react to initialProfile changes
+    if (!initialProfile) return;
+    setProfile((prev) => (prev === initialProfile ? prev : initialProfile));
   }, [initialProfile]);
 
   const change = useCallback(

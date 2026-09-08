@@ -398,7 +398,11 @@ export default function AssetsPage() {
     void fetchTree();
   }, [fetchTree]);
 
-  // Register the page tab
+  // Register the page tab.
+  // [Welle 7a · OP-080] `t` gehoert in die Abhaengigkeiten: die Beschriftung
+  // IST uebersetzter Text. Ohne sie blieb der Reiter nach einem
+  // Sprachwechsel deutsch. `openTab` gibt seit dieser Welle bei gleichen
+  // Werten `prev` zurueck, der Effekt kann also gefahrlos erneut laufen.
   useEffect(() => {
     openTab({
       id: "assets",
@@ -406,7 +410,7 @@ export default function AssetsPage() {
       href: "/assets",
       icon: "Database",
     });
-  }, []);
+  }, [openTab, t]);
 
   const toggleNode = (id: string) => {
     setExpanded((prev) => {

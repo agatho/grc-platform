@@ -137,12 +137,18 @@ export function NavPreferencesProvider({
     [queryClient],
   );
 
-  // Wrap setLocalPrefs so old call sites that used setPrefs still work.
-  const setPrefs = setLocalPrefs;
+  // [Welle 7a · OP-080] Hier stand `const setPrefs = setLocalPrefs;` — eine
+  // reine Umbenennung ohne Aufrufstelle ausserhalb dieser Datei (nachgesehen:
+  // `setPrefs` in `settings/notifications/page.tsx` ist ein eigener,
+  // gleichnamiger Zustandssetzer). Fuer die Regel war die Umbenennung eine
+  // gewoehnliche, bei jedem Rendern neu gebundene Variable, also eine fehlende
+  // Abhaengigkeit in zwei Rueckrufen; fuer den Leser verdeckte sie, dass es
+  // sich um den unveraenderlichen Setzer aus `useState` handelt. Beide
+  // Aufrufstellen benutzen ihn jetzt unter seinem eigenen Namen.
 
   const togglePin = useCallback(
     (route: string) => {
-      setPrefs((prev) => {
+      setLocalPrefs((prev) => {
         const isPinned = prev.pinnedRoutes.includes(route);
         let next: string[];
         if (isPinned) {
@@ -212,7 +218,7 @@ export function NavPreferencesProvider({
   }, []);
 
   const toggleSidebarMode = useCallback(() => {
-    setPrefs((prev) => {
+    setLocalPrefs((prev) => {
       const newMode: SidebarMode =
         prev.sidebarMode === "condensed" ? "full" : "condensed";
       const updated = { ...prev, sidebarMode: newMode };

@@ -4,7 +4,7 @@
 // Zero dependencies — pure SVG + CSS.
 // Renderbar bei beliebiger Step-Anzahl (vertikal scrollbar bei > 30 Steps).
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import Link from "next/link";
 import { useDateFormat } from "@/lib/format-date";
 
@@ -97,11 +97,21 @@ export function ProgrammeGantt({
     };
   }, [phases, steps, startDate, endDate, todayStr]);
 
-  const xPct = (date: string | null): number => {
-    if (!date) return 0;
-    const d = dayDiff(rangeStart, date);
-    return Math.max(0, Math.min(100, (d / totalDays) * 100));
-  };
+  // [Welle 7a · OP-080] `xPct` wird in der `useMemo` fuer die Monatsmarken
+  // unten benutzt, stand aber nicht in deren Abhaengigkeiten — die Liste
+  // zaehlte stattdessen `rangeStart` und `rangeEnd` auf und liess `totalDays`
+  // aus, das `xPct` ebenfalls liest. Dass daraus heute keine falsche Marke
+  // folgt, haengt allein daran, dass alle drei aus DERSELBEN `useMemo`
+  // stammen. Als `useCallback` gefasst und genannt, sagt die Liste das, was
+  // der Code tut.
+  const xPct = useCallback(
+    (date: string | null): number => {
+      if (!date) return 0;
+      const d = dayDiff(rangeStart, date);
+      return Math.max(0, Math.min(100, (d / totalDays) * 100));
+    },
+    [rangeStart, totalDays],
+  );
 
   // Group steps by phase (preserve order)
   const stepsByPhase = phases.map((p) => ({
@@ -128,7 +138,7 @@ export function ProgrammeGantt({
       cursor.setUTCMonth(cursor.getUTCMonth() + 1);
     }
     return result;
-  }, [rangeStart, rangeEnd, formatDate]);
+  }, [rangeStart, rangeEnd, formatDate, xPct]);
 
   const todayPct = xPct(todayStr);
 

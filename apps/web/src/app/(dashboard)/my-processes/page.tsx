@@ -5,7 +5,7 @@
 // acknowledgment. UX modelled on /my-policies.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useNow, useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -188,12 +188,19 @@ function ProcessCard({
   item: MyProcessItem;
   t: ReturnType<typeof useTranslations>;
 }) {
+  // [Welle 7a · OP-080] `Date.now()` im Renderpfad ist unrein: derselbe
+  // Rendervorgang kann bei zwei Aufrufen zwei Werte sehen, und Server- und
+  // Browserdurchlauf sehen ohnehin verschiedene — das ist die Klasse, aus der
+  // Abweichungen beim Anhydrieren entstehen. `useNow()` aus next-intl liefert
+  // EINEN Zeitpunkt je Einhaengung, aus demselben Anbieter, den die Seite
+  // fuer Sprache und Zeitzone ohnehin schon benutzt.
+  const nowMs = useNow().getTime();
   const { formatDate } = useDateFormat();
   const pending = hasPendingAcknowledgment(item);
   const dueDate = item.acknowledgment?.dueDate
     ? new Date(item.acknowledgment.dueDate)
     : null;
-  const overdue = pending && dueDate !== null && dueDate.getTime() < Date.now();
+  const overdue = pending && dueDate !== null && dueDate.getTime() < nowMs;
 
   return (
     <Link href={`/my-processes/${item.id}`}>

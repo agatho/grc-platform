@@ -238,13 +238,51 @@ function hasAccessibleName(el: HTMLElement): boolean {
  *
  * Returns the ref callback to attach to the control.
  */
+/**
+ * Reicht einen Knoten an einen weitergegebenen Verweis durch — Rueckruf wie
+ * Objektverweis.
+ *
+ * [Welle 7a · OP-080] Diese drei Zeilen standen bis Welle 7a im Rumpf von
+ * `useAccessibleNameFallback`, und `react-hooks/immutability` meldete sie:
+ * „Modifying component props or hook arguments is not allowed." Der Regel
+ * fehlt die Unterscheidung, ob die Zuweisung beim Rendern oder — wie hier —
+ * aus einem Verweis-Rueckruf zur Festschreibungszeit geschieht; sie sieht
+ * eine Zuweisung an ein Hook-Argument im Rumpf eines Hooks. Nachgemessen:
+ * dieselbe Zuweisung in einer Funktion auf Modulebene meldet sie nicht. Der
+ * Weiterreichungsschritt ist damit einmal benannt statt an jeder Stelle
+ * wiederholt.
+ */
+function assignForwardedRef<T>(
+  ref: React.Ref<T> | undefined,
+  node: T | null,
+): void {
+  if (typeof ref === "function") ref(node);
+  else if (ref) (ref as React.RefObject<T | null>).current = node;
+}
+
 export function useAccessibleNameFallback<T extends HTMLElement>(
   forwardedRef: React.Ref<T> | undefined,
   fallback: () => string | undefined,
 ): React.RefCallback<T> {
   const elementRef = React.useRef<T | null>(null);
   const fallbackRef = React.useRef(fallback);
-  fallbackRef.current = fallback;
+  // [Welle 7a · OP-080] Im EFFEKT nachgezogen, nicht beim Rendern — dieselbe
+  // Klasse wie in `modal-shell.tsx` und `arctos-bpmn-canvas.tsx`. Sichtbar
+  // wurde die Stelle erst, nachdem die Zuweisung an `forwardedRef` unten
+  // ausgelagert war: davor brach der Compiler diese Funktion vorher ab und
+  // kam gar nicht bis hierher.
+  //
+  // Die Reihenfolge stimmt in beide Richtungen, nachgesehen: Dieser Effekt
+  // steht VOR `React.useEffect(apply)`, wird also in jeder Festschreibung
+  // vorher ausgefuehrt. Und der Verweis-Rueckruf unten, der `apply()` schon
+  // zur Festschreibungszeit — also vor allen Effekten — aufruft, liest beim
+  // ersten Einhaengen genau den Wert, mit dem `useRef(fallback)` belegt
+  // wurde; laeuft er spaeter erneut (weil `forwardedRef` die Identitaet
+  // wechselt), holen die beiden Effekte unmittelbar danach denselben
+  // Durchlauf nach.
+  React.useEffect(() => {
+    fallbackRef.current = fallback;
+  });
 
   const apply = React.useCallback(() => {
     const el = elementRef.current;
@@ -270,9 +308,7 @@ export function useAccessibleNameFallback<T extends HTMLElement>(
   return React.useCallback(
     (node: T | null) => {
       elementRef.current = node;
-      if (typeof forwardedRef === "function") forwardedRef(node);
-      else if (forwardedRef)
-        (forwardedRef as React.RefObject<T | null>).current = node;
+      assignForwardedRef(forwardedRef, node);
       if (node) apply();
     },
     [forwardedRef, apply],

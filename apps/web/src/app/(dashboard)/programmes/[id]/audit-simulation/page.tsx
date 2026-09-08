@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +73,7 @@ export default function AuditSimulationPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function runAudit() {
+  const runAudit = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -88,11 +88,16 @@ export default function AuditSimulationPage({
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    runAudit();
   }, [id]);
+
+  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
+  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
+  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
+  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
+  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
+  useEffect(() => {
+    void runAudit();
+  }, [runAudit]);
 
   return (
     <ModuleGate moduleKey="programme">

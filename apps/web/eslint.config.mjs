@@ -181,40 +181,116 @@ export default tseslint.config(
   },
 
   // ── Deliberate exceptions ─────────────────────────────────────────────
+  //
+  // [ARCTOS-FULL-2026-08-31 / Welle 7a · OP-080]
+  //
+  // Hier standen bis Welle 7a ACHT abgeschaltete Regeln mit EINER gemeinsamen
+  // Begründung: eine Umstellung sei „eine Verhaltensänderung in 18/19 Seiten,
+  // die dieses Paket ohne die E2E-Suite nicht verifizieren kann".
+  //
+  // Beide Hälften dieser Begründung sind gemessen und beide waren falsch:
+  //
+  //   * Die E2E-Suite läuft (OP-204, Welle 6c). Sie war nie durch den
+  //     Produktionsbau blockiert; `playwright.config.ts` startet ausserhalb
+  //     von CI `npm run dev`.
+  //   * Die ZAHLEN stimmten nicht, und die BESCHREIBUNG der Fundstellen
+  //     stimmte nicht. Gemessen am 2026-09-08 gegen genau diese
+  //     Konfiguration (`npx eslint . -f json --rule '{…:"error"}'`,
+  //     2.290 Dateien):
+  //
+  //       Regel                            notiert   gemessen   heute
+  //       ──────────────────────────────── ───────── ────────── ──────
+  //       react-hooks/exhaustive-deps      23        37         0  AN
+  //       react-hooks/set-state-in-effect  19        20         20 aus
+  //       react-hooks/purity                8         8         0  AN
+  //       react-hooks/static-components     3         3         0  AN
+  //       react-hooks/immutability          2         3         0  AN
+  //       react-hooks/incompatible-library  2         2         2  aus
+  //       react-hooks/preserve-manual-mem.  1         1         0  AN
+  //       react-hooks/refs                  1         2         0  AN
+  //       ──────────────────────────────── ───────── ────────── ──────
+  //       Summe                            59        76         22
+  //
+  //     Vier der acht Zahlen waren zu niedrig; `exhaustive-deps` um 14.
+  //
+  // Sechs Regeln sind damit AN, und keine davon war eine Stilfrage — die
+  // Befunde und ihre Nachweise stehen in `docs/UMSETZUNG-WELLE-7A.md`. Die
+  // Trennung „eine Regel je Eintrag" bleibt aus demselben Grund erhalten wie
+  // vorher: damit eine andere Art von Meldung nicht mitgeschwiegen wird.
   {
-    // `react-hooks/exhaustive-deps` reports 23 sites, all of them existing
-    // "run once with the initial prop" effects written while the rule was off.
-    // Turning it on without rewriting them would either fail CI or invite
-    // blanket per-line disables; rewriting them changes behaviour in 18 pages,
-    // which this package cannot verify without the E2E suite (WP11). Recorded
-    // here with the reason rather than switched off silently, and handed to
-    // WP11. `react-hooks/rules-of-hooks` — the rule that catches actual
-    // hook-order bugs — IS an error above.
     rules: {
-      "react-hooks/exhaustive-deps": "off",
-
-      // ── React-Compiler lints from eslint-plugin-react-hooks 7 ──────────
-      // `eslint-config-next@16` pulls in the new compiler rule set. They
-      // report 36 sites, and every one of them is the same shape: a
-      // `useEffect` that fetches on mount and calls `setLoading(true)` /
-      // `setData(...)`. That is an idiom the compiler would like replaced by a
-      // data library — `@tanstack/react-query` is already a dependency — not a
-      // defect: no wrong render, no wrong data, no accessibility or security
-      // effect. Converting 19 pages to react-query is a behaviour change WP12
-      // cannot verify without the E2E suite (WP11), and marking 36 sites with
-      // per-line disables would bury a real future hit.
+      // ── Was jetzt AN ist ────────────────────────────────────────────
       //
-      // Off with this note and handed to WP11, one rule at a time so a
-      // different kind of report is NOT silenced:
-      "react-hooks/set-state-in-effect": "off", // 19× fetch-on-mount
-      "react-hooks/purity": "off", //              8× Date.now()/random in render path
-      "react-hooks/static-components": "off", //   3× component defined in a component
-      "react-hooks/immutability": "off", //        2×
-      "react-hooks/incompatible-library": "off", // 2× recharts/bpmn-js interop
-      "react-hooks/preserve-manual-memoization": "off", // 1×
-      "react-hooks/refs": "off", //                1×
-      // `react-hooks/rules-of-hooks` — the rule that catches an actual
-      // hook-order bug — stays an ERROR above, and its two hits are fixed.
+      // Diese sechs stehen NICHT hier — sie stehen nirgends mehr in dieser
+      // Datei, gelten also wie jede andere Regel des Regelwerks:
+      //
+      //   react-hooks/exhaustive-deps          37 → 0
+      //   react-hooks/purity                    8 → 0
+      //   react-hooks/static-components         3 → 0
+      //   react-hooks/immutability              3 → 0
+      //   react-hooks/refs                      2 → 0
+      //   react-hooks/preserve-manual-memoization 1 → 0
+      //
+      // ── Was aus bleibt, mit gemessener Zahl und Grund ───────────────
+
+      // 20 Fundstellen, gemessen 2026-09-08 (nicht 19).
+      //
+      // Die alte Begründung sagte: „every one of them is the same shape: a
+      // `useEffect` that fetches on mount", und die Auflösung sei
+      // `@tanstack/react-query` in 19 Seiten. Nachgezählt, Fundstelle für
+      // Fundstelle, stimmt das für NEUN von zwanzig. Die vier Gestalten:
+      //
+      //   A  Abruf beim Einhängen — 9 Fundstellen in 6 Dateien
+      //      (bcms/bia/[id]/processes, catalogs/objects, dashboard/page ×4,
+      //      processes/[id]/ropa, entity-documents-panel ×2). NUR HIER ist
+      //      react-query die saubere Auflösung, und es ist bereits
+      //      Abhängigkeit.
+      //   B  Formular beim Öffnen zurücksetzen — 4 Fundstellen
+      //      (organizations, tasks, settings/notifications/scheduled,
+      //      modern-sidebar). Kein Abruf; react-query hilft hier nicht.
+      //   C  Browserspeicher beim Einhängen lesen — 5 Fundstellen
+      //      (use-layout-preference, use-nav-preferences ×2,
+      //      use-tab-navigation ×2). Der sanktionierte Weg wäre
+      //      `useSyncExternalStore`, nicht react-query.
+      //   D  Anzeigezustand aus einem Übergang — 2 Fundstellen
+      //      (bpmn-toolbar „Gespeichert" mit Zeitgeber, theme-switcher
+      //      `mounted`-Wachtposten gegen Serverabweichung).
+      //
+      // Diese Welle hat die Zahl NICHT gesenkt: 20 vorher, 20 nachher. Ihre
+      // Zusammensetzung hat sich um −1/+1 verändert, und das ist selbst ein
+      // Befund: `org-switcher` fiel weg (die gespiegelte Liste ist jetzt
+      // beim Rendern abgeleitet), und `catalogs/objects` kam hinzu — dort
+      // brach der Compiler vorher an einem `immutability`-Befund in
+      // DERSELBEN Funktion ab und kam nie bis zum Effekt. Nachgemessen in
+      // beide Richtungen (alter Stand: kein `set-state-in-effect` in dieser
+      // Datei).
+      //
+      // Warum sie aus bleibt: 15 Dateien, davon 11 Fundstellen, für die die
+      // genannte Auflösung nachweislich nicht zutrifft. Das ist eine eigene
+      // Welle mit eigenem Vorher-/Nachher-Lauf, keine Zugabe zu dieser. Die
+      // Zahl ist gemessen und gedeckelt: `.eslint-ratchet.json` steht für
+      // `apps/web` auf 0, jede NEUE Fundstelle irgendeiner Regel lässt die
+      // Ratsche fallen.
+      "react-hooks/set-state-in-effect": "off", // 20× (A 9 / B 4 / C 5 / D 2)
+
+      // 2 Fundstellen, gemessen 2026-09-08 — und beide sind DIESELBE
+      // Tatsache über eine fremde Bibliothek, nicht über diesen Code:
+      //
+      //   audit-log/page.tsx:1321   useReactTable(...)
+      //   components/ui/data-table.tsx:68   useReactTable(...)
+      //
+      // Der volle Meldungstext: „TanStack Table's `useReactTable()` API
+      // returns functions that cannot be memoized safely" — und die Meldung
+      // ist ausdrücklich eine MITTEILUNG („Compilation Skipped"), kein
+      // Defekt an der Fundstelle: der Compiler verzichtet dort auf die
+      // Optimierung. Es gibt keine Behebung ausser dem Verzicht auf
+      // `@tanstack/react-table`, und das ist keine Frage, die eine
+      // Lint-Regel entscheidet. Anders als bei den sechs eingeschalteten
+      // Regeln steht hier also nicht „noch nicht getan", sondern „von hier
+      // aus nicht behebbar".
+      "react-hooks/incompatible-library": "off", // 2× useReactTable
+      // `react-hooks/rules-of-hooks` — die Regel, die einen echten Fehler in
+      // der Hook-Reihenfolge findet — ist oben ERROR.
     },
   },
   {

@@ -165,7 +165,13 @@ export function BpmnViewerLegacy({
     // Re-init when xml changes
   }, [xml]);
 
-  // Apply risk overlays
+  // Apply risk overlays.
+  // [Welle 7a · OP-080] `t` gehoert in die Abhaengigkeiten beider
+  // Einblendungs-Effekte: sie setzen zugaengliche Namen aus uebersetztem Text
+  // (`makeInteractiveOverlay({ label: t(...) })`). Ohne `t` blieben diese
+  // Namen nach einem Sprachwechsel in der alten Sprache — der Sprachwaehler
+  // haengt Clientkomponenten nicht neu ein. Beide Effekte raeumen ihre eigenen
+  // Einblendungen vorher ab und sind damit wiederholbar.
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || loading || !riskOverlayData?.length) return;
@@ -213,7 +219,7 @@ export function BpmnViewerLegacy({
     } catch {
       // Overlays may fail if elements don't exist in the diagram
     }
-  }, [riskOverlayData, loading]);
+  }, [riskOverlayData, loading, t]);
 
   // Call-Activity Drill-Down: badge on elements with a linked child
   // process; clicking the badge navigates to the child's detail page.
@@ -270,7 +276,7 @@ export function BpmnViewerLegacy({
     } catch {
       // Overlays may fail if elements don't exist in the diagram
     }
-  }, [callActivityOverlayData, loading]);
+  }, [callActivityOverlayData, loading, t]);
 
   // [WP12 · S14-10] Arrow keys pan, +/- zoom, 0 fits — bound to the canvas so
   // the shortcuts never steal keys from the rest of the page.

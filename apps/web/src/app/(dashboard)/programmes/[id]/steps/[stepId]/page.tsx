@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
@@ -237,7 +237,7 @@ export default function StepDetailPage({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
     try {
       const [stepR, subR, linkR, usersR] = await Promise.all([
@@ -268,11 +268,16 @@ export default function StepDetailPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }
-
-  useEffect(() => {
-    load();
   }, [id, stepId]);
+
+  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
+  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
+  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
+  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
+  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   async function saveHeader() {
     setError(null);

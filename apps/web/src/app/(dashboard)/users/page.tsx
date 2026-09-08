@@ -376,7 +376,13 @@ export default function UsersPage() {
       },
     ],
 
-    [t],
+    // [Welle 7a · OP-080] `formatDateTime` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, formatDateTime],
   );
 
   // ---------- Global filter for name + email ----------
