@@ -201,7 +201,7 @@ export default tseslint.config(
   //       Regel                            notiert   gemessen   heute
   //       ──────────────────────────────── ───────── ────────── ──────
   //       react-hooks/exhaustive-deps      23        37         0  AN
-  //       react-hooks/set-state-in-effect  19        20         20 aus
+  //       react-hooks/set-state-in-effect  19        20         0  AN
   //       react-hooks/purity                8         8         0  AN
   //       react-hooks/static-components     3         3         0  AN
   //       react-hooks/immutability          2         3         0  AN
@@ -209,11 +209,18 @@ export default tseslint.config(
   //       react-hooks/preserve-manual-mem.  1         1         0  AN
   //       react-hooks/refs                  1         2         0  AN
   //       ──────────────────────────────── ───────── ────────── ──────
-  //       Summe                            59        76         22
+  //       Summe                            59        76         2
   //
   //     Vier der acht Zahlen waren zu niedrig; `exhaustive-deps` um 14.
   //
-  // Sechs Regeln sind damit AN, und keine davon war eine Stilfrage — die
+  // [Welle 7b · OP-080] Die Spalte „heute" ist fortgeschrieben: sieben von
+  // acht Regeln sind AN. `set-state-in-effect` ist von 20 auf 0 gefallen —
+  // nachgemessen mit derselben Zeile, 2.293 Dateien. Uebrig bleibt EINE Regel,
+  // `incompatible-library`, und ihre Begruendung lautet nicht „noch nicht
+  // getan", sondern „von hier aus nicht behebbar".
+  //
+  // Sieben Regeln sind damit AN (sechs seit Welle 7a, `set-state-in-effect`
+  // seit Welle 7b), und keine davon war eine Stilfrage — die
   // Befunde und ihre Nachweise stehen in `docs/UMSETZUNG-WELLE-7A.md`. Die
   // Trennung „eine Regel je Eintrag" bleibt aus demselben Grund erhalten wie
   // vorher: damit eine andere Art von Meldung nicht mitgeschwiegen wird.
@@ -221,7 +228,7 @@ export default tseslint.config(
     rules: {
       // ── Was jetzt AN ist ────────────────────────────────────────────
       //
-      // Diese sechs stehen NICHT hier — sie stehen nirgends mehr in dieser
+      // Diese sieben stehen NICHT hier — sie stehen nirgends mehr in dieser
       // Datei, gelten also wie jede andere Regel des Regelwerks:
       //
       //   react-hooks/exhaustive-deps          37 → 0
@@ -230,48 +237,38 @@ export default tseslint.config(
       //   react-hooks/immutability              3 → 0
       //   react-hooks/refs                      2 → 0
       //   react-hooks/preserve-manual-memoization 1 → 0
+      //   react-hooks/set-state-in-effect      20 → 0   [Welle 7b]
       //
       // ── Was aus bleibt, mit gemessener Zahl und Grund ───────────────
 
-      // 20 Fundstellen, gemessen 2026-09-08 (nicht 19).
+      // [Welle 7b · OP-080] `react-hooks/set-state-in-effect` steht seit dieser
+      // Welle NICHT mehr hier — sie gilt wie jede andere Regel des Regelwerks.
       //
-      // Die alte Begründung sagte: „every one of them is the same shape: a
-      // `useEffect` that fetches on mount", und die Auflösung sei
-      // `@tanstack/react-query` in 19 Seiten. Nachgezählt, Fundstelle für
-      // Fundstelle, stimmt das für NEUN von zwanzig. Die vier Gestalten:
+      // Gemessen 2026-09-08 gegen genau diese Konfiguration: 20 Fundstellen
+      // vorher, 0 nachher, 2.293 Dateien. Kein `eslint-disable` an keiner
+      // Fundstelle.
       //
-      //   A  Abruf beim Einhängen — 9 Fundstellen in 6 Dateien
-      //      (bcms/bia/[id]/processes, catalogs/objects, dashboard/page ×4,
-      //      processes/[id]/ropa, entity-documents-panel ×2). NUR HIER ist
-      //      react-query die saubere Auflösung, und es ist bereits
-      //      Abhängigkeit.
-      //   B  Formular beim Öffnen zurücksetzen — 4 Fundstellen
-      //      (organizations, tasks, settings/notifications/scheduled,
-      //      modern-sidebar). Kein Abruf; react-query hilft hier nicht.
-      //   C  Browserspeicher beim Einhängen lesen — 5 Fundstellen
-      //      (use-layout-preference, use-nav-preferences ×2,
-      //      use-tab-navigation ×2). Der sanktionierte Weg wäre
-      //      `useSyncExternalStore`, nicht react-query.
-      //   D  Anzeigezustand aus einem Übergang — 2 Fundstellen
-      //      (bpmn-toolbar „Gespeichert" mit Zeitgeber, theme-switcher
-      //      `mounted`-Wachtposten gegen Serverabweichung).
+      // Die alte Begruendung sagte: „every one of them is the same shape: a
+      // `useEffect` that fetches on mount", und die Aufloesung sei
+      // `@tanstack/react-query`. Welle 7a hat nachgezaehlt, dass das fuer NEUN
+      // von zwanzig gilt. Welle 7b hat jede Fundstelle einzeln nachgesehen und
+      // kommt auf eine noch andere Aufteilung — die Gestalt „Browserspeicher"
+      // war zu gross gefasst:
       //
-      // Diese Welle hat die Zahl NICHT gesenkt: 20 vorher, 20 nachher. Ihre
-      // Zusammensetzung hat sich um −1/+1 verändert, und das ist selbst ein
-      // Befund: `org-switcher` fiel weg (die gespiegelte Liste ist jetzt
-      // beim Rendern abgeleitet), und `catalogs/objects` kam hinzu — dort
-      // brach der Compiler vorher an einem `immutability`-Befund in
-      // DERSELBEN Funktion ab und kam nie bis zum Effekt. Nachgemessen in
-      // beide Richtungen (alter Stand: kein `set-state-in-effect` in dieser
-      // Datei).
+      //   A  Abruf beim Einhaengen             9  → @tanstack/react-query
+      //   B  Formular beim Oeffnen zuruecksetzen 4 → Einhaengen statt Effekt
+      //   C  Browserspeicher beim Einhaengen    2  → useSyncExternalStore
+      //   C' gespiegelter Serverzustand         2  → beim Rendern ableiten
+      //   D  Anhydrier-Wachtposten              1  → useSyncExternalStore
+      //   D' Uebergang einer Eigenschaft        1  → Anpassung beim Rendern
+      //   E  abgeleiteter Anzeigezustand        1  → beim Rendern ableiten
       //
-      // Warum sie aus bleibt: 15 Dateien, davon 11 Fundstellen, für die die
-      // genannte Auflösung nachweislich nicht zutrifft. Das ist eine eigene
-      // Welle mit eigenem Vorher-/Nachher-Lauf, keine Zugabe zu dieser. Die
-      // Zahl ist gemessen und gedeckelt: `.eslint-ratchet.json` steht für
-      // `apps/web` auf 0, jede NEUE Fundstelle irgendeiner Regel lässt die
-      // Ratsche fallen.
-      "react-hooks/set-state-in-effect": "off", // 20× (A 9 / B 4 / C 5 / D 2)
+      // Welle 7a hatte C mit 5 und D mit 2 gefuehrt; zwei der fuenf
+      // C-Fundstellen (`use-nav-preferences`) lesen keinen Browserspeicher,
+      // sondern spiegeln ein react-query-Ergebnis, und eine der beiden
+      // C-Fundstellen in `use-tab-navigation` war ein abgeleiteter
+      // Anzeigezustand. Einzelheiten und die Belege in
+      // `docs/UMSETZUNG-WELLE-7B.md`.
 
       // 2 Fundstellen, gemessen 2026-09-08 — und beide sind DIESELBE
       // Tatsache über eine fremde Bibliothek, nicht über diesen Code:

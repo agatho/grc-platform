@@ -155,17 +155,6 @@ function CreateTaskDialog({
   orgUsers: OrgUser[];
 }) {
   const t = useTranslations("tasks");
-  const tActions = useTranslations("actions");
-  const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);
-
-  useEffect(() => {
-    if (open) setForm(EMPTY_FORM);
-  }, [open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(form);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -174,134 +163,175 @@ function CreateTaskDialog({
           <DialogTitle>{t("create")}</DialogTitle>
           <DialogDescription>{t("createDescription")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="task-title">{t("titleField")} *</Label>
-            <Input
-              id="task-title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-              maxLength={255}
-              placeholder={t("titlePlaceholder")}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="task-desc">{t("description")}</Label>
-            <Textarea
-              id="task-desc"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              rows={3}
-              placeholder={t("descriptionPlaceholder")}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Priority */}
-            <div className="space-y-2">
-              <Label htmlFor="task-priority">{t("priority")}</Label>
-              <Select
-                value={form.priority}
-                onValueChange={(v) =>
-                  setForm({ ...form, priority: v as TaskFormData["priority"] })
-                }
-              >
-                <SelectTrigger id="task-priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {t(`priorities.${p}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Due Date */}
-            <div className="space-y-2">
-              <Label htmlFor="task-due">{t("dueDate")}</Label>
-              <Input
-                id="task-due"
-                type="date"
-                value={form.dueDate}
-                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Assignee */}
-          <div className="space-y-2">
-            <Label htmlFor="task-assignee">{t("assignee")}</Label>
-            <Select
-              value={form.assigneeId || "__none__"}
-              onValueChange={(v) =>
-                setForm({ ...form, assigneeId: v === "__none__" ? "" : v })
-              }
-            >
-              <SelectTrigger id="task-assignee">
-                <SelectValue placeholder={t("selectAssignee")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">{t("unassigned")}</SelectItem>
-                {orgUsers.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name} ({u.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Source entity (optional) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="task-source-type">{t("sourceEntityType")}</Label>
-              <Input
-                id="task-source-type"
-                value={form.sourceEntityType}
-                onChange={(e) =>
-                  setForm({ ...form, sourceEntityType: e.target.value })
-                }
-                placeholder={t("sourceEntityTypePlaceholder")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="task-source-id">{t("sourceEntityId")}</Label>
-              <Input
-                id="task-source-id"
-                value={form.sourceEntityId}
-                onChange={(e) =>
-                  setForm({ ...form, sourceEntityId: e.target.value })
-                }
-                placeholder={t("sourceEntityIdPlaceholder")}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {tActions("cancel")}
-            </Button>
-            <Button type="submit" disabled={saving || !form.title.trim()}>
-              {saving ? <Loader2 size={16} className="animate-spin" /> : null}
-              {tActions("create")}
-            </Button>
-          </DialogFooter>
-        </form>
+        <CreateTaskForm
+          onOpenChange={onOpenChange}
+          onSave={onSave}
+          saving={saving}
+          orgUsers={orgUsers}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateTaskForm({
+  onOpenChange,
+  onSave,
+  saving,
+  orgUsers,
+}: {
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: TaskFormData) => void;
+  saving: boolean;
+  orgUsers: OrgUser[];
+}) {
+  // [Welle 7b · OP-080, Gestalt B] Hier stand `useEffect(() => { if (open)
+  // setForm(EMPTY_FORM); }, [open])` — ein Formular-Reset beim Oeffnen, also
+  // `react-hooks/set-state-in-effect`. Diese Gestalt ist KEIN Abruf beim
+  // Einhaengen; `@tanstack/react-query` waere hier keine Antwort, sondern eine
+  // Verschlechterung.
+  //
+  // Die Antwort, die React selbst gibt, ist das EINHAENGEN: `DialogContent`
+  // liegt hinter Radix' `DialogPortal` ohne `forceMount`, seine Kinder sind
+  // also nur eingehaengt, solange der Dialog offen ist. Der Formularzustand
+  // ist deshalb in ein Bauteil UNTERHALB von `DialogContent` gewandert und
+  // entsteht bei jedem Oeffnen neu — leer, ohne dass ihn ein Effekt leeren
+  // muss.
+
+  const t = useTranslations("tasks");
+  const tActions = useTranslations("actions");
+  const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Title */}
+      <div className="space-y-2">
+        <Label htmlFor="task-title">{t("titleField")} *</Label>
+        <Input
+          id="task-title"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
+          maxLength={255}
+          placeholder={t("titlePlaceholder")}
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="task-desc">{t("description")}</Label>
+        <Textarea
+          id="task-desc"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          rows={3}
+          placeholder={t("descriptionPlaceholder")}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* Priority */}
+        <div className="space-y-2">
+          <Label htmlFor="task-priority">{t("priority")}</Label>
+          <Select
+            value={form.priority}
+            onValueChange={(v) =>
+              setForm({ ...form, priority: v as TaskFormData["priority"] })
+            }
+          >
+            <SelectTrigger id="task-priority">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {t(`priorities.${p}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Due Date */}
+        <div className="space-y-2">
+          <Label htmlFor="task-due">{t("dueDate")}</Label>
+          <Input
+            id="task-due"
+            type="date"
+            value={form.dueDate}
+            onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {/* Assignee */}
+      <div className="space-y-2">
+        <Label htmlFor="task-assignee">{t("assignee")}</Label>
+        <Select
+          value={form.assigneeId || "__none__"}
+          onValueChange={(v) =>
+            setForm({ ...form, assigneeId: v === "__none__" ? "" : v })
+          }
+        >
+          <SelectTrigger id="task-assignee">
+            <SelectValue placeholder={t("selectAssignee")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">{t("unassigned")}</SelectItem>
+            {orgUsers.map((u) => (
+              <SelectItem key={u.id} value={u.id}>
+                {u.name} ({u.email})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Source entity (optional) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="task-source-type">{t("sourceEntityType")}</Label>
+          <Input
+            id="task-source-type"
+            value={form.sourceEntityType}
+            onChange={(e) =>
+              setForm({ ...form, sourceEntityType: e.target.value })
+            }
+            placeholder={t("sourceEntityTypePlaceholder")}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="task-source-id">{t("sourceEntityId")}</Label>
+          <Input
+            id="task-source-id"
+            value={form.sourceEntityId}
+            onChange={(e) =>
+              setForm({ ...form, sourceEntityId: e.target.value })
+            }
+            placeholder={t("sourceEntityIdPlaceholder")}
+          />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+        >
+          {tActions("cancel")}
+        </Button>
+        <Button type="submit" disabled={saving || !form.title.trim()}>
+          {saving ? <Loader2 size={16} className="animate-spin" /> : null}
+          {tActions("create")}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
@@ -45,8 +46,6 @@ export default function ObjectCatalogPage() {
   const t = useTranslations("catalogs");
   const { formatDate } = useDateFormat();
   const _router = useRouter();
-  const [objects, setObjects] = useState<ObjectRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   // [WP12 · S14-13] Escape, focus trap and focus restoration for the
@@ -61,29 +60,36 @@ export default function ObjectCatalogPage() {
     description: "",
   });
 
-  // [Welle 7a · OP-080] Zwei Befunde an derselben Stelle: der Effekt stand
+  // [Welle 7a · OP-080] Zwei Befunde standen an dieser Stelle: der Effekt lag
   // VOR der Erklaerung von `fetchObjects` und rief eine Bindung auf, die zum
   // Zeitpunkt des Renderns noch in der zeitlichen Totzone lag
   // (`react-hooks/immutability`), und `fetchObjects` fehlte in seinen
-  // Abhaengigkeiten (`react-hooks/exhaustive-deps`). Beides ist derselbe
-  // Fehler: die Abhaengigkeitsliste `[typeFilter]` behauptete, der Effekt
-  // haenge nur am Filter, obwohl er eine bei jedem Rendern neu gebaute
-  // Funktion aufruft. Die Funktion steht jetzt vor dem Effekt, ist in
-  // `useCallback` mit ihrer wirklichen Abhaengigkeit gefasst, und der Effekt
-  // nennt sie.
-  const fetchObjects = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ limit: "100" });
-    if (typeFilter) params.set("objectType", typeFilter);
-    const res = await fetch(`/api/v1/catalogs/objects?${params}`);
-    const json = await res.json();
-    setObjects(json.data ?? []);
-    setLoading(false);
-  }, [typeFilter]);
+  // Abhaengigkeiten (`react-hooks/exhaustive-deps`).
+  //
+  // [Welle 7b · OP-080, Gestalt A] Der dritte Befund an derselben Stelle wurde
+  // erst sichtbar, NACHDEM der `immutability`-Befund behoben war — vorher brach
+  // der Compiler an ihm ab (siehe UMSETZUNG-WELLE-7A.md §5.1). Es war
+  // `set-state-in-effect`: ein Abruf beim Einhaengen, der Ergebnis und
+  // Ladezustand synchron im Effekt zurueckschrieb. Beides kommt jetzt aus
+  // `@tanstack/react-query`; Effekt und gespiegelter Zustand entfallen.
+  const {
+    data: objects = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ObjectRow[]>({
+    queryKey: ["catalogs", "objects", typeFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "100" });
+      if (typeFilter) params.set("objectType", typeFilter);
+      const res = await fetch(`/api/v1/catalogs/objects?${params}`);
+      const json = await res.json();
+      return (json.data ?? []) as ObjectRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchObjects();
-  }, [fetchObjects]);
+  const fetchObjects = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     if (!newObject.name.trim()) return;

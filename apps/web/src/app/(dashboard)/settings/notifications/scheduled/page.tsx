@@ -112,18 +112,6 @@ function CreateScheduledDialog({
   saving: boolean;
 }) {
   const t = useTranslations("settings.scheduled");
-  const tActions = useTranslations("actions");
-  const tRoles = useTranslations("roles");
-  const [form, setForm] = useState<ScheduledFormData>(EMPTY_FORM);
-
-  useEffect(() => {
-    if (open) setForm(EMPTY_FORM);
-  }, [open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(form);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,107 +120,146 @@ function CreateScheduledDialog({
           <DialogTitle>{t("create")}</DialogTitle>
           <DialogDescription>{t("createDescription")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Recipient type */}
-          <div className="space-y-2">
-            <Label>{t("recipientType")}</Label>
-            <Select
-              value={form.recipientType}
-              onValueChange={(v) =>
-                setForm({
-                  ...form,
-                  recipientType: v as "role" | "all",
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="role">{t("byRole")}</SelectItem>
-                <SelectItem value="all">{t("allUsers")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Role selector */}
-          {form.recipientType === "role" && (
-            <div className="space-y-2">
-              <Label>{t("recipientRole")}</Label>
-              <Select
-                value={form.recipientRole}
-                onValueChange={(v) => setForm({ ...form, recipientRole: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {tRoles(role)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Subject */}
-          <div className="space-y-2">
-            <Label htmlFor="sched-subject">{t("subject")} *</Label>
-            <Input
-              id="sched-subject"
-              value={form.subject}
-              onChange={(e) => setForm({ ...form, subject: e.target.value })}
-              required
-              maxLength={255}
-            />
-          </div>
-
-          {/* Message */}
-          <div className="space-y-2">
-            <Label htmlFor="sched-message">{t("message")}</Label>
-            <Textarea
-              id="sched-message"
-              value={form.message}
-              onChange={(e) => setForm({ ...form, message: e.target.value })}
-              rows={3}
-            />
-          </div>
-
-          {/* Scheduled for */}
-          <div className="space-y-2">
-            <Label htmlFor="sched-time">{t("scheduledFor")} *</Label>
-            <Input
-              id="sched-time"
-              type="datetime-local"
-              value={form.scheduledFor}
-              onChange={(e) =>
-                setForm({ ...form, scheduledFor: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {tActions("cancel")}
-            </Button>
-            <Button
-              type="submit"
-              disabled={saving || !form.subject.trim() || !form.scheduledFor}
-            >
-              {saving ? <Loader2 size={16} className="animate-spin" /> : null}
-              {tActions("create")}
-            </Button>
-          </DialogFooter>
-        </form>
+        <CreateScheduledForm
+          onOpenChange={onOpenChange}
+          onSave={onSave}
+          saving={saving}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateScheduledForm({
+  onOpenChange,
+  onSave,
+  saving,
+}: {
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: ScheduledFormData) => void;
+  saving: boolean;
+}) {
+  // [Welle 7b · OP-080, Gestalt B] Hier stand `useEffect(() => { if (open)
+  // setForm(EMPTY_FORM); }, [open])` — ein Formular-Reset beim Oeffnen, also
+  // `react-hooks/set-state-in-effect`. Diese Gestalt ist KEIN Abruf beim
+  // Einhaengen; `@tanstack/react-query` waere hier keine Antwort, sondern eine
+  // Verschlechterung.
+  //
+  // Die Antwort, die React selbst gibt, ist das EINHAENGEN: `DialogContent`
+  // liegt hinter Radix' `DialogPortal` ohne `forceMount`, seine Kinder sind
+  // also nur eingehaengt, solange der Dialog offen ist. Der Formularzustand
+  // ist deshalb in ein Bauteil UNTERHALB von `DialogContent` gewandert und
+  // entsteht bei jedem Oeffnen neu — leer, ohne dass ihn ein Effekt leeren
+  // muss.
+
+  const t = useTranslations("settings.scheduled");
+  const tActions = useTranslations("actions");
+  const tRoles = useTranslations("roles");
+  const [form, setForm] = useState<ScheduledFormData>(EMPTY_FORM);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Recipient type */}
+      <div className="space-y-2">
+        <Label>{t("recipientType")}</Label>
+        <Select
+          value={form.recipientType}
+          onValueChange={(v) =>
+            setForm({
+              ...form,
+              recipientType: v as "role" | "all",
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="role">{t("byRole")}</SelectItem>
+            <SelectItem value="all">{t("allUsers")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Role selector */}
+      {form.recipientType === "role" && (
+        <div className="space-y-2">
+          <Label>{t("recipientRole")}</Label>
+          <Select
+            value={form.recipientRole}
+            onValueChange={(v) => setForm({ ...form, recipientRole: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((role) => (
+                <SelectItem key={role} value={role}>
+                  {tRoles(role)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Subject */}
+      <div className="space-y-2">
+        <Label htmlFor="sched-subject">{t("subject")} *</Label>
+        <Input
+          id="sched-subject"
+          value={form.subject}
+          onChange={(e) => setForm({ ...form, subject: e.target.value })}
+          required
+          maxLength={255}
+        />
+      </div>
+
+      {/* Message */}
+      <div className="space-y-2">
+        <Label htmlFor="sched-message">{t("message")}</Label>
+        <Textarea
+          id="sched-message"
+          value={form.message}
+          onChange={(e) => setForm({ ...form, message: e.target.value })}
+          rows={3}
+        />
+      </div>
+
+      {/* Scheduled for */}
+      <div className="space-y-2">
+        <Label htmlFor="sched-time">{t("scheduledFor")} *</Label>
+        <Input
+          id="sched-time"
+          type="datetime-local"
+          value={form.scheduledFor}
+          onChange={(e) => setForm({ ...form, scheduledFor: e.target.value })}
+          required
+        />
+      </div>
+
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+        >
+          {tActions("cancel")}
+        </Button>
+        <Button
+          type="submit"
+          disabled={saving || !form.subject.trim() || !form.scheduledFor}
+        >
+          {saving ? <Loader2 size={16} className="animate-spin" /> : null}
+          {tActions("create")}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 

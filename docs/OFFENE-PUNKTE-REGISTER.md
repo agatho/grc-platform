@@ -612,6 +612,63 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-08 — Welle 7b: `set-state-in-effect` ist an, und die Sortierung war falsch
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-7B.md`. **20 → 0 Fundstellen, 2.294
+Dateien, kein einziges `eslint-disable`.** Die Ratsche misst `apps/web` mit
+0 bei Baseline 0 — **mit** eingeschalteter Regel. Damit sind **sieben von acht**
+Hook-Regeln an; übrig bleibt nur `incompatible-library` (2× `useReactTable`),
+von hier aus ohne Bibliothekswechsel nicht behebbar.
+
+**Der methodisch wichtigste Teil: die Sortierung aus Welle 7a war falsch.**
+7a hatte recht, dass die alte Begründung („alle sind Abruf beim Einhängen,
+react-query löst es") nur auf 9 von 20 zutrifft — aber ihre Aufteilung der
+übrigen elf stimmte nicht. Es sind **sieben** Gestalten, nicht vier, und die
+Gruppe „Browserspeicher" war um **drei** Fundstellen zu gross:
+
+| Gestalt                           |  7a | gemessen | Auflösung               |
+| --------------------------------- | --: | -------: | ----------------------- |
+| A Abruf beim Einhängen            |   9 |        9 | `@tanstack/react-query` |
+| B Formular-Reset                  |   4 |        4 | Einhängen statt Effekt  |
+| C Browserspeicher                 |   5 |    **2** | `useSyncExternalStore`  |
+| C′ gespiegelter **Server**zustand |   — |    **2** | beim Rendern ableiten   |
+| D Anhydrier-Wachtposten           |   2 |    **1** | `useSyncExternalStore`  |
+| D′ Eigenschaftsübergang           |   — |    **1** | Anpassung beim Rendern  |
+| E abgeleiteter Anzeigezustand     |   — |    **1** | beim Rendern ableiten   |
+
+`use-nav-preferences.tsx` liest **keinen** Browserspeicher, es spiegelt ein
+react-query-Ergebnis. Hätte man Gestalt C geschlossen auf
+`useSyncExternalStore` umgestellt, wären zwei Fundstellen **falsch** behoben
+worden — **und der schwerste Defekt dieser Welle wäre stehen geblieben.**
+
+| OP     | Was                                                                                                                                                                                                                                                                  | Art     | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------- |
+| OP-212 | **Die Navigationsgruppe der aufgerufenen Seite fiel wieder zu.** Die Seitenleiste meldet die Gruppe des Pfads beim ersten Rendern; der Effekt setzte danach den _gespeicherten_ Stand und gewann. Spur des alten Standes: `erm=offen isms=zu` → `erm=zu isms=offen`. | Produkt | behoben |
+| OP-213 | **Ein unbekannter Wert im Browserspeicher wurde zum Layoutnamen.** `as LayoutMode` war eine Behauptung; `"compact"` wurde übernommen, und keine Ansicht traf zu.                                                                                                     | Produkt | behoben |
+| OP-214 | **Gesperrter Browserspeicher legte den Anbieter lahm** — ungeschützter Zugriff im Effekt. `use-tab-navigation.tsx` hatte für denselben Zugriff seit jeher ein `try/catch`.                                                                                           | Produkt | behoben |
+| OP-215 | **Die Dokumentensuche zeigte die Treffer der vorletzten Eingabe.** Ohne Ordnung zwischen zwei Anfragen gewann die zuletzt eintreffende, nicht die jüngste.                                                                                                           | Produkt | behoben |
+
+**Drei Prüfungen konnten zunächst nicht fallen — und das war der Fund.**
+Prüfung 1 wartete auf `loading === false` und war gegen den alten Stand
+**grün**: Sie las zwei Festschreibungen _vor_ dem Defekt. Ohne den zweiten
+Blick wäre OP-212 als „nicht vorhanden" gebucht worden.
+
+**Und eine ehrliche Fehlanzeige.** Für Gestalt B haben zwei Messgeräte nichts
+gesehen (`seen=[]`, `written=[]`): ein `useLayoutEffect`-Zeuge, der an den
+fraglichen Festschreibungen nicht teilnahm, und ein Aufzeichner am
+Prototyp-Setzer, den React auf dem Element verdeckt. Ergebnis: Radix hängt
+`DialogContent` eine Festschreibung nach `open` ein, der Rückstelleffekt lief
+vorher — **es gibt dort keinen sichtbaren Defekt.** Statt einer Prüfung steht
+deshalb eine Begründung in der Datei. Das ist die richtige Antwort: Nichts
+behaupten, was sich nicht messen lässt.
+
+**Was mit Begründung bleibt:** `incompatible-library` (2, gehört in einen ADR)
+und `sidebar.tsx:272`, das `setActiveGroup` beim Rendern in den Anbieter ruft
+— nicht behoben, weil der offensichtliche Weg (ab in einen `useEffect`) eine
+**neue** Fundstelle genau dieser Regel erzeugt hätte. Der davon verursachte
+Defekt ist behoben; die Warnung braucht eine Welle mit `sidebar.tsx` als
+Gegenstand.
+
 ### Nachtrag 2026-09-08 — Welle 7a: OP-080, die Regeln sind an
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-7A.md`. Die Begründung für den Aufschub

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -272,6 +273,10 @@ const STATUS_COLORS: Record<string, string> = {
   closed: "#9ca3af",
 };
 
+const DASHBOARD_AUDIT_KEY = ["audit-log", "dashboard"] as const;
+const DASHBOARD_NOTIFICATIONS_KEY = ["notifications", "dashboard"] as const;
+const DASHBOARD_TASKS_KEY = ["tasks", "dashboard", "my"] as const;
+
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const rt = useTranslations("risk.dashboard");
@@ -280,150 +285,95 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const { isEnabled: ermEnabled } = useModuleConfig("erm");
 
-  // State for real data widgets
-  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(true);
-  const [auditError, setAuditError] = useState(false);
+  // [Welle 7b · OP-080, Gestalt A] Vier Fundstellen von
+  // `react-hooks/set-state-in-effect` standen hier — vier Abrufe beim
+  // Einhaengen, jeder mit drei gespiegelten Zustandsfeldern (Daten, Laden,
+  // Fehler) und einem eigenhaendigen `cancelled`-Wachtposten gegen das
+  // Schreiben nach dem Aushaengen. Genau diese Gestalt meint die alte
+  // Registerbegruendung, und fuer sie ist `@tanstack/react-query` die
+  // Aufloesung: Ladezustand, Fehlerzustand und Abbruch kommen aus der
+  // Bibliothek, die dieser Arbeitsbereich ohnehin schon fuehrt.
+  const queryClient = useQueryClient();
 
-  const [notifications, setNotifications] = useState<NotificationEntry[]>([]);
-  const [notifLoading, setNotifLoading] = useState(true);
-  const [notifError, setNotifError] = useState(false);
+  const {
+    data: auditEntries = [],
+    isPending: auditLoading,
+    isError: auditError,
+  } = useQuery<AuditLogEntry[]>({
+    queryKey: DASHBOARD_AUDIT_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/audit-log?limit=10");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<AuditLogEntry>).data;
+    },
+  });
 
-  const [myTasks, setMyTasks] = useState<DashboardTask[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
-  const [tasksError, setTasksError] = useState(false);
+  const {
+    data: notifications = [],
+    isPending: notifLoading,
+    isError: notifError,
+  } = useQuery<NotificationEntry[]>({
+    queryKey: DASHBOARD_NOTIFICATIONS_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/notifications?limit=5");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<NotificationEntry>).data;
+    },
+  });
 
-  // Risk dashboard summary
-  const [riskSummary, setRiskSummary] = useState<RiskDashboardSummary | null>(
-    null,
-  );
-  const [riskSummaryLoading, setRiskSummaryLoading] = useState(true);
+  const {
+    data: myTasks = [],
+    isPending: tasksLoading,
+    isError: tasksError,
+  } = useQuery<DashboardTask[]>({
+    queryKey: DASHBOARD_TASKS_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/tasks?view=my&limit=5");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<DashboardTask>).data;
+    },
+  });
 
-  // Fetch recent audit log entries
-  useEffect(() => {
-    let cancelled = false;
-    setAuditLoading(true);
-    fetch("/api/v1/audit-log?limit=10")
-      .then((r) => {
+  // Nur abfragen, wenn das ERM-Modul an ist. Vorher tat das ein `if
+  // (!ermEnabled) { setRiskSummaryLoading(false); return; }` im Effektrumpf —
+  // eine der vier Fundstellen. `enabled` sagt dasselbe, ohne einen Zustand zu
+  // setzen; `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht
+  // `ermEnabled` auch in der Ableitung des Ladezustands.
+  const { data: riskSummary = null, isPending: riskSummaryPending } =
+    useQuery<RiskDashboardSummary | null>({
+      queryKey: ["risks", "dashboard-summary"],
+      enabled: ermEnabled,
+      queryFn: async () => {
+        const r = await fetch("/api/v1/risks/dashboard-summary");
         if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<AuditLogEntry>>;
-      })
-      .then((res) => {
-        if (!cancelled) {
-          setAuditEntries(res.data);
-          setAuditError(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAuditEntries([]);
-          setAuditError(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setAuditLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch notifications
-  const fetchNotifications = useCallback(() => {
-    setNotifLoading(true);
-    fetch("/api/v1/notifications?limit=5")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<NotificationEntry>>;
-      })
-      .then((res) => {
-        setNotifications(res.data);
-        setNotifError(false);
-      })
-      .catch(() => {
-        setNotifications([]);
-        setNotifError(true);
-      })
-      .finally(() => {
-        setNotifLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  // Fetch my tasks (next 5 due)
-  useEffect(() => {
-    let cancelled = false;
-    setTasksLoading(true);
-    fetch("/api/v1/tasks?view=my&limit=5")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<DashboardTask>>;
-      })
-      .then((res) => {
-        if (!cancelled) {
-          setMyTasks(res.data);
-          setTasksError(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMyTasks([]);
-          setTasksError(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setTasksLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch risk dashboard summary (only when ERM module is enabled)
-  useEffect(() => {
-    if (!ermEnabled) {
-      setRiskSummaryLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setRiskSummaryLoading(true);
-    fetch("/api/v1/risks/dashboard-summary")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<{ data: RiskDashboardSummary }>;
-      })
-      .then((res) => {
-        if (!cancelled) setRiskSummary(res.data);
-      })
-      .catch(() => {
-        if (!cancelled) setRiskSummary(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRiskSummaryLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ermEnabled]);
+        return ((await r.json()) as { data: RiskDashboardSummary }).data;
+      },
+    });
+  const riskSummaryLoading = ermEnabled && riskSummaryPending;
 
   // Mark notification as read
-  async function markAsRead(id: string) {
-    try {
-      const res = await fetch(`/api/v1/notifications/${id}/read`, {
-        method: "PUT",
-      });
-      if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-        );
+  const markAsRead = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/v1/notifications/${id}/read`, {
+          method: "PUT",
+        });
+        if (res.ok) {
+          // Der Zwischenspeicher der Abfrage IST jetzt der Ort, an dem die
+          // Meldungen stehen; er wird direkt fortgeschrieben statt eines
+          // zweiten, gespiegelten Zustandsfelds.
+          queryClient.setQueryData<NotificationEntry[]>(
+            DASHBOARD_NOTIFICATIONS_KEY,
+            (prev) =>
+              prev?.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+          );
+        }
+      } catch {
+        // Silently fail — the user can retry
       }
-    } catch {
-      // Silently fail — the user can retry
-    }
-  }
+    },
+    [queryClient],
+  );
 
   const userName = session?.user?.name ?? "";
   const { layout } = useLayout();

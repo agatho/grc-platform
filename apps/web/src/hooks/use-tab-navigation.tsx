@@ -4,8 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useState,
+  useMemo,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
@@ -51,45 +51,142 @@ const TabNavigationContext = createContext<TabNavigationContextValue>({
 });
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Der Browserspeicher als AEUSSERER SPEICHER
+//
+// [Welle 7b · OP-080, Gestalt C] Diese Datei trug ZWEI Fundstellen von
+// `react-hooks/set-state-in-effect`, und keine davon war ein Abruf beim
+// Einhaengen — `@tanstack/react-query` haette hier nichts zu tun:
+//
+//   1. Der Anbieter las die Reiter beim Einhaengen aus dem Sitzungsspeicher
+//      und schrieb sie mit `setTabs(...)` in den Zustand. Die Reiter lebten
+//      damit an ZWEI Orten: im Speicher und in React. Ein zweiter Effekt
+//      (`[tabs, initialized]`) hielt beide von Hand gleich.
+//   2. `activeTab` war ein eigener Zustand, den ein dritter Effekt bei jedem
+//      Wegwechsel aus `pathname` und `tabs` nachzog.
+//
+// Beides ist jetzt fort, und zwar auf dem Weg, den React fuer genau diese
+// Frage vorsieht:
+//
+//   * Die Reiter leben nur noch im Sitzungsspeicher, und der Anbieter LIEST
+//     sie mit `useSyncExternalStore`. Das ist keine Umschreibung des alten
+//     Effekts, sondern nimmt ihm die Ursache: es gibt keine zwei Staende mehr,
+//     die auseinanderlaufen koennten, kein `initialized`-Merkerfeld und keinen
+//     Persistenz-Effekt. Die Server-Momentaufnahme ist die leere Liste, also
+//     bleibt das Anhydrieren abweichungsfrei.
+//
+//     Damit faellt auch die URSACHE von OP-211 fort statt nur ihrer Wirkung:
+//     Kindeffekte laufen vor denen des Elternteils, und ein `setTabs(...)` des
+//     Elternteils konnte die soeben angemeldete Anmeldung eines Kindes wieder
+//     wegwerfen. Ein Kind, das jetzt anmeldet, schreibt in DENSELBEN Speicher,
+//     aus dem der Anbieter liest; es gibt nichts mehr, was es ueberholen
+//     koennte. Die Pruefungen aus Welle 7a bleiben trotzdem stehen — sie messen
+//     das Verhalten, nicht den Aufbau.
+//
+//   * `activeTab` wird beim Rendern ABGELEITET. Es war nie eine eigene
+//     Tatsache: der Effekt setzte genau die Kennung des Reiters, dessen Ziel
+//     dem Pfad entspricht, sonst `null`.
+//
+// Der Sitzungsspeicher gehoert je einem Reiter des Browsers, der dauerhafte
+// Speicher der Anheftungen aber allen; das `storage`-Ereignis (das nur in den
+// ANDEREN Reitern feuert) gehoert deshalb zum Abonnement.
 // ---------------------------------------------------------------------------
 
-function loadSessionTabs(): TabItem[] {
-  if (typeof window === "undefined") return [];
+const EMPTY_TABS: TabItem[] = [];
+
+const listeners = new Set<() => void>();
+
+/** Der Rohstand, aus dem `cachedTabs` gebaut wurde. `null` = noch nie gebaut. */
+let cachedKey: string | null = null;
+let cachedTabs: TabItem[] = EMPTY_TABS;
+
+function readRaw(storage: "session" | "local", key: string): string {
+  if (typeof window === "undefined") return "";
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-    return raw ? (JSON.parse(raw) as TabItem[]) : [];
+    const s = storage === "session" ? sessionStorage : localStorage;
+    return s.getItem(key) ?? "";
   } catch {
-    return [];
+    // Speicher gesperrt (privater Modus, Richtlinie fuer Drittanbieter).
+    return "";
   }
 }
 
-function saveSessionTabs(tabs: TabItem[]) {
+function parseTabs(raw: string): TabItem[] {
+  if (!raw) return EMPTY_TABS;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as TabItem[]) : EMPTY_TABS;
+  } catch {
+    return EMPTY_TABS;
+  }
+}
+
+function parsePinnedIds(raw: string): Set<string> {
+  if (!raw) return new Set();
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? new Set(parsed as string[]) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/**
+ * `useSyncExternalStore` verlangt eine Momentaufnahme, die bei unveraendertem
+ * Speicher DIESELBE Kennung zurueckgibt — sonst rendert React endlos. Daher
+ * der Zwischenspeicher auf den beiden Rohzeichenketten.
+ */
+function getTabsSnapshot(): TabItem[] {
+  const rawTabs = readRaw("session", SESSION_KEY);
+  const rawPins = readRaw("local", PIN_KEY);
+  const key = `${rawTabs}\u0000${rawPins}`;
+  if (key !== cachedKey) {
+    cachedKey = key;
+    const pinnedIds = parsePinnedIds(rawPins);
+    const parsed = parseTabs(rawTabs);
+    cachedTabs =
+      parsed.length === 0
+        ? EMPTY_TABS
+        : parsed.map((t) => ({ ...t, pinned: pinnedIds.has(t.id) }));
+  }
+  return cachedTabs;
+}
+
+/** Der Server kennt weder Sitzungs- noch dauerhaften Speicher. */
+function getTabsServerSnapshot(): TabItem[] {
+  return EMPTY_TABS;
+}
+
+function subscribeTabs(onStoreChange: () => void): () => void {
+  listeners.add(onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    listeners.delete(onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
+function emit() {
+  for (const listener of listeners) listener();
+}
+
+function writeTabs(tabs: TabItem[]) {
   if (typeof window === "undefined") return;
   try {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify(tabs));
   } catch {
     // storage full — silently fail
   }
+  emit();
 }
 
-function loadPinnedIds(): Set<string> {
-  if (typeof window === "undefined") return new Set();
-  try {
-    const raw = localStorage.getItem(PIN_KEY);
-    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function savePinnedIds(ids: Set<string>) {
+function writePinnedIds(ids: Set<string>) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(PIN_KEY, JSON.stringify([...ids]));
   } catch {
     // storage full — silently fail
   }
+  emit();
 }
 
 // ---------------------------------------------------------------------------
@@ -98,104 +195,59 @@ function savePinnedIds(ids: Set<string>) {
 
 export function TabProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [tabs, setTabs] = useState<TabItem[]>([]);
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [initialized, setInitialized] = useState(false);
 
-  // Hydrate from sessionStorage on mount.
-  //
-  // [Welle 7a · OP-080] PRODUKTDEFEKT, aufgefallen beim Versuch, die
-  // Reiterbeschriftung zu pruefen: **die Reiterleiste zeigte nie die Seite,
-  // mit der sie geoeffnet wurde.**
-  //
-  // Hier stand `setTabs(hydrated)` — ein fester Wert. Die Seiten, die ihren
-  // Reiter anmelden (`/assets`, `/assets/[id]`, `/work-items`,
-  // `/work-items/[id]`), sind KINDER dieses Anbieters
-  // (`(dashboard)/layout.tsx`), und Kindeffekte laufen VOR den Effekten des
-  // Elternteils. Beim ersten Aufbau lief also erst `openTab(...)` und
-  // unmittelbar danach dieses `setTabs(hydrated)`, das die soeben
-  // angemeldete Anmeldung wieder wegwarf. Gemessen (jsdom, ein Aufbau):
-  //
-  //   leerer Sitzungsspeicher       → tabs.length = 0   (Reiter weg)
-  //   vorbefuellter Sitzungsspeicher → tabs.length = 1, und zwar der
-  //                                    GESPEICHERTE; der eigene fehlte
-  //
-  // Sichtbar wurde es erst nach einer Navigation im Browser, weil `openTab`
-  // dann in einer spaeteren Festschreibung laeuft.
-  //
-  // Der funktionale Aktualisierer behebt es: was zwischen Rendern und diesem
-  // Effekt bereits angemeldet wurde, bleibt bestehen und gewinnt bei
-  // gleicher Kennung (es ist der frischere Stand); die Anheftung kommt in
-  // beiden Faellen aus dem dauerhaften Speicher.
-  useEffect(() => {
-    const stored = loadSessionTabs();
-    const pinnedIds = loadPinnedIds();
-    setTabs((registered) => {
-      const registeredIds = new Set(registered.map((t) => t.id));
-      const hydrated = stored
-        .filter((t) => !registeredIds.has(t.id))
-        .map((t) => ({ ...t, pinned: pinnedIds.has(t.id) }));
-      return [
-        ...hydrated,
-        ...registered.map((t) => ({ ...t, pinned: pinnedIds.has(t.id) })),
-      ];
-    });
-    setInitialized(true);
-  }, []);
+  const tabs = useSyncExternalStore(
+    subscribeTabs,
+    getTabsSnapshot,
+    getTabsServerSnapshot,
+  );
 
-  // Persist tabs when they change
-  useEffect(() => {
-    if (initialized) {
-      saveSessionTabs(tabs);
-    }
-  }, [tabs, initialized]);
-
-  // Auto-activate tab when route changes
-  useEffect(() => {
-    if (!initialized) return;
-    const matchingTab = tabs.find((t) => t.href === pathname);
-    if (matchingTab) {
-      setActiveTab(matchingTab.id);
-    } else {
-      setActiveTab(null);
-    }
-  }, [pathname, tabs, initialized]);
+  // Abgeleitet, nicht gesetzt: aktiv ist der Reiter, dessen Ziel dem aktuellen
+  // Pfad entspricht. Genau das tat der Effekt vorher, nur einen
+  // Renderdurchlauf spaeter.
+  const activeTab = useMemo(
+    () => tabs.find((t) => t.href === pathname)?.id ?? null,
+    [tabs, pathname],
+  );
 
   const openTab = useCallback(
     (newTab: Omit<TabItem, "pinned" | "openedAt">) => {
-      setTabs((prev) => {
-        // [Welle 7a · OP-080] Ein bereits offener Reiter wird AKTUALISIERT,
-        // nicht nur aktiviert.
-        //
-        // Vorher stand hier `return prev` — der Reiter behielt Beschriftung,
-        // Ziel und Sinnbild aus dem Augenblick seiner Anlage, fuer immer.
-        // Das traf zwei Faelle, die beide auf dem Bildschirm sichtbar sind:
-        //
-        //   * Sprachwechsel. Die Seiten melden ihren Reiter mit `t("title")`
-        //     an. Der Sprachwaehler setzt nur einen Keks und ruft
-        //     `router.refresh()`; Clientkomponenten werden dabei NICHT neu
-        //     eingehaengt, der Zustand dieses Providers bleibt bestehen. Die
-        //     Reiterleiste blieb deshalb deutsch, waehrend die ganze uebrige
-        //     Oberflaeche englisch war — und `saveSessionTabs` schrieb den
-        //     falschsprachigen Text zusaetzlich in den Sitzungsspeicher, wo
-        //     er den Rest der Sitzung ueberlebte.
-        //   * Umbenennen. `/assets/[id]` und `/work-items/[id]` melden den
-        //     Namen des Objekts als Beschriftung an. Nach einer Umbenennung
-        //     stand im Reiter weiter der alte Name.
-        //
-        // `prev` wird unveraendert zurueckgegeben, wenn sich nichts geaendert
-        // hat: sonst erzeugte jeder Aufruf ein neues Feld, und der
-        // Persistenz-Effekt (`[tabs, initialized]`) liefe in eine Schleife.
-        const existing = prev.find((t) => t.id === newTab.id);
-        if (existing) {
-          if (
-            existing.label === newTab.label &&
-            existing.href === newTab.href &&
-            existing.icon === newTab.icon
-          ) {
-            return prev;
-          }
-          return prev.map((t) =>
+      const prev = getTabsSnapshot();
+
+      // [Welle 7a · OP-080] Ein bereits offener Reiter wird AKTUALISIERT,
+      // nicht nur aktiviert.
+      //
+      // Vorher stand hier `return prev` — der Reiter behielt Beschriftung,
+      // Ziel und Sinnbild aus dem Augenblick seiner Anlage, fuer immer. Das
+      // traf zwei Faelle, die beide auf dem Bildschirm sichtbar sind:
+      //
+      //   * Sprachwechsel. Die Seiten melden ihren Reiter mit `t("title")` an.
+      //     Der Sprachwaehler setzt nur einen Keks und ruft `router.refresh()`;
+      //     Clientkomponenten werden dabei NICHT neu eingehaengt. Die
+      //     Reiterleiste blieb deshalb deutsch, waehrend die uebrige
+      //     Oberflaeche englisch war — und der falschsprachige Text wanderte
+      //     zusaetzlich in den Sitzungsspeicher, wo er den Rest der Sitzung
+      //     ueberlebte.
+      //   * Umbenennen. `/assets/[id]` und `/work-items/[id]` melden den Namen
+      //     des Objekts als Beschriftung an. Nach einer Umbenennung stand im
+      //     Reiter weiter der alte Name.
+      //
+      // Bei unveraenderten Werten wird NICHT geschrieben. Sonst schriebe jeder
+      // Aufruf in den Speicher, benachrichtigte die Zuhoerer, loeste ein neues
+      // Rendern aus und damit den anmeldenden Effekt erneut — eine Schleife.
+      // Das ist dieselbe Falle wie vorher beim `setTabs` mit jedes Mal neuem
+      // Feld, und sie ist weiterhin mitgeprueft.
+      const existing = prev.find((t) => t.id === newTab.id);
+      if (existing) {
+        if (
+          existing.label === newTab.label &&
+          existing.href === newTab.href &&
+          existing.icon === newTab.icon
+        ) {
+          return;
+        }
+        writeTabs(
+          prev.map((t) =>
             t.id === newTab.id
               ? {
                   ...t,
@@ -204,78 +256,65 @@ export function TabProvider({ children }: { children: ReactNode }) {
                   icon: newTab.icon,
                 }
               : t,
-          );
+          ),
+        );
+        return;
+      }
+
+      const tab: TabItem = {
+        ...newTab,
+        pinned: false,
+        openedAt: Date.now(),
+      };
+
+      let next = [...prev, tab];
+
+      // Enforce max tabs — remove oldest non-pinned if exceeded
+      if (next.length > MAX_TABS) {
+        const nonPinned = next
+          .filter((t) => !t.pinned)
+          .sort((a, b) => a.openedAt - b.openedAt);
+        if (nonPinned.length > 0) {
+          const toRemove = nonPinned[0];
+          next = next.filter((t) => t.id !== toRemove.id);
         }
+      }
 
-        const tab: TabItem = {
-          ...newTab,
-          pinned: false,
-          openedAt: Date.now(),
-        };
-
-        let next = [...prev, tab];
-
-        // Enforce max tabs — remove oldest non-pinned if exceeded
-        if (next.length > MAX_TABS) {
-          const nonPinned = next
-            .filter((t) => !t.pinned)
-            .sort((a, b) => a.openedAt - b.openedAt);
-          if (nonPinned.length > 0) {
-            const toRemove = nonPinned[0];
-            next = next.filter((t) => t.id !== toRemove.id);
-          }
-        }
-
-        return next;
-      });
-      setActiveTab(newTab.id);
+      writeTabs(next);
     },
     [],
   );
 
-  const closeTab = useCallback(
-    (id: string) => {
-      setTabs((prev) => {
-        const filtered = prev.filter((t) => t.id !== id);
-        return filtered;
-      });
-      if (activeTab === id) {
-        setActiveTab(null);
-      }
-    },
-    [activeTab],
-  );
+  const closeTab = useCallback((id: string) => {
+    const prev = getTabsSnapshot();
+    if (!prev.some((t) => t.id === id)) return;
+    writeTabs(prev.filter((t) => t.id !== id));
+  }, []);
 
   const pinTab = useCallback((id: string) => {
-    setTabs((prev) => {
-      const pinnedCount = prev.filter((t) => t.pinned).length;
-      if (pinnedCount >= MAX_PINNED) return prev;
-
-      const next = prev.map((t) => (t.id === id ? { ...t, pinned: true } : t));
-
-      // Update localStorage
-      const pinnedIds = new Set(next.filter((t) => t.pinned).map((t) => t.id));
-      savePinnedIds(pinnedIds);
-
-      return next;
-    });
+    const prev = getTabsSnapshot();
+    if (prev.filter((t) => t.pinned).length >= MAX_PINNED) return;
+    if (!prev.some((t) => t.id === id)) return;
+    writePinnedIds(
+      new Set(prev.filter((t) => t.pinned || t.id === id).map((t) => t.id)),
+    );
   }, []);
 
   const unpinTab = useCallback((id: string) => {
-    setTabs((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, pinned: false } : t));
-
-      const pinnedIds = new Set(next.filter((t) => t.pinned).map((t) => t.id));
-      savePinnedIds(pinnedIds);
-
-      return next;
-    });
+    const prev = getTabsSnapshot();
+    if (!prev.some((t) => t.pinned && t.id === id)) return;
+    writePinnedIds(
+      new Set(prev.filter((t) => t.pinned && t.id !== id).map((t) => t.id)),
+    );
   }, []);
 
+  const value = useMemo(
+    () => ({ tabs, activeTab, openTab, closeTab, pinTab, unpinTab }),
+    [tabs, activeTab, openTab, closeTab, pinTab, unpinTab],
+  );
+
   return (
-    <TabNavigationContext.Provider
-      value={{ tabs, activeTab, openTab, closeTab, pinTab, unpinTab }}
-    >
+    <TabNavigationContext.Provider value={value}>
       {children}
     </TabNavigationContext.Provider>
   );
