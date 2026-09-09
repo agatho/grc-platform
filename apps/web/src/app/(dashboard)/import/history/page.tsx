@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -73,28 +73,24 @@ export default function ImportHistoryPage() {
   const t = useTranslations("import");
   const router = useRouter();
 
-  const [jobs, setJobs] = useState<ImportJobRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [_total, setTotal] = useState(0);
-
-  const fetchJobs = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/import?limit=50");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setJobs(data.data);
-      setTotal(data.pagination?.total ?? data.data.length);
-    } catch {
-      toast.error("Failed to load import history");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Toast bei Fehler bleibt wie
+  // vorher, die Liste bleibt dann leer. Das nie gelesene `_total` entfiel.
+  const { data: jobs = [], isPending: loading } = useQuery<ImportJobRow[]>({
+    queryKey: ["import", "jobs", 50],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/import?limit=50");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        return data.data as ImportJobRow[];
+      } catch {
+        toast.error("Failed to load import history");
+        return [];
+      }
+    },
+  });
 
   const columns: ColumnDef<ImportJobRow>[] = [
     {
