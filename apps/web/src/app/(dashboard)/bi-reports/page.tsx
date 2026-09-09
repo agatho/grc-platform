@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -41,28 +42,27 @@ interface BiReportRecord {
 export default function BiReportsPage() {
   const t = useTranslations("biReporting");
   const router = useRouter();
-  const [reports, setReports] = useState<BiReportRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const fetchReports = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      const res = await fetch(`/api/v1/bi-reports?${params}`);
-      const json = await res.json();
-      setReports(json.data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter]);
-
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Suchbegriff und Statusfilter
+  // gehen in die Anfrage und stehen deshalb im Schluessel. Der Antwort-
+  // koerper wird wie vorher ohne `ok`-Pruefung gelesen.
+  const { data: reports = [], isPending: loading } = useQuery<BiReportRecord[]>(
+    {
+      queryKey: ["bi-reports", "list", search, statusFilter],
+      queryFn: async () => {
+        const params = new URLSearchParams();
+        if (search) params.set("search", search);
+        if (statusFilter !== "all") params.set("status", statusFilter);
+        const res = await fetch(`/api/v1/bi-reports?${params}`);
+        const json = await res.json();
+        return (json.data ?? []) as BiReportRecord[];
+      },
+    },
+  );
 
   const statusColor = (s: string) => {
     switch (s) {
