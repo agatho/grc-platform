@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -107,32 +108,29 @@ export default function AccessLogPage() {
   const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("accessLog");
 
-  const [entries, setEntries] = useState<AccessLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("__all__");
 
   // Fetch access log entries
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (eventTypeFilter !== "__all__")
-        params.set("event_type", eventTypeFilter);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Ereignisfilter steht im
+  // Schlüssel. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste; ein
+  // Netzfehler landet im Fehlerzustand der Abfrage (Tabelle ebenfalls leer).
+  const { data: entries = [], isPending: loading } = useQuery<AccessLogEntry[]>(
+    {
+      queryKey: ["access-log", eventTypeFilter],
+      queryFn: async () => {
+        const params = new URLSearchParams({ limit: "50" });
+        if (eventTypeFilter !== "__all__")
+          params.set("event_type", eventTypeFilter);
 
-      const res = await fetch(`/api/v1/access-log?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as { data: AccessLogEntry[] };
-      setEntries(json.data);
-    } catch {
-      setEntries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [eventTypeFilter]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+        const res = await fetch(`/api/v1/access-log?${params.toString()}`);
+        if (!res.ok) return [];
+        const json = (await res.json()) as { data: AccessLogEntry[] };
+        return json.data;
+      },
+    },
+  );
 
   // Table columns
   const columns = useMemo<ColumnDef<AccessLogEntry, unknown>[]>(
