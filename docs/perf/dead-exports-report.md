@@ -1,6 +1,6 @@
 # Dead-Exports-Report
 
-_Generated: 2026-09-09T02:00:08.368Z_
+_Generated: 2026-09-09T07:29:55.272Z_
 
 Static-Analyse findet `export`-Statements ohne matching `import` im Code. Heuristik, nicht vollstaendig:
 

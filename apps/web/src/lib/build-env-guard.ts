@@ -27,7 +27,12 @@
  * unit test can exercise it without a build.
  */
 
-export interface BuildEnvGuardInput {
+// [Welle 8g] Nicht exportiert: die Dead-Exports-Ratsche hat den Export als
+// tot gemeldet, und die Regel dieses Repositories lautet "Entfernen, nicht
+// in die Ratsche aufnehmen". Der Typ wird nur eine Zeile weiter unten als
+// Parameterform gebraucht; ausserhalb dieser Datei hat ihn nie jemand
+// importiert.
+interface BuildEnvGuardInput {
   /** `process.env.NODE_ENV` as seen by the config loader. */
   nodeEnv: string | undefined;
   /** `process.argv` of the process loading `next.config.ts`. */

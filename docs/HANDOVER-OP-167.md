@@ -6,8 +6,8 @@
 > **Resolved 2026-09-09, same day, in the local session.** Six further build runs
 > (12–17) showed the cause was not Next.js but the build recipe in §7 of this very
 > document: `set NODE_ENV=development` before `next build`. With that variable the
-> static-generation worker loads Next's *development* page runtime while the compiled
-> app is bound to the *production* one — two React copies, null hook dispatcher on the
+> static-generation worker loads Next's _development_ page runtime while the compiled
+> app is bound to the _production_ one — two React copies, null hook dispatcher on the
 > first `useContext` in `/_global-error`. Without the variable the identical checkout
 > builds green in under two minutes and `server.js` runs. Full measurement, the trace
 > that shows both runtime files loading in one worker, and what it rules out: the
@@ -237,7 +237,7 @@ npx next build
 ```
 
 > **Corrected 2026-09-09.** This recipe used to read `set NODE_ENV=development`, and
-> that line *was* OP-167 — see the note at the top of this document. `NODE_ENV` must be
+> that line _was_ OP-167 — see the note at the top of this document. `NODE_ENV` must be
 > **unset** (Next then defaults it to `production`) or the build is refused by
 > `next.config.ts`. Set `development` only for `npm install`, and clear it again before
 > building. Measured here: the build takes about two minutes on this machine, not 15–20;
