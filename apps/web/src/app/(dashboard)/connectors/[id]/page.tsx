@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -50,38 +51,48 @@ export default function ConnectorDetailPage() {
   const { formatDateTime } = useDateFormat();
   const params = useParams();
   const router = useRouter();
-  const [connector, setConnector] = useState<Connector | null>(null);
-  const [testResults, setTestResults] = useState<TestResult[]>([]);
-  const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
 
   const id = params.id as string;
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (null bzw. leere Liste).
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ connector: Connector | null; testResults: TestResult[] }>({
+    queryKey: ["connectors", "detail", id],
+    queryFn: async () => {
       const [connRes, resultsRes] = await Promise.all([
         fetch(`/api/v1/connectors/${id}`),
         fetch(`/api/v1/connectors/${id}/test-results?limit=20`),
       ]);
+      let connector: Connector | null = null;
+      let testResults: TestResult[] = [];
       if (connRes.ok) {
         const json = await connRes.json();
-        setConnector(json.data);
+        connector = json.data as Connector;
       }
       if (resultsRes.ok) {
         const json = await resultsRes.json();
-        setTestResults(json.data ?? []);
+        testResults = (json.data ?? []) as TestResult[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { connector, testResults };
+    },
+  });
+  const connector = data?.connector ?? null;
+  const testResults = data?.testResults ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const runTests = async () => {
     setRunning(true);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -35,28 +36,32 @@ const FRAMEWORKS = [
 export default function GapAnalysisPage() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("connectors");
-  const [analyses, setAnalyses] = useState<GapAnalysis[]>([]);
-  const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: analyses = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<GapAnalysis[]>({
+    queryKey: ["connectors", "framework-mappings", "gap-analysis"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/framework-mappings/gap-analysis?limit=50",
       );
-      if (res.ok) {
-        const json = await res.json();
-        setAnalyses(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as GapAnalysis[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const runAnalysis = async (framework: string) => {
     setRunning(framework);
@@ -104,9 +109,9 @@ export default function GapAnalysisPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

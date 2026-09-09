@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,31 +29,31 @@ interface HeatmapResponse {
 
 export default function CoverageHeatmapPage() {
   const t = useTranslations("connectors");
-  const [scores, setScores] = useState<FrameworkScore[]>([]);
-  const [categoryCoverage, setCategoryCoverage] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [categoriesMeasured, setCategoriesMeasured] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus drei gespiegelten Zustaenden aus einer Antwort (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher die Ausgangswerte (leere Liste, leere Karte, nicht gemessen).
+  const {
+    data: heatmap = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<HeatmapResponse | null>({
+    queryKey: ["connectors", "framework-mappings", "heatmap"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/framework-mappings/dashboard");
+      if (!res.ok) return null;
+      const json: { data: HeatmapResponse } = await res.json();
+      return json.data;
+    },
+  });
+  const scores = heatmap?.frameworkScores ?? [];
+  const categoryCoverage = heatmap?.categoryCoverage ?? {};
+  const categoriesMeasured = Boolean(heatmap?.categoryCoverageMeasured);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/framework-mappings/dashboard");
-      if (res.ok) {
-        const json: { data: HeatmapResponse } = await res.json();
-        setScores(json.data.frameworkScores ?? []);
-        setCategoryCoverage(json.data.categoryCoverage ?? {});
-        setCategoriesMeasured(Boolean(json.data.categoryCoverageMeasured));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const heatColor = (pct: number): string => {
     if (pct >= 90) return "bg-green-600 text-white";
@@ -92,7 +93,7 @@ export default function CoverageHeatmapPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw size={14} />
         </Button>

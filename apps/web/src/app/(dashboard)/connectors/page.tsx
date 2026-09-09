@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -54,33 +55,43 @@ export default function ConnectorDashboardPage() {
   const t = useTranslations("connectors");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (null bzw. leere Liste).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ stats: DashboardStats | null; connectors: ConnectorRow[] }>({
+    queryKey: ["connectors", "dashboard"],
+    queryFn: async () => {
       const [dashRes, listRes] = await Promise.all([
         fetch("/api/v1/connectors/dashboard"),
         fetch("/api/v1/connectors?limit=50"),
       ]);
+      let stats: DashboardStats | null = null;
+      let connectors: ConnectorRow[] = [];
       if (dashRes.ok) {
         const json = await dashRes.json();
-        setStats(json.data);
+        stats = json.data as DashboardStats;
       }
       if (listRes.ok) {
         const json = await listRes.json();
-        setConnectors(json.data ?? []);
+        connectors = (json.data ?? []) as ConnectorRow[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { stats, connectors };
+    },
+  });
+  const stats = data?.stats ?? null;
+  const connectors = data?.connectors ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const statusColor: Record<string, string> = {
     active: "bg-green-100 text-green-900",
@@ -117,9 +128,12 @@ export default function ConnectorDashboardPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Link href="/connectors/new">
             <Button size="sm">
