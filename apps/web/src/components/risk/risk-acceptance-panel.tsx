@@ -8,7 +8,8 @@
 // already-accepted 409, unscored 422) are mapped to i18n messages via
 // mapAcceptanceApiError.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   ShieldCheck,
@@ -98,10 +99,6 @@ export function RiskAcceptancePanel({
   const t = useTranslations("risk.acceptance");
   const { formatDate, formatDateTime } = useDateFormat();
 
-  const [records, setRecords] = useState<AcceptanceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
   // Accept dialog
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [acceptForm, setAcceptForm] = useState({
@@ -125,10 +122,20 @@ export function RiskAcceptancePanel({
   // Data
   // ---------------------------------------------------------------------------
 
-  const fetchHistory = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect mirroring loading/error/data into state (pattern from
+  // wave 7b, `catalogs/objects/page.tsx`). A non-ok history response throws
+  // as before and lands in the query's error state. Props and the exported
+  // API of this component are unchanged.
+  const {
+    data: records = [],
+    isPending,
+    isFetching,
+    isError: loadError,
+    refetch,
+  } = useQuery<AcceptanceRecord[]>({
+    queryKey: ["risks", riskId, "acceptance"],
+    queryFn: async () => {
       // Per-risk history (full rows incl. revokeReason) + org-wide list
       // (joined acceptor identity) — merged by id.
       const [historyRes, joinedRes] = await Promise.all([
@@ -154,18 +161,16 @@ export function RiskAcceptancePanel({
           }
         }
       }
-      setRecords(rows);
-    } catch {
-      setLoadError(true);
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [riskId]);
+      return rows;
+    },
+  });
+  // Retrying after an error used to show the spinner (error was cleared
+  // before the fetch); `isFetching` keeps that.
+  const loading = isPending || (loadError && isFetching);
 
-  useEffect(() => {
-    void fetchHistory();
-  }, [fetchHistory]);
+  const fetchHistory = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const active = useMemo(
     () => records.find((r) => r.status === "active") ?? null,
