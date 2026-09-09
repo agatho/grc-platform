@@ -612,6 +612,81 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — CI zu OP-245: ein Coverage-Tor, das seit dem Minor-Batch rot war, und drei Jobs, die zum ersten Mal liefen
+
+Die Übergabe verlangte, die CI zu prüfen, nicht nur den lokalen Lauf. Das
+war nötig: auf diesem Zweig war seit `f102816f` **kein** Lauf des
+CI-Workflows grün, und weil Lint jedes Mal zuerst fiel, sind Security Audit,
+Unit Tests und E2E Smoke seitdem nie gelaufen. Mit dem Lint-Job auf 0
+liefen sie zum ersten Mal — und zeigten drei Dinge, von denen keines zu
+OP-245 gehört, aber jedes vor OP-245 unsichtbar war.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Beleg                                                                                                                                                                            | Art                                                     | Stand       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------- |
+| OP-250 | **Ein E-Mail-Test lud `EmailService` per `await import()` im Testkörper — und damit alle React-Email-Templates innerhalb des 5-Sekunden-Limits des Tests.** Auf dem CI-Runner braucht das 6,1 s (die Import-Phase der Datei liegt dort bei ~23 s kalt), lokal 0,6 s; der Test `renders every registered key without throwing` fiel, bevor ein einziges Template gerendert war. Der Import steht jetzt auf Modulebene, wo vitest ihn nicht gegen ein Zeitlimit misst; der Test selbst braucht 6 ms. `vi.mock("resend")` ist gehoistet und wirkt wie zuvor. Keine Erwartung und kein Zeitlimit wurde geändert.                                                                                                                   | CI-Lauf 34371008020, Job Unit Tests: `Test timed out in 5000ms` bei `template-coverage.test.ts:157`; lokal danach 10/10, tsc 0, eslint 0                                         | Testsuite (latent seit 2026-09-01, erst jetzt sichtbar) | **behoben** |
+| OP-251 | **Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden.** `auth.setup.ts` verlangt seit der Mehr-Konten-Testbasis (`81200d89`) ein `E2E_ROLE_PASSWORD` und Konten, die `npm run db:seed:e2e-users` mit genau diesem Passwort angelegt hat. `ci.yml` seedet diese Konten nirgends, und der Schritt, der fällt (`Run Playwright smoke (fast fail)`), bekommt nicht einmal die vorhandenen Secrets `E2E_EMAIL`/`E2E_PASSWORD` — die stehen nur am Schritt danach. Die Meldung ist klar und gewollt (ein stiller Skip wäre wieder ein Tor, das nichts prüft), aber der Job ist damit seit einer Woche ein sicherer Rotfall. Nicht angefasst: `.github/workflows/**` liegt bei der Cloud-Sitzung (Vorgabe des Eigentümers). | CI-Lauf 34371008020, Job E2E Smoke Tests: `No password for the primary E2E account. Provision it with E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users`                 | CI-Workflow (Cloud-Sitzung)                             | offen       |
+| OP-252 | **`notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei.** `generate-notice.mjs` schrieb unausgerichtete Markdown-Tabellen (`\|---\|---:\|`), der Prettier-Schritt im Lint-Job verlangt ausgerichtete. Die eingecheckte `THIRD-PARTY-LICENSES.md` war seit `da7f5505` (2026-09-01, „Vollverifikation") die Prettier-Fassung — damit war `notice:check` seitdem in jedem Lauf rot; als `452205ad` die Erzeuger-Fassung einspielte, wurde stattdessen Prettier rot. Der Erzeuger formatiert seine Markdown-Ausgabe jetzt selbst mit Prettier (Repo-Konfiguration), vor dem Schreiben und vor dem Vergleich. Kein Tor wurde gelockert.                                                           | CI-Läufe 34371008020 (Security Audit: `✗ veraltet`) und 34374305993 (Lint: `[warn] THIRD-PARTY-LICENSES.md`); Linux-Klon auf `2d815a66`: `--check` grün, `prettier --check` grün | Werkzeug (zwei Tore gegeneinander, seit 2026-09-01)     | **behoben** |
+
+**CI auf `6e3991d4`** (der Push mit den 95 Commits): acht von zehn Workflows grün. Rot: Coverage (siehe unten — seit `a3ff1b07`) und der CI-Workflow, dort allein der Lint-Job am Schritt `op-index.mjs`, weil `docs/OFFENE-PUNKTE-INDEX.md` nach dem neuen Nachtrag nicht neu erzeugt war (mit `194aeda1` nachgezogen). Der Lint-Job selbst: 0 ESLint-Fehler mit 7.1.1, Ratsche 0/0 — die Cloud-Sitzung hatte ihn zuletzt mit 416 Fehlern rot gesehen (`3351dcb2`).
+
+**CI auf `194aeda1`** (Index nachgezogen, Coverage-Baseline): neun von zehn Workflows grün, Coverage darunter. Der CI-Workflow kam zum ersten Mal seit `f102816f` am Lint-Job vorbei und fiel in drei Jobs, die seitdem nie gelaufen waren: Security Audit (`✗ veraltet: NOTICE`, `THIRD-PARTY-LICENSES.md`), Unit Tests (OP-250) und E2E Smoke (OP-251); Build und Integration Tests waren grün.
+
+**NOTICE und THIRD-PARTY-LICENSES.md waren veraltet — seit OP-234, nicht
+seit OP-245.** Der Security-Audit-Job meldete beide Dateien als nicht mehr
+zum installierten Baum passend: nach dem Abhängigkeits-Upgrade hat der
+Produktionsbaum 440 statt 441 Pakete, drei Lizenzsummen haben sich
+verschoben. Der Nachtrag zu OP-234 hätte `npm run notice` enthalten müssen;
+das ist mit `452205ad` nachgeholt, erzeugt im Linux-Klon auf `194aeda1`
+(Node 22 wie CI), `--check` danach grün. Auf Windows lässt sich das Skript
+nicht ausführen: `scripts/lib/dep-tree.mjs:23` ruft `execFileSync("npm")`
+ohne Shell auf und stirbt mit `ENOENT` — **dieselbe Klasse wie die vier
+Runner-Skripte unter OP-246, eine fünfte Stelle**, die in der Tabelle dort
+fehlt — OP-246 wurde aus dem Testlauf heraus gezählt, und die Lizenz-Skripte
+laufen in keinem Test. `check-dependency-hygiene.mjs:146` hat denselben
+Aufruf. Beides gehört zu OP-246 und bleibt dort offen.
+
+**Das Coverage-Tor war rot — und zwar seit `a3ff1b07`, also seit dem
+Minor-Batch aus OP-234, nicht seit OP-245.** Die Ratsche meldete
+`packages/auth lines: 65.00 % < Baseline 65.60 %` und `statements: 63.61 % <
+64.28 %` (Toleranz 0,5). Gemessen, bevor irgendetwas angefasst wurde:
+
+| Stand                                     | in `packages/auth` aufgelöst              | lines | statements | functions | branches |
+| ----------------------------------------- | ----------------------------------------- | ----: | ---------: | --------: | -------: |
+| `6faa7ada` (letzter grüner Coverage-Lauf) | geschachtelt: vitest + coverage-v8 4.1.10 | 65,28 |      64,00 |     68,38 |    52,62 |
+| `a3ff1b07` (erster roter Lauf)            | gehoben: 4.1.11 (die Schachtel ist weg)   | 65,00 |      63,61 |     68,38 |    52,62 |
+| `6e3991d4` (dieser Push)                  | 4.1.11                                    | 65,00 |      63,61 |     68,38 |    52,62 |
+
+(Lokal im Linux-Klon gemessen, deshalb 65,28 statt der 65,60 aus CI — die
+Differenz zwischen den Maschinen ist konstant, die zwischen den Ständen nicht.)
+`git diff 6faa7ada..a3ff1b07 -- packages/auth/src` ist **leer**. Funktionen
+und Zweige sind identisch; nur die Zeilen- und Anweisungszählung ist anders,
+und sie wechselt genau dort, wo das Werkzeug wechselt. Das ist keine
+verlorene Abdeckung, sondern ein anderes Lineal.
+
+**Entscheidung:** die Baseline von `packages/auth` auf die CI-gemessenen
+Werte des neuen Werkzeugs gesetzt (65,00 / 63,61), über den dafür
+vorgesehenen Weg — Eintrag in `_history` von `.coverage-ratchet.json` mit
+Datum, Deltas und Begründung, so wie `coverage-gate.mjs --update-baseline
+--reason` ihn schreibt; von Hand nur deshalb, weil `--update-baseline` die
+Baseline _aller_ zwölf Workspaces aus einer lokalen Messung neu setzen würde,
+und die lokale Messung auf Windows ist nicht die, gegen die CI misst. Die
+Gesamtwerte sind im selben CI-Lauf gestiegen (lines 34,32 → 35,78 %). Das
+Skript sagt zu Recht „der übliche Weg ist nicht die Absenkung, sondern der
+fehlende Test" — hier fehlt kein Test, hier hat sich das Zählen geändert;
+wer die 0,6 % trotzdem mit Tests zurückholen will, findet in
+`packages/auth/src` die Kandidaten unverändert vor.
+
+**CI auf `2d815a66`** (NOTICE, OP-250): neun von zehn Workflows grün, der
+CI-Workflow rot im Lint-Job — am Prettier-Schritt, an der eben erzeugten
+`THIRD-PARTY-LICENSES.md`. Das ist OP-252 oben: die Datei, die
+`notice:check` verlangt, war nicht die, die Prettier verlangt.
+
+**CI auf `277b564c`** (OP-252): neun von zehn Workflows grün, der CI-Workflow rot am Lint-Job — diesmal an `check-op-numbers.mjs`: `OP-252 — scripts/generate-notice.mjs` stand im Code, aber noch nicht im Register, weil dieser Nachtrag erst mit dem nächsten Commit kommt. Das Tor tut, was es soll. Prettier und die Ratschen waren in demselben Job grün, `THIRD-PARTY-LICENSES.md` eingeschlossen. Der Lauf auf dem Commit, der diesen Nachtrag trägt, ist der Beleg für die Kette dahinter; erwartet rot bleibt allein E2E Smoke (OP-251).
+
+**Offen aus diesem Nachtrag:** OP-251 (Cloud-Sitzung, `ci.yml`), und unter
+OP-246 die fünfte und sechste `execFileSync("npm")`-Stelle. Zu OP-245
+selbst: nichts.
+
 ### Nachtrag 2026-09-09 — OP-245 geschlossen: 416 Fundstellen des neueren Plugins abgetragen, der Pin ist weg
 
 Lokale Sitzung auf der Maschine des Eigentümers, Start bei `3351dcb2`
