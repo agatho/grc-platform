@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -100,43 +101,49 @@ const PHASE_STATUS_COLORS: Record<string, string> = {
 
 export function PlaybookTab({ incidentId }: { incidentId: string }) {
   const t = useTranslations("isms.playbook");
-  const [loading, setLoading] = useState(true);
-  const [statusData, setStatusData] = useState<PlaybookStatusData | null>(null);
-  const [suggestions, setSuggestions] = useState<PlaybookSuggestion[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [activating, setActivating] = useState(false);
   const [aborting, setAborting] = useState(false);
 
-  const fetchStatus = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). Status and suggestions are two independent
+  // queries, as they were two independent requests. A non-ok response leaves
+  // the respective part at its previous default.
+  const {
+    data: statusData = null,
+    isPending: loading,
+    refetch: refetchStatus,
+  } = useQuery<PlaybookStatusData | null>({
+    queryKey: ["isms", "incidents", incidentId, "playbook"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/isms/incidents/${incidentId}/playbook`);
-      if (res.ok) {
-        const json = await res.json();
-        setStatusData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [incidentId]);
-
-  const fetchSuggestions = useCallback(async () => {
-    const res = await fetch(
-      `/api/v1/isms/incidents/${incidentId}/playbook-suggestions`,
-    );
-    if (res.ok) {
+      if (!res.ok) return null;
       const json = await res.json();
-      setSuggestions(json.data?.suggestions ?? []);
-      if (json.data?.suggestions?.length > 0) {
-        setSelectedTemplateId(json.data.suggestions[0].id);
-      }
-    }
-  }, [incidentId]);
+      return (json.data ?? null) as PlaybookStatusData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchStatus();
-    void fetchSuggestions();
-  }, [fetchStatus, fetchSuggestions]);
+  const { data: suggestions = [] } = useQuery<PlaybookSuggestion[]>({
+    queryKey: ["isms", "incidents", incidentId, "playbook-suggestions"],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/isms/incidents/${incidentId}/playbook-suggestions`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data?.suggestions ?? []) as PlaybookSuggestion[];
+    },
+  });
+
+  // The first suggestion used to be written into state once the suggestions
+  // arrived. The user's own choice still wins; until there is one, the
+  // default is derived during render instead of set from an effect.
+  const [chosenTemplateId, setSelectedTemplateId] = useState<string>("");
+  const selectedTemplateId = chosenTemplateId || (suggestions[0]?.id ?? "");
+
+  const fetchStatus = useCallback(async () => {
+    await refetchStatus();
+  }, [refetchStatus]);
 
   const handleActivate = async () => {
     if (!selectedTemplateId) return;
