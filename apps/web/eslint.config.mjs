@@ -285,9 +285,42 @@ export default tseslint.config(
       // Lint-Regel entscheidet. Anders als bei den sechs eingeschalteten
       // Regeln steht hier also nicht „noch nicht getan", sondern „von hier
       // aus nicht behebbar".
-      "react-hooks/incompatible-library": "off", // 2× useReactTable
+      // [Welle 8e · OP-080] Bis hierher stand die Regel global auf `off`.
+      // Das ist eine Aussage ueber ZWEI Dateien, aber sie galt fuer 2.298 —
+      // eine dritte `useReactTable`-Stelle waere stillschweigend
+      // dazugekommen, und die Begruendung „von hier aus nicht behebbar"
+      // haette sie mitgedeckt, ohne dass jemand sie je gelesen haette. Genau
+      // diese Form — eine wahre Begruendung, die mehr abdeckt als das, was
+      // sie begruendet — ist in diesem Audit mehrfach die Ursache gewesen.
+      //
+      // Sie steht deshalb jetzt AUF ERROR, und `off` gilt nur noch fuer die
+      // zwei benannten Dateien (Block unten). Kommt eine dritte hinzu, faellt
+      // der Lint-Lauf und die Entscheidung wird bewusst getroffen statt
+      // geerbt. Entscheidung und Alternativen:
+      // docs/ADR-028-tanstack-table-und-react-compiler.md.
+      "react-hooks/incompatible-library": "error",
       // `react-hooks/rules-of-hooks` — die Regel, die einen echten Fehler in
       // der Hook-Reihenfolge findet — ist oben ERROR.
+    },
+  },
+  {
+    // [Welle 8e · OP-080] Die zwei — und nur die zwei — Dateien, die
+    // `useReactTable` aufrufen. Gemessen am 2026-09-09 gegen genau diese
+    // Konfiguration: zwei Fundstellen, beide mit demselben Meldungstext
+    // („Compilation Skipped: Use of incompatible library"), beide eine
+    // Mitteilung ueber @tanstack/react-table und keine ueber diesen Code.
+    //
+    // Die Ausnahme ist NAMENTLICH, nicht global: eine dritte Aufrufstelle
+    // faellt auf. Sie ist auch nicht `eslint-disable` an der Zeile, weil die
+    // Begruendung nicht an der Zeile haengt, sondern an der Abhaengigkeit —
+    // sie gehoert in die Konfiguration und in den ADR, wo sie beim naechsten
+    // Bibliothekswechsel wiedergefunden wird.
+    files: [
+      "src/app/(dashboard)/audit-log/page.tsx",
+      "src/components/ui/data-table.tsx",
+    ],
+    rules: {
+      "react-hooks/incompatible-library": "off",
     },
   },
   {

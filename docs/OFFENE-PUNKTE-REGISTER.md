@@ -612,6 +612,26 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8e: OP-080 geschlossen, und wieder eine Begründung, die zu weit reichte
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-8E.md`, Entscheidung in
+`docs/ADR-028-tanstack-table-und-react-compiler.md`.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                                                                             | Art          | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------ | ------- |
+| OP-080 | **Die letzte der acht Compiler-Regeln stand global auf `off`.** Ihre Begründung war wahr — `@tanstack/react-table` gibt Funktionen zurück, die der React Compiler nicht memoisieren kann, und die Meldung ist ausdrücklich eine Mitteilung („Compilation Skipped"), kein Defekt. Nur galt sie für **2.298 Dateien**, obwohl sie über **zwei** etwas aussagte: eine dritte `useReactTable`-Stelle wäre stillschweigend dazugekommen, gedeckt von einer Begründung, die sie nie gemeint hat. Die Regel steht jetzt auf `error`, `off` gilt namentlich für die zwei bekannten Dateien. | Dritte Aufrufstelle eingesetzt: `✖ 1 problem (1 error)`, Exit 1; entfernt: Exit 0 | Codequalität | behoben |
+
+**Das ist die vierte Fundstelle derselben Form** in dieser Remediation: eine
+wahre Begründung, die mehr abdeckt als das, was sie begründet. Vorher waren
+es die `no-console`-Ausnahmeliste (erlaubte genau die vier Level, auf denen
+man Fehlerobjekte ausgibt — 23 gezählt, 88 vorhanden), `allowThrow: true` mit
+fachlich korrekter Beschreibung daneben, und „Playwright braucht den
+Production-Build", das vier Punkte blockierte und nie zutraf.
+
+**Alle acht Regeln aus `eslint-plugin-react-hooks@7` sind damit wirksam** —
+sieben ohne Ausnahme, eine mit einer bezifferten und begründeten. Von den
+notierten 59 Fundstellen waren 76 vorhanden; ungedeckelt ist keine mehr.
+
 ### Nachtrag 2026-09-09 — Welle 8d: die Zahl unter der Achse, und ein Datum, das der Empfänger falsch lesen musste
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-8D.md`.
