@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,29 +22,33 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 export default function RcsaCampaignsPage() {
   const t = useTranslations("rcsa");
   const router = useRouter();
-  const [campaigns, setCampaigns] = useState<RcsaCampaignWithStats[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("");
 
-  const fetchCampaigns = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Statusfilter ist Teil des
+  // Schlüssels. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: campaigns = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<RcsaCampaignWithStats[]>({
+    queryKey: ["rcsa", "campaigns", "overview", statusFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
       params.set("limit", "50");
       const res = await fetch(`/api/v1/rcsa/campaigns?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setCampaigns(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as RcsaCampaignWithStats[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchCampaigns();
-  }, [fetchCampaigns]);
+  const fetchCampaigns = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const statusColors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
@@ -66,9 +71,12 @@ export default function RcsaCampaignsPage() {
             variant="outline"
             size="sm"
             onClick={fetchCampaigns}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/rcsa/campaigns/new")}>
             <Plus size={14} className="mr-1" />

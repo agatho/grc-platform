@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -14,6 +15,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useNow } from "@/hooks/use-now";
 
 interface AssignmentWithEntity {
   id: string;
@@ -31,8 +33,9 @@ interface AssignmentWithEntity {
 
 export default function MyAssessmentsPage() {
   const t = useTranslations("rcsa");
-  const [assignments, setAssignments] = useState<AssignmentWithEntity[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · purity] `Date.now()` stand in `daysUntilDeadline` (Render-
+  // Helfer); die Uhr kommt jetzt aus `useNow` (einmal je Minute erneuert).
+  const now = useNow();
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,22 +44,32 @@ export default function MyAssessmentsPage() {
     {},
   );
 
-  const fetchAssignments = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage und wird unten im bestehenden Fehlerkasten gezeigt (vorher kam er
+  // nur nach einem Absenden dorthin, beim Einhaengen wurde er verschluckt).
+  const {
+    data: assignments = [],
+    isPending: loading,
+    isFetching,
+    error: loadError,
+    refetch,
+  } = useQuery<AssignmentWithEntity[]>({
+    queryKey: ["rcsa", "my-assignments"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/rcsa/my-assignments?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setAssignments(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AssignmentWithEntity[];
+    },
+  });
+  const displayedError = error ?? loadError?.message ?? null;
 
-  useEffect(() => {
-    void fetchAssignments();
-  }, [fetchAssignments]);
+  const fetchAssignments = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const getForm = (assignmentId: string) => forms[assignmentId] ?? {};
 
@@ -112,7 +125,7 @@ export default function MyAssessmentsPage() {
   }
 
   const daysUntilDeadline = (deadline: string) => {
-    const diff = new Date(deadline).getTime() - Date.now();
+    const diff = new Date(deadline).getTime() - now;
     return Math.ceil(diff / (1000 * 60 * 60 * 24));
   };
 
@@ -133,9 +146,9 @@ export default function MyAssessmentsPage() {
           variant="outline"
           size="sm"
           onClick={fetchAssignments}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
@@ -149,9 +162,9 @@ export default function MyAssessmentsPage() {
         />
       </div>
 
-      {error && (
+      {displayedError && (
         <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-          {error}
+          {displayedError}
         </div>
       )}
 
