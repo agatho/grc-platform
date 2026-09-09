@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,8 +79,6 @@ function QmsPageInner() {
   const t = useTranslations("aiAct");
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<ProviderQms[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, boolean | string | number>>({
     ai_system_id: "",
@@ -97,18 +96,25 @@ function QmsPageInner() {
     next_audit_date: "",
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ProviderQms[]>({
+    queryKey: ["ai-act", "qms"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/qms?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as ProviderQms[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = { ...form, next_audit_date: form.next_audit_date || null };

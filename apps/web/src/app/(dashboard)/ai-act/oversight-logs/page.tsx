@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,20 +11,20 @@ import { useDateFormat } from "@/lib/format-date";
 export default function AiOversightLogsPage() {
   const t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<AiHumanOversightLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: rows = [], isPending: loading } = useQuery<
+    AiHumanOversightLog[]
+  >({
+    queryKey: ["ai-act", "oversight-logs"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/oversight-logs?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as AiHumanOversightLog[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

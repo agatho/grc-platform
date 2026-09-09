@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -118,19 +119,23 @@ export default function IncidentsMonitorPage() {
   const t = useTranslations("aiAct");
   const tCommon = useTranslations("common");
   const { formatDateTime } = useDateFormat();
-  const [rows, setRows] = useState<IncidentWithOverdue[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Die Sortierung nach
+  // Eskalationsstufe wandert mit in die Abfragefunktion.
+  const {
+    data: rows = [],
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<IncidentWithOverdue[]>({
+    queryKey: ["ai-act", "incidents-monitor"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/incidents-monitor");
       if (!res.ok)
         throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = (await res.json()) as { data: MonitorResponse };
-      const sorted = [...json.data.incidents].sort((a, b) => {
+      return [...json.data.incidents].sort((a, b) => {
         const aOrder = ESCALATION_META[a.overdue.escalationLevel].order;
         const bOrder = ESCALATION_META[b.overdue.escalationLevel].order;
         if (aOrder !== bOrder) return aOrder - bOrder;
@@ -138,17 +143,17 @@ export default function IncidentsMonitorPage() {
           new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime()
         );
       });
-      setRows(sorted);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tCommon("common.error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [tCommon]);
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : tCommon("common.error")
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const bucket = {
     critical: rows.filter(

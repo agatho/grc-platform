@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,8 +71,6 @@ function PenaltiesPageInner() {
   const t = useTranslations("aiAct");
   const tCommon = useTranslations("common");
   const { formatCurrency } = useDateFormat();
-  const [rows, setRows] = useState<AiPenalty[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     authority: "",
@@ -82,18 +81,25 @@ function PenaltiesPageInner() {
     description: "",
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<AiPenalty[]>({
+    queryKey: ["ai-act", "penalties"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/penalties?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as AiPenalty[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = {

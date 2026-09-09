@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 import { Plus } from "lucide-react";
@@ -18,20 +18,18 @@ const IMPACT_COLORS: Record<string, string> = {
 export default function AiFriasPage() {
   const t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<AiFria[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: rows = [], isPending: loading } = useQuery<AiFria[]>({
+    queryKey: ["ai-act", "frias"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/frias?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as AiFria[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

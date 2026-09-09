@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, ShieldX, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -55,8 +56,6 @@ const PROHIBITED_KEYS = [
 function ProhibitedPageInner() {
   const t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<ProhibitedScreening[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     ai_system_id: "",
@@ -70,18 +69,25 @@ function ProhibitedPageInner() {
     biometric_categorization: false,
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ProhibitedScreening[]>({
+    queryKey: ["ai-act", "prohibited"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/prohibited?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as ProhibitedScreening[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const isAnyProhibited =
     form.social_scoring ||

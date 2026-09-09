@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -98,11 +99,9 @@ export default function FriaDetailPage() {
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
-  const [fria, setFria] = useState<FriaDetail | null>(null);
   const [quality, setQuality] = useState<QualityResult | null>(null);
-  const [loading, setLoading] = useState(true);
   const [runningQuality, setRunningQuality] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [qualityError, setQualityError] = useState<string | null>(null);
 
   const [quality_flags, setQualityFlags] = useState({
     hasDiscriminationAnalysis: false,
@@ -113,16 +112,24 @@ export default function FriaDetailPage() {
     hasMitigationMeasuresDocumented: false,
   });
 
-  const fetchFria = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerzustand war vorher
+  // eine Variable für Abruf UND Qualitätsprüfung; jetzt hat die Prüfung ihre
+  // eigene, der Abruffehler kommt aus der Abfrage und geht vor.
+  const {
+    data: fria = null,
+    isPending: loading,
+    error: fetchError,
+  } = useQuery<FriaDetail | null>({
+    queryKey: ["ai-act", "frias", id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/frias/${id}`);
       if (!res.ok)
         throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = await res.json();
       const data = json.data ?? json;
-      setFria({
+      return {
         id: data.id,
         assessmentCode: data.assessmentCode,
         aiSystemId: data.aiSystemId,
@@ -133,13 +140,14 @@ export default function FriaDetailPage() {
           : [],
         mitigationMeasures: data.mitigationMeasures ?? null,
         nextReviewDate: data.nextReviewDate ?? null,
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : tCommon("common.error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [id, tCommon]);
+      } as FriaDetail;
+    },
+  });
+  const error = fetchError
+    ? fetchError instanceof Error
+      ? fetchError.message
+      : tCommon("common.error")
+    : qualityError;
 
   const runQualityCheck = useCallback(async () => {
     setRunningQuality(true);
@@ -153,15 +161,11 @@ export default function FriaDetailPage() {
       const json = await res.json();
       setQuality(json.data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : tCommon("common.error"));
+      setQualityError(e instanceof Error ? e.message : tCommon("common.error"));
     } finally {
       setRunningQuality(false);
     }
   }, [id, quality_flags, tCommon]);
-
-  useEffect(() => {
-    void fetchFria();
-  }, [fetchFria]);
 
   const boolRow = (
     key: string,

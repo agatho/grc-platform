@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,52 +62,27 @@ const RISK_COLORS: Record<string, string> = {
   minimal: "bg-green-100 text-green-900",
 };
 
+const aiSystemKey = (id: string) => ["ai-act", "systems", id] as const;
+
 function SystemDetailInner() {
   const _router = useRouter();
   const t = useTranslations("aiAct");
-  const tCommon = useTranslations("common");
-  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<AiSystemDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<AiSystemDetail>>({});
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`): das Formular wird aus dem
+  // Serverstand gesät, deshalb lebt es in einer eigenen Komponente, die erst
+  // eingehängt wird, wenn die Daten da sind. Eine nicht-ok-Antwort liefert
+  // wie vorher „nicht gefunden".
+  const { data = null, isPending: loading } = useQuery<AiSystemDetail | null>({
+    queryKey: aiSystemKey(id),
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/systems/${id}`);
-      if (res.ok) {
-        const row = (await res.json()).data;
-        setData(row);
-        setForm(row);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/v1/ai-act/systems/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        setData(updated);
-        setForm(updated);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!res.ok) return null;
+      return (await res.json()).data as AiSystemDetail;
+    },
+  });
 
   if (loading) {
     return (
@@ -123,6 +99,45 @@ function SystemDetailInner() {
       </div>
     );
   }
+
+  return <SystemDetailForm id={id} initial={data} />;
+}
+
+function SystemDetailForm({
+  id,
+  initial,
+}: {
+  id: string;
+  initial: AiSystemDetail;
+}) {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
+  const [data, setData] = useState<AiSystemDetail>(initial);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Partial<AiSystemDetail>>(initial);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/ai-act/systems/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = (await res.json()).data as AiSystemDetail;
+        setData(updated);
+        setForm(updated);
+        // Den Abfrage-Cache mitziehen, damit ein erneutes Einhängen nicht den
+        // alten Stand als Saat nimmt.
+        queryClient.setQueryData(aiSystemKey(id), updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const set = (key: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));

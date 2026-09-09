@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -64,8 +65,6 @@ function CorrectiveActionsInner() {
   const t = useTranslations("aiAct");
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<CorrectiveAction[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -78,18 +77,25 @@ function CorrectiveActionsInner() {
     is_withdrawal: false,
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<CorrectiveAction[]>({
+    queryKey: ["ai-act", "corrective-actions"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/corrective-actions?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as CorrectiveAction[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = {

@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,52 +97,27 @@ function serializeCodeOfPracticeNotes(data: CodeOfPracticeData): string {
   return JSON.stringify(data);
 }
 
+const gpaiKey = (id: string) => ["ai-act", "gpai", id] as const;
+
 function GpaiDetailInner() {
   const _router = useRouter();
   const t = useTranslations("aiAct");
-  const tCommon = useTranslations("common");
-  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<GpaiModel | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<GpaiModel>>({});
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`): das Formular wird aus dem
+  // Serverstand gesät, deshalb lebt es in einer eigenen Komponente, die erst
+  // eingehängt wird, wenn die Daten da sind. Eine nicht-ok-Antwort liefert
+  // wie vorher „nicht gefunden".
+  const { data = null, isPending: loading } = useQuery<GpaiModel | null>({
+    queryKey: gpaiKey(id),
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/gpai/${id}`);
-      if (res.ok) {
-        const row = (await res.json()).data;
-        setData(row);
-        setForm(row);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/v1/ai-act/gpai/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        setData(updated);
-        setForm(updated);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!res.ok) return null;
+      return (await res.json()).data as GpaiModel;
+    },
+  });
 
   if (loading) {
     return (
@@ -158,6 +134,39 @@ function GpaiDetailInner() {
       </div>
     );
   }
+
+  return <GpaiForm id={id} initial={data} />;
+}
+
+function GpaiForm({ id, initial }: { id: string; initial: GpaiModel }) {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
+  const [data, setData] = useState<GpaiModel>(initial);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Partial<GpaiModel>>(initial);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/ai-act/gpai/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = (await res.json()).data as GpaiModel;
+        setData(updated);
+        setForm(updated);
+        // Den Abfrage-Cache mitziehen, damit ein erneutes Einhängen nicht den
+        // alten Stand als Saat nimmt.
+        queryClient.setQueryData(gpaiKey(id), updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const set = (key: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));

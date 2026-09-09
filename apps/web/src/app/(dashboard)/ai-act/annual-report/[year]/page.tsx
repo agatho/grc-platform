@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -151,29 +152,34 @@ export default function AiActAnnualReportPage() {
   const router = useRouter();
   const { year: yearParam } = useParams<{ year: string }>();
   const year = parseInt(yearParam, 10) || new Date().getUTCFullYear();
-  const [data, setData] = useState<AnnualReportResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Das Jahr steht im Schlüssel,
+  // damit der Jahreswechsel über das Auswahlfeld einen neuen Abruf auslöst.
+  const {
+    data = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<AnnualReportResponse | null>({
+    queryKey: ["ai-act", "annual-report", year],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/annual-report/${year}`);
       if (!res.ok)
         throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = await res.json();
-      setData(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t("annualReport.loadFailed"));
-    } finally {
-      setLoading(false);
-    }
-  }, [year, t, tCommon]);
+      return (json.data ?? null) as AnnualReportResponse | null;
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : t("annualReport.loadFailed")
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (

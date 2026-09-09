@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,52 +85,27 @@ function getDeadlineInfo(deadline: string | null) {
   return { overdue, diffH: Math.abs(diffH), diffD: Math.abs(diffD), date: dl };
 }
 
+const incidentKey = (id: string) => ["ai-act", "incidents", id] as const;
+
 function IncidentDetailInner() {
   const _router = useRouter();
   const t = useTranslations("aiAct");
-  const tCommon = useTranslations("common");
-  const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<AiIncident | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<AiIncident>>({});
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`): das Formular wird aus dem
+  // Serverstand gesät, deshalb lebt es in einer eigenen Komponente, die erst
+  // eingehängt wird, wenn die Daten da sind. Eine nicht-ok-Antwort liefert
+  // wie vorher „nicht gefunden".
+  const { data = null, isPending: loading } = useQuery<AiIncident | null>({
+    queryKey: incidentKey(id),
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/incidents/${id}`);
-      if (res.ok) {
-        const row = (await res.json()).data;
-        setData(row);
-        setForm(row);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/v1/ai-act/incidents/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        setData(updated);
-        setForm(updated);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!res.ok) return null;
+      return (await res.json()).data as AiIncident;
+    },
+  });
 
   if (loading) {
     return (
@@ -146,6 +122,39 @@ function IncidentDetailInner() {
       </div>
     );
   }
+
+  return <IncidentForm id={id} initial={data} />;
+}
+
+function IncidentForm({ id, initial }: { id: string; initial: AiIncident }) {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate, formatDateTime } = useDateFormat();
+  const queryClient = useQueryClient();
+  const [data, setData] = useState<AiIncident>(initial);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Partial<AiIncident>>(initial);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/ai-act/incidents/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = (await res.json()).data as AiIncident;
+        setData(updated);
+        setForm(updated);
+        // Den Abfrage-Cache mitziehen, damit ein erneutes Einhängen nicht den
+        // alten Stand als Saat nimmt.
+        queryClient.setQueryData(incidentKey(id), updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const set = (key: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));
