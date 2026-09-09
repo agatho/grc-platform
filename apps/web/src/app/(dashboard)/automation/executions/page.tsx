@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import {
@@ -81,9 +82,6 @@ export default function ExecutionLogPage() {
   const { formatDateTime } = useDateFormat();
   const searchParams = useSearchParams();
 
-  const [executions, setExecutions] = useState<Execution[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -93,9 +91,21 @@ export default function ExecutionLogPage() {
   );
   const [ruleIdFilter] = useState(searchParams.get("ruleId") ?? "");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); Seite und Filter stehen im
+  // Schlüssel. `keepPreviousData` hält beim Blättern die bisherige Liste
+  // stehen, wie es der alte Zustand tat (er wurde erst nach der Antwort
+  // ersetzt).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ executions: Execution[]; total: number }>({
+    queryKey: ["automation", "executions", page, statusFilter, ruleIdFilter],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (statusFilter) params.set("status", statusFilter);
       if (ruleIdFilter) params.set("ruleId", ruleIdFilter);
@@ -103,19 +113,20 @@ export default function ExecutionLogPage() {
       const res = await fetch(
         `/api/v1/automation/executions?${params.toString()}`,
       );
-      if (res.ok) {
-        const json = await res.json();
-        setExecutions(json.data ?? []);
-        setTotal(json.pagination?.total ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, ruleIdFilter]);
+      if (!res.ok) return { executions: [], total: 0 };
+      const json = await res.json();
+      return {
+        executions: (json.data ?? []) as Execution[],
+        total: (json.pagination?.total ?? 0) as number,
+      };
+    },
+  });
+  const executions = data?.executions ?? [];
+  const total = data?.total ?? 0;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const totalPages = Math.ceil(total / 20);
 
@@ -142,9 +153,9 @@ export default function ExecutionLogPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

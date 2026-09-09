@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -49,38 +50,52 @@ interface RuleRow {
   createdAt: string;
 }
 
+interface AutomationOverview {
+  stats: DashboardStats | null;
+  rules: RuleRow[];
+}
+
+const OVERVIEW_QUERY_KEY = ["automation", "overview"] as const;
+
 export default function AutomationOverviewPage() {
   const t = useTranslations("automation");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [rules, setRules] = useState<RuleRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Kennzahlen und Regeln wurden
+  // immer gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt;
+  // das lokale Umschalten einer Regel läuft unten über `setQueryData`.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AutomationOverview>({
+    queryKey: OVERVIEW_QUERY_KEY,
+    queryFn: async () => {
       const [dashRes, rulesRes] = await Promise.all([
         fetch("/api/v1/automation/dashboard"),
         fetch("/api/v1/automation/rules?limit=50"),
       ]);
-      if (dashRes.ok) {
-        const json = await dashRes.json();
-        setStats(json.data);
-      }
-      if (rulesRes.ok) {
-        const json = await rulesRes.json();
-        setRules(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const stats: DashboardStats | null = dashRes.ok
+        ? ((await dashRes.json()).data ?? null)
+        : null;
+      const rules: RuleRow[] = rulesRes.ok
+        ? ((await rulesRes.json()).data ?? [])
+        : [];
+      return { stats, rules };
+    },
+  });
+  const stats = data?.stats ?? null;
+  const rules = data?.rules ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const toggleActive = async (ruleId: string, currentActive: boolean) => {
     setTogglingId(ruleId);
@@ -91,10 +106,17 @@ export default function AutomationOverviewPage() {
         body: JSON.stringify({ isActive: !currentActive }),
       });
       if (res.ok) {
-        setRules((prev) =>
-          prev.map((r) =>
-            r.id === ruleId ? { ...r, isActive: !currentActive } : r,
-          ),
+        queryClient.setQueryData<AutomationOverview>(
+          OVERVIEW_QUERY_KEY,
+          (prev) =>
+            prev
+              ? {
+                  ...prev,
+                  rules: prev.rules.map((r) =>
+                    r.id === ruleId ? { ...r, isActive: !currentActive } : r,
+                  ),
+                }
+              : prev,
         );
       }
     } finally {
@@ -130,9 +152,12 @@ export default function AutomationOverviewPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Link href="/automation/templates">
             <Button variant="outline" size="sm">
