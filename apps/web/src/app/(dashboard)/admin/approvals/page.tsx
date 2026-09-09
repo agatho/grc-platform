@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, GitBranch, Plus, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 
@@ -54,26 +55,29 @@ export default function ApprovalWorkflowsPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage und zeigt ueber den Vorgabewert dieselbe Leeransicht.
+  const {
+    data: workflows = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ApprovalWorkflow[]>({
+    queryKey: ["approvals", "workflows"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/approvals");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ApprovalWorkflow[];
+    },
+  });
 
   const fetchWorkflows = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/approvals");
-      if (!res.ok) throw new Error("Failed to load");
-      const json = await res.json();
-      setWorkflows(json.data ?? []);
-    } catch {
-      setWorkflows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchWorkflows();
-  }, [fetchWorkflows]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -93,10 +97,10 @@ export default function ApprovalWorkflowsPage() {
             variant="outline"
             size="sm"
             onClick={fetchWorkflows}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             {tCommon("actions.refresh")}
           </Button>

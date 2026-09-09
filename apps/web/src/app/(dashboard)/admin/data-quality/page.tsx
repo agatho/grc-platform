@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -80,29 +81,35 @@ export default function DataQualityPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDate, formatNumber } = useDateFormat();
-  const [stats, setStats] = useState<DataQualityStats | null>(null);
-  const [rules, setRules] = useState<DataQualityRule[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher leere Liste und keine Kennzahlen; ein Netzfehler wird nicht
+  // mehr verschluckt, sondern landet im Fehlerzustand der Abfrage (die Seite
+  // zeigt dann ueber die Vorgabewerte dieselbe Leeransicht).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ rules: DataQualityRule[]; stats: DataQualityStats | null }>({
+    queryKey: ["data-quality", "rules"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/data-quality/rules");
+      if (!res.ok) return { rules: [], stats: null };
+      const json = await res.json();
+      return {
+        rules: (json.data ?? []) as DataQualityRule[],
+        stats: (json.stats ?? null) as DataQualityStats | null,
+      };
+    },
+  });
+  const rules = data?.rules ?? [];
+  const stats = data?.stats ?? null;
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/data-quality/rules");
-      if (res.ok) {
-        const json = await res.json();
-        setRules(json.data ?? []);
-        setStats(json.stats ?? null);
-      }
-    } catch {
-      // silently handle
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -129,10 +136,10 @@ export default function DataQualityPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             {tCommon("actions.refresh")}
           </Button>

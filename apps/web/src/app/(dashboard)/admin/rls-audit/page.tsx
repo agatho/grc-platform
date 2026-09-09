@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 import {
@@ -78,34 +79,45 @@ export default function RlsAuditPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDateTime } = useDateFormat();
-  const [report, setReport] = useState<AuditReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterMode>("gaps");
 
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [Welle 7a · OP-080] `fetchReport` stand in `useCallback` und in den
+  // Abhaengigkeiten des Effekts. Die leere Liste war eine Behauptung ueber
+  // eine Funktion, die bei jedem Rendern neu entsteht.
+  //
+  // [OP-245 · Gestalt A] Der Effekt ist jetzt ganz weg: Abruf beim Einhängen
+  // über `@tanstack/react-query` statt Effekt plus gespiegeltem Lade-,
+  // Daten- und Fehlerzustand (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`). Ein anderer Status als 200/503 wirft wie
+  // vorher mit uebersetzter Meldung; die Meldung kommt aus dem Fehlerzustand
+  // der Abfrage. Der Ladekreis sitzt nur im Knopf „erneut pruefen" und folgt
+  // daher `isFetching`.
+  const {
+    data: report = null,
+    isFetching: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<AuditReport>({
+    queryKey: ["admin", "rls-audit"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/admin/rls-audit");
       if (res.status !== 200 && res.status !== 503) {
         throw new Error(tCommon("common.httpError", { status: res.status }));
       }
       const json = (await res.json()) as { data: AuditReport };
-      setReport(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, [tCommon]);
+      return json.data;
+    },
+  });
+  const error =
+    queryError === null
+      ? null
+      : queryError instanceof Error
+        ? queryError.message
+        : String(queryError);
 
-  // [Welle 7a · OP-080] `fetchReport` steht jetzt in `useCallback` und in den
-  // Abhaengigkeiten des Effekts. Die leere Liste war eine Behauptung ueber
-  // eine Funktion, die bei jedem Rendern neu entsteht.
-  useEffect(() => {
-    void fetchReport();
-  }, [fetchReport]);
+  const fetchReport = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     if (!report) return [];

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -73,24 +74,29 @@ interface Role {
 
 export default function RolesAdminPage() {
   const t = useTranslations("admin");
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const fetchRoles = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: roles = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<Role[]>({
+    queryKey: ["admin", "roles"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/admin/roles");
-      if (res.ok) setRoles((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      return ((await res.json()).data ?? []) as Role[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchRoles();
-  }, [fetchRoles]);
+  const fetchRoles = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const systemRoles = roles.filter((r) => r.isSystem);
   const customRoles = roles.filter((r) => !r.isSystem);

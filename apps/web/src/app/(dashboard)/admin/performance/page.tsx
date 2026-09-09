@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Card,
@@ -36,39 +37,52 @@ import type { CacheStatsResponse, SlowQueriesResponse } from "@grc/shared";
 
 export default function PerformanceDashboardPage() {
   const t = useTranslations("performance");
-  const [cacheStats, setCacheStats] = useState<CacheStatsResponse | null>(null);
-  const [slowQueries, setSlowQueries] = useState<SlowQueriesResponse | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
 
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Kennzahlen wurden immer
+  // zusammen geholt — daher EINE Abfrage. Eine nicht-ok-Antwort laesst den
+  // jeweiligen Teil wie vorher leer; ein Netzfehler wird wie vorher nur
+  // protokolliert.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    cacheStats: CacheStatsResponse | null;
+    slowQueries: SlowQueriesResponse | null;
+  }>({
+    queryKey: ["admin", "performance"],
+    queryFn: async () => {
+      let cacheStats: CacheStatsResponse | null = null;
+      let slowQueries: SlowQueriesResponse | null = null;
+      try {
+        const [cacheRes, queryRes] = await Promise.all([
+          fetch("/api/v1/admin/performance/cache-stats"),
+          fetch("/api/v1/admin/performance/slow-queries"),
+        ]);
+
+        if (cacheRes.ok) {
+          const json = await cacheRes.json();
+          cacheStats = json.data as CacheStatsResponse;
+        }
+        if (queryRes.ok) {
+          const json = await queryRes.json();
+          slowQueries = json.data as SlowQueriesResponse;
+        }
+      } catch (err) {
+        console.error("Failed to load performance data:", err);
+      }
+      return { cacheStats, slowQueries };
+    },
+  });
+  const cacheStats = data?.cacheStats ?? null;
+  const slowQueries = data?.slowQueries ?? null;
+
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [cacheRes, queryRes] = await Promise.all([
-        fetch("/api/v1/admin/performance/cache-stats"),
-        fetch("/api/v1/admin/performance/slow-queries"),
-      ]);
-
-      if (cacheRes.ok) {
-        const data = await cacheRes.json();
-        setCacheStats(data.data);
-      }
-      if (queryRes.ok) {
-        const data = await queryRes.json();
-        setSlowQueries(data.data);
-      }
-    } catch (err) {
-      console.error("Failed to load performance data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const handleClearCache = useCallback(async () => {
     setClearing(true);

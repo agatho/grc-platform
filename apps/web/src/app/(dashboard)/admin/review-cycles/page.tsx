@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -67,29 +68,29 @@ export default function ReviewCyclesPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [cycles, setCycles] = useState<ReviewCycle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: cycles = [],
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<ReviewCycle[]>({
+    queryKey: ["review-cycles", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/review-cycles");
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
-      setCycles(json.data ?? []);
-    } catch {
-      setError(true);
-      setCycles([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as ReviewCycle[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -116,9 +117,12 @@ export default function ReviewCyclesPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
             <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">

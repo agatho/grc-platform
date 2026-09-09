@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, ClipboardCheck, RefreshCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -79,27 +80,31 @@ export default function ApprovalRequestsPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [requests, setRequests] = useState<ApprovalRequest[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
 
-  const fetchRequests = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Statusfilter wird wie vorher
+  // clientseitig angewendet und gehoert daher nicht in den Schluessel. Eine
+  // nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: requests = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ApprovalRequest[]>({
+    queryKey: ["approvals", "requests"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/approvals/requests");
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) return [];
       const json = await res.json();
-      setRequests(json.data ?? []);
-    } catch {
-      setRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as ApprovalRequest[];
+    },
+  });
 
-  useEffect(() => {
-    fetchRequests();
-  }, [fetchRequests]);
+  const fetchRequests = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filteredRequests = requests.filter((r) => {
     if (statusFilter !== "__all__" && r.status !== statusFilter) return false;
@@ -139,10 +144,10 @@ export default function ApprovalRequestsPage() {
             variant="outline"
             size="sm"
             onClick={fetchRequests}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             {tCommon("actions.refresh")}
           </Button>

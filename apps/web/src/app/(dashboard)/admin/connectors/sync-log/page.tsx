@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   RefreshCw,
@@ -126,18 +127,24 @@ export default function SyncLogPage() {
       minute: "2-digit",
       second: "2-digit",
     });
-  const [logs, setLogs] = useState<SyncLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   // Filters
   const [filterConnector, setFilterConnector] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Beide Filter gehen in die
+  // Anfrage und stehen deshalb im Schluessel. Der Antwortkoerper wird wie
+  // vorher ohne `ok`-Pruefung gelesen; ein Netzfehler landet wie vorher als
+  // Fehlertext auf der Seite.
+  const {
+    data: logs = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery<SyncLogEntry[]>({
+    queryKey: ["connectors", "sync-log", filterConnector, filterStatus],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filterConnector !== "all")
         params.set("connectorInstanceId", filterConnector);
@@ -145,17 +152,14 @@ export default function SyncLogPage() {
       const url = `/api/v1/connectors/sync-log${params.toString() ? `?${params.toString()}` : ""}`;
       const res = await fetch(url);
       const json = await res.json().catch(() => ({ data: [] }));
-      setLogs(json.data ?? []);
-    } catch {
-      setError(t("syncLog.loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [filterConnector, filterStatus, t]);
+      return (json.data ?? []) as SyncLogEntry[];
+    },
+  });
+  const error = isError ? t("syncLog.loadError") : "";
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  const fetchLogs = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Unique connector names for filter dropdown
   const connectorOptions = Array.from(

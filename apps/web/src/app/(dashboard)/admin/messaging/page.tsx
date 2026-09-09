@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -74,29 +75,29 @@ export default function MessagingIntegrationsPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDateTime: formatDate } = useDateFormat();
-  const [integrations, setIntegrations] = useState<MessagingIntegration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: integrations = [],
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<MessagingIntegration[]>({
+    queryKey: ["messaging", "integrations"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/messaging/integrations");
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
-      setIntegrations(json.data ?? []);
-    } catch {
-      setError(true);
-      setIntegrations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as MessagingIntegration[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -123,9 +124,12 @@ export default function MessagingIntegrationsPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
             <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">

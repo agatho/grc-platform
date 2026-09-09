@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -72,8 +73,6 @@ const EVENT_TYPES = [
 export default function WebhooksAdminPage() {
   const t = useTranslations("platform");
   const router = useRouter();
-  const [webhooks, setWebhooks] = useState<WebhookRegistrationData[]>([]);
-  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -91,22 +90,27 @@ export default function WebhooksAdminPage() {
   const [formEventTypes, setFormEventTypes] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchWebhooks = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: webhooks = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<WebhookRegistrationData[]>({
+    queryKey: ["webhooks", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/webhooks");
-      if (res.ok) {
-        const json = await res.json();
-        setWebhooks(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as WebhookRegistrationData[];
+    },
+  });
 
-  useEffect(() => {
-    fetchWebhooks();
-  }, [fetchWebhooks]);
+  const fetchWebhooks = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     setSubmitting(true);

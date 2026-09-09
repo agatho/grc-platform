@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Save } from "lucide-react";
 
@@ -26,28 +27,51 @@ const RISK_CATEGORIES = [
 
 const ESCALATION_ROLES = ["admin", "risk_manager", "auditor"];
 
+const THRESHOLDS_QUERY_KEY = ["erm", "risk-appetite"] as const;
+
 export default function BoardKpiConfigPage() {
   const t = useTranslations("boardKpi");
-  const [thresholds, setThresholds] = useState<ThresholdRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  //
+  // Die Schieberegler und Rollenwahl aendern die Zeilen VOR dem Speichern
+  // lokal. Dafuer gibt es keinen `useState`-Setter mehr; `setThresholds`
+  // schreibt stattdessen in den Abfrage-Cache unter demselben Schluessel
+  // (`queryClient.setQueryData`), das Speichern holt wie vorher den
+  // Serverstand neu. Der Provider fragt nicht bei Fensterfokus nach, ein
+  // Hintergrundabruf reisst dem Nutzer die Eingabe also nicht weg.
+  const {
+    data: thresholds = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ThresholdRow[]>({
+    queryKey: THRESHOLDS_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/v1/erm/risk-appetite");
-      if (res.ok) {
-        const json = await res.json();
-        setThresholds(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ThresholdRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const setThresholds = useCallback(
+    (updater: (prev: ThresholdRow[]) => ThresholdRow[]) => {
+      queryClient.setQueryData<ThresholdRow[]>(THRESHOLDS_QUERY_KEY, (prev) =>
+        updater(prev ?? []),
+      );
+    },
+    [queryClient],
+  );
 
   const saveThreshold = async (
     category: string,
@@ -144,9 +168,9 @@ export default function BoardKpiConfigPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

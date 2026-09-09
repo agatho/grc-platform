@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Shield,
@@ -57,74 +58,128 @@ const ROLES = [
   { value: "process_owner", label: "Process Owner" },
 ];
 
+// [OP-245 · Gestalt A] Die Seite rief ihren Abruf in einem Effekt und schrieb
+// das Ergebnis ueber `setConfig` und `populateForm` in vierzehn Formularfelder
+// zurueck (`react-hooks/set-state-in-effect`); `populateForm` stand dabei
+// unterhalb seiner ersten Verwendung (`react-hooks/immutability`). Der Abruf
+// liegt jetzt in `@tanstack/react-query`. Das Formular ist — wie in Welle 7b
+// bei `processes/[id]/ropa` — eine eigene Komponente, die mit dem geladenen
+// Stand EINGEHAENGT wird: der Serverstand ist die SAAT des Formulars, React
+// setzt die Anfangswerte beim Einhaengen, ein spiegelnder Effekt entfaellt.
+// Die Rueckmeldungen (`error`/`success`) bleiben auf der Seite, damit das
+// Neu-Einhaengen nach dem Speichern die Erfolgsmeldung nicht loescht.
 export default function SsoConfigPage() {
   const t = useTranslations("identity");
-  const [activeTab, setActiveTab] = useState<TabKey>("saml");
-  const [config, setConfig] = useState<SsoConfigData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // Wie vorher wird die Antwort unabhaengig vom Status gelesen; ohne `data`
+  // gibt es noch keine Konfiguration (`null` → das Formular speichert per POST).
+  // Ein Netz- oder Parsefehler landet im Fehlerzustand der Abfrage und wird
+  // unten als `loadError` gezeigt.
+  const {
+    data: config = null,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery<SsoConfigData | null>({
+    queryKey: ["admin", "sso"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/admin/sso");
+      const json = await res.json();
+      return (json.data ?? null) as SsoConfigData | null;
+    },
+  });
+
+  // Der Schluessel wird NUR ueber `fetchConfig()` erhoeht — nach dem Speichern
+  // und nach dem Umschalten von „aktiv", also genau dort, wo bisher
+  // `populateForm` das Formular neu befuellte. Ein Hintergrundabruf laesst die
+  // Eingaben stehen.
+  const [seedVersion, setSeedVersion] = useState(0);
+  const fetchConfig = useCallback(async () => {
+    await refetch();
+    setSeedVersion((v) => v + 1);
+  }, [refetch]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <SsoConfigForm
+      key={seedVersion}
+      config={config}
+      error={error || (isError ? t("loadError") : "")}
+      success={success}
+      setError={setError}
+      setSuccess={setSuccess}
+      fetchConfig={fetchConfig}
+    />
+  );
+}
+
+function SsoConfigForm({
+  config,
+  error,
+  success,
+  setError,
+  setSuccess,
+  fetchConfig,
+}: {
+  config: SsoConfigData | null;
+  error: string;
+  success: string;
+  setError: (message: string) => void;
+  setSuccess: (message: string) => void;
+  fetchConfig: () => Promise<void>;
+}) {
+  const t = useTranslations("identity");
+  const [activeTab, setActiveTab] = useState<TabKey>(
+    config?.provider ?? "saml",
+  );
+  const [saving, setSaving] = useState(false);
   const [showEnforceDialog, setShowEnforceDialog] = useState(false);
 
-  // Form state
-  const [displayName, setDisplayName] = useState("");
-  const [defaultRole, setDefaultRole] = useState("viewer");
-  const [autoProvision, setAutoProvision] = useState(true);
-  const [enforceSSO, setEnforceSSO] = useState(false);
+  // Form state — seeded from `config` exactly as `populateForm` did.
+  const [displayName, setDisplayName] = useState(config?.displayName ?? "");
+  const [defaultRole, setDefaultRole] = useState(
+    config?.defaultRole ?? "viewer",
+  );
+  const [autoProvision, setAutoProvision] = useState(
+    config?.autoProvision ?? true,
+  );
+  const [enforceSSO, setEnforceSSO] = useState(config?.enforceSSO ?? false);
   // SAML
-  const [samlMetadataUrl, setSamlMetadataUrl] = useState("");
-  const [samlEntityId, setSamlEntityId] = useState("");
-  const [samlSsoUrl, setSamlSsoUrl] = useState("");
-  const [samlCertificate, setSamlCertificate] = useState("");
-  // OIDC
-  const [oidcDiscoveryUrl, setOidcDiscoveryUrl] = useState("");
-  const [oidcClientId, setOidcClientId] = useState("");
+  const [samlMetadataUrl, setSamlMetadataUrl] = useState(
+    config?.samlMetadataUrl ?? "",
+  );
+  const [samlEntityId, setSamlEntityId] = useState(config?.samlEntityId ?? "");
+  const [samlSsoUrl, setSamlSsoUrl] = useState(config?.samlSsoUrl ?? "");
+  const [samlCertificate, setSamlCertificate] = useState(
+    config?.samlCertificate ?? "",
+  );
+  // OIDC — das Secret wird wie bisher nie in das Feld zurueckgespielt.
+  const [oidcDiscoveryUrl, setOidcDiscoveryUrl] = useState(
+    config?.oidcDiscoveryUrl ?? "",
+  );
+  const [oidcClientId, setOidcClientId] = useState(config?.oidcClientId ?? "");
   const [oidcClientSecret, setOidcClientSecret] = useState("");
-  const [oidcScopes, setOidcScopes] = useState("openid profile email");
+  const [oidcScopes, setOidcScopes] = useState(
+    config?.oidcScopes ?? "openid profile email",
+  );
   // Group mapping
   const [groupMappings, setGroupMappings] = useState<
     Array<{ group: string; role: string }>
-  >([]);
-
-  const fetchConfig = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/admin/sso");
-      const json = await res.json();
-      if (json.data) {
-        setConfig(json.data);
-        populateForm(json.data);
-      }
-    } catch {
-      setError(t("loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    fetchConfig();
-  }, [fetchConfig]);
-
-  function populateForm(data: SsoConfigData) {
-    setActiveTab(data.provider);
-    setDisplayName(data.displayName ?? "");
-    setDefaultRole(data.defaultRole ?? "viewer");
-    setAutoProvision(data.autoProvision);
-    setEnforceSSO(data.enforceSSO);
-    setSamlMetadataUrl(data.samlMetadataUrl ?? "");
-    setSamlEntityId(data.samlEntityId ?? "");
-    setSamlSsoUrl(data.samlSsoUrl ?? "");
-    setSamlCertificate(data.samlCertificate ?? "");
-    setOidcDiscoveryUrl(data.oidcDiscoveryUrl ?? "");
-    setOidcClientId(data.oidcClientId ?? "");
-    setOidcClientSecret("");
-    setOidcScopes(data.oidcScopes ?? "openid profile email");
-    const gm = data.groupRoleMapping ?? {};
-    setGroupMappings(
-      Object.entries(gm).map(([group, role]) => ({ group, role })),
-    );
-  }
+  >(() =>
+    Object.entries(config?.groupRoleMapping ?? {}).map(([group, role]) => ({
+      group,
+      role,
+    })),
+  );
 
   async function handleLoadMetadata() {
     if (!samlMetadataUrl) return;
@@ -261,14 +316,6 @@ export default function SsoConfigPage() {
 
   function removeGroupMapping(index: number) {
     setGroupMappings(groupMappings.filter((_, i) => i !== index));
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    );
   }
 
   return (

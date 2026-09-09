@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Cable,
@@ -149,15 +150,23 @@ export default function ConnectorManagementPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDateTime, formatNumber } = useDateFormat();
-  const [connectorTypes, setConnectorTypes] = useState<ConnectorType[]>([]);
-  const [instances, setInstances] = useState<ConnectorInstance[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Typen und Instanzen wurden
+  // immer zusammen geholt und zusammen verwendet — daher EINE Abfrage. Ein
+  // Netzfehler landet wie vorher als Fehlertext auf der Seite; die Antwort-
+  // koerper werden wie vorher ohne `ok`-Pruefung gelesen.
+  const {
+    data,
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery<{
+    connectorTypes: ConnectorType[];
+    instances: ConnectorInstance[];
+  }>({
+    queryKey: ["connectors", "types-and-instances"],
+    queryFn: async () => {
       const [typesRes, instancesRes] = await Promise.all([
         fetch("/api/v1/connectors/types"),
         fetch("/api/v1/connectors/instances"),
@@ -166,18 +175,19 @@ export default function ConnectorManagementPage() {
       const instancesJson = await instancesRes
         .json()
         .catch(() => ({ data: [] }));
-      setConnectorTypes(typesJson.data ?? []);
-      setInstances(instancesJson.data ?? []);
-    } catch {
-      setError(t("connectors.loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+      return {
+        connectorTypes: (typesJson.data ?? []) as ConnectorType[],
+        instances: (instancesJson.data ?? []) as ConnectorInstance[],
+      };
+    },
+  });
+  const connectorTypes = data?.connectorTypes ?? [];
+  const instances = data?.instances ?? [];
+  const error = isError ? t("connectors.loadError") : "";
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Group instances by connectorTypeId
   const instancesByType = instances.reduce<Record<string, ConnectorInstance[]>>(

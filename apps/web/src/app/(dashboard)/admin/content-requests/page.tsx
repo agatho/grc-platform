@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -91,38 +92,44 @@ export default function ContentRequestsPage() {
   const t = useTranslations("admin");
   const tCommon = useTranslations("common");
   const { formatDate, formatNumber } = useDateFormat();
-  const [requests, setRequests] = useState<ContentRequest[]>([]);
-  const [stats, setStats] = useState<ContentRequestStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Anfragen und Kennzahlen
+  // wurden immer zusammen geholt — daher EINE Abfrage. Eine nicht-ok-Antwort
+  // der Anfragenliste wirft wie vorher und landet im Fehlerzustand; eine
+  // nicht-ok-Antwort der Kennzahlen laesst sie wie vorher leer.
+  const {
+    data,
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    requests: ContentRequest[];
+    stats: ContentRequestStats | null;
+  }>({
+    queryKey: ["content-requests", "list-and-stats"],
+    queryFn: async () => {
       const [reqRes, statsRes] = await Promise.all([
         fetch("/api/v1/content-requests"),
         fetch("/api/v1/content-requests/stats"),
       ]);
       if (!reqRes.ok) throw new Error("Failed to load requests");
       const reqJson = await reqRes.json();
-      setRequests(reqJson.data ?? []);
-
+      let stats: ContentRequestStats | null = null;
       if (statsRes.ok) {
         const statsJson = await statsRes.json();
-        setStats(statsJson.data ?? null);
+        stats = (statsJson.data ?? null) as ContentRequestStats | null;
       }
-    } catch {
-      setError(true);
-      setRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { requests: (reqJson.data ?? []) as ContentRequest[], stats };
+    },
+  });
+  const requests = data?.requests ?? [];
+  const stats = data?.stats ?? null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -149,9 +156,12 @@ export default function ContentRequestsPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
             <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">
