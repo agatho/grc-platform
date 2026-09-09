@@ -3,7 +3,22 @@ import { fileURLToPath } from "node:url";
 import createNextIntlPlugin from "next-intl/plugin";
 import type { NextConfig } from "next";
 
+import { findBuildNodeEnvConflict } from "./src/lib/build-env-guard";
 import { staticSecurityHeaders } from "./src/lib/security-headers";
+
+// [OP-167] A `next build` with NODE_ENV=development in the environment
+// compiles against the production React runtime but prerenders with the
+// development one, and dies on `/_global-error` with a null hook
+// dispatcher. Eleven build runs were spent on that before the variable
+// was identified (2026-09-09). Fail here, in seconds, with the reason —
+// not twelve minutes later with a digest. See build-env-guard.ts.
+const buildEnvConflict = findBuildNodeEnvConflict({
+  nodeEnv: process.env.NODE_ENV,
+  argv: process.argv,
+});
+if (buildEnvConflict) {
+  throw new Error(`[next.config] ${buildEnvConflict}`);
+}
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 

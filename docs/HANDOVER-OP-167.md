@@ -3,6 +3,19 @@
 **Written:** 2026-09-09 · **Branch:** `audit/full-2026-08-31` · **HEAD:** `31ec0083`
 **For:** a Claude Code session running locally on the machine that can actually build.
 
+> **Resolved 2026-09-09, same day, in the local session.** Six further build runs
+> (12–17) showed the cause was not Next.js but the build recipe in §7 of this very
+> document: `set NODE_ENV=development` before `next build`. With that variable the
+> static-generation worker loads Next's *development* page runtime while the compiled
+> app is bound to the *production* one — two React copies, null hook dispatcher on the
+> first `useContext` in `/_global-error`. Without the variable the identical checkout
+> builds green in under two minutes and `server.js` runs. Full measurement, the trace
+> that shows both runtime files loading in one worker, and what it rules out: the
+> Nachtrag 2026-09-09 under OP-167 in `docs/OFFENE-PUNKTE-REGISTER.md`. §3–§6 below are
+> left as written; they are the leads that were open before that run, and §6's
+> `node:stream` finding still stands on its own merits. A guard in `next.config.ts`
+> now refuses such a build in two seconds with the reason (`src/lib/build-env-guard.ts`).
+
 This is the one open point that blocks **deployment and the test instance**. It does
 not block the test suite: `playwright.config.ts` starts `npm run dev` outside CI, so
 E2E has never depended on this (OP-204).
@@ -216,18 +229,26 @@ answered**, because no webpack run has ever reached the generation phase.
 
 ```bat
 cd /d C:\Users\daimon\Downloads\grcfiles\arctos-audit-build\apps\web
-set NODE_ENV=development
+set NODE_ENV=
 set ARCTOS_BUILD_IGNORE_TS_ERRORS=1
 set NODE_OPTIONS=--max-old-space-size=12288
 rmdir /s /q .next
 npx next build
 ```
 
+> **Corrected 2026-09-09.** This recipe used to read `set NODE_ENV=development`, and
+> that line *was* OP-167 — see the note at the top of this document. `NODE_ENV` must be
+> **unset** (Next then defaults it to `production`) or the build is refused by
+> `next.config.ts`. Set `development` only for `npm install`, and clear it again before
+> building. Measured here: the build takes about two minutes on this machine, not 15–20;
+> the longer figure was the bridge round-trip, not the build.
+
 Notes that have each cost a run already:
 
 - **`NODE_ENV=production` breaks `npm install` / `npm ci`** — it drops 564 dev
   packages including `tsx`, and the build then fails for an unrelated reason. Set
-  `development` for installs.
+  `development` for installs — **and unset it before `next build`** (see above; a
+  variable set for the install and left in place is exactly how OP-167 came about).
 - **`ARCTOS_BUILD_IGNORE_TS_ERRORS=1` is not there to hide errors.** It is there so
   the build _reaches the generation phase_, where the crash lives. A measurement of
   16.3.4 was lost because type errors stopped it earlier.

@@ -459,7 +459,7 @@ alle vier stammen aus der Messung vom 2026-09-02.
 
 | ID     | Titel                                                                          | Herkunft                                                                  | Kategorie             | Umfang | Blockiert durch          | Wert                                                             |
 | ------ | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------- | --------------------- | ------ | ------------------------ | ---------------------------------------------------------------- |
-| OP-167 | **Der Produktionsbau bricht ab: `/_global-error` lässt sich nicht prerendern** | Eigene Messung 2026-09-03 auf der Maschine des Eigentümers, vier Bauläufe | Betrieb (Fremdfehler) | offen  | Fehler in Next.js 16.2.x | Ohne Produktionsbau gibt es kein Deployment und keinen E2E-Lauf. |
+| OP-167 | **Der Produktionsbau bricht ab: `/_global-error` lässt sich nicht prerendern** | Eigene Messung 2026-09-03 auf der Maschine des Eigentümers, vier Bauläufe | Betrieb (Fremdfehler) | **behoben 2026-09-09** — es war kein Fremdfehler, sondern `NODE_ENV=development` im eigenen Bau-Rezept; siehe Nachtrag 2026-09-09 | — | Ohne Produktionsbau gibt es kein Deployment und keinen E2E-Lauf. |
 
 **Was gemessen wurde.** `next build` bricht bei 516 von 688 Seiten ab:
 
@@ -611,6 +611,111 @@ Befund vorbeigelaufen, und ein Tor, das nur unter einer ungenannten Bedingung
 ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
+
+### Nachtrag 2026-09-09 — OP-167 geschlossen: elf Bauläufe gegen eine Umgebungsvariable
+
+Lokale Sitzung auf der Maschine des Eigentümers, Checkout `1649027f`, Next
+16.2.11, Node 24.13, `next.config.ts` bis Lauf 16 unverändert. Übergabe war
+`docs/HANDOVER-OP-167.md`; deren Experiment A (`serverMinification` /
+`turbopackMinify` abschalten) wurde **nicht** gebaut, weil sich vorher aus
+dem Next-Quellcode ergab, dass `--debug-prerender` mehr umschaltet, als die
+Übergabe annahm — und der Unterschied dort lag.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                          | Art                                | Stand       |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------------- | ----------- |
+| OP-167 | **Der Produktionsbau läuft.** Die Ursache war `set NODE_ENV=development` im eigenen Bau-Rezept (Übergabe §7), nicht Next.js. Mit der Variable lädt der Prerender-Worker Nexts *Entwicklungs*-Laufzeit, während der gebaute Code fest an die *Produktions*-Laufzeit gebunden ist — zwei React-Kopien, `useContext` auf einem `null`-Dispatcher. Ohne die Variable baut derselbe Checkout in unter zwei Minuten grün, `server.js` startet und antwortet. Ein Guard in `next.config.ts` weist einen solchen Bau jetzt nach zwei Sekunden mit Begründung ab. | Läufe 12–17 unten; `apps/web/src/lib/build-env-guard.ts` + Test (6/6 grün) | Betrieb — **eigener** Fehler, kein Fremdfehler | **behoben** |
+
+**Was gemessen wurde.** Sechs Bauläufe, jeder mit gelöschtem `.next`, jeder
+mit `ARCTOS_BUILD_IGNORE_TS_ERRORS=1` (damit die Erzeugungsphase erreicht
+wird) und `--max-old-space-size=12288`. Erfolgskriterium wie in der Übergabe:
+nicht `✓ Compiled`, sondern `.next/standalone/apps/web/server.js`.
+
+| #   | Lauf                                                                                              | Ergebnis                                                                                                                                                                                              | Was er belegt / ausschliesst                                                                                                                                                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 12  | `NODE_ENV` **nicht gesetzt** (Next setzt `production`), Config unverändert                        | **grün**, 688/688, Exit 0, `server.js` vorhanden, 1 min 46 s                                                                                                                                          | Derselbe Checkout, der elfmal rot war, baut. Next 16.2.11, Turbopack, die Seitenzahl, unser `global-error.tsx` und `next-intl` scheiden als Ursache aus — endgültig, nicht nur je einzeln.                                                                   |
+| 13  | wie 12, nur `NODE_ENV=development` in der Prozessumgebung                                         | **rot**, Abbruch bei 516/688, `digest: 3120278025`, kein `server.js`                                                                                                                                  | Die Gegenprobe: die Variable allein reproduziert den Fehler wortgleich, gleicher Digest, gleiche Stelle. Zeile 2 des Logs: `⚠ You are using a non-standard "NODE_ENV" value in your environment` — diese Warnung stand in jedem der elf roten Logs.       |
+| 14  | wie 13, mit einem `--require`-Hook, der je Prozess protokolliert, welche Next-Laufzeitdatei geladen wird | **rot**; 31 Worker laden `app-page-turbo.runtime.prod.js` aus dem gebauten Chunk — **einer davon (pid 75652) lädt zusätzlich `app-page-turbo.runtime.dev.js`**, aus `node_modules/next/dist/server/route-modules/app-page/module.compiled.js:22`, genau beim Start der Erzeugung | Der Mechanismus mit Stack, statt einer Vermutung: zwei Laufzeitdateien in **einem** Prozess. Das ist der „echte Stack", den §5 der Übergabe suchte — er liegt nicht im ignore-gelisteten Fehler, sondern eine Ebene früher, beim Laden.                    |
+| 15  | `NODE_ENV` nicht gesetzt, aber `NODE_ENV=development` in `apps/web/.env.local`                   | **grün**, 688/688, `server.js` vorhanden; Log ohne die Warnung aus Lauf 13                                                                                                                            | Env-Files sind für diesen Fehler **wirkungslos**: Next setzt `NODE_ENV` vor dem Lesen der Dateien und lässt es von ihnen nicht überschreiben (`@next/env`, `processEnv`). Die Begründung in `docs/STATUS.md` vom 2026-07-23 — „Zeile aus `.env` entfernt" — deckte den Mechanismus nicht. |
+| 16  | wie 12, Artefakt-Lauf, danach `node server.js` aus dem Standalone-Verzeichnis                    | **grün**; Server `✓ Ready`, `/login` → 200 in 50 ms, `/api/health` → 503 (keine Datenbank erreichbar, erwartet), `/_not-a-route` und `/de/login` → 307 auf `/login?callbackUrl=…`                  | Das Artefakt ist nicht nur vorhanden, es läuft. Die 503 auf `/api/health` ist die korrekte Antwort eines Servers ohne DB, kein Baufehler.                                                                                                                       |
+| 17a | `NODE_ENV=development` **mit** dem neuen Guard in `next.config.ts`                                | Abbruch nach **2 s**: `Error: [next.config] NODE_ENV=development is set in the environment of \`next build\` … (OP-167). Unset NODE_ENV … or pass --debug-prerender`                                   | Der Fehler ist jetzt in Sekunden benannt statt nach zwölf Minuten als Digest.                                                                                                                                                                                  |
+| 17  | wie 16, **mit** dem Guard in `next.config.ts`, `NODE_ENV` nicht gesetzt | **grün**, 688/688, Exit 0, `server.js` vorhanden, 1 min 43 s | Der Guard blockiert keinen korrekten Bau. Das ist der Stand, mit dem die Testinstanz gebaut werden kann. |
+
+**Der Mechanismus.** `next build` ersetzt `process.env.NODE_ENV` im
+gebündelten Code statisch durch `"production"`
+(`next/dist/build/define-env.js:77` — `dev || allowDevelopmentBuild ?
+'development' : 'production'`). Deshalb enthält kein Server-Chunk mehr eine
+`NODE_ENV`-Abfrage; stattdessen steht dort 2.732-mal fest
+`require("next/dist/compiled/next-server/app-page-turbo.runtime.prod.js")`.
+Der Worker der statischen Erzeugung ist dagegen **ungebündelter** Next-Code:
+`export/routes/app-page.js` → `route-modules/app-page/module.render` →
+`module.compiled.js`, und diese Datei wählt die Laufzeit zur Laufzeit an
+`process.env.NODE_ENV` — mit `development` also `app-page-turbo.runtime.dev.js`.
+Jede der beiden Laufzeitdateien bringt ihr eigenes React mit
+(`react.production.js` bzw. `react.development.js`, nachgezählt). Gerendert
+wird mit dem `react-dom-server` der Dev-Kopie, die Komponenten der Seite rufen
+ihre Hooks aber auf der Prod-Kopie auf, deren Dispatcher niemand gesetzt hat —
+`ReactSharedInternals.H` ist `null`, und der erste Hook stirbt:
+`Cannot read properties of null (reading 'useContext')`. Dass es genau
+`/_global-error` trifft, liegt nicht an dieser Route: **alle** unsere Seiten
+sind `force-dynamic`, prerendert werden nur die beiden synthetischen Routen.
+Darum auch Lauf 8 der Übergabe (ein Worker → Abbruch bei 0/688): die erste
+Seite, die überhaupt gerendert wird, ist die erste, die stirbt.
+
+**Warum `--debug-prerender` grün war (Lauf 5).** Die Übergabe las die Doku:
+Minification aus, Sourcemaps an, `prerenderEarlyExit=false`. Der Code tut
+mehr (`next/dist/cli/next-build.js:65` und `server/config.js:1387 ff.`): das
+Flag setzt `process.env.NODE_ENV = 'development'` **und**
+`experimental.allowDevelopmentBuild = true`. Damit ist auch der gebündelte Code
+`development`, beide Hälften laden dieselbe Laufzeitdatei — grün. Es war nie
+die Minification. Experiment A der Übergabe hätte deshalb zwei weitere rote
+Läufe geliefert.
+
+**Warum elf Läufe daran vorbeigingen — drei Dinge, die schon da waren.**
+
+1. Die Warnung stand in **Zeile 2 jedes roten Logs**: `non-standard "NODE_ENV"
+   value in your environment`. Sie wurde als Rauschen behandelt wie der
+   `ECONNREFUSED`-Prewarm.
+2. `docs/STATUS.md` (Abschnitt 2026-07-23) **nannte die Ursache bereits**:
+   „React-Dev/Prod-Dispatcher-Mismatch, non-standard-node-env". Nur war die
+   damalige Abhilfe — die Zeile aus den `.env`-Files zu entfernen — eine
+   Begründung, die den Mechanismus nicht deckte (Lauf 15); als der Fehler
+   im September wiederkam, wurde er als neuer Fremdfehler gelesen statt als
+   derselbe Defekt mit anderer Quelle.
+3. Die Quelle war das Bau-Rezept selbst: `NODE_ENV=development` wurde für
+   `npm install` gesetzt (mit `production` fehlen die devDependencies — das
+   stimmt), und dann für den Bau nicht wieder entfernt. Das Rezept in
+   `docs/HANDOVER-OP-167.md` §7 ist korrigiert.
+
+Das ist, in der Zählung dieses Registers, die **fünfte Fundstelle derselben
+Form** — eine wahre Aussage, die mehr abdeckt, als sie belegt: „`NODE_ENV=production`
+bricht den Install" wurde zu „also `development` setzen", und das galt dann
+auch für den Bau. Und es ist die zweite Fundstelle der Form „stand schon in
+der eigenen Doku, wurde nicht wieder gelesen".
+
+**Was dieses Register zurücknimmt.** Die Kategorie „Fremdfehler in Next.js
+16.2.x" für OP-167 (Haupttabelle, korrigiert), die Zuordnung zu
+vercel/next.js#95741 (bereits am 2026-09-03 zurückgenommen, jetzt gegenstandslos),
+und die drei Optionen der „Vorlage an den Eigentümer" vom 2026-09-03 (auf einen
+Fix warten, auf Webpack wechseln, Canary prüfen) — keine davon war nötig.
+Deliverable 2 der Übergabe (Minimalreproduktion für #95741) entfällt aus
+demselben Grund. Bestehen bleibt der Webpack-Befund aus Übergabe §6
+(`node:stream` erreicht über das `@grc/shared`-Barrel eine Client-Seite):
+er ist ein eigener Defekt und von OP-167 unabhängig.
+
+**Was verhindert, dass es ein zwölftes Mal passiert.**
+`apps/web/src/lib/build-env-guard.ts` wird beim Laden von `next.config.ts`
+ausgeführt und wirft, wenn `NODE_ENV=development` gesetzt ist, `argv` ein
+`next build` ist und `--debug-prerender` fehlt (das ist der eine
+Entwicklungsbau, den Next selbst konsistent macht). `next dev`, `next start`
+und die Build-Worker (anderes `argv`) sind nicht betroffen. Sechs Unit-Tests
+in `src/__tests__/lib/build-env-guard.test.ts`, ESLint sauber. Kein ADR: es
+gibt keine Architekturentscheidung zu dokumentieren, nur eine Regel, die der
+Code jetzt selbst durchsetzt.
+
+**Offen unter OP-167:** nichts. Der Bau für die Testinstanz kann heute
+erfolgen. Die Docker-Pipeline war nie betroffen — das Node-Image setzt
+`NODE_ENV` im Build-Stage nicht, und `Dockerfile:135` setzt `production` erst
+im Runtime-Stage.
 
 ### Nachtrag 2026-09-09 — Welle 8e: OP-080 geschlossen, und wieder eine Begründung, die zu weit reichte
 
