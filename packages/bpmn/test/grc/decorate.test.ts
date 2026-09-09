@@ -23,6 +23,14 @@ import {
 } from "./fixtures";
 import { corpusScene, corpusXml } from "./helpers";
 
+// [OP-246, Zeitlimit unter Last] Drei Tests unten dekorieren
+// `synth-large-flat-process` (52 Aufgaben, 30 kB BPMN) im vollen statischen
+// Renderer. Lokal 0,5–0,9 s; auf dem CI-Runner unter der Parallelität des
+// Unit-Jobs 2,8 / 3,7 / 5,6 s (Lauf 34380036750) — der letzte über vitests
+// 5-s-Vorgabe, ohne dass sich am Code etwas geändert hatte. Dasselbe Limit
+// wie die Korpus-Tests unter test/draw; die Erwartungen bleiben unverändert.
+const LARGE_CORPUS_TIMEOUT = 30_000;
+
 /**
  * Die Zeichenschicht der GRC-Überlagerung.
  *
@@ -184,24 +192,28 @@ describe("Elementdekoration im statischen SVG", () => {
     );
   });
 
-  it("zeichnet den Sammel-Badge, wenn mehr Signale anliegen als Slots da sind", async () => {
-    const { svg, model } = await staticDecoration(
-      "synth-large-flat-process",
-      largeProcessData(),
-      "risk-control",
-    );
-    const withOverflow = [...model.elements.values()].find(
-      (decoration) => decoration.resolution.overflow,
-    );
-    expect(withOverflow).toBeDefined();
-    const group = svg.querySelector(
-      `[data-element-id="${withOverflow?.elementId ?? ""}"]`,
-    );
-    const texts = Array.from(group?.querySelectorAll("text") ?? []).map(
-      (node) => node.textContent ?? "",
-    );
-    expect(texts.some((text) => text.startsWith("+"))).toBe(true);
-  });
+  it(
+    "zeichnet den Sammel-Badge, wenn mehr Signale anliegen als Slots da sind",
+    async () => {
+      const { svg, model } = await staticDecoration(
+        "synth-large-flat-process",
+        largeProcessData(),
+        "risk-control",
+      );
+      const withOverflow = [...model.elements.values()].find(
+        (decoration) => decoration.resolution.overflow,
+      );
+      expect(withOverflow).toBeDefined();
+      const group = svg.querySelector(
+        `[data-element-id="${withOverflow?.elementId ?? ""}"]`,
+      );
+      const texts = Array.from(group?.querySelectorAll("text") ?? []).map(
+        (node) => node.textContent ?? "",
+      );
+      expect(texts.some((text) => text.startsWith("+"))).toBe(true);
+    },
+    LARGE_CORPUS_TIMEOUT,
+  );
 });
 
 describe("Kanten und diagrammweite Dekoration", () => {
@@ -248,16 +260,20 @@ describe("Kanten und diagrammweite Dekoration", () => {
     expect(banner?.textContent).toMatch(/Reißpunkt/);
   });
 
-  it("zeichnet beobachtete, nicht modellierte Pfade als Geisterkante", async () => {
-    const { svg } = await staticDecoration(
-      "synth-large-flat-process",
-      largeProcessData(),
-      "operations",
-    );
-    const ghost = svg.querySelector('[data-grc="ghost-edge"]');
-    expect(ghost).not.toBeNull();
-    expect(ghost?.querySelector("text")?.textContent).toBe("12 %");
-  });
+  it(
+    "zeichnet beobachtete, nicht modellierte Pfade als Geisterkante",
+    async () => {
+      const { svg } = await staticDecoration(
+        "synth-large-flat-process",
+        largeProcessData(),
+        "operations",
+      );
+      const ghost = svg.querySelector('[data-grc="ghost-edge"]');
+      expect(ghost).not.toBeNull();
+      expect(ghost?.querySelector("text")?.textContent).toBe("12 %");
+    },
+    LARGE_CORPUS_TIMEOUT,
+  );
 
   it("zeichnet die Legende nur auf Wunsch und nennt darin die Abdeckungsquote", async () => {
     const without = await staticDecoration(
@@ -403,31 +419,35 @@ describe("Interaktion nach oben", () => {
     }
   });
 
-  it("meldet den Sammel-Badge mit der Liste der verdrängten Signale", async () => {
-    const events: GrcInteraction[] = [];
-    const { svg, model } = await staticDecoration(
-      "synth-large-flat-process",
-      largeProcessData(),
-      "risk-control",
-      { onInteract: (event) => events.push(event) },
-    );
-    const target = [...model.elements.values()].find(
-      (decoration) => decoration.resolution.overflow,
-    );
-    const group = svg.querySelector(
-      `[data-element-id="${target?.elementId ?? ""}"]`,
-    );
-    const overflowBadge = Array.from(
-      group?.querySelectorAll('[data-grc-interactive="overflow.open"]') ?? [],
-    )[0];
-    overflowBadge?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  it(
+    "meldet den Sammel-Badge mit der Liste der verdrängten Signale",
+    async () => {
+      const events: GrcInteraction[] = [];
+      const { svg, model } = await staticDecoration(
+        "synth-large-flat-process",
+        largeProcessData(),
+        "risk-control",
+        { onInteract: (event) => events.push(event) },
+      );
+      const target = [...model.elements.values()].find(
+        (decoration) => decoration.resolution.overflow,
+      );
+      const group = svg.querySelector(
+        `[data-element-id="${target?.elementId ?? ""}"]`,
+      );
+      const overflowBadge = Array.from(
+        group?.querySelectorAll('[data-grc-interactive="overflow.open"]') ?? [],
+      )[0];
+      overflowBadge?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-    const event = events[0];
-    expect(event?.type).toBe("overflow.open");
-    if (event?.type === "overflow.open") {
-      expect(event.suppressed.length).toBeGreaterThan(0);
-    }
-  });
+      const event = events[0];
+      expect(event?.type).toBe("overflow.open");
+      if (event?.type === "overflow.open") {
+        expect(event.suppressed.length).toBeGreaterThan(0);
+      }
+    },
+    LARGE_CORPUS_TIMEOUT,
+  );
 
   it("meldet Pin, Kante und Bogen mit eigenen Ereignistypen", async () => {
     const events: GrcInteraction[] = [];
