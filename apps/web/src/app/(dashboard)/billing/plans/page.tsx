@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Zap } from "lucide-react";
@@ -36,29 +37,24 @@ export default function PlansPage() {
   const t = useTranslations("billing");
   const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
 
-  const fetchPlans = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before.
+  const { data: plans = [], isPending: loading } = useQuery<Plan[]>({
+    queryKey: ["subscriptions", "plans"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/subscriptions/plans");
-      if (res.ok) {
-        const data = await res.json();
-        setPlans(data.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPlans();
-  }, [fetchPlans]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as Plan[];
+    },
+  });
 
   const subscribe = async (planId: string) => {
     setSubscribing(planId);
