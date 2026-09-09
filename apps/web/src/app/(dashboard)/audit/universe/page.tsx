@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, Plus, RefreshCcw, AlertTriangle, Search } from "lucide-react";
 
@@ -31,17 +32,27 @@ export default function UniversePage() {
 
 function UniverseInner() {
   const t = useTranslations("auditMgmt");
-  const [entries, setEntries] = useState<AuditUniverseEntry[]>([]);
-  const [gaps, setGaps] = useState({ neverAudited: 0, overdue: 0 });
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [entityTypeFilter, setEntityTypeFilter] = useState("");
   const [gapFilter, setGapFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Einträge und Lückenzähler kommen
+  // aus derselben Antwort — eine Abfrage, ein Objekt; alle drei Filter
+  // stehen im Schlüssel.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    entries: AuditUniverseEntry[];
+    gaps: { neverAudited: number; overdue: number };
+  }>({
+    queryKey: ["audit", "universe", search, entityTypeFilter, gapFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (entityTypeFilter) params.set("entityType", entityTypeFilter);
@@ -49,19 +60,21 @@ function UniverseInner() {
       params.set("limit", "50");
 
       const res = await fetch(`/api/v1/audit-mgmt/universe?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setEntries(json.data ?? []);
-        setGaps(json.gaps ?? { neverAudited: 0, overdue: 0 });
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, entityTypeFilter, gapFilter]);
+      if (!res.ok)
+        return { entries: [], gaps: { neverAudited: 0, overdue: 0 } };
+      const json = await res.json();
+      return {
+        entries: (json.data ?? []) as AuditUniverseEntry[],
+        gaps: json.gaps ?? { neverAudited: 0, overdue: 0 },
+      };
+    },
+  });
+  const entries = pageData?.entries ?? [];
+  const gaps = pageData?.gaps ?? { neverAudited: 0, overdue: 0 };
 
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+  const fetchEntries = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: FormData) => {
     const body = {
@@ -134,9 +147,12 @@ function UniverseInner() {
             variant="outline"
             size="sm"
             onClick={fetchEntries}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

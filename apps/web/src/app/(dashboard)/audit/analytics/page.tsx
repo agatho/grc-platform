@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -64,6 +65,7 @@ export default function AuditAnalyticsPage() {
 
 function AnalyticsInner() {
   const t = useTranslations("analytics");
+  const now = useNow();
   const router = useRouter();
   const [imports, setImports] = useState<AuditAnalyticsImport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,7 +126,7 @@ function AnalyticsInner() {
     if (!expiresAt) return null;
     return Math.max(
       0,
-      Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000),
+      Math.ceil((new Date(expiresAt).getTime() - now) / 86400000),
     );
   };
 

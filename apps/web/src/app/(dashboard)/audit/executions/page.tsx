@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -55,8 +56,6 @@ function ExecutionsInner() {
 
   const t = useTranslations("auditMgmt");
   const _router = useRouter();
-  const [audits, setAudits] = useState<AuditWithLead[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -82,27 +81,33 @@ function ExecutionsInner() {
     };
   }, []);
 
-  const fetchAudits = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Suche und Statusfilter stehen im
+  // Schlüssel.
+  const {
+    data: audits = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AuditWithLead[]>({
+    queryKey: ["audit", "audits", search, statusFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
       params.set("limit", "50");
 
       const res = await fetch(`/api/v1/audit-mgmt/audits?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAudits(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditWithLead[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchAudits();
-  }, [fetchAudits]);
+  const fetchAudits = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: FormData) => {
     const parseCsv = (v: string | null): string[] | undefined => {
@@ -215,9 +220,12 @@ function ExecutionsInner() {
             variant="outline"
             size="sm"
             onClick={fetchAudits}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

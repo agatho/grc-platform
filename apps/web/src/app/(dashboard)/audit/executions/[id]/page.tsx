@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useId } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -57,6 +58,33 @@ interface Finding {
   createdAt: string;
 }
 
+interface EvidencePoolEntry {
+  id: string;
+  fileName: string;
+  category: string | null;
+  description?: string | null;
+  createdAt?: string;
+}
+
+// [OP-245] Stable empty defaults for `useQuery` data, so the lists keep
+// their identity while a query is still pending.
+const NO_CHECKLISTS: AuditChecklist[] = [];
+const NO_ITEMS: AuditChecklistItem[] = [];
+const NO_EVIDENCE: EvidencePoolEntry[] = [];
+const NO_FINDINGS: Finding[] = [];
+const NO_RISK_OPTIONS: Array<{ id: string; title: string }> = [];
+
+function checklistItemsQueryKey(auditId: string, checklistId: string) {
+  return [
+    "audit-mgmt",
+    "audits",
+    auditId,
+    "checklists",
+    checklistId,
+    "items",
+  ] as const;
+}
+
 export default function ExecutionDetailPage() {
   return (
     <ModuleGate moduleKey="audit">
@@ -75,8 +103,6 @@ function ExecutionDetailInner() {
 
   const t = useTranslations("auditMgmt");
   const params = useParams<{ id: string }>();
-  const [audit, setAudit] = useState<AuditDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   // Transition-Dialog: wenn Audit in "completed"/"review" wechselt, braucht
@@ -88,22 +114,29 @@ function ExecutionDetailInner() {
     Array<{ kind: string; message: string; severity: "warning" | "error" }>
   >([]);
 
-  const fetchAudit = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`). Eine nicht-ok-Antwort wirft,
+  // damit — wie vorher — ein fehlgeschlagener Neuabruf nach einem
+  // Statuswechsel die bereits angezeigte Akte stehen lässt; beim ersten
+  // Abruf bleibt sie `null` (→ „auditNotFound").
+  const {
+    data: audit = null,
+    isPending: loading,
+    refetch: refetchAudit,
+  } = useQuery<AuditDetail | null>({
+    queryKey: ["audit-mgmt", "audits", params.id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/audit-mgmt/audits/${params.id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAudit(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id]);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.data ?? null) as AuditDetail | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchAudit();
-  }, [fetchAudit]);
+  const fetchAudit = useCallback(async () => {
+    await refetchAudit();
+  }, [refetchAudit]);
 
   const handleStatusChange = async (newStatus: string, conclusion?: string) => {
     // ISO 19011 § 6.5: Audit-Konklusion beim Übergang in "review"/"completed"
@@ -1570,12 +1603,12 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const a11yId = useId();
 
   const t = useTranslations("auditMgmt");
-  const [checklists, setChecklists] = useState<AuditChecklist[]>([]);
-  const [selectedChecklist, setSelectedChecklist] = useState<string | null>(
-    null,
-  );
-  const [items, setItems] = useState<AuditChecklistItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // Ausdrückliche Wahl des Nutzers; die wirksame Auswahl (mit der ersten
+  // Checkliste als Vorgabe) wird weiter unten beim Rendern abgeleitet.
+  const [selectedChecklistState, setSelectedChecklist] = useState<
+    string | null
+  >(null);
   const [generating, setGenerating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
@@ -1590,15 +1623,6 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   // initial aus item.evidenceIds, werden über Add/Remove-Buttons verändert,
   // erst beim Submit als evidenceIds an PUT .../items/[itemId] geschickt.
   const [evaluateEvidenceIds, setEvaluateEvidenceIds] = useState<string[]>([]);
-  const [evidencePool, setEvidencePool] = useState<
-    Array<{
-      id: string;
-      fileName: string;
-      category: string | null;
-      description?: string | null;
-      createdAt?: string;
-    }>
-  >([]);
   const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
   const [createFindingItem, setCreateFindingItem] =
     useState<AuditChecklistItem | null>(null);
@@ -1706,69 +1730,81 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     };
   }, [orgId]);
 
-  const fetchChecklists = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Checklisten, Items und Evidenz-Pool über
+  // `@tanstack/react-query` statt Effekt plus gespiegeltem Lade- und
+  // Datenzustand (Muster aus Welle 7b, `dashboard/page.tsx`). Eine
+  // nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: checklists = NO_CHECKLISTS,
+    isPending: loading,
+    refetch: refetchChecklists,
+  } = useQuery<AuditChecklist[]>({
+    queryKey: ["audit-mgmt", "audits", auditId, "checklists"],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/audit-mgmt/audits/${auditId}/checklists?limit=100`,
       );
-      if (res.ok) {
-        const json = await res.json();
-        setChecklists(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [auditId]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditChecklist[];
+    },
+  });
 
+  const fetchChecklists = useCallback(async () => {
+    await refetchChecklists();
+  }, [refetchChecklists]);
+
+  // [OP-245 · Gestalt E, Zug 3] Auto-select first checklist: beim Rendern
+  // abgeleitet statt in einem nachlaufenden Effekt gesetzt. Die
+  // ausdrückliche Wahl des Nutzers bleibt im Zustand; ohne Wahl gilt die
+  // erste Checkliste.
+  const selectedChecklist = selectedChecklistState ?? checklists[0]?.id ?? null;
+
+  // Die Items hängen an der gewählten Checkliste: sie steht im Schlüssel,
+  // und ohne Auswahl fragt die Abfrage nichts ab.
+  const { data: items = NO_ITEMS } = useQuery<AuditChecklistItem[]>({
+    queryKey: checklistItemsQueryKey(auditId, selectedChecklist ?? ""),
+    enabled: selectedChecklist !== null,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/items`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditChecklistItem[];
+    },
+  });
+
+  // Invalidiert genau die Checkliste, die übergeben wird — so bleiben die
+  // Aufrufstellen (nach Generieren, Duplizieren, Bewerten, Import)
+  // unverändert. Für eine gerade erst gewählte Checkliste holt der
+  // Schlüsselwechsel die Items ohnehin; die Invalidierung schadet nicht.
   const fetchItems = useCallback(
     async (checklistId: string) => {
-      const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}/items`,
-      );
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
+      await queryClient.invalidateQueries({
+        queryKey: checklistItemsQueryKey(auditId, checklistId),
+      });
     },
-    [auditId],
+    [queryClient, auditId],
   );
-
-  useEffect(() => {
-    void fetchChecklists();
-  }, [fetchChecklists]);
-
-  useEffect(() => {
-    if (selectedChecklist) {
-      void fetchItems(selectedChecklist);
-    }
-  }, [selectedChecklist, fetchItems]);
-
-  // Auto-select first checklist
-  useEffect(() => {
-    if (checklists.length > 0 && !selectedChecklist) {
-      setSelectedChecklist(checklists[0].id);
-    }
-  }, [checklists, selectedChecklist]);
 
   // Evidence-Pool laden (scope: org-weit, damit Auditor alles verknüpfen kann
   // was im Audit-Kontext sinnvoll ist — Kontroll-Tests, bestehende Audit-
   // Evidenzen, Policy-Dokumente usw.)
-  const fetchEvidencePool = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/evidence?limit=100&sortDir=desc");
-      if (res.ok) {
+  const { data: evidencePool = NO_EVIDENCE } = useQuery<EvidencePoolEntry[]>({
+    queryKey: ["evidence", "pool", { limit: 100, sortDir: "desc" }],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/evidence?limit=100&sortDir=desc");
+        if (!res.ok) return [];
         const json = await res.json();
-        setEvidencePool(json.data ?? []);
+        return (json.data ?? []) as EvidencePoolEntry[];
+      } catch {
+        // still usable with empty pool
+        return [];
       }
-    } catch {
-      // still usable with empty pool
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchEvidencePool();
-  }, [fetchEvidencePool]);
+    },
+  });
 
   // Task-13-Filter über die Items-Tabelle.
   const [resultFilter, setResultFilter] = useState<string>("");
@@ -1782,27 +1818,32 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
   // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste + Form-State aus Item
   // ziehen, damit das Dialog den bisherigen Stand anzeigt.
-  useEffect(() => {
-    if (evaluateItem) {
-      const item = evaluateItem as AuditChecklistItem & {
-        methodEntries?: MethodEntry[] | null;
-      };
-      setEvaluateEvidenceIds(item.evidenceIds ?? []);
-      setSelectedResult(item.result ?? "");
-      // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
-      // aber die Server-Antwort kann jsonb-Frozen/flat sein.
-      setMethodEntries(
-        (item.methodEntries ?? []).map((e) => ({
-          ...e,
-        })) as EditableMethodEntry[],
-      );
-      setEvidencePickerOpen(false);
-    } else {
-      setEvaluateEvidenceIds([]);
-      setSelectedResult("");
-      setMethodEntries([]);
-    }
-  }, [evaluateItem]);
+  // [OP-245 · Gestalt E, Zug 2] Vorbelegen und Zurücksetzen gehören in die
+  // Handler, die den Dialog öffnen bzw. schließen — nicht in einen Effekt,
+  // der der Zustandsänderung nachläuft.
+  const openEvaluateDialog = useCallback((target: AuditChecklistItem) => {
+    const item = target as AuditChecklistItem & {
+      methodEntries?: MethodEntry[] | null;
+    };
+    setEvaluateItem(target);
+    setEvaluateEvidenceIds(item.evidenceIds ?? []);
+    setSelectedResult(item.result ?? "");
+    // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
+    // aber die Server-Antwort kann jsonb-Frozen/flat sein.
+    setMethodEntries(
+      (item.methodEntries ?? []).map((e) => ({
+        ...e,
+      })) as EditableMethodEntry[],
+    );
+    setEvidencePickerOpen(false);
+  }, []);
+
+  const closeEvaluateDialog = useCallback(() => {
+    setEvaluateItem(null);
+    setEvaluateEvidenceIds([]);
+    setSelectedResult("");
+    setMethodEntries([]);
+  }, []);
 
   const handleGenerate = async (
     catalogId?: string,
@@ -1945,7 +1986,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     );
 
     if (res.ok) {
-      setEvaluateItem(null);
+      closeEvaluateDialog();
       void fetchItems(selectedChecklist);
       void fetchChecklists();
     } else {
@@ -2003,8 +2044,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     );
     if (res.ok) {
       if (selectedChecklist === checklistId) {
+        // Zurück auf die abgeleitete Vorgabe (erste Checkliste); die Items
+        // folgen dem Schlüssel der Auswahl.
         setSelectedChecklist(null);
-        setItems([]);
       }
       void fetchChecklists();
     } else {
@@ -2584,7 +2626,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setEvaluateItem(item)}
+                              onClick={() => openEvaluateDialog(item)}
                             >
                               {t("evaluate")}
                             </Button>
@@ -2610,7 +2652,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       )}
 
       {/* Evaluate Dialog — ISO 19011 § 6.4.5/6.4.7 konformes Arbeitspapier */}
-      <Dialog open={!!evaluateItem} onOpenChange={() => setEvaluateItem(null)}>
+      <Dialog open={!!evaluateItem} onOpenChange={() => closeEvaluateDialog()}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Audit-Bewertung erfassen</DialogTitle>
@@ -2949,7 +2991,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setEvaluateItem(null)}
+                      onClick={() => closeEvaluateDialog()}
                     >
                       Abbrechen
                     </Button>
@@ -3196,40 +3238,45 @@ const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
 ];
 
 type ActivityWithUser = AuditActivity & { performedByName?: string | null };
+const NO_ACTIVITIES: ActivityWithUser[] = [];
 
 function ActivitiesTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
   const { formatDate, formatDateTime } = useDateFormat();
-  const [activities, setActivities] = useState<ActivityWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>("");
   const [presetValues, setPresetValues] = useState<ActivityTemplate | null>(
     null,
   );
 
-  const fetchActivities = useCallback(async () => {
-    setLoading(true);
-    try {
-      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ das
-      // Prüfungsprogramm war leer. Für eine Prüfungsakte ist das die
-      // schlimmste Anzeige: „keine Prüfungshandlungen durchgeführt".
-      setActivities(
-        await fetchAllPages<ActivityWithUser>(
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerpfad bleibt: Konsole
+  // und leere Liste.
+  const {
+    data: activities = NO_ACTIVITIES,
+    isPending: loading,
+    refetch: refetchActivities,
+  } = useQuery<ActivityWithUser[]>({
+    queryKey: ["audit-mgmt", "audits", auditId, "activities"],
+    queryFn: async () => {
+      try {
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ das
+        // Prüfungsprogramm war leer. Für eine Prüfungsakte ist das die
+        // schlimmste Anzeige: „keine Prüfungshandlungen durchgeführt".
+        return await fetchAllPages<ActivityWithUser>(
           `/api/v1/audit-mgmt/audits/${auditId}/activities`,
-        ),
-      );
-    } catch (err) {
-      console.error("audit/executions: Aktivitäten nicht geladen", err);
-      setActivities([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [auditId]);
+        );
+      } catch (err) {
+        console.error("audit/executions: Aktivitäten nicht geladen", err);
+        return [];
+      }
+    },
+  });
 
-  useEffect(() => {
-    void fetchActivities();
-  }, [fetchActivities]);
+  const fetchActivities = useCallback(async () => {
+    await refetchActivities();
+  }, [refetchActivities]);
 
   const handleCreate = async (formData: FormData) => {
     const body = {
@@ -3581,48 +3628,53 @@ function FindingsTab({ auditId }: { auditId: string }) {
 
   const t = useTranslations("auditMgmt");
   const { formatDate } = useDateFormat();
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [risks, setRisks] = useState<Array<{ id: string; title: string }>>([]);
 
-  const fetchFindings = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Beide Abrufe über `@tanstack/react-query` statt
+  // Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus Welle 7b,
+  // `dashboard/page.tsx`). Die Welle-7a-Bemerkung zu den Abhaengigkeiten
+  // ist damit gegenstandslos: es gibt keinen Effekt mehr, dessen Liste
+  // von Hand gefuehrt werden muesste — der Schluessel traegt `auditId`.
+  const {
+    data: findings = NO_FINDINGS,
+    isPending: loading,
+    refetch: refetchFindings,
+  } = useQuery<Finding[]>({
+    queryKey: ["findings", "by-audit", auditId, { limit: 100 }],
+    queryFn: async () => {
       // F-14: proper server-side filter (auditId was client-side filtered
       // before -> UI showed ALL org audit findings, misleading).
       const res = await fetch(`/api/v1/findings?auditId=${auditId}&limit=100`);
-      if (res.ok) {
-        const json = await res.json();
-        setFindings(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [auditId]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Finding[];
+    },
+  });
 
-  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
-  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
-  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
-  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
-  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
-  useEffect(() => {
-    void fetchFindings();
-    // Load risks for the optional risk-link picker
-    (async () => {
+  const fetchFindings = useCallback(async () => {
+    await refetchFindings();
+  }, [refetchFindings]);
+
+  // Load risks for the optional risk-link picker
+  const { data: risks = NO_RISK_OPTIONS } = useQuery<
+    Array<{ id: string; title: string }>
+  >({
+    queryKey: ["risks", "picker", "all"],
+    queryFn: async () => {
       try {
         // [ARCTOS-FULL-2026-08-31 · OP-050] siehe oben — zweite Aufrufstelle
         // desselben Musters in derselben Datei.
         const rows = await fetchAllPages<{ id: string; title: string }>(
           "/api/v1/risks",
         );
-        setRisks(rows.map((x) => ({ id: x.id, title: x.title })));
+        return rows.map((x) => ({ id: x.id, title: x.title }));
       } catch (err) {
         console.error("audit/executions: Risikoliste nicht geladen", err);
+        return [];
       }
-    })();
-  }, [auditId, fetchFindings]);
+    },
+  });
 
   const handleAdd = async (formData: FormData) => {
     setSaving(true);
