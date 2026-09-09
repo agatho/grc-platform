@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -108,6 +109,26 @@ interface LinkageItem {
   assetId?: string;
   riskContext?: string;
   createdAt: string;
+}
+
+interface RiskLinkages {
+  frameworkMappings: LinkageItem[];
+  processLinks: LinkageItem[];
+  assetLinks: LinkageItem[];
+  controlLinks: Array<{
+    id: string;
+    linkId: string;
+    title: string;
+    status: string;
+    controlType: string;
+  }>;
+}
+
+interface TreatmentBudget {
+  id: string;
+  name: string;
+  currency: string;
+  totalAmount: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -376,32 +397,8 @@ function RiskDetailContent() {
   const riskId = params.id as string;
   const { formatDate, formatDateTime, formatNumber, locale } = useDateFormat();
 
-  const [riskData, setRiskData] = useState<RiskDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // KRIs for this risk
-  const [kris, setKris] = useState<KriWithMeasurements[]>([]);
-  const [krisLoading, setKrisLoading] = useState(true);
-
-  // Audit log
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(true);
-
-  // Linkages
-  const [frameworkMappings, setFrameworkMappings] = useState<LinkageItem[]>([]);
-  const [processLinks, setProcessLinks] = useState<LinkageItem[]>([]);
-  const [assetLinks, setAssetLinks] = useState<LinkageItem[]>([]);
-  const [controlLinks, setControlLinks] = useState<
-    Array<{
-      id: string;
-      linkId: string;
-      title: string;
-      status: string;
-      controlType: string;
-    }>
-  >([]);
-  const [linkagesLoading, setLinkagesLoading] = useState(true);
+  // Risikodaten, KRIs, Audit-Log, Verknuepfungen und Budgets kommen aus
+  // `useQuery` — siehe unten ab „Fetch risk data".
 
   // Assessment editing
   const [editingAssessment, setEditingAssessment] = useState(false);
@@ -426,9 +423,6 @@ function RiskDetailContent() {
     status: "planned" as TreatmentStatus,
   });
   const [savingTreatment, setSavingTreatment] = useState(false);
-  const [treatmentBudgets, setTreatmentBudgets] = useState<
-    Array<{ id: string; name: string; currency: string; totalAmount: string }>
-  >([]);
 
   // Add measurement form
   const [measKriId, setMeasKriId] = useState<string | null>(null);
@@ -439,41 +433,49 @@ function RiskDetailContent() {
   // Fetch risk data
   // ---------------------------------------------------------------------------
 
-  const fetchRisk = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`) — fuer alle vier Abrufe
+  // dieser Seite und die Budgetliste je eine Abfrage mit eigenem Schluessel.
+  // Das Bewertungsformular wurde bisher bei JEDEM Abruf aus der Antwort neu
+  // befuellt (auch waehrend der Nutzer darin tippte); es wird jetzt beim
+  // Betreten des Bearbeitungsmodus aus dem geladenen Stand befuellt — siehe
+  // den Knopf „Bewertung bearbeiten".
+  const {
+    data: riskData = null,
+    isPending: loading,
+    isError: error,
+    refetch: refetchRisk,
+  } = useQuery<RiskDetail | null>({
+    queryKey: ["risks", riskId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/risks/${riskId}`);
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      setRiskData(json.data);
-      setError(false);
-      // Initialize assessment form from current data
-      if (json.data) {
-        setAssessmentForm({
-          inherentLikelihood: json.data.inherentLikelihood ?? 1,
-          inherentImpact: json.data.inherentImpact ?? 1,
-          residualLikelihood: json.data.residualLikelihood ?? 1,
-          residualImpact: json.data.residualImpact ?? 1,
-        });
-      }
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [riskId]);
+      return (json.data ?? null) as RiskDetail | null;
+    },
+  });
 
-  // Fetch KRIs linked to this risk
-  const fetchKris = useCallback(async () => {
-    setKrisLoading(true);
-    try {
+  const fetchRisk = useCallback(async () => {
+    await refetchRisk();
+  }, [refetchRisk]);
+
+  // Fetch KRIs linked to this risk. Eine nicht-ok-Antwort liefert wie vorher
+  // eine leere Liste.
+  const {
+    data: kris = [],
+    isPending: krisLoading,
+    refetch: refetchKris,
+  } = useQuery<KriWithMeasurements[]>({
+    queryKey: ["risks", riskId, "kris"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/kris?riskId=${riskId}&limit=50`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
       const kriItems: KriWithMeasurements[] = json.data ?? [];
 
       // Fetch last 12 measurements for each KRI
-      const withMeasurements = await Promise.all(
+      return Promise.all(
         kriItems.map(async (k) => {
           try {
             const mRes = await fetch(
@@ -489,96 +491,119 @@ function RiskDetailContent() {
           return { ...k, measurements: [] };
         }),
       );
+    },
+  });
 
-      setKris(withMeasurements);
-    } catch {
-      setKris([]);
-    } finally {
-      setKrisLoading(false);
-    }
-  }, [riskId]);
+  const fetchKris = useCallback(async () => {
+    await refetchKris();
+  }, [refetchKris]);
 
-  // Fetch audit log
-  const fetchAuditLog = useCallback(async () => {
-    setAuditLoading(true);
-    try {
+  // Fetch audit log. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: auditLog = [],
+    isPending: auditLoading,
+    refetch: refetchAuditLog,
+  } = useQuery<AuditLogEntry[]>({
+    queryKey: ["audit-log", "risk", riskId],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/audit-log?entityType=risk&entityId=${riskId}&limit=50`,
       );
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
-      setAuditLog(json.data ?? []);
-    } catch {
-      setAuditLog([]);
-    } finally {
-      setAuditLoading(false);
-    }
-  }, [riskId]);
+      return (json.data ?? []) as AuditLogEntry[];
+    },
+  });
 
-  // Fetch linkages
+  const fetchAuditLog = useCallback(async () => {
+    await refetchAuditLog();
+  }, [refetchAuditLog]);
+
+  // Fetch linkages. Die vier Teile wurden immer zusammen geholt — daher EINE
+  // Abfrage; ein Netzfehler laesst wie vorher alle Teile leer.
+  const {
+    data: linkages,
+    isPending: linkagesLoading,
+    refetch: refetchLinkages,
+  } = useQuery<RiskLinkages>({
+    queryKey: ["risks", riskId, "linkages"],
+    queryFn: async () => {
+      const result: RiskLinkages = {
+        frameworkMappings: [],
+        processLinks: [],
+        assetLinks: [],
+        controlLinks: [],
+      };
+      try {
+        const [fmRes, plRes, alRes, clRes] = await Promise.all([
+          fetch(`/api/v1/risks/${riskId}/framework-mappings?limit=50`),
+          fetch(`/api/v1/risks/${riskId}/process-links?limit=50`),
+          fetch(`/api/v1/risks/${riskId}/asset-links?limit=50`),
+          // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+          // `fetch("/api/v1/controls?riskId=" + riskId + "&limit=50")`.
+          // `GET /api/v1/controls` fuehrt seit #WAVE6-CROSS-01 eine strikte
+          // Erlaubnisliste (`paginate({ allowedParams: [...] })`) und beantwortet
+          // jeden unbekannten Parameter mit 422 — gemessen:
+          //   422 {"fieldErrors":{"riskId":["is not a recognized query parameter"]}}
+          // Der Zweig `if (clRes?.ok)` war damit nie wahr: die Karte
+          // „Verknuepfte Kontrollen" meldete IMMER „Keine Kontrollen verknuepft",
+          // auch wenn `risk_control` Zeilen hatte. Dieselbe Welle hat mit
+          // `GET /api/v1/risks/:id/controls` (#WAVE6-CROSS-02) den richtigen
+          // Endpunkt angelegt; nur die Aufrufstelle blieb stehen.
+          // Kein `.catch(() => null)` mehr: ein Netzwerkfehler gehoert in das
+          // `try` darum, nicht in eine stille leere Liste.
+          fetch(`/api/v1/risks/${riskId}/controls`),
+        ]);
+
+        if (fmRes.ok) {
+          const fmJson = await fmRes.json();
+          result.frameworkMappings = fmJson.data ?? [];
+        }
+        if (plRes.ok) {
+          const plJson = await plRes.json();
+          result.processLinks = plJson.data ?? [];
+        }
+        if (alRes.ok) {
+          const alJson = await alRes.json();
+          result.assetLinks = alJson.data ?? [];
+        }
+        if (clRes.ok) {
+          const clJson = await clRes.json();
+          result.controlLinks = (clJson.data ?? []).map(
+            (c: UnvalidatedJson) => ({
+              id: c.id,
+              linkId: c.linkId ?? c.id,
+              title: c.title ?? "Kontrolle",
+              status: c.status ?? "designed",
+              controlType: c.controlType ?? "preventive",
+            }),
+          );
+        }
+      } catch {
+        // Ignore
+      }
+      return result;
+    },
+  });
+  const frameworkMappings = linkages?.frameworkMappings ?? [];
+  const processLinks = linkages?.processLinks ?? [];
+  const assetLinks = linkages?.assetLinks ?? [];
+  const controlLinks = linkages?.controlLinks ?? [];
+
   const fetchLinkages = useCallback(async () => {
-    setLinkagesLoading(true);
-    try {
-      const [fmRes, plRes, alRes, clRes] = await Promise.all([
-        fetch(`/api/v1/risks/${riskId}/framework-mappings?limit=50`),
-        fetch(`/api/v1/risks/${riskId}/process-links?limit=50`),
-        fetch(`/api/v1/risks/${riskId}/asset-links?limit=50`),
-        // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
-        // `fetch("/api/v1/controls?riskId=" + riskId + "&limit=50")`.
-        // `GET /api/v1/controls` fuehrt seit #WAVE6-CROSS-01 eine strikte
-        // Erlaubnisliste (`paginate({ allowedParams: [...] })`) und beantwortet
-        // jeden unbekannten Parameter mit 422 — gemessen:
-        //   422 {"fieldErrors":{"riskId":["is not a recognized query parameter"]}}
-        // Der Zweig `if (clRes?.ok)` war damit nie wahr: die Karte
-        // „Verknuepfte Kontrollen" meldete IMMER „Keine Kontrollen verknuepft",
-        // auch wenn `risk_control` Zeilen hatte. Dieselbe Welle hat mit
-        // `GET /api/v1/risks/:id/controls` (#WAVE6-CROSS-02) den richtigen
-        // Endpunkt angelegt; nur die Aufrufstelle blieb stehen.
-        // Kein `.catch(() => null)` mehr: ein Netzwerkfehler gehoert in das
-        // `try` darum, nicht in eine stille leere Liste.
-        fetch(`/api/v1/risks/${riskId}/controls`),
-      ]);
+    await refetchLinkages();
+  }, [refetchLinkages]);
 
-      if (fmRes.ok) {
-        const fmJson = await fmRes.json();
-        setFrameworkMappings(fmJson.data ?? []);
-      }
-      if (plRes.ok) {
-        const plJson = await plRes.json();
-        setProcessLinks(plJson.data ?? []);
-      }
-      if (alRes.ok) {
-        const alJson = await alRes.json();
-        setAssetLinks(alJson.data ?? []);
-      }
-      if (clRes.ok) {
-        const clJson = await clRes.json();
-        const controls = (clJson.data ?? []).map((c: UnvalidatedJson) => ({
-          id: c.id,
-          linkId: c.linkId ?? c.id,
-          title: c.title ?? "Kontrolle",
-          status: c.status ?? "designed",
-          controlType: c.controlType ?? "preventive",
-        }));
-        setControlLinks(controls);
-      }
-    } catch {
-      // Ignore
-    } finally {
-      setLinkagesLoading(false);
-    }
-  }, [riskId]);
-
-  useEffect(() => {
-    void fetchRisk();
-    void fetchKris();
-    void fetchAuditLog();
-    void fetchLinkages();
-    fetch("/api/v1/budgets?limit=100")
-      .then((r) => r.json())
-      .then((json) => setTreatmentBudgets(json.data ?? []))
-      .catch(() => {});
-  }, [fetchRisk, fetchKris, fetchAuditLog, fetchLinkages]);
+  // Budgets fuer den Massnahmen-Dialog. Der Antwortkoerper wird wie vorher
+  // ohne `ok`-Pruefung gelesen; ein Fehler laesst die Liste wie vorher leer.
+  const { data: treatmentBudgets = [] } = useQuery<TreatmentBudget[]>({
+    queryKey: ["budgets", "list", 100],
+    queryFn: async () => {
+      const r = await fetch("/api/v1/budgets?limit=100");
+      const json = await r.json();
+      return (json.data ?? []) as TreatmentBudget[];
+    },
+  });
 
   // ---------------------------------------------------------------------------
   // Assessment save
@@ -993,7 +1018,17 @@ function RiskDetailContent() {
           {/* Edit Assessment */}
           {!editingAssessment ? (
             <button
-              onClick={() => setEditingAssessment(true)}
+              onClick={() => {
+                // [OP-245] Formular aus dem geladenen Stand befuellen — bisher
+                // geschah das in `fetchRisk` bei jedem Abruf.
+                setAssessmentForm({
+                  inherentLikelihood: r.inherentLikelihood ?? 1,
+                  inherentImpact: r.inherentImpact ?? 1,
+                  residualLikelihood: r.residualLikelihood ?? 1,
+                  residualImpact: r.residualImpact ?? 1,
+                });
+                setEditingAssessment(true);
+              }}
               className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               <Pencil size={14} />

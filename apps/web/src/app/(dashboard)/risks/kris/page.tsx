@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -337,15 +338,6 @@ function KriDashboardContent() {
   const t = useTranslations("risk.kri");
   const { formatDate } = useDateFormat();
 
-  const [kris, setKris] = useState<KriListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // Measurements cache: kriId -> measurements
-  const [measurementsCache, setMeasurementsCache] = useState<
-    Record<string, KRIMeasurement[]>
-  >({});
-
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [riskFilter, setRiskFilter] = useState<string>("");
@@ -363,9 +355,23 @@ function KriDashboardContent() {
   // Fetch KRIs
   // ---------------------------------------------------------------------------
 
-  const fetchKris = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Alle drei Filter gehen in
+  // die Anfrage und stehen deshalb im Schluessel. Liste und Messwert-Cache
+  // kommen aus EINER Abfrage; ein Fehler von `fetchAllPages` landet wie
+  // vorher im Fehlerzustand.
+  const {
+    data,
+    isPending: loading,
+    isError: error,
+    refetch,
+  } = useQuery<{
+    kris: KriListItem[];
+    measurementsCache: Record<string, KRIMeasurement[]>;
+  }>({
+    queryKey: ["kris", "list", statusFilter, riskFilter, frequencyFilter],
+    queryFn: async () => {
       // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422. Der Fehler
       // wurde immerhin gesetzt — die KRI-Seite war also nicht leer, sondern
       // dauerhaft im Fehlerzustand. Die Route erlaubt selbst höchstens 200
@@ -376,8 +382,6 @@ function KriDashboardContent() {
       if (frequencyFilter) params.measurementFrequency = frequencyFilter;
 
       const rows = await fetchAllPages<KriListItem>("/api/v1/kris", { params });
-      setKris(rows);
-      setError(false);
 
       // Fetch measurements for each KRI (last 12)
       const cache: Record<string, KRIMeasurement[]> = {};
@@ -396,17 +400,15 @@ function KriDashboardContent() {
           }
         }),
       );
-      setMeasurementsCache(cache);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, riskFilter, frequencyFilter]);
+      return { kris: rows, measurementsCache: cache };
+    },
+  });
+  const kris = data?.kris ?? [];
+  const measurementsCache = data?.measurementsCache ?? {};
 
-  useEffect(() => {
-    void fetchKris();
-  }, [fetchKris]);
+  const fetchKris = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Status counts
   const greenCount = kris.filter(

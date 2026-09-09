@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -99,37 +100,36 @@ function GroupRiskContent() {
   const t = useTranslations("risk.group");
   const router = useRouter();
 
-  const [data, setData] = useState<OrgRiskSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // Org filter checkboxes
-  const [selectedOrgs, setSelectedOrgs] = useState<Set<string>>(new Set());
-
   // ---------------------------------------------------------------------------
   // Fetch
   // ---------------------------------------------------------------------------
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data = [],
+    isPending: loading,
+    isError: error,
+  } = useQuery<OrgRiskSummary[]>({
+    queryKey: ["risks", "group-summary"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/risks/group-summary");
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      const items: OrgRiskSummary[] = json.data ?? [];
-      setData(items);
-      setSelectedOrgs(new Set(items.map((d) => d.orgId)));
-      setError(false);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as OrgRiskSummary[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // Org filter checkboxes. Die Auswahl wurde bisher beim Abruf aus der
+  // Antwort befuellt (alle Organisationen angehakt). Ohne Zustandsspiegel
+  // heisst `null` jetzt „alle geladenen"; erst ein Klick des Nutzers macht
+  // daraus eine konkrete Menge.
+  const [selectedOrgsState, setSelectedOrgs] = useState<Set<string> | null>(
+    null,
+  );
+  const selectedOrgs = selectedOrgsState ?? new Set(data.map((d) => d.orgId));
 
   // Filtered data
   const filteredData = data.filter((d) => selectedOrgs.has(d.orgId));
@@ -145,7 +145,7 @@ function GroupRiskContent() {
 
   function toggleOrg(orgId: string) {
     setSelectedOrgs((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev ?? data.map((d) => d.orgId));
       if (next.has(orgId)) {
         next.delete(orgId);
       } else {
