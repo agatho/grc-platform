@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Search,
@@ -124,14 +125,18 @@ export default function CrossFrameworkMappingsPage() {
 
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
-  const [entries, setEntries] = useState<CatalogEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<CatalogEntry | null>(null);
-  const [mappings, setMappings] = useState<MappingEntry[]>([]);
   const [entrySearch, setEntrySearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [loadingEntries, setLoadingEntries] = useState(false);
-  const [loadingMappings, setLoadingMappings] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  // [OP-245 · Gestalt E] `expandedGroups` wurde beim Laden der Mappings mit
+  // allen Gruppennamen gesät („alle aufgeklappt") und danach vom Nutzer
+  // umgeschaltet — ein vom Server gesäter Bearbeitungszustand. Gespeichert
+  // wird jetzt nur die Abweichung vom Standard, also die zugeklappten
+  // Gruppen; aufgeklappt ist alles, was nicht darin steht. Die Auswahl eines
+  // Eintrags setzt die Menge zurück, wie es vorher der Abruf tat.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Fetch all catalogs
   useEffect(() => {
@@ -159,21 +164,33 @@ export default function CrossFrameworkMappingsPage() {
     })();
   }, []);
 
-  // Fetch entries when catalog changes
-  useEffect(() => {
-    if (!selectedCatalog) return;
-    setLoadingEntries(true);
-    setSelectedEntry(null);
-    setMappings([]);
-    setExpandedGroups(new Set());
-
-    const catalogType = selectedCatalog.catalogType;
-    const base =
-      catalogType === "risk"
-        ? `/api/v1/catalogs/risks/${selectedCatalog.id}/entries`
-        : `/api/v1/catalogs/controls/${selectedCatalog.id}/entries`;
-
-    (async () => {
+  // [OP-245 · Gestalt A] Quelleinträge des gewählten Katalogs (mit
+  // Suchbegriff) — vorher ein Effekt, der `loadingEntries` synchron setzte,
+  // Auswahl und Mappings zurücksetzte und dann abrief. Katalog-Id, Katalogtyp
+  // und Suchbegriff stehen im Schlüssel; die OP-050-Fehlerbehandlung (Konsole
+  // + leere Liste) bleibt. Das Zurücksetzen der Auswahl bei Katalog- oder
+  // Suchwechsel geschieht in den Ereignisbehandlern, die den Wechsel
+  // auslösen; die Mappings hängen am gewählten Eintrag und fallen damit von
+  // selbst weg.
+  const selectedCatalogId = selectedCatalog?.id ?? null;
+  const selectedCatalogType = selectedCatalog?.catalogType ?? null;
+  const { data: entries = [], isPending: entriesPending } = useQuery<
+    CatalogEntry[]
+  >({
+    queryKey: [
+      "catalogs",
+      "mappings",
+      "entries",
+      selectedCatalogId,
+      selectedCatalogType,
+      entrySearch,
+    ],
+    enabled: selectedCatalogId !== null,
+    queryFn: async () => {
+      const base =
+        selectedCatalogType === "risk"
+          ? `/api/v1/catalogs/risks/${selectedCatalogId}/entries`
+          : `/api/v1/catalogs/controls/${selectedCatalogId}/entries`;
       try {
         // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=300` ⇒ 422, und
         // `catch { setEntries([]) }` hat den Fehler in genau die Aussage
@@ -181,42 +198,38 @@ export default function CrossFrameworkMappingsPage() {
         // dauerhaft ohne Quelleinträge.
         const params: Record<string, string> = {};
         if (entrySearch) params.search = entrySearch;
-        setEntries(await fetchAllPages<CatalogEntry>(base, { params }));
+        return await fetchAllPages<CatalogEntry>(base, { params });
       } catch (err) {
         console.error("catalogs/mappings: Einträge nicht geladen", err);
-        setEntries([]);
-      } finally {
-        setLoadingEntries(false);
+        return [];
       }
-    })();
-  }, [selectedCatalog, entrySearch]);
+    },
+  });
+  const loadingEntries = selectedCatalogId !== null && entriesPending;
 
-  // Fetch mappings when entry changes
-  const fetchMappings = useCallback(async (entryId: string) => {
-    setLoadingMappings(true);
-    try {
-      const res = await fetch(`/api/v1/catalogs/mappings?entryId=${entryId}`);
-      const json = await res.json();
-      setMappings(json.data ?? []);
-      // Expand all groups by default
-      const groups = new Set<string>();
-      for (const m of json.data ?? []) {
-        groups.add(m.targetEntry.catalogName);
-        groups.add(m.sourceEntry.catalogName);
+  // [OP-245 · Gestalt A] Mappings des gewählten Eintrags — vorher
+  // `fetchMappings(selectedEntry.id)` im Effekt, das nebenbei alle Gruppen
+  // aufklappte (siehe `collapsedGroups`). Die Antwort wird wie vorher ohne
+  // Statusprüfung gelesen; ein Fehler ergibt wie vorher eine leere Liste.
+  const selectedEntryId = selectedEntry?.id ?? null;
+  const { data: mappings = [], isPending: mappingsPending } = useQuery<
+    MappingEntry[]
+  >({
+    queryKey: ["catalogs", "mappings", "by-entry", selectedEntryId],
+    enabled: selectedEntryId !== null,
+    queryFn: async () => {
+      try {
+        const res = await fetch(
+          `/api/v1/catalogs/mappings?entryId=${selectedEntryId}`,
+        );
+        const json = await res.json();
+        return (json.data ?? []) as MappingEntry[];
+      } catch {
+        return [];
       }
-      setExpandedGroups(groups);
-    } catch {
-      setMappings([]);
-    } finally {
-      setLoadingMappings(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (selectedEntry) {
-      fetchMappings(selectedEntry.id);
-    }
-  }, [selectedEntry, fetchMappings]);
+    },
+  });
+  const loadingMappings = selectedEntryId !== null && mappingsPending;
 
   // Group mappings by target catalog (normalize: if the selected entry is target, swap)
   const groupedMappings: GroupedMappings[] = (() => {
@@ -249,7 +262,7 @@ export default function CrossFrameworkMappingsPage() {
   const totalMappings = mappings.length;
 
   const toggleGroup = (name: string) => {
-    setExpandedGroups((prev) => {
+    setCollapsedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(name)) {
         next.delete(name);
@@ -311,7 +324,10 @@ export default function CrossFrameworkMappingsPage() {
             value={selectedCatalog?.id ?? ""}
             onChange={(e) => {
               const cat = catalogs.find((c) => c.id === e.target.value);
-              if (cat) setSelectedCatalog(cat);
+              if (cat) {
+                setSelectedEntry(null);
+                setSelectedCatalog(cat);
+              }
             }}
           >
             {catalogs.map((c) => (
@@ -328,12 +344,18 @@ export default function CrossFrameworkMappingsPage() {
               type="text"
               placeholder={t("mappings.searchEntries")}
               value={entrySearch}
-              onChange={(e) => setEntrySearch(e.target.value)}
+              onChange={(e) => {
+                setSelectedEntry(null);
+                setEntrySearch(e.target.value);
+              }}
               className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-8 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             {entrySearch && (
               <button
-                onClick={() => setEntrySearch("")}
+                onClick={() => {
+                  setSelectedEntry(null);
+                  setEntrySearch("");
+                }}
                 className="absolute right-2 top-1/2 -translate-y-1/2"
               >
                 <X className="h-4 w-4 text-gray-400" />
@@ -365,7 +387,10 @@ export default function CrossFrameworkMappingsPage() {
                 entries.map((entry) => (
                   <button
                     key={entry.id}
-                    onClick={() => setSelectedEntry(entry)}
+                    onClick={() => {
+                      setCollapsedGroups(new Set());
+                      setSelectedEntry(entry);
+                    }}
                     className={`flex w-full items-center gap-3 rounded px-3 py-2 text-left transition-colors hover:bg-gray-50 ${
                       selectedEntry?.id === entry.id
                         ? "bg-indigo-50 ring-1 ring-indigo-200"
@@ -452,7 +477,7 @@ export default function CrossFrameworkMappingsPage() {
 
               {/* Grouped mapping results */}
               {groupedMappings.map((group) => {
-                const isExpanded = expandedGroups.has(group.catalogName);
+                const isExpanded = !collapsedGroups.has(group.catalogName);
                 return (
                   <div
                     key={group.catalogName}
