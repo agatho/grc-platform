@@ -92,6 +92,25 @@ fi
 # psql wrapper: reads SQL from stdin, runs it against database $1 as superuser.
 # ON_ERROR_STOP=0 so a GRANT on a not-yet-existing object never aborts the
 # whole batch; real ERROR lines are surfaced by the caller.
+# [ARCTOS-FULL-2026-08-31 · OP-238] Einzelwert abfragen. `psql_db` liest SQL
+# von der Standardeingabe (`-f -`) und reicht keine weiteren Argumente durch —
+# ein `psql_db "$DB" -tAc "..."` laeuft dort ins Leere und liefert LEER, was
+# wie „Funktion nicht vorhanden" aussieht. Genau so ist die erste Fassung
+# dieser Abnahme still durchgelaufen.
+psql_query() {
+  local db="$1" sql="$2"
+  if [ "$DIRECT_PSQL" = "1" ]; then
+    PGHOST="${PGHOST:-localhost}" \
+    PGPORT="${PGPORT:-5432}" \
+    PGUSER="${PGUSER:-$PGSUPERUSER}" \
+    PGPASSWORD="${PGPASSWORD:-grc_dev_password}" \
+      psql -tA -q -d "$db" -c "$sql" 2>/dev/null | tr -d '[:space:]'
+  else
+    docker compose -f "$COMPOSE_FILE" exec -T postgres \
+      psql -U "$PGSUPERUSER" -tA -q -d "$db" -c "$sql" 2>/dev/null | tr -d '[:space:]'
+  fi
+}
+
 psql_db() {
   local db="$1"
   if [ "$DIRECT_PSQL" = "1" ]; then
@@ -275,6 +294,59 @@ SQL
     FAILED=$((FAILED + 1))
   else
     echo "  ✓ $DB: Grants + Default-Privileges + FORCE RLS gesetzt."
+  fi
+
+  # ── [ARCTOS-FULL-2026-08-31 · OP-238] Abnahme, nicht nur Ausfuehrung ──────
+  #
+  # Dieses Skript legt die Rolle an und vergibt Tabellen-, Sequenz- und
+  # Default-Rechte. Was es BEWUSST NICHT tut, ist ein pauschaler
+  # `GRANT EXECUTE ON ALL FUNCTIONS` — Migration 0398 hat EXECUTE auf den
+  # SECURITY-DEFINER-Funktionen gezielt entzogen, weil die mit
+  # Superuser-Rechten laufen und RLS umgehen. Ein pauschaler GRANT hier
+  # naehme genau diese Haertung zurueck.
+  #
+  # Die gezielten Grants vergeben die MIGRATIONEN — und zwar unter
+  # `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grc_app')`
+  # (`0396_rls_log_tables.sql:117` und der Event-Trigger aus
+  # `0397_rls_policy_normalization.sql`). Existiert die Rolle beim Migrieren
+  # noch nicht, fallen sie STILL aus. Danach steht eine Datenbank da, die
+  # fertig aussieht, und die Anwendung scheitert bei JEDER Abfrage mit
+  #
+  #   ERROR:  permission denied for function app_current_org_scope
+  #
+  # weil jede RLS-Policy diese Funktion aufruft.
+  #
+  # Dieses Skript kann das nicht reparieren, ohne die Haertung aufzugeben.
+  # Es kann aber verhindern, dass der Zustand unbemerkt ausgeliefert wird.
+  # Deshalb prueft es zum Schluss die eine Bedingung, an der alles haengt.
+  USABLE=$(psql_query "$DB" "SELECT has_function_privilege('grc_app', 'public.app_current_org_scope()', 'EXECUTE')")
+  if [ "$USABLE" = "f" ]; then
+    echo "" >&2
+    echo "  ✗ $DB: grc_app darf app_current_org_scope() NICHT ausfuehren." >&2
+    echo "" >&2
+    echo "    Jede RLS-Policy ruft diese Funktion. In diesem Zustand" >&2
+    echo "    scheitert JEDE Abfrage der Anwendung mit" >&2
+    echo "      ERROR:  permission denied for function app_current_org_scope" >&2
+    echo "" >&2
+    echo "    Ursache (OP-238): die Migrationen vergeben den Grant nur," >&2
+    echo "    wenn die Rolle beim Migrieren schon existiert. Hier lief" >&2
+    echo "    die Migration vor der Provisionierung." >&2
+    echo "" >&2
+    echo "    Abhilfe, eine von beiden:" >&2
+    echo "      * die Migrationen erneut fahren — sie sind idempotent, und" >&2
+    echo "        jetzt existiert die Rolle; oder" >&2
+    echo "      * bei einer Neuinstallation dieses Skript VOR den" >&2
+    echo "        Migrationen laufen lassen." >&2
+    echo "" >&2
+    echo "    Ein pauschaler GRANT EXECUTE ist NICHT die Abhilfe — er naehme" >&2
+    echo "    die Haertung aus Migration 0398 zurueck." >&2
+    FAILED=$((FAILED + 1))
+  elif [ "$USABLE" = "t" ]; then
+    echo "  ✓ $DB: grc_app kann app_current_org_scope() ausfuehren."
+  else
+    echo "  ! $DB: Pruefung auf app_current_org_scope() nicht moeglich" >&2
+    echo "    (Funktion nicht vorhanden? Datenbank noch nicht migriert?)." >&2
+    echo "    Das ist KEIN Befund — aber auch keine Abnahme." >&2
   fi
 done
 

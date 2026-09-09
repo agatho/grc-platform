@@ -21,11 +21,9 @@ Nummern: **238**
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
 | OP-234 | Zwei kritische Advisories gegen die ausgelieferte Next-Version, dazu eines mit hoher Schwere in `sharp`. `GHS… | offen — höchste Priorität                                                                  | 2026-09-09   |
 
-## teilweise (1)
+## teilweise (0)
 
-| Nr     | Titel                                                                                                          | Stand laut Register      | Nachtrag   |
-| ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------- |
-| OP-238 | Der EXECUTE-Grant auf `app_current_org_scope()` ist an die Existenz der Rolle zum Migrationszeitpunkt gebunde… | CI behoben, Skript offen | 2026-09-09 |
+_keine_
 
 ## Entscheidung (2)
 
@@ -198,7 +196,7 @@ Nummern: **238**
 | OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung a… | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsbera… | Haupttabelle |
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 
-## behoben (71)
+## behoben (72)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -273,3 +271,4 @@ Nummern: **238**
 | OP-235 | Drei API-Routen liegen auf der Platte und in keinem Klon — und die Oberfläche ruft eine davon. `.gitignore:89… | behoben                                                                                    | 2026-09-09 |
 | OP-236 | `packages/bpmn` hat in CI noch nie eine Coverage-Summary erzeugt. Der Bildvergleichstest rastert SVG über `ca… | behoben                                                                                    | 2026-09-09 |
 | OP-237 | Der Forward-only-Check liest die ersten 40 Zeilen einer Migration nach dem Remediation-Marker. In `0099_phase… | behoben                                                                                    | 2026-09-09 |
+| OP-238 | Der EXECUTE-Grant auf `app_current_org_scope()` ist an die Existenz der Rolle zum Migrationszeitpunkt gebunde… | behoben                                                                                    | 2026-09-09 |
