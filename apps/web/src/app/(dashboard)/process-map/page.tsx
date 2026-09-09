@@ -6,13 +6,8 @@
 // down, uncategorized children inherit the parent's band) or opens the
 // process detail page when there are no children.
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -105,15 +100,11 @@ function ProcessMapContent() {
   const [stack, setStack] = useState<Crumb[]>([]);
   const parentId = stack.length > 0 ? stack[stack.length - 1].id : null;
 
-  const [groups, setGroups] = useState<ProcessMapGroups>(EMPTY_GROUPS);
-  const [parent, setParent] = useState<MapParent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   // Manual sort mode (0374) — draft holds the unsaved band order.
   const [sortMode, setSortMode] = useState(false);
   const [draft, setDraft] = useState<ProcessMapGroups | null>(null);
   const [savingSort, setSavingSort] = useState(false);
+  const [sortError, setSortError] = useState<string | null>(null);
 
   // Same edit gate as the process PUT route (admin, process_owner).
   const canSort = useMemo(() => {
@@ -121,40 +112,58 @@ function ProcessMapContent() {
     return roles.some((r) => r.role === "admin" || r.role === "process_owner");
   }, [session]);
 
-  const fetchLevel = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Die Ebene der Landkarte kam aus `fetchLevel` im
+  // Effekt, das Lade-, Fehler- und Datenzustand synchron zurückschrieb.
+  // Jetzt eine Abfrage über `@tanstack/react-query` mit `parentId` im
+  // Schlüssel (Muster aus Welle 7b, `catalogs/objects/page.tsx`). Eine
+  // nicht-ok-Antwort ergibt wie vorher `loadError`, und im Fehlerfall sind
+  // Bänder und Elternknoten wie vorher leer. `fetchLevel` bleibt als dünne
+  // Hülle für das Neuladen nach dem Speichern der Reihenfolge.
+  const {
+    data: level,
+    isPending: loading,
+    error: loadError,
+    refetch,
+  } = useQuery<{ groups: ProcessMapGroups; parent: MapParent | null }>({
+    queryKey: ["processes", "map", parentId],
+    queryFn: async () => {
       const qs = parentId ? `?parentId=${parentId}` : "";
       const res = await fetch(`/api/v1/processes/map${qs}`);
       if (!res.ok) throw new Error(t("loadError"));
       const json = await res.json();
-      setGroups(json.data?.groups ?? EMPTY_GROUPS);
-      setParent(json.data?.parent ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("loadError"));
-      setGroups(EMPTY_GROUPS);
-      setParent(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [parentId, t]);
+      return {
+        groups: (json.data?.groups ?? EMPTY_GROUPS) as ProcessMapGroups,
+        parent: (json.data?.parent ?? null) as MapParent | null,
+      };
+    },
+  });
+  const groups = loadError ? EMPTY_GROUPS : (level?.groups ?? EMPTY_GROUPS);
+  const parent = loadError ? null : (level?.parent ?? null);
+  // Der Speicherfehler der Sortierung überlagert wie vorher den Ladefehler;
+  // beide standen zuvor in demselben Feld.
+  const error =
+    sortError ?? (loadError ? loadError.message || t("loadError") : null);
 
-  useEffect(() => {
-    void fetchLevel();
-  }, [fetchLevel]);
+  const fetchLevel = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-  // Leaving the current drill level discards any unsaved sort draft.
-  useEffect(() => {
+  // [OP-245 · Gestalt E] Das Verlassen der Drill-Ebene verwarf den
+  // Sortierentwurf in einem Effekt an `parentId`. Das geschieht jetzt in den
+  // beiden Ereignisbehandlern, die die Ebene wechseln (`handleTileClick`,
+  // `jumpTo`), statt einen Renderdurchlauf später.
+  const discardSortDraft = useCallback(() => {
     setSortMode(false);
     setDraft(null);
-  }, [parentId]);
+    setSortError(null);
+  }, []);
 
   // Tile click: drill in when the process has children, otherwise open
   // the detail page (with ?from= breadcrumb when inside a drill-in).
   const handleTileClick = useCallback(
     (item: ProcessMapItem) => {
       if (item.childCount > 0) {
+        discardSortDraft();
         setStack((prev) => [...prev, { id: item.id, name: item.name }]);
       } else {
         router.push(
@@ -162,7 +171,7 @@ function ProcessMapContent() {
         );
       }
     },
-    [router, parentId],
+    [router, parentId, discardSortDraft],
   );
 
   const startSort = useCallback(() => {
@@ -170,10 +179,7 @@ function ProcessMapContent() {
     setSortMode(true);
   }, [groups]);
 
-  const cancelSort = useCallback(() => {
-    setSortMode(false);
-    setDraft(null);
-  }, []);
+  const cancelSort = discardSortDraft;
 
   const moveDraftItem = useCallback(
     (band: ProcessMapBand, index: number, direction: "up" | "down") => {
@@ -189,7 +195,7 @@ function ProcessMapContent() {
   const saveSort = useCallback(async () => {
     if (!draft) return;
     setSavingSort(true);
-    setError(null);
+    setSortError(null);
     try {
       for (const band of ALL_BANDS) {
         const before = groups[band].map((i) => i.id).join(",");
@@ -206,7 +212,7 @@ function ProcessMapContent() {
       setDraft(null);
       await fetchLevel();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("sort.saveError"));
+      setSortError(err instanceof Error ? err.message : t("sort.saveError"));
     } finally {
       setSavingSort(false);
     }
@@ -228,10 +234,14 @@ function ProcessMapContent() {
     [moveDraftItem, t],
   );
 
-  const jumpTo = useCallback((index: number) => {
-    // index -1 = root
-    setStack((prev) => (index < 0 ? [] : prev.slice(0, index + 1)));
-  }, []);
+  const jumpTo = useCallback(
+    (index: number) => {
+      // index -1 = root
+      discardSortDraft();
+      setStack((prev) => (index < 0 ? [] : prev.slice(0, index + 1)));
+    },
+    [discardSortDraft],
+  );
 
   const totalCount =
     groups.management.length +
