@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -85,8 +86,6 @@ function ContractListInner() {
   const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
 
-  const [contracts, setContracts] = useState<ContractRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("__all__");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
@@ -97,24 +96,29 @@ function ContractListInner() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchContracts = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data: contracts = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ContractRow[]>({
+    queryKey: ["contracts", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/contracts?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setContracts(json.data ?? []);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ContractRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchContracts();
-  }, [fetchContracts]);
+  const fetchContracts = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = contracts;
@@ -274,9 +278,12 @@ function ContractListInner() {
             variant="outline"
             size="sm"
             onClick={fetchContracts}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button
             size="sm"

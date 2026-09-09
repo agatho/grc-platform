@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -55,13 +56,21 @@ export default function ObligationsQueuePage() {
 
 function ObligationsQueueInner() {
   const t = useTranslations("contracts");
-  const [obligations, setObligations] = useState<ObligationRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
 
-  const fetchObligations = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Ein Fehler der äusseren
+  // Vertragsliste wird nicht mehr verschluckt, sondern landet im
+  // Fehlerzustand der Abfrage (gleiche Darstellung: leere Liste).
+  const {
+    data: obligations = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ObligationRow[]>({
+    queryKey: ["contracts", "obligations", "queue"],
+    queryFn: async () => {
       // Fetch all contracts, then obligations for each
       // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422, und `if (!cRes.ok)
       // return;` liess `loading` im `finally` auf false laufen — die Seite zeigte
@@ -93,17 +102,13 @@ function ObligationsQueueInner() {
         return a.dueDate.localeCompare(b.dueDate);
       });
 
-      setObligations(allObls);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return allObls;
+    },
+  });
 
-  useEffect(() => {
-    void fetchObligations();
-  }, [fetchObligations]);
+  const fetchObligations = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     if (statusFilter === "__all__") return obligations;
@@ -147,9 +152,12 @@ function ObligationsQueueInner() {
             variant="outline"
             size="sm"
             onClick={fetchObligations}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

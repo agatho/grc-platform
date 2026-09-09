@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -60,27 +61,30 @@ function ContractsDashboardInner() {
   const t = useTranslations("contracts");
   const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
-  const [data, setData] = useState<ContractDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `data` wie vorher leer; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ContractDashboard | null>({
+    queryKey: ["contracts", "dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/contracts/dashboard");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as ContractDashboard | null;
+    },
+  });
 
   const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/contracts/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -108,9 +112,12 @@ function ContractsDashboardInner() {
             variant="outline"
             size="sm"
             onClick={fetchDashboard}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/contracts/list")}>
             <FileText size={16} />
