@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -46,40 +47,41 @@ export function CatalogWorkqueue({
   createParam = "catalogEntryId",
 }: Props) {
   const t = useTranslations("catalogs");
-  const [entries, setEntries] = useState<CatalogEntry[]>([]);
-  const [catalogs, setCatalogs] = useState<CatalogInfo[]>([]);
-  const [_totalEntries, setTotalEntries] = useState(0);
-  const [unassignedCount, setUnassignedCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [selectedCatalog, setSelectedCatalog] = useState<string>("");
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      catalogType,
-      unassignedOnly: "true",
-      limit: "50",
-    });
-    if (selectedCatalog) params.set("catalogId", selectedCatalog);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Katalogtyp und Filter stehen im
+  // Schlüssel; eine nicht-ok-Antwort liefert wie vorher leere Werte. Das nie
+  // gelesene `_totalEntries` entfiel.
+  const { data: bundle, isPending: loading } = useQuery<{
+    entries: CatalogEntry[];
+    catalogs: CatalogInfo[];
+    unassignedCount: number;
+  }>({
+    queryKey: ["catalogs", "active-entries", catalogType, selectedCatalog],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        catalogType,
+        unassignedOnly: "true",
+        limit: "50",
+      });
+      if (selectedCatalog) params.set("catalogId", selectedCatalog);
 
-    try {
       const res = await fetch(`/api/v1/catalogs/active-entries?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setEntries(json.data ?? []);
-        setCatalogs(json.catalogs ?? []);
-        setTotalEntries(json.totalEntries ?? 0);
-        setUnassignedCount(json.unassignedCount ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [catalogType, selectedCatalog]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+      if (!res.ok) return { entries: [], catalogs: [], unassignedCount: 0 };
+      const json = await res.json();
+      return {
+        entries: (json.data ?? []) as CatalogEntry[],
+        catalogs: (json.catalogs ?? []) as CatalogInfo[],
+        unassignedCount: (json.unassignedCount ?? 0) as number,
+      };
+    },
+  });
+  const entries = bundle?.entries ?? [];
+  const catalogs = bundle?.catalogs ?? [];
+  const unassignedCount = bundle?.unassignedCount ?? 0;
 
   // Don't show if no active catalogs or all entries processed
   if (!loading && catalogs.length === 0) return null;
