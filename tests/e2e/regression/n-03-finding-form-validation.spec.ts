@@ -85,13 +85,23 @@ test("W22-C1-03: Finding-Create UI form — required validation + happy path + p
   // links to. The assertion itself is unchanged and is still the real check:
   // the title the form just created has to be readable on the detail page.
   await page.goto(`/controls/findings/${findingId}`);
-  await page
-    .waitForLoadState("networkidle", { timeout: 15_000 })
-    .catch(() => {});
+  // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+  //   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(…)
+  //   const pageText = await page.locator("body").innerText();
+  //   expect(pageText).toContain(<Titel>);
+  // `waitForLoadState("networkidle")` kehrt sofort zurück, wenn im Moment des
+  // Aufrufs zufällig kein Abruf läuft — direkt nach `goto()` ist das der
+  // Regelfall, weil die Seite ihre Daten erst nach der Hydrierung holt.
+  // Danach liest `innerText()` **einmal**, und `expect(zeichenkette)`
+  // wiederholt nichts. Gemessen: die Seite lieferte die Hülle vor dem ersten
+  // Abruf ("A / U / Organisation / U / © 2026 ARCTOS"). Dieselbe Bauart wie
+  // der Testdefekt in `navigation.spec.ts` (Welle 6c §8.2). Die Erwartung ist
+  // unverändert; nur das Lesen wiederholt jetzt.
   expect(
     new URL(page.url()).pathname,
     "navigation did not land on the finding detail route",
   ).toBe(`/controls/findings/${findingId}`);
-  const pageText = await page.locator("body").innerText();
-  expect(pageText).toContain(title);
+  await expect(page.locator("body")).toContainText(title, {
+    timeout: 60_000,
+  });
 });

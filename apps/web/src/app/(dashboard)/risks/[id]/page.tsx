@@ -512,7 +512,20 @@ function RiskDetailContent() {
         fetch(`/api/v1/risks/${riskId}/framework-mappings?limit=50`),
         fetch(`/api/v1/risks/${riskId}/process-links?limit=50`),
         fetch(`/api/v1/risks/${riskId}/asset-links?limit=50`),
-        fetch(`/api/v1/controls?riskId=${riskId}&limit=50`).catch(() => null),
+        // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+        // `fetch("/api/v1/controls?riskId=" + riskId + "&limit=50")`.
+        // `GET /api/v1/controls` fuehrt seit #WAVE6-CROSS-01 eine strikte
+        // Erlaubnisliste (`paginate({ allowedParams: [...] })`) und beantwortet
+        // jeden unbekannten Parameter mit 422 — gemessen:
+        //   422 {"fieldErrors":{"riskId":["is not a recognized query parameter"]}}
+        // Der Zweig `if (clRes?.ok)` war damit nie wahr: die Karte
+        // „Verknuepfte Kontrollen" meldete IMMER „Keine Kontrollen verknuepft",
+        // auch wenn `risk_control` Zeilen hatte. Dieselbe Welle hat mit
+        // `GET /api/v1/risks/:id/controls` (#WAVE6-CROSS-02) den richtigen
+        // Endpunkt angelegt; nur die Aufrufstelle blieb stehen.
+        // Kein `.catch(() => null)` mehr: ein Netzwerkfehler gehoert in das
+        // `try` darum, nicht in eine stille leere Liste.
+        fetch(`/api/v1/risks/${riskId}/controls`),
       ]);
 
       if (fmRes.ok) {
@@ -527,7 +540,7 @@ function RiskDetailContent() {
         const alJson = await alRes.json();
         setAssetLinks(alJson.data ?? []);
       }
-      if (clRes?.ok) {
+      if (clRes.ok) {
         const clJson = await clRes.json();
         const controls = (clJson.data ?? []).map((c: UnvalidatedJson) => ({
           id: c.id,

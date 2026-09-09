@@ -143,7 +143,19 @@ function ControlDetailInner() {
           fetch(`/api/v1/controls/${controlId}`),
           fetch(`/api/v1/controls/${controlId}/tests`),
           fetch(`/api/v1/controls/${controlId}/findings`),
-          fetch(`/api/v1/controls/${controlId}/rcm`),
+          // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+          // `/api/v1/controls/:id/rcm`. Diesen Endpunkt gibt es nicht —
+          // `app/api/v1/controls/[id]/` hat kein `rcm/`-Segment, und der
+          // Entwicklungsserver antwortet mit einer HTML-404:
+          //   404 GET /api/v1/controls/<uuid>/rcm
+          // (gemessen 2026-09-08 beim Aufruf der Kontroll-Detailseite).
+          // `rcmRes.ok` war damit nie wahr, `linkedRisks` blieb leer, und der
+          // Reiter „RKM" meldete auch bei vorhandener `risk_control`-Zeile
+          // „Keine Risiko-Kontroll-Zuordnungen gefunden".
+          // Der richtige Endpunkt heisst `/risks` (#WAVE6-CROSS-02, die
+          // Gegenrichtung zu `/risks/:id/controls`) und liefert genau die
+          // Felder, die `LinkedRisk` erwartet.
+          fetch(`/api/v1/controls/${controlId}/risks`),
           fetch(
             `/api/v1/audit-log?entityType=control&entityId=${controlId}&limit=50`,
           ),

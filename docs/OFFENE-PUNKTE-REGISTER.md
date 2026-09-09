@@ -612,6 +612,56 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8a: das Regressionsprojekt ist vollständig gemessen
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-8A.md`.
+
+**62 von 62 Tests gemessen, 62 grün, 0 rot, 0 ungemessen** (Welle 6c: 26
+gemessen, 36 ungemessen). Ehrlich dazu: Das ist eine **Summe über zwölf
+Abschnitte**, kein Durchlauf am Stück. Vier Abschnitte sind unter Last
+abgebrochen und wurden einzeln nachgemessen — alle grün.
+
+**Der bekannte rote Test war zweierlei.** `n-01` galt seit Welle 7a als „rot,
+aber kein Rückschritt". Beides stimmte, und beides war zu wenig:
+
+1. **Ein Testfehler.** Der Test las den Seiteninhalt **einmal**, nach
+   `waitForLoadState("networkidle")` mit `.catch()`. Der Beleg steckt in der
+   empfangenen Zeichenkette: `"A / U / Organisation / U / © 2026 ARCTOS"` — das
+   ist der erste Frame, **bevor** die Sitzung geladen ist. Dieselbe Zeile stand
+   in **sieben** Spezifikationen. Die Erwartung ist unverändert; nur das Lesen
+   wiederholt jetzt.
+2. **Ein Produktdefekt auf derselben Seite**, den der Test wegen (1) nie
+   erreichen konnte.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                                                                    | Art     | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------- | ------- |
+| OP-216 | **„Verknüpfte Kontrollen" auf `/risks/[id]` war strukturell immer leer.** Die Seite rief `GET /api/v1/controls?riskId=…` — diese Route führt seit `#WAVE6-CROSS-01` eine strikte Parameter-Erlaubnisliste und antwortet auf jeden unbekannten Parameter mit **422**. Der Zweig `if (clRes?.ok)` war damit nie wahr, und es gab **kein `else`**: Die Karte meldete immer „Keine Kontrollen verknüpft", auch wenn `risk_control` Zeilen hatte. Dieselbe Welle hatte mit `GET /api/v1/risks/:id/controls` den richtigen Endpunkt bereits angelegt — nur die Aufrufstelle blieb stehen. | `422 {"fieldErrors":{"riskId":["is not a recognized query parameter"]}}` | Produkt | behoben |
+| OP-217 | **Dasselbe in der Gegenrichtung.** Der Reiter „RCM" auf `/controls/[id]` rief `GET /api/v1/controls/<uuid>/rcm` — dieses Segment existiert nicht, **404**, ebenfalls ohne `else`. Richtig ist `GET /api/v1/controls/:id/risks`.                                                                                                                                                                                                                                                                                                                                                     | `404 GET /api/v1/controls/<uuid>/rcm`                                    | Produkt | behoben |
+
+Beide tragen dieselbe Signatur: **`if (res.ok)` ohne `else`**. Das sind das
+**siebzehnte und achtzehnte** wirkungslose Kontrolle dieses Audits — und die
+ersten beiden, die nicht in einem Prüfwerkzeug sitzen, sondern **im Produkt
+selbst**. Die neuen Prüfungen sagen deshalb nicht „die Seite liefert 200",
+sondern: die Seite setzt **keinen abgelehnten API-Aufruf** ab.
+
+**Vier Prüfungen waren seit Welle 6b unerfüllbar** — englische Zeichenketten
+gegen eine inzwischen übersetzte Oberfläche, dazu ein `/^Pruefen$/` gegen
+„Prüfen". Rot geworden sind sie nie, weil das Projekt ungemessen war. Ein
+Testbestand, den niemand ausführt, altert unbemerkt.
+
+**Nicht behoben, benannt:** `GET /api/v1/findings/<uuid>/status-history` gibt
+404 — Route und Tabelle existieren nicht; das wäre ein neues Merkmal, keine
+Reparatur. Und jede Modulseite zeigt beim Laden kurz den rohen
+Übersetzungsschlüssel des Modul-Teasers; die Behebung ändert die Prüfung vor
+jeder Modulseite und braucht eine eigene Welle.
+
+**Zwei Fallstricke fürs Protokoll:** Ein `kill -9` auf den Next-Server mitten
+im Schreiben beschädigt `.next` — danach `GET /api/auth/session 404` und alle
+vier Anmeldungen rot, was wie ein kaputtes Anmeldeverfahren aussieht und keines
+ist. Und `pkill -f playwright` bringt die eigene Shell um, sobald deren
+Kommandozeile das Muster enthält — auch dann, wenn sie das Skript nur per
+Heredoc **schreibt**.
+
 ### Nachtrag 2026-09-08 — Welle 7b: `set-state-in-effect` ist an, und die Sortierung war falsch
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-7B.md`. **20 → 0 Fundstellen, 2.294
