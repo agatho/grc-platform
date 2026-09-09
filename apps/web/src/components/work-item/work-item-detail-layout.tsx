@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { ChevronRight, History, Loader2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { ModuleIcon } from "@/components/module/module-icon";
 import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 import Link from "next/link";
 
@@ -49,7 +49,6 @@ export function WorkItemDetailLayout({
   const [transitioning, setTransitioning] = useState<string | null>(null);
   const [historyEntries, setHistoryEntries] = useState<UnvalidatedJson[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const Icon = icon ? getLucideIcon(icon) : null;
 
   async function handleStatusChange(newStatus: string) {
     setTransitioning(newStatus);
@@ -133,7 +132,12 @@ export function WorkItemDetailLayout({
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
-          {Icon && <Icon size={24} className="text-gray-500" />}
+          {/* [OP-245] `<ModuleIcon>` statt eines Nachschlags im Rumpf — dieselbe
+              Aufloesung wie Welle 7a (`module-icon.tsx`) fuer
+              `react-hooks/static-components`. */}
+          {icon && (
+            <ModuleIcon name={icon} size={24} className="text-gray-500" />
+          )}
           <div>
             <div className="flex items-center gap-2">
               {elementId && (
