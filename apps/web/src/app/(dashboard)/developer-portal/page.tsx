@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -47,33 +48,42 @@ interface UsageStats {
 export default function DeveloperPortalPage() {
   const t = useTranslations("developerPortal");
   const { formatDate } = useDateFormat();
-  const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
-  const [stats, setStats] = useState<UsageStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (leere Liste bzw. null).
+  const {
+    data: portal,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ apiKeys: ApiKeyRow[]; stats: UsageStats | null }>({
+    queryKey: ["developer-portal", "overview"],
+    queryFn: async () => {
       const [keysRes, statsRes] = await Promise.all([
         fetch("/api/v1/api-keys"),
         fetch("/api/v1/api-keys/usage/stats"),
       ]);
+      let apiKeys: ApiKeyRow[] = [];
+      let stats: UsageStats | null = null;
       if (keysRes.ok) {
         const keysData = await keysRes.json();
-        setApiKeys(keysData.data ?? []);
+        apiKeys = (keysData.data ?? []) as ApiKeyRow[];
       }
       if (statsRes.ok) {
         const statsData = await statsRes.json();
-        setStats(statsData.data);
+        stats = (statsData.data ?? null) as UsageStats | null;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { apiKeys, stats };
+    },
+  });
+  const apiKeys = portal?.apiKeys ?? [];
+  const stats = portal?.stats ?? null;
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleRevoke = async (id: string) => {
     await fetch(`/api/v1/api-keys/${id}`, { method: "DELETE" });
