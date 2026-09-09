@@ -18,7 +18,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/format-date";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface CompareRisk {
   riskId: string;
@@ -125,7 +125,9 @@ function FAIRCompareInner() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 type="number"
-                tickFormatter={formatCompactEUR}
+                tickFormatter={(v: number) =>
+                  formatCompactCurrency(locale, v, "EUR")
+                }
                 fontSize={11}
               />
               <YAxis type="category" dataKey="name" width={200} fontSize={11} />
@@ -199,10 +201,4 @@ function FAIRCompareInner() {
  */
 function formatEUR(locale: string, value: number): string {
   return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
 }

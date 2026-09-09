@@ -24,6 +24,17 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import path from "node:path";
 
+// [ARCTOS-FULL-2026-08-31 · Welle 8d] Die Regel kannte bis hierher nur die
+// halbe Form. `toLocaleString("de-DE")` fiel auf, `new Intl.NumberFormat(
+// "de-DE")` nicht — dieselbe Wirkung, anderer Aufruf. Genau darueber sind in
+// Welle 6b 20 Geldbetraege durchgerutscht. Die Regel deckt jetzt beide Formen;
+// `g` ist absichtlich NICHT gesetzt, weil ein `RegExp` mit `g` zwischen
+// Aufrufen seinen `lastIndex` behaelt und dann jeden zweiten Treffer
+// verschluckt — die Kopie fuer `matchAll` wird an der Fundstelle erzeugt.
+const FESTES_GEBIETSSCHEMA_QUELLE =
+  "(?:toLocale[A-Za-z]*|Intl\\.(?:NumberFormat|DateTimeFormat|RelativeTimeFormat|ListFormat|PluralRules|Collator))\\(\\s*[\"'][a-z]{2}-[A-Z]{2}[\"']";
+const FESTES_GEBIETSSCHEMA = () => new RegExp(FESTES_GEBIETSSCHEMA_QUELLE, "g");
+
 const WEB = path.join(__dirname, "../../..");
 const SRC = path.join(WEB, "src");
 const MESSAGES = path.join(WEB, "messages");
@@ -139,11 +150,9 @@ describe("[OP-070] Welle 5a — die umgestellten Oberflaechen", () => {
   it.each(LOCALE_SENSITIVE)(
     "%s formatiert nicht mit einem fest verdrahteten Gebietsschema",
     (rel) => {
-      const hits = [
-        ...code(rel).matchAll(
-          /toLocale[A-Za-z]*\(\s*["'][a-z]{2}-[A-Z]{2}["']/g,
-        ),
-      ].map((m) => m[0]);
+      const hits = [...code(rel).matchAll(FESTES_GEBIETSSCHEMA())].map(
+        (m) => m[0],
+      );
       expect(hits).toEqual([]);
     },
   );
@@ -169,9 +178,7 @@ describe("[OP-070] Welle 5a — die umgestellten Oberflaechen", () => {
           const src = readFileSync(p, "utf8")
             .replace(BLOCK_COMMENT, "")
             .replace(LINE_COMMENT, "$1");
-          for (const m of src.matchAll(
-            /toLocale[A-Za-z]*\(\s*["'][a-z]{2}-[A-Z]{2}["']/g,
-          )) {
+          for (const m of src.matchAll(FESTES_GEBIETSSCHEMA())) {
             offenders.push(`${path.relative(SRC, p)}: ${m[0]}`);
           }
         }

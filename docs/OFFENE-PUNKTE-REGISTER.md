@@ -612,6 +612,37 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8d: die Zahl unter der Achse, und ein Datum, das der Empfänger falsch lesen musste
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-8D.md`.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                           | Beleg                                                            | Art               | Stand     |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------- | --------- |
+| OP-222 | **`formatCompactEUR` lag als byteweise identische Kopie in vier FAIR-Seiten — und hatte zwei Fehler, von denen nur einer das Gebietsschema war.** Sie rundete auf ganze Tausender: **999.999 wurde zu „1000k"**, direkt unter einem Tick, der „1.0M" heißt; 12.500 wurde zu „13k". Das ist in jeder Sprache falsch. Dazu war der Dezimaltrenner fest der englische Punkt, während die Oberfläche daneben deutsch formatierte. | `alt(999_999) === "1000k"`, im Test als Gegenprobe mitgeführt    | Produktdefekt     | behoben   |
+| OP-223 | **Der Wachposten gegen fest verdrahtete Gebietsschemata kannte nur die halbe Form.** `toLocaleString("de-DE")` fiel auf, `new Intl.NumberFormat("de-DE")` nicht — dieselbe Wirkung, anderer Aufruf. Genau darüber sind die 20 Geldbeträge aus OP-203 durchgerutscht. Die Regel deckt jetzt beide Formen, an allen drei Fundstellen derselben Prüfung.                                                                         | Gegenprobe: alte Regel 0 Treffer, neue 1 Treffer, Test rot       | Testlücke         | behoben   |
+| OP-224 | **Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest.** `title` und `message` sind fertige Zeichenketten in der Datenbank; jeder Empfänger kann eine andere Sprache haben. Der Betreff der E-Mail wird über `templateKey` zweisprachig aufgelöst, der Meldungstext nicht. Sprachrichtig wird das erst, wenn die Meldung je Empfänger aus `templateData` gerendert wird.        | `packages/email/src/template-registry.ts` löst nur `subject` auf | fehlende Funktion | **offen** |
+
+**Der Fund mit der unmittelbarsten Wirkung ist ein Datum.** In
+`api/v1/policies/distributions/[id]/activate/route.ts` stand ein **englischer
+Satz mit einem deutsch formatierten Datum**: `Please read and acknowledge by
+01.12.2026.` Für den englischen Empfänger ist die gepunktete Form nicht nur
+fremd, sie ist **mehrdeutig** — `01.12.` liest sich als 12. Januar. Bei einer
+Fristmitteilung darf sich der Empfänger in der Frist nicht irren können. Da an
+dieser Stelle kein Gebietsschema existiert (siehe OP-224), steht dort jetzt
+ISO 8601: in beiden Sprachen eindeutig, in keiner falsch.
+
+**OP-203 ist damit fertig beziffert.** Von den 18 benannten Fundstellen ist auf
+den Bildschirmpfaden **keine** mehr übrig — unter der erweiterten Regel aus
+OP-223 gemessen: 0 in `app/(dashboard)`, `app/(portal)` und `components`. Was
+bleibt, sind **26 Fundstellen in 12 Exportdateien**, und dort ist die
+Umstellung keine Formatierungsfrage: die Dokumente sind durchgehend deutsch
+geschrieben („Erstellt am", „Organisation", „Stand"). Ein englisch
+formatiertes Datum in einem deutschen Bericht macht ihn nicht richtiger,
+sondern uneinheitlich — dasselbe Argument, mit dem Welle 5a ihre
+Teiländerung an `admin/rls-audit` zurückgenommen hat: ganz oder gar nicht.
+Die Liste steht jetzt als Zahl je Datei in
+`wave8d-compact-currency.test.ts` §2 und fällt, sobald sie wächst.
+
 ### Nachtrag 2026-09-09 — Welle 8b/8c: ein Check, den es nicht gab, und ein Fehler, den ich selbst gemacht habe
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-8B.md` und `docs/UMSETZUNG-WELLE-8C.md`.

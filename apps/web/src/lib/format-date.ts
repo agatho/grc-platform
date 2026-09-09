@@ -122,6 +122,46 @@ export function formatCurrency(
 }
 
 /**
+ * Kompakte Waehrungsangabe fuer Achsenbeschriftungen ("1,3 Mio. €" / "€1.3M").
+ *
+ * [ARCTOS-FULL-2026-08-31 · Welle 8d] Ersetzt vier byteweise identische
+ * Kopien von `formatCompactEUR`, je eine in den vier FAIR-Seiten. Die
+ * ersetzte Fassung hatte zwei Fehler, und nur einer davon war das
+ * Gebietsschema:
+ *
+ *   1. Sie schrieb `(v/1000).toFixed(0) + "k"`. Fuer 999.999 ergibt das
+ *      **"1000k"** — direkt unter einem Tick, der "1.0M" heisst. Und 12.500
+ *      wurde zu "13k". Das ist in JEDER Sprache falsch.
+ *   2. Der Dezimaltrenner war fest der englische Punkt ("1.3M"), obwohl die
+ *      Oberflaeche daneben deutsch formatiert war.
+ *
+ * `notation: "compact"` loest beides ueber CLDR: Deutsch kuerzt unterhalb
+ * einer Million gar nicht ab (12.500 € bleibt 12.500 €) und schreibt darueber
+ * "Mio."; Englisch kuerzt ab Tausend mit "K". `trailingZeroDisplay` haelt
+ * "0 €" statt "0,0 €" auf der Nulllinie.
+ *
+ * Der Waehrungscode ist Pflichtargument — aus demselben Grund wie bei
+ * `formatCurrency`: "EUR" gehoert zum Betrag, nicht zum Gebietsschema.
+ */
+export function formatCompactCurrency(
+  locale: SupportedLocale | string,
+  value: number | null | undefined,
+  currency: string,
+  opts?: Intl.NumberFormatOptions,
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return value.toLocaleString(tag(locale), {
+    style: "currency",
+    currency,
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+    trailingZeroDisplay: "stripIfInteger",
+    ...opts,
+  });
+}
+
+/**
  * React hook — returns memoised date/number formatters that
  * already know the active locale. Use inside any "use client"
  * component:
@@ -154,6 +194,11 @@ export function useDateFormat() {
         currency: string,
         opts?: Intl.NumberFormatOptions,
       ) => formatCurrency(locale, n, currency, opts),
+      formatCompactCurrency: (
+        n: number | null | undefined,
+        currency: string,
+        opts?: Intl.NumberFormatOptions,
+      ) => formatCompactCurrency(locale, n, currency, opts),
       locale,
     }),
     [locale],

@@ -23,7 +23,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { formatCurrency, useDateFormat } from "@/lib/format-date";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  useDateFormat,
+} from "@/lib/format-date";
 
 interface SimResult {
   id: string;
@@ -197,7 +201,9 @@ function FAIRResultsInner() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="bucket"
-                    tickFormatter={(val) => formatCompactEUR(val)}
+                    tickFormatter={(val: number) =>
+                      formatCompactCurrency(locale, val, "EUR")
+                    }
                     fontSize={11}
                   />
                   <YAxis fontSize={11} />
@@ -275,7 +281,9 @@ function FAIRResultsInner() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="threshold"
-                    tickFormatter={(val) => formatCompactEUR(val)}
+                    tickFormatter={(val: number) =>
+                      formatCompactCurrency(locale, val, "EUR")
+                    }
                     fontSize={11}
                   />
                   <YAxis
@@ -458,10 +466,4 @@ function formatEUR(locale: string, value: number): string {
 function formatEURFromUnknown(locale: string, value: unknown): string {
   const num = Number(value);
   return Number.isFinite(num) ? formatEUR(locale, num) : String(value ?? "-");
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
 }

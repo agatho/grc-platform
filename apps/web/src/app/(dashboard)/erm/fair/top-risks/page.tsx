@@ -19,7 +19,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatCurrency } from "@/lib/format-date";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -111,7 +111,9 @@ function FAIRTopRisksInner() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   type="number"
-                  tickFormatter={formatCompactEUR}
+                  tickFormatter={(v: number) =>
+                    formatCompactCurrency(locale, v, "EUR")
+                  }
                   fontSize={11}
                 />
                 <YAxis
@@ -216,10 +218,4 @@ function FAIRTopRisksInner() {
  */
 function formatEUR(locale: string, value: number): string {
   return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
 }

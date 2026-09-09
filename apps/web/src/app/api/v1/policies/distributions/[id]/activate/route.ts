@@ -95,7 +95,20 @@ export const POST = withErrorHandler(async function POST(
       entityType: "policy_distribution",
       entityId: id,
       title: `New policy requires your acknowledgment: ${dist.title}`,
-      message: `Please read and acknowledge by ${new Date(dist.deadline).toLocaleDateString("de-DE")}.`,
+      // [ARCTOS-FULL-2026-08-31 · Welle 8d] Hier stand ein ENGLISCHER Satz mit
+      // einem DEUTSCH formatierten Datum: `…acknowledge by 01.12.2026.` Fuer
+      // den englischen Leser ist die gepunktete Form nicht nur fremd, sie ist
+      // mehrdeutig — 01.12. liest sich als 12. Januar. Der Empfaenger einer
+      // Fristmitteilung darf sich in der Frist nicht irren koennen.
+      //
+      // Die Meldung wird beim Schreiben festgelegt, der Empfaenger steht erst
+      // beim Lesen fest, und jeder Empfaenger kann eine andere Sprache haben —
+      // ein Gebietsschema gibt es an dieser Stelle also nicht. Deshalb
+      // ISO 8601: in beiden Sprachen eindeutig, in keiner falsch. Die
+      // sprachrichtige Fassung braucht die Meldung aus `templateData` je
+      // Empfaenger gerendert; das ist als OP-224 aufgenommen und keine
+      // Aenderung an dieser Zeile.
+      message: `Please read and acknowledge by ${new Date(dist.deadline).toISOString().slice(0, 10)}.`,
       channel: "both" as const,
       templateKey: "policy_distribution",
       templateData: {

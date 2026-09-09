@@ -17,7 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency } from "@/lib/format-date";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -186,7 +186,9 @@ function FAIRPortfolioInner() {
                   type="number"
                   dataKey="y"
                   name={t("tailRisk")}
-                  tickFormatter={formatCompactEUR}
+                  tickFormatter={(v: number) =>
+                    formatCompactCurrency(locale, v, "EUR")
+                  }
                   label={{
                     value: t("tailRisk"),
                     angle: -90,
@@ -333,10 +335,4 @@ function FAIRPortfolioInner() {
  */
 function formatEUR(locale: string, value: number): string {
   return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
 }
