@@ -612,6 +612,143 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — OP-245 geschlossen: 416 Fundstellen des neueren Plugins abgetragen, der Pin ist weg
+
+Lokale Sitzung auf der Maschine des Eigentümers, Start bei `3351dcb2`
+(Entscheidung des Eigentümers: Weg B). Übergabe war `HANDOVER-OP-245.md`
+aus der Cloud-Sitzung; deren Zahlen wurden zuerst nachgemessen, dann
+umgesetzt. Arbeitsteilung: ein Pilot von Hand, dann vierzehn parallel
+arbeitende Agenten mit einem schriftlichen Rezept (Muster aus Welle 7b,
+`catalogs/objects/page.tsx`) und einem zweiten für die nicht-mechanischen
+Gestalten; jede Datei wurde einzeln gegen ESLint 7.1.1 geprüft, jeder
+Bericht gelesen, die Verhaltensänderungen stehen unten gesammelt.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Beleg                                                                                                               | Art           | Stand       |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------- | ----------- |
+| OP-245 | **`eslint-plugin-react-hooks` 7.1.1 bleibt, die 416 Fundstellen sind abgetragen, der Pin auf 7.0.1 ist entfernt.** 384 × `set-state-in-effect`, 15 × `refs`, 9 × `purity`, 4 × `static-components`, 3 × `immutability`, 1 × `preserve-manual-memoization` in 354 Dateien — jede neu _erkannt_, keine neu _eingeführt_. Aufgelöst mit den Gestalten aus Welle 7b: Abruf beim Einhängen auf `@tanstack/react-query` (346 Stellen), abgeleiteter Zustand beim Rendern, vom Server gesäte Formulare als eigenes, mit dem Stand eingehängtes Bauteil, Uhrzeit als externer Speicher (`useNow`), Rückruf-Referenzen im Effekt statt beim Rendern. Kein `eslint-disable`, die Ratsche unverändert, keine Regel angefasst. | `eslint . --quiet` in apps/web mit 7.1.1: **0**; `lint-ratchet.mjs` 0/0 und 44/44; tsc 13 × Exit 0; Messungen unten | Code-Qualität | **behoben** |
+
+**Erst nachgemessen** (§3 der Übergabe), mit 7.1.1 per `--no-save` über den
+Pin installiert, `apps/web/eslint.config.mjs` unverändert:
+416 Fundstellen in 354 Dateien, Verteilung wie in der Übergabe. Die
+`set-state-in-effect`-Gestalten nach dem geflaggten Ausdruck: `void fetchX()`
+276, `fetchX()` 71, direktes `setX(...)` 26, Rest 11 — 347 von 384 sind
+derselbe Griff.
+
+**Was gemessen wurde, nach der Umsetzung.**
+
+| Prüfung                                                             | Ergebnis                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `eslint . --quiet` (apps/web) mit `eslint-plugin-react-hooks` 7.1.1 | **0** (vorher 416; Zwischenstand nach den mechanischen Stapeln 16, davon 11 in neun Dateien, die zwischen den Stapeln durchgefallen waren — mit dem Register nachgezogen)                                                                                                                             |
+| `node scripts/lint-ratchet.mjs`                                     | **Exit 0** — apps/web 0 Befunde gegen Baseline 0, Wurzel 44 gegen 44, gemessen mit 7.1.1 als aufgeloester Version (ein erster Lauf nach dem Entfernen des Pins hatte noch 7.0.1 aus dem Lockfile aufgeloest — deshalb `npm update eslint-plugin-react-hooks`, dann erneut gemessen)                   |
+| `npm ls eslint-plugin-react-hooks` nach Entfernen des Pins          | genau eine Kopie, **7.1.1**, ueber eslint-config-next 16.3.4; keine geschachtelte 7.0.1 mehr unter apps/web                                                                                                                                                                                           |
+| `tsc --noEmit` apps/web                                             | **Exit 0**, 0 Fehler, nach allen 349 geaenderten Dateien (zwei Zwischenlaeufe waehrend der Agentenarbeit zeigten nur Momentaufnahmen halbfertiger Dateien)                                                                                                                                            |
+| `vitest run` apps/web (mit Testdatenbank)                           | **3.019 von 3.027**; die acht roten sind die sieben bekannten Windows-Ausfaelle aus OP-246 (CRLF, Pfadtrenner, PoC-Datei ausserhalb des Repos) plus `all-components-smoke`, das unter der Last der vier parallelen Pruefungen ins 15-s-Limit lief — isoliert 17/17. Kein Ausfall durch die Umstellung |
+| `prettier --check .`                                                | grün (`--end-of-line auto`, s. OP-234)                                                                                                                                                                                                                                                                |
+| CI (`gh run list --branch audit/full-2026-08-31`)                   | nach dem Push angestossen — Ergebnis im Folge-Nachtrag                                                                                                                                                                                                                                                |
+
+**Was je Gestalt geschehen ist.**
+
+- **Abruf beim Einhängen (346 + die bedingten/verketteten Abrufe):** `useQuery`
+  mit vollständigem `queryKey` (jede Kennung, jeder Filter, jede Seite, die
+  in der Anfrage steckt), `isPending` für einen Ladezustand, der mit `true`
+  beginnt, `isFetching` für den Aktualisieren-Knopf, `enabled` für die alten
+  `if (id)`-Bedingungen, bisherige Funktionsnamen (`fetchData`, `reload`,
+  `load`) als dünne Hüllen um `refetch`/`invalidateQueries`, damit die
+  Aufrufstellen unverändert bleiben. Lokale Nachbesserungen nach Mutationen
+  (`setItems(prev => …)`) wurden zu `queryClient.setQueryData` auf demselben
+  Schlüssel, wo die Seite auf die sofortige Anzeige baut (elf Dateien), sonst
+  zu einem erneuten Abruf. Listen mit Seiten- oder Filterwechsel tragen
+  `placeholderData: keepPreviousData`, damit die alten Zeilen stehen bleiben
+  (marketplace, tasks, automation/executions, isms/cve, budget/costs,
+  programmes/my-work, risk-acceptances, graph-Suche).
+- **Vom Server gesäte Formulare (Welle 7b, `ropa`-Muster) — 16 Stellen:** das
+  Formular ist ein eigenes Bauteil, initialisiert per `useState(() => seed)`
+  und mit einem Schlüssel eingehängt, der nur dann wechselt, wenn ein
+  _neuer_ Stand das Formular zurücksetzen soll (nach erfolgreichem
+  Speichern), nicht bei jedem Hintergrundabruf: admin/sso, bcms/crisis/[id],
+  bcms/bia/[id], budget/[year], controls/findings/analytics (SLA-Editor),
+  dashboards/[id], organizations/[id], onboarding, erm/risks/[id]/fair,
+  isms/assessments/[id]/wizard, programmes/[id]/steps/[stepId],
+  tprm/questionnaires/[id]/edit, settings/notifications,
+  components/process/process-review-config, components/bpmn/arctos-properties-panel,
+  die vier ai-act-Detailseiten.
+- **Direktes `setX` im Effekt (26):** abgeleitet beim Rendern (`useMemo`,
+  `override ?? default`), in den Handler verlegt, der die Änderung auslöst
+  (Suchfeld leeren, Sortierentwurf verwerfen, Dialog öffnen/schliessen),
+  oder Teil eines Abrufs geworden (`setLoading(true)` am Anfang eines
+  Effekts war immer ein Abruf).
+- **`refs` (15):** die "jeweils jüngster Rückruf"-Referenzen in
+  `arctos-bpmn-canvas`, `bpmn-viewer-legacy` und `grc-view-select` wurden
+  beim Rendern _beschrieben_; die Zuweisung liegt jetzt in einem Effekt vor
+  den Effekten, die sie lesen. Die acht Fundstellen in `processes/[id]/page.tsx`
+  waren ein echter Defekt (OP-247 unten).
+- **`purity` (9):** `Date.now()` in "vor x Minuten"-Helfern. Neuer Hook
+  `src/hooks/use-now.ts` (`useSyncExternalStore`, Takt eine Minute,
+  Server-Momentaufnahme = Modulstart, damit Hydrierung nicht abweicht) — die
+  Anzeigen laufen damit zum ersten Mal wirklich mit.
+- **`static-components` (4):** `getLucideIcon()` als Typ im Rendern →
+  `<ModuleIcon name=…/>` aus Welle 7a; stateless, deshalb in der Sache
+  harmlos. **`immutability` (3):** Funktionen vor ihrer Verwendung erklärt
+  oder in den Modulraum verlegt. **`preserve-manual-memoization` (1):**
+  `userId` gehoben, damit Abhängigkeitsliste und Rumpf dasselbe lesen.
+
+**Verhaltensänderungen, die für alle umgestellten Seiten gelten** — kein
+Einzelfall, sondern die Folge des Musters, und deshalb hier einmal:
+
+1. Ein erneuter Abruf (Aktualisieren-Knopf, nach einer Mutation) zeigt
+   keinen Vollbild-Spinner mehr; der Inhalt bleibt stehen, `isPending` gilt
+   nur vor dem ersten Ergebnis. Auf `processes/[id]` hat das Nebenwirkung:
+   vorher wurde bei jedem Abruf der ganze Reiterbaum samt BPMN-Editor
+   ausgehängt.
+2. Netzfehler (im Unterschied zu Nicht-ok-Antworten) werden nicht mehr
+   verschluckt, sondern landen im Fehlerzustand der Abfrage; gerendert wird
+   dasselbe (leere Liste, "nicht gefunden"), aber der Provider wiederholt
+   einmal (`retry: 1`), bevor der Fehler steht — eine Sekunde später als
+   vorher. Wo die alte `catch`-Logik einen Toast oder `console.error`
+   trug, steht sie unverändert im `queryFn`.
+3. `staleTime` 60 s: eine Seite, die innerhalb einer Minute erneut
+   eingehängt wird, zeigt zuerst den Zwischenspeicher; ein ausdrücklicher
+   `refetch` fragt immer an. Reiter-Daten (rcsa/campaigns/[id],
+   processes/[id]) werden beim Zurückschalten binnen 60 s nicht neu geladen.
+4. Bei gepaarten Abrufen in einem `queryFn` setzt eine Nicht-ok-Antwort den
+   betroffenen Teil auf seinen Anfangswert, statt den vorigen Wert zu halten.
+
+**Zwei Defekte, die die Regeln freigelegt haben** — beide als Nebenwirkung
+der vorgeschriebenen Auflösung behoben, weil die Behebung _ist_ die
+Auflösung; hier benannt, damit sie nicht in einem Lint-Commit verschwinden:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                                                                                              | Art     | Stand                |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------- | -------------------- |
+| OP-247 | **Rückgängig/Wiederholen im Prozesseditor blieben nach der ersten Änderung stehen.** `canUndo`/`canRedo` wurden beim Rendern aus `editorRef.current` gelesen, aber nichts rendert `EditorTab` nach einem Kommando neu — `onChanged={markChanged}` setzt nur einmal `hasChanges`. Sichtbar: nach der ersten Bearbeitung blieb Rückgängig gesperrt, nach einem Rückgängig blieb Wiederholen gesperrt. Jetzt Zustand, geschrieben aus `onChanged` bei jedem `commandStack.changed`, in beiden Engines. | `processes/[id]/page.tsx` 1489–1490 (alt), `react-hooks/refs` × 8; `grc-maintenance-surface` 32/32 | Produkt | behoben (mit OP-245) |
+| OP-248 | **Ungespeicherte Risikobewertung im Krisenszenario wurde vom nächsten Abruf überschrieben.** Jeder `fetchData()` — Logeintrag anlegen, Teammitglied entfernen, aktivieren/abschliessen, ERM-Sync — schrieb `likelihood`/`treatmentStrategy` mit dem Serverwert zurück: "Hoch" wählen, Logeintrag schreiben, und die Auswahl springt zurück. Jetzt ein eigenes Bauteil, gesät beim Einhängen, Schlüssel erst nach erfolgreichem Speichern erhöht.                                                    | `bcms/crisis/[id]/page.tsx` 94–96 (alt)                                                            | Produkt | behoben (mit OP-245) |
+
+**Beobachtungen der Agenten, bewusst NICHT mitbehoben** — vorbestehendes
+Verhalten, das die Umstellung sichtbar gemacht hat und das je einzeln eine
+Entscheidung braucht (ein Sammelpunkt, damit keine Nummer ohne Zeile
+existiert):
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                  | Art     | Stand                             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------- | --------------------------------- |
+| OP-249 | **Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht:** (1) `programmes/[id]/steps/[stepId]`: die drei Freigabe-Knöpfe `await fetch(...)` ohne `r.ok` — ein 4xx/5xx ist stumm, die Seite lädt nur neu; (2) `graph/explorer`: ein gescheiterter Teilgraph-Abruf hat keine Meldung — vorher blieb still der alte Graph stehen, jetzt steht still der Leerzustand; (3) `catalogs/controls` und `catalogs/risks`: bei Nicht-ok blieben die Zuweisungen des _vorigen_ Eintrags unter dem neu gewählten stehen (jetzt leer, aber weiter ohne Meldung); (4) `admin/sso`: der Aktiv-Schalter sät das ganze Formular neu und verwirft ungespeicherte Eingaben — so war es, so ist es; (5) `processes/[id]/compare`: gleiche Version links und rechts liess den vorigen Vergleich unter falscher Beschriftung stehen (jetzt Leerzustand). | Agentenberichte OP-245 | Produkt | offen — je einzeln zu entscheiden |
+
+**Windows-Ränder (OP-246), unverändert:** die sieben bekannten Windows-Ausfälle
+der Suite (CRLF, Pfadtrenner, die PoC-Datei ausserhalb des Repos) bleiben,
+und `all-components-smoke` läuft unter Last der vier parallelen Prüfungen ins
+15-Sekunden-Limit — isoliert 17/17.
+
+**Sieben Prüfungen mussten einen `QueryClientProvider` bekommen**, weil sie
+umgestellte Seiten oder Bauteile nackt einhängen (die App hat ihn im
+Wurzel-Layout): `wave7a-hook-deps`, `wave8b-module-teaser`, `wave6b-switch-effect`,
+`risk-acceptance-cockpit`, `grc-view-select`, `bpmn-chrome-plane`, dazu der
+Test `wave8e-incompatible-library` — alle im Muster von
+`wave7b-set-state-in-effect.test.tsx`. Keine Erwartung wurde geändert.
+
+**Commits:** ein Pilot, dann je Verzeichnis ein Commit mit den Zählern im
+Betreff, die zwei Defekte eigens, die Prüfungen eigens, zuletzt der Pin —
+95 Commits von `3351dcb2` bis zu dem, der diesen Nachtrag trägt (Pilot, useNow, OP-247, OP-248, 89 Verzeichnisse, Prüfungen, Pin).
+
+**Offen unter OP-245:** nichts. OP-249 trägt die fünf Beobachtungen.
+
 ### Nachtrag 2026-09-09 — OP-234 geschlossen: Next 16.3.4, sharp 0.35.4, und der Rest des Baums
 
 Lokale Sitzung auf der Maschine des Eigentümers, Start bei `f102816f`, elf
@@ -2198,10 +2335,10 @@ zum vierten Mal in einem Timeout verschwunden.
 
 ### Nachtrag 2026-09-09 — Welle 8l: zwei Befunde aus dem Abhängigkeits-Update
 
-| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                  | Art                          | Stand                               |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------- | ----------------------------------- |
-| OP-244 | **`Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert.** Die eigene Angabe lautet `(MIT OR GPL-3.0-or-later)`; die GitHub-Lizenzdatenbank normalisiert das zu „GPL-3.0-only OR MIT", und die Action bewertet einen ODER-Ausdruck nicht als Wahl, sondern fällt über den Zweig auf der Sperrliste. Sie meldet also nicht, dass GPL-Code ausgeliefert wird, sondern dass sie den Ausdruck nicht auswerten kann.                                                                                                                                                                                                                           | Lauf `34345848114`                                                     | Tor                          | behoben                             |
-| OP-245 | **`eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile Anwendungscode geändert hätte.** 384 davon `react-hooks/set-state-in-effect`, die Regel, die Welle 7b mit 20 Fundstellen auf 0 gebracht hat. Der Sprung ist die Regel, nicht der Code. **Nachtrag 2026-09-09 (lokale Sitzung, OP-234):** Weg A vorläufig genommen — exakte devDependency `eslint-plugin-react-hooks@7.0.1` in apps/web, Ratsche wieder 0/0. **Entscheidung des Eigentümers am 2026-09-09: Weg B** — die neuere Version bleibt, die 416 Stellen werden abgearbeitet; übergeben an die lokale Sitzung, Auftrag in `docs/HANDOVER-OP-245.md`. | Eigene Messung 2026-09-09 gegen `a3ff1b07`, bestätigt gegen `29224b2f` | Entscheidung des Eigentümers | **entschieden — in Arbeit (Weg B)** |
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Beleg                                                                  | Art                          | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------- | ---------------------- |
+| OP-244 | **`Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert.** Die eigene Angabe lautet `(MIT OR GPL-3.0-or-later)`; die GitHub-Lizenzdatenbank normalisiert das zu „GPL-3.0-only OR MIT", und die Action bewertet einen ODER-Ausdruck nicht als Wahl, sondern fällt über den Zweig auf der Sperrliste. Sie meldet also nicht, dass GPL-Code ausgeliefert wird, sondern dass sie den Ausdruck nicht auswerten kann.                                                                                                                                                                                                                                                                                                                                                                         | Lauf `34345848114`                                                     | Tor                          | behoben                |
+| OP-245 | **`eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile Anwendungscode geändert hätte.** 384 davon `react-hooks/set-state-in-effect`, die Regel, die Welle 7b mit 20 Fundstellen auf 0 gebracht hat. Der Sprung ist die Regel, nicht der Code. **Nachtrag 2026-09-09 (lokale Sitzung, OP-234):** Weg A vorläufig genommen — exakte devDependency `eslint-plugin-react-hooks@7.0.1` in apps/web, Ratsche wieder 0/0. **Entscheidung des Eigentümers am 2026-09-09: Weg B** — die neuere Version bleibt, die 416 Stellen werden abgearbeitet; übergeben an die lokale Sitzung, Auftrag in `docs/HANDOVER-OP-245.md`. **Umgesetzt 2026-09-09 (lokale Sitzung):** alle 416 Stellen abgetragen, Pin entfernt, ESLint mit 7.1.1 auf 0 — Nachtrag 2026-09-09 zu OP-245. | Eigene Messung 2026-09-09 gegen `a3ff1b07`, bestätigt gegen `29224b2f` | Entscheidung des Eigentümers | **behoben 2026-09-09** |
 
 **OP-244, warum das keine Aufweichung ist.** Der Eintrag steht in
 `allow-dependencies-licenses`, aber aus einem anderen Grund als trufflehog:
