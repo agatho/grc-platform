@@ -736,6 +736,36 @@ jobs:
       AUTH_TRUST_HOST: "true"
       E2E_BASE_URL: http://localhost:3000
       NEXT_TELEMETRY_DISABLED: "1"
+      # [2026-09-09] Die beiden Variablen unten sind die vollstaendige
+      # Ursache von 17 der 17 roten E2E-Eintraege aus Lauf 34398654753.
+      # Triage mit Beleg je Eintrag: docs/HANDOVER-2026-09-09-ABEND-ANTWORT.md.
+      #
+      # Ratenbegrenzung: `LIMITS.DEFAULT` steht auf 300 Anfragen/60 s, und
+      # `middleware.ts` schluesselt den Eimer auf die BENUTZER-ID
+      # (`checkRequestRateLimit(req, pathname, req.auth?.user?.id)`) — beides
+      # richtig. Nur ist diese Suite kein Mensch: 201 Tests laufen in 5,5
+      # Minuten als EIN angemeldetes Konto gegen EINEN Server und teilen sich
+      # damit einen einzigen Eimer. Er ist rechnerisch nach etwa einem
+      # Fuenftel der Suite leer; alles danach bekommt 429, und das sah nach
+      # fuenfzehn verschiedenen Defekten aus. Die Variable wird von
+      # `envLimit()` in `apps/web/src/lib/rate-limit.ts` gelesen, Format
+      # "<Anzahl>/<Sekunden>" — ein Suitenbudget, kein Menschenbudget.
+      #
+      # Der Begrenzer bleibt an: die uebrigen Politiken (auth, portal,
+      # intake, export, import, upload, ai, copilot) haben eigene Werte und
+      # sind hier NICHT angehoben, damit ihre Tests weiter das pruefen, was
+      # sie pruefen sollen.
+      RATE_LIMIT_DEFAULT: "100000/60"
+      # Malware-Pruefung: `isClamAvRequired()` (packages/shared/src/lib/clamav.ts)
+      # verlangt einen Scanner, sobald `NODE_ENV=production` ist — und der
+      # Server laeuft hier ueber `npm start`, also genau so. Ein Laeufer ohne
+      # clamd lehnt daraufhin JEDEN Upload mit 503 ab (fail-closed, WP5,
+      # bewusst so). Das ist der einzige 503 im Lauf und der Grund, aus dem
+      # `document-signature.spec.ts:181` 201 erwartet und 503 bekommt. Der
+      # dafuer vorgesehene Schalter sagt dem Job, dass dieser Laeufer kein
+      # Produktionssystem ist; er steht im Protokoll, ein fehlender Dienst
+      # nicht.
+      CLAMAV_OPTIONAL: "1"
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
