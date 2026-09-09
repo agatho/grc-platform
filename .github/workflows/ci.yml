@@ -270,7 +270,21 @@ jobs:
           python3 -c "import cairosvg; print('cairosvg', cairosvg.__version__)"
           convert -version | head -1
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] `@grc/ai` haelt einen Waechter vor
+      # `vitest` (`tests/require-db.mjs`): ohne Datenbank wuerden drei
+      # Zusicherungen still uebersprungen, die beweisen, dass die
+      # pgvector-Suche org-gebunden ist (S05-20/-21). Dieser Job hat keinen
+      # Postgres-Dienst, also endete er hier mit Exit 1 — der Waechter tat
+      # genau, was er soll.
+      #
+      # Der Ausweg ist NICHT, den Waechter stumm zu schalten: der Opt-out ist
+      # nur zulaessig, weil dieselben drei Zusicherungen im Job
+      # `integration-tests` gegen eine echte, migrierte Datenbank laufen
+      # (Schritt „pgvector-Mandantentrennung (@grc/ai, S05-20/-21)"). Faellt
+      # dieser Schritt dort weg, ist dieser Opt-out sofort unzulaessig.
       - name: Run tests
+        env:
+          ALLOW_SKIP_DB_TESTS: "1"
         run: npx turbo test -- --reporter=verbose --coverage
         env:
           # [WP10 · S08-09] Nur hier — turbo ist der einzige Verbraucher.
@@ -375,15 +389,20 @@ jobs:
       # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
       # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
       # aus. Ein Fehlschlag bricht den Job ab.
-      - name: Build schema from migrations
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
-
-      # [WP10, uebernommen aus WP2/S01-09 und WP9] Beide Laufzeitrollen
-      # werden hier mit demselben Skript angelegt, das auch im Deploy laeuft
-      # (deploy/provision-grc-app.sh) — vorher legte CI `grc_app` mit einem
-      # handgeschriebenen GRANT-Block an und kannte `grc_worker` gar nicht.
-      # Damit testete CI eine Rechtelage, die es in Produktion nicht gibt.
+      # [ARCTOS-FULL-2026-08-31 · OP-238] Diese Provisionierung stand VOR
+      # dieser Welle NACH den Migrationen — und die RLS-Suite hat das die
+      # ganze Zeit gemeldet, nur hat niemand hingesehen:
+      #
+      #   AssertionError: expected 'grc=X/grc' to match /grc_app=X\//
+      #   PostgresError: permission denied for function app_current_org_scope
+      #   PostgresError: permission denied for function auth_lookup_user_by_email
+      #
+      # `0396_rls_log_tables.sql:117` vergibt EXECUTE nur
+      # `IF EXISTS (… rolname = 'grc_app')`. Existiert die Rolle beim
+      # Migrieren nicht, faellt der GRANT still aus, und das Skript holt ihn
+      # nicht nach (es vergibt EXECUTE bewusst nicht pauschal, weil 0398 es
+      # gezielt entzogen hat). Die Rolle muss deshalb VOR den Migrationen da
+      # sein — in CI wie in einer frischen Installation.
       - name: Provision grc_app + grc_worker roles (same script as deploy)
         env:
           DIRECT_PSQL: "1"
@@ -433,6 +452,15 @@ jobs:
       #      formatierungsfest, weil vorher prettier darueber laeuft.
       #
       # `shell: bash` ist nicht kosmetisch: es schaltet `pipefail` mit ein.
+      - name: Build schema from migrations
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
+
+      # [WP10, uebernommen aus WP2/S01-09 und WP9] Beide Laufzeitrollen
+      # werden hier mit demselben Skript angelegt, das auch im Deploy laeuft
+      # (deploy/provision-grc-app.sh) — vorher legte CI `grc_app` mit einem
+      # handgeschriebenen GRANT-Block an und kannte `grc_worker` gar nicht.
+      # Damit testete CI eine Rechtelage, die es in Produktion nicht gibt.
       - name: RLS-Abdeckung — 0 Luecken gegen die frisch migrierte Datenbank
         shell: bash
         env:
@@ -539,6 +567,18 @@ jobs:
           ARCTOS_ALLOW_PRIVILEGED_DB: "true"
           CRON_SECRET: ci-cron-secret-not-a-real-value
           AUTH_SECRET: ci-build-placeholder
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Die drei Zusicherungen, fuer die
+      # der Waechter in `@grc/ai` steht: die pgvector-Vorfilterung darf keine
+      # Einbettungen einer anderen Organisation liefern (S05-20/-21). Sie
+      # laufen hier, weil hier eine migrierte Datenbank steht — und nur weil
+      # sie hier laufen, darf der unit-tests-Job den Waechter ueberspringen.
+      - name: pgvector-Mandantentrennung (@grc/ai, S05-20/-21)
+        working-directory: packages/ai
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+          APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
+        run: npm test
+
 
       - name: Route-chain RLS test (real withErrorHandler→withAuth→db)
         # #SEC-F01b-RUN — drives the REAL Next route pipeline (withErrorHandler →
