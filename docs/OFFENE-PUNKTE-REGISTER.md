@@ -632,6 +632,18 @@ zweier Läufe desselben Generators, einmal im Arbeitsbaum und einmal in einem
 frischen `git worktree` auf denselben Commit, zeigte den Unterschied — drei
 Pfade, die es nur auf der Platte gibt.
 
+**Nachtrag zu OP-233, eine Stunde später gemessen:** Der geänderte Testwert
+hat den PR-Lauf trotzdem nicht grün gemacht — und der Grund ist lehrreich.
+gitleaks scannt im PR die **Commit-Spanne**, nicht den Arbeitsbaum. Der alte
+Wert steht weiter in Commit `39ca631` vom 2026-09-01, und der liegt in der
+Spanne. Für einen Fund in einem **abgeschlossenen** Commit ist der
+Fingerabdruck das richtige Mittel und der Pfad das falsche: er nennt genau
+einen Commit, eine Datei, eine Regel und eine Zeile — und er fällt in die
+sichere Richtung, denn wird die Historie doch umgeschrieben, zeigt er ins
+Leere und der Fund erscheint wieder. `.gitleaksignore` trägt diese eine Zeile.
+Gegen die echte Historie gemessen: mit der Datei `no leaks found`, ohne sie
+sofort wieder `generic-api-key`.
+
 **Die Antwort ist diesmal nicht eine dritte Ausnahme.** Auf C-15 folgte eine
 Ausnahme für `coverage/`; sie hat den nächsten Fall mit `test-results/` nicht
 verhindert. `scripts/check-gate-inputs.mjs` fragt jetzt nicht mehr nach

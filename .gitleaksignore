@@ -1,0 +1,25 @@
+# gitleaks — Fundstellen der VERGANGENHEIT, bewertet
+#
+# [ARCTOS-FULL-2026-08-31 · Welle 8g]
+#
+# In .gitleaks.toml steht die Begruendung, warum dort nach PFAD ausgenommen
+# wird und nicht nach Fingerabdruck. Hier gilt das Gegenteil, und der
+# Unterschied ist der Grund:
+#
+# gitleaks scannt im PR die COMMIT-SPANNE, nicht den Arbeitsbaum. Der Testwert
+# in `portal-auth.test.ts:110` ist am 2026-09-09 geaendert worden — er hat
+# keine hohe Entropie mehr, und ein Scan des Arbeitsbaums meldet ihn nicht.
+# Der Commit 39ca631 von 2026-09-01 enthaelt aber weiter den alten Wert, und
+# er liegt in der Spanne. Aendern laesst sich das nur durch Umschreiben der
+# Historie.
+#
+# Fuer einen Fund in einem ABGESCHLOSSENEN Commit ist der Fingerabdruck das
+# richtige Mittel und der Pfad das falsche: er nennt genau einen Commit, eine
+# Datei, eine Regel und eine Zeile — und er faellt in die SICHERE Richtung.
+# Wird die Historie doch einmal umgeschrieben, zeigt er ins Leere, und der
+# Fund erscheint wieder, statt still gedeckt zu bleiben.
+#
+# Bewertung: `process.env.IP_PSEUDONYM_KEY = "test-pseudonym-key-0123456789"`.
+# Ein Testwert, mit dem die Suite einen HMAC rechnet; er hat nie etwas
+# geschuetzt. Entropie 4,32 — deshalb `generic-api-key`.
+39ca631007628c04c4a3279ab6074b0890ba2ffc:apps/web/src/__tests__/lib/portal-auth.test.ts:generic-api-key:110
