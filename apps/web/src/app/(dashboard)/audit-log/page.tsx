@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -734,22 +735,10 @@ export default function AuditLogPage() {
   const t = useTranslations("auditLog");
   const { data: session } = useSession();
 
-  // Data state
-  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [integrity, setIntegrity] = useState<IntegrityState>({
-    kind: "loading",
-  });
-
   // Filter state
   const [actionFilter, setActionFilter] = useState<string>("__all__");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("__all__");
   const [includeDescendants, setIncludeDescendants] = useState(false);
-
-  // Response scope
-  const [scope, setScope] = useState<AuditLogListResponse["scope"] | null>(
-    null,
-  );
 
   // Dialog state
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(
@@ -775,15 +764,63 @@ export default function AuditLogPage() {
     currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
 
   // Anchor state
-  const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(
-    null,
-  );
   const [anchorBusy, setAnchorBusy] = useState(false);
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [anchorError, setAnchorError] = useState<string | null>(null);
 
   // Archive download state
   const [archiveBusy, setArchiveBusy] = useState(false);
+
+  // [OP-245 · Gestalt A] Drei Abrufe beim Einhaengen (Eintraege, Integritaet,
+  // Anker) liefen je in einem Effekt und schrieben Ergebnis und Ladezustand
+  // synchron zurueck (`react-hooks/set-state-in-effect`). Alle drei liegen
+  // jetzt in `@tanstack/react-query` (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`); die Fehlerpfade sind unveraendert — die
+  // Abfragefunktionen fangen wie vorher selbst und liefern den Leer- bzw.
+  // Fehlerwert, den die Anzeige schon kannte.
+  const descendantsRequested = includeDescendants && canIncludeDescendants;
+
+  // Fetch audit log entries
+  const {
+    data: entriesBundle,
+    isPending: loading,
+    refetch: refetchEntries,
+  } = useQuery<{
+    entries: AuditLogEntry[];
+    scope: AuditLogListResponse["scope"] | null;
+  }>({
+    queryKey: [
+      "audit-log",
+      "entries",
+      actionFilter,
+      entityTypeFilter,
+      descendantsRequested,
+    ],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams({ limit: "50" });
+        if (actionFilter !== "__all__") params.set("action", actionFilter);
+        if (entityTypeFilter !== "__all__")
+          params.set("entity_type", entityTypeFilter);
+        if (descendantsRequested) {
+          params.set("includeDescendants", "true");
+        }
+
+        const res = await fetch(`/api/v1/audit-log?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as AuditLogListResponse;
+        return { entries: json.data, scope: json.scope ?? null };
+      } catch {
+        return { entries: [], scope: null };
+      }
+    },
+  });
+  const entries = useMemo(() => entriesBundle?.entries ?? [], [entriesBundle]);
+  const scope = entriesBundle?.scope ?? null;
+
+  const fetchEntries = useCallback(async () => {
+    await refetchEntries();
+  }, [refetchEntries]);
 
   // Derive unique entity types from data
   const entityTypes = useMemo(() => {
@@ -794,83 +831,76 @@ export default function AuditLogPage() {
     return Array.from(set).sort();
   }, [entries]);
 
-  // Fetch audit log entries
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (actionFilter !== "__all__") params.set("action", actionFilter);
-      if (entityTypeFilter !== "__all__")
-        params.set("entity_type", entityTypeFilter);
-      if (includeDescendants && canIncludeDescendants) {
-        params.set("includeDescendants", "true");
-      }
-
-      const res = await fetch(`/api/v1/audit-log?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as AuditLogListResponse;
-      setEntries(json.data);
-      setScope(json.scope ?? null);
-    } catch {
-      setEntries([]);
-      setScope(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    actionFilter,
-    entityTypeFilter,
-    includeDescendants,
-    canIncludeDescendants,
-  ]);
-
   // Fetch integrity check — ADR-011 rev.2 per-tenant endpoint
-  const fetchIntegrity = useCallback(async () => {
-    setIntegrity({ kind: "loading" });
-    try {
-      // 503 means "chain broken" — the body is still valid JSON, we read it
-      const res = await fetch("/api/v1/audit-log/integrity");
-      // [E2E-TRIAGE-3 · 2026-09-02] A throttled check is not a failed check.
-      //
-      // Every non-200/503 became `HTTP <status>` in the panel, and on THIS
-      // panel an error reads as "the audit trail could not be verified" —
-      // indistinguishable from a broken hash chain. A 429 is neither: the
-      // verification simply did not run. Say so, and say when to retry.
-      if (res.status === 429) {
-        const retryAfter = Number(res.headers.get("Retry-After") ?? "0");
-        throw new Error(
-          retryAfter > 0
-            ? `Integritätsprüfung ist aktuell begrenzt — erneut möglich in ${retryAfter}s. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).`
-            : "Integritätsprüfung ist aktuell begrenzt. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).",
-        );
-      }
-      if (res.status !== 200 && res.status !== 503) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const json = (await res.json()) as { data: IntegrityCheckResult };
-      setIntegrity(
-        json.data.healthy
+  const {
+    data: integrityResult,
+    isFetching: integrityFetching,
+    refetch: refetchIntegrity,
+  } = useQuery<IntegrityState>({
+    queryKey: ["audit-log", "integrity"],
+    queryFn: async () => {
+      try {
+        // 503 means "chain broken" — the body is still valid JSON, we read it
+        const res = await fetch("/api/v1/audit-log/integrity");
+        // [E2E-TRIAGE-3 · 2026-09-02] A throttled check is not a failed check.
+        //
+        // Every non-200/503 became `HTTP <status>` in the panel, and on THIS
+        // panel an error reads as "the audit trail could not be verified" —
+        // indistinguishable from a broken hash chain. A 429 is neither: the
+        // verification simply did not run. Say so, and say when to retry.
+        if (res.status === 429) {
+          const retryAfter = Number(res.headers.get("Retry-After") ?? "0");
+          throw new Error(
+            retryAfter > 0
+              ? `Integritätsprüfung ist aktuell begrenzt — erneut möglich in ${retryAfter}s. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).`
+              : "Integritätsprüfung ist aktuell begrenzt. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).",
+          );
+        }
+        if (res.status !== 200 && res.status !== 503) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const json = (await res.json()) as { data: IntegrityCheckResult };
+        return json.data.healthy
           ? { kind: "healthy", data: json.data }
-          : { kind: "unhealthy", data: json.data },
-      );
-    } catch (err) {
-      setIntegrity({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Unknown error",
-      });
-    }
-  }, []);
+          : { kind: "unhealthy", data: json.data };
+      } catch (err) {
+        return {
+          kind: "error",
+          message: err instanceof Error ? err.message : "Unknown error",
+        };
+      }
+    },
+  });
+  // Vorher setzte jeder Aufruf zuerst `{ kind: "loading" }`; das Abzeichen
+  // zeigte also auch bei einer erneuten Pruefung „wird geprueft". `isFetching`
+  // bildet genau das ab, `isPending` nur den ersten Lauf.
+  const integrity: IntegrityState =
+    integrityFetching || !integrityResult
+      ? { kind: "loading" }
+      : integrityResult;
+
+  const fetchIntegrity = useCallback(async () => {
+    await refetchIntegrity();
+  }, [refetchIntegrity]);
 
   // Fetch anchor status (ADR-011 rev.3)
+  const { data: anchorStatus = null, refetch: refetchAnchorStatus } =
+    useQuery<AnchorStatusResponse | null>({
+      queryKey: ["audit-log", "anchor"],
+      queryFn: async () => {
+        try {
+          const res = await fetch("/api/v1/audit-log/anchor");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return (await res.json()) as AnchorStatusResponse;
+        } catch {
+          return null;
+        }
+      },
+    });
+
   const fetchAnchorStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/audit-log/anchor");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setAnchorStatus((await res.json()) as AnchorStatusResponse);
-    } catch {
-      setAnchorStatus(null);
-    }
-  }, []);
+    await refetchAnchorStatus();
+  }, [refetchAnchorStatus]);
 
   async function triggerAnchor() {
     setAnchorBusy(true);
@@ -944,18 +974,6 @@ export default function AuditLogPage() {
       setArchiveBusy(false);
     }
   }
-
-  useEffect(() => {
-    void fetchIntegrity();
-  }, [fetchIntegrity]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
-
-  useEffect(() => {
-    void fetchAnchorStatus();
-  }, [fetchAnchorStatus]);
 
   // Table columns
   const columns = useMemo<ColumnDef<AuditLogEntry, unknown>[]>(
