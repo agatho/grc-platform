@@ -10,9 +10,9 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@grc/db": "*",
-    "@grc/shared": "*",
-    "@grc/events": "*"
+    "@grc/db": "^0.1.0",
+    "@grc/events": "^0.1.0",
+    "@grc/shared": "^0.1.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",

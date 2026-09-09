@@ -20,11 +20,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "bpmn-moddle": "^10.0.0",
-    "diagram-js": "^15.22.0",
-    "min-dash": "^4.2.1",
-    "min-dom": "^4.1.0",
-    "tiny-svg": "^4.1.2"
+    "bpmn-moddle": "^10.2.0",
+    "diagram-js": "^15.26.0",
+    "min-dash": "^4.2.3",
+    "min-dom": "^4.2.1",
+    "tiny-svg": "^4.1.4"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",
