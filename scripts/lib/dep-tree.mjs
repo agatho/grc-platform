@@ -8,7 +8,7 @@
 // Sicherheits-/Compliance-Prüfschritt darf keinen unversionierten Fremdcode
 // zur Laufzeit nachladen (das war einer der vier Defekte aus S08-10).
 // ============================================================================
-import { execFileSync } from "node:child_process";
+import { npmAusfuehren } from "./npm-befehl.mjs";
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
@@ -20,7 +20,7 @@ function npmLs(cwd, omitDev) {
   if (omitDev) args.push("--omit=dev");
   let out;
   try {
-    out = execFileSync("npm", args, {
+    out = npmAusfuehren(args, {
       cwd,
       encoding: "utf8",
       maxBuffer: 256 * 1024 * 1024,

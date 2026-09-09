@@ -2606,3 +2606,51 @@ genau die Bedingung, gegen die `auth.setup.ts` `currentOrgId` prüft.
 **Was hier NICHT behoben ist.** Das Pilot Readiness Gate fällt ohne
 `STAGING_URL` weiterhin laut statt still (#S13-30). Das ist so gewollt und ein
 Secret, keine Workflow-Frage — es bleibt beim Eigentümer.
+
+**Nachtrag zu Welle 8m — OP-246, die zwei letzten `npm`-Aufrufe ohne Shell.**
+Die lokale Sitzung hat vier Runner-Skripte portabel gemacht (OP-234) und
+`scripts/lib/dep-tree.mjs` sowie `scripts/check-dependency-hygiene.mjs` als
+noch offen benannt, weil OP-246 ausserhalb ihres Auftrags lag. Sie liegen in
+`scripts/**` und sind hier nachgezogen.
+
+`execFileSync("npm", …)` ohne Shell scheitert auf Windows mit `ENOENT`, bevor
+irgendetwas läuft — dort heisst das Programm `npm.cmd`, und ohne Shell findet
+keine PATHEXT-Auflösung statt. Der Aufrufer bekommt einen Fehler, der nach
+„npm kaputt" aussieht und „falscher Dateiname" bedeutet. Sechs Fundstellen in
+diesem Audit sind genug für **eine** Stelle statt sechs verstreuter: der Name
+steht jetzt in `scripts/lib/npm-befehl.mjs`.
+
+**Die erste Fassung dieser Korrektur war falsch, und nur das Nachmessen auf
+Windows hat es gezeigt.** Naheliegend war `npm.cmd` auf Windows. Gemessen auf
+der Maschine des Eigentümers:
+
+```
+execFileSync("npm",     …)  →  Error: spawnSync npm ENOENT
+execFileSync("npm.cmd", …)  →  Error: spawnSync npm.cmd EINVAL
+```
+
+Seit der Gegenmaßnahme zu CVE-2024-27980 weigert sich Node, eine `.cmd`-Datei
+ohne Shell zu starten. Der verbreitete Rat „nimm `npm.cmd`" ist damit veraltet.
+Der Weg, der auf beiden Plattformen ohne Shell funktioniert, ist derselbe, den
+die vier Runner-Skripte aus OP-234 nehmen: nicht das Startprogramm suchen,
+sondern den JavaScript-Einstiegspunkt und ihn mit der laufenden Node-Binärdatei
+ausführen. Beide Orte gemessen — Windows `C:\nvm4w\nodejs\node_modules\npm\
+bin\npm-cli.js`, Linux `/opt/node22/lib/node_modules/npm/bin/npm-cli.js`.
+
+Findet sich keiner der beiden, fällt POSIX auf `npm` im PATH zurück (dort ein
+gewöhnliches Programm) und Windows bricht mit einer Meldung ab, die den Grund
+nennt — statt eines `ENOENT`, das nach „npm kaputt" aussieht.
+
+`shell: true` wäre die kürzere Antwort und die schlechtere — sie reicht die
+Argumente durch eine Shell, und damit hinge die Bedeutung von `&`, `|` und `^`
+plötzlich am Inhalt der Argumente.
+
+**Beobachtung am Rande, nicht behoben.** `check-dependency-hygiene.mjs` meldet
+im Arbeitsbaum eines Entwicklers `[stray] @grc/web@0.1.0 — .env.local`. Die
+Datei ist von `.gitignore` erfasst und existiert in CI nicht, dort ist der
+Schritt also grün. Lokal ist er es nicht, und ein Tor, das aus einem Grund rot
+ist, der mit dem gesuchten Defekt nichts zu tun hat, gewöhnt seine Leser das
+Hinsehen ab. Die naheliegende Abhilfe — ignorierte Dateien überspringen —
+wäre allerdings kein reiner Gewinn: sie könnte eine echte mitgelieferte
+Arbeitsdatei in einem Fremdpaket verdecken, das zufällig auf eine Ignore-Regel
+passt. Deshalb hier als Beobachtung notiert statt still geändert.

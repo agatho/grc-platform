@@ -60,7 +60,7 @@
 // Exit 0 = sauber, 1 = neue Funde, 2 = Konfigurations-/Aufruffehler.
 // ============================================================================
 
-import { execFileSync } from "node:child_process";
+import { npmAusfuehren } from "./lib/npm-befehl.mjs";
 import {
   readFileSync,
   readdirSync,
@@ -143,16 +143,12 @@ const ackFor = (name) => ACKNOWLEDGED.find((a) => a.pkg === name);
 function productionPackages() {
   let out;
   try {
-    out = execFileSync(
-      "npm",
-      ["ls", "--omit=dev", "--all", "--json", "--long"],
-      {
-        cwd: ROOT,
-        encoding: "utf8",
-        maxBuffer: 512 * 1024 * 1024,
-        stdio: ["ignore", "pipe", "ignore"],
-      },
-    );
+    out = npmAusfuehren(["ls", "--omit=dev", "--all", "--json", "--long"], {
+      cwd: ROOT,
+      encoding: "utf8",
+      maxBuffer: 512 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "ignore"],
+    });
   } catch (e) {
     // `npm ls` endet mit Exit != 0, sobald irgendwo eine Peer-Warnung steht.
     // Die JSON-Ausgabe ist trotzdem vollstaendig und brauchbar.
