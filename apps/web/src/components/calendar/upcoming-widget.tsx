@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react";
@@ -47,25 +47,19 @@ interface UpcomingEvent extends AggregatedCalendarEvent {
 export function CalendarUpcomingWidget() {
   const t = useTranslations("calendar");
   const { formatDate } = useDateFormat();
-  const [events, setEvents] = useState<UpcomingEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUpcoming = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before.
+  const { data: events = [], isPending: loading } = useQuery<UpcomingEvent[]>({
+    queryKey: ["calendar", "upcoming", { limit: 5 }],
+    queryFn: async () => {
       const res = await fetch("/api/v1/calendar/upcoming?limit=5");
-      if (res.ok) {
-        const json = await res.json();
-        setEvents(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchUpcoming();
-  }, [fetchUpcoming]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as UpcomingEvent[];
+    },
+  });
 
   const urgencyColors: Record<string, string> = {
     // [ARCTOS-FULL-2026-08-31 · OP-049] green-700 statt -800 ist die
