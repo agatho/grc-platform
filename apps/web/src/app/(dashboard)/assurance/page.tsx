@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -42,41 +43,58 @@ interface TrendData {
 export default function AssuranceDashboardPage() {
   const t = useTranslations("boardKpi");
   const _router = useRouter();
-  const [modules, setModules] = useState<ModuleScore[]>([]);
-  const [overallScore, setOverallScore] = useState(0);
   const [selectedModule, setSelectedModule] = useState<ModuleScore | null>(
     null,
   );
-  const [_trendData, setTrendData] = useState<TrendData[]>([]);
-  const [hasEnoughTrendData, setHasEnoughTrendData] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Scores und Trend wurden immer
+  // zusammen geladen — daher eine Abfrage mit einem Objekt. Der Trendverlauf
+  // (`trendData`) wurde vorher in einen ungenutzten Zustand geschrieben und
+  // bleibt im Abfrageergebnis verfügbar.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    modules: ModuleScore[];
+    overallScore: number;
+    trendData: TrendData[];
+    hasEnoughTrendData: boolean;
+  }>({
+    queryKey: ["assurance", "dashboard"],
+    queryFn: async () => {
       const [scoresRes, trendRes] = await Promise.all([
         fetch("/api/v1/assurance/scores"),
         fetch("/api/v1/assurance/trend"),
       ]);
 
+      let modules: ModuleScore[] = [];
+      let overallScore = 0;
+      let trendData: TrendData[] = [];
+      let hasEnoughTrendData = false;
       if (scoresRes.ok) {
         const json = await scoresRes.json();
-        setModules(json.modules ?? []);
-        setOverallScore(json.overallScore ?? 0);
+        modules = json.modules ?? [];
+        overallScore = json.overallScore ?? 0;
       }
       if (trendRes.ok) {
         const json = await trendRes.json();
-        setTrendData(json.data ?? []);
-        setHasEnoughTrendData(json.hasEnoughData ?? false);
+        trendData = json.data ?? [];
+        hasEnoughTrendData = json.hasEnoughData ?? false;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { modules, overallScore, trendData, hasEnoughTrendData };
+    },
+  });
+  const modules = data?.modules ?? [];
+  const overallScore = data?.overallScore ?? 0;
+  const hasEnoughTrendData = data?.hasEnoughTrendData ?? false;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && modules.length === 0) {
     return (
@@ -130,9 +148,9 @@ export default function AssuranceDashboardPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
