@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Plus, Target, Loader2, TrendingUp } from "lucide-react";
@@ -30,23 +31,20 @@ export default function MaturityOverviewPage() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("benchmarking");
   const router = useRouter();
-  const [models, setModels] = useState<MaturityModelRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchModels = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Wie vorher wird die Antwort ohne
+  // Blick auf `res.ok` gelesen.
+  const { data: models = [], isPending: loading } = useQuery<
+    MaturityModelRecord[]
+  >({
+    queryKey: ["maturity", "models"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/maturity/models?limit=50");
       const json = await res.json();
-      setModels(json.data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
+      return (json.data ?? []) as MaturityModelRecord[];
+    },
+  });
 
   return (
     <div className="space-y-6">
