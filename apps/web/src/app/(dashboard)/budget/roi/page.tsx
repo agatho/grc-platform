@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -45,8 +46,6 @@ export default function RoiDashboardPage() {
   const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
-  const [data, setData] = useState<RoiDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [perspective, setPerspective] = useState<Perspective>("cfo");
   const [cutPercent, setCutPercent] = useState(0);
   const [scenario, setScenario] = useState<BudgetCutScenarioResult | null>(
@@ -54,22 +53,29 @@ export default function RoiDashboardPage() {
   );
   const [scenarioLoading, setScenarioLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`. Der entprellte Szenario-Abruf darunter bleibt ein Effekt:
+  // er setzt seinen Zustand erst im Timer, nicht synchron im Effekt.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<RoiDashboardData | null>({
+    queryKey: ["budget", "roi"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/budget/roi");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RoiDashboardData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const fetchScenario = useCallback(async (pct: number) => {
     if (pct === 0) {
@@ -133,9 +139,9 @@ export default function RoiDashboardPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

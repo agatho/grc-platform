@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
@@ -63,25 +64,28 @@ export default function ExecutiveReportPage() {
   const router = useRouter();
   const year = params.year as string;
 
-  const [data, setData] = useState<ReportData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); das Jahr steht im Schluessel.
+  // Eine nicht-ok-Antwort liefert wie vorher `null`.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ReportData | null>({
+    queryKey: ["budget", "report", year],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/budget/report/${year}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as ReportData | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/budget/report/${year}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [year]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const handleExportPdf = async () => {
     try {
@@ -174,9 +178,12 @@ export default function ExecutiveReportPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button variant="outline" size="sm" onClick={handleExportPdf}>
             <FileText size={14} className="mr-1" />

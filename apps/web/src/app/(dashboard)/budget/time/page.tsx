@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -56,8 +57,6 @@ export default function TimeTrackingPage() {
   const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
-  const [entries, setEntries] = useState<GrcTimeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("list");
   const [showCreate, setShowCreate] = useState(false);
 
@@ -68,32 +67,43 @@ export default function TimeTrackingPage() {
   const [newDescription, setNewDescription] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Department analysis
-  const [deptAnalysis, setDeptAnalysis] = useState<DeptAnalysisRow[]>([]);
-
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Zeiteintraege und
+  // Abteilungsanalyse liefen immer zusammen und werden zusammen gelesen,
+  // daher eine Abfrage mit einem Ergebnisobjekt. Eine nicht-ok-Antwort
+  // liefert wie vorher eine leere Liste.
+  const {
+    data: timeData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ entries: GrcTimeEntry[]; deptAnalysis: DeptAnalysisRow[] }>({
+    queryKey: ["budget", "time"],
+    queryFn: async () => {
       const [eRes, dRes] = await Promise.all([
         fetch("/api/v1/budget/time"),
         fetch("/api/v1/budget/time/department-analysis"),
       ]);
+      let entries: GrcTimeEntry[] = [];
+      let deptAnalysis: DeptAnalysisRow[] = [];
       if (eRes.ok) {
         const json = await eRes.json();
-        setEntries(json.data ?? []);
+        entries = (json.data ?? []) as GrcTimeEntry[];
       }
       if (dRes.ok) {
         const json = await dRes.json();
-        setDeptAnalysis(json.data ?? []);
+        deptAnalysis = (json.data ?? []) as DeptAnalysisRow[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { entries, deptAnalysis };
+    },
+  });
+  const entries = timeData?.entries ?? [];
+  const deptAnalysis = timeData?.deptAnalysis ?? [];
 
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+  const fetchEntries = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -179,9 +189,12 @@ export default function TimeTrackingPage() {
             variant="outline"
             size="sm"
             onClick={fetchEntries}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
             <Plus size={14} className="mr-1" />

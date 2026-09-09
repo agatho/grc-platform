@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -76,9 +77,6 @@ export default function BudgetOverviewPage() {
   const a11yId = useId();
 
   const t = useTranslations("budget");
-  const [budgets, setBudgets] = useState<GrcBudget[]>([]);
-  const [usageMap, setUsageMap] = useState<Record<string, BudgetUsage>>({});
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [treeView, setTreeView] = useState(true);
@@ -96,33 +94,48 @@ export default function BudgetOverviewPage() {
   const [formPeriodEnd, setFormPeriodEnd] = useState("");
   const [formNotes, setFormNotes] = useState("");
 
-  const fetchBudgets = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (leere Liste bzw. leere Karte).
+  const {
+    data: overview,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    budgets: GrcBudget[];
+    usageMap: Record<string, BudgetUsage>;
+  }>({
+    queryKey: ["budget", "overview"],
+    queryFn: async () => {
       const [budgetRes, usageRes] = await Promise.all([
         fetch("/api/v1/budget?limit=100"),
         fetch("/api/v1/budget/usage"),
       ]);
+      let budgets: GrcBudget[] = [];
+      const usageMap: Record<string, BudgetUsage> = {};
       if (budgetRes.ok) {
         const json = await budgetRes.json();
-        setBudgets(json.data ?? []);
+        budgets = (json.data ?? []) as GrcBudget[];
       }
       if (usageRes.ok) {
         const json = await usageRes.json();
-        const map: Record<string, BudgetUsage> = {};
-        for (const u of json.data ?? []) {
-          map[u.budgetId] = u;
+        for (const u of (json.data ?? []) as BudgetUsage[]) {
+          usageMap[u.budgetId] = u;
         }
-        setUsageMap(map);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { budgets, usageMap };
+    },
+  });
+  const budgets = overview?.budgets ?? [];
+  const usageMap = overview?.usageMap ?? {};
 
-  useEffect(() => {
-    void fetchBudgets();
-  }, [fetchBudgets]);
+  const fetchBudgets = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Build tree from flat list
   const buildTree = (items: GrcBudget[]): BudgetNode[] => {
@@ -231,9 +244,12 @@ export default function BudgetOverviewPage() {
             variant="outline"
             size="sm"
             onClick={fetchBudgets}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button
             variant="outline"
