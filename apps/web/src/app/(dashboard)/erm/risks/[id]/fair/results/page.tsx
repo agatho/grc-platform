@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Loader2, ArrowLeft, RefreshCcw, BarChart3 } from "lucide-react";
@@ -66,29 +67,33 @@ function FAIRResultsInner() {
   const router = useRouter();
   const riskId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<SimResult | null>(null);
-  const [allResults, setAllResults] = useState<SimResult[]>([]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` und eine leere Liste; ein Netzfehler landet im Fehlerzustand
+  // der Abfrage statt still verschluckt zu werden (Anzeige bleibt gleich).
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ latest: SimResult | null; results: SimResult[] }>({
+    queryKey: ["erm", "risks", riskId, "fair", "results"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/erm/risks/${riskId}/fair/results`);
+      if (!res.ok) return { latest: null, results: [] };
+      const data = await res.json();
+      return {
+        latest: (data.data?.latest ?? null) as SimResult | null,
+        results: (data.data?.results ?? []) as SimResult[],
+      };
+    },
+  });
+  const result = bundle?.latest ?? null;
+  const allResults = bundle?.results ?? [];
 
   const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/erm/risks/${riskId}/fair/results`);
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data.data?.latest ?? null);
-        setAllResults(data.data?.results ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [riskId]);
-
-  useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (

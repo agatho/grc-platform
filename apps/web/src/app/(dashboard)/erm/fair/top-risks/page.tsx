@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, TrendingUp, ExternalLink } from "lucide-react";
@@ -46,27 +46,20 @@ function FAIRTopRisksInner() {
   const locale = useLocale();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [risks, setRisks] = useState<TopRisk[]>([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage statt still verschluckt zu werden (Anzeige bleibt: leere Liste).
+  const { data: risks = [], isPending: loading } = useQuery<TopRisk[]>({
+    queryKey: ["erm", "fair", "top-risks", 10],
+    queryFn: async () => {
       const res = await fetch("/api/v1/erm/fair/top-risks?limit=10");
-      if (res.ok) {
-        const data = await res.json();
-        setRisks(data.data ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as TopRisk[];
+    },
+  });
 
   if (loading) {
     return (

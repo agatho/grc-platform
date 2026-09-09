@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Loader2, BarChart3 } from "lucide-react";
@@ -50,31 +50,24 @@ function FAIRCompareInner() {
   const searchParams = useSearchParams();
   const riskIds = searchParams.get("riskIds") ?? "";
 
-  const [loading, setLoading] = useState(true);
-  const [risks, setRisks] = useState<CompareRisk[]>([]);
-
-  const fetchData = useCallback(async () => {
-    if (!riskIds) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Ohne `riskIds` fragt die Abfrage
+  // nichts ab (`enabled`); `isPending` bliebe dann wahr, deshalb geht die
+  // Bedingung auch in den Ladezustand ein. Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage statt still verschluckt zu werden (Anzeige bleibt: leere Liste).
+  const { data: risks = [], isPending } = useQuery<CompareRisk[]>({
+    queryKey: ["erm", "fair", "compare", riskIds],
+    enabled: riskIds !== "",
+    queryFn: async () => {
       const res = await fetch(`/api/v1/erm/fair/compare?riskIds=${riskIds}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRisks(data.data ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [riskIds]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as CompareRisk[];
+    },
+  });
+  const loading = riskIds !== "" && isPending;
 
   if (loading) {
     return (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -101,31 +102,43 @@ export default function FAIRParametersPage() {
   );
 }
 
+interface FairPageSeed {
+  methodology: string;
+  fairParams: FAIRParams;
+  latestResult: SimResult | null;
+}
+
+const EMPTY_SEED: FairPageSeed = {
+  methodology: "qualitative",
+  fairParams: DEFAULT_PARAMS,
+  latestResult: null,
+};
+
+// [OP-245 · Gestalt A] Die Seite rief ihre drei Abrufe in einem Effekt und
+// schrieb Ergebnis und Ladezustand synchron zurueck
+// (`react-hooks/set-state-in-effect`). Der Abruf liegt jetzt in
+// `@tanstack/react-query` (Muster aus Welle 7b, `processes/[id]/ropa/page.tsx`).
+//
+// Das Formular ist dabei in eine eigene Komponente gewandert: der Serverstand
+// ist die SAAT des Formulars, nicht sein Inhalt — der Nutzer editiert die
+// FAIR-Parameter lokal und speichert sie selbst. Ein eigenes Bauteil, das mit
+// dem geladenen Stand EINGEHAENGT wird, braucht dafuer keinen spiegelnden
+// Effekt; ein Hintergrundabruf reisst dem Nutzer das Formular nicht weg.
 function FAIRParametersInner() {
   const t = useTranslations("fair");
-  const locale = useLocale();
   const params = useParams();
-  const router = useRouter();
   const riskId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [simulating, setSimulating] = useState(false);
-  const [methodology, setMethodology] = useState<string>("qualitative");
-  const [fairParams, setFairParams] = useState<FAIRParams>(DEFAULT_PARAMS);
-  const [latestResult, setLatestResult] = useState<SimResult | null>(null);
-  const [iterations, setIterations] = useState("10000");
-  const [error, setError] = useState<string | null>(null);
+  const { data, isPending, isError } = useQuery<FairPageSeed>({
+    queryKey: ["erm", "risks", riskId, "fair", "parameters"],
+    queryFn: async () => {
+      const seed: FairPageSeed = { ...EMPTY_SEED };
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
       // Fetch methodology
       const methRes = await fetch("/api/v1/erm/fair/methodology");
       if (methRes.ok) {
         const methData = await methRes.json();
-        setMethodology(methData.data?.riskMethodology ?? "qualitative");
+        seed.methodology = methData.data?.riskMethodology ?? "qualitative";
       }
 
       // Fetch FAIR params
@@ -133,7 +146,7 @@ function FAIRParametersInner() {
       if (paramsRes.ok) {
         const paramsData = await paramsRes.json();
         if (paramsData.data) {
-          setFairParams({
+          seed.fairParams = {
             lefMin: Number(paramsData.data.lefMin),
             lefMostLikely: Number(paramsData.data.lefMostLikely),
             lefMax: Number(paramsData.data.lefMax),
@@ -142,7 +155,7 @@ function FAIRParametersInner() {
             lmMax: Number(paramsData.data.lmMax),
             lossComponents:
               paramsData.data.lossComponents ?? DEFAULT_PARAMS.lossComponents,
-          });
+          };
         }
       }
 
@@ -152,18 +165,52 @@ function FAIRParametersInner() {
       );
       if (resultsRes.ok) {
         const resultsData = await resultsRes.json();
-        setLatestResult(resultsData.data?.latest ?? null);
+        seed.latestResult = (resultsData.data?.latest ??
+          null) as SimResult | null;
       }
-    } catch (_err) {
-      setError(t("fetchError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [riskId, t]);
+      return seed;
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <FAIRParametersForm
+      riskId={riskId}
+      initial={data ?? EMPTY_SEED}
+      initialError={isError ? t("fetchError") : null}
+    />
+  );
+}
+
+function FAIRParametersForm({
+  riskId,
+  initial,
+  initialError,
+}: {
+  riskId: string;
+  initial: FairPageSeed;
+  initialError: string | null;
+}) {
+  const t = useTranslations("fair");
+  const locale = useLocale();
+  const router = useRouter();
+
+  const [saving, setSaving] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const methodology = initial.methodology;
+  const [fairParams, setFairParams] = useState<FAIRParams>(initial.fairParams);
+  const [latestResult, setLatestResult] = useState<SimResult | null>(
+    initial.latestResult,
+  );
+  const [iterations, setIterations] = useState("10000");
+  const [error, setError] = useState<string | null>(initialError);
 
   const handleSave = async () => {
     setSaving(true);
@@ -237,14 +284,6 @@ function FAIRParametersInner() {
       }));
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   if (methodology === "qualitative") {
     return (

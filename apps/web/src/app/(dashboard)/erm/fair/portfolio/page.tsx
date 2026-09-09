@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import {
@@ -66,36 +66,38 @@ function FAIRPortfolioInner() {
   const t = useTranslations("fair");
   const locale = useLocale();
 
-  const [loading, setLoading] = useState(true);
-  const [topRisks, setTopRisks] = useState<TopRisk[]>([]);
-  const [aggregate, setAggregate] = useState<AggregateData | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Nicht-ok-
+  // Antworten ergeben wie vorher eine leere Liste bzw. `null`; ein Netzfehler
+  // landet im Fehlerzustand der Abfrage (Anzeige bleibt: leere Seite).
+  const { data: bundle, isPending: loading } = useQuery<{
+    topRisks: TopRisk[];
+    aggregate: AggregateData | null;
+  }>({
+    queryKey: ["erm", "fair", "portfolio"],
+    queryFn: async () => {
       const [topRes, aggRes] = await Promise.all([
         fetch("/api/v1/erm/fair/top-risks?limit=50"),
         fetch("/api/v1/erm/fair/aggregate"),
       ]);
 
+      let topRisks: TopRisk[] = [];
+      let aggregate: AggregateData | null = null;
       if (topRes.ok) {
         const data = await topRes.json();
-        setTopRisks(data.data ?? []);
+        topRisks = (data.data ?? []) as TopRisk[];
       }
       if (aggRes.ok) {
         const data = await aggRes.json();
-        setAggregate(data.data ?? null);
+        aggregate = (data.data ?? null) as AggregateData | null;
       }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      return { topRisks, aggregate };
+    },
+  });
+  const topRisks = bundle?.topRisks ?? [];
+  const aggregate = bundle?.aggregate ?? null;
 
   if (loading) {
     return (

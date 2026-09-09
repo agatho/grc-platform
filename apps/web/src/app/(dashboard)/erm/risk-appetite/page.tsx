@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, AlertTriangle, CheckCircle2 } from "lucide-react";
 
@@ -45,36 +46,50 @@ export default function RiskAppetitePage() {
 
 function RiskAppetiteInner() {
   const t = useTranslations("boardKpi");
-  const [dashboard, setDashboard] = useState<DashboardItem[]>([]);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [breaches, setBreaches] = useState<Breach[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Nicht-ok-
+  // Antworten ergeben wie vorher eine leere Liste bzw. `null`.
+  const {
+    data: bundle,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    dashboard: DashboardItem[];
+    summary: DashboardSummary | null;
+    breaches: Breach[];
+  }>({
+    queryKey: ["erm", "risk-appetite", "dashboard-bundle"],
+    queryFn: async () => {
       const [dashRes, breachRes] = await Promise.all([
         fetch("/api/v1/erm/risk-appetite/dashboard"),
         fetch("/api/v1/erm/risk-appetite/breaches"),
       ]);
 
+      let dashboard: DashboardItem[] = [];
+      let summary: DashboardSummary | null = null;
+      let breaches: Breach[] = [];
       if (dashRes.ok) {
         const json = await dashRes.json();
-        setDashboard(json.data ?? []);
-        setSummary(json.summary ?? null);
+        dashboard = (json.data ?? []) as DashboardItem[];
+        summary = (json.summary ?? null) as DashboardSummary | null;
       }
       if (breachRes.ok) {
         const json = await breachRes.json();
-        setBreaches(json.breaches ?? []);
+        breaches = (json.breaches ?? []) as Breach[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { dashboard, summary, breaches };
+    },
+  });
+  const dashboard = bundle?.dashboard ?? [];
+  const summary = bundle?.summary ?? null;
+  const breaches = bundle?.breaches ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && dashboard.length === 0) {
     return (
@@ -100,9 +115,9 @@ function RiskAppetiteInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
