@@ -1,4 +1,13 @@
 -- 0403_audit_anchor_seal.sql
+--
+-- Migration: 0403_audit_anchor_seal
+-- Breaking: yes-backfill
+-- Estimated-Duration: 20
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Breaking: Backfill von anchored_at auf audit_anchor; der Append-only-Trigger
+-- ist dafuer kurz abgeschaltet und wird als ENABLE ALWAYS zurueckgesetzt.
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-01, S03-08, S03-11, S03-17
 --
 -- S03-01 is the finding that decides whether the product's central

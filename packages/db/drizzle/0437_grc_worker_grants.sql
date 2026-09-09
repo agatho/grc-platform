@@ -1,4 +1,11 @@
 -- 0437_grc_worker_grants.sql
+--
+-- Migration: 0437_grc_worker_grants
+-- Breaking: no
+-- Estimated-Duration: 2
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- [ARCTOS-FULL-2026-08-31 / WP9 · S01-09, mit S03-01/S03-12 (WP4) und S10-01 (WP5)]
 --
 -- Der Worker verbindet ab jetzt als `grc_worker` (BYPASSRLS, NOSUPERUSER)

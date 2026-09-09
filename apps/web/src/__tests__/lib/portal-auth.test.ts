@@ -107,7 +107,16 @@ beforeEach(() => {
   updateSetMock.mockReset();
   updateWhereMock.mockReset();
   resolveDdSessionTokenHashMock.mockReset();
-  process.env.IP_PSEUDONYM_KEY = "test-pseudonym-key-0123456789";
+  // [ARCTOS-FULL-2026-08-31 · Welle 8g] Der Wert hiess vorher
+  // "test-pseudonym-key-0123456789" und wurde von gitleaks als
+  // `generic-api-key` gemeldet (Entropie 4,32) — ein Falschpositiv, das
+  // den PR-Check rot machte. Statt eine Ausnahme in die Konfiguration des
+  // Scanners zu schreiben, ist der WERT geaendert: er ist beliebig, der
+  // Test rechnet nur einen HMAC damit. Eine Ausnahmeliste haette hier
+  // einen Scanner stumpfer gemacht, um ein Testdatum zu behalten, das
+  // ohnehin nichts bedeutet. Nachgemessen: gitleaks meldet die Zeile
+  // nicht mehr.
+  process.env.IP_PSEUDONYM_KEY = "not-a-secret-test-key";
 });
 
 describe("validateDdToken — input validation", () => {

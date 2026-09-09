@@ -31,7 +31,7 @@ import {
 import { useMemo } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -43,10 +43,32 @@ import { EntityDocumentsPanel } from "@/components/documents/entity-documents-pa
 
 const MESSAGES = path.join(__dirname, "../../../messages");
 
+/**
+ * Der vollstaendige, GEBAUTE Nachrichtenbaum — derselbe, den die App laedt.
+ *
+ * [ARCTOS-FULL-2026-08-31 · Welle 8g] `messages/<locale>.json` ist
+ * Bauausgabe von `scripts/build-messages.ts` und steht in `.gitignore`
+ * (Zeile 42/43). Lokal war sie immer da, in CI nie: die Test-Jobs bauen sie
+ * nicht, und der rohe `ENOENT` sagte niemandem, warum. Dieselbe Klasse wie
+ * C-15 und OP-066 — eine Eingabe, die im Repository nicht existiert.
+ *
+ * Behoben wird das am Manifest (`pretest` / `pretest:coverage` bauen das
+ * Buendel, wie `prebuild` es fuer den Bau tut). Diese Meldung bleibt trotzdem
+ * stehen: wer die Suite an den npm-Skripten vorbei startet, soll lesen
+ * koennen, was fehlt, statt einen Dateipfad zu sehen.
+ */
 function messagesFor(locale: string): Record<string, unknown> {
-  return JSON.parse(
-    readFileSync(path.join(MESSAGES, `${locale}.json`), "utf8"),
-  ) as Record<string, unknown>;
+  const datei = path.join(MESSAGES, `${locale}.json`);
+  if (!existsSync(datei)) {
+    throw new Error(
+      `Das gebaute Nachrichtenbuendel ${locale}.json fehlt.\n` +
+        `  Erwartet: ${datei}\n` +
+        "  Es ist Bauausgabe und steht in .gitignore. Erzeugen mit:\n" +
+        "    npx tsx apps/web/scripts/build-messages.ts\n" +
+        "  Ueber `npm test` geschieht das automatisch (pretest).",
+    );
+  }
+  return JSON.parse(readFileSync(datei, "utf8")) as Record<string, unknown>;
 }
 
 vi.mock("next-auth/react", () => ({

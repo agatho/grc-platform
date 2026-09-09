@@ -1,4 +1,14 @@
 -- 0407_audit_grants_and_migration_anchor.sql
+--
+-- Migration: 0407_audit_grants_and_migration_anchor
+-- Breaking: no
+-- Estimated-Duration: 2
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Locking: enthaelt ALTER TYPE ... ADD VALUE. Das muss committen, bevor der
+-- Wert benutzt wird — PostgreSQL lehnt es sonst mit 55P04 ab. Die Datei
+-- wird deshalb von migrate-all.ts als self-managed gefahren (S09-05).
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-19, S03-08
 --
 -- ── S03-19: grc_app has no rights on the audit tables ─────────────────

@@ -48,36 +48,31 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
+          cache: npm
+
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Dieser Job installierte NICHTS.
+      # Das ging gut, solange `audit-i18n-coverage.mjs` nur `node:`-Module
+      # benutzte — bis Welle 8c ihm `prettier` gab (OP-220, damit der
+      # eingecheckte Report nicht das Format-Gate rot macht). Ergebnis:
+      # `ERR_MODULE_NOT_FOUND`, Job tot, und der Schritt darunter, der auf
+      # Schluesselverlust prueft, lief NIE.
+      #
+      # Ein Skript still auf „ohne Abhaengigkeiten" zurueckzubauen waere die
+      # falsche Antwort — es waere eine stille Verschlechterung. Der Job
+      # installiert stattdessen, wie sein Geschwisterjob weiter unten. Dass
+      # keine weitere Fundstelle dieser Art existiert, prueft
+      # `scripts/check-workflow-script-deps.mjs`.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Dieser Schritt liest nur JSON und braucht keine Abhaengigkeiten. Er
+      # steht bewusst VOR dem Coverage-Audit: ein verschwundener Schluessel
+      # soll auch dann gemeldet werden, wenn der Generator daneben faellt.
+      - name: Kein Schluesselverlust im Katalog
+        run: node scripts/i18n-key-inventory.mjs --check
 
       - name: Run i18n coverage audit
         run: node scripts/audit-i18n-coverage.mjs
-
-      # ────────────────────────────────────────────────────────────────
-      # [ARCTOS-FULL-2026-08-31 · Welle 8c] Kein Schluessel verschwindet
-      # unbemerkt.
-      #
-      # Der Schritt darueber vergleicht DE gegen EN. Wird ein Schluessel in
-      # BEIDEN Sprachen geloescht oder ueberschrieben, bleiben beide Seiten
-      # deckungsgleich und er meldet nichts. Der Unused-Key-Ratchet weiter
-      # unten meldet ebenfalls nichts, im Gegenteil: war der Schluessel
-      # unbenutzt, SINKT dessen Zahl und der Check wird gruener.
-      #
-      # Damit war ein verschwundener Schluessel die einzige Aenderung am
-      # Katalog, die kein Check sehen konnte — und zugleich die einzige, die
-      # der Nutzer sofort sieht, naemlich als rohen Schluessel auf der Seite.
-      # Gemessen: in Welle 8b sind so 24 `esgAdvanced.materiality.*`-Eintraege
-      # ueberschrieben worden, beide Sprachen, alle Checks gruen.
-      #
-      # Gegenprobe zu diesem Schritt: bei einer symmetrischen Loeschung endet
-      # `audit-i18n-coverage.mjs` mit Exit 0, `i18n-key-inventory.mjs --check`
-      # mit Exit 1.
-      #
-      # Wachsen darf der Bestand frei. Eine Absenkung ist nicht verboten, aber
-      # begruendungspflichtig:
-      #   node scripts/i18n-key-inventory.mjs --update --reason "..."
-      # ────────────────────────────────────────────────────────────────
-      - name: Kein Schluesselverlust im Katalog
-        run: node scripts/i18n-key-inventory.mjs --check
 
       - name: Upload report as artifact
         if: always()

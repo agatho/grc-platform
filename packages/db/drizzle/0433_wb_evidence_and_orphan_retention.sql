@@ -1,4 +1,11 @@
 -- 0433_wb_evidence_and_orphan_retention.sql
+--
+-- Migration: 0433_wb_evidence_and_orphan_retention
+-- Breaking: no
+-- Estimated-Duration: 3
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-20 (High), S07-12 (Medium, Ergänzung)
 --
 -- Befund S07-20: `POST /api/v1/portal/mailbox/:token/evidence` berechnet

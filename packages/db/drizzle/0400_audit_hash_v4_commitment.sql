@@ -1,4 +1,14 @@
 -- 0400_audit_hash_v4_commitment.sql
+--
+-- Migration: 0400_audit_hash_v4_commitment
+-- Breaking: yes-backfill
+-- Estimated-Duration: 10
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Breaking: Neue Spalte, neue CHECK-Constraint und Seedzeilen in
+-- audit_sensitive_column. Bestehende Zeilen behalten ihre hash_version < 4;
+-- die Pruefung akzeptiert beide Generationen (ADR-026).
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-02, S03-03, S03-06, S03-14
 --
 -- Introduces hash-chain formula **v4** and the content commitment it is

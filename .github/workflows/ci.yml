@@ -212,6 +212,16 @@ jobs:
       - name: OP-Nummern sind eindeutig und im Register bekannt
         run: node scripts/check-op-numbers.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Ein Job, der nichts installiert,
+      # aber ein Skript aufruft, das ein Paket importiert, stirbt an
+      # `ERR_MODULE_NOT_FOUND` — und hat dann NICHTS geprueft, waehrend die
+      # Schritte darunter gar nicht erst laufen. Zwei Fundstellen, beide
+      # unbemerkt: der i18n-Parity-Job seit Welle 8c, und der WOECHENTLICHE
+      # Volllauf des Geheimnis-Scanners seit `dcded077` (2026-09-05).
+      # Beide gegengeprueft.
+      - name: Jedes Workflow-Skript laeuft in seinem Job
+        run: node scripts/check-workflow-script-deps.mjs
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────
@@ -548,6 +558,20 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Ohne diese Zeile bricht der Bau ab,
+      # und zwar mit der richtigen Meldung: der Laufzeit-Waechter aus #SEC-F01
+      # verweigert einen Pool, der als `grc` (SUPERUSER, BYPASSRLS)
+      # verbindet — das haette die Mandantentrennung fuer jede Abfrage
+      # abgeschaltet. Der Waechter hatte recht; der Job hatte die Rolle nie.
+      #
+      # Nebenbefund, und der ist wichtiger: dieser Baulauf ist in CI
+      # `✓ Compiled successfully in 90s` gelaufen, hat TypeScript beendet und
+      # `Collecting page data` erreicht — OHNE den Absturz auf
+      # `/_global-error`, an dem OP-167 lokal seit Tagen haengt. CI setzt
+      # `NODE_ENV` nicht. Der Beleg dafuer, dass OP-167 an der Umgebung
+      # haengt und nicht an Next, stand also im Protokoll dieses PR, bevor
+      # ihn jemand gesucht hat.
+      APP_DATABASE_URL: postgresql://grc_app:grc_app_pass@localhost:5432/grc_platform_test
       AUTH_SECRET: e2e-ci-secret-do-not-use-in-prod
       AUTH_TRUST_HOST: "true"
       E2E_BASE_URL: http://localhost:3000
@@ -590,6 +614,19 @@ jobs:
       - name: Build schema from migrations
         working-directory: packages/db
         run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
+
+      # [Welle 8g] Dieselbe Provisionierung wie in Produktion und im
+      # Datenbank-Job. Der E2E-Lauf prueft damit den Pfad, der RLS
+      # tatsaechlich durchsetzt, statt einen Superuser-Pfad, der sie umgeht.
+      - name: grc_app provisionieren
+        env:
+          DIRECT_PSQL: 1
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_pass
+        run: bash deploy/provision-grc-app.sh grc_platform_test
 
       - name: Run seed (admin user + demo data)
         working-directory: packages/db
@@ -860,20 +897,56 @@ jobs:
             exit 1
           fi
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Hier stand eine EIGENE, verkuerzte
+      # Fassung der grc_app-Provisionierung: CREATE ROLE, USAGE auf das Schema
+      # und DML auf alle Tabellen. Was fehlte, war `GRANT EXECUTE` auf die
+      # Funktionen — und die RLS-Policies rufen `app_current_org_scope()`.
+      # Ergebnis in jedem Lauf:
+      #
+      #   ERROR:  permission denied for function app_current_org_scope
+      #   Rows visible without context (grc_app, non-superuser):
+      #   ::error::RLS FAILURE — expected 0 rows without org context, got
+      #
+      # Zwei Fehler in einem: die Provisionierung war unvollstaendig, UND der
+      # Vergleich `[ "$ROWS" != "0" ]` konnte eine fehlgeschlagene ABFRAGE
+      # nicht von einer verletzten POLICY unterscheiden — er meldete einen
+      # RLS-Bruch, wo keiner war. Ein Check, der ueber das Falsche redet, ist
+      # schlimmer als einer, der schweigt: hier stand seit Langem „RLS
+      # FAILURE" im Protokoll, und es war nie eines.
+      #
+      # `deploy/provision-grc-app.sh` ist die eine gueltige Fassung — dasselbe
+      # Skript, das Produktion und Entwicklung benutzen. Die CI prueft damit
+      # jetzt den echten Provisionierungspfad mit, statt eine Nachbildung
+      # davon.
+      - name: grc_app provisionieren (derselbe Weg wie Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_pass
+        run: bash deploy/provision-grc-app.sh grc_platform
+
       - name: Test RLS isolation
         run: |
-          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -c "
-            DO \$\$ BEGIN
-              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grc_app') THEN
-                CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_pass';
-              END IF;
-            END \$\$;
-            GRANT USAGE ON SCHEMA public TO grc_app;
-            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
-          "
-          ROWS=$(PGPASSWORD=grc_app_pass psql -h localhost -U grc_app -d grc_platform \
-            -t -c "SELECT count(*) FROM organization;" | tr -d ' ')
+          set -euo pipefail
+          # `ON_ERROR_STOP=1`: eine fehlgeschlagene Abfrage muss als Fehler
+          # enden und nicht als leerer Wert weiterlaufen.
+          ROWS=$(PGPASSWORD=grc_app_pass psql -v ON_ERROR_STOP=1 \
+            -h localhost -U grc_app -d grc_platform \
+            -t -A -c "SELECT count(*) FROM organization;" | tr -d ' ')
           echo "Rows visible without context (grc_app, non-superuser): $ROWS"
+          # Erst pruefen, dass ueberhaupt eine Zahl herauskam. Ohne das
+          # meldet ein Verbindungs- oder Rechtefehler einen RLS-Bruch.
+          case "$ROWS" in
+            ''|*[!0-9]*)
+              echo "::error::Die Abfrage hat keine Zahl geliefert (\"$ROWS\")."
+              echo "::error::Das ist KEIN RLS-Befund, sondern ein Fehler der"
+              echo "::error::Abfrage selbst — Rechte, Verbindung oder Rolle."
+              exit 1
+              ;;
+          esac
           if [ "$ROWS" != "0" ]; then
             echo "::error::RLS FAILURE — expected 0 rows without org context, got $ROWS"
             exit 1

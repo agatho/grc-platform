@@ -1,4 +1,13 @@
 -- 0442_management_review_action_element_id.sql
+--
+-- Migration: 0442_management_review_action_element_id
+-- Breaking: yes-backfill
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Breaking: zwei UPDATE-Backfills (work_item_type und work_item). Sie sind
+-- idempotent und aendern keine Struktur.
 -- [E2E-TRIAGE-3 · 2026-09-02]
 --
 -- Befund: `POST /api/v1/isms/reviews/:id/items` mit einer Massnahme liefert

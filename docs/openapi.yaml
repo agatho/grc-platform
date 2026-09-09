@@ -46751,7 +46751,12 @@ paths:
       summary: PUT /api/v1/processes/{id}/comments/{commentId}/resolve
       tags:
         - processes
-      security: []
+      security:
+        - 
+          bearerAuth:
+            - ...
+            - admin
+            - process_owner
       parameters:
         - 
           name: id
@@ -47221,6 +47226,121 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
+  "/api/v1/processes/{id}/diagram-overlay/preference":
+    get:
+      summary: GET /api/v1/processes/{id}/diagram-overlay/preference
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - risk_manager
+            - control_owner
+            - process_owner
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+    put:
+      summary: PUT /api/v1/processes/{id}/diagram-overlay/preference
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - risk_manager
+            - control_owner
+            - process_owner
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+  "/api/v1/processes/{id}/diagram-overlay":
+    get:
+      summary: GET /api/v1/processes/{id}/diagram-overlay
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - risk_manager
+            - control_owner
+            - process_owner
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
   "/api/v1/processes/{id}/dmn-links":
     get:
       summary: GET /api/v1/processes/{id}/dmn-links
@@ -47637,6 +47757,126 @@ paths:
                     type: string
                   details:
                     type: object
+  "/api/v1/processes/{id}/lanes/{laneId}":
+    patch:
+      summary: PATCH /api/v1/processes/{id}/lanes/{laneId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - compliance_officer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - 
+          name: laneId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+    delete:
+      summary: DELETE /api/v1/processes/{id}/lanes/{laneId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - compliance_officer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - 
+          name: laneId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  "/api/v1/processes/{id}/lanes":
+    get:
+      summary: GET /api/v1/processes/{id}/lanes
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - risk_manager
+            - control_owner
+            - compliance_officer
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
   "/api/v1/processes/{id}/maturity/auto-compute":
     post:
       summary: POST /api/v1/processes/{id}/maturity/auto-compute
@@ -48872,6 +49112,214 @@ paths:
                     type: string
                   details:
                     type: object
+  "/api/v1/processes/{id}/step-bia/{stepId}":
+    put:
+      summary: PUT /api/v1/processes/{id}/step-bia/{stepId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - bcm_manager
+            - compliance_officer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - 
+          name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+    delete:
+      summary: DELETE /api/v1/processes/{id}/step-bia/{stepId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - bcm_manager
+            - compliance_officer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - 
+          name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  "/api/v1/processes/{id}/step-bia":
+    get:
+      summary: GET /api/v1/processes/{id}/step-bia
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - risk_manager
+            - bcm_manager
+            - compliance_officer
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  "/api/v1/processes/{id}/step-raci/{stepId}":
+    put:
+      summary: PUT /api/v1/processes/{id}/step-raci/{stepId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - compliance_officer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - 
+          name: stepId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+  "/api/v1/processes/{id}/step-raci":
+    get:
+      summary: GET /api/v1/processes/{id}/step-raci
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - risk_manager
+            - control_owner
+            - compliance_officer
+            - auditor
+            - viewer
+      parameters:
+        - 
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
   "/api/v1/processes/{id}/step-risks":
     get:
       summary: GET /api/v1/processes/{id}/step-risks
@@ -50339,6 +50787,144 @@ paths:
           bearerAuth:
             - admin
             - process_owner
+      parameters: []
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+  "/api/v1/processes/sod-rules/{ruleId}":
+    patch:
+      summary: PATCH /api/v1/processes/sod-rules/{ruleId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - compliance_officer
+            - risk_manager
+      parameters:
+        - 
+          name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+        "201":
+          description: Created / Updated
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "422":
+          description: Validation failed
+          content:
+            "application/json":
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: object
+    delete:
+      summary: DELETE /api/v1/processes/sod-rules/{ruleId}
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - compliance_officer
+            - risk_manager
+      parameters:
+        - 
+          name: ruleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+  "/api/v1/processes/sod-rules":
+    get:
+      summary: GET /api/v1/processes/sod-rules
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - risk_manager
+            - control_owner
+            - compliance_officer
+            - auditor
+            - viewer
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          content:
+            "application/json":
+              schema:
+                type: object
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+    post:
+      summary: POST /api/v1/processes/sod-rules
+      tags:
+        - processes
+      security:
+        - 
+          bearerAuth:
+            - admin
+            - process_owner
+            - risk_manager
+            - control_owner
+            - compliance_officer
+            - auditor
+            - viewer
       parameters: []
       responses:
         "200":
@@ -54374,45 +54960,6 @@ paths:
           description: Forbidden
         "404":
           description: Not Found
-    post:
-      summary: POST /api/v1/risk-acceptances
-      tags:
-        - risk-acceptances
-      security:
-        - 
-          bearerAuth:
-            - admin
-            - risk_manager
-            - process_owner
-            - ciso
-            - control_owner
-            - auditor
-            - viewer
-      parameters: []
-      responses:
-        "200":
-          description: OK
-        "201":
-          description: Created / Updated
-          content:
-            "application/json":
-              schema:
-                type: object
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "422":
-          description: Validation failed
-          content:
-            "application/json":
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                  details:
-                    type: object
   "/api/v1/risk-quantification/appetite/{id}":
     get:
       summary: GET /api/v1/risk-quantification/appetite/{id}

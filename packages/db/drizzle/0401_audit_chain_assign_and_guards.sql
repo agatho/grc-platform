@@ -1,4 +1,11 @@
 -- 0401_audit_chain_assign_and_guards.sql
+--
+-- Migration: 0401_audit_chain_assign_and_guards
+-- Breaking: no
+-- Estimated-Duration: 10
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-02, S03-05, S03-06, S03-14, S03-16
 --
 -- Three structural changes to how audit_log is written and protected.

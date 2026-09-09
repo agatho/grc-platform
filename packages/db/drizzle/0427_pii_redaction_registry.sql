@@ -1,4 +1,11 @@
 -- 0427_pii_redaction_registry.sql
+--
+-- Migration: 0427_pii_redaction_registry
+-- Breaking: no
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-06 (High), S07-23 (Low)
 --
 -- Befund: `redact_pii_jsonb()` — das einzige Werkzeug, mit dem ARCTOS einen

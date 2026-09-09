@@ -1,4 +1,11 @@
 -- 0438_organization_insert_policy.sql
+--
+-- Migration: 0438_organization_insert_policy
+-- Breaking: no
+-- Estimated-Duration: 1
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- [ARCTOS-FULL-2026-08-31 / Restdefekte · O-2, konsistent zu WP2 (S01-*) und WP3 (S02-03)]
 --
 -- Befund O-2: `POST /api/v1/organizations` konnte unter der Laufzeitrolle

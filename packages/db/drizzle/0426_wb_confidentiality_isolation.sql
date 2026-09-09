@@ -1,4 +1,11 @@
 -- 0426_wb_confidentiality_isolation.sql
+--
+-- Migration: 0426_wb_confidentiality_isolation
+-- Breaking: no
+-- Estimated-Duration: 10
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-01 (Critical), S07-08 (High), S07-09 (High)
 --
 -- ── Ausgangslage nach WP4 ─────────────────────────────────────────────

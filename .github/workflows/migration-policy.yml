@@ -74,6 +74,35 @@ jobs:
                 FAIL=1
               fi
             done
+
+            # [ARCTOS-FULL-2026-08-31 · Welle 8g] Bis hierher prueft dieser
+            # Schritt nur, DASS die Zeile da ist — nicht, was darauf steht.
+            # Gemessen: zehn eingecheckte Migrationen trugen `Locking: none`,
+            # ein Wort, das ADR-023 §4 gar nicht kennt (`no|short|long`). Ein
+            # Kopf mit einem erfundenen Wert ist genau so wenig wert wie
+            # keiner — er sieht nur aus wie einer. Die Werte werden deshalb
+            # jetzt mitgeprueft.
+            check_value() {
+              local key="$1" allowed="$2" value
+              value=$(head -40 "$f" | grep -m1 -- "^-- $key" | sed "s/^-- $key *//" | tr -d '\r')
+              case " $allowed " in
+                *" $value "*) ;;
+                *)
+                  echo "::error file=$f::ADR-023 §4: '-- $key $value' ist kein zulaessiger Wert. Erlaubt: $allowed"
+                  FAIL=1
+                  ;;
+              esac
+            }
+            check_value "Breaking:" "no yes-backfill yes-breaking"
+            check_value "Locking:" "no short long"
+            check_value "Compensating-Required:" "no yes"
+            DUR=$(head -40 "$f" | grep -m1 -- "^-- Estimated-Duration:" | sed 's/^-- Estimated-Duration: *//' | tr -d '\r')
+            case "$DUR" in
+              ''|*[!0-9]*)
+                echo "::error file=$f::ADR-023 §4: '-- Estimated-Duration: $DUR' ist keine Sekundenzahl."
+                FAIL=1
+                ;;
+            esac
             if head -40 "$f" | grep -qE '^-- Breaking: yes'; then
               echo "::notice file=$f::breaking migration — deploy/db-backup.sh --pre-breaking is required before rollout."
             fi

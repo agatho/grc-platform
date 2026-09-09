@@ -1,4 +1,13 @@
 -- 0431_search_index_softdelete.sql
+--
+-- Migration: 0431_search_index_softdelete
+-- Breaking: no
+-- Estimated-Duration: 15
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Locking: ein UNIQUE INDEX auf crawl_source. CREATE INDEX nimmt einen
+-- SHARE-Lock; die Tabelle ist klein, deshalb short und nicht long.
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-25 (Low), S07-16 (Medium, DB-Anteil)
 --
 -- Befund S07-25: keine der vier `sync_*_search_index()`-Funktionen kennt

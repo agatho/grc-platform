@@ -1,4 +1,11 @@
 -- 0406_wb_audit_chain_hardening.sql
+--
+-- Migration: 0406_wb_audit_chain_hardening
+-- Breaking: no
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-15
 --
 -- The whistleblowing chain is the one HinSchG §8 depends on, and it was

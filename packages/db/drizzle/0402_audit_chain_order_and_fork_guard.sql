@@ -1,4 +1,15 @@
 -- 0402_audit_chain_order_and_fork_guard.sql
+--
+-- Migration: 0402_audit_chain_order_and_fork_guard
+-- Breaking: yes-backfill
+-- Estimated-Duration: 120
+-- Locking: long
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Locking/Dauer: schreibt Zeilen in audit_log um (Kettenreihenfolge je Scope)
+-- und schaltet dafuer zwei Trigger kurz ab, danach wieder ENABLE ALWAYS.
+-- Die Dauer waechst mit der Zahl der Protokollzeilen; 120 s ist die
+-- Schaetzung fuer eine Installation mittlerer Groesse, nicht eine Messung.
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-09, plus the ordering artefact
 -- behind the "5 unexplained mismatches in production" of S03-12.
 --

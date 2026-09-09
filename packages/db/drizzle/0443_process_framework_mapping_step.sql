@@ -1,4 +1,16 @@
 -- 0443_process_framework_mapping_step.sql
+--
+-- Migration: 0443_process_framework_mapping_step
+-- Breaking: yes-backfill
+-- Estimated-Duration: 10
+-- Locking: short
+-- Compensating-Required: yes
+-- Reviewer: audit/full-2026-08-31
+-- Breaking/Compensating: die alte Unique-Constraint
+-- (process_id, catalog_entry_id) wird durch einen BREITEREN Unique-Index
+-- (process, step, resolved) ersetzt. Vorwaerts ist das eine Lockerung und
+-- damit unkritisch; die RUECKNAHME muss vorher auf Duplikate pruefen, die
+-- unter der neuen Regel zulaessig geworden sind. Deshalb yes.
 -- [STUFE2-D · Overlay-Endpunkt der BPMN-Engine, docs/bpmn-engine/STUFE2-D-OFFENE-PUNKTE.md]
 --
 -- ── Warum genau diese eine Spalte ───────────────────────────────────

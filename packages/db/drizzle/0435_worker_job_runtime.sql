@@ -1,4 +1,11 @@
 -- 0435_worker_job_runtime.sql
+--
+-- Migration: 0435_worker_job_runtime
+-- Breaking: no
+-- Estimated-Duration: 3
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- [ARCTOS-FULL-2026-08-31 / WP9] Worker-Laufzeitinfrastruktur.
 --
 -- Deckt drei Findings ab:

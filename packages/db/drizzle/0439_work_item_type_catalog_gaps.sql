@@ -1,4 +1,12 @@
 -- 0439_work_item_type_catalog_gaps.sql
+--
+-- Migration: 0439_work_item_type_catalog_gaps
+-- Breaking: no
+-- Estimated-Duration: 2
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Nur INSERT ... ON CONFLICT in die Katalogtabelle work_item_type.
 -- [ARCTOS-FULL-2026-08-31 / Restdefekte · O-4]
 --
 -- Befund O-4: `POST /api/v1/findings` antwortete mit 500. Ursache ist kein

@@ -1,4 +1,11 @@
 -- 0425_pii_pseudonym_key.sql
+--
+-- Migration: 0425_pii_pseudonym_key
+-- Breaking: no
+-- Estimated-Duration: 3
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · Grundlage für S07-02, S07-03, S07-08
 --
 -- Drei Pseudonymisierungen des Produkts folgen demselben defekten Muster:

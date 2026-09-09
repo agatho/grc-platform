@@ -1,4 +1,11 @@
 -- 0404_audit_chain_verification.sql
+--
+-- Migration: 0404_audit_chain_verification
+-- Breaking: no
+-- Estimated-Duration: 10
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-04, S03-05, S03-08, S03-12
 --
 -- ── One verification, three callers (S03-04) ──────────────────────────

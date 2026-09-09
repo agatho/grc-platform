@@ -3,7 +3,11 @@
 -- Migration: 0412_anonymous_token_resolution
 -- Breaking: no
 -- Estimated-Duration: 2
--- Locking: none
+-- Locking: no
+-- [Welle 8g] Hier stand `none`. ADR-023 §4 kennt nur `no|short|long`; der
+-- CI-Check prueft seit dieser Welle auch die WERTE, nicht nur, dass die
+-- Zeile da ist. Zehn Dateien trugen ein Wort, das es in der Entscheidung
+-- nicht gibt.
 -- Compensating-Required: no
 -- Reviewer: audit/full-2026-08-31
 --

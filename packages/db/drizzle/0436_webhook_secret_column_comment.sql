@@ -1,4 +1,12 @@
 -- 0436_webhook_secret_column_comment.sql
+--
+-- Migration: 0436_webhook_secret_column_comment
+-- Breaking: no
+-- Estimated-Duration: 1
+-- Locking: no
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+-- Locking: nur COMMENT ON COLUMN — kein Lock auf Daten.
 -- [ARCTOS-FULL-2026-08-31 / WP9 · S10-26 (Info)]
 --
 -- `webhook_registration.secret_hash` does NOT hold a hash. The value is used

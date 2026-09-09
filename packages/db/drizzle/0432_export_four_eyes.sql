@@ -1,4 +1,11 @@
 -- 0432_export_four_eyes.sql
+--
+-- Migration: 0432_export_four_eyes
+-- Breaking: no
+-- Estimated-Duration: 3
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-14 (Medium) — Vier-Augen-Prinzip für
 -- den Massenexport. Ergänzt `decideBulkExport()` aus WP3 (S02-07) um den
 -- Teil, den eine reine Entscheidungsfunktion nicht leisten kann: die

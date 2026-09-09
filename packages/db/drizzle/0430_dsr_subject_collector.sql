@@ -1,4 +1,11 @@
 -- 0430_dsr_subject_collector.sql
+--
+-- Migration: 0430_dsr_subject_collector
+-- Breaking: no
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-13 (Medium)
 --
 -- Befund: Art. 15 (Auskunft) und Art. 20 (Übertragbarkeit) sind im Produkt

@@ -1,4 +1,11 @@
 -- 0405_audit_trigger_coverage.sql
+--
+-- Migration: 0405_audit_trigger_coverage
+-- Breaking: no
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP4 · S03-13
 --
 -- 508 of 527 base tables carried `audit_trigger`. Among the 19 without it

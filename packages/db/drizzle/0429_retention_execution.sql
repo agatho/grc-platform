@@ -1,4 +1,11 @@
 -- 0429_retention_execution.sql
+--
+-- Migration: 0429_retention_execution
+-- Breaking: no
+-- Estimated-Duration: 5
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
 -- ARCTOS-FULL-2026-08-31 · WP8 · S07-07 (High), S07-12 (Medium), S07-24 (Low), S07-23 (Low)
 --
 -- Befund S07-07: der einzige Retention-Job über personenbezogene Daten

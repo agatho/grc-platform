@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "tsx scripts/build-messages.ts",
+    "predev": "tsx scripts/build-messages.ts",
+    "pretest": "tsx scripts/build-messages.ts",
+    "pretest:coverage": "tsx scripts/build-messages.ts",
     "build": "node scripts/next-build.mjs",
     "start": "next start",
     "lint": "eslint . --no-error-on-unmatched-pattern",
