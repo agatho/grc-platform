@@ -11,15 +11,14 @@ nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 
 Nummern: **254**
 
-## offen (5)
+## offen (4)
 
-| Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
-| ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
-| OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)       | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.               | Haupttabelle |
-| OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.       | 2026-09-03   |
-| OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | offen — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando ben… | 2026-09-09   |
-| OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
-| OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                          | 2026-09-09   |
+| Nr     | Titel                                                                                                          | Stand laut Register                                                                  | Nachtrag     |
+| ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
+| OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)       | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.         | Haupttabelle |
+| OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten. | 2026-09-03   |
+| OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                | 2026-09-09   |
+| OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                    | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -197,7 +196,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (87)
+## behoben (88)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -258,6 +257,7 @@ _keine_
 | OP-218 | Auf jeder Modulseite blitzte beim Laden der Teaser mit dem rohen Modulschlüssel auf. `orgId` kommt aus `useSe… | behoben                                                                                    | 2026-09-09 |
 | OP-219 | Der 21. stumme Zweig, und er saß im Teaser selbst. `if (res.ok) { refetch(); }` ohne `else`, dazu ein `catch`… | behoben                                                                                    | 2026-09-09 |
 | OP-220 | `scripts/audit-i18n-coverage.mjs` schreibt rohes Markdown in eine eingecheckte Datei (`docs/i18n-coverage-rep… | behoben                                                                                    | 2026-09-09 |
+| OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | behoben 2026-09-09 (Welle 8o) — Entscheidung des Eigentümers: Ratsche eingehängt           | 2026-09-09 |
 | OP-222 | `formatCompactEUR` lag als byteweise identische Kopie in vier FAIR-Seiten — und hatte zwei Fehler, von denen … | behoben                                                                                    | 2026-09-09 |
 | OP-223 | Der Wachposten gegen fest verdrahtete Gebietsschemata kannte nur die halbe Form. `toLocaleString("de-DE")` fi… | behoben                                                                                    | 2026-09-09 |
 | OP-225 | Ein verschwundener Übersetzungsschlüssel war die einzige Änderung am Katalog, die kein Check sehen konnte. Be… | behoben                                                                                    | 2026-09-09 |
