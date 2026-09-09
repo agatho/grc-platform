@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -46,38 +47,53 @@ export default function XbrlTaggingPage() {
   // even when this component is rendered more than once on a page.
   const a11yId = useId();
 
-  const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
-  const [tags, setTags] = useState<XbrlTag[]>([]);
-  const [kpis, setKpis] = useState<XbrlKpis | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selectedTaxonomy, setSelectedTaxonomy] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Taxonomien und Tags wurden bei
+  // jedem Taxonomie-Wechsel zusammen neu geladen — daher eine Abfrage mit
+  // einem Objekt und der Taxonomie im Schlüssel.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    taxonomies: Taxonomy[];
+    kpis: XbrlKpis | null;
+    tags: XbrlTag[];
+  }>({
+    queryKey: ["xbrl", "tagging", selectedTaxonomy],
+    queryFn: async () => {
       const [taxRes, tagRes] = await Promise.all([
         fetch("/api/v1/xbrl/taxonomies"),
         fetch(
           `/api/v1/xbrl/tags${selectedTaxonomy ? `?taxonomyId=${selectedTaxonomy}` : ""}`,
         ),
       ]);
+      let taxonomies: Taxonomy[] = [];
+      let kpis: XbrlKpis | null = null;
+      let tags: XbrlTag[] = [];
       if (taxRes.ok) {
         const taxJson = await taxRes.json();
-        setTaxonomies(taxJson.data ?? []);
-        setKpis(taxJson.kpis ?? null);
+        taxonomies = taxJson.data ?? [];
+        kpis = taxJson.kpis ?? null;
       }
       if (tagRes.ok) {
         const tagJson = await tagRes.json();
-        setTags(tagJson.data ?? []);
+        tags = tagJson.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedTaxonomy]);
+      return { taxonomies, kpis, tags };
+    },
+  });
+  const taxonomies = data?.taxonomies ?? [];
+  const kpis = data?.kpis ?? null;
+  const tags = data?.tags ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const statusBadge = (status: XbrlTag["status"]) => {
     switch (status) {
@@ -146,9 +162,12 @@ export default function XbrlTaggingPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" />

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -27,27 +28,30 @@ interface ConsolidationGroup {
 }
 
 export default function ConsolidationPage() {
-  const [groups, setGroups] = useState<ConsolidationGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Aktualisieren-Schaltfläche
+  // hängt an `isFetching`.
+  const {
+    data: groups = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ConsolidationGroup[]>({
+    queryKey: ["financial-reporting", "consolidation-groups"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/financial-reporting/consolidation-groups",
       );
-      if (res.ok) {
-        const json = await res.json();
-        setGroups(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ConsolidationGroup[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const methodLabel = (method: ConsolidationGroup["method"]) => {
     switch (method) {
@@ -125,9 +129,12 @@ export default function ConsolidationPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" />
