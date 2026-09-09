@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -344,9 +345,6 @@ export default function TasksPage() {
   const { data: session } = useSession();
   const { formatDate } = useDateFormat();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<"my" | "all">("my");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
   const [priorityFilter, setPriorityFilter] = useState<string>("__all__");
@@ -365,26 +363,40 @@ export default function TasksPage() {
   );
 
   // Fetch tasks
-  const fetchTasks = useCallback(async (view: "my" | "all") => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Der Reiter steht im Schlüssel;
+  // beim Reiterwechsel bleibt die alte Liste stehen, bis die neue da ist —
+  // wie vorher durch `loading && tasks.length === 0`. Ein Fehler des Helfers
+  // landet im Fehlerzustand der Abfrage (`isError`), die Liste ist dann leer.
+  const {
+    data: tasks = [],
+    isPending: loading,
+    isError: error,
+    refetch,
+  } = useQuery<Task[]>({
+    queryKey: ["tasks", { view: activeTab }],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422 ⇒ die
       // Aufgabenliste war für jeden Mandanten leer. Der `catch` unten hat den
       // Fehlerzustand zwar gesetzt, aber nur als „Failed to fetch tasks" —
       // die Ursache stand nirgends. Jetzt geblättert; der Helfer wirft mit
       // Status und Detail aus dem problem+json.
-      const rows = await fetchAllPages<Task>("/api/v1/tasks", {
-        params: { view },
+      return fetchAllPages<Task>("/api/v1/tasks", {
+        params: { view: activeTab },
       });
-      setTasks(rows);
-    } catch {
-      setError(true);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+  });
+  // Die Aufrufer übergeben weiterhin den Reiter; er ist stets der aktive
+  // (die Wiederholen-Schaltfläche liegt im jeweiligen Reiterinhalt), deshalb
+  // genügt ein erneuter Abruf der aktiven Abfrage.
+  const fetchTasks = useCallback(
+    async (_view: "my" | "all") => {
+      await refetch();
+    },
+    [refetch],
+  );
 
   // Fetch org users
   useEffect(() => {
@@ -403,10 +415,6 @@ export default function TasksPage() {
         console.error("tasks: Nutzerliste nicht geladen", err);
       });
   }, []);
-
-  useEffect(() => {
-    void fetchTasks(activeTab);
-  }, [activeTab, fetchTasks]);
 
   // Create task
   const handleCreate = async (data: TaskFormData) => {
