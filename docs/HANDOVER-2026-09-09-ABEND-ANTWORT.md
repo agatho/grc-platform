@@ -270,8 +270,28 @@ das ist der bekannte cairosvg-Rand aus OP-246, unverändert.
    mit den Werten aus `.env.example`. Sonst ist an `.github/**` nichts
    geändert; `check-workflow-yaml.mjs` und `check-workflow-script-deps.mjs`
    sind grün.
-2. **Register:** ein Eintrag oben in Punkt 2 wartet auf eine Nummer. Ich habe
-   bewusst **keine** vergeben und keine neue Nummer irgendwo im Baum
-   verwendet — `scripts/check-op-numbers.mjs` würde eine Nummer, die im Code
-   steht und im Register fehlt, sofort rot melden, und das war gestern schon
-   einmal ein verlorener Lauf.
+2. **Register — erledigt, der Eigentümer hat `OP-256` vergeben.** Der Eintrag
+   steht als eigener Nachtrag am Ende von `OFFENE-PUNKTE-REGISTER.md`, die
+   Nummer ist jetzt auch im Code zitiert (`module-gate.tsx`,
+   `use-module-config.tsx`, die Prüfung), und der Index ist neu erzeugt.
+   `OP-255` war beim Nachschlagen schon vergeben — daher 256.
+
+3. **Neu und deiner: `scripts/op-index.mjs` erzeugt auf Windows einen LEEREN
+   Index, ohne zu klagen.** Das Skript liest das Register mit
+   `readFileSync(...).split("\n")` und vergleicht anschliessend Zeilen, die
+   auf diesem Checkout (`core.autocrlf=true`) auf `\r` enden. Gemessen, beide
+   Male am selben Registerstand:
+
+   | Eingabe                         | Ergebnis                                             |
+   | ------------------------------- | ---------------------------------------------------- |
+   | Register wie ausgecheckt (CRLF) | `Nummern: 0` — offen 0, behoben 0, ohne Stand 0      |
+   | dieselbe Datei, `tr -d '\r'`    | `Nummern: 256` — offen 4, behoben 90, ohne Stand 160 |
+
+   Es ist die Klasse aus OP-246, nur an einer Stelle, die niemand als Test
+   führt. Gefährlich ist daran nicht der falsche Lauf, sondern der **stille**:
+   `--write` hätte einen leeren Index eingecheckt, das Tor „Der Punkte-Index
+   passt zum Register" wäre auf dem Linux-Läufer sofort rot gewesen, und die
+   Ursache hätte in einer ganz anderen Datei gestanden als der Fehler. Ich
+   habe den Index deshalb aus einer LF-Fassung erzeugt und das Skript **nicht**
+   angefasst — `scripts/**` ist deins. Die Behebung ist eine Zeile
+   (`.split(/\r?\n/)`).

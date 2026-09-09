@@ -203,7 +203,7 @@ export function useModuleConfig(moduleKey: ModuleKey) {
     /**
      * Meldung, wenn die Konfiguration NICHT geladen werden konnte.
      *
-     * [ARCTOS-FULL-2026-08-31 · 2026-09-09] Ohne dieses Feld war der Fehler
+     * [ARCTOS-FULL-2026-08-31 · OP-256] Ohne dieses Feld war der Fehler
      * fuer jeden Aufrufer von aussen nicht von „Modul abgeschaltet" zu
      * unterscheiden: der Anbieter liefert bei einem Fehler eine LEERE Liste,
      * und `status` faellt dann auf `"disabled"` zurueck. `ModuleGate` liest

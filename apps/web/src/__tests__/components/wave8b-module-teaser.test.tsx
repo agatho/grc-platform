@@ -212,7 +212,7 @@ describe("Welle 8b — OP-219: die abgelehnte Aktivierung", () => {
   });
 });
 
-describe("Ein fehlgeschlagener Abruf ist kein abgeschaltetes Modul", () => {
+describe("OP-256 — ein fehlgeschlagener Abruf ist kein abgeschaltetes Modul", () => {
   // Gefunden im E2E-Lauf 34398654753 (W22-C1-03): der Abruf von
   // `/api/v1/organizations/<id>/modules` bekam 429, und die Finding-
   // Detailseite zeigte 60 Sekunden lang den Teaser mit dem ROHEN

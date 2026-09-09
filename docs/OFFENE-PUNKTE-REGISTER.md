@@ -2810,3 +2810,74 @@ Vorsicht required zu setzen: `Migration policy`, `Migration rehearsal`,
 damit möglich. **Reihenfolge beachten:** wird der Schutz gesetzt, solange
 E2E Smoke rot ist, blockiert er den eigenen Merge. Erst grün, dann mergen,
 dann schützen.
+
+### Nachtrag 2026-09-10 — OP-256: ein fehlgeschlagener Abruf ist kein abgeschaltetes Modul
+
+Gefunden in der Triage der roten E2E-Einträge aus Lauf `34398654753`, die die
+Übergabe vom Abend des 2026-09-09 verlangt hat. Die Triage selbst steht in
+`docs/HANDOVER-2026-09-09-ABEND-ANTWORT.md`; ihr Ergebnis in einer Zeile: **17
+Einträge, 17 × Umgebung, 0 Testdefekte, 1 Produktdefekt.** Der Produktdefekt
+ist dieser hier, und er ist **keine** der 17 Ursachen — ohne die
+Umgebungsursache wäre kein Lauf rot gewesen. Er ist durch sie nur sichtbar
+geworden.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Beleg                                                                                                                                                                                                                                                                  | Art                     | Stand                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | ---------------------- |
+| OP-256 | **Ein fehlgeschlagener Abruf der Modulkonfiguration liess jede gate-geschützte Seite behaupten, das Modul sei nicht freigeschaltet.** `ModuleConfigProvider` liefert bei einem Fehler eine LEERE Liste plus `error`. `ModuleGate` las nur die Liste, fand keinen Eintrag zum Schlüssel und zeichnete den Teaser — mit `definition?.displayNameDe ?? moduleKey`, also dem ROHEN Modulschlüssel, weil bei einem Fehler auch die Definition fehlt. Damit machte die Anwendung eine Aussage über den Vertrag („dieses Modul ist nicht freigeschaltet“), wo nur EINE wiederholbare Anfrage gescheitert war — und zwar auf jeder gate-geschützten Seite gleichzeitig. Der einzige Hinweis stand in der Browser-Konsole. `useModuleConfig` reicht `error` und `refetch` jetzt durch, und das Tor hat einen eigenen Fehlerzustand VOR der Statusabfrage: benannt, wiederholbar, ohne Aussage über die Freischaltung. | E2E-Lauf 34398654753, Eintrag 17 (`W22-C1-03`): Rumpf der Seite = `AUOrganisationU`**`ics`**`© 2026 ARCTOS …` statt der angelegten Feststellung, 60 s lang; zwei Prüfungen in `wave8b-module-teaser.test.tsx`, gegen den alten Stand rot (`Unable to find role=alert`) | Produktdefekt (Anzeige) | **behoben 2026-09-10** |
+
+**Wie er sichtbar wurde.** Eintrag 17 legt eine Feststellung über die
+Oberfläche an, landet richtig auf `/controls/findings/<id>` und findet den
+Titel dann 60 Sekunden lang nicht. Der Rumpf im Fehlerbericht ist der Beweis:
+
+```
+Received string: "AUOrganisationUics© 2026 ARCTOS — …ImpressumDatenschutz"
+```
+
+Das `ics` in der Mitte ist kein Zufall — es ist der rohe Modulschlüssel,
+gezeichnet vom `ModuleTeaser`. Die Kette: `/api/v1/organizations/<id>/modules`
+bekommt 429 → der Anbieter meldet `configs: []` **plus** `error` →
+`useModuleConfig` liest nur die Liste → `status: "disabled"` → Teaser.
+
+**Es ist dieselbe Anzeige wie in OP-218, aus der zweiten Quelle.** OP-218 hat
+den Teaser-Blitz mit dem rohen Schlüssel für die noch **ladende** Sitzung
+abgestellt; die zweite Quelle — der **Fehler** — blieb offen, weil die
+Behebung damals am Ladezustand angesetzt hat und nicht an der Frage, die
+darunter liegt: was wissen wir eigentlich? Bei leerer Liste wissen wir über
+die Freischaltung nichts, und „nichts gewusst“ darf nicht als
+„abgeschaltet“ gezeichnet werden. In Betrieb trifft das nicht eine
+Seite, sondern jede gate-geschützte gleichzeitig, sobald diese eine Anfrage
+einmal scheitert: die Anwendung sieht dann komplett abbestellt aus.
+
+**Gegenprobe im Protokoll**, gegen den Stand vor der Behebung:
+
+```
+× zeigt den benannten Fehler statt des Teasers
+  → Unable to find role="alert"
+× laesst den Abruf wiederholen, statt die Seite tot stehen zu lassen
+  → Unable to find role="button" and name "modules.unavailable.retry"
+Tests  2 failed | 4 passed (6)
+```
+
+Mit der Behebung 6/6, alle neun Komponenten-Testdateien 89/89. Ein Aufrufer,
+der `useModuleConfig` nachbildet und `error` nicht setzt, verhält sich wie
+bisher — deshalb sind die vorhandenen Attrappen unverändert geblieben.
+
+**Verwandtschaft.** Mit OP-218 (gleiche Anzeige, andere Quelle) und mit OP-249
+(ein Fehler, der keinen Nutzer erreicht). OP-256 ist dabei die Umkehrung des
+OP-249-Musters: hier erreichte den Nutzer nicht zu wenig, sondern eine
+**falsche** Aussage.
+
+**Was am selben Tag ausserdem passiert ist, damit die Spur nicht reisst.** Auf
+Ansage des Eigentümers hat die lokale Sitzung die drei Testbudgets im E2E-Job
+gesetzt (`RATE_LIMIT_DEFAULT`, `RATE_LIMIT_AUTH`, `CLAMAV_OPTIONAL`) — die
+Ursache aller 17 Einträge. Die Zuständigkeitsgrenze der Abend-Übergabe
+(`.github/**` bei der Cloud-Sitzung) ist damit an dieser einen Stelle bewusst
+überschritten worden. Die Werte stammen **nicht** aus eigener Erfindung,
+sondern aus `.env.example`, Abschnitt „E2E-Testumgebung: eigene
+Budgets“, wo sie seit dem 2026-09-02 stehen (E2E-TRIAGE-3 und -4), mit
+gemessenen Zahlen. Angewandt hatte sie niemand, weil der E2E-Job bis zum
+2026-09-09 nie laufen konnte. Das ist wieder die Form „stand schon in der
+eigenen Doku, wurde nicht wieder gelesen“ — und sie hat diesmal zusätzlich
+eine dritte Variable zutage gefördert, die die Triage übersehen hatte:
+`RATE_LIMIT_AUTH` (10/60 s, adressgeschlüsselt, fail-closed), die erst rot
+geworden wäre, nachdem das Standardbudget nicht mehr alles davor verdeckt.

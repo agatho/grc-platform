@@ -32,7 +32,7 @@ export function ModuleGate({ moduleKey, children }: ModuleGateProps) {
     );
   }
 
-  // [ARCTOS-FULL-2026-08-31 · 2026-09-09] Ein FEHLGESCHLAGENER Abruf ist kein
+  // [ARCTOS-FULL-2026-08-31 · OP-256] Ein FEHLGESCHLAGENER Abruf ist kein
   // abgeschaltetes Modul.
   //
   // `ModuleConfigProvider` liefert bei einem Fehler eine LEERE Liste plus
