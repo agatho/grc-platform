@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDateFormat } from "@/lib/format-date";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -1280,15 +1280,19 @@ function AuditLogTable({
 
 import {
   flexRender,
+  type ColumnFiltersState,
+  type SortingState,
+  type ColumnVisibilityState as VisibilityState,
+  type RowData,
+} from "@tanstack/react-table";
+// [OP-234] v9: the v8-shaped hook and row-model factories live in `legacy`.
+import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-} from "@tanstack/react-table";
+  useLegacyTable,
+} from "@tanstack/react-table/legacy";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
@@ -1299,7 +1303,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function DataTableWithRowIndex<TData>({
+function DataTableWithRowIndex<TData extends RowData>({
   data,
   columns,
   searchKey,
@@ -1318,7 +1322,7 @@ function DataTableWithRowIndex<TData>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const table = useReactTable({
+  const table = useLegacyTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -1329,7 +1333,7 @@ function DataTableWithRowIndex<TData>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     state: { sorting, columnFilters, columnVisibility },
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
   return (

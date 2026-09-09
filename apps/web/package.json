@@ -42,7 +42,7 @@
     "@radix-ui/react-tooltip": "^1.2.16",
     "@tailwindcss/postcss": "^4.3.3",
     "@tanstack/react-query": "^5.102.8",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.2.4",
     "bpmn-js": "^18.28.0",
     "bpmn-js-properties-panel": "^5.65.0",
     "bpmn-moddle": "^10.2.0",

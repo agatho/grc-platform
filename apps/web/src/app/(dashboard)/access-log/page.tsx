@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Loader2 } from "lucide-react";
 
 import { DataTable, SortableHeader } from "@/components/ui/data-table";

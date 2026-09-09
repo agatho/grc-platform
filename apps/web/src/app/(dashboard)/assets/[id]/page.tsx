@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 
 import type { Asset, WorkItem } from "@grc/shared";
 import { Badge } from "@/components/ui/badge";

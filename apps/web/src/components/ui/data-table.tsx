@@ -1,17 +1,24 @@
 "use client";
 
+// [OP-234] @tanstack/react-table 9 rewrote the API around a store and
+// composable features. Its `legacy` entry keeps the v8 shape (`useLegacyTable`,
+// `LegacyColumnDef`, the `get*RowModel` factories); the state types moved
+// to the main entry under their v9 names.
 import {
-  type ColumnDef,
   type ColumnFiltersState,
+  type ColumnVisibilityState as VisibilityState,
+  type RowData,
   type SortingState,
-  type VisibilityState,
   flexRender,
+} from "@tanstack/react-table";
+import {
+  type LegacyColumnDef as ColumnDef,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  useLegacyTable,
+} from "@tanstack/react-table/legacy";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
@@ -24,8 +31,8 @@ import {
   TableRow,
 } from "./table";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<TData, unknown>[];
   data: TData[];
   searchKey?: string;
   searchPlaceholder?: string;
@@ -44,7 +51,7 @@ interface DataTableProps<TData, TValue> {
   nextPageLabel?: string;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   searchKey,
@@ -53,7 +60,7 @@ export function DataTable<TData, TValue>({
   toolbar,
   previousPageLabel,
   nextPageLabel,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   // [ARCTOS-FULL-2026-08-31 · OP-070] Der Rahmen dieser Tabelle war fest auf
   // ENGLISCH verdrahtet — „No results.", „row(s)", „Page x of y",
   // „Filter..." — in einem Produkt, dessen Vorgabesprache Deutsch ist. Der
@@ -65,7 +72,7 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const table = useReactTable({
+  const table = useLegacyTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -76,7 +83,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     state: { sorting, columnFilters, columnVisibility },
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
   return (
