@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Brain, Plus, Play } from "lucide-react";
 
@@ -19,22 +20,25 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function PredictionModelsPage() {
   const t = useTranslations("predictiveRisk");
-  const [models, setModels] = useState<RiskPredictionModel[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: models = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<RiskPredictionModel[]>({
+    queryKey: ["predictive-risk", "models"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/predictive-risk/models");
+      if (!res.ok) return [];
+      return (await res.json()).data as RiskPredictionModel[];
+    },
+  });
 
   const fetchModels = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/predictive-risk/models");
-      if (res.ok) setModels((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchModels();
-  }, [fetchModels]);
+    await refetch();
+  }, [refetch]);
 
   const trainModel = async (id: string) => {
     await fetch(`/api/v1/predictive-risk/models/${id}/train`, {
