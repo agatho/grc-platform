@@ -4,10 +4,10 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
   useCallback,
   type ReactNode,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import type { ModuleConfig, ModuleKey } from "@grc/shared";
 
@@ -61,59 +61,62 @@ export function ModuleConfigProvider({
   sessionLoading = false,
   children,
 }: ModuleConfigProviderProps) {
-  const [configs, setConfigs] = useState<ModuleConfig[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchConfigs = useCallback(async () => {
-    if (!orgId) {
-      setConfigs([]);
-      setError(null);
-      // Solange die Sitzung laedt, ist „keine Organisation" kein Ergebnis,
-      // sondern ein Zwischenstand — und ein Zwischenstand darf nicht als
-      // „Modul abgeschaltet" durchgehen. Ist die Sitzung fertig und hat
-      // trotzdem keine Organisation, faellt das Flag und der Teaser
-      // erscheint wie bisher (kein Dauerladekreis).
-      setLoading(sessionLoading);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  // [OP-245 · Gestalt A] Der Abruf laeuft ueber `@tanstack/react-query`;
+  // Effekt und gespiegelter Zustand entfallen. Die OP-218-Semantik bleibt
+  // Zeile fuer Zeile erhalten:
+  //   * ohne `orgId` wird nichts abgerufen (`enabled`), die Liste ist leer,
+  //     es gibt keinen Fehler, und `loading` ist genau `sessionLoading` —
+  //     solange die Sitzung laedt, ist „keine Organisation" kein Ergebnis,
+  //     sondern ein Zwischenstand, und der darf nicht als „Modul
+  //     abgeschaltet" durchgehen; ist die Sitzung fertig und hat trotzdem
+  //     keine Organisation, faellt das Flag und der Teaser erscheint wie
+  //     bisher (kein Dauerladekreis);
+  //   * mit `orgId` ist `loading` wahr, bis die Antwort da ist (`isPending`
+  //     gilt in react-query auch fuer eine abgeschaltete Abfrage, deshalb
+  //     der `orgId`-Wachtposten davor);
+  //   * ein Fehler liefert eine leere Liste und die Meldung, wie vorher;
+  //     kein automatischer Wiederholversuch, weil es vorher keinen gab.
+  const {
+    data,
+    error: queryError,
+    isPending,
+    refetch: refetchQuery,
+  } = useQuery<ModuleConfig[]>({
+    queryKey: ["organizations", orgId, "modules"],
+    enabled: Boolean(orgId),
+    retry: false,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/organizations/${orgId}/modules`);
       if (!res.ok) {
         throw new Error(`Failed to load module configs (${res.status})`);
       }
       const json = await res.json();
-      const data: ModuleConfig[] = Array.isArray(json)
-        ? json
-        : (json.data ?? []);
-      setConfigs(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[ModuleConfig] fetch error:", message);
-      setError(message);
-      setConfigs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [orgId, sessionLoading]);
+      return (Array.isArray(json) ? json : (json.data ?? [])) as ModuleConfig[];
+    },
+  });
+
+  const error =
+    queryError === null
+      ? null
+      : queryError instanceof Error
+        ? queryError.message
+        : String(queryError);
 
   useEffect(() => {
-    void fetchConfigs();
-  }, [fetchConfigs]);
+    if (error) console.error("[ModuleConfig] fetch error:", error);
+  }, [error]);
+
+  const refetch = useCallback(() => {
+    if (orgId) void refetchQuery();
+  }, [orgId, refetchQuery]);
 
   return (
     <ModuleConfigContext.Provider
       value={{
-        configs,
-        // Der erste Rendervorgang liegt vor dem ersten Effektlauf; ohne
-        // diese Oder-Verknuepfung bliebe genau dieses eine Bild uebrig.
-        loading: sessionLoading || loading,
+        configs: error ? [] : (data ?? []),
+        loading: sessionLoading || (orgId ? isPending : false),
         error,
-        refetch: fetchConfigs,
+        refetch,
       }}
     >
       {children}
