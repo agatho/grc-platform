@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useMemo, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -65,70 +66,72 @@ function CompareContent() {
   const initialFrom = searchParams.get("from");
   const initialTo = searchParams.get("to");
 
-  const [versions, setVersions] = useState<ProcessVersion[]>([]);
-  const [versionFrom, setVersionFrom] = useState(initialFrom ?? "");
-  const [versionTo, setVersionTo] = useState(initialTo ?? "");
-  const [comparison, setComparison] = useState<VersionComparison | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [versionsLoading, setVersionsLoading] = useState(true);
+  const [versionFromChoice, setVersionFrom] = useState(initialFrom ?? "");
+  const [versionToChoice, setVersionTo] = useState(initialTo ?? "");
 
-  // Fetch available versions
-  useEffect(() => {
-    setVersionsLoading(true);
-    fetch(`/api/v1/processes/${processId}`)
-      .then((r) => (r.ok ? r.json() : { data: {} }))
-      .then((json) => {
-        const versionsList = (json.data?.versions ?? []) as ProcessVersion[];
-        setVersions(
-          versionsList.sort((a, b) => b.versionNumber - a.versionNumber),
-        );
-      })
-      .catch(() => setVersions([]))
-      .finally(() => setVersionsLoading(false));
-  }, [processId]);
+  // [OP-245 · Gestalt A] Verfügbare Versionen — vorher ein Effekt mit
+  // `setVersionsLoading(true)` synchron im Rumpf. Jetzt eine Abfrage über
+  // `@tanstack/react-query` (Muster aus Welle 7b, `catalogs/objects/page.tsx`).
+  // Eine nicht-ok-Antwort ergibt wie vorher eine leere Liste.
+  const { data: versions = [], isPending: versionsLoading } = useQuery<
+    ProcessVersion[]
+  >({
+    queryKey: ["processes", processId, "versions"],
+    queryFn: async () => {
+      const r = await fetch(`/api/v1/processes/${processId}`);
+      if (!r.ok) return [];
+      const json = await r.json();
+      const versionsList = (json.data?.versions ?? []) as ProcessVersion[];
+      return versionsList.sort((a, b) => b.versionNumber - a.versionNumber);
+    },
+  });
 
-  // [Welle 7a · OP-080] Die Vorbelegung der beiden Versionsfelder stand bis
-  // Welle 7a IM Ladeeffekt und las dort `versionFrom`, ohne dass der Wert in
-  // dessen Abhaengigkeitsliste stand. Beide Auswege waren dort falsch:
-  // `versionFrom` in die Liste aufzunehmen haette bei JEDER Auswahl eines
-  // Vergleichsstandes einen neuen Abruf von `/api/v1/processes/[id]`
-  // ausgeloest, und ein funktionaler Aktualisierer haette die beiden Felder
-  // nicht paarweise setzen koennen. Die Vorbelegung ist deshalb ein eigener
-  // Effekt: er haengt an den geladenen Versionen UND an `versionFrom`, sagt
-  // damit die Wahrheit, und belegt weiterhin nur vor, solange der Nutzer
-  // nichts gewaehlt hat.
-  useEffect(() => {
-    if (versionFrom || versions.length < 2) return;
+  // [Welle 7a · OP-080] Die Vorbelegung der beiden Versionsfelder war bis
+  // Welle 7a Teil des Ladeeffekts und danach ein eigener Effekt an den
+  // geladenen Versionen und `versionFrom`.
+  // [OP-245 · Gestalt E] Sie ist jetzt eine Ableitung beim Rendern: die Wahl
+  // des Nutzers (oder der URL) bleibt im Zustand; solange ein Feld leer ist,
+  // gilt der Standard „vorletzte gegen letzte Version". Anders als vorher
+  // fällt jedes Feld für sich zurück, nicht paarweise — eine URL mit nur
+  // `?from=` oder nur `?to=` bekommt das fehlende Feld vorbelegt, statt dass
+  // beide überschrieben werden bzw. keines.
+  const defaultPair = useMemo(() => {
+    if (versions.length < 2) return null;
     const sorted = [...versions].sort(
       (a, b) => a.versionNumber - b.versionNumber,
     );
-    setVersionFrom(String(sorted[sorted.length - 2].versionNumber));
-    setVersionTo(String(sorted[sorted.length - 1].versionNumber));
-  }, [versions, versionFrom]);
+    return {
+      from: String(sorted[sorted.length - 2].versionNumber),
+      to: String(sorted[sorted.length - 1].versionNumber),
+    };
+  }, [versions]);
+  const versionFrom = versionFromChoice || defaultPair?.from || "";
+  const versionTo = versionToChoice || defaultPair?.to || "";
 
-  // Fetch comparison
-  const fetchComparison = useCallback(async () => {
-    if (!versionFrom || !versionTo || versionFrom === versionTo) return;
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/v1/processes/${processId}/compare?from=${versionFrom}&to=${versionTo}`,
-      );
-      if (!res.ok) throw new Error("Failed to load comparison");
-      const json = await res.json();
-      setComparison(json.data ?? null);
-    } catch {
-      setComparison(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [processId, versionFrom, versionTo]);
-
-  useEffect(() => {
-    if (versionFrom && versionTo) {
-      void fetchComparison();
-    }
-  }, [fetchComparison, versionFrom, versionTo]);
+  // [OP-245 · Gestalt A] Der Vergleich — vorher `fetchComparison` im Effekt.
+  // `enabled` trägt die alte Vorbedingung (beide Felder gesetzt und
+  // verschieden); eine nicht-ok-Antwort ergibt wie vorher `null`. Bei zwei
+  // gleichen Versionen bleibt nicht mehr der vorige Vergleich stehen, sondern
+  // es gibt keinen.
+  const compareEnabled = Boolean(
+    versionFrom && versionTo && versionFrom !== versionTo,
+  );
+  const { data: comparison = null, isPending: comparisonPending } =
+    useQuery<VersionComparison | null>({
+      queryKey: ["processes", processId, "compare", versionFrom, versionTo],
+      enabled: compareEnabled,
+      queryFn: async () => {
+        const res = await fetch(
+          `/api/v1/processes/${processId}/compare?from=${versionFrom}&to=${versionTo}`,
+        );
+        if (!res.ok) return null;
+        const json = await res.json();
+        return (json.data ?? null) as VersionComparison | null;
+      },
+    });
+  // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht die
+  // Vorbedingung auch in der Ableitung des Ladezustands.
+  const loading = compareEnabled && comparisonPending;
 
   const stats = comparison?.diff?.stats ?? {
     added: 0,

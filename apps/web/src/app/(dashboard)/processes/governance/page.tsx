@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -138,42 +139,44 @@ function GovernanceCockpit() {
   const tProcess = useTranslations("process");
   const { formatDate: _formatDate } = useDateFormat();
 
-  const [data, setData] = useState<GovernanceData | null>(null);
-  const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [roadmapLoading, setRoadmapLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Fetch governance data
-  const fetchGovernance = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Kennzahlen des Cockpits — vorher `fetchGovernance`
+  // im Effekt beim Einhängen, mit gespiegeltem Lade- und Datenzustand. Jetzt
+  // eine Abfrage über `@tanstack/react-query` (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort ergibt wie vorher
+  // `null`.
+  const { data = null, isPending: loading } = useQuery<GovernanceData | null>({
+    queryKey: ["processes", "governance"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/processes/governance");
-      if (!res.ok) throw new Error("Failed to load governance data");
+      if (!res.ok) return null;
       const json = await res.json();
-      setData(json.data ?? null);
-    } catch {
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? null) as GovernanceData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchGovernance();
-  }, [fetchGovernance]);
-
-  // Fetch roadmap when tab changes
-  useEffect(() => {
-    if (activeTab === "roadmap" && roadmap.length === 0) {
-      setRoadmapLoading(true);
-      fetch("/api/v1/processes/governance/roadmap")
-        .then((r) => (r.ok ? r.json() : { data: [] }))
-        .then((json) => setRoadmap(json.data ?? []))
-        .catch(() => setRoadmap([]))
-        .finally(() => setRoadmapLoading(false));
-    }
-  }, [activeTab, roadmap.length]);
+  // [OP-245 · Gestalt A] Die Roadmap wurde erst beim Öffnen ihres Reiters
+  // abgerufen (`if (activeTab === "roadmap" && roadmap.length === 0)`), mit
+  // `setRoadmapLoading(true)` synchron im Effekt. `enabled` sagt dasselbe;
+  // der Zwischenspeicher der Abfrage ersetzt das `length === 0`-Merkmal.
+  // Eine nicht-ok-Antwort ergibt wie vorher eine leere Liste.
+  const roadmapEnabled = activeTab === "roadmap";
+  const { data: roadmap = [], isPending: roadmapPending } = useQuery<
+    RoadmapItem[]
+  >({
+    queryKey: ["processes", "governance", "roadmap"],
+    enabled: roadmapEnabled,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/processes/governance/roadmap");
+      if (!r.ok) return [];
+      const json = await r.json();
+      return (json.data ?? []) as RoadmapItem[];
+    },
+  });
+  // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht der
+  // Reiter auch in der Ableitung des Ladezustands.
+  const roadmapLoading = roadmapEnabled && roadmapPending;
 
   if (loading) {
     return (

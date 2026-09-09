@@ -2,7 +2,8 @@
 
 // BPM Overhaul Phase 8: Maturity Breakdown page (CMMI-style).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -59,40 +60,44 @@ const DIMENSION_LABELS: Record<string, string> = {
   documentation_completeness: "Documentation Completeness",
 };
 
+function latestMaturityQueryKey(processId: string) {
+  return ["processes", processId, "maturity-history", "latest"] as const;
+}
+
 export default function MaturityPage() {
   const params = useParams<{ id: string }>();
   const processId = params?.id ?? "";
   const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
 
-  const [result, setResult] = useState<MaturityResult | null>(null);
-  const [loading, setLoading] = useState(true);
   const [computing, setComputing] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    // History is in process_maturity_assessment — read the most recent via the legacy endpoint
-    const resp = await fetch(
-      `/api/v1/processes/${processId}/maturity-history?limit=1`,
-    );
-    if (resp.ok) {
-      const j = await resp.json();
-      const latest = (j.data ?? [])[0];
-      if (latest) {
-        setResult({
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`). Wie vorher: ohne Eintrag
+  // (oder bei nicht-ok-Antwort) bleibt das Ergebnis `null`.
+  const { data: result = null, isPending: loading } =
+    useQuery<MaturityResult | null>({
+      queryKey: latestMaturityQueryKey(processId),
+      enabled: processId !== "",
+      queryFn: async () => {
+        // History is in process_maturity_assessment — read the most recent via the legacy endpoint
+        const resp = await fetch(
+          `/api/v1/processes/${processId}/maturity-history?limit=1`,
+        );
+        if (!resp.ok) return null;
+        const j = await resp.json();
+        const latest = (j.data ?? [])[0];
+        if (!latest) return null;
+        return {
           id: latest.id,
           overall: latest.overallLevel,
           overallLevel: latest.overallLevel,
           assessmentDate: latest.assessmentDate,
           dimensions: latest.dimensionScores ?? [],
-        });
-      }
-    }
-    setLoading(false);
-  }, [processId]);
-
-  useEffect(() => {
-    if (processId) reload();
-  }, [processId, reload]);
+        };
+      },
+    });
 
   const compute = useCallback(async () => {
     setComputing(true);
@@ -103,14 +108,19 @@ export default function MaturityPage() {
       );
       if (resp.ok) {
         const j = await resp.json();
-        setResult({
-          id: j.data.id,
-          overall: j.data.overall,
-          overallLevel: j.data.overall,
-          assessmentDate:
-            j.data.assessmentDate ?? new Date().toISOString().slice(0, 10),
-          dimensions: j.data.dimensions ?? [],
-        });
+        // Die Antwort des Rechenlaufs wird wie vorher sofort angezeigt —
+        // als Zwischenstand im Abfrage-Cache statt in einem eigenen Feld.
+        queryClient.setQueryData<MaturityResult | null>(
+          latestMaturityQueryKey(processId),
+          {
+            id: j.data.id,
+            overall: j.data.overall,
+            overallLevel: j.data.overall,
+            assessmentDate:
+              j.data.assessmentDate ?? new Date().toISOString().slice(0, 10),
+            dimensions: j.data.dimensions ?? [],
+          },
+        );
         toast.success(
           `Maturity Level ${j.data.overall}: ${LEVEL_LABELS[j.data.overall] ?? ""}`,
         );
@@ -121,7 +131,7 @@ export default function MaturityPage() {
     } finally {
       setComputing(false);
     }
-  }, [processId]);
+  }, [processId, queryClient]);
 
   return (
     <ModuleGate moduleKey="bpm">

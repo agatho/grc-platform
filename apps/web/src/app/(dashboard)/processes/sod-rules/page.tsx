@@ -14,7 +14,8 @@
 //  * **Deaktivieren statt löschen** ist der Regelfall; eine ausser Kraft
 //    gesetzte Regel bleibt nachvollziehbar, erzeugt aber keinen Konflikt mehr.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
@@ -73,9 +74,24 @@ interface RulesResponse {
 
 export default function SodRulesPage() {
   const t = useTranslations("processGrc");
-  const [resp, setResp] = useState<RulesResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Der Ladefehler kommt aus der
+  // Abfrage; die Fehler der Mutationen (Umschalten, Löschen) landen weiter
+  // in einem eigenen Zustand und werden in derselben Zeile angezeigt.
+  const {
+    data: resp = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<RulesResponse>({
+    queryKey: ["processes", "sod-rules"],
+    // `limit` bleibt bei der Vorgabe der Route (100). Wächst die Regelmenge
+    // über eine Seite hinaus, gehört hier `fetchAllPages` hin — heute wäre
+    // das eine Blätterschleife über eine Liste, die keine zweite Seite hat.
+    queryFn: () => fetchJson<RulesResponse>("/api/v1/processes/sod-rules"),
+  });
+  const [mutationError, setMutationError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -85,28 +101,19 @@ export default function SodRulesPage() {
   const [rationale, setRationale] = useState("");
   const [frameworkRef, setFrameworkRef] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // `limit` bleibt bei der Vorgabe der Route (100). Wächst die Regelmenge
-      // über eine Seite hinaus, gehört hier `fetchAllPages` hin — heute wäre
-      // das eine Blätterschleife über eine Liste, die keine zweite Seite hat.
-      setResp(await fetchJson<RulesResponse>("/api/v1/processes/sod-rules"));
-    } catch (e) {
-      setError(
-        e instanceof ApiRequestError
-          ? (e.detail ?? e.message)
-          : (e as Error).message,
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const error: string | null =
+    mutationError ??
+    (queryError
+      ? queryError instanceof ApiRequestError
+        ? (queryError.detail ?? queryError.message)
+        : (queryError as Error).message
+      : null);
+  const setError = setMutationError;
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const load = useCallback(async () => {
+    setMutationError(null);
+    await refetch();
+  }, [refetch]);
 
   const create = async () => {
     setBusy(true);
