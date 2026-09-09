@@ -18,8 +18,7 @@
     "@grc/events": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@hono/node-server": "^2.1.1",
-    "hono": "^4.13.7",
-    "svix": "^1.99.1"
+    "hono": "^4.13.7"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",
