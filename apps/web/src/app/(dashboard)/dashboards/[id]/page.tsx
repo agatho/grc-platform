@@ -15,8 +15,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// @ts-expect-error -- react-grid-layout has no bundled types; @types/react-grid-layout may lag behind
-import { Responsive, WidthProvider } from "react-grid-layout";
+import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -43,11 +42,16 @@ import type {
   BatchWidgetDataResponse,
 } from "@grc/shared";
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
-
 export default function DashboardViewPage() {
   const t = useTranslations("dashboard");
   const router = useRouter();
+  // [OP-234] react-grid-layout 2 replaced the `WidthProvider` HOC with this
+  // hook: the grid needs an explicit `width`, measured on the wrapping div.
+  const {
+    width: gridWidth,
+    containerRef: gridContainerRef,
+    mounted: gridMounted,
+  } = useContainerWidth();
   const params = useParams();
   const searchParams = useSearchParams();
   const dashboardId = params.id as string;
@@ -460,51 +464,56 @@ export default function DashboardViewPage() {
             )}
           </div>
         ) : (
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={{ lg: displayLayout }}
-            breakpoints={{ lg: 1200, md: 768, sm: 480 }}
-            cols={{ lg: 12, md: 8, sm: 4 }}
-            rowHeight={80}
-            isDraggable={isEditMode}
-            isResizable={isEditMode}
-            draggableHandle=".drag-handle"
-            onLayoutChange={(layout: Layout[]) => {
-              if (isEditMode) handleLayoutChange(layout);
-            }}
-            compactType="vertical"
-            useCSSTransforms
-          >
-            {displayWidgets.map((widget) => {
-              const wd = widgetData[widget.id];
-              const wConfig = widget.configJson as WidgetConfig;
+          <div ref={gridContainerRef}>
+            {gridMounted && (
+              <ResponsiveGridLayout
+                width={gridWidth}
+                className="layout"
+                layouts={{ lg: displayLayout }}
+                breakpoints={{ lg: 1200, md: 768, sm: 480 }}
+                cols={{ lg: 12, md: 8, sm: 4 }}
+                rowHeight={80}
+                isDraggable={isEditMode}
+                isResizable={isEditMode}
+                draggableHandle=".drag-handle"
+                onLayoutChange={(layout: Layout[]) => {
+                  if (isEditMode) handleLayoutChange(layout);
+                }}
+                compactType="vertical"
+                useCSSTransforms
+              >
+                {displayWidgets.map((widget) => {
+                  const wd = widgetData[widget.id];
+                  const wConfig = widget.configJson as WidgetConfig;
 
-              return (
-                <div key={widget.id}>
-                  <DashboardWidgetFrame
-                    widgetId={widget.id}
-                    definitionKey={widget.definition.key}
-                    widgetType={widget.definition.type}
-                    title={widget.definition.nameDe}
-                    config={wConfig}
-                    data={wd?.data}
-                    isLoading={isDataLoading && !wd}
-                    error={
-                      wd?.status === "rejected"
-                        ? (wd.error ?? "Fehler")
-                        : undefined
-                    }
-                    isEditMode={isEditMode}
-                    onConfigure={() =>
-                      setConfigWidget({ widget, isNew: false })
-                    }
-                    onRemove={() => handleRemoveWidget(widget.id)}
-                    onRetry={fetchWidgetData}
-                  />
-                </div>
-              );
-            })}
-          </ResponsiveGridLayout>
+                  return (
+                    <div key={widget.id}>
+                      <DashboardWidgetFrame
+                        widgetId={widget.id}
+                        definitionKey={widget.definition.key}
+                        widgetType={widget.definition.type}
+                        title={widget.definition.nameDe}
+                        config={wConfig}
+                        data={wd?.data}
+                        isLoading={isDataLoading && !wd}
+                        error={
+                          wd?.status === "rejected"
+                            ? (wd.error ?? "Fehler")
+                            : undefined
+                        }
+                        isEditMode={isEditMode}
+                        onConfigure={() =>
+                          setConfigWidget({ widget, isNew: false })
+                        }
+                        onRemove={() => handleRemoveWidget(widget.id)}
+                        onRetry={fetchWidgetData}
+                      />
+                    </div>
+                  );
+                })}
+              </ResponsiveGridLayout>
+            )}
+          </div>
         )}
       </div>
 

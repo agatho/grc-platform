@@ -60,7 +60,7 @@
     "pdfkit": "^0.19.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-grid-layout": "^1.5.4",
+    "react-grid-layout": "^2.2.4",
     "recharts": "3.10.1",
     "sonner": "^2.0.8"
   },
