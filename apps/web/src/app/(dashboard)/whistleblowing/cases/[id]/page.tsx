@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -36,6 +37,7 @@ const STATUS_STEPS = ["received", "acknowledged", "investigating", "resolved"];
 
 function CaseDetailInner() {
   const t = useTranslations("whistleblowing");
+  const now = useNow();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { formatDate, formatDateTime } = useDateFormat();
@@ -147,11 +149,11 @@ function CaseDetailInner() {
   const currentStepIdx = STATUS_STEPS.indexOf(caseRow.status);
 
   const daysUntilAck = Math.ceil(
-    (new Date(caseRow.acknowledgeDeadline).getTime() - Date.now()) /
+    (new Date(caseRow.acknowledgeDeadline).getTime() - now) /
       (1000 * 60 * 60 * 24),
   );
   const daysUntilResponse = Math.ceil(
-    (new Date(caseRow.responseDeadline).getTime() - Date.now()) /
+    (new Date(caseRow.responseDeadline).getTime() - now) /
       (1000 * 60 * 60 * 24),
   );
 
