@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import {
@@ -41,37 +42,47 @@ export default function DistributionDetailPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const [dist, setDist] = useState<PolicyDistributionWithStats | null>(null);
-  const [acknowledgments, setAcknowledgments] = useState<
-    PolicyAcknowledgmentWithUser[]
-  >([]);
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Nicht-ok-
+  // Antworten ergeben wie vorher `null` bzw. eine leere Liste.
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    dist: PolicyDistributionWithStats | null;
+    acknowledgments: PolicyAcknowledgmentWithUser[];
+  }>({
+    queryKey: ["policies", "distributions", id, "detail"],
+    queryFn: async () => {
       const [distRes, complianceRes] = await Promise.all([
         fetch(`/api/v1/policies/distributions/${id}`),
         fetch(`/api/v1/policies/distributions/${id}/compliance?limit=50`),
       ]);
 
+      let dist: PolicyDistributionWithStats | null = null;
+      let acknowledgments: PolicyAcknowledgmentWithUser[] = [];
       if (distRes.ok) {
         const json = await distRes.json();
-        setDist(json.data);
+        dist = (json.data ?? null) as PolicyDistributionWithStats | null;
       }
       if (complianceRes.ok) {
         const json = await complianceRes.json();
-        setAcknowledgments(json.data ?? []);
+        acknowledgments = (json.data ?? []) as PolicyAcknowledgmentWithUser[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { dist, acknowledgments };
+    },
+  });
+  const dist = bundle?.dist ?? null;
+  const acknowledgments = bundle?.acknowledgments ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleActivate = async () => {
     setActionLoading(true);
