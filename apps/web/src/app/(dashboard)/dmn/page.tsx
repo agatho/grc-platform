@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -27,25 +27,18 @@ export default function DmnListPage() {
 
 function DmnListInner() {
   const t = useTranslations("abac");
-  const [decisions, setDecisions] = useState<DmnDecision[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: decisions = [], isPending: loading } = useQuery<DmnDecision[]>({
+    queryKey: ["dmn", "decisions"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/dmn?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setDecisions(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DmnDecision[];
+    },
+  });
 
   if (loading) {
     return (
