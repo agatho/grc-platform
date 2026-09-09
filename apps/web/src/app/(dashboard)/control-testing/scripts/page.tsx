@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { TestTube, Plus, Sparkles, Play } from "lucide-react";
 
@@ -11,22 +12,26 @@ import type { ControlTestScript } from "@grc/shared";
 
 export default function ControlTestScriptsPage() {
   const t = useTranslations("controlTesting");
-  const [scripts, setScripts] = useState<ControlTestScript[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: scripts = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ControlTestScript[]>({
+    queryKey: ["control-testing", "scripts"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/control-testing/scripts?limit=50");
+      if (!res.ok) return [];
+      return (await res.json()).data as ControlTestScript[];
+    },
+  });
 
   const fetchScripts = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/control-testing/scripts?limit=50");
-      if (res.ok) setScripts((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchScripts();
-  }, [fetchScripts]);
+    await refetch();
+  }, [refetch]);
 
   const executeScript = async (id: string) => {
     await fetch(`/api/v1/control-testing/scripts/${id}/execute`, {

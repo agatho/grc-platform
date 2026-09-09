@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { TestTube, ListChecks } from "lucide-react";
@@ -20,22 +20,20 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ControlTestingDashboardPage() {
   const t = useTranslations("controlTesting");
-  const [data, setData] = useState<ControlTestingDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/control-testing/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`.
+  const { data = null, isPending: loading } =
+    useQuery<ControlTestingDashboard | null>({
+      queryKey: ["control-testing", "dashboard"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/control-testing/dashboard");
+        if (!res.ok) return null;
+        return ((await res.json()).data ??
+          null) as ControlTestingDashboard | null;
+      },
+    });
 
   if (loading || !data) {
     return (

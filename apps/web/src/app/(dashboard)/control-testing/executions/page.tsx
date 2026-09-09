@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { TestTube } from "lucide-react";
 
@@ -19,22 +19,20 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ControlTestExecutionsPage() {
   const t = useTranslations("controlTesting");
-  const [executions, setExecutions] = useState<ControlTestExecution[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: executions = [], isPending: loading } = useQuery<
+    ControlTestExecution[]
+  >({
+    queryKey: ["control-testing", "executions"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/control-testing/executions?limit=50");
-      if (res.ok) setExecutions((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as ControlTestExecution[];
+    },
+  });
 
   if (loading) {
     return (
