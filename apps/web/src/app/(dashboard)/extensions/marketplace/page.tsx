@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Search, Puzzle, Download, CheckCircle2, Loader2 } from "lucide-react";
 
@@ -38,31 +39,34 @@ interface MarketplaceItem {
 
 export default function MarketplacePage() {
   const t = useTranslations("extensions");
-  const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [pricingFilter, setPricingFilter] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Preisfilter ist Teil des
+  // Schlüssels.
+  const {
+    data: items = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<MarketplaceItem[]>({
+    queryKey: ["plugins", "marketplace", pricingFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (pricingFilter) params.set("pricingModel", pricingFilter);
       const res = await fetch(
         `/api/v1/plugins/marketplace?${params.toString()}`,
       );
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [pricingFilter]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as MarketplaceItem[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleInstall = async (pluginId: string) => {
     await fetch("/api/v1/plugins/installations", {

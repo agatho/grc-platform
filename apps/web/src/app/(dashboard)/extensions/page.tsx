@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -62,33 +62,35 @@ interface MarketplaceListing {
 
 export default function ExtensionsPage() {
   const t = useTranslations("extensions");
-  const [installed, setInstalled] = useState<InstalledPlugin[]>([]);
-  const [featured, setFeatured] = useState<MarketplaceListing[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen wurden immer
+  // gemeinsam gestellt, daher eine Abfrage mit einem Objekt als Ergebnis.
+  const { data, isPending: loading } = useQuery<{
+    installed: InstalledPlugin[];
+    featured: MarketplaceListing[];
+  }>({
+    queryKey: ["plugins", "extensions-overview"],
+    queryFn: async () => {
       const [instRes, mktRes] = await Promise.all([
         fetch("/api/v1/plugins/installations"),
         fetch("/api/v1/plugins/marketplace?featured=true&limit=6"),
       ]);
+      let installed: InstalledPlugin[] = [];
+      let featured: MarketplaceListing[] = [];
       if (instRes.ok) {
-        const data = await instRes.json();
-        setInstalled(data.data ?? []);
+        const json = await instRes.json();
+        installed = json.data ?? [];
       }
       if (mktRes.ok) {
-        const data = await mktRes.json();
-        setFeatured(data.data ?? []);
+        const json = await mktRes.json();
+        featured = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      return { installed, featured };
+    },
+  });
+  const installed = data?.installed ?? [];
+  const featured = data?.featured ?? [];
 
   if (loading) {
     return (
