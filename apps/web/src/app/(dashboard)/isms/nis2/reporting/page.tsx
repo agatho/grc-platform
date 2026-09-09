@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -53,27 +54,30 @@ export default function NIS2ReportingPage() {
 function NIS2ReportingInner() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("nis2");
-  const [reports, setReports] = useState<NIS2Report[]>([]);
-  const [stats, setStats] = useState<ReportStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Liste und Kennzahlen kommen aus
+  // derselben Antwort.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ reports: NIS2Report[]; stats: ReportStats | null }>({
+    queryKey: ["isms", "nis2", "reporting-tracker"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/isms/nis2/reporting-tracker");
+      if (!res.ok) return { reports: [], stats: null };
+      const json = await res.json();
+      return { reports: json.data ?? [], stats: json.stats ?? null };
+    },
+  });
+  const reports = data?.reports ?? [];
+  const stats = data?.stats ?? null;
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/isms/nis2/reporting-tracker");
-      if (res.ok) {
-        const json = await res.json();
-        setReports(json.data);
-        setStats(json.stats);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && reports.length === 0) {
     return (
@@ -108,9 +112,9 @@ function NIS2ReportingInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

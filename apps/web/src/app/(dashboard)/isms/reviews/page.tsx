@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus, Loader2, CalendarCheck, Users } from "lucide-react";
@@ -45,34 +46,39 @@ export default function ReviewsPage() {
 function ReviewsInner() {
   const t = useTranslations("ismsAssessment");
   const tmr = useTranslations("managementReview");
-  const [reviews, setReviews] = useState<ManagementReview[]>([]);
-  const [users, setUsers] = useState<OrgUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
-  const fetchReviews = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Zwei unabhängige Abrufe, zwei
+  // Abfragen; nur die Reviews tragen den Ladezustand, wie vorher.
+  const {
+    data: reviews = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ManagementReview[]>({
+    queryKey: ["isms", "reviews"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/reviews?limit=50");
-      if (res.ok) {
-        const json = await res.json();
-        setReviews(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ManagementReview[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchReviews();
-    void (async () => {
+  const { data: users = [] } = useQuery<OrgUser[]>({
+    queryKey: ["users", "list", { limit: 100 }],
+    queryFn: async () => {
       const res = await fetch("/api/v1/users?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setUsers((json.data ?? []) as OrgUser[]);
-      }
-    })();
-  }, [fetchReviews]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as OrgUser[];
+    },
+  });
+
+  const fetchReviews = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: CreateReviewData) => {
     const res = await fetch("/api/v1/isms/reviews", {

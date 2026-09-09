@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -54,19 +55,25 @@ function VulnerabilityDetailInner() {
   const router = useRouter();
   const t = useTranslations("isms");
 
-  const [vuln, setVuln] = useState<Vulnerability | null>(null);
-  const [asset, setAsset] = useState<Asset | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Asset-Nachabruf hängt vom
+  // Ergebnis des ersten ab und bleibt darum in derselben `queryFn`.
+  const { data, isPending: loading } = useQuery<{
+    vuln: Vulnerability | null;
+    asset: Asset | null;
+  }>({
+    queryKey: ["isms", "vulnerabilities", id, "detail"],
+    queryFn: async () => {
+      let vuln: Vulnerability | null = null;
+      let asset: Asset | null = null;
       const res = await fetch(`/api/v1/isms/vulnerabilities/${id}`);
       if (res.ok) {
         const json = await res.json();
         const data = json.data ?? json;
-        setVuln(data);
+        vuln = data;
 
         // Fetch linked asset if available
         if (data.affectedAssetId) {
@@ -76,21 +83,18 @@ function VulnerabilityDetailInner() {
             );
             if (assetRes.ok) {
               const assetJson = await assetRes.json();
-              setAsset(assetJson.data ?? assetJson);
+              asset = assetJson.data ?? assetJson;
             }
           } catch {
             /* asset fetch failed */
           }
         }
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      return { vuln, asset };
+    },
+  });
+  const vuln = data?.vuln ?? null;
+  const asset = data?.asset ?? null;
 
   if (loading) {
     return (

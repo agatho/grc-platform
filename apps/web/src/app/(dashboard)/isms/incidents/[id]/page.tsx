@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -73,38 +74,44 @@ function IncidentDetailInner() {
   const params = useParams();
   const incidentId = params.id as string;
 
-  const [incident, setIncident] = useState<SecurityIncident | null>(null);
-  const [timeline, setTimeline] = useState<IncidentTimelineEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
   // Timeline form
   const [newActionType, setNewActionType] = useState("other");
   const [newDescription, setNewDescription] = useState("");
   const [addingEntry, setAddingEntry] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Vorfall und Zeitleiste wurden
+  // immer gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    incident: SecurityIncident | null;
+    timeline: IncidentTimelineEntry[];
+  }>({
+    queryKey: ["isms", "incidents", incidentId, "detail"],
+    queryFn: async () => {
       const [incRes, tlRes] = await Promise.all([
         fetch(`/api/v1/isms/incidents/${incidentId}`),
         fetch(`/api/v1/isms/incidents/${incidentId}/timeline`),
       ]);
-      if (incRes.ok) {
-        const json = await incRes.json();
-        setIncident(json.data);
-      }
-      if (tlRes.ok) {
-        const json = await tlRes.json();
-        setTimeline(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [incidentId]);
+      const incident: SecurityIncident | null = incRes.ok
+        ? ((await incRes.json()).data ?? null)
+        : null;
+      const timeline: IncidentTimelineEntry[] = tlRes.ok
+        ? ((await tlRes.json()).data ?? [])
+        : [];
+      return { incident, timeline };
+    },
+  });
+  const incident = data?.incident ?? null;
+  const timeline = data?.timeline ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleStatusTransition = useCallback(
     async (newStatus: string) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -46,28 +47,31 @@ export default function IsmsAssetsPage() {
 function IsmsAssetsInner() {
   const t = useTranslations("isms");
   const router = useRouter();
-  const [assets, setAssets] = useState<AssetRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [protectionFilter, setProtectionFilter] = useState("__all__");
   const [tierFilter, setTierFilter] = useState("__all__");
 
-  const fetchAssets = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: assets = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AssetRow[]>({
+    queryKey: ["isms", "assets", "classification-overview"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/assets/classification-overview");
-      if (res.ok) {
-        const json = await res.json();
-        setAssets(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AssetRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchAssets();
-  }, [fetchAssets]);
+  const fetchAssets = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = assets;
@@ -117,9 +121,12 @@ function IsmsAssetsInner() {
             variant="outline"
             size="sm"
             onClick={fetchAssets}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button
             size="sm"

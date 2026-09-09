@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -99,67 +100,74 @@ function AssetDetailInner() {
   const t = useTranslations("assets");
   const tIsms = useTranslations("isms");
 
-  const [asset, setAsset] = useState<AssetDetail | null>(null);
-  const [classification, setClassification] = useState<Classification | null>(
-    null,
-  );
-  const [vulnerabilities, setVulnerabilities] = useState<Vulnerability[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
   // ── Data Fetching ────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt; die
+  // Ausweich- und Fehlerpfade der Einzelabrufe sind unverändert.
+  const { data, isPending: loading } = useQuery<{
+    asset: AssetDetail | null;
+    classification: Classification | null;
+    vulnerabilities: Vulnerability[];
+    auditLog: AuditEntry[];
+  }>({
+    queryKey: ["isms", "assets", id, "detail"],
+    queryFn: async () => {
       const [assetRes, classRes] = await Promise.all([
         fetch(`/api/v1/assets/${id}`),
         fetch(`/api/v1/isms/assets/${id}/classification`).catch(() => null),
       ]);
 
+      let asset: AssetDetail | null = null;
       if (assetRes.ok) {
         const json = await assetRes.json();
-        setAsset(json.data ?? json);
+        asset = json.data ?? json;
       }
 
+      let classification: Classification | null = null;
       if (classRes?.ok) {
         const json = await classRes.json();
-        setClassification(json.data ?? json);
+        classification = json.data ?? json;
       }
 
       // Fetch vulnerabilities (may not exist)
+      let vulnerabilities: Vulnerability[] = [];
       try {
         const vulnRes = await fetch(
           `/api/v1/isms/vulnerabilities?assetId=${id}`,
         );
         if (vulnRes.ok) {
           const json = await vulnRes.json();
-          setVulnerabilities(Array.isArray(json) ? json : (json.data ?? []));
+          vulnerabilities = Array.isArray(json) ? json : (json.data ?? []);
         }
       } catch {
         /* endpoint may not exist */
       }
 
       // Fetch audit log
+      let auditLog: AuditEntry[] = [];
       try {
         const auditRes = await fetch(
           `/api/v1/audit-log?entityType=asset&entityId=${id}&limit=20`,
         );
         if (auditRes.ok) {
           const json = await auditRes.json();
-          setAuditLog(Array.isArray(json) ? json : (json.data ?? []));
+          auditLog = Array.isArray(json) ? json : (json.data ?? []);
         }
       } catch {
         /* endpoint may not exist */
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      return { asset, classification, vulnerabilities, auditLog };
+    },
+  });
+  const asset = data?.asset ?? null;
+  const classification = data?.classification ?? null;
+  const vulnerabilities = data?.vulnerabilities ?? [];
+  const auditLog = data?.auditLog ?? [];
 
   // ── Loading / Error ──────────────────────────────────────────
   if (loading) {

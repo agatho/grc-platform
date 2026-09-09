@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -56,30 +57,37 @@ export default function AiRoadmapPage() {
   );
 }
 
+const ROADMAP_QUERY_KEY = ["isms", "maturity", "roadmap"] as const;
+
 function AiRoadmapInner() {
   const t = useTranslations("ismsIntelligence.roadmap");
-  const [data, setData] = useState<RoadmapData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [generating, setGenerating] = useState(false);
   const [viewMode, setViewMode] = useState<"timeline" | "list">("timeline");
   const [targetMaturity, setTargetMaturity] = useState(3);
 
-  const fetchRoadmap = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Das Ergebnis der Generierung
+  // (POST) wird unten über `setQueryData` unter demselben Schlüssel abgelegt,
+  // damit die frisch erzeugte Roadmap wie vorher sofort erscheint.
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<RoadmapData | null>({
+    queryKey: ROADMAP_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/maturity/roadmap");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RoadmapData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchRoadmap();
-  }, [fetchRoadmap]);
+  const fetchRoadmap = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -91,7 +99,10 @@ function AiRoadmapInner() {
       });
       if (res.ok) {
         const json = await res.json();
-        setData(json.data);
+        queryClient.setQueryData<RoadmapData | null>(
+          ROADMAP_QUERY_KEY,
+          json.data,
+        );
         toast.success(
           `${json.data.totalActions} improvement actions generated`,
         );

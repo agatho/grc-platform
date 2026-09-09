@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, Play, Link2, TrendingUp } from "lucide-react";
@@ -32,35 +33,43 @@ export default function CorrelationPage() {
 function CorrelationInner() {
   const t = useTranslations("correlation");
   const router = useRouter();
-  const [correlations, setCorrelations] = useState<IncidentCorrelation[]>([]);
-  const [patterns, setPatterns] = useState<DetectedPattern[]>([]);
-  const [loading, setLoading] = useState(true);
   const [computing, setComputing] = useState(false);
   const [windowDays, setWindowDays] = useState("90");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); `windowDays` steht im Schlüssel.
+  // Korrelationen und Muster wurden immer gemeinsam geladen, daher eine
+  // Abfrage mit einem Ergebnisobjekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    correlations: IncidentCorrelation[];
+    patterns: DetectedPattern[];
+  }>({
+    queryKey: ["isms", "incidents", "correlation", windowDays],
+    queryFn: async () => {
       const [corrRes, patternRes] = await Promise.all([
         fetch("/api/v1/isms/incidents/correlations?limit=100"),
         fetch(`/api/v1/isms/incidents/patterns?windowDays=${windowDays}`),
       ]);
-      if (corrRes.ok) {
-        const json = await corrRes.json();
-        setCorrelations(json.data ?? []);
-      }
-      if (patternRes.ok) {
-        const json = await patternRes.json();
-        setPatterns(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [windowDays]);
+      const correlations: IncidentCorrelation[] = corrRes.ok
+        ? ((await corrRes.json()).data ?? [])
+        : [];
+      const patterns: DetectedPattern[] = patternRes.ok
+        ? ((await patternRes.json()).data ?? [])
+        : [];
+      return { correlations, patterns };
+    },
+  });
+  const correlations = data?.correlations ?? [];
+  const patterns = data?.patterns ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const runCorrelation = useCallback(async () => {
     setComputing(true);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -69,51 +70,51 @@ function riskLabel(score: number): string {
 
 function IsmsRisksInner() {
   const router = useRouter();
-  const [scenarios, setScenarios] = useState<RiskScenario[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: scenarios = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<RiskScenario[]>({
+    queryKey: ["isms", "risk-scenarios"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/isms/risk-scenarios?limit=100");
+      if (!res.ok) return [];
+      const json = await res.json();
+      // API returns Drizzle format, merge with raw fields
+      const items = (json.data ?? []).map((r: Record<string, unknown>) => ({
+        id: r.id,
+        scenario_code: r.scenarioCode || r.scenario_code || "",
+        title: r.title || r.description?.toString().slice(0, 60) || "Unbenannt",
+        description: r.description || "",
+        threat_title: r.threatTitle || r.threat_title || null,
+        vulnerability_title:
+          r.vulnerabilityTitle || r.vulnerability_title || null,
+        asset_name: r.assetName || r.asset_name || null,
+        likelihood: r.likelihood ?? 0,
+        impact: r.impact ?? 0,
+        risk_score:
+          r.riskScore ||
+          r.risk_score ||
+          Number(r.likelihood || 0) * Number(r.impact || 0),
+        residual_likelihood: r.residualLikelihood || r.residual_likelihood || 0,
+        residual_impact: r.residualImpact || r.residual_impact || 0,
+        residual_score: r.residualScore || r.residual_score || 0,
+        treatment_strategy:
+          r.treatmentStrategy || r.treatment_strategy || "mitigate",
+        status: r.status || "identified",
+        synced_to_erm: r.syncedToErm || r.synced_to_erm || false,
+      }));
+      return items as RiskScenario[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/isms/risk-scenarios?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        // API returns Drizzle format, merge with raw fields
-        const items = (json.data ?? []).map((r: Record<string, unknown>) => ({
-          id: r.id,
-          scenario_code: r.scenarioCode || r.scenario_code || "",
-          title:
-            r.title || r.description?.toString().slice(0, 60) || "Unbenannt",
-          description: r.description || "",
-          threat_title: r.threatTitle || r.threat_title || null,
-          vulnerability_title:
-            r.vulnerabilityTitle || r.vulnerability_title || null,
-          asset_name: r.assetName || r.asset_name || null,
-          likelihood: r.likelihood ?? 0,
-          impact: r.impact ?? 0,
-          risk_score:
-            r.riskScore ||
-            r.risk_score ||
-            Number(r.likelihood || 0) * Number(r.impact || 0),
-          residual_likelihood:
-            r.residualLikelihood || r.residual_likelihood || 0,
-          residual_impact: r.residualImpact || r.residual_impact || 0,
-          residual_score: r.residualScore || r.residual_score || 0,
-          treatment_strategy:
-            r.treatmentStrategy || r.treatment_strategy || "mitigate",
-          status: r.status || "identified",
-          synced_to_erm: r.syncedToErm || r.synced_to_erm || false,
-        }));
-        setScenarios(items);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const criticalCount = scenarios.filter((s) => s.risk_score >= 15).length;
   const treatedCount = scenarios.filter((s) => s.status === "treated").length;
@@ -131,7 +132,10 @@ function IsmsRisksInner() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchData}>
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" /> Szenario erstellen

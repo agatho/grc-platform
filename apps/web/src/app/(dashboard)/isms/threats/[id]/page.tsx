@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -54,39 +55,43 @@ function ThreatDetailInner() {
   const router = useRouter();
   const t = useTranslations("isms");
 
-  const [threat, setThreat] = useState<Threat | null>(null);
-  const [scenarios, setScenarios] = useState<RiskScenario[]>([]);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Bedrohung und verknüpfte
+  // Szenarien wurden immer gemeinsam geladen, daher eine Abfrage mit einem
+  // Ergebnisobjekt; die Ausweichpfade sind unverändert.
+  const { data, isPending: loading } = useQuery<{
+    threat: Threat | null;
+    scenarios: RiskScenario[];
+  }>({
+    queryKey: ["isms", "threats", id, "detail"],
+    queryFn: async () => {
+      let threat: Threat | null = null;
       const res = await fetch(`/api/v1/isms/threats/${id}`);
       if (res.ok) {
         const json = await res.json();
-        setThreat(json.data ?? json);
+        threat = json.data ?? json;
       }
       // Try to fetch linked risk scenarios
+      let scenarios: RiskScenario[] = [];
       try {
         const scenRes = await fetch(
           `/api/v1/isms/risk-scenarios?threatId=${id}`,
         );
         if (scenRes.ok) {
           const json = await scenRes.json();
-          setScenarios(Array.isArray(json) ? json : (json.data ?? []));
+          scenarios = Array.isArray(json) ? json : (json.data ?? []);
         }
       } catch {
         /* endpoint may not exist */
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      return { threat, scenarios };
+    },
+  });
+  const threat = data?.threat ?? null;
+  const scenarios = data?.scenarios ?? [];
 
   if (loading) {
     return (

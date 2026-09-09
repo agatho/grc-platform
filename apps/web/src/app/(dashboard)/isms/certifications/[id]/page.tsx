@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -54,37 +55,51 @@ function CertDetailInner() {
   const _router = useRouter();
   const frameworkId = params.id as string;
 
-  const [gaps, setGaps] = useState<GapItem[]>([]);
-  const [gapStats, setGapStats] = useState<Record<string, number>>({});
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  const [loading, setLoading] = useState(true);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    gaps: GapItem[];
+    gapStats: Record<string, number>;
+    snapshots: Snapshot[];
+  }>({
+    queryKey: ["isms", "certification", frameworkId, "gaps-and-snapshots"],
+    queryFn: async () => {
       const [gapRes, snapRes] = await Promise.all([
         fetch("/api/v1/isms/certification/gaps?limit=50"),
         fetch(`/api/v1/isms/certification/snapshots?framework=${frameworkId}`),
       ]);
 
+      let gaps: GapItem[] = [];
+      let gapStats: Record<string, number> = {};
       if (gapRes.ok) {
         const json = await gapRes.json();
-        setGaps(json.data);
-        setGapStats(json.stats);
+        gaps = json.data ?? [];
+        gapStats = json.stats ?? {};
       }
+      let snapshots: Snapshot[] = [];
       if (snapRes.ok) {
         const json = await snapRes.json();
-        setSnapshots(json.data);
+        snapshots = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [frameworkId]);
+      return { gaps, gapStats, snapshots };
+    },
+  });
+  const gaps = data?.gaps ?? [];
+  const gapStats = data?.gapStats ?? {};
+  const snapshots = data?.snapshots ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreateSnapshot = useCallback(async () => {
     setSnapshotLoading(true);
@@ -156,9 +171,12 @@ function CertDetailInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

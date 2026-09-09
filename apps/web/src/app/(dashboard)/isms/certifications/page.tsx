@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -73,35 +74,42 @@ function CertificationsInner() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("certifications");
   const _router = useRouter();
-  const [readiness, setReadiness] = useState<ReadinessData | null>(null);
-  const [timeline, setTimeline] = useState<TimelineData | null>(null);
   const [priorities, setPriorities] = useState<PriorityItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    readiness: ReadinessData | null;
+    timeline: TimelineData | null;
+  }>({
+    queryKey: ["isms", "certification", "readiness-and-timeline"],
+    queryFn: async () => {
       const [readinessRes, timelineRes] = await Promise.all([
         fetch("/api/v1/isms/certification/readiness"),
         fetch("/api/v1/isms/certification/timeline"),
       ]);
+      const readiness: ReadinessData | null = readinessRes.ok
+        ? ((await readinessRes.json()).data ?? null)
+        : null;
+      const timeline: TimelineData | null = timelineRes.ok
+        ? ((await timelineRes.json()).data ?? null)
+        : null;
+      return { readiness, timeline };
+    },
+  });
+  const readiness = data?.readiness ?? null;
+  const timeline = data?.timeline ?? null;
 
-      if (readinessRes.ok) {
-        const json = await readinessRes.json();
-        setReadiness(json.data);
-      }
-      if (timelineRes.ok) {
-        const json = await timelineRes.json();
-        setTimeline(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const fetchPriorities = useCallback(async () => {
     const res = await fetch("/api/v1/isms/certification/ai-priority", {
@@ -135,9 +143,9 @@ function CertificationsInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

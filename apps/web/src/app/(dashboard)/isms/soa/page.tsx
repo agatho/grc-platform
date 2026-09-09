@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -67,12 +68,6 @@ export default function SoaPage() {
 
 function SoaInner() {
   const t = useTranslations("ismsAssessment");
-  const [rows, setRows] = useState<SoaRow[]>([]);
-  const [stats, setStats] = useState<SoaStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  // [E2E-TRIAGE-3] A failed load must not look like an empty SoA — see
-  // fetchData below.
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -114,11 +109,22 @@ function SoaInner() {
    * module; showing it as empty is the worst possible failure mode, and a
    * swallowed status is what made it invisible for so long. Page through at
    * the size the API allows, and let a failed load say so.
+   *
+   * [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+   * statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+   * aus Welle 7b, `catalogs/objects/page.tsx`); Filter und Suchbegriff stehen
+   * im Schlüssel. Ein geworfener `HTTP <status>` landet im Fehlerzustand der
+   * Abfrage und wird unten wie vorher als `loadError` angezeigt — NICHT als
+   * leere SoA.
    */
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
+  const {
+    data,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<{ rows: SoaRow[]; stats: SoaStats | null }>({
+    queryKey: ["isms", "soa", filter, search],
+    queryFn: async () => {
       const collected: SoaRow[] = [];
       let stats: SoaStats | null = null;
       // MAX_PAGE_SIZE in apps/web/src/lib/api.ts. Bounded so a broken
@@ -148,20 +154,22 @@ function SoaInner() {
         stats = json.stats ?? stats;
         if (pageNo >= (json.pagination?.totalPages ?? 1)) break;
       }
-      setRows(collected);
-      setStats(stats);
-    } catch (err) {
-      setRows([]);
-      setStats(null);
-      setLoadError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, [filter, search]);
+      return { rows: collected, stats };
+    },
+  });
+  // [E2E-TRIAGE-3] A failed load must not look like an empty SoA — see the
+  // `loadError` branch in the table below.
+  const loadError: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Unknown error"
+    : null;
+  const rows = loadError ? [] : (data?.rows ?? []);
+  const stats = loadError ? null : (data?.stats ?? null);
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleGenerate = async () => {
     await fetch("/api/v1/isms/soa", { method: "POST" });
