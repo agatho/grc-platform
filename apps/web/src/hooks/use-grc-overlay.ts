@@ -24,7 +24,8 @@
  *   ist in einem Prüfungswerkzeug die schlechtere Eigenschaft.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { GrcOverlayData } from "@grc/bpmn/grc";
 
 export interface UseGrcOverlayResult {
@@ -40,62 +41,62 @@ export function useGrcOverlay(
 ): UseGrcOverlayResult {
   const enabled = options.enabled ?? true;
   const versionId = options.versionId;
+  const active = Boolean(processId) && enabled;
 
-  const [data, setData] = useState<GrcOverlayData | undefined>(undefined);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [nonce, setNonce] = useState(0);
+  // [OP-245 · Gestalt A] Der Abruf läuft über `@tanstack/react-query` statt
+  // über einen Effekt, der Daten-, Lade- und Fehlerzustand spiegelte (Muster
+  // aus Welle 7b). `enabled` schaltet wie vorher den Aufruf ab; Prozess und
+  // Version stehen im Schlüssel; das Abbruchsignal der Abfrage ersetzt den
+  // eigenen `AbortController`. Die drei Festlegungen im Kopf gelten
+  // unverändert: ohne `active` gibt es weder Daten noch Fehler noch Laden,
+  // ein Fehlschlag liefert `data === undefined`, und es wird nicht gepollt.
+  const {
+    data: loaded,
+    error: queryError,
+    isFetching,
+    refetch,
+  } = useQuery<GrcOverlayData>({
+    queryKey: ["processes", processId, "diagram-overlay", versionId ?? null],
+    enabled: active,
+    queryFn: async ({ signal }) => {
+      const query = versionId
+        ? `?version=${encodeURIComponent(versionId)}`
+        : "";
+      const res = await fetch(
+        `/api/v1/processes/${processId}/diagram-overlay${query}`,
+        { signal },
+      );
+      if (!res.ok) throw new Error(`overlay ${String(res.status)}`);
+      const json: unknown = await res.json();
+      const payload = (json as { data?: GrcOverlayData }).data;
+      // `computedAt` ist Pflichtfeld des Vertrags. Fehlt es, ist die Antwort
+      // nicht der Datensatz, für den sie sich ausgibt — dann lieber nichts
+      // zeichnen als einen Stand behaupten, den niemand kennt.
+      if (!payload || typeof payload.computedAt !== "string") {
+        throw new Error("overlay payload without computedAt");
+      }
+      return payload;
+    },
+  });
 
   const reload = useCallback(() => {
-    setNonce((value) => value + 1);
-  }, []);
+    // Wie vorher: ohne Prozessbezug oder abgeschaltet löst `reload` nichts
+    // aus — `refetch` würde eine abgeschaltete Abfrage sonst trotzdem laden.
+    if (!active) return;
+    void refetch();
+  }, [active, refetch]);
 
-  useEffect(() => {
-    if (!processId || !enabled) {
-      setData(undefined);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const controller = new AbortController();
-    setLoading(true);
-    setError(null);
+  const error =
+    active && queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : "overlay failed"
+      : null;
 
-    const query = versionId ? `?version=${encodeURIComponent(versionId)}` : "";
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/v1/processes/${processId}/diagram-overlay${query}`,
-          { signal: controller.signal },
-        );
-        if (!res.ok) throw new Error(`overlay ${String(res.status)}`);
-        const json: unknown = await res.json();
-        const payload = (json as { data?: GrcOverlayData }).data;
-        if (cancelled) return;
-        // `computedAt` ist Pflichtfeld des Vertrags. Fehlt es, ist die Antwort
-        // nicht der Datensatz, für den sie sich ausgibt — dann lieber nichts
-        // zeichnen als einen Stand behaupten, den niemand kennt.
-        if (!payload || typeof payload.computedAt !== "string") {
-          throw new Error("overlay payload without computedAt");
-        }
-        setData(payload);
-      } catch (err) {
-        if (cancelled || (err as { name?: string }).name === "AbortError") {
-          return;
-        }
-        setData(undefined);
-        setError(err instanceof Error ? err.message : "overlay failed");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [processId, enabled, versionId, nonce]);
-
-  return { data, loading, error, reload };
+  return {
+    data: active && !queryError ? loaded : undefined,
+    loading: active && isFetching,
+    error,
+    reload,
+  };
 }
