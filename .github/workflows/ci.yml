@@ -736,35 +736,48 @@ jobs:
       AUTH_TRUST_HOST: "true"
       E2E_BASE_URL: http://localhost:3000
       NEXT_TELEMETRY_DISABLED: "1"
-      # [2026-09-09] Die beiden Variablen unten sind die vollstaendige
-      # Ursache von 17 der 17 roten E2E-Eintraege aus Lauf 34398654753.
-      # Triage mit Beleg je Eintrag: docs/HANDOVER-2026-09-09-ABEND-ANTWORT.md.
+      # ── Testumgebungs-Budgets ────────────────────────────────────────
+      # [2026-09-09] Diese drei Zeilen sind die vollstaendige Ursache von 17
+      # der 17 roten E2E-Eintraege aus Lauf 34398654753 — und sie standen zu
+      # dem Zeitpunkt bereits wortgleich in `.env.example` unter
+      # „E2E-Testumgebung: eigene Budgets" (E2E-TRIAGE-3, 2026-09-02, und
+      # E2E-TRIAGE-4). Nur hatte der E2E-Job bis heute nie laufen koennen,
+      # also hat die Empfehlung nie jemand angewandt. Die Werte sind von dort
+      # uebernommen, nicht neu erfunden.
       #
-      # Ratenbegrenzung: `LIMITS.DEFAULT` steht auf 300 Anfragen/60 s, und
-      # `middleware.ts` schluesselt den Eimer auf die BENUTZER-ID
+      # Triage mit Beleg je Eintrag:
+      # docs/HANDOVER-2026-09-09-ABEND-ANTWORT.md.
+      #
+      # `LIMITS.DEFAULT` steht auf 300 Anfragen/60 s, und `middleware.ts`
+      # schluesselt den Eimer auf die BENUTZER-ID
       # (`checkRequestRateLimit(req, pathname, req.auth?.user?.id)`) — beides
-      # richtig. Nur ist diese Suite kein Mensch: 201 Tests laufen in 5,5
-      # Minuten als EIN angemeldetes Konto gegen EINEN Server und teilen sich
-      # damit einen einzigen Eimer. Er ist rechnerisch nach etwa einem
-      # Fuenftel der Suite leer; alles danach bekommt 429, und das sah nach
-      # fuenfzehn verschiedenen Defekten aus. Die Variable wird von
-      # `envLimit()` in `apps/web/src/lib/rate-limit.ts` gelesen, Format
-      # "<Anzahl>/<Sekunden>" — ein Suitenbudget, kein Menschenbudget.
+      # richtig. Nur ist diese Suite kein Nutzer, sondern ein Lasterzeuger:
+      # 201 Tests laufen in 5,5 Minuten als EIN angemeldetes Konto gegen EINEN
+      # Server und teilen sich damit einen einzigen Eimer. Er ist rechnerisch
+      # nach etwa einem Fuenftel der Suite leer; alles danach bekommt 429, und
+      # das sah nach fuenfzehn verschiedenen Defekten aus.
+      RATE_LIMIT_DEFAULT: "3000/60"
+      # Dieselbe Sache am Anmeldebudget, das die Triage von heute NICHT
+      # gesehen hat, weil das Standardbudget zuerst leer war und alles
+      # Weitere verdeckte: `auth` liegt bei 10/60 s, ist ADRESS-geschluesselt
+      # und fail-closed. Die Suite meldet mehrere Konten an (`auth.setup.ts`)
+      # und kommt vom selben Laeufer, also aus einem Eimer — ohne diese Zeile
+      # ist der naechste rote Lauf schon bestellt.
+      RATE_LIMIT_AUTH: "1000/60"
+      # Die uebrigen Politiken (portal, intake, export, import, upload, ai,
+      # copilot) bleiben auf ihren Produktwerten, damit ihre Tests weiter
+      # pruefen, was sie pruefen sollen.
       #
-      # Der Begrenzer bleibt an: die uebrigen Politiken (auth, portal,
-      # intake, export, import, upload, ai, copilot) haben eigene Werte und
-      # sind hier NICHT angehoben, damit ihre Tests weiter das pruefen, was
-      # sie pruefen sollen.
-      RATE_LIMIT_DEFAULT: "100000/60"
       # Malware-Pruefung: `isClamAvRequired()` (packages/shared/src/lib/clamav.ts)
-      # verlangt einen Scanner, sobald `NODE_ENV=production` ist — und der
-      # Server laeuft hier ueber `npm start`, also genau so. Ein Laeufer ohne
-      # clamd lehnt daraufhin JEDEN Upload mit 503 ab (fail-closed, WP5,
-      # bewusst so). Das ist der einzige 503 im Lauf und der Grund, aus dem
-      # `document-signature.spec.ts:181` 201 erwartet und 503 bekommt. Der
-      # dafuer vorgesehene Schalter sagt dem Job, dass dieser Laeufer kein
-      # Produktionssystem ist; er steht im Protokoll, ein fehlender Dienst
-      # nicht.
+      # ist wahr, sobald `NODE_ENV=production` ist — und der E2E-Server IST
+      # ein Produktionsbau. Ein Laeufer ohne clamd lehnt daraufhin JEDEN
+      # Upload mit 503 ab (fail-closed, S04-06, fachlich richtig: eine Instanz
+      # ohne Scanner soll keine Dateien annehmen). Das ist der einzige 503 im
+      # Lauf und der Grund, aus dem `document-signature.spec.ts:181` 201
+      # erwartet und 503 bekommt. Die Alternative — ein clamd auf 3310 — ist
+      # laut `.env.example` „ebenso gueltig und besser"; sie ist hier nicht
+      # gewaehlt, weil ein Schalter im Protokoll steht und ein fehlender
+      # Dienst nicht.
       CLAMAV_OPTIONAL: "1"
 
     steps:

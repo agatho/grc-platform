@@ -44,6 +44,25 @@ Grösse löst pro Aufruf zweistellig viele API-Anfragen aus. Der Eimer ist
 rechnerisch nach etwa einem Fünftel der Suite leer, und danach ist alles rot,
 was als Nächstes kommt — deshalb sieht es nach fünfzehn Geschichten aus.
 
+> **Nachtrag 2026-09-10, und er korrigiert mich:** der Eigentümer hat mich
+> gebeten, die Variablen selbst zu setzen. Beim Eintragen fand ich, dass die
+> Antwort seit dem 2026-09-02 wortgleich in `.env.example` steht — Abschnitt
+> „E2E-Testumgebung: eigene Budgets", geschrieben von E2E-TRIAGE-3 und -4,
+> mit gemessenen Zahlen („rund 2.400 API-Aufrufe in 4,5 Minuten") und mit
+> beiden Werten. Angewandt hatte sie niemand, weil der E2E-Job bis gestern nie
+> laufen konnte. **Ich habe die dokumentierten Werte übernommen statt eigene
+> zu erfinden** (`3000/60` statt meiner `100000/60`).
+>
+> Dort steht auch eine **dritte** Variable, die meine Triage nicht gesehen
+> hat: `RATE_LIMIT_AUTH=1000/60`. Das Anmeldebudget liegt bei 10/60 s, ist
+> **adressgeschlüsselt** und **fail-closed**; die Suite meldet mehrere Konten
+> vom selben Läufer an. Im Lauf 34398654753 ist es nicht aufgefallen, weil das
+> Standardbudget zuerst leer war und alles Weitere verdeckte — der nächste
+> rote Lauf wäre sonst schon bestellt gewesen. Sie ist mit gesetzt.
+>
+> Das ist, in der Zählung dieses Audits, wieder die Form „stand schon in der
+> eigenen Doku, wurde nicht wieder gelesen".
+
 **Was `ci.yml` braucht:** ein `RATE_LIMIT_DEFAULT` für den E2E-Job, gross genug
 für eine Suite statt für einen Menschen (`"100000/60"` oder ähnlich). Die
 Variable wird bereits gelesen (`envLimit()` in `lib/rate-limit.ts`, Format
@@ -241,10 +260,16 @@ das ist der bekannte cairosvg-Rand aus OP-246, unverändert.
 
 ---
 
-## 5. Zwei Dinge für dich
+## 5. Zwei Dinge für dich — davon eines erledigt
 
-1. **`ci.yml`:** `RATE_LIMIT_DEFAULT` und `CLAMAV_OPTIONAL` im E2E-Job
-   (Belege in Punkt 1). Ich habe `.github/**` nicht angefasst.
+1. **`ci.yml` — erledigt, auf Ansage des Eigentümers.** Damit ist die
+   Zuständigkeitsgrenze aus deiner Übergabe an dieser einen Stelle bewusst
+   überschritten worden; ich sage es dir, damit du nicht dasselbe noch einmal
+   einträgst. Im E2E-Job stehen jetzt drei Zeilen — `RATE_LIMIT_DEFAULT`
+   `3000/60`, `RATE_LIMIT_AUTH` `1000/60`, `CLAMAV_OPTIONAL` `1` —, alle drei
+   mit den Werten aus `.env.example`. Sonst ist an `.github/**` nichts
+   geändert; `check-workflow-yaml.mjs` und `check-workflow-script-deps.mjs`
+   sind grün.
 2. **Register:** ein Eintrag oben in Punkt 2 wartet auf eine Nummer. Ich habe
    bewusst **keine** vergeben und keine neue Nummer irgendwo im Baum
    verwendet — `scripts/check-op-numbers.mjs` würde eine Nummer, die im Code
