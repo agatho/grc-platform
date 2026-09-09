@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -53,25 +53,20 @@ export default function EvidenceRequestsPage() {
 
 function EvidenceRequestsInner() {
   const { formatDate } = useDateFormat();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<EvidenceRequestDashboard | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/evidence-requests");
-      if (res.ok) {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher `null`.
+  const { data = null, isPending: loading } =
+    useQuery<EvidenceRequestDashboard | null>({
+      queryKey: ["controls", "evidence-requests"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/evidence-requests");
+        if (!res.ok) return null;
         const json = await res.json();
-        setData(json.data ?? null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+        return (json.data ?? null) as EvidenceRequestDashboard | null;
+      },
+    });
 
   if (loading) {
     return (

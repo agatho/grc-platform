@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -62,6 +63,28 @@ interface SlaConfigItem {
   slaDays: number;
 }
 
+interface AnalyticsData {
+  ttr: TtrItem[];
+  sla: SlaData | null;
+  aging: AgingData | null;
+  slaConfig: SlaConfigItem[];
+}
+
+type SlaConfigDraft = { severity: string; slaDays: number };
+
+// Stable empty defaults for the query data while it is still pending.
+const NO_TTR: TtrItem[] = [];
+const NO_SLA_CONFIG: SlaConfigItem[] = [];
+
+// Defaults for the SLA form when the org has not configured any yet.
+const DEFAULT_SLA_CONFIG: SlaConfigDraft[] = [
+  { severity: "significant_nonconformity", slaDays: 14 },
+  { severity: "insignificant_nonconformity", slaDays: 30 },
+  { severity: "improvement_requirement", slaDays: 60 },
+  { severity: "recommendation", slaDays: 90 },
+  { severity: "observation", slaDays: 180 },
+];
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -91,20 +114,22 @@ const BUCKET_COLORS: Record<string, string> = {
 export default function FindingAnalyticsPage() {
   const t = useTranslations("intelligence");
 
-  const [ttrData, setTtrData] = useState<TtrItem[]>([]);
-  const [slaData, setSlaData] = useState<SlaData | null>(null);
-  const [agingData, setAgingData] = useState<AgingData | null>(null);
-  const [slaConfig, setSlaConfig] = useState<SlaConfigItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
-  const [editConfig, setEditConfig] = useState<
-    Array<{ severity: string; slaDays: number }>
-  >([]);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `dashboard/page.tsx`). Die vier Abrufe wurden immer zusammen
+  // geholt und zusammen gezeigt, darum eine Abfrage mit einem Objekt. Wie
+  // vorher werden die Antworten ohne `ok`-Prüfung gelesen; ein Fehler lässt
+  // die Karten leer (kein eigener Fehlerzustand, so war es auch).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AnalyticsData>({
+    queryKey: ["findings", "analytics", "overview"],
+    queryFn: async () => {
       const [ttrRes, slaRes, agingRes, configRes] = await Promise.all([
         fetch("/api/v1/findings/analytics/ttr"),
         fetch("/api/v1/findings/analytics/sla"),
@@ -117,54 +142,33 @@ export default function FindingAnalyticsPage() {
       const agingJson = await agingRes.json();
       const configJson = await configRes.json();
 
-      setTtrData(ttrJson.data ?? []);
-      setSlaData(slaJson.data ?? null);
-      setAgingData(agingJson.data ?? null);
-      setSlaConfig(configJson.data ?? []);
-    } catch {
-      // Errors handled per-card
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return {
+        ttr: (ttrJson.data ?? []) as TtrItem[],
+        sla: (slaJson.data ?? null) as SlaData | null,
+        aging: (agingJson.data ?? null) as AgingData | null,
+        slaConfig: (configJson.data ?? []) as SlaConfigItem[],
+      };
+    },
+  });
+  const ttrData = data?.ttr ?? NO_TTR;
+  const slaData = data?.sla ?? null;
+  const agingData = data?.aging ?? null;
+  const slaConfig = data?.slaConfig ?? NO_SLA_CONFIG;
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  const fetchAll = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-  useEffect(() => {
-    if (slaConfig.length > 0) {
-      setEditConfig(
-        slaConfig.map((c) => ({ severity: c.severity, slaDays: c.slaDays })),
-      );
-    } else {
-      // Defaults
-      setEditConfig([
-        { severity: "significant_nonconformity", slaDays: 14 },
-        { severity: "insignificant_nonconformity", slaDays: 30 },
-        { severity: "improvement_requirement", slaDays: 60 },
-        { severity: "recommendation", slaDays: 90 },
-        { severity: "observation", slaDays: 180 },
-      ]);
-    }
-  }, [slaConfig]);
-
-  const saveSlaConfig = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/v1/ics/finding-sla", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ configs: editConfig }),
-      });
-      if (res.ok) {
-        await fetchAll();
-        setShowConfig(false);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+  // [OP-245 · Gestalt E] Die SLA-Tabelle ist ein Formular, dessen Saat der
+  // Server setzt (Konfiguration, sonst Vorgaben) und das der Nutzer danach
+  // bearbeitet. Sie lebt in einem eigenen Bauteil (`SlaConfigEditor`), das
+  // beim Öffnen der Karte mit dieser Saat EINGEHÄNGT wird — kein
+  // spiegelnder Effekt, und ein Hintergrundabruf überschreibt keine
+  // Eingaben mehr (Muster aus Welle 7b, `processes/[id]/ropa`).
+  const slaSeed: SlaConfigDraft[] =
+    slaConfig.length > 0
+      ? slaConfig.map((c) => ({ severity: c.severity, slaDays: c.slaDays }))
+      : DEFAULT_SLA_CONFIG;
 
   const maxTtr = Math.max(...ttrData.map((d) => d.avgDays), 1);
   const totalAging = agingData
@@ -197,10 +201,10 @@ export default function FindingAnalyticsPage() {
               variant="outline"
               size="sm"
               onClick={fetchAll}
-              disabled={loading}
+              disabled={isFetching}
             >
               <RefreshCcw
-                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
               />
               {t("findingAnalytics.refresh")}
             </Button>
@@ -430,62 +434,95 @@ export default function FindingAnalyticsPage() {
 
             {/* SLA Config */}
             {showConfig && (
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>{t("findingAnalytics.slaConfigTitle")}</CardTitle>
-                  <CardDescription>
-                    {t("findingAnalytics.slaConfigDescription")}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {editConfig.map((config, idx) => (
-                      <div
-                        key={config.severity}
-                        className="flex items-center gap-4"
-                      >
-                        <Badge
-                          className={`w-56 justify-center ${severityBadge(config.severity)}`}
-                        >
-                          {config.severity.replace(/_/g, " ")}
-                        </Badge>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={365}
-                          value={config.slaDays}
-                          onChange={(e) => {
-                            const next = [...editConfig];
-                            next[idx] = {
-                              ...config,
-                              slaDays: Number(e.target.value),
-                            };
-                            setEditConfig(next);
-                          }}
-                          className="w-24"
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          {t("findingAnalytics.days")}
-                        </span>
-                      </div>
-                    ))}
-                    <Button
-                      onClick={saveSlaConfig}
-                      disabled={saving}
-                      className="mt-4"
-                    >
-                      {saving && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                      {t("findingAnalytics.saveSla")}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <SlaConfigEditor
+                seed={slaSeed}
+                onSaved={async () => {
+                  await fetchAll();
+                  setShowConfig(false);
+                }}
+              />
             )}
           </div>
         )}
       </div>
     </ModuleGate>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SLA config editor — a form seeded from the server, owning its draft
+// ---------------------------------------------------------------------------
+
+function SlaConfigEditor({
+  seed,
+  onSaved,
+}: {
+  seed: SlaConfigDraft[];
+  onSaved: () => Promise<void>;
+}) {
+  const t = useTranslations("intelligence");
+  const [editConfig, setEditConfig] = useState<SlaConfigDraft[]>(() => seed);
+  const [saving, setSaving] = useState(false);
+
+  const saveSlaConfig = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/v1/ics/finding-sla", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ configs: editConfig }),
+      });
+      if (res.ok) {
+        await onSaved();
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle>{t("findingAnalytics.slaConfigTitle")}</CardTitle>
+        <CardDescription>
+          {t("findingAnalytics.slaConfigDescription")}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {editConfig.map((config, idx) => (
+            <div key={config.severity} className="flex items-center gap-4">
+              <Badge
+                className={`w-56 justify-center ${severityBadge(config.severity)}`}
+              >
+                {config.severity.replace(/_/g, " ")}
+              </Badge>
+              <Input
+                type="number"
+                min={1}
+                max={365}
+                value={config.slaDays}
+                onChange={(e) => {
+                  const next = [...editConfig];
+                  next[idx] = {
+                    ...config,
+                    slaDays: Number(e.target.value),
+                  };
+                  setEditConfig(next);
+                }}
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">
+                {t("findingAnalytics.days")}
+              </span>
+            </div>
+          ))}
+          <Button onClick={saveSlaConfig} disabled={saving} className="mt-4">
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {t("findingAnalytics.saveSla")}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

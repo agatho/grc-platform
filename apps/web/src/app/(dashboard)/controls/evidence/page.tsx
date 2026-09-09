@@ -4,7 +4,8 @@
 // literally called `Image`; jsx-a11y's alt-text rule treats every <Image> as
 // an <img> and demanded an alt prop on a decorative SVG icon. Aliased so the
 // rule stays on for real images.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -78,27 +79,30 @@ export default function EvidencePage() {
 function EvidencePageInner() {
   const t = useTranslations("controls");
   const { formatDate } = useDateFormat();
-  const [evidence, setEvidence] = useState<Evidence[]>([]);
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  const fetchEvidence = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: evidence = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Evidence[]>({
+    queryKey: ["controls", "evidence"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/evidence?limit=100");
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
-      setEvidence(json.data ?? []);
-    } catch {
-      setEvidence([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as Evidence[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchEvidence();
-  }, [fetchEvidence]);
+  const fetchEvidence = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -142,7 +146,7 @@ function EvidencePageInner() {
             variant="outline"
             size="sm"
             onClick={() => fetchEvidence()}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw size={14} />
           </Button>

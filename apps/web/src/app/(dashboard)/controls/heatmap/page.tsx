@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Grid3X3 } from "lucide-react";
 import Link from "next/link";
@@ -67,28 +68,34 @@ function _scoreBgStyle(score: number): string {
 
 export default function CesHeatmapPage() {
   const t = useTranslations("intelligence");
-  const [cells, setCells] = useState<HeatmapCell[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: cells = [],
+    isPending: loading,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery<HeatmapCell[]>({
+    queryKey: ["ics", "ces", "heatmap"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ics/ces/heatmap");
       if (!res.ok) throw new Error("Failed to load heatmap data");
       const json = await res.json();
-      setCells(json.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as HeatmapCell[];
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Unknown error"
+    : null;
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Build lookup map
   const cellMap = new Map<string, HeatmapCell>();
@@ -114,10 +121,10 @@ export default function CesHeatmapPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             {t("ces.refresh")}
           </Button>

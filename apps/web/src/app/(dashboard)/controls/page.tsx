@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -114,9 +115,31 @@ function ControlsPageInner() {
   const router = useRouter();
   const { formatDate } = useDateFormat();
 
-  const [controls, setControls] = useState<ControlRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: controls = [],
+    isPending: loading,
+    isFetching,
+    isError: error,
+    refetch,
+  } = useQuery<ControlRow[]>({
+    queryKey: ["controls", "list"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/v1/controls?limit=100&sortBy=title&sortDir=asc",
+      );
+      if (!res.ok) throw new Error("Failed to fetch controls");
+      const json = await res.json();
+      return (json.data ?? []) as ControlRow[];
+    },
+  });
+
+  const fetchControls = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -129,28 +152,6 @@ function ControlsPageInner() {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  const fetchControls = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const res = await fetch(
-        "/api/v1/controls?limit=100&sortBy=title&sortDir=asc",
-      );
-      if (!res.ok) throw new Error("Failed to fetch controls");
-      const json = await res.json();
-      setControls(json.data ?? []);
-    } catch {
-      setError(true);
-      setControls([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchControls();
-  }, [fetchControls]);
 
   const filteredControls = useMemo(() => {
     let result = controls;
@@ -291,9 +292,12 @@ function ControlsPageInner() {
             variant="outline"
             size="sm"
             onClick={() => fetchControls()}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/controls/new")}>
             <Plus size={16} />

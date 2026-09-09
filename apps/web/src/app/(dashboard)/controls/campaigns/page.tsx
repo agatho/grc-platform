@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,26 +62,28 @@ function CampaignsPageInner() {
   const t = useTranslations("controls");
   const { formatDate } = useDateFormat();
   const _router = useRouter();
-  const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: campaigns = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<CampaignRow[]>({
+    queryKey: ["controls", "campaigns"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/controls/campaigns?limit=100");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as CampaignRow[];
+    },
+  });
 
   const fetchCampaigns = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/controls/campaigns?limit=100");
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      setCampaigns(json.data ?? []);
-    } catch {
-      setCampaigns([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchCampaigns();
-  }, [fetchCampaigns]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -106,7 +109,7 @@ function CampaignsPageInner() {
             variant="outline"
             size="sm"
             onClick={() => fetchCampaigns()}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw size={14} />
           </Button>

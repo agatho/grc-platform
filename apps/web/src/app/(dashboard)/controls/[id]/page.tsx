@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -52,6 +52,14 @@ interface AuditLogEntry {
   entityType: string;
   changes: Record<string, { old: unknown; new: unknown }> | null;
   createdAt: string;
+}
+
+interface ControlDetailData {
+  control: ControlDetail | null;
+  tests: ControlTest[];
+  findings: Finding[];
+  linkedRisks: LinkedRisk[];
+  auditLog: AuditLogEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -128,16 +136,15 @@ function ControlDetailInner() {
   const router = useRouter();
   const controlId = params.id as string;
 
-  const [control, setControl] = useState<ControlDetail | null>(null);
-  const [tests, setTests] = useState<ControlTest[]>([]);
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [linkedRisks, setLinkedRisks] = useState<LinkedRisk[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die fünf Anfragen wurden immer
+  // gemeinsam gestellt und gemeinsam verwendet, daher eine Abfrage, die ein
+  // Objekt liefert. Nicht-ok-Antworten lassen wie vorher den jeweiligen
+  // Teil leer; ein Netzfehler landet im Fehlerzustand der Abfrage.
+  const { data, isPending: loading } = useQuery<ControlDetailData>({
+    queryKey: ["controls", "detail", controlId],
+    queryFn: async () => {
       const [controlRes, testsRes, findingsRes, rcmRes, logRes] =
         await Promise.all([
           fetch(`/api/v1/controls/${controlId}`),
@@ -161,36 +168,42 @@ function ControlDetailInner() {
           ),
         ]);
 
+      const result: ControlDetailData = {
+        control: null,
+        tests: [],
+        findings: [],
+        linkedRisks: [],
+        auditLog: [],
+      };
       if (controlRes.ok) {
         const json = await controlRes.json();
-        setControl(json.data ?? null);
+        result.control = json.data ?? null;
       }
       if (testsRes.ok) {
         const json = await testsRes.json();
-        setTests(json.data ?? []);
+        result.tests = json.data ?? [];
       }
       if (findingsRes.ok) {
         const json = await findingsRes.json();
-        setFindings(json.data ?? []);
+        result.findings = json.data ?? [];
       }
       if (rcmRes.ok) {
         const json = await rcmRes.json();
-        setLinkedRisks(json.data ?? []);
+        result.linkedRisks = json.data ?? [];
       }
       if (logRes.ok) {
         const json = await logRes.json();
-        setAuditLog(json.data ?? []);
+        result.auditLog = json.data ?? [];
       }
-    } catch {
-      // error states handled by null checks
-    } finally {
-      setLoading(false);
-    }
-  }, [controlId]);
+      return result;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const control = data?.control ?? null;
+  const tests = data?.tests ?? [];
+  const findings = data?.findings ?? [];
+  const linkedRisks = data?.linkedRisks ?? [];
+  const auditLog = data?.auditLog ?? [];
 
   if (loading) {
     return (

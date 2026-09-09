@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import Link from "next/link";
@@ -110,29 +111,32 @@ export default function FindingsPage() {
 function FindingsPageInner() {
   const t = useTranslations("findings");
   const { formatDate } = useDateFormat();
-  const [findings, setFindings] = useState<FindingRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
 
-  const fetchFindings = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: findings = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<FindingRow[]>({
+    queryKey: ["findings", "list"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/findings?limit=100&sortBy=createdAt&sortDir=desc",
       );
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
-      setFindings(json.data ?? []);
-    } catch {
-      setFindings([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as FindingRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchFindings();
-  }, [fetchFindings]);
+  const fetchFindings = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     if (statusFilter === "__all__") return findings;
@@ -274,7 +278,7 @@ function FindingsPageInner() {
           variant="outline"
           size="sm"
           onClick={() => fetchFindings()}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw size={14} />
         </Button>
