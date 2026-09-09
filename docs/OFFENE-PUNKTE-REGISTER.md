@@ -2654,3 +2654,75 @@ Hinsehen ab. Die naheliegende Abhilfe — ignorierte Dateien überspringen —
 wäre allerdings kein reiner Gewinn: sie könnte eine echte mitgelieferte
 Arbeitsdatei in einem Fremdpaket verdecken, das zufällig auf eine Ignore-Regel
 passt. Deshalb hier als Beobachtung notiert statt still geändert.
+
+### Nachtrag 2026-09-09 — Welle 8n: was der E2E-Job zeigte, sobald er überhaupt lief
+
+Der Lauf `34395761770` ist der erste, in dem die volle Playwright-Suite je
+gestartet ist. Vier Schritte, die seit dem 2026-09-02 nie grün waren, sind es
+jetzt — und dahinter lag ein Befund, den vorher niemand sehen konnte.
+
+| OP     | Was                                                                                                                                                                                                                                                                                   | Beleg                         | Art     | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------- | ------- |
+| OP-254 | **Die E2E-Datenbank hatte den Demo-Datensatz nie.** Der Job fährt `src/seed.ts` — Organisationen, Benutzer, Rollen. Die Suite prüft gegen die Demo-Daten: `ai-act-workflow.spec` sucht `AIS-001`, und die Zeile steht in `seed_demo_12_ai_act.sql`, die nur `src/seed-demo.ts` fährt. | Lauf `34395761770`, Test 9–11 | Betrieb | behoben |
+
+**Was OP-251 gebracht hat, gemessen.** Alle vier Anmeldungen aus
+`auth.setup.ts` grün — `authenticate as admin` (2,3 s), `owner`, `reviewer`,
+`approver` —, der Rauchtest 8/8 in 14,5 s, und dann 201 Tests gestartet. Vorher
+endete derselbe Job in `auth.setup.ts` mit „No password for the primary E2E
+account". Auch die zwei Provisionierungs-Hälften aus OP-241 sind hier grün
+(`grc_app-Rollen anlegen` vor den Migrationen, `grc_app-Grants + Abnahme`
+danach), und `Run ./.github/actions/apt-ohne-fremdquellen` (OP-253) ebenfalls.
+
+**Der Lauf wurde nicht durch ein Zeitlimit abgeschnitten, sondern von mir.**
+`concurrency: cancel-in-progress: true` — mein eigener Push von `7fa0147e` hat
+den laufenden Lauf für `d8e5d824` abgebrochen (`The operation was canceled`,
+12m45s). Das ist Bedienung, kein Defekt, gehört aber ins Protokoll, damit die
+Zahl später nicht als Zeitlimit gelesen wird.
+
+**OP-254 und die Falle, die ich mir dabei selbst gestellt hätte.** Die erste
+Fassung des Seeding-Schrittes hat den Mandanten über
+`WHERE name = 'Meridian Holdings GmbH' LIMIT 1` gesucht. Das war richtig,
+solange der Job nur `src/seed.ts` fuhr. Mit dem Demo-Datensatz gibt es diesen
+Namen **zweimal** — gemessen im Container gegen eine frisch migrierte
+Datenbank nach beiden Seeds:
+
+```
+c2446a5c-64f1-40a7-862a-8ab084f66f41  Meridian Holdings GmbH
+ccc4cc1c-4b09-499c-8420-ebd8da655cd7  Meridian Holdings GmbH (Demo Tenant)
+3410dec6-35a4-48a6-b112-3541bf91f316  Meridian Holdings GmbH
+```
+
+`LIMIT 1` hätte still eine davon genommen. Und die Demo-Daten liegen in
+**keiner** der beiden gleichnamigen, sondern in `ccc4cc1c…`:
+
+```
+AIS-001  org=ccc4cc1c-4b09-499c-8420-ebd8da655cd7
+AIS-002  org=ccc4cc1c-4b09-499c-8420-ebd8da655cd7
+AIS-003  org=ccc4cc1c-4b09-499c-8420-ebd8da655cd7
+```
+
+Ein Konto im falschen Mandanten sieht eine leere Anwendung, und die Suite fällt
+an einer Assertion, die nach einem Produktfehler aussieht. Der Mandant ist
+deshalb jetzt der Literalwert `ccc4cc1c…` — derselbe, den `seed-e2e-users.ts`
+als Vorgabe führt und `playwright.config.ts` annimmt — und er wird **geprüft,
+nicht angenommen**: fehlt er, bricht der Schritt ab und gibt die vorhandenen
+Organisationen aus.
+
+**Die ganze Kette ist im Container durchgespielt**, nicht nur gelesen: Rollen →
+429/429 Migrationen → Grants → `src/seed.ts` → `src/seed-demo.ts` (alle
+Referenz- und Demo-Dateien `ok`) → `seed-e2e-users --org ccc4cc1c…`. Ergebnis:
+
+```
+e2e-admin@arctos.local  älteste Mitgliedschaft in ccc4cc1c-4b09-499c-8420-ebd8da655cd7
+AI-Systeme im Mandanten: 5
+```
+
+Das primäre Konto hält seine älteste Mitgliedschaft genau dort, wo die Daten
+liegen — die Bedingung, gegen die `auth.setup.ts` `currentOrgId` prüft.
+
+**Offen und noch nicht beurteilt:** die Unit-Tests sind in diesem Lauf mit
+einer DOM-Assertion und einem 15-Sekunden-Zeitlimit gefallen
+(`expected null not to be null`, `Test timed out in 15000ms`), obwohl derselbe
+Job auf `d3637701` 909/909 grün war. Der Verdacht ist Lastabhängigkeit wie bei
+den Korpus-Tests aus OP-246; beurteilt ist er nicht, weil der Lauf abgebrochen
+wurde, bevor das Protokoll abrufbar war.

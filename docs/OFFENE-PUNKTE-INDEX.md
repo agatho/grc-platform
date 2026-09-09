@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **253**
+Nummern: **254**
 
 ## offen (5)
 
@@ -197,7 +197,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (86)
+## behoben (87)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -287,3 +287,4 @@ _keine_
 | OP-251 | Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden. `auth.setup.ts` verlangt seit der Mehr-Konten-T… | behoben 2026-09-09 (Welle 8m)                                                              | 2026-09-09 |
 | OP-252 | `notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei. `generate-notice.mjs`… | behoben                                                                                    | 2026-09-09 |
 | OP-253 | Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht. Der Schritt, der `cairosvg` für die Ras… | behoben 2026-09-09 (Welle 8m)                                                              | 2026-09-09 |
+| OP-254 | Die E2E-Datenbank hatte den Demo-Datensatz nie. Der Job fährt `src/seed.ts` — Organisationen, Benutzer, Rolle… | behoben                                                                                    | 2026-09-09 |

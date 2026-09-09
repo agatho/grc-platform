@@ -824,6 +824,21 @@ jobs:
         working-directory: packages/db
         run: npx tsx src/seed.ts
 
+      # ── [ARCTOS-FULL-2026-08-31 · OP-254] Der Demo-Datensatz ────────────
+      #
+      # Hier lief nur `src/seed.ts` — Organisationen, Benutzer, Rollen. Die
+      # E2E-Suite prueft aber gegen den DEMO-Datensatz: `ai-act-workflow.spec`
+      # sucht `AIS-001`, und die Zeile steht in
+      # `packages/db/sql/seed_demo_12_ai_act.sql`, die nur `src/seed-demo.ts`
+      # faehrt. Im Lauf 34395761770 ist die Suite genau daran gefallen —
+      # zum ersten Mal ueberhaupt sichtbar, weil sie vor OP-251 nie so weit
+      # kam.
+      - name: Referenzkataloge und Demo-Datensatz
+        working-directory: packages/db
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+        run: npx tsx src/seed-demo.ts
+
       # ── [ARCTOS-FULL-2026-08-31 · OP-251] Die E2E-Konten ────────────────
       #
       # `auth.setup.ts` verlangt seit `81200d89` ein `E2E_ROLE_PASSWORD` und
@@ -834,25 +849,30 @@ jobs:
       #   No password for the primary E2E account. Provision it with
       #   E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users
       #
-      # Zwei Dinge waren falsch, und das zweite ist das interessantere.
+      # Das Passwort kam aus `secrets.E2E_PASSWORD`, und das KANN nicht
+      # stimmen: die Datenbank dieses Jobs entsteht in diesem Job neu, aus
+      # Migrationen und Seed. Gegen ein frisch gehashtes Konto passt nur das
+      # Passwort, mit dem es GERADE angelegt wurde — ein Wert aus den
+      # Repository-Secrets kann es per Bauart nicht sein. Deshalb wird es hier
+      # erzeugt, maskiert, verwendet und mit dem Lauf weggeworfen. Es steht in
+      # keinem Secret und in keiner Datei; die Konten existieren nur in dieser
+      # Wegwerf-Datenbank.
       #
-      # 1. Das Passwort kam aus `secrets.E2E_PASSWORD`. Das KANN nicht
-      #    stimmen: die Datenbank dieses Jobs entsteht in diesem Job neu, aus
-      #    Migrationen und Seed. Gegen ein frisch gehashtes Konto passt nur
-      #    das Passwort, mit dem es GERADE angelegt wurde — ein Wert aus den
-      #    Repository-Secrets kann es per Bauart nicht sein. Deshalb wird das
-      #    Passwort hier erzeugt, maskiert, verwendet und mit dem Lauf
-      #    weggeworfen. Es steht in keinem Secret und in keiner Datei; die
-      #    Konten existieren nur in dieser Wegwerf-Datenbank.
+      # Der Mandant ist FEST der Demo-Mandant, und das ist wichtig genug fuer
+      # zwei Saetze. Die erste Fassung dieses Schrittes hat ihn ueber
+      # `WHERE name = 'Meridian Holdings GmbH'` gesucht. Sobald der
+      # Demo-Datensatz oben dazukommt, gibt es diesen Namen ZWEIMAL —
+      # `c2446a5c…` aus `seed_demo_00_platform.sql` und die von `src/seed.ts`
+      # erzeugte Organisation — und `LIMIT 1` haette still eine davon
+      # genommen. Gemessen am 2026-09-09 gegen eine frisch migrierte
+      # Datenbank; die Demo-Daten (AIS-001 … AIS-005) liegen in KEINER von
+      # beiden, sondern in `ccc4cc1c…`. Ein Konto im falschen Mandanten sieht
+      # eine leere Anwendung, und die Suite faellt an einer Assertion, die
+      # nach einem Produktfehler aussieht.
       #
-      # 2. `E2E_ORG_ID` wurde nicht gesetzt, und die Vorgabe des Seeders ist
-      #    die Demo-Mandanten-UUID `ccc4cc1c-…`, die nur
-      #    `packages/db/sql/seed_demo_00_platform.sql` schreibt. Dieser Job
-      #    laeuft aber `src/seed.ts`, und der legt „Meridian Holdings GmbH"
-      #    mit einer ERZEUGTEN id an. Nachgemessen am 2026-09-09 gegen eine
-      #    frisch migrierte Datenbank: nach `src/seed.ts` ist
-      #    `SELECT count(*) … WHERE id = 'ccc4cc1c-…'` gleich **0**. Die id
-      #    wird deshalb aus der Datenbank gelesen, nicht angenommen.
+      # `ccc4cc1c…` ist derselbe Wert, den `seed-e2e-users.ts` als Vorgabe
+      # fuehrt und `playwright.config.ts` annimmt. Er wird geprueft, nicht
+      # angenommen: fehlt er, bricht der Schritt ab.
       #
       # `secrets.E2E_EMAIL` behaelt seinen Sinn: es benennt, WELCHES Konto das
       # primaere ist. Der Seeder legt genau dieses an — ist das Secret leer,
@@ -866,17 +886,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          ORG_ID=$(psql -h localhost -U grc -d grc_platform_test -tAc \
-            "SELECT id FROM organization
-               WHERE name = 'Meridian Holdings GmbH' AND deleted_at IS NULL
-               LIMIT 1" | tr -d '[:space:]')
-          if [ -z "$ORG_ID" ]; then
-            echo "✗ Kein Demo-Mandant in der Datenbank — hat 'Run seed' gewirkt?" >&2
+          # Der Demo-Mandant aus seed_demo_00_platform.sql. Literal, weil die
+          # Demo-Daten an dieser id haengen und der Name mehrdeutig ist.
+          ORG_ID=ccc4cc1c-4b09-499c-8420-ebd8da655cd7
+
+          VORHANDEN=$(psql -h localhost -U grc -d grc_platform_test -tAc \
+            "SELECT count(*) FROM organization WHERE id = '$ORG_ID'" \
+            | tr -d '[:space:]')
+          if [ "$VORHANDEN" != "1" ]; then
+            echo "✗ Der Demo-Mandant $ORG_ID fehlt — hat 'Referenzkataloge und" >&2
+            echo "  Demo-Datensatz' gewirkt? Ohne ihn laufen die E2E-Konten in" >&2
+            echo "  einen Mandanten ohne Demo-Daten (OP-254)." >&2
             psql -h localhost -U grc -d grc_platform_test \
               -c "SELECT id, name FROM organization ORDER BY created_at LIMIT 10" >&2
             exit 1
           fi
-          echo "Demo-Mandant: $ORG_ID"
 
           # 24 Zeichen aus /dev/urandom. Der Seeder verlangt >= 12; die
           # Pruefung steht trotzdem hier, damit ein leerer Wert nicht als
