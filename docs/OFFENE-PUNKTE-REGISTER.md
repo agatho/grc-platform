@@ -2198,10 +2198,10 @@ zum vierten Mal in einem Timeout verschwunden.
 
 ### Nachtrag 2026-09-09 — Welle 8l: zwei Befunde aus dem Abhängigkeits-Update
 
-| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Beleg                                      | Art                          | Stand                    |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ | ---------------------------- | ------------------------ |
-| OP-244 | **`Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert.** Die eigene Angabe lautet `(MIT OR GPL-3.0-or-later)`; die GitHub-Lizenzdatenbank normalisiert das zu „GPL-3.0-only OR MIT", und die Action bewertet einen ODER-Ausdruck nicht als Wahl, sondern fällt über den Zweig auf der Sperrliste. Sie meldet also nicht, dass GPL-Code ausgeliefert wird, sondern dass sie den Ausdruck nicht auswerten kann.                                                                     | Lauf `34345848114`                         | Tor                          | behoben                  |
-| OP-245 | **`eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile Anwendungscode geändert hätte.** 384 davon `react-hooks/set-state-in-effect`, die Regel, die Welle 7b mit 20 Fundstellen auf 0 gebracht hat. Der Sprung ist die Regel, nicht der Code. **Nachtrag 2026-09-09 (lokale Sitzung, OP-234):** Weg A vorläufig genommen — exakte devDependency `eslint-plugin-react-hooks@7.0.1` in apps/web, Ratsche wieder 0/0; die Entscheidung bleibt beim Eigentümer. | Eigene Messung 2026-09-09 gegen `a3ff1b07` | Entscheidung des Eigentümers | **offen — Entscheidung** |
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                  | Art                          | Stand                               |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ---------------------------- | ----------------------------------- |
+| OP-244 | **`Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert.** Die eigene Angabe lautet `(MIT OR GPL-3.0-or-later)`; die GitHub-Lizenzdatenbank normalisiert das zu „GPL-3.0-only OR MIT", und die Action bewertet einen ODER-Ausdruck nicht als Wahl, sondern fällt über den Zweig auf der Sperrliste. Sie meldet also nicht, dass GPL-Code ausgeliefert wird, sondern dass sie den Ausdruck nicht auswerten kann.                                                                                                                                                                                                                           | Lauf `34345848114`                                                     | Tor                          | behoben                             |
+| OP-245 | **`eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile Anwendungscode geändert hätte.** 384 davon `react-hooks/set-state-in-effect`, die Regel, die Welle 7b mit 20 Fundstellen auf 0 gebracht hat. Der Sprung ist die Regel, nicht der Code. **Nachtrag 2026-09-09 (lokale Sitzung, OP-234):** Weg A vorläufig genommen — exakte devDependency `eslint-plugin-react-hooks@7.0.1` in apps/web, Ratsche wieder 0/0. **Entscheidung des Eigentümers am 2026-09-09: Weg B** — die neuere Version bleibt, die 416 Stellen werden abgearbeitet; übergeben an die lokale Sitzung, Auftrag in `docs/HANDOVER-OP-245.md`. | Eigene Messung 2026-09-09 gegen `a3ff1b07`, bestätigt gegen `29224b2f` | Entscheidung des Eigentümers | **entschieden — in Arbeit (Weg B)** |
 
 **OP-244, warum das keine Aufweichung ist.** Der Eintrag steht in
 `allow-dependencies-licenses`, aber aus einem anderen Grund als trufflehog:
@@ -2251,5 +2251,31 @@ Drei Wege, alle mit ihrem Preis:
 | **B** die 416 jetzt abarbeiten                                                                | 354 Dateien, Maßstab Welle 7b; Wochen, nicht Stunden                           | die Testinstanz bleibt so lange auf dem alten Stand                                              |
 | **C** die sechs Regeln auf `warn` und unter die Ratsche mit dem gemessenen Stand              | wenige Zeilen; die Zahl kann nur noch fallen                                   | `apps/web` ist nicht mehr bei 0 gedeckelt — der Deckel, den Welle 4b-5 gesetzt hat, wird weicher |
 
-**Kein Weg gewählt.** Bis dahin ist der Lint-Job auf diesem Branch rot. Ich
-habe die Regeln **nicht** abgeschaltet und die Ratsche **nicht** angehoben.
+**Entschieden am 2026-09-09: Weg B.** Der Eigentümer hält an der neueren
+Version fest — „da wir die neuere Version nutzen wollen". Die 416 Stellen
+werden abgearbeitet, nicht umgangen. Weg A bleibt bis zum Abschluss als
+**Gerüst** stehen (die exakte devDependency `7.0.1` in `apps/web`), damit der
+Lint-Job währenddessen etwas aussagt statt pauschal rot zu sein; er fällt im
+**letzten** Commit dieser Arbeit, zusammen mit den Korrekturen, die die Zahl
+auf 0 bringen.
+
+Weder Weg A noch Weg C sind dabei stillschweigend mitgenommen worden: keine
+Regel ist abgeschaltet, die Ratsche steht unverändert bei 0, und kein
+`eslint-disable` ist gesetzt.
+
+**Übergeben an die lokale Sitzung.** Der vollständige Auftrag steht in
+`docs/HANDOVER-OP-245.md`: die nachgemessene Aufteilung (346 der 384
+`set-state-in-effect`-Fundstellen sind **dieselbe** Gestalt — Abruf beim
+Einhängen; 321 der 344 betroffenen Dateien liegen unter
+`src/app/(dashboard)` und tragen **genau eine** Fundstelle), das bereits im
+Repository vorhandene Vorbild aus Welle 7b
+(`catalogs/objects/page.tsx`, `@tanstack/react-query` 5.102.8 ist installiert
+und in 17 Dateien im Einsatz), die vollständige Aufzählung der 32
+Nicht-`set-state`-Befunde, und die Reihenfolge: erst **eine** Pilotdatei zur
+Abstimmung der Gestalt, dann Stapel je Verzeichnis, dann die Einzelfälle,
+zuletzt der Pin.
+
+**Eine Warnung ist im Auftrag ausdrücklich vermerkt.** Vier der 15
+`refs`-Befunde liegen in `components/bpmn/arctos-bpmn-canvas.tsx` — der
+eigenen Engine. Wo die Regel recht hat und die Behebung ein Umbau wäre, gehört
+das in dieses Register, nicht in ein erzwungenes Refactoring.

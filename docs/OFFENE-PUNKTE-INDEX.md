@@ -9,9 +9,9 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **245**
+Nummern: **246**
 
-## offen (6)
+## offen (4)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -19,8 +19,6 @@ Nummern: **245**
 | OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.       | 2026-09-03   |
 | OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | offen — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando ben… | 2026-09-09   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
-| OP-234 | Zwei kritische Advisories gegen die ausgelieferte Next-Version, dazu eines mit hoher Schwere in `sharp`. `GHS… | offen — höchste Priorität                                                                  | 2026-09-09   |
-| OP-245 | `eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile A… | offen — Entscheidung                                                                       | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -33,7 +31,7 @@ _keine_
 | OP-113 | `custom_sql` bleibt eine Lesefläche: Org-Admin/Auditor kann jede Zeile lesen, die `grc_app` in seiner Org les… | Bewusst akzeptiert; identisch zur Lage bei `bi-reports/execute`. Die Entscheidung gehört … | Haupttabelle |
 | OP-132 | `docs/ADR-023` steht auf _Proposed_, obwohl §1/§3/§4 implementiert sind                                        | Der Entscheidungsstand entspricht der Umsetzung.                                           | Haupttabelle |
 
-## ohne Stand (159)
+## ohne Stand (161)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -196,8 +194,10 @@ _keine_
 | OP-164 | Erster Staging-Lauf ist der eigentliche Beweis: Backup, Off-Site-Verschlüsselung, DR-Restore, Alarmzustellung… | Alle Kontrollen, die im Betrieb wirken sollen, sind nie gegen eine Produktivumgebung gela… | Haupttabelle |
 | OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung a… | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsbera… | Haupttabelle |
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
+| OP-245 | `eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile A… | entschieden — in Arbeit (Weg B)                                                            | 2026-09-09   |
+| OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (78)
+## behoben (79)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -269,6 +269,7 @@ _keine_
 | OP-231 | `apps/web/messages/de.json` ist Bauausgabe und steht in `.gitignore` — und zwei Suiten aus Welle 7a/7b lasen … | behoben                                                                                    | 2026-09-09 |
 | OP-232 | `docs/openapi.yaml` und `docs/API_REFERENCE.md` waren veraltet (1.372 Routen, 2.042 Operationen).              | behoben                                                                                    | 2026-09-09 |
 | OP-233 | Zwei Scanner, zwei Bewertungen derselben Testfixtures. gitleaks lief „zero config" und meldete zwei Funde, di… | behoben                                                                                    | 2026-09-09 |
+| OP-234 | Next 16.2.11 → 16.3.4, sharp 0.35.3 → 0.35.4. Die zwei kritischen Advisories (`GHSA-p293-qw3h-jr36`, `GHSA-2x… | behoben                                                                                    | 2026-09-09 |
 | OP-235 | Drei API-Routen liegen auf der Platte und in keinem Klon — und die Oberfläche ruft eine davon. `.gitignore:89… | behoben                                                                                    | 2026-09-09 |
 | OP-236 | `packages/bpmn` hat in CI noch nie eine Coverage-Summary erzeugt. Der Bildvergleichstest rastert SVG über `ca… | behoben                                                                                    | 2026-09-09 |
 | OP-237 | Der Forward-only-Check liest die ersten 40 Zeilen einer Migration nach dem Remediation-Marker. In `0099_phase… | behoben                                                                                    | 2026-09-09 |
