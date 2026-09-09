@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -26,43 +27,59 @@ import { GRAPH_ENTITY_COLORS } from "@grc/shared";
 export default function DependencyMapPage() {
   const t = useTranslations("graph");
 
-  const [matrix, setMatrix] = useState<DependencyMatrixEntryData[]>([]);
-  const [hubs, setHubs] = useState<HubEntityData[]>([]);
-  const [stats, setStats] = useState<GraphStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"matrix" | "hubs">("matrix");
 
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Nicht-ok-Antworten und Netzfehler liefern wie vorher die
+  // Ausgangswerte; der Netzfehler wird wie vorher protokolliert.
+  const {
+    data: graph,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    matrix: DependencyMatrixEntryData[];
+    hubs: HubEntityData[];
+    stats: GraphStatsResponse | null;
+  }>({
+    queryKey: ["graph", "dependencies"],
+    queryFn: async () => {
+      let matrix: DependencyMatrixEntryData[] = [];
+      let hubs: HubEntityData[] = [];
+      let stats: GraphStatsResponse | null = null;
+      try {
+        const [matrixRes, hubsRes, statsRes] = await Promise.all([
+          fetch("/api/v1/graph/dependencies/matrix"),
+          fetch("/api/v1/graph/dependencies/hubs?limit=20"),
+          fetch("/api/v1/graph/stats"),
+        ]);
+
+        if (matrixRes.ok) {
+          const { data } = await matrixRes.json();
+          matrix = data as DependencyMatrixEntryData[];
+        }
+        if (hubsRes.ok) {
+          const { data } = await hubsRes.json();
+          hubs = data as HubEntityData[];
+        }
+        if (statsRes.ok) {
+          stats = (await statsRes.json()) as GraphStatsResponse;
+        }
+      } catch (err) {
+        console.error("Failed to fetch dependency data:", err);
+      }
+      return { matrix, hubs, stats };
+    },
+  });
+  const matrix = graph?.matrix ?? [];
+  const hubs = graph?.hubs ?? [];
+  const stats = graph?.stats ?? null;
+
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [matrixRes, hubsRes, statsRes] = await Promise.all([
-        fetch("/api/v1/graph/dependencies/matrix"),
-        fetch("/api/v1/graph/dependencies/hubs?limit=20"),
-        fetch("/api/v1/graph/stats"),
-      ]);
-
-      if (matrixRes.ok) {
-        const { data } = await matrixRes.json();
-        setMatrix(data);
-      }
-      if (hubsRes.ok) {
-        const { data } = await hubsRes.json();
-        setHubs(data);
-      }
-      if (statsRes.ok) {
-        const data = await statsRes.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch dependency data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   // Get unique entity types for matrix headers
   const matrixTypes = new Set<string>();

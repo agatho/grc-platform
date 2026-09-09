@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -22,27 +23,32 @@ import { GRAPH_ENTITY_COLORS } from "@grc/shared";
 export default function GraphOverviewPage() {
   const t = useTranslations("graph");
 
-  const [stats, setStats] = useState<GraphStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort und ein
+  // Netzfehler liefern wie vorher `null`; der Netzfehler wird wie vorher
+  // protokolliert.
+  const {
+    data: stats = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<GraphStatsResponse | null>({
+    queryKey: ["graph", "stats"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/graph/stats");
+        if (!res.ok) return null;
+        return (await res.json()) as GraphStatsResponse;
+      } catch (err) {
+        console.error("Failed to fetch graph stats:", err);
+        return null;
+      }
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/graph/stats");
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch graph stats:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
