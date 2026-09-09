@@ -612,6 +612,31 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — OP-238: eine frische Installation, die migriert bevor sie die Rolle anlegt, bekommt keine Anwendung
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                                                                                    | Art         | Stand                        |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------- |
+| OP-238 | **Der EXECUTE-Grant auf `app_current_org_scope()` ist an die Existenz der Rolle zum Migrationszeitpunkt gebunden.** `0396_rls_log_tables.sql:117` entzieht der Funktion erst `PUBLIC` und vergibt sie dann in einem `DO`-Block unter `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grc_app')`. Existiert die Rolle beim Migrieren nicht, wird der GRANT **stillschweigend übersprungen** — und `deploy/provision-grc-app.sh` holt ihn nicht nach, weil es EXECUTE bewusst nicht pauschal vergibt (`0398_secdef_function_hardening.sql` hat es gezielt entzogen). Da **jede** RLS-Policy diese Funktion aufruft, scheitert danach **jede Abfrage der Anwendung** mit `permission denied for function app_current_org_scope`. | in CI zweimal gemessen; lokal, wo die Rolle vor den Migrationen existierte, trägt die Funktion `grc_app=X/grc` und die Abfrage liefert 0 | **Betrieb** | CI behoben, **Skript offen** |
+
+**Die Kette ist vollständig gemessen**, in beide Richtungen:
+
+| Reihenfolge                           | ACL auf `app_current_org_scope()` | Abfrage als `grc_app`      |
+| ------------------------------------- | --------------------------------- | -------------------------- |
+| Rolle **vor** den Migrationen (lokal) | `grc=X/grc,grc_app=X/grc`         | `0`                        |
+| Rolle **nach** den Migrationen (CI)   | ohne `grc_app`                    | `ERROR: permission denied` |
+
+**In CI behoben**, indem die Provisionierung jetzt **vor** den Migrationen
+läuft — in beiden Jobs, `database` und `e2e-smoke`. Das ist zugleich die
+Reihenfolge, die eine Installation einhalten muss.
+
+**Offen bleibt das Skript.** `provision-grc-app.sh` ist der dokumentierte Weg,
+die Rolle anzulegen, und es hinterlässt sie derzeit in einem Zustand, in dem
+die Anwendung nicht laufen kann, wenn die Migrationen vorher liefen. Richtig
+wäre, dass es die bedingten Grants nachholt — nicht pauschal (das wäre die
+Rücknahme von `0398`), sondern für genau die `SECURITY DEFINER`-Funktionen,
+deren Migrationen auf die Existenz der Rolle prüfen. Das ist eine Änderung an
+einem Sicherheitsskript und gehört gemessen, nicht schnell gemacht.
+
 ### Nachtrag 2026-09-09 — Welle 8g, zweiter Durchgang: der PR-Lauf hat drei fehlende API-Routen aufgedeckt
 
 Nach dem Zusammenführen mit `189cb05a` (OP-167) lief die CI erneut. Drei von

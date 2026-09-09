@@ -635,22 +635,38 @@ jobs:
       # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
       # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
       # aus. Ein Fehlschlag bricht den Job ab.
-      - name: Build schema from migrations
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
-
-      # [Welle 8g] Dieselbe Provisionierung wie in Produktion und im
-      # Datenbank-Job. Der E2E-Lauf prueft damit den Pfad, der RLS
-      # tatsaechlich durchsetzt, statt einen Superuser-Pfad, der sie umgeht.
-      - name: grc_app provisionieren
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g, zweiter Anlauf] Diese Provisionierung
+      # steht VOR den Migrationen, und das ist keine Kosmetik.
+      #
+      # `0396_rls_log_tables.sql:117` grantet EXECUTE auf
+      # `app_current_org_scope()` — der Funktion, die JEDE RLS-Policy aufruft —
+      # in einem `DO`-Block unter der Bedingung
+      # `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grc_app')`.
+      # Existiert die Rolle beim Migrieren nicht, wird der GRANT
+      # STILLSCHWEIGEND UEBERSPRUNGEN, und `provision-grc-app.sh` holt ihn
+      # nicht nach: es vergibt EXECUTE bewusst nicht pauschal, weil
+      # `0398_secdef_function_hardening.sql` es gezielt entzogen hat.
+      #
+      # Folge, in jedem CI-Lauf gemessen:
+      #   ERROR:  permission denied for function app_current_org_scope
+      #
+      # Und das ist nicht nur ein CI-Problem — siehe OP-238 im Register: eine
+      # frische Produktionsinstallation, die migriert bevor sie die Rolle
+      # anlegt, bekommt dasselbe, und dann scheitert JEDE Abfrage der
+      # Anwendung.
+      - name: grc_app provisionieren (derselbe Weg wie Produktion)
         env:
-          DIRECT_PSQL: 1
+          DIRECT_PSQL: "1"
           PGHOST: localhost
-          PGPORT: 5432
+          PGPORT: "5432"
           PGUSER: grc
           PGPASSWORD: grc_test_password
           GRC_APP_PASSWORD: grc_app_pass
         run: bash deploy/provision-grc-app.sh grc_platform_test
+
+      - name: Build schema from migrations
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
 
       - name: Run seed (admin user + demo data)
         working-directory: packages/db
@@ -850,6 +866,35 @@ jobs:
       # und BASE-002 war hier per Bauart unsichtbar. CI benutzt jetzt denselben
       # Runner wie Dev, DR und Audit; der Entrypoint fuehrt dieselbe Sequenz
       # aus. Ein Fehlschlag bricht den Job ab.
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g, zweiter Anlauf] Diese Provisionierung
+      # steht VOR den Migrationen, und das ist keine Kosmetik.
+      #
+      # `0396_rls_log_tables.sql:117` grantet EXECUTE auf
+      # `app_current_org_scope()` — der Funktion, die JEDE RLS-Policy aufruft —
+      # in einem `DO`-Block unter der Bedingung
+      # `IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'grc_app')`.
+      # Existiert die Rolle beim Migrieren nicht, wird der GRANT
+      # STILLSCHWEIGEND UEBERSPRUNGEN, und `provision-grc-app.sh` holt ihn
+      # nicht nach: es vergibt EXECUTE bewusst nicht pauschal, weil
+      # `0398_secdef_function_hardening.sql` es gezielt entzogen hat.
+      #
+      # Folge, in jedem CI-Lauf gemessen:
+      #   ERROR:  permission denied for function app_current_org_scope
+      #
+      # Und das ist nicht nur ein CI-Problem — siehe OP-238 im Register: eine
+      # frische Produktionsinstallation, die migriert bevor sie die Rolle
+      # anlegt, bekommt dasselbe, und dann scheitert JEDE Abfrage der
+      # Anwendung.
+      - name: grc_app provisionieren (derselbe Weg wie Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_pass
+        run: bash deploy/provision-grc-app.sh grc_platform
+
       - name: Build schema from migrations
         working-directory: packages/db
         run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/migrate-all.ts
@@ -920,37 +965,6 @@ jobs:
             echo "::error::Audit log hash chain integrity check FAILED"
             exit 1
           fi
-
-      # [ARCTOS-FULL-2026-08-31 · Welle 8g] Hier stand eine EIGENE, verkuerzte
-      # Fassung der grc_app-Provisionierung: CREATE ROLE, USAGE auf das Schema
-      # und DML auf alle Tabellen. Was fehlte, war `GRANT EXECUTE` auf die
-      # Funktionen — und die RLS-Policies rufen `app_current_org_scope()`.
-      # Ergebnis in jedem Lauf:
-      #
-      #   ERROR:  permission denied for function app_current_org_scope
-      #   Rows visible without context (grc_app, non-superuser):
-      #   ::error::RLS FAILURE — expected 0 rows without org context, got
-      #
-      # Zwei Fehler in einem: die Provisionierung war unvollstaendig, UND der
-      # Vergleich `[ "$ROWS" != "0" ]` konnte eine fehlgeschlagene ABFRAGE
-      # nicht von einer verletzten POLICY unterscheiden — er meldete einen
-      # RLS-Bruch, wo keiner war. Ein Check, der ueber das Falsche redet, ist
-      # schlimmer als einer, der schweigt: hier stand seit Langem „RLS
-      # FAILURE" im Protokoll, und es war nie eines.
-      #
-      # `deploy/provision-grc-app.sh` ist die eine gueltige Fassung — dasselbe
-      # Skript, das Produktion und Entwicklung benutzen. Die CI prueft damit
-      # jetzt den echten Provisionierungspfad mit, statt eine Nachbildung
-      # davon.
-      - name: grc_app provisionieren (derselbe Weg wie Produktion)
-        env:
-          DIRECT_PSQL: "1"
-          PGHOST: localhost
-          PGPORT: "5432"
-          PGUSER: grc
-          PGPASSWORD: grc_test_password
-          GRC_APP_PASSWORD: grc_app_pass
-        run: bash deploy/provision-grc-app.sh grc_platform
 
       - name: Test RLS isolation
         run: |
