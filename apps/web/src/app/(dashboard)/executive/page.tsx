@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -124,13 +125,21 @@ function Sparkline({
 export default function ExecutiveDashboardPage() {
   const t = useTranslations("intelligence");
 
-  const [kpis, setKpis] = useState<KpiData | null>(null);
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Antworten wurden immer
+  // zusammen geholt — daher EINE Abfrage; die Koerper werden wie vorher ohne
+  // `ok`-Pruefung gelesen. Ein Fehler landet im Fehlerzustand der Abfrage;
+  // die Seite zeigt dann ueber die Vorgabewerte dieselbe Leeransicht wie
+  // vorher („handled in UI").
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ kpis: KpiData | null; snapshots: Snapshot[] }>({
+    queryKey: ["executive", "dashboard-and-trend", 12],
+    queryFn: async () => {
       const [dashRes, trendRes] = await Promise.all([
         fetch("/api/v1/executive/dashboard"),
         fetch("/api/v1/executive/trend?months=12"),
@@ -139,18 +148,18 @@ export default function ExecutiveDashboardPage() {
       const dashJson = await dashRes.json();
       const trendJson = await trendRes.json();
 
-      setKpis(dashJson.data ?? null);
-      setSnapshots(trendJson.data?.snapshots ?? []);
-    } catch {
-      // handled in UI
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return {
+        kpis: (dashJson.data ?? null) as KpiData | null,
+        snapshots: (trendJson.data?.snapshots ?? []) as Snapshot[],
+      };
+    },
+  });
+  const kpis = data?.kpis ?? null;
+  const snapshots = data?.snapshots ?? [];
 
-  useEffect(() => {
-    fetchAll();
-  }, [fetchAll]);
+  const fetchAll = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const kpiCards = kpis
     ? [
@@ -220,10 +229,10 @@ export default function ExecutiveDashboardPage() {
           variant="outline"
           size="sm"
           onClick={fetchAll}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
           />
           {t("executive.refresh")}
         </Button>
