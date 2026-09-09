@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -335,9 +336,6 @@ export default function WorkItemsPage() {
   const { openTab } = useTabNavigation();
   const { formatDate } = useDateFormat();
 
-  const [workItems, setWorkItems] = useState<WorkItemRow[]>([]);
-  const [workItemTypes, setWorkItemTypes] = useState<WorkItemType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Filters
@@ -347,30 +345,47 @@ export default function WorkItemsPage() {
   );
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [wiRes, typesRes] = await Promise.all([
-        fetch("/api/v1/work-items"),
-        fetch("/api/v1/work-items/types"),
-      ]);
-      if (wiRes.ok) {
-        const wiJson = (await wiRes.json()) as { data: WorkItemRow[] };
-        setWorkItems(wiJson.data);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Elemente und Typen wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt; ein
+  // Netzfehler ergibt wie vorher den Leerzustand.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ workItems: WorkItemRow[]; workItemTypes: WorkItemType[] }>({
+    queryKey: ["work-items", "list-and-types"],
+    queryFn: async () => {
+      let workItems: WorkItemRow[] = [];
+      let workItemTypes: WorkItemType[] = [];
+      try {
+        const [wiRes, typesRes] = await Promise.all([
+          fetch("/api/v1/work-items"),
+          fetch("/api/v1/work-items/types"),
+        ]);
+        if (wiRes.ok) {
+          const wiJson = (await wiRes.json()) as { data: WorkItemRow[] };
+          workItems = wiJson.data;
+        }
+        if (typesRes.ok) {
+          const typesJson = (await typesRes.json()) as {
+            data: WorkItemType[];
+          };
+          workItemTypes = typesJson.data;
+        }
+      } catch {
+        // empty state
       }
-      if (typesRes.ok) {
-        const typesJson = (await typesRes.json()) as { data: WorkItemType[] };
-        setWorkItemTypes(typesJson.data);
-      }
-    } catch {
-      // empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { workItems, workItemTypes };
+    },
+  });
+  const workItems = data?.workItems ?? [];
+  const workItemTypes = data?.workItemTypes ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Register page tab.
   // [Welle 7a · OP-080] Siehe /assets: `t` gehoert in die Abhaengigkeiten.
@@ -524,7 +539,6 @@ export default function WorkItemsPage() {
         onOpenChange={setDialogOpen}
         workItemTypes={workItemTypes}
         onCreated={() => {
-          setLoading(true);
           void fetchData();
         }}
         t={t}
