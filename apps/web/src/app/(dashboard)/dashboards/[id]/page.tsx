@@ -15,7 +15,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ResponsiveGridLayout, useContainerWidth } from "react-grid-layout";
+import {
+  ResponsiveGridLayout,
+  useContainerWidth,
+  verticalCompactor,
+} from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -473,14 +477,12 @@ export default function DashboardViewPage() {
                 breakpoints={{ lg: 1200, md: 768, sm: 480 }}
                 cols={{ lg: 12, md: 8, sm: 4 }}
                 rowHeight={80}
-                isDraggable={isEditMode}
-                isResizable={isEditMode}
-                draggableHandle=".drag-handle"
-                onLayoutChange={(layout: Layout[]) => {
-                  if (isEditMode) handleLayoutChange(layout);
+                dragConfig={{ enabled: isEditMode, handle: ".drag-handle" }}
+                resizeConfig={{ enabled: isEditMode }}
+                compactor={verticalCompactor}
+                onLayoutChange={(layout) => {
+                  if (isEditMode) handleLayoutChange([...layout]);
                 }}
-                compactType="vertical"
-                useCSSTransforms
               >
                 {displayWidgets.map((widget) => {
                   const wd = widgetData[widget.id];
