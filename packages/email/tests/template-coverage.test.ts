@@ -31,6 +31,14 @@ import {
   DEDICATED_TEMPLATE_KEYS,
   GENERIC_TEMPLATES,
 } from "../src/template-registry";
+// Imported at module level on purpose: loading EmailService pulls in every
+// React-Email template. As a dynamic `import()` inside a test, that load
+// counted against the 5-s per-test timeout — 6,1 s on the CI runner, where
+// this file's import phase takes ~23 s cold — and the test failed before a
+// single template had rendered. Up here it is paid once, in the import
+// phase, which vitest does not time. `vi.mock("resend")` below is hoisted
+// above this import, so the delivery tests see the same mock as before.
+import { EmailService } from "../src/EmailService";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const SCAN_DIRS = [
@@ -154,8 +162,7 @@ describe("e-mail template coverage (S10-03)", () => {
     }
   });
 
-  it("renders every registered key without throwing", async () => {
-    const { EmailService } = await import("../src/EmailService");
+  it("renders every registered key without throwing", () => {
     const service = new EmailService("re_test_placeholder");
     for (const key of allEmailTemplateKeys()) {
       const rendered = service.renderTemplate(
@@ -205,8 +212,7 @@ describe("EmailService delivery accounting (S10-04)", () => {
     else process.env.EMAIL_ENABLED = previous;
   });
 
-  async function service() {
-    const { EmailService } = await import("../src/EmailService");
+  function service() {
     return new EmailService("re_test_key");
   }
 
