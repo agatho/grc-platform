@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,47 +47,54 @@ export function RiskLinkSearch({
   onRiskLinked,
 }: RiskLinkSearchProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<RiskSearchResult[]>([]);
-  const [searching, setSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  // The dropdown is closed by an outside click and re-opened by typing or by
+  // focusing the input while it has results; below two characters there is
+  // nothing to open.
+  const [dismissed, setDismissed] = useState(false);
   const [linking, setLinking] = useState<string | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Debounced search (300ms)
+  // [OP-245 · Gestalt A/E] The search effect cleared its results synchronously
+  // (`setResults([])` below two characters) and otherwise fetched after 300 ms.
+  // The effect now only debounces the term; the request is a query keyed on
+  // the debounced term (pattern from batch B, `graph/explorer`), and the
+  // results are visible only while the *live* term is long enough, so that
+  // below two characters nothing is shown at once. A failed request (non-ok
+  // or network) is the query's error state: no list, no "No risks found".
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   useEffect(() => {
-    if (query.length < 2) {
-      setResults([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setSearching(true);
-      try {
-        const res = await fetch(
-          `/api/v1/risks?search=${encodeURIComponent(query)}&limit=10`,
-        );
-        if (res.ok) {
-          const json = await res.json();
-          const data = (json.data ?? []).map((r: Record<string, unknown>) => ({
-            id: r.id as string,
-            title: r.title as string,
-            elementId: r.elementId as string | undefined,
-            riskScoreInherent: r.riskScoreInherent as number | undefined,
-            status: r.status as string | undefined,
-          }));
-          setResults(data);
-          setShowDropdown(true);
-        }
-      } catch {
-        // Search failed — silently ignore
-      } finally {
-        setSearching(false);
-      }
-    }, 300);
-
+    const timer = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(timer);
   }, [query]);
+
+  const {
+    data: searchData = [],
+    isFetching,
+    isError,
+  } = useQuery<RiskSearchResult[]>({
+    queryKey: ["risks", "search", debouncedQuery],
+    enabled: debouncedQuery.length >= 2,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/risks?search=${encodeURIComponent(debouncedQuery)}&limit=10`,
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.data ?? []).map((r: Record<string, unknown>) => ({
+        id: r.id as string,
+        title: r.title as string,
+        elementId: r.elementId as string | undefined,
+        riskScoreInherent: r.riskScoreInherent as number | undefined,
+        status: r.status as string | undefined,
+      })) as RiskSearchResult[];
+    },
+  });
+  const active = query.length >= 2;
+  const results = active ? searchData : [];
+  // A pending debounce counts as searching, so "No risks found" does not
+  // flash before the request has even started.
+  const searching = active && (debouncedQuery !== query || isFetching);
+  const showDropdown = active && !dismissed;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -95,7 +103,7 @@ export function RiskLinkSearch({
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
       ) {
-        setShowDropdown(false);
+        setDismissed(true);
       }
     };
     document.addEventListener("mousedown", handleClick);
@@ -124,8 +132,6 @@ export function RiskLinkSearch({
         }
         toast.success("Risk linked");
         setQuery("");
-        setResults([]);
-        setShowDropdown(false);
         onRiskLinked();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Failed to link risk");
@@ -146,9 +152,12 @@ export function RiskLinkSearch({
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setDismissed(false);
+          }}
           onFocus={() => {
-            if (results.length > 0) setShowDropdown(true);
+            if (results.length > 0) setDismissed(false);
           }}
           placeholder="Search risks..."
           className="w-full rounded-md border border-gray-200 pl-9 pr-3 py-1.5 text-sm bg-white focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -203,14 +212,11 @@ export function RiskLinkSearch({
       )}
 
       {/* No results */}
-      {showDropdown &&
-        query.length >= 2 &&
-        !searching &&
-        results.length === 0 && (
-          <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg p-3 text-center text-sm text-gray-400">
-            No risks found
-          </div>
-        )}
+      {showDropdown && !searching && !isError && results.length === 0 && (
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg p-3 text-center text-sm text-gray-400">
+          No risks found
+        </div>
+      )}
     </div>
   );
 }

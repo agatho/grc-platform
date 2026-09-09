@@ -141,7 +141,11 @@ export function GrcViewSelect({
     value: GrcViewId | null;
     onChange: (next: GrcViewId | null) => void;
   }>({ value, onChange });
-  current.current = { value, onChange };
+  // [OP-245 · react-hooks/refs] Im Effekt beschrieben statt beim Rendern; er
+  // steht vor dem Effekt, der die Referenz liest, und laeuft deshalb zuerst.
+  useEffect(() => {
+    current.current = { value, onChange };
+  }, [value, onChange]);
 
   useEffect(() => {
     if (applied.current || !settled || !preference) return;

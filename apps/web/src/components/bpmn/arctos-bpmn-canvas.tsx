@@ -283,10 +283,17 @@ export function ArctosBpmnCanvas({
     disabledReasonRef.current = disabledReason;
   }, [t, disabledReason]);
 
+  // [OP-245 · react-hooks/refs] Die "jeweils juengste Rueckruf"-Referenzen
+  // wurden waehrend des Renderns beschrieben; der Compiler verbietet das,
+  // weil ein Rendern verworfen werden kann, die Ref aber schon geschrieben
+  // ist. Die Zuweisung liegt jetzt in einem Effekt — vor den Effekten, die
+  // sie lesen, und die Ereignis-Handler lesen sie ohnehin erst zur Laufzeit.
   const onElementClickRef = useRef(onElementClick);
-  onElementClickRef.current = onElementClick;
   const onNavigateToProcessRef = useRef(onNavigateToProcess);
-  onNavigateToProcessRef.current = onNavigateToProcess;
+  useEffect(() => {
+    onElementClickRef.current = onElementClick;
+    onNavigateToProcessRef.current = onNavigateToProcess;
+  }, [onElementClick, onNavigateToProcess]);
   /**
    * [WELLE-6C · 2026-09-08] `onChanged` — die Meldung, die es nie gab.
    *
@@ -305,7 +312,9 @@ export function ArctosBpmnCanvas({
    * fehlte allein das Abonnement.
    */
   const onChangedRef = useRef(onChanged);
-  onChangedRef.current = onChanged;
+  useEffect(() => {
+    onChangedRef.current = onChanged;
+  }, [onChanged]);
   const callTargetsRef = useRef<Map<string, string>>(new Map());
   /**
    * [ARCTOS-FULL-2026-08-31 · OP-029] Der Arbeitsstand über den Moduswechsel
@@ -947,7 +956,9 @@ function useGrcDecoration(
   onSelectElement: (elementId: string) => void,
 ): void {
   const onSelectRef = useRef(onSelectElement);
-  onSelectRef.current = onSelectElement;
+  useEffect(() => {
+    onSelectRef.current = onSelectElement;
+  }, [onSelectElement]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

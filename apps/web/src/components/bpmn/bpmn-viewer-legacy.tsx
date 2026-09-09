@@ -62,11 +62,15 @@ export function BpmnViewerLegacy({
   const t = useTranslations("bpmn");
   const describedById = useId();
 
-  // Store latest callback in ref to avoid re-init
+  // Store latest callback in ref to avoid re-init.
+  // [OP-245 · react-hooks/refs] Written in an effect, not during render —
+  // see the same note in arctos-bpmn-canvas.tsx.
   const onElementClickRef = useRef(onElementClick);
-  onElementClickRef.current = onElementClick;
   const onNavigateToProcessRef = useRef(onNavigateToProcess);
-  onNavigateToProcessRef.current = onNavigateToProcess;
+  useEffect(() => {
+    onElementClickRef.current = onElementClick;
+    onNavigateToProcessRef.current = onNavigateToProcess;
+  }, [onElementClick, onNavigateToProcess]);
   // bpmnElementId → calledProcessId for the dblclick drill-down
   const callTargetsRef = useRef<Map<string, string>>(new Map());
 

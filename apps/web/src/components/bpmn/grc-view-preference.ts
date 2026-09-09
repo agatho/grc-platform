@@ -31,7 +31,8 @@
  *   das wäre eine Oberfläche, die die eigene Eingabe zurücknimmt.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { GrcViewId } from "@grc/bpmn/grc";
 
 export interface GrcDiagramPreference {
@@ -53,48 +54,40 @@ export function preferenceUrl(processId: string): string {
   return `/api/v1/processes/${encodeURIComponent(processId)}/diagram-overlay/preference`;
 }
 
+/** Der Cache-Schlüssel der Voreinstellung; `save` schreibt unter demselben. */
+function preferenceKey(processId: string | undefined) {
+  return ["processes", processId, "diagram-overlay", "preference"] as const;
+}
+
 export function useGrcDiagramPreference(
   processId: string | undefined,
 ): UseGrcDiagramPreferenceResult {
-  const [preference, setPreference] = useState<
-    GrcDiagramPreference | undefined
-  >(undefined);
-  const [settled, setSettled] = useState(false);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (!processId) {
-      // Ohne Prozessbezug gibt es keinen Endpunkt, den man fragen könnte.
-      // `settled` bleibt falsch: „nicht gefragt" ist nicht „nichts gefunden".
-      setPreference(undefined);
-      setSettled(false);
-      return;
-    }
-    let cancelled = false;
-    const controller = new AbortController();
-    void (async () => {
-      try {
-        const res = await fetch(preferenceUrl(processId), {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error(`preference ${String(res.status)}`);
-        const json: unknown = await res.json();
-        const data = (json as { data?: Partial<GrcDiagramPreference> }).data;
-        if (cancelled || !data) return;
-        setPreference({
-          activeView: (data.activeView ?? null) as GrcViewId | null,
-          frameworkCode: data.frameworkCode ?? null,
-        });
-      } catch {
-        // Bewusst stumm. Die Wahl im Zustand bleibt gültig.
-      } finally {
-        if (!cancelled) setSettled(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [processId]);
+  // [OP-245 · Gestalt A] Der Ladeversuch läuft über `@tanstack/react-query`
+  // statt über einen Effekt, der die Voreinstellung in einen Zustand
+  // spiegelte (Muster aus Welle 7b). Ohne Prozessbezug gibt es keinen
+  // Endpunkt, den man fragen könnte — dann ist die Abfrage abgeschaltet, und
+  // `settled` bleibt falsch: „nicht gefragt" ist nicht „nichts gefunden".
+  // Ein Fehlschlag bleibt stumm (siehe Kopf): der Fehlerzustand der Abfrage
+  // wird nicht nach außen gereicht, `isFetched` wird trotzdem wahr.
+  const { data, isFetched } = useQuery<GrcDiagramPreference | null>({
+    queryKey: preferenceKey(processId),
+    enabled: Boolean(processId),
+    queryFn: async ({ signal }) => {
+      // `enabled` schaltet ab; die Prüfung hier verengt nur den Typ.
+      if (!processId) return null;
+      const res = await fetch(preferenceUrl(processId), { signal });
+      if (!res.ok) throw new Error(`preference ${String(res.status)}`);
+      const json: unknown = await res.json();
+      const body = (json as { data?: Partial<GrcDiagramPreference> }).data;
+      if (!body) return null;
+      return {
+        activeView: (body.activeView ?? null) as GrcViewId | null,
+        frameworkCode: body.frameworkCode ?? null,
+      };
+    },
+  });
 
   // Der zuletzt gesendete Stand, damit ein doppelter Wechsel auf denselben
   // Wert (Sichtwahl in zwei Reitern derselben Seite) nicht zweimal schreibt.
@@ -109,7 +102,12 @@ export function useGrcDiagramPreference(
       });
       if (lastSent.current === body) return;
       lastSent.current = body;
-      setPreference(next);
+      // Die eigene Wahl landet sofort im Cache — unter demselben Schlüssel,
+      // den die Abfrage oben liest — statt in einem gespiegelten Zustand.
+      queryClient.setQueryData<GrcDiagramPreference | null>(
+        preferenceKey(processId),
+        next,
+      );
       void fetch(preferenceUrl(processId), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -119,8 +117,8 @@ export function useGrcDiagramPreference(
         // weil `lastSent` dann einen anderen Wert trägt.
       });
     },
-    [processId],
+    [processId, queryClient],
   );
 
-  return { preference, settled, save };
+  return { preference: data ?? undefined, settled: isFetched, save };
 }

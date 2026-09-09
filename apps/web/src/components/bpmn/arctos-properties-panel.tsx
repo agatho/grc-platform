@@ -5,6 +5,7 @@
 // the currently selected BPMN element.
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -66,6 +67,65 @@ interface CustomRole {
   name: string;
 }
 
+interface PanelData {
+  step: Step | null;
+  controls: ControlLink[];
+  roles: CustomRole[];
+  initialCi: Map<string, "C" | "I">;
+}
+
+// [OP-245 · Gestalt A] The four requests `reload()` used to issue from an
+// effect, as one query function; the result seeds the editor below.
+async function loadPanelData(
+  processId: string,
+  bpmnElementId: string,
+): Promise<PanelData> {
+  let step: Step | null = null;
+  let controls: ControlLink[] = [];
+  let roles: CustomRole[] = [];
+  const initialCi = new Map<string, "C" | "I">();
+  // Find the step record for this bpmn element
+  const stepsResp = await fetch(`/api/v1/processes/${processId}/steps`);
+  if (stepsResp.ok) {
+    const j = await stepsResp.json();
+    const found: Step | undefined = (j.data ?? []).find(
+      (s: Step) => s.bpmnElementId === bpmnElementId,
+    );
+    if (found) {
+      step = found;
+      // Load controls linked to this step
+      const ctlResp = await fetch(
+        `/api/v1/processes/${processId}/steps/${found.id}/controls`,
+      );
+      if (ctlResp.ok) {
+        const cj = await ctlResp.json();
+        controls = cj.data ?? [];
+      }
+    }
+  }
+  // Roles for RACI dropdowns
+  const rolesResp = await fetch(`/api/v1/custom-roles`);
+  if (rolesResp.ok) {
+    const r = await rolesResp.json();
+    roles = r.data ?? [];
+  }
+  // B3.1: existing C/I overrides for this activity
+  const ovResp = await fetch(
+    `/api/v1/processes/${processId}/raci/overrides?activityBpmnId=${encodeURIComponent(bpmnElementId)}`,
+  );
+  if (ovResp.ok) {
+    const ov = await ovResp.json();
+    const rows: Array<{ participantBpmnId: string; raciRole: string }> =
+      ov.data ?? [];
+    for (const row of rows) {
+      if (row.raciRole === "C" || row.raciRole === "I") {
+        initialCi.set(row.participantBpmnId, row.raciRole);
+      }
+    }
+  }
+  return { step, controls, roles, initialCi };
+}
+
 export function ArctosPropertiesPanel({
   processId,
   bpmnElementId,
@@ -75,92 +135,116 @@ export function ArctosPropertiesPanel({
   bpmnElementId: string;
   onChange?: () => void;
 }) {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead of
+  // an effect calling `reload()` (pattern from wave 7b). The panel is a form
+  // seeded by the server, so it is split the way wave 7b split
+  // `processes/[id]/ropa`: this component loads, the editor below owns the
+  // editable copy and is mounted with a key per element. `staleTime: 0` and
+  // `gcTime: 0` keep the old contract that every selection of an element
+  // fetches afresh — a cached seed would show the values from before the
+  // last save.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<PanelData>({
+    queryKey: [
+      "processes",
+      processId,
+      "steps",
+      bpmnElementId,
+      "arctos-properties",
+    ],
+    queryFn: () => loadPanelData(processId, bpmnElementId),
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-6 text-center">
+          <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data?.step) {
+    return (
+      <Card>
+        <CardContent className="py-6 text-sm text-muted-foreground">
+          This element has no DB-side step record yet — save the process to
+          sync.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <ArctosPropertiesEditor
+      key={`${processId}:${bpmnElementId}`}
+      processId={processId}
+      bpmnElementId={bpmnElementId}
+      onChange={onChange}
+      step={data.step}
+      controls={data.controls}
+      roles={data.roles}
+      initialCi={data.initialCi}
+      reload={reload}
+    />
+  );
+}
+
+function ArctosPropertiesEditor({
+  processId,
+  bpmnElementId,
+  onChange,
+  step,
+  controls,
+  roles,
+  initialCi: seedCi,
+  reload,
+}: {
+  processId: string;
+  bpmnElementId: string;
+  onChange?: () => void;
+  step: Step;
+  controls: ControlLink[];
+  roles: CustomRole[];
+  initialCi: Map<string, "C" | "I">;
+  reload: () => Promise<void>;
+}) {
   const t = useTranslations("process");
   const tDrill = useTranslations("bpmOverhaul");
   const router = useRouter();
-  const [step, setStep] = useState<Step | null>(null);
-  const [controls, setControls] = useState<ControlLink[]>([]);
-  const [roles, setRoles] = useState<CustomRole[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [lod, setLod] = useState<string>("");
-  const [responsibleRole, setResponsibleRole] = useState<string>("");
-  const [accountableRole, setAccountableRole] = useState<string>("");
+  // The editable copy, seeded once per mount (the key above resets it when
+  // another element is selected). A `reload()` after linking a process
+  // updates `step` through the props and leaves unsaved edits in place.
+  const [lod, setLod] = useState<string>(() => step.lineOfDefense ?? "");
+  const [responsibleRole, setResponsibleRole] = useState<string>(
+    () => step.raciResponsibleRoleId ?? "",
+  );
+  const [accountableRole, setAccountableRole] = useState<string>(
+    () => step.raciAccountableRoleId ?? "",
+  );
   // B3.1: Consulted / Informed role assignments — persisted as RACI
   // overrides (process_raci_override; participantBpmnId = role id).
-  const [consultedIds, setConsultedIds] = useState<string[]>([]);
-  const [informedIds, setInformedIds] = useState<string[]>([]);
-  const [initialCi, setInitialCi] = useState<Map<string, "C" | "I">>(new Map());
+  const [consultedIds, setConsultedIds] = useState<string[]>(() =>
+    [...seedCi.entries()].filter(([, r]) => r === "C").map(([id]) => id),
+  );
+  const [informedIds, setInformedIds] = useState<string[]>(() =>
+    [...seedCi.entries()].filter(([, r]) => r === "I").map(([id]) => id),
+  );
+  const [initialCi, setInitialCi] = useState<Map<string, "C" | "I">>(seedCi);
   // Call-Activity Drill-Down: linked-process search state
   const [processSearch, setProcessSearch] = useState("");
-  const [processResults, setProcessResults] = useState<ProcessSearchResult[]>(
-    [],
-  );
-  const [processSearching, setProcessSearching] = useState(false);
   const [linkingProcess, setLinkingProcess] = useState(false);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Find the step record for this bpmn element
-      const stepsResp = await fetch(`/api/v1/processes/${processId}/steps`);
-      if (stepsResp.ok) {
-        const j = await stepsResp.json();
-        const found: Step | undefined = (j.data ?? []).find(
-          (s: Step) => s.bpmnElementId === bpmnElementId,
-        );
-        if (found) {
-          setStep(found);
-          setLod(found.lineOfDefense ?? "");
-          setResponsibleRole(found.raciResponsibleRoleId ?? "");
-          setAccountableRole(found.raciAccountableRoleId ?? "");
-
-          // Load controls linked to this step
-          const ctlResp = await fetch(
-            `/api/v1/processes/${processId}/steps/${found.id}/controls`,
-          );
-          if (ctlResp.ok) {
-            const cj = await ctlResp.json();
-            setControls(cj.data ?? []);
-          }
-        }
-      }
-      // Roles for RACI dropdowns
-      const rolesResp = await fetch(`/api/v1/custom-roles`);
-      if (rolesResp.ok) {
-        const r = await rolesResp.json();
-        setRoles(r.data ?? []);
-      }
-      // B3.1: existing C/I overrides for this activity
-      const ovResp = await fetch(
-        `/api/v1/processes/${processId}/raci/overrides?activityBpmnId=${encodeURIComponent(bpmnElementId)}`,
-      );
-      if (ovResp.ok) {
-        const ov = await ovResp.json();
-        const rows: Array<{ participantBpmnId: string; raciRole: string }> =
-          ov.data ?? [];
-        const ci = new Map<string, "C" | "I">();
-        for (const row of rows) {
-          if (row.raciRole === "C" || row.raciRole === "I") {
-            ci.set(row.participantBpmnId, row.raciRole);
-          }
-        }
-        setInitialCi(ci);
-        setConsultedIds(
-          [...ci.entries()].filter(([, r]) => r === "C").map(([id]) => id),
-        );
-        setInformedIds(
-          [...ci.entries()].filter(([, r]) => r === "I").map(([id]) => id),
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [processId, bpmnElementId]);
-
-  useEffect(() => {
-    reload();
-  }, [reload]);
 
   // B3.1: toggle helpers — a role is either Consulted or Informed, not both.
   const toggleConsulted = useCallback((roleId: string, checked: boolean) => {
@@ -184,37 +268,47 @@ export function ArctosPropertiesPanel({
   // Call-Activity Drill-Down: only call activities and (collapsed)
   // subprocesses can invoke another process.
   const isCallStep =
-    step?.stepType === "call_activity" || step?.stepType === "subprocess";
+    step.stepType === "call_activity" || step.stepType === "subprocess";
 
   // Debounced process search (org-scoped list API); the current process is
   // excluded — self-linking is rejected server-side anyway (422).
+  // [OP-245 · Gestalt A/E] The effect cleared the results synchronously and
+  // otherwise fetched after 300 ms; now it only debounces the term, the
+  // request is a query keyed on the debounced term (pattern from batch B,
+  // `graph/explorer`), and the results are visible only while the live term
+  // is long enough. A non-ok answer yields an empty list (before: the
+  // previous list stayed); a network failure yields an empty list as before.
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
-    if (!isCallStep || processSearch.trim().length < 2) {
-      setProcessResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setProcessSearching(true);
-      try {
-        const resp = await fetch(
-          `/api/v1/processes?search=${encodeURIComponent(processSearch.trim())}&limit=10`,
-        );
-        if (resp.ok) {
-          const j = await resp.json();
-          setProcessResults(
-            ((j.data ?? []) as ProcessSearchResult[]).filter(
-              (p) => p.id !== processId,
-            ),
-          );
-        }
-      } catch {
-        setProcessResults([]);
-      } finally {
-        setProcessSearching(false);
-      }
-    }, 300);
+    const timer = setTimeout(
+      () => setDebouncedSearch(processSearch.trim()),
+      300,
+    );
     return () => clearTimeout(timer);
-  }, [processSearch, processId, isCallStep]);
+  }, [processSearch]);
+
+  const { data: processSearchData = [], isFetching: processSearching } =
+    useQuery<ProcessSearchResult[]>({
+      queryKey: [
+        "processes",
+        "search",
+        debouncedSearch,
+        { exclude: processId },
+      ],
+      enabled: isCallStep && debouncedSearch.length >= 2,
+      queryFn: async () => {
+        const resp = await fetch(
+          `/api/v1/processes?search=${encodeURIComponent(debouncedSearch)}&limit=10`,
+        );
+        if (!resp.ok) return [];
+        const j = await resp.json();
+        return ((j.data ?? []) as ProcessSearchResult[]).filter(
+          (p) => p.id !== processId,
+        );
+      },
+    });
+  const processResults =
+    isCallStep && processSearch.trim().length >= 2 ? processSearchData : [];
 
   const saveCalledProcess = useCallback(
     async (calledProcessId: string | null) => {
@@ -240,7 +334,6 @@ export function ArctosPropertiesPanel({
             : tDrill("drilldown.linkRemoved"),
         );
         setProcessSearch("");
-        setProcessResults([]);
         await reload();
         onChange?.();
       } finally {
@@ -328,27 +421,6 @@ export function ArctosPropertiesPanel({
     onChange,
     t,
   ]);
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-center">
-          <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!step) {
-    return (
-      <Card>
-        <CardContent className="py-6 text-sm text-muted-foreground">
-          This element has no DB-side step record yet — save the process to
-          sync.
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <div className="space-y-3">
