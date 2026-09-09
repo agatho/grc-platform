@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { FileText, Plus } from "lucide-react";
 
@@ -11,25 +11,20 @@ import type { CopilotPromptTemplate } from "@grc/shared";
 
 export default function PromptTemplatesPage() {
   const t = useTranslations("copilot");
-  const [templates, setTemplates] = useState<CopilotPromptTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: templates = [], isPending: loading } = useQuery<
+    CopilotPromptTemplate[]
+  >({
+    queryKey: ["copilot", "templates"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/copilot/templates");
-      if (res.ok) {
-        const json = await res.json();
-        setTemplates(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchTemplates();
-  }, [fetchTemplates]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as CopilotPromptTemplate[];
+    },
+  });
 
   if (loading) {
     return (
