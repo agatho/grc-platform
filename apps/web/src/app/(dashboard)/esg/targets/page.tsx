@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Plus, Award } from "lucide-react";
 
@@ -26,25 +27,27 @@ export default function TargetsPage() {
 
 function TargetsInner() {
   const t = useTranslations("esg");
-  const [targets, setTargets] = useState<TargetRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: targets = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<TargetRow[]>({
+    queryKey: ["esg", "targets"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/esg/targets");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as TargetRow[];
+    },
+  });
 
   const fetchTargets = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/esg/targets");
-      if (res.ok) {
-        const json = await res.json();
-        setTargets(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchTargets();
-  }, [fetchTargets]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && targets.length === 0) {
     return (
@@ -69,9 +72,12 @@ function TargetsInner() {
             variant="outline"
             size="sm"
             onClick={fetchTargets}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" />

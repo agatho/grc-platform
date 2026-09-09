@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -152,27 +153,29 @@ export default function TaxonomyPage() {
 function TaxonomyInner() {
   const t = useTranslations("esg");
   const { formatNumber, locale } = useDateFormat();
-  const [activities, setActivities] = useState<TaxonomyActivity[]>([]);
-  const [summary, setSummary] = useState<TaxonomySummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await fetchTaxonomyData();
-      setActivities(result.activities);
-      setSummary(result.summary);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). `fetchTaxonomyData` liefert
+  // bereits Aktivitäten und Zusammenfassung als ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ["esg", "taxonomy"],
+    queryFn: fetchTaxonomyData,
+  });
+  const activities = pageData?.activities ?? [];
+  const summary = pageData?.summary ?? null;
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const loadData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -220,10 +223,13 @@ function TaxonomyInner() {
             variant="outline"
             size="sm"
             onClick={loadData}
-            disabled={loading}
+            disabled={isFetching}
             aria-label={t("taxonomy.refresh")}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

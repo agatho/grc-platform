@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -41,9 +42,6 @@ function MetricDetailInner() {
   const router = useRouter();
   const metricId = params.id as string;
 
-  const [metric, setMetric] = useState<EsrsMetric | null>(null);
-  const [measurements, setMeasurements] = useState<EsgMeasurement[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -55,29 +53,41 @@ function MetricDetailInner() {
   const [formSource, setFormSource] = useState("");
   const [formNotes, setFormNotes] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Kennzahl und Messwerte wurden
+  // immer zusammen geladen und verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ metric: EsrsMetric | null; measurements: EsgMeasurement[] }>({
+    queryKey: ["esg", "metrics", metricId],
+    queryFn: async () => {
       const [mRes, measRes] = await Promise.all([
         fetch(`/api/v1/esg/metrics/${metricId}`),
         fetch(`/api/v1/esg/metrics/${metricId}/measurements`),
       ]);
+      let metric: EsrsMetric | null = null;
+      let measurements: EsgMeasurement[] = [];
       if (mRes.ok) {
         const json = await mRes.json();
-        setMetric(json.data);
+        metric = json.data;
       }
       if (measRes.ok) {
         const json = await measRes.json();
-        setMeasurements(json.data ?? []);
+        measurements = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [metricId]);
+      return { metric, measurements };
+    },
+  });
+  const metric = pageData?.metric ?? null;
+  const measurements = pageData?.measurements ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -178,9 +188,12 @@ function MetricDetailInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => setShowForm(!showForm)}>
             <Plus size={14} className="mr-1" />

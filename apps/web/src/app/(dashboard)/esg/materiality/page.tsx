@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, Plus, BarChart3, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -51,30 +52,32 @@ export default function Page() {
 function PageInner() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("esgAdvanced");
-  const [assessments, setAssessments] = useState<MaterialityAssessment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
-  const fetchAssessments = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage.
+  const {
+    data: assessments = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<MaterialityAssessment[]>({
+    queryKey: ["esg", "materiality", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/esg/materiality?limit=50");
-      if (res.ok) {
-        const json = await res.json();
-        setAssessments(json.data ?? []);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MaterialityAssessment[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchAssessments();
-  }, [fetchAssessments]);
+  const fetchAssessments = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

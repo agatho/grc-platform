@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, TrendingUp, TrendingDown, Minus, Filter } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -23,6 +24,15 @@ interface YoyMetric {
   direction: "improvement" | "deterioration" | "neutral";
 }
 
+async function fetchYoyMetrics(esrsStandard: string): Promise<YoyMetric[]> {
+  const params = new URLSearchParams({ includeYoy: "true" });
+  if (esrsStandard) params.set("esrsStandard", esrsStandard);
+  const res = await fetch(`/api/v1/esg/measurements?${params.toString()}`);
+  if (!res.ok) return [];
+  const json = await res.json();
+  return (json.data ?? []) as YoyMetric[];
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -36,44 +46,29 @@ export default function EsgYoyPage() {
 }
 
 function EsgYoyInner() {
-  const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<YoyMetric[]>([]);
   const [filter, setFilter] = useState("");
-  const [standards, setStandards] = useState<string[]>([]);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ includeYoy: "true" });
-      if (filter) params.set("esrsStandard", filter);
-      const res = await fetch(`/api/v1/esg/measurements?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        const data: YoyMetric[] = json.data ?? [];
-        setMetrics(data);
-        // Extract unique ESRS standards for filter.
-        // [Welle 7a · OP-080] Der Wachtposten las vorher `standards` aus der
-        // Umgebung dieses Rueckrufs, ohne dass der Wert in seiner
-        // Abhaengigkeitsliste stand — die Liste `[filter]` behauptete also,
-        // der Rueckruf haenge nur am Filter. Der funktionale Aktualisierer
-        // liest den Bestand dort, wo er wirklich aktuell ist, und die Liste
-        // stimmt wieder. Absicht unveraendert: die Auswahlliste wird EINMAL
-        // aus dem ungefilterten Ergebnis gefuellt und danach nicht mehr
-        // ueberschrieben — sonst schruempfte sie auf den gerade gewaehlten
-        // Standard zusammen und der Nutzer kaeme nicht mehr zurueck.
-        const unique = [...new Set(data.map((m) => m.esrsStandard))].sort();
-        if (unique.length > 0) {
-          setStandards((prev) => (prev.length === 0 ? unique : prev));
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Filter steht im Schlüssel.
+  const { data: metrics = [], isPending: loading } = useQuery<YoyMetric[]>({
+    queryKey: ["esg", "yoy", filter],
+    queryFn: () => fetchYoyMetrics(filter),
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // Auswahlliste der ESRS-Standards.
+  // [Welle 7a · OP-080] Absicht: die Liste wird aus dem UNGEFILTERTEN
+  // Ergebnis gefuellt und schrumpft nicht auf den gerade gewaehlten Standard
+  // zusammen — sonst kaeme der Nutzer nicht mehr zurueck. Vorher hielt ein
+  // eigener Zustand den ersten Bestand fest; jetzt haengt eine zweite
+  // Abfrage am Schluessel ohne Filter: bei leerem Filter ist es dieselbe
+  // Abfrage (dedupliziert, kein zweiter Request), bei gesetztem Filter bleibt
+  // der ungefilterte Bestand im Cache und die Liste steht weiter vollstaendig.
+  const { data: allMetrics = [] } = useQuery<YoyMetric[]>({
+    queryKey: ["esg", "yoy", ""],
+    queryFn: () => fetchYoyMetrics(""),
+  });
+  const standards = [...new Set(allMetrics.map((m) => m.esrsStandard))].sort();
 
   if (loading && metrics.length === 0) {
     return (

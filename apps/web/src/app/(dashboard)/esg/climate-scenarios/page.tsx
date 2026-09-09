@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Loader2,
@@ -100,32 +101,35 @@ export default function ClimateScenarioPage() {
 function ClimateScenarioInner() {
   const t = useTranslations("esgAdvanced");
   const locale = useLocale();
-  const [data, setData] = useState<ClimateScenario[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "physical" | "transition">(
     "all",
   );
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Filter steht im Schlüssel.
+  const {
+    data = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ClimateScenario[]>({
+    queryKey: ["esg", "climate-scenarios", filter],
+    queryFn: async () => {
       const url =
         filter === "all"
           ? "/api/v1/esg/climate-scenarios?limit=100"
           : `/api/v1/esg/climate-scenarios?limit=100&scenario_type=${filter}`;
       const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ClimateScenario[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const physical = data.filter((s) => s.scenario_type === "physical");
   const transition = data.filter((s) => s.scenario_type === "transition");
@@ -158,10 +162,10 @@ function ClimateScenarioInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
             />
             {t("climateScenarios.refresh")}
           </Button>
