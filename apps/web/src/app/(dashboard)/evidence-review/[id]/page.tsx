@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -18,30 +18,34 @@ import type {
 export default function EvidenceReviewDetailPage() {
   const t = useTranslations("evidenceReview");
   const { id } = useParams<{ id: string }>();
-  const [job, setJob] = useState<EvidenceReviewJob | null>(null);
-  const [results, setResults] = useState<EvidenceReviewResult[]>([]);
-  const [gaps, setGaps] = useState<EvidenceReviewGap[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Abrufe wurden immer
+  // zusammen ausgelöst und zusammen verwendet — eine Abfrage, ein Objekt.
+  const { data: pageData, isPending: loading } = useQuery<{
+    job: EvidenceReviewJob | null;
+    results: EvidenceReviewResult[];
+    gaps: EvidenceReviewGap[];
+  }>({
+    queryKey: ["evidence-review", "jobs", id],
+    queryFn: async () => {
       const [jobRes, resultsRes, gapsRes] = await Promise.all([
         fetch(`/api/v1/evidence-review/jobs/${id}`),
         fetch(`/api/v1/evidence-review/jobs/${id}/results?limit=50`),
         fetch(`/api/v1/evidence-review/jobs/${id}/gaps?limit=50`),
       ]);
-      if (jobRes.ok) setJob((await jobRes.json()).data);
-      if (resultsRes.ok) setResults((await resultsRes.json()).data);
-      if (gapsRes.ok) setGaps((await gapsRes.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      let job: EvidenceReviewJob | null = null;
+      let results: EvidenceReviewResult[] = [];
+      let gaps: EvidenceReviewGap[] = [];
+      if (jobRes.ok) job = (await jobRes.json()).data;
+      if (resultsRes.ok) results = (await resultsRes.json()).data;
+      if (gapsRes.ok) gaps = (await gapsRes.json()).data;
+      return { job, results, gaps };
+    },
+  });
+  const job = pageData?.job ?? null;
+  const results = pageData?.results ?? [];
+  const gaps = pageData?.gaps ?? [];
 
   if (loading || !job) {
     return (
