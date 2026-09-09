@@ -57,13 +57,20 @@ describe("Welle 8e — incompatible-library ist an, die Ausnahme ist namentlich"
     }
   });
 
-  it("es gibt genau diese zwei useReactTable-Aufrufstellen im Quelltext", () => {
+  it("es gibt genau diese zwei useLegacyTable-Aufrufstellen im Quelltext", () => {
     // Waechst diese Liste, ohne dass jemand den Ausnahmeblock anfasst, faellt
     // der Lint-Lauf. Waechst sie MIT dem Ausnahmeblock, faellt dieser Test —
     // die Entscheidung gehoert dann in den ADR, nicht in eine Zeile.
+    //
+    // [OP-234] Seit @tanstack/react-table 9 heisst der Hook des v8-kompatiblen
+    // Einstiegs `useLegacyTable` (aus `@tanstack/react-table/legacy`); der Name
+    // `useReactTable` kommt im Quelltext nicht mehr vor. Beide Schreibweisen
+    // zaehlen, damit ein Rueckbau auf den alten Namen nicht unbemerkt bliebe.
     const treffer = alleQuellen(SRC)
       .filter((p) => !p.includes("__tests__"))
-      .filter((p) => /\buseReactTable\s*\(/.test(readFileSync(p, "utf8")))
+      .filter((p) =>
+        /\buse(React|Legacy)Table\s*\(/.test(readFileSync(p, "utf8")),
+      )
       .map((p) => `src/${path.relative(SRC, p).split(path.sep).join("/")}`)
       .sort();
     expect(treffer).toEqual([...AUSNAHMEN].sort());

@@ -88,6 +88,12 @@ problem (1 error)`, Exit 1. Entfernt → Exit 0. Die zwei bekannten
 - Wird `@tanstack/react-table` einmal kompatibel (oder ersetzt), fällt die
   Ausnahme ersatzlos weg — der Nachweis dafür ist ein leerer Lint-Lauf ohne
   den `files`-Block.
+- **Nachtrag 2026-09-09 (OP-234):** Mit `@tanstack/react-table` 9 heisst der
+  Hook `useLegacyTable` und kommt aus `@tanstack/react-table/legacy`; die
+  zwei Aufrufstellen sind dieselben, der Ausnahmeblock ist unverändert. Ob
+  der neue, store-basierte v9-Einstieg (`useTable`) mit dem Compiler
+  verträglich ist, ist nicht gemessen — das wäre der Weg, die Ausnahme
+  loszuwerden, und ein eigener Punkt.
 
 ## Verweise
 

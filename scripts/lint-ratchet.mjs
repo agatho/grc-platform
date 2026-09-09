@@ -57,7 +57,8 @@
 // ============================================================================
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { createRequire } from "node:module";
+import { dirname, join, resolve } from "node:path";
 
 const ROOT = resolve(process.cwd());
 const BASELINE = join(ROOT, ".eslint-ratchet.json");
@@ -82,14 +83,25 @@ const SCOPES = [
   },
 ];
 
+// [OP-234] ESLint über den laufenden Node-Prozess statt über `npx`: ohne Shell
+// scheitert `execFileSync("npx")` unter Windows mit ENOENT, bevor eine Datei
+// gelintet ist — die Ratsche meldete dann "konnte nicht ausgeführt werden"
+// statt einer Zahl. Der aufgelöste Binary-Pfad ist auf jeder Plattform derselbe.
+const require = createRequire(import.meta.url);
+const eslintPkgPath = require.resolve("eslint/package.json");
+const eslintBin = join(
+  dirname(eslintPkgPath),
+  require(eslintPkgPath).bin.eslint,
+);
+
 /** Ein ESLint-Lauf in `scope.cwd`; liefert Zähler je Regel. */
 function measure(scope) {
   let raw;
   try {
     raw = execFileSync(
-      "npx",
+      process.execPath,
       [
-        "eslint",
+        eslintBin,
         ...scope.targets,
         "--no-error-on-unmatched-pattern",
         "-f",
