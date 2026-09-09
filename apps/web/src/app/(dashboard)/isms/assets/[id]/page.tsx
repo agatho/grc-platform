@@ -90,12 +90,14 @@ export default function IsmsAssetDetailPage() {
   );
 }
 
+const TIER_KEYS = ["business_structure", "primary_asset", "supporting_asset"];
+
 function AssetDetailInner() {
   const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const _t = useTranslations("assets");
-  const _tc = useTranslations("common");
+  const t = useTranslations("assets");
+  const tIsms = useTranslations("isms");
 
   const [asset, setAsset] = useState<AssetDetail | null>(null);
   const [classification, setClassification] = useState<Classification | null>(
@@ -172,24 +174,24 @@ function AssetDetailInner() {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <ShieldAlert size={32} className="mb-3 text-gray-400" />
-        <p className="text-sm font-medium">Asset nicht gefunden</p>
+        <p className="text-sm font-medium">{t("notFound")}</p>
         <Button
           variant="ghost"
           size="sm"
           className="mt-4"
           onClick={() => router.push("/isms/assets")}
         >
-          <ArrowLeft size={14} className="mr-1" /> Zurück zur Liste
+          <ArrowLeft size={14} className="mr-1" /> {t("backToList")}
         </Button>
       </div>
     );
   }
 
-  const tierLabel: Record<string, string> = {
-    business_structure: "Geschäftsstruktur",
-    primary_asset: "Primäres Asset",
-    supporting_asset: "Unterstützendes Asset",
-  };
+  // [ARCTOS-FULL-2026-08-31 · OP-202, Welle 8b] Der Katalog fuehrt
+  // `assets.tiers.*` seit jeher in BEIDEN Sprachen; daneben stand hier eine
+  // deutsche Zweitfassung. Derselbe Befund wie in Welle 5a.
+  const tierLabel = (tier: string) =>
+    TIER_KEYS.includes(tier) ? t(`tiers.${tier}`) : tier;
 
   const tierColor: Record<string, string> = {
     business_structure: "bg-indigo-100 text-indigo-900 border-indigo-300",
@@ -219,7 +221,7 @@ function AssetDetailInner() {
               variant="outline"
               className={`text-xs ${tierColor[asset.assetTier] ?? ""}`}
             >
-              {tierLabel[asset.assetTier] ?? asset.assetTier}
+              {tierLabel(asset.assetTier)}
             </Badge>
             {classification?.overallProtection && (
               <ProtectionLevelBadge
@@ -239,7 +241,7 @@ function AssetDetailInner() {
         <Link href={`/isms/assets/${id}/classify`}>
           <Button variant="default" size="sm">
             <Pencil size={14} className="mr-1.5" />
-            Klassifizierung bearbeiten
+            {t("detail.editClassification")}
           </Button>
         </Link>
       </div>
@@ -249,23 +251,23 @@ function AssetDetailInner() {
         <TabsList>
           <TabsTrigger value="overview">
             <Server size={14} className="mr-1.5" />
-            Übersicht
+            {t("detail.tabOverview")}
           </TabsTrigger>
           <TabsTrigger value="classification">
             <ShieldCheck size={14} className="mr-1.5" />
-            Klassifizierung
+            {t("detail.tabClassification")}
           </TabsTrigger>
           <TabsTrigger value="vulnerabilities">
             <Bug size={14} className="mr-1.5" />
-            Schwachstellen
+            {t("detail.tabVulnerabilities")}
           </TabsTrigger>
           <TabsTrigger value="incidents">
             <AlertTriangle size={14} className="mr-1.5" />
-            Vorfälle
+            {t("detail.tabIncidents")}
           </TabsTrigger>
           <TabsTrigger value="history">
             <History size={14} className="mr-1.5" />
-            Verlauf
+            {t("detail.tabHistory")}
           </TabsTrigger>
         </TabsList>
 
@@ -275,28 +277,32 @@ function AssetDetailInner() {
             {/* Main info */}
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">Asset-Informationen</CardTitle>
+                <CardTitle className="text-base">
+                  {t("detail.assetInfo")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                   <div>
-                    <dt className="text-gray-500 font-medium">Name</dt>
+                    <dt className="text-gray-500 font-medium">{t("name")}</dt>
                     <dd className="text-gray-900 mt-0.5">{asset.name}</dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500 font-medium">Tier</dt>
+                    <dt className="text-gray-500 font-medium">{t("tier")}</dt>
                     <dd className="mt-0.5">
                       <Badge
                         variant="outline"
                         className={`text-xs ${tierColor[asset.assetTier] ?? ""}`}
                       >
-                        {tierLabel[asset.assetTier] ?? asset.assetTier}
+                        {tierLabel(asset.assetTier)}
                       </Badge>
                     </dd>
                   </div>
                   {asset.codeGroup && (
                     <div>
-                      <dt className="text-gray-500 font-medium">Code-Gruppe</dt>
+                      <dt className="text-gray-500 font-medium">
+                        {t("codeGroup")}
+                      </dt>
                       <dd className="text-gray-900 mt-0.5">
                         {asset.codeGroup}
                       </dd>
@@ -305,7 +311,7 @@ function AssetDetailInner() {
                   {asset.description && (
                     <div className="sm:col-span-2">
                       <dt className="text-gray-500 font-medium">
-                        Beschreibung
+                        {t("description")}
                       </dt>
                       <dd className="text-gray-900 mt-0.5 whitespace-pre-wrap">
                         {asset.description}
@@ -315,7 +321,7 @@ function AssetDetailInner() {
                   {asset.contactPerson && (
                     <div>
                       <dt className="text-gray-500 font-medium">
-                        Ansprechpartner
+                        {t("contactPerson")}
                       </dt>
                       <dd className="text-gray-900 mt-0.5">
                         {asset.contactPerson}
@@ -325,7 +331,7 @@ function AssetDetailInner() {
                   {asset.dataProtectionResponsible && (
                     <div>
                       <dt className="text-gray-500 font-medium">
-                        Datenschutzverantwortlicher
+                        {t("dataProtectionResponsible")}
                       </dt>
                       <dd className="text-gray-900 mt-0.5">
                         {asset.dataProtectionResponsible}
@@ -334,14 +340,16 @@ function AssetDetailInner() {
                   )}
                   {asset.dpoEmail && (
                     <div>
-                      <dt className="text-gray-500 font-medium">DSB E-Mail</dt>
+                      <dt className="text-gray-500 font-medium">
+                        {t("dpoEmail")}
+                      </dt>
                       <dd className="text-gray-900 mt-0.5">{asset.dpoEmail}</dd>
                     </div>
                   )}
                   {asset.visibleInModules?.length > 0 && (
                     <div className="sm:col-span-2">
                       <dt className="text-gray-500 font-medium">
-                        Sichtbar in Modulen
+                        {t("detail.visibleInModules")}
                       </dt>
                       <dd className="mt-1 flex gap-1.5 flex-wrap">
                         {asset.visibleInModules.map((m) => (
@@ -363,36 +371,52 @@ function AssetDetailInner() {
             {/* Metadata sidebar */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Metadaten</CardTitle>
+                <CardTitle className="text-base">
+                  {t("detail.metadata")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} className="shrink-0" />
-                  <span>Erstellt: {formatDate(asset.createdAt)}</span>
+                  <span>
+                    {t("detail.createdAt", {
+                      date: formatDate(asset.createdAt),
+                    })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <Clock size={14} className="shrink-0" />
-                  <span>Aktualisiert: {formatDate(asset.updatedAt)}</span>
+                  <span>
+                    {t("detail.updatedAt", {
+                      date: formatDate(asset.updatedAt),
+                    })}
+                  </span>
                 </div>
                 {asset.latestAuditDate && (
                   <div className="flex items-center gap-2 text-gray-500">
                     <FileText size={14} className="shrink-0" />
                     <span>
-                      Letztes Audit: {formatDate(asset.latestAuditDate)}
+                      {t("detail.latestAudit", {
+                        date: formatDate(asset.latestAuditDate),
+                      })}
                     </span>
                   </div>
                 )}
                 {asset.latestAuditResult && (
                   <div className="flex items-center gap-2 text-gray-500">
                     <ShieldCheck size={14} className="shrink-0" />
-                    <span>Audit-Ergebnis: {asset.latestAuditResult}</span>
+                    <span>
+                      {t("detail.latestAuditResult", {
+                        result: asset.latestAuditResult,
+                      })}
+                    </span>
                   </div>
                 )}
 
                 {/* CIA Defaults */}
                 <div className="pt-3 border-t border-gray-100">
                   <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-                    CIA-Standardwerte
+                    {t("ciaDefaults")}
                   </p>
                   <div className="space-y-1.5">
                     {[
@@ -422,12 +446,12 @@ function AssetDetailInner() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-base">
-                Schutzbedarfsfeststellung
+                {t("detail.protectionNeeds")}
               </CardTitle>
               <Link href={`/isms/assets/${id}/classify`}>
                 <Button variant="outline" size="sm">
                   <Pencil size={14} className="mr-1.5" />
-                  Bearbeiten
+                  {t("detail.edit")}
                 </Button>
               </Link>
             </CardHeader>
@@ -439,7 +463,7 @@ function AssetDetailInner() {
                     <Shield size={24} className="text-blue-600" />
                     <div>
                       <p className="text-sm font-medium text-gray-500">
-                        Gesamtschutzbedarf
+                        {t("detail.overallProtection")}
                       </p>
                       <div className="mt-1">
                         <ProtectionLevelBadge
@@ -451,7 +475,9 @@ function AssetDetailInner() {
                       </div>
                     </div>
                     <div className="ml-auto text-xs text-gray-400">
-                      Klassifiziert am {formatDate(classification.classifiedAt)}
+                      {t("detail.classifiedAt", {
+                        date: formatDate(classification.classifiedAt),
+                      })}
                     </div>
                   </div>
 
@@ -460,19 +486,19 @@ function AssetDetailInner() {
                     {[
                       {
                         key: "confidentiality",
-                        label: "Vertraulichkeit",
+                        label: tIsms("confidentiality"),
                         level: classification.confidentialityLevel,
                         reason: classification.confidentialityReason,
                       },
                       {
                         key: "integrity",
-                        label: "Integrität",
+                        label: tIsms("integrity"),
                         level: classification.integrityLevel,
                         reason: classification.integrityReason,
                       },
                       {
                         key: "availability",
-                        label: "Verfügbarkeit",
+                        label: tIsms("availability"),
                         level: classification.availabilityLevel,
                         reason: classification.availabilityReason,
                       },
@@ -497,7 +523,7 @@ function AssetDetailInner() {
                           </p>
                         ) : (
                           <p className="text-xs text-gray-400 italic">
-                            Keine Begründung angegeben
+                            {t("detail.noReason")}
                           </p>
                         )}
                       </div>
@@ -509,8 +535,9 @@ function AssetDetailInner() {
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <Calendar size={14} />
                       <span>
-                        Nächste Überprüfung:{" "}
-                        {formatDate(classification.reviewDate)}
+                        {t("detail.nextReview", {
+                          date: formatDate(classification.reviewDate),
+                        })}
                       </span>
                     </div>
                   )}
@@ -519,10 +546,10 @@ function AssetDetailInner() {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <Shield size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Dieses Asset wurde noch nicht klassifiziert.
+                    {t("detail.notClassified")}
                   </p>
                   <Link href={`/isms/assets/${id}/classify`} className="mt-3">
-                    <Button size="sm">Jetzt klassifizieren</Button>
+                    <Button size="sm">{t("detail.classifyNow")}</Button>
                   </Link>
                 </div>
               )}
@@ -534,14 +561,16 @@ function AssetDetailInner() {
         <TabsContent value="vulnerabilities" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Schwachstellen</CardTitle>
+              <CardTitle className="text-base">
+                {t("detail.vulnerabilities")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {vulnerabilities.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <Bug size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Keine Schwachstellen für dieses Asset erfasst.
+                    {t("detail.noVulnerabilities")}
                   </p>
                 </div>
               ) : (
@@ -574,10 +603,10 @@ function AssetDetailInner() {
                                 : "bg-gray-100 text-gray-900 border-gray-300"
                         }
                       >
-                        {v.severity}
+                        {tIsms(`incidentSeverity.${v.severity}`)}
                       </Badge>
                       <Badge variant="outline" className="text-xs">
-                        {v.status}
+                        {tIsms(`vulnerabilityStatus.${v.status}`)}
                       </Badge>
                     </div>
                   ))}
@@ -591,13 +620,15 @@ function AssetDetailInner() {
         <TabsContent value="incidents" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Sicherheitsvorfälle</CardTitle>
+              <CardTitle className="text-base">
+                {t("detail.incidents")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                 <AlertTriangle size={28} className="text-gray-400 mb-3" />
                 <p className="text-sm text-gray-500">
-                  Keine Vorfälle für dieses Asset gemeldet.
+                  {t("detail.noIncidents")}
                 </p>
               </div>
             </CardContent>
@@ -608,14 +639,16 @@ function AssetDetailInner() {
         <TabsContent value="history" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Änderungsverlauf</CardTitle>
+              <CardTitle className="text-base">
+                {t("detail.changeHistory")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {auditLog.length === 0 ? (
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <Activity size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Noch keine Änderungen protokolliert.
+                    {t("detail.noHistory")}
                   </p>
                 </div>
               ) : (
@@ -639,12 +672,12 @@ function AssetDetailInner() {
                       <div className="flex-1 min-w-0">
                         <p className="text-gray-900">
                           <span className="font-medium">
-                            {entry.userName ?? "System"}
+                            {entry.userName ?? t("detail.systemUser")}
                           </span>{" "}
                           <Badge variant="outline" className="text-[10px] mx-1">
                             {entry.action}
                           </Badge>{" "}
-                          {entry.entityTitle ?? "Asset"}
+                          {entry.entityTitle ?? t("detail.entityFallback")}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
                           {formatDateTime(entry.createdAt)}

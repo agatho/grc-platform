@@ -67,7 +67,7 @@ interface InvoiceRow {
 
 export default function BillingPage() {
   const t = useTranslations("billing");
-  const { formatDate } = useDateFormat();
+  const { formatDate, formatCurrency: money } = useDateFormat();
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
@@ -102,12 +102,8 @@ export default function BillingPage() {
     fetchData();
   }, [fetchData]);
 
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency,
-    }).format(amount / 100);
-  };
+  const formatCurrency = (amount: number, currency: string) =>
+    money(amount / 100, currency);
 
   if (loading) {
     return (

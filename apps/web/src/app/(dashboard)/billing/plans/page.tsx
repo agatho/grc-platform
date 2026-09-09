@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Plan {
   id: string;
@@ -33,6 +34,7 @@ interface Plan {
 
 export default function PlansPage() {
   const t = useTranslations("billing");
+  const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,12 +76,7 @@ export default function PlansPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount / 100);
-  };
+  const formatCurrency = (amount: number) => money(amount / 100, "EUR");
 
   const formatLimit = (val: number | null) => {
     if (val === null || val === -1) return t("plans.unlimited");

@@ -45,7 +45,7 @@ export function CatalogWorkqueue({
   createRoute,
   createParam = "catalogEntryId",
 }: Props) {
-  const _t = useTranslations("catalogs");
+  const t = useTranslations("catalogs");
   const [entries, setEntries] = useState<CatalogEntry[]>([]);
   const [catalogs, setCatalogs] = useState<CatalogInfo[]>([]);
   const [_totalEntries, setTotalEntries] = useState(0);
@@ -96,7 +96,10 @@ export function CatalogWorkqueue({
     );
   }
 
-  const entityLabel = catalogType === "risk" ? "Risiko" : "Kontrolle";
+  const createLabel =
+    catalogType === "risk"
+      ? t("workqueue.createRisk")
+      : t("workqueue.createControl");
 
   return (
     <div className="rounded-lg border border-blue-200 bg-blue-50/50">
@@ -110,22 +113,21 @@ export function CatalogWorkqueue({
           <div>
             <p className="text-sm font-medium text-blue-900">
               {loading ? (
-                "Kataloge werden geladen..."
+                t("workqueue.loading")
               ) : (
                 <>
-                  {catalogs.length} aktive{" "}
                   {catalogType === "risk"
-                    ? "Risikokataloge"
-                    : "Kontrollkataloge"}
+                    ? t("workqueue.summaryRisk", { count: catalogs.length })
+                    : t("workqueue.summaryControl", { count: catalogs.length })}
                   {" · "}
                   <span className="font-bold">
-                    {unassignedCount} offene Einträge
+                    {t("workqueue.openEntries", { count: unassignedCount })}
                   </span>
                 </>
               )}
             </p>
             <p className="text-xs text-blue-700 mt-0.5">
-              Aus aktivierten Katalogen — klicken zum Anzeigen
+              {t("workqueue.hint")}
             </p>
           </div>
         </div>
@@ -147,7 +149,7 @@ export function CatalogWorkqueue({
                 onChange={(e) => setSelectedCatalog(e.target.value)}
                 className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-sm"
               >
-                <option value="">Alle Kataloge</option>
+                <option value="">{t("workqueue.allCatalogs")}</option>
                 {catalogs.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -164,7 +166,7 @@ export function CatalogWorkqueue({
             </div>
           ) : entries.length === 0 ? (
             <p className="text-sm text-blue-700 py-4 text-center">
-              Keine offenen Einträge in diesem Katalog.
+              {t("workqueue.empty")}
             </p>
           ) : (
             <div className="space-y-1.5 max-h-80 overflow-y-auto">
@@ -197,7 +199,7 @@ export function CatalogWorkqueue({
                       className="shrink-0 whitespace-nowrap"
                     >
                       <Plus size={14} className="mr-1" />
-                      {entityLabel} erstellen
+                      {createLabel}
                     </Button>
                   </Link>
                 </div>
@@ -207,7 +209,10 @@ export function CatalogWorkqueue({
 
           {entries.length > 0 && (
             <p className="text-xs text-blue-600 mt-2 text-center">
-              {entries.length} von {unassignedCount} offenen Einträgen angezeigt
+              {t("workqueue.shown", {
+                shown: entries.length,
+                total: unassignedCount,
+              })}
             </p>
           )}
         </div>

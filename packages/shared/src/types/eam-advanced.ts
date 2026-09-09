@@ -215,38 +215,36 @@ export interface RedundancyCluster {
   estimatedSavings: number;
 }
 
-export const EU_EEA_COUNTRIES = [
-  "AT",
-  "BE",
-  "BG",
-  "HR",
-  "CY",
-  "CZ",
-  "DK",
-  "EE",
-  "FI",
-  "FR",
-  "DE",
-  "GR",
-  "HU",
-  "IE",
-  "IT",
-  "LV",
-  "LT",
-  "LU",
-  "MT",
-  "NL",
-  "PL",
-  "PT",
-  "RO",
-  "SK",
-  "SI",
-  "ES",
-  "SE",
-  "IS",
-  "LI",
-  "NO",
-] as const;
+// [ARCTOS-FULL-2026-08-31 · Welle 8c] Hier stand `EU_EEA_COUNTRIES` — 30
+// Codes (EU-27 + IS/LI/NO), seit e40ab5a5 (Sprints 34-37), ohne einen
+// einzigen Verwender im Repository.
+//
+// Welle 6a hat direkt darunter die zweite `ADEQUACY_COUNTRIES` entfernt und
+// diese Liste stehen lassen. Die Zusicherung, die daraus entstand, zaehlt
+// die Deklarationen — aber nur fuer EINEN Namen. Genau durch diese Luecke
+// ist in dieser Welle beim Beheben von OP-201 eine zweite
+// `EU_EEA_COUNTRIES` in `state-machines/dpms-tia.ts` entstanden: die
+// EU/EWR-Liste der TPRM-Route wurde ins Paket gezogen, ohne zu pruefen, ob
+// es den Namen dort schon gibt.
+//
+// Damit war fuer die Dauer dieser Welle derselbe Zustand hergestellt, den
+// Welle 6a beseitigt hatte: der namentliche Export in `index.ts` verdeckt
+// den gleichnamigen Stern-Export aus `types.ts:39`, und was aus
+// `@grc/shared` herauskommt, ist nicht die Liste, die man hier liest.
+// Inhaltlich waren beide deckungsgleich — der Schaden war die Verdeckung,
+// nicht der Inhalt.
+//
+// Aufgefallen ist es nicht an einer Zusicherung, sondern an der
+// Dead-Exports-Ratsche, und dort als angebliche VERBESSERUNG:
+// `eam-advanced.ts: 28 < Baseline 29`. Der tote Export war nicht
+// verschwunden, er war durch den Import in der TPRM-Route nur namentlich
+// erreichbar geworden — der Detektor loest ueber den Namen auf und traf die
+// falsche Datei. Ein Tor, das gruen meldet, was ein Defekt ist.
+//
+// Die eine gueltige Liste steht in `state-machines/dpms-tia.ts`, neben der
+// Angemessenheitsliste: beide beantworten dieselbe Frage und muessen
+// zusammen gepflegt werden. Die Zusicherung zaehlt jetzt beide Namen; siehe
+// `packages/shared/tests/dpms-tia-retention.test.ts`.
 
 // [N-2 · Welle 6a] Hier stand eine ZWEITE Liste der Angemessenheitsbeschluesse
 // (`ADEQUACY_COUNTRIES`), und sie war falsch.

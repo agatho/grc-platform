@@ -50,6 +50,18 @@ const GATE_INPUTS = [
     "docs/perf/dead-exports-report.md",
     "scripts/audit-dead-exports.mjs --check (Frischepruefung, OP-074)",
   ],
+  // [ARCTOS-FULL-2026-08-31 · Welle 8c] Die fuenfte Ratsche. Sie zaehlt die
+  // i18n-Schluessel je Namespace und Sprache und meldet jede Absenkung.
+  // Grund: eine symmetrische Loeschung in DE UND EN ist der einzige Eingriff
+  // am Katalog, den kein bestehender Check sehen kann — `audit-i18n-coverage`
+  // vergleicht DE gegen EN (bleibt deckungsgleich), und `--max-unused` SINKT
+  // dabei sogar, der Check wird also gruener. Genau so sind in Welle 8b 24
+  // `esgAdvanced.materiality.*`-Schluessel unbemerkt ueberschrieben worden.
+  // Liegt aus demselben Grund in der Wurzel wie die uebrigen Ratschen.
+  [
+    ".i18n-keys-ratchet.json",
+    "scripts/i18n-key-inventory.mjs --check (i18n-Schluesselbestand)",
+  ],
   [".env.example", "scripts/check-env-example.mjs"],
   ["scripts/db-integrity-baseline.json", "DB-Integritätsprüfung"],
   [

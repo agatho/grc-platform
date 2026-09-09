@@ -1,5 +1,9 @@
 import { db, vendorSubProcessor } from "@grc/db";
-import { createSubProcessorSchema } from "@grc/shared";
+import {
+  ADEQUACY_COUNTRIES,
+  createSubProcessorSchema,
+  EU_EEA_COUNTRIES,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import {
@@ -54,59 +58,23 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       { status: 422 },
     );
 
-  // Auto-compute country risk flags (reuse Sprint 37 adequacy data)
-  const EU_EEA_COUNTRIES = [
-    "AT",
-    "BE",
-    "BG",
-    "HR",
-    "CY",
-    "CZ",
-    "DK",
-    "EE",
-    "FI",
-    "FR",
-    "DE",
-    "GR",
-    "HU",
-    "IE",
-    "IT",
-    "LV",
-    "LT",
-    "LU",
-    "MT",
-    "NL",
-    "PL",
-    "PT",
-    "RO",
-    "SK",
-    "SI",
-    "ES",
-    "SE",
-    "IS",
-    "LI",
-    "NO",
-  ];
-  const ADEQUACY_COUNTRIES = [
-    "AD",
-    "AR",
-    "CA",
-    "FO",
-    "GG",
-    "IL",
-    "IM",
-    "JP",
-    "JE",
-    "NZ",
-    "KR",
-    "CH",
-    "GB",
-    "UY",
-  ];
+  // [ARCTOS-FULL-2026-08-31 · Welle 8b/8c · OP-201] Hier standen ZWEI
+  // Inline-Kopien der Laenderlisten. Die Angemessenheitsliste war die dritte
+  // Fassung im Repository — und die einzige, der die **USA** fehlten
+  // (EU-US Data Privacy Framework, Art.-45-Beschluss vom Juli 2023).
+  //
+  // Wirkung: Fuer einen Unterauftragsverarbeiter mit `hostingCountry: "US"`
+  // meldete diese Route `isAdequateCountry: false` und verlangte damit eine
+  // Transfer-Impact-Assessment, waehrend `packages/shared` denselben Fall als
+  // angemessen fuehrt. Zwei Antworten auf dieselbe Rechtsfrage im selben
+  // Produkt.
+  //
+  // Beide Listen kommen jetzt aus `@grc/shared` — derselben Stelle, aus der
+  // diese Datei ihr Schema ohnehin schon bezieht.
   const country = body.data.hostingCountry?.toUpperCase();
-  const isEu = country ? EU_EEA_COUNTRIES.includes(country) : false;
+  const isEu = country ? EU_EEA_COUNTRIES.has(country) : false;
   const isAdequateCountry = country
-    ? ADEQUACY_COUNTRIES.includes(country) || isEu
+    ? ADEQUACY_COUNTRIES.has(country) || isEu
     : false;
   const requiresTia = country ? !isEu && !isAdequateCountry : false;
 

@@ -6,9 +6,11 @@ import { FileText, Scale, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxCmsDashboard } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function TaxCmsDashboardPage() {
   const t = useTranslations("taxCms");
+  const { formatCurrency: money } = useDateFormat();
   const [data, setData] = useState<TaxCmsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -127,10 +129,7 @@ export default function TaxCmsDashboardPage() {
               {t("totalExposure")}
             </p>
             <p className="text-2xl font-bold">
-              {new Intl.NumberFormat("de-DE", {
-                style: "currency",
-                currency: "EUR",
-              }).format(data.totalExposure)}
+              {money(data.totalExposure, "EUR")}
             </p>
           </CardContent>
         </Card>

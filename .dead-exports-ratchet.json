@@ -1,7 +1,7 @@
 {
   "_comment": "[OP-075] Ratsche über scripts/audit-dead-exports.mjs. Zahlen dürfen nur SINKEN. Geprüft mit `node scripts/audit-dead-exports.mjs --check`; neu gesetzt mit `--update-baseline`. Eine Anhebung verlangt zusätzlich --reason und wird in _history festgehalten. Die Datei liegt in der Wurzel, nicht unter docs/, damit sie nicht wie in C-15/OP-066 durch eine .gitignore-Regel aus dem Repository fällt; scripts/check-gate-inputs.mjs prüft das.",
-  "_updatedAt": "2026-09-07",
-  "total": 2469,
+  "_updatedAt": "2026-09-09",
+  "total": 2468,
   "files": 459,
   "counts": {
     "apps/web/src/__tests__/api/helpers/db-proxy.ts": 1,
@@ -416,7 +416,7 @@
     "packages/shared/src/types/dora.ts": 26,
     "packages/shared/src/types/dpms-advanced.ts": 10,
     "packages/shared/src/types/dpms.ts": 5,
-    "packages/shared/src/types/eam-advanced.ts": 29,
+    "packages/shared/src/types/eam-advanced.ts": 28,
     "packages/shared/src/types/eam-ai.ts": 21,
     "packages/shared/src/types/eam-catalog.ts": 14,
     "packages/shared/src/types/eam-dashboards.ts": 21,
@@ -580,6 +580,12 @@
         "packages/db/src/schema/whistleblowing-advanced.ts: 3 → 4"
       ],
       "reason": "Welle 6a / N-2: fuenf Drizzle-Tabellendefinitionen verlieren ihren letzten TS-Importeur, weil in fuenf Crons ein ungenutzter Import entfernt wurde (risk_prediction_alert, process_kpi_measurement, technology_application_link, vendor_sub_processor_notification, wb_protection_event). Alle fuenf Tabellen EXISTIEREN in der Datenbank (gemessen 2026-09-07 gegen grc_v4c, je 1 Treffer in information_schema.tables); ihre Definitionen zu loeschen erzeugte genau die Schema-Drift, gegen die ADR-014 geschrieben wurde. Der Import war die Taeuschung, nicht die Definition."
+    },
+    {
+      "date": "2026-09-09",
+      "total": 2468,
+      "files": 459,
+      "changed": ["packages/shared/src/types/eam-advanced.ts: 29 → 28"]
     }
   ]
 }

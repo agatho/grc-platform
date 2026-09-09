@@ -80,7 +80,6 @@ export default function ProcessesPage() {
 function ProcessLandscape() {
   const t = useTranslations("process");
   const tGov = useTranslations("processGovernance");
-  const _tActions = useTranslations("actions");
   const tMap = useTranslations("processMap");
   const _router = useRouter();
 

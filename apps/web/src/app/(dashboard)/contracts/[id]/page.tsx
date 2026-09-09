@@ -18,6 +18,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -47,6 +48,7 @@ export default function ContractDetailPage() {
 
 function ContractDetailInner() {
   const t = useTranslations("contracts");
+  const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
@@ -137,10 +139,7 @@ function ContractDetailInner() {
     if (!val) return "\u2014";
     const num = parseFloat(val);
     if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: String(c.currency || "EUR"),
-    }).format(num);
+    return money(num, String(c.currency || "EUR"));
   };
 
   return (

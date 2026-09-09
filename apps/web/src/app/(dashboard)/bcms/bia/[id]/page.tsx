@@ -15,6 +15,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BiaAssessment, BiaProcessImpact } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function BiaWizardPage() {
   return (
@@ -26,6 +27,7 @@ export default function BiaWizardPage() {
 
 function BiaWizardInner() {
   const t = useTranslations("bcms");
+  const { formatCurrency: money } = useDateFormat();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -322,11 +324,7 @@ function BiaWizardInner() {
                 </div>
                 <span className="text-xs text-gray-600 w-24 text-right">
                   {val != null
-                    ? new Intl.NumberFormat("de-DE", {
-                        style: "currency",
-                        currency: "EUR",
-                        maximumFractionDigits: 0,
-                      }).format(val)
+                    ? money(val, "EUR", { maximumFractionDigits: 0 })
                     : "-"}
                 </span>
               </div>

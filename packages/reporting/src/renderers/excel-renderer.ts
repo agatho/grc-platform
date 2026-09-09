@@ -126,7 +126,11 @@ export async function renderExcel(
 function sanitizeSheetName(name: string): string {
   return (
     name
-      .replace(/[\\/*?\[\]:]/g, "")
+      // [Welle 8c] `\[` innerhalb einer Zeichenklasse ist ueberfluessig und
+      // war der einzige `no-useless-escape` der Lint-Ratsche. `\]` bleibt
+      // noetig. Verhaltensgleichheit gemessen: beide Fassungen liefern fuer
+      // "A[B]C", "x/y*z?", "Sheet:1" und "a\\b" dasselbe Ergebnis.
+      .replace(/[\\/*?[\]:]/g, "")
       .substring(0, 31)
       .trim() || "Sheet"
   );

@@ -128,7 +128,6 @@ export default function NewRiskPage() {
 
 function NewRiskForm() {
   const t = useTranslations("risk");
-  const _tActions = useTranslations("actions");
   const router = useRouter();
 
   // Pre-fill from catalog entry query params
@@ -352,11 +351,13 @@ function NewRiskForm() {
           <BookOpen size={18} className="text-blue-600 shrink-0" />
           <div>
             <p className="text-sm font-medium text-blue-900">
-              Aus Katalog: <span className="font-mono">{catalogCode}</span> —{" "}
-              {catalogName}
+              {t("fromCatalog.source", {
+                code: catalogCode ?? "",
+                name: catalogName ?? "",
+              })}
             </p>
             <p className="text-xs text-blue-700 mt-0.5">
-              Titel und Beschreibung wurden vorausgefüllt
+              {t("fromCatalog.prefilled")}
             </p>
           </div>
         </div>

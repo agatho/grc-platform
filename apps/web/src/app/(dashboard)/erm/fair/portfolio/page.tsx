@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import {
   ScatterChart,
@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -63,6 +64,7 @@ export default function FAIRPortfolioPage() {
 
 function FAIRPortfolioInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
 
   const [loading, setLoading] = useState(true);
   const [topRisks, setTopRisks] = useState<TopRisk[]>([]);
@@ -126,7 +128,7 @@ function FAIRPortfolioInner() {
           <Card className="p-4 border-l-4 border-l-blue-500">
             <p className="text-sm text-muted-foreground">{t("totalALE")}</p>
             <p className="text-2xl font-bold">
-              {formatEUR(aggregate.totalAleP50)}
+              {formatEUR(locale, aggregate.totalAleP50)}
             </p>
             <p className="text-xs text-muted-foreground">
               P50 {t("aggregate")}
@@ -135,7 +137,7 @@ function FAIRPortfolioInner() {
           <Card className="p-4 border-l-4 border-l-red-500">
             <p className="text-sm text-muted-foreground">{t("totalVaR")}</p>
             <p className="text-2xl font-bold text-red-700">
-              {formatEUR(aggregate.totalAleP95)}
+              {formatEUR(locale, aggregate.totalAleP95)}
             </p>
             <p className="text-xs text-muted-foreground">
               P95 {t("aggregate")}
@@ -151,7 +153,7 @@ function FAIRPortfolioInner() {
             <p className="text-sm text-muted-foreground">{t("avgALE")}</p>
             <p className="text-2xl font-bold">
               {aggregate.riskCount > 0
-                ? formatEUR(aggregate.totalAleP50 / aggregate.riskCount)
+                ? formatEUR(locale, aggregate.totalAleP50 / aggregate.riskCount)
                 : "-"}
             </p>
           </Card>
@@ -203,9 +205,9 @@ function FAIRPortfolioInner() {
                         <p>
                           {t("category")}: {d.category}
                         </p>
-                        <p>ALE P50: {formatEUR(d.z)}</p>
+                        <p>ALE P50: {formatEUR(locale, d.z)}</p>
                         <p>
-                          {t("tailRisk")}: {formatEUR(d.y)}
+                          {t("tailRisk")}: {formatEUR(locale, d.y)}
                         </p>
                       </div>
                     );
@@ -263,10 +265,10 @@ function FAIRPortfolioInner() {
                     </td>
                     <td className="p-2 text-right">{cat.count}</td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(cat.aleP50)}
+                      {formatEUR(locale, cat.aleP50)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(cat.aleP95)}
+                      {formatEUR(locale, cat.aleP95)}
                     </td>
                     <td className="p-2 text-right">
                       {aggregate.totalAleP50 > 0
@@ -305,10 +307,10 @@ function FAIRPortfolioInner() {
                     <Badge variant="outline">{r.riskCategory}</Badge>
                   </td>
                   <td className="p-2 text-right font-mono">
-                    {formatEUR(r.aleP50)}
+                    {formatEUR(locale, r.aleP50)}
                   </td>
                   <td className="p-2 text-right font-mono text-red-600">
-                    {formatEUR(r.aleP95)}
+                    {formatEUR(locale, r.aleP95)}
                   </td>
                   <td className="p-2 text-muted-foreground">
                     {r.ownerName ?? "-"}
@@ -323,12 +325,14 @@ function FAIRPortfolioInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }
 
 function formatCompactEUR(value: number): string {

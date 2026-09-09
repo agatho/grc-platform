@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxAuditPrep } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function TaxAuditPrepsPage() {
   const t = useTranslations("taxCms");
+  const { formatCurrency: money } = useDateFormat();
   const [rows, setRows] = useState<TaxAuditPrep[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -55,11 +57,9 @@ export default function TaxAuditPrepsPage() {
               <div className="flex gap-2">
                 {prep.totalExposure != null && (
                   <Badge variant="outline">
-                    {new Intl.NumberFormat("de-DE", {
-                      style: "currency",
-                      currency: "EUR",
+                    {money(prep.totalExposure, "EUR", {
                       maximumFractionDigits: 0,
-                    }).format(prep.totalExposure)}
+                    })}
                   </Badge>
                 )}
                 <Badge variant="outline">{prep.status}</Badge>

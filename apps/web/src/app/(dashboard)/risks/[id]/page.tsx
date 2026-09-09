@@ -32,7 +32,10 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
 import { AiControlSuggestionsDialog } from "@/components/risk/ai-control-suggestions-dialog";
 import { RiskAcceptancePanel } from "@/components/risk/risk-acceptance-panel";
-import { useDateFormat } from "@/lib/format-date";
+import {
+  formatCurrency as formatMoney,
+  useDateFormat,
+} from "@/lib/format-date";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -160,15 +163,23 @@ function scoreBadge(score: number | null | undefined): {
   return { label: String(score), color: "bg-green-100 text-green-900" };
 }
 
-function formatCurrency(value: string | null | undefined): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Diese Funktion steht ausserhalb
+ * der Komponente und kann deshalb keinen Hook lesen; sie nimmt das
+ * Gebietsschema als Parameter — dieselbe Loesung, die Welle 5a fuer die drei
+ * Datumshelfer gewaehlt hat.
+ *
+ * Sie stand auf `"en-US"` und war damit der umgekehrte Fall von OP-203: ein
+ * DEUTSCHER Leser sah auf der Risikodetailseite "€1,234" statt "1.234 €".
+ */
+function formatCurrency(
+  locale: string,
+  value: string | null | undefined,
+): string {
   if (!value) return "-";
   const num = parseFloat(value);
   if (isNaN(num)) return value;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(num);
+  return formatMoney(locale, num, "EUR", { maximumFractionDigits: 0 });
 }
 
 function trendIcon(trend: KriTrend) {
@@ -363,7 +374,7 @@ function RiskDetailContent() {
   const params = useParams();
   const _router = useRouter();
   const riskId = params.id as string;
-  const { formatDate, formatDateTime, formatNumber } = useDateFormat();
+  const { formatDate, formatDateTime, formatNumber, locale } = useDateFormat();
 
   const [riskData, setRiskData] = useState<RiskDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -855,17 +866,17 @@ function RiskDetailContent() {
               <CardContent className="space-y-1 text-sm">
                 <p>
                   <span className="text-gray-500">{t("financialMin")}:</span>{" "}
-                  {formatCurrency(r.financialImpactMin)}
+                  {formatCurrency(locale, r.financialImpactMin)}
                 </p>
                 <p>
                   <span className="text-gray-500">{t("financialMax")}:</span>{" "}
-                  {formatCurrency(r.financialImpactMax)}
+                  {formatCurrency(locale, r.financialImpactMax)}
                 </p>
                 <p>
                   <span className="text-gray-500">
                     {t("financialExpected")}:
                   </span>{" "}
-                  {formatCurrency(r.financialImpactExpected)}
+                  {formatCurrency(locale, r.financialImpactExpected)}
                 </p>
               </CardContent>
             </Card>
@@ -1146,7 +1157,7 @@ function RiskDetailContent() {
                           {tr.costEstimate && (
                             <span>
                               {t("treatmentCost")}:{" "}
-                              {formatCurrency(tr.costEstimate)}
+                              {formatCurrency(locale, tr.costEstimate)}
                             </span>
                           )}
                           {tr.expectedRiskReduction && (

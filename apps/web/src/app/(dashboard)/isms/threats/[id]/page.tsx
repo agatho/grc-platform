@@ -52,7 +52,7 @@ function ThreatDetailInner() {
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const _t = useTranslations("isms");
+  const t = useTranslations("isms");
 
   const [threat, setThreat] = useState<Threat | null>(null);
   const [scenarios, setScenarios] = useState<RiskScenario[]>([]);
@@ -100,14 +100,15 @@ function ThreatDetailInner() {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <AlertTriangle size={32} className="mb-3 text-gray-400" />
-        <p className="text-sm font-medium">Bedrohung nicht gefunden</p>
+        <p className="text-sm font-medium">{t("threatDetail.notFound")}</p>
         <Button
           variant="ghost"
           size="sm"
           className="mt-4"
           onClick={() => router.push("/isms/threats")}
         >
-          <ArrowLeft size={14} className="mr-1" /> Zurück zur Liste
+          <ArrowLeft size={14} className="mr-1" />{" "}
+          {t("threatDetail.backToList")}
         </Button>
       </div>
     );
@@ -115,14 +116,8 @@ function ThreatDetailInner() {
 
   const likelihoodLabel = (rating: number | null) => {
     if (!rating) return "–";
-    const labels: Record<number, string> = {
-      1: "Sehr gering",
-      2: "Gering",
-      3: "Mittel",
-      4: "Hoch",
-      5: "Sehr hoch",
-    };
-    return labels[rating] ?? String(rating);
+    if (rating < 1 || rating > 5) return String(rating);
+    return t(`threatDetail.likelihoodRating.${rating}`);
   };
 
   const likelihoodColor = (rating: number | null) => {
@@ -141,6 +136,7 @@ function ThreatDetailInner() {
           size="icon"
           onClick={() => router.push("/isms/threats")}
           className="mt-1 shrink-0"
+          aria-label={t("threatDetail.backToList")}
         >
           <ArrowLeft size={18} />
         </Button>
@@ -165,7 +161,7 @@ function ThreatDetailInner() {
                 variant="outline"
                 className="bg-blue-100 text-blue-900 border-blue-300 text-xs"
               >
-                System
+                {t("threatDetail.system")}
               </Badge>
             )}
           </div>
@@ -177,15 +173,15 @@ function ThreatDetailInner() {
         <TabsList>
           <TabsTrigger value="overview">
             <Zap size={14} className="mr-1.5" />
-            Übersicht
+            {t("threatDetail.tabOverview")}
           </TabsTrigger>
           <TabsTrigger value="scenarios">
             <Shield size={14} className="mr-1.5" />
-            Risikoszenarien
+            {t("threatDetail.tabScenarios")}
           </TabsTrigger>
           <TabsTrigger value="history">
             <History size={14} className="mr-1.5" />
-            Verlauf
+            {t("threatDetail.tabHistory")}
           </TabsTrigger>
         </TabsList>
 
@@ -194,17 +190,23 @@ function ThreatDetailInner() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">Bedrohungsdetails</CardTitle>
+                <CardTitle className="text-base">
+                  {t("threatDetail.details")}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                   <div>
-                    <dt className="text-gray-500 font-medium">Titel</dt>
+                    <dt className="text-gray-500 font-medium">
+                      {t("threatDetail.title")}
+                    </dt>
                     <dd className="text-gray-900 mt-0.5">{threat.title}</dd>
                   </div>
                   {threat.code && (
                     <div>
-                      <dt className="text-gray-500 font-medium">Code</dt>
+                      <dt className="text-gray-500 font-medium">
+                        {t("threatDetail.code")}
+                      </dt>
                       <dd className="text-gray-900 mt-0.5 font-mono">
                         {threat.code}
                       </dd>
@@ -212,7 +214,9 @@ function ThreatDetailInner() {
                   )}
                   {threat.threatCategory && (
                     <div>
-                      <dt className="text-gray-500 font-medium">Kategorie</dt>
+                      <dt className="text-gray-500 font-medium">
+                        {t("threatDetail.category")}
+                      </dt>
                       <dd className="mt-0.5">
                         <Badge variant="outline" className="text-xs">
                           {threat.threatCategory}
@@ -222,7 +226,7 @@ function ThreatDetailInner() {
                   )}
                   <div>
                     <dt className="text-gray-500 font-medium">
-                      Eintrittswahrscheinlichkeit
+                      {t("threatDetail.likelihood")}
                     </dt>
                     <dd className="mt-0.5">
                       <Badge
@@ -236,7 +240,7 @@ function ThreatDetailInner() {
                   {threat.description && (
                     <div className="sm:col-span-2">
                       <dt className="text-gray-500 font-medium">
-                        Beschreibung
+                        {t("threatDetail.description")}
                       </dt>
                       <dd className="text-gray-900 mt-0.5 whitespace-pre-wrap">
                         {threat.description}
@@ -249,24 +253,33 @@ function ThreatDetailInner() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Metadaten</CardTitle>
+                <CardTitle className="text-base">
+                  {t("threatDetail.metadata")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} className="shrink-0" />
-                  <span>Erstellt: {formatDate(threat.createdAt)}</span>
+                  <span>
+                    {t("threatDetail.createdAt", {
+                      date: formatDate(threat.createdAt),
+                    })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <Zap size={14} className="shrink-0" />
                   <span>
-                    Typ:{" "}
-                    {threat.isSystem ? "Systembedrohung" : "Benutzerdefiniert"}
+                    {t("threatDetail.type", {
+                      type: threat.isSystem
+                        ? t("threatDetail.typeSystem")
+                        : t("threatDetail.typeCustom"),
+                    })}
                   </span>
                 </div>
                 {threat.catalogEntryId && (
                   <div className="flex items-center gap-2 text-gray-500">
                     <Shield size={14} className="shrink-0" />
-                    <span>Aus Katalog verknüpft</span>
+                    <span>{t("threatDetail.fromCatalog")}</span>
                   </div>
                 )}
               </CardContent>
@@ -279,7 +292,7 @@ function ThreatDetailInner() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">
-                Verknüpfte Risikoszenarien
+                {t("threatDetail.linkedScenarios")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -287,7 +300,7 @@ function ThreatDetailInner() {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <Shield size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Keine Risikoszenarien mit dieser Bedrohung verknüpft.
+                    {t("threatDetail.noScenarios")}
                   </p>
                 </div>
               ) : (
@@ -300,7 +313,7 @@ function ThreatDetailInner() {
                       <Shield size={16} className="text-gray-400 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm text-gray-900 truncate">
-                          {s.description ?? "Risikoszenario"}
+                          {s.description ?? t("threatDetail.scenarioFallback")}
                         </p>
                       </div>
                     </div>
@@ -315,12 +328,16 @@ function ThreatDetailInner() {
         <TabsContent value="history" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Änderungsverlauf</CardTitle>
+              <CardTitle className="text-base">
+                {t("threatDetail.changeHistory")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                 <Activity size={28} className="text-gray-400 mb-3" />
-                <p className="text-sm text-gray-500">Verlauf wird geladen...</p>
+                <p className="text-sm text-gray-500">
+                  {t("threatDetail.historyLoading")}
+                </p>
               </div>
             </CardContent>
           </Card>

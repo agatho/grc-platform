@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, TrendingUp, ExternalLink } from "lucide-react";
 import {
@@ -19,6 +19,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -42,6 +43,7 @@ export default function FAIRTopRisksPage() {
 
 function FAIRTopRisksInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -119,7 +121,7 @@ function FAIRTopRisksInner() {
                   fontSize={11}
                 />
                 <RechartsTooltip
-                  formatter={(val: unknown) => formatEUR(Number(val))}
+                  formatter={(val: unknown) => formatEUR(locale, Number(val))}
                 />
                 <Legend />
                 <Bar
@@ -171,10 +173,10 @@ function FAIRTopRisksInner() {
                     <Badge variant="secondary">{r.status}</Badge>
                   </td>
                   <td className="p-2 text-right font-mono font-semibold">
-                    {formatEUR(r.aleP50)}
+                    {formatEUR(locale, r.aleP50)}
                   </td>
                   <td className="p-2 text-right font-mono text-red-600">
-                    {formatEUR(r.aleP95)}
+                    {formatEUR(locale, r.aleP95)}
                   </td>
                   <td className="p-2 text-muted-foreground">
                     {r.ownerName ?? "-"}
@@ -206,12 +208,14 @@ function FAIRTopRisksInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }
 
 function formatCompactEUR(value: number): string {

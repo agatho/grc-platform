@@ -31,7 +31,7 @@ interface UserRole {
 }
 
 export default function AccessReviewsPage() {
-  const _t = useTranslations("accessLog");
+  const t = useTranslations("accessReview");
   const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
   const [users, setUsers] = useState<UserRole[]>([]);
@@ -141,24 +141,18 @@ export default function AccessReviewsPage() {
           className="flex items-center gap-2 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
         >
           <AlertTriangle size={16} />
-          Benutzer konnten nicht geladen werden. Die Liste unten ist
-          unvollständig.
+          {t("loadError")}
         </div>
       )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Berechtigungsprüfung
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Periodische Überprüfung aller Nutzerzugriffe und
-            Rollenberechtigungen
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchUsers}>
           <RefreshCcw size={14} className="mr-1.5" />
-          Aktualisieren
+          {t("refresh")}
         </Button>
       </div>
 
@@ -170,7 +164,7 @@ export default function AccessReviewsPage() {
               <Users size={20} className="text-blue-600" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
-                <p className="text-xs text-gray-500">Nutzer gesamt</p>
+                <p className="text-xs text-gray-500">{t("totalUsers")}</p>
               </div>
             </div>
           </CardContent>
@@ -183,7 +177,7 @@ export default function AccessReviewsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {approved.size}
                 </p>
-                <p className="text-xs text-gray-500">Bestätigt</p>
+                <p className="text-xs text-gray-500">{t("approvedCount")}</p>
               </div>
             </div>
           </CardContent>
@@ -196,7 +190,7 @@ export default function AccessReviewsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {revoked.size}
                 </p>
-                <p className="text-xs text-gray-500">Widerrufen</p>
+                <p className="text-xs text-gray-500">{t("revokedCount")}</p>
               </div>
             </div>
           </CardContent>
@@ -207,7 +201,7 @@ export default function AccessReviewsPage() {
               <Clock size={20} className="text-amber-600" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">{progress}%</p>
-                <p className="text-xs text-gray-500">Fortschritt</p>
+                <p className="text-xs text-gray-500">{t("progress")}</p>
               </div>
             </div>
           </CardContent>
@@ -225,7 +219,7 @@ export default function AccessReviewsPage() {
       {/* User List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Nutzerzugriffe prüfen</CardTitle>
+          <CardTitle className="text-base">{t("listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -268,7 +262,7 @@ export default function AccessReviewsPage() {
                     </p>
                     {user.department && (
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Abteilung: {user.department}
+                        {t("department", { name: user.department })}
                       </p>
                     )}
                   </div>
@@ -277,10 +271,14 @@ export default function AccessReviewsPage() {
                   <div className="text-right shrink-0">
                     {user.lastLogin ? (
                       <p className="text-xs text-gray-500">
-                        Letzter Login: {formatDate(user.lastLogin)}
+                        {t("lastLogin", {
+                          date: formatDate(user.lastLogin),
+                        })}
                       </p>
                     ) : (
-                      <p className="text-xs text-red-500">Nie eingeloggt</p>
+                      <p className="text-xs text-red-500">
+                        {t("neverLoggedIn")}
+                      </p>
                     )}
                   </div>
 
@@ -295,7 +293,7 @@ export default function AccessReviewsPage() {
                             : "bg-red-100 text-red-900 border-red-300"
                         }
                       >
-                        {isApproved ? "✓ Bestätigt" : "✗ Widerrufen"}
+                        {isApproved ? t("badgeApproved") : t("badgeRevoked")}
                       </Badge>
                     ) : (
                       <>
@@ -306,7 +304,7 @@ export default function AccessReviewsPage() {
                           className="text-green-700 hover:bg-green-50 border-green-300"
                         >
                           <UserCheck size={14} className="mr-1" />
-                          Bestätigen
+                          {t("approve")}
                         </Button>
                         <Button
                           variant="outline"
@@ -315,7 +313,7 @@ export default function AccessReviewsPage() {
                           className="text-red-700 hover:bg-red-50 border-red-300"
                         >
                           <UserX size={14} className="mr-1" />
-                          Widerrufen
+                          {t("revoke")}
                         </Button>
                       </>
                     )}

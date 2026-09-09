@@ -468,62 +468,19 @@ describe("[OP-070] Welle 6b — ai-act, settings, admin, rls-audit", () => {
 
   // ── §8 ───────────────────────────────────────────────────────────────────
   //
-  // Das feste Gebietsschema hat eine ZWEITE Schreibweise, die weder der
-  // Detektor in `scripts/audit-i18n-usage.mjs` noch der Wachposten aus Welle
-  // 5a kennt: `new Intl.NumberFormat("de-DE", { style: "currency" })`. Beide
-  // suchen nur nach `toLocale*("xx-XX")`. Welle 5a hat den Bildschirmbereich
-  // deshalb als „70 → 2" gemeldet; die 20 Geldformatierer waren nie gezaehlt.
+  // Hier stand die Liste der 18 Dateien, die Geld weiterhin mit
+  // `new Intl.NumberFormat("de-DE", { style: "currency" })` formatierten,
+  // geprueft auf GLEICHHEIT — „beziffert statt behauptet", und zugleich die
+  // Bremse gegen Zuwachs.
   //
-  // Behoben ist bisher nur die eine Fundstelle in dieser Welles Gebiet
-  // (`ai-act/penalties`). Die uebrigen stehen hier NAMENTLICH — beziffert
-  // statt behauptet, und die Liste ist zugleich die Bremse gegen Zuwachs.
-  const FIXED_CURRENCY_LOCALE = [
-    "app/(dashboard)/bcms/bia/[id]/page.tsx",
-    "app/(dashboard)/bcms/strategies/page.tsx",
-    "app/(dashboard)/billing/page.tsx",
-    "app/(dashboard)/billing/plans/page.tsx",
-    "app/(dashboard)/contracts/[id]/page.tsx",
-    "app/(dashboard)/contracts/list/page.tsx",
-    "app/(dashboard)/contracts/page.tsx",
-    "app/(dashboard)/eam/dashboards/cost-management/page.tsx",
-    "app/(dashboard)/erm/fair/compare/page.tsx",
-    "app/(dashboard)/erm/fair/portfolio/page.tsx",
-    "app/(dashboard)/erm/fair/top-risks/page.tsx",
-    "app/(dashboard)/erm/risks/[id]/fair/page.tsx",
-    "app/(dashboard)/erm/risks/[id]/fair/results/page.tsx",
-    "app/(dashboard)/esg/climate-scenarios/page.tsx",
-    "app/(dashboard)/esg/taxonomy/page.tsx",
-    "app/(dashboard)/risks/[id]/page.tsx",
-    "app/(dashboard)/tax-cms/audit-preps/page.tsx",
-    "app/(dashboard)/tax-cms/page.tsx",
-  ];
-
-  it("die Geldformatierer mit festem Gebietsschema sind genau die bezifferten", () => {
-    const roots = [
-      path.join(SRC, "app/(dashboard)"),
-      path.join(SRC, "app/(portal)"),
-      path.join(SRC, "components"),
-    ];
-    const offenders = new Set<string>();
-    const walk = (dir: string) => {
-      for (const e of readdirSync(dir, { withFileTypes: true })) {
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) walk(p);
-        else if (/\.tsx?$/.test(p) && !p.endsWith(".test.tsx")) {
-          const src = readFileSync(p, "utf8")
-            .replace(BLOCK_COMMENT, "")
-            .replace(LINE_COMMENT, "$1");
-          if (/Intl\.[A-Za-z]*Format\(\s*["'][a-z]{2}-[A-Z]{2}["']/.test(src))
-            offenders.add(path.relative(SRC, p));
-        }
-      }
-    };
-    roots.forEach(walk);
-    // Genau — nicht „hoechstens". Waechst die Liste, faellt der Test; wird
-    // eine Datei umgestellt, faellt er auch, und der Eintrag gehoert
-    // gestrichen. Eine Ausnahmeliste, die nur nach oben nachgibt, ist keine.
-    expect([...offenders].sort()).toEqual([...FIXED_CURRENCY_LOCALE].sort());
-  });
+  // [Welle 8b · OP-203] Alle 18 sind umgestellt. Die Liste ist damit leer,
+  // und darum steht sie nicht mehr da: eine Ausnahmeliste, die niemand mehr
+  // braucht, ist eine Einladung, die naechste Ausnahme hineinzuschreiben —
+  // dieselbe Begruendung, mit der Welle 6b die Ausnahme aus
+  // `wave5a-surfaces.test.ts` gestrichen hat. Die Zusicherung selbst ist
+  // nicht weggefallen, sondern schaerfer geworden: sie steht in
+  // `wave8b-surfaces.test.ts` §2 und prueft den ganzen Bildschirmbereich
+  // OHNE Ausnahmeliste.
 
   it("das Mittel gegen das feste Gebietsschema bei Geld existiert und wird benutzt", () => {
     // Welle 5a hat zweimal denselben Befund gemacht: das Mittel war da und

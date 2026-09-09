@@ -257,6 +257,7 @@ export {
   validateTiaQuality,
   assessTransferRisk,
   ADEQUACY_COUNTRIES,
+  EU_EEA_COUNTRIES,
   type TiaSnapshot,
   type TransferRiskAssessment,
   type LegalMechanism,

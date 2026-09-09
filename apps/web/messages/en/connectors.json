@@ -96,5 +96,17 @@
     "controls": "controls",
     "covered": "covered",
     "missing": "missing"
+  },
+  "detail": {
+    "notFound": "Connector not found",
+    "runTests": "Run tests",
+    "runHealthCheck": "Run health check",
+    "delete": "Delete connector",
+    "confirmDelete": "Delete this connector?",
+    "deleteFailed": "The connector could not be deleted.",
+    "testResults": "Test results",
+    "noTestResults": "No test results yet. Click “Run tests” to execute.",
+    "scanned": "{category} – {count} scanned",
+    "durationMs": "{ms} ms"
   }
 }

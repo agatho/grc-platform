@@ -52,7 +52,7 @@ function VulnerabilityDetailInner() {
   const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const _t = useTranslations("isms");
+  const t = useTranslations("isms");
 
   const [vuln, setVuln] = useState<Vulnerability | null>(null);
   const [asset, setAsset] = useState<Asset | null>(null);
@@ -104,14 +104,14 @@ function VulnerabilityDetailInner() {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-gray-500">
         <Bug size={32} className="mb-3 text-gray-400" />
-        <p className="text-sm font-medium">Schwachstelle nicht gefunden</p>
+        <p className="text-sm font-medium">{t("vulnDetail.notFound")}</p>
         <Button
           variant="ghost"
           size="sm"
           className="mt-4"
           onClick={() => router.push("/isms/vulnerabilities")}
         >
-          <ArrowLeft size={14} className="mr-1" /> Zurück zur Liste
+          <ArrowLeft size={14} className="mr-1" /> {t("vulnDetail.backToList")}
         </Button>
       </div>
     );
@@ -125,12 +125,17 @@ function VulnerabilityDetailInner() {
     info: "bg-blue-100 text-blue-900 border-blue-300",
   };
 
+  // [ARCTOS-FULL-2026-08-31 · Welle 8b] Der Wertevorrat stand hier auf
+  // `in_remediation` / `accepted` / `closed` — die Listenseite, der Katalog
+  // (`isms.vulnerabilityStatus`) und die Daten kennen aber `in_progress`,
+  // `accepted_risk` und `false_positive`. Drei von fuenf Zustaenden konnten
+  // hier nie eine Farbe bekommen.
   const statusColor: Record<string, string> = {
     open: "bg-red-100 text-red-900 border-red-300",
-    in_remediation: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    in_progress: "bg-yellow-100 text-yellow-900 border-yellow-300",
     mitigated: "bg-green-100 text-green-900 border-green-300",
-    accepted: "bg-blue-100 text-blue-900 border-blue-300",
-    closed: "bg-gray-100 text-gray-900 border-gray-300",
+    accepted_risk: "bg-blue-100 text-blue-900 border-blue-300",
+    false_positive: "bg-gray-100 text-gray-900 border-gray-300",
   };
 
   return (
@@ -177,19 +182,19 @@ function VulnerabilityDetailInner() {
         <TabsList>
           <TabsTrigger value="overview">
             <Bug size={14} className="mr-1.5" />
-            Übersicht
+            {t("vulnDetail.tabOverview")}
           </TabsTrigger>
           <TabsTrigger value="asset">
             <Server size={14} className="mr-1.5" />
-            Betroffenes Asset
+            {t("vulnDetail.tabAsset")}
           </TabsTrigger>
           <TabsTrigger value="mitigation">
             <ShieldCheck size={14} className="mr-1.5" />
-            Maßnahmen
+            {t("vulnDetail.tabMitigation")}
           </TabsTrigger>
           <TabsTrigger value="history">
             <History size={14} className="mr-1.5" />
-            Verlauf
+            {t("vulnDetail.tabHistory")}
           </TabsTrigger>
         </TabsList>
 
@@ -199,41 +204,47 @@ function VulnerabilityDetailInner() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle className="text-base">
-                  Schwachstellendetails
+                  {t("vulnDetail.details")}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 text-sm">
                   <div>
-                    <dt className="text-gray-500 font-medium">Titel</dt>
+                    <dt className="text-gray-500 font-medium">
+                      {t("vulnDetail.title")}
+                    </dt>
                     <dd className="text-gray-900 mt-0.5">{vuln.title}</dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500 font-medium">Schweregrad</dt>
+                    <dt className="text-gray-500 font-medium">
+                      {t("vulnDetail.severity")}
+                    </dt>
                     <dd className="mt-0.5">
                       <Badge
                         variant="outline"
                         className={`text-xs ${severityColor[vuln.severity] ?? ""}`}
                       >
-                        {vuln.severity}
+                        {t(`incidentSeverity.${vuln.severity}`)}
                       </Badge>
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-gray-500 font-medium">Status</dt>
+                    <dt className="text-gray-500 font-medium">
+                      {t("vulnDetail.status")}
+                    </dt>
                     <dd className="mt-0.5">
                       <Badge
                         variant="outline"
                         className={`text-xs ${statusColor[vuln.status] ?? ""}`}
                       >
-                        {vuln.status}
+                        {t(`vulnerabilityStatus.${vuln.status}`)}
                       </Badge>
                     </dd>
                   </div>
                   {vuln.cveReference && (
                     <div>
                       <dt className="text-gray-500 font-medium">
-                        CVE-Referenz
+                        {t("vulnDetail.cveReference")}
                       </dt>
                       <dd className="mt-0.5">
                         <a
@@ -251,7 +262,7 @@ function VulnerabilityDetailInner() {
                   {vuln.description && (
                     <div className="sm:col-span-2">
                       <dt className="text-gray-500 font-medium">
-                        Beschreibung
+                        {t("vulnDetail.description")}
                       </dt>
                       <dd className="text-gray-900 mt-0.5 whitespace-pre-wrap">
                         {vuln.description}
@@ -264,12 +275,18 @@ function VulnerabilityDetailInner() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Metadaten</CardTitle>
+                <CardTitle className="text-base">
+                  {t("vulnDetail.metadata")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} className="shrink-0" />
-                  <span>Erstellt: {formatDate(vuln.createdAt)}</span>
+                  <span>
+                    {t("vulnDetail.createdAt", {
+                      date: formatDate(vuln.createdAt),
+                    })}
+                  </span>
                 </div>
                 {asset && (
                   <div className="flex items-center gap-2 text-gray-500">
@@ -291,7 +308,9 @@ function VulnerabilityDetailInner() {
         <TabsContent value="asset" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Betroffenes Asset</CardTitle>
+              <CardTitle className="text-base">
+                {t("vulnDetail.affectedAsset")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {asset ? (
@@ -310,7 +329,7 @@ function VulnerabilityDetailInner() {
                   </div>
                   <Link href={`/isms/assets/${asset.id}`}>
                     <Button variant="outline" size="sm">
-                      Details anzeigen
+                      {t("vulnDetail.showDetails")}
                     </Button>
                   </Link>
                 </div>
@@ -318,7 +337,7 @@ function VulnerabilityDetailInner() {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <Server size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Kein Asset zugeordnet.
+                    {t("vulnDetail.noAsset")}
                   </p>
                 </div>
               )}
@@ -330,7 +349,9 @@ function VulnerabilityDetailInner() {
         <TabsContent value="mitigation" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Gegenmaßnahmen</CardTitle>
+              <CardTitle className="text-base">
+                {t("vulnDetail.mitigation")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {vuln.mitigationControlId ? (
@@ -338,15 +359,17 @@ function VulnerabilityDetailInner() {
                   <ShieldCheck size={24} className="text-green-600 shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-900">
-                      Verknüpfte Kontrolle
+                      {t("vulnDetail.linkedControl")}
                     </p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      ID: {vuln.mitigationControlId}
+                      {t("vulnDetail.controlId", {
+                        id: vuln.mitigationControlId,
+                      })}
                     </p>
                   </div>
                   <Link href={`/controls/${vuln.mitigationControlId}`}>
                     <Button variant="outline" size="sm">
-                      Kontrolle anzeigen
+                      {t("vulnDetail.showControl")}
                     </Button>
                   </Link>
                 </div>
@@ -354,7 +377,7 @@ function VulnerabilityDetailInner() {
                 <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                   <ShieldCheck size={28} className="text-gray-400 mb-3" />
                   <p className="text-sm text-gray-500">
-                    Keine Gegenmaßnahme zugeordnet.
+                    {t("vulnDetail.noMitigation")}
                   </p>
                 </div>
               )}
@@ -366,12 +389,16 @@ function VulnerabilityDetailInner() {
         <TabsContent value="history" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Änderungsverlauf</CardTitle>
+              <CardTitle className="text-base">
+                {t("vulnDetail.changeHistory")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
                 <Activity size={28} className="text-gray-400 mb-3" />
-                <p className="text-sm text-gray-500">Verlauf wird geladen...</p>
+                <p className="text-sm text-gray-500">
+                  {t("vulnDetail.historyLoading")}
+                </p>
               </div>
             </CardContent>
           </Card>

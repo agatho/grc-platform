@@ -947,7 +947,8 @@
     "teaser": {
       "activate": "Modul aktivieren",
       "contact": "Support kontaktieren",
-      "addon": "Dieses Modul erfordert eine Zusatzlizenz"
+      "addon": "Dieses Modul erfordert eine Zusatzlizenz",
+      "activateFailed": "Das Modul konnte nicht aktiviert werden. Bitte wenden Sie sich an einen Administrator."
     },
     "disableConfirm": "Das Deaktivieren von {name} verbirgt dieses Modul für alle Benutzer Ihrer Organisation. Ihre Daten werden nicht gelöscht und können jederzeit reaktiviert werden.",
     "depNotMet": "Erfordert: {deps}",
@@ -1231,7 +1232,38 @@
       "bcm": "BCM"
     },
     "workItemsTab": "Arbeitsobjekte",
-    "workItemsDescription": "Verknüpfte Arbeitsobjekte für dieses Asset"
+    "workItemsDescription": "Verknüpfte Arbeitsobjekte für dieses Asset",
+    "detail": {
+      "editClassification": "Klassifizierung bearbeiten",
+      "tabOverview": "Übersicht",
+      "tabClassification": "Klassifizierung",
+      "tabVulnerabilities": "Schwachstellen",
+      "tabIncidents": "Vorfälle",
+      "tabHistory": "Verlauf",
+      "assetInfo": "Asset-Informationen",
+      "visibleInModules": "Sichtbar in Modulen",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "updatedAt": "Aktualisiert: {date}",
+      "latestAudit": "Letztes Audit: {date}",
+      "latestAuditResult": "Audit-Ergebnis: {result}",
+      "protectionNeeds": "Schutzbedarfsfeststellung",
+      "edit": "Bearbeiten",
+      "overallProtection": "Gesamtschutzbedarf",
+      "classifiedAt": "Klassifiziert am {date}",
+      "noReason": "Keine Begründung angegeben",
+      "nextReview": "Nächste Überprüfung: {date}",
+      "notClassified": "Dieses Asset wurde noch nicht klassifiziert.",
+      "classifyNow": "Jetzt klassifizieren",
+      "vulnerabilities": "Schwachstellen",
+      "noVulnerabilities": "Keine Schwachstellen für dieses Asset erfasst.",
+      "incidents": "Sicherheitsvorfälle",
+      "noIncidents": "Keine Vorfälle für dieses Asset gemeldet.",
+      "changeHistory": "Änderungsverlauf",
+      "noHistory": "Noch keine Änderungen protokolliert.",
+      "systemUser": "System",
+      "entityFallback": "Asset"
+    }
   },
   "cia": {
     "confidentiality": "Vertraulichkeit",
@@ -1776,6 +1808,10 @@
       "riskTitle": "Risiko",
       "riskOwner": "Verantwortlicher",
       "noRisks": "Noch keine Risiken erfasst"
+    },
+    "fromCatalog": {
+      "source": "Aus Katalog: {code} — {name}",
+      "prefilled": "Titel und Beschreibung wurden vorausgefüllt"
     }
   },
   "process": {
@@ -2688,6 +2724,18 @@
       "bulkDescription": "Diesen Katalogeintrag mehreren Entitäten gleichzeitig zuweisen",
       "selectedCount": "{count} ausgewählt",
       "assignedCount": "{count} zugewiesen"
+    },
+    "workqueue": {
+      "loading": "Kataloge werden geladen …",
+      "summaryRisk": "{count, plural, one {# aktiver Risikokatalog} other {# aktive Risikokataloge}}",
+      "summaryControl": "{count, plural, one {# aktiver Kontrollkatalog} other {# aktive Kontrollkataloge}}",
+      "openEntries": "{count, plural, one {# offener Eintrag} other {# offene Einträge}}",
+      "hint": "Aus aktivierten Katalogen — klicken zum Anzeigen",
+      "allCatalogs": "Alle Kataloge",
+      "empty": "Keine offenen Einträge in diesem Katalog.",
+      "createRisk": "Risiko erstellen",
+      "createControl": "Kontrolle erstellen",
+      "shown": "{shown} von {total} offenen Einträgen angezeigt"
     }
   },
   "isms": {
@@ -2909,6 +2957,64 @@
       "duration": "Dauer",
       "slaStatus": "SLA-Status",
       "allTasksCompleted": "Alle Aufgaben abgeschlossen"
+    },
+    "threatDetail": {
+      "notFound": "Bedrohung nicht gefunden",
+      "backToList": "Zurück zur Liste",
+      "system": "System",
+      "tabOverview": "Übersicht",
+      "tabScenarios": "Risikoszenarien",
+      "tabHistory": "Verlauf",
+      "details": "Bedrohungsdetails",
+      "title": "Titel",
+      "code": "Code",
+      "category": "Kategorie",
+      "likelihood": "Eintrittswahrscheinlichkeit",
+      "description": "Beschreibung",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "type": "Typ: {type}",
+      "typeSystem": "Systembedrohung",
+      "typeCustom": "Benutzerdefiniert",
+      "fromCatalog": "Aus Katalog verknüpft",
+      "linkedScenarios": "Verknüpfte Risikoszenarien",
+      "noScenarios": "Keine Risikoszenarien mit dieser Bedrohung verknüpft.",
+      "scenarioFallback": "Risikoszenario",
+      "changeHistory": "Änderungsverlauf",
+      "historyLoading": "Verlauf wird geladen …",
+      "likelihoodRating": {
+        "1": "Sehr gering",
+        "2": "Gering",
+        "3": "Mittel",
+        "4": "Hoch",
+        "5": "Sehr hoch"
+      }
+    },
+    "vulnDetail": {
+      "notFound": "Schwachstelle nicht gefunden",
+      "backToList": "Zurück zur Liste",
+      "tabOverview": "Übersicht",
+      "tabAsset": "Betroffenes Asset",
+      "tabMitigation": "Maßnahmen",
+      "tabHistory": "Verlauf",
+      "details": "Schwachstellendetails",
+      "title": "Titel",
+      "severity": "Schweregrad",
+      "status": "Status",
+      "cveReference": "CVE-Referenz",
+      "description": "Beschreibung",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "affectedAsset": "Betroffenes Asset",
+      "showDetails": "Details anzeigen",
+      "noAsset": "Kein Asset zugeordnet.",
+      "mitigation": "Gegenmaßnahmen",
+      "linkedControl": "Verknüpfte Kontrolle",
+      "controlId": "ID: {id}",
+      "showControl": "Kontrolle anzeigen",
+      "noMitigation": "Keine Gegenmaßnahme zugeordnet.",
+      "changeHistory": "Änderungsverlauf",
+      "historyLoading": "Verlauf wird geladen …"
     }
   },
   "ismsAssessment": {
@@ -3654,10 +3760,33 @@
         "high": "Hoch"
       },
       "legalBasisValues": {
-        "adequacy": "Angemessenheitsbeschluss",
-        "sccs": "Standardvertragsklauseln",
-        "bcrs": "Verbindliche interne Datenschutzvorschriften",
-        "derogation": "Ausnahmetatbestand"
+        "adequacy": "Angemessenheitsbeschluss (Art. 45 DSGVO)",
+        "sccs": "Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)",
+        "bcrs": "Verbindliche interne Datenschutzvorschriften (Art. 47 DSGVO)",
+        "derogation": "Ausnahme (Art. 49 DSGVO)"
+      },
+      "detail": {
+        "notFound": "Transfer Impact Assessment nicht gefunden.",
+        "back": "Zurück zur Übersicht",
+        "reviewOverdueBadge": "Review überfällig",
+        "transferDetails": "Transferdetails",
+        "targetCountry": "Zielland",
+        "schremsIi": "Schrems-II-Bewertung",
+        "schremsIiEmpty": "Keine Schrems-II-Bewertung erfasst.",
+        "riskAndSafeguards": "Risikobewertung und Schutzmaßnahmen",
+        "riskClassification": "Risikoeinstufung: {rating}",
+        "riskHigh": "Hohes Risiko: Zusätzliche Schutzmaßnahmen und ggf. Aussetzung des Transfers erforderlich.",
+        "riskMedium": "Mittleres Risiko: Ergänzende Schutzmaßnahmen empfohlen.",
+        "riskLow": "Niedriges Risiko: Standardschutzmaßnahmen ausreichend.",
+        "documents": "Unterstützende Dokumente",
+        "documentsEmpty": "Keine Dokumente hinterlegt.",
+        "responsibility": "Verantwortung und Termine",
+        "responsible": "Verantwortlich",
+        "assessmentDate": "Bewertungsdatum",
+        "nextReview": "Nächste Überprüfung",
+        "createdAt": "Erstellt am",
+        "reviewOverdue": "Überprüfung überfällig",
+        "reviewOverdueHint": "Die nächste Überprüfung war am {date} fällig. Bitte aktualisieren Sie die Bewertung zeitnah."
       }
     }
   },
@@ -3980,6 +4109,25 @@
     },
     "empty": {
       "noVendors": "Keine Lieferanten gefunden"
+    },
+    "riskOverview": {
+      "title": "Lieferanten-Risikoübersicht",
+      "subtitle": "Aggregierte Risikoansicht aller Drittparteien mit ERM-Synchronisation",
+      "refresh": "Aktualisieren",
+      "kpiTotal": "Lieferantenrisiken gesamt",
+      "kpiCritical": "Kritisch (Score ≥ 15)",
+      "kpiSynced": "Im ERM synchronisiert",
+      "kpiUnsyncedHigh": "Nicht synchronisiert (hoch)",
+      "tableTitle": "Lieferanten-Risikobewertungen",
+      "colVendor": "Lieferant",
+      "colTier": "Tier",
+      "colInherent": "Inhärenter Score",
+      "colResidual": "Restrisiko-Score",
+      "colStatus": "Status",
+      "colErmSync": "ERM-Sync",
+      "empty": "Keine Lieferantenrisiken vorhanden",
+      "notSynced": "Nicht im ERM synchronisiert",
+      "synced": "Im ERM synchronisiert"
     }
   },
   "contracts": {
@@ -4456,6 +4604,55 @@
       "at_risk": "Gefährdet",
       "off_track": "Nicht im Plan",
       "achieved": "Erreicht"
+    },
+    "taxonomy": {
+      "title": "EU-Taxonomie-Alignment",
+      "subtitle": "Bewertung der Taxonomie-Konformität wirtschaftlicher Aktivitäten gemäß EU-Taxonomie-Verordnung",
+      "refresh": "Aktualisieren",
+      "addActivity": "Aktivität hinzufügen",
+      "dialogTitle": "Neue Taxonomie-Aktivität",
+      "activityName": "Aktivitätsname",
+      "activityNamePlaceholder": "z. B. Stromerzeugung aus Windkraft",
+      "naceCode": "NACE-Code",
+      "naceCodePlaceholder": "z. B. D35.1.1",
+      "reportingYear": "Berichtsjahr",
+      "cancel": "Abbrechen",
+      "create": "Erstellen",
+      "createFailed": "Die Aktivität konnte nicht angelegt werden.",
+      "kpiEligible": "Taxonomie-fähig",
+      "kpiAligned": "Taxonomie-konform",
+      "kpiRate": "Alignment-Quote",
+      "kpiTurnover": "Umsatz (aligned)",
+      "kpiCapex": "CapEx (aligned)",
+      "kpiOpex": "OpEx (aligned)",
+      "colActivity": "Aktivität",
+      "colNace": "NACE",
+      "colObjective": "Umweltziel",
+      "colEligible": "Fähig",
+      "colAligned": "Konform",
+      "colSc": "SC",
+      "colDnsh": "DNSH",
+      "colMs": "MS",
+      "colTurnover": "Umsatz",
+      "colStatus": "Status",
+      "empty": "Noch keine Taxonomie-Aktivitäten erfasst.",
+      "emptyHint": "Klicken Sie auf „Aktivität hinzufügen“, um zu beginnen.",
+      "yes": "Ja",
+      "no": "Nein",
+      "objective": {
+        "climate_mitigation": "Klimaschutz",
+        "climate_adaptation": "Klimaanpassung",
+        "water": "Wasser",
+        "circular_economy": "Kreislaufwirtschaft",
+        "pollution": "Umweltverschmutzung",
+        "biodiversity": "Biodiversität"
+      },
+      "status": {
+        "draft": "Entwurf",
+        "in_review": "In Prüfung",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt"
+      }
     }
   },
   "intelligence": {
@@ -5643,5 +5840,23 @@
       "continuityTitle": "Business Continuity",
       "continuityDesc": "Getestete Business-Continuity-Pläne und Disaster Recovery."
     }
+  },
+  "accessReview": {
+    "title": "Berechtigungsprüfung",
+    "subtitle": "Periodische Überprüfung aller Nutzerzugriffe und Rollenberechtigungen",
+    "refresh": "Aktualisieren",
+    "loadError": "Benutzer konnten nicht geladen werden. Die Liste unten ist unvollständig.",
+    "totalUsers": "Nutzer gesamt",
+    "approvedCount": "Bestätigt",
+    "revokedCount": "Widerrufen",
+    "progress": "Fortschritt",
+    "listTitle": "Nutzerzugriffe prüfen",
+    "department": "Abteilung: {name}",
+    "lastLogin": "Letzter Login: {date}",
+    "neverLoggedIn": "Nie eingeloggt",
+    "badgeApproved": "✓ Bestätigt",
+    "badgeRevoked": "✗ Widerrufen",
+    "approve": "Bestätigen",
+    "revoke": "Widerrufen"
   }
 }

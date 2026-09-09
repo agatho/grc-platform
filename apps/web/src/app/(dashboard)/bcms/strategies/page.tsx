@@ -10,6 +10,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ContinuityStrategy } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STRATEGY_COLORS: Record<string, string> = {
   active_active: "bg-green-100 text-green-900",
@@ -31,6 +32,7 @@ export default function StrategyListPage() {
 
 function StrategyListInner() {
   const t = useTranslations("bcms");
+  const { formatCurrency: money } = useDateFormat();
   const _router = useRouter();
   const [items, setItems] = useState<ContinuityStrategy[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,14 +106,8 @@ function StrategyListInner() {
     );
   }
 
-  const formatCurrency = (val: string | undefined) => {
-    if (!val) return "-";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(parseFloat(val));
-  };
+  const formatCurrency = (val: string | undefined) =>
+    val ? money(parseFloat(val), "EUR", { maximumFractionDigits: 0 }) : "-";
 
   return (
     <div className="space-y-6">

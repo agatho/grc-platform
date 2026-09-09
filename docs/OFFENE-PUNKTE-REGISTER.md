@@ -612,6 +612,74 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8b/8c: ein Check, den es nicht gab, und ein Fehler, den ich selbst gemacht habe
+
+Einzelheiten in `docs/UMSETZUNG-WELLE-8B.md` und `docs/UMSETZUNG-WELLE-8C.md`.
+
+Sprachlich: Ab hier stehen die englischen Fachbegriffe, die im deutschen
+Entwickleralltag ohnehin benutzt werden — Gate, Check, Ratchet, Barrel,
+Commit, Build, Lint. Die früheren Protokolle haben dafür deutsche Wörter
+erfunden („Tor", „Ratsche", „Fehlerwickel"), die niemand liest und niemand
+sucht. Das war ein Fehler; die alten Dateien tragen ihn noch.
+
+**Welle 8b** hat OP-202 abgeschlossen (11 Seiten mit Scheinbindung
+umgestellt) und dabei etwas an sich selbst gefunden, das schwerer wiegt als
+die Welle:
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Beleg                                                                              | Art       | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------- | ------- |
+| OP-218 | **Ein verschwundener Übersetzungsschlüssel war die einzige Änderung am Katalog, die kein Check sehen konnte.** Beim Einpflegen wurden 24 vorhandene `esgAdvanced.materiality.*`-Schlüssel in **beiden** Sprachen überschrieben. `audit-i18n-coverage.mjs` vergleicht DE gegen EN — eine symmetrische Löschung lässt beide Seiten deckungsgleich und ist dort per Konstruktion unsichtbar. `audit-i18n-usage.mjs --max-unused` zählt Schlüssel ohne Aufrufstelle; verschwindet ein unbenutzter, **sinkt** die Zahl und der Check wird grüner. Zugleich ist es die Änderung, die der Nutzer sofort sieht: die Seite zeigt den rohen Schlüssel. | Gegenprobe an einer symmetrischen Löschung: alter Check Exit 0, neuer Check Exit 1 | Testlücke | behoben |
+
+Behoben mit `scripts/i18n-key-inventory.mjs` und `.i18n-keys-ratchet.json`
+(80 Namespaces, 19.994 Schlüssel DE+EN): Der Bestand je Namespace und Sprache
+darf wachsen, nicht sinken. Eine Absenkung ist nicht verboten, sondern
+begründungspflichtig — `--update --reason "…"` schreibt den Grund nach
+`_history`. Als Schritt in `.github/workflows/i18n-coverage.yml` und als
+Gate-Eingabe in `scripts/check-gate-inputs.mjs` registriert; letzteres ist
+gegengeprüft, es meldete die noch nicht eingecheckte Datei sofort.
+
+**Welle 8c** hat OP-201 geschlossen — und dabei denselben Defekt neu erzeugt,
+den sie beseitigen sollte.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Beleg                                               | Art           | Stand                                                                                              |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------- |
+| OP-201 | Dritte `ADEQUACY_COUNTRIES`-Liste in `apps/web/src/app/api/v1/tprm/sub-processors/route.ts`, ohne `US` — die Liste vor dem EU-US Data Privacy Framework vom 10.07.2023. Ein US-Subprozessor wurde damit als Drittland ohne Angemessenheitsbeschluss bewertet.                                                                                                                                                                                                                                                                                                                                                                                                       | Route importiert jetzt aus `@grc/shared`            | Produktdefekt | behoben                                                                                            |
+| OP-219 | **Beim Zusammenführen ist eine zweite `EU_EEA_COUNTRIES` entstanden.** Die EU/EWR-Liste der Route wurde nach `dpms-tia.ts` gezogen, ohne zu prüfen, ob es den Namen im Paket schon gibt — es gab ihn, als Array in `types/eam-advanced.ts`, seit `e40ab5a5` und ohne einen einzigen Verwender. Damit war exakt der Zustand wiederhergestellt, den Welle 6a beseitigt hatte: der namentliche Export in `index.ts` verdeckt den gleichnamigen Stern-Export aus `types.ts`, und was aus `@grc/shared` herauskommt, ist nicht die Liste, die man in der Datei liest. Die Zusicherung aus Welle 6a hat es nicht gesehen, weil sie **einen Namen fest verdrahtet** hatte. | 30 Codes, inhaltlich deckungsgleich; null Verwender | Codequalität  | behoben                                                                                            |
+| OP-220 | `scripts/audit-i18n-coverage.mjs` schreibt rohes Markdown in eine **eingecheckte** Datei (`docs/i18n-coverage-report.md`), die unter den Format-Schritt aus `ci.yml` fällt. Der Generator schreibt `\|---\|`, prettier `\| --- \|`. Wer den Report neu erzeugte und committete, machte das Format-Gate rot, ohne dass irgendetwas darauf hinwies. `audit-dead-exports.mjs` und `audit-secrets.mjs` lösen das seit OP-074 dadurch, dass der Generator selbst formatiert; dieser hier zog nicht nach.                                                                                                                                                                 | gemessen am 2026-09-09 an genau diesem Weg          | Codequalität  | behoben                                                                                            |
+| OP-221 | **`npm run lint` ist auf diesem Branch rot und war es immer.** `turbo lint` bricht bei jedem ESLint-Error ab; im Root-Scope stehen 44 eingefrorene Altbefunde. CI prüft einen anderen Weg: `npx eslint .` nur in `apps/web` (0 Befunde) plus `scripts/lint-ratchet.mjs`. Beides ist grün, das dokumentierte Kommando nicht. Wer `npm run lint` ruft, sieht einen Fehlschlag, der nichts über seine Änderung aussagt.                                                                                                                                                                                                                                                | `Failed: @grc/email#lint, @grc/auth#lint, …`        | Doku          | **offen** — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando benennen |
+
+**Was OP-219 aufgedeckt hat, ist nicht die Kopie, sondern der Weg dorthin.**
+Aufgefallen ist sie nicht an einer Zusicherung, sondern am Dead-Exports-Ratchet
+— und dort als angebliche **Verbesserung**: `eam-advanced.ts: 28 < Baseline 29`.
+Der tote Export war nicht verschwunden; er war durch den neuen Import in der
+TPRM-Route nur namentlich erreichbar geworden, und der Detektor löst über den
+Namen auf und traf die falsche Datei. Ein Gate, das grün meldet, was ein Defekt
+ist. Die Zusicherung in `packages/shared/tests/dpms-tia-retention.test.ts` zählt
+jetzt beide Namen über eine Liste statt eines verdrahteten Bezeichners und prüft
+zusätzlich, dass der namentliche Export im Barrel auf die Heimatdatei zeigt.
+Beide Richtungen gemessen: rot bei wiedereingeführter Kopie, rot bei entferntem
+Barrel-Export, grün sonst.
+
+**Eigener Fehler, vierte Instanz derselben Klasse.** Die Gegenprobe zur
+Barrel-Zusicherung meldete zunächst „25 passed" — der Test war also
+angeblich nicht scharf. Er war es; die Probe war kaputt. Die Kette lautete
+`sed … && grep -c "EU_EEA_COUNTRIES" … && npx vitest …`, und `grep -c` endet
+bei **null Treffern** mit Status 1. Die Kette brach vor `vitest` ab; die
+Ausgabe „25 passed" stammte vom nachfolgenden Wiederherstellungslauf. Ich
+hatte die Abwesenheit einer Fehlermeldung als Ergebnis gelesen — dieselbe
+Klasse wie `✓ Compiled successfully` als Beweis für einen behobenen Absturz,
+wie das grüne Coverage-Gate gegen eine veraltete Datei und wie der
+Secret-Scan-Report, der vor der zu findenden Zeile erzeugt wurde. **Regel
+daraus:** eine Gegenprobe zählt nur, wenn der Fehlschlag selbst im Protokoll
+steht — nicht die Abwesenheit eines Erfolgs.
+
+**Gemessener Gesamtstand nach 8b/8c** (voller Durchlauf am 2026-09-09, frische
+Datenbank von null): 429/429 Migrationen, 617 Tabellen, DB-Integrität ohne
+Regression gegen die Baseline, **7.813 Tests grün in 13 von 13 Tasks**, 13
+Typechecks ohne Befund, Format über das ganze Repository grün, Lint-Ratchet
+44 (von 45, `no-useless-escape` vollständig behoben), Dead-Exports-Ratchet
+2.468, Secret-Scan 0 Befunde, alle vier i18n-Checks grün.
+
 ### Nachtrag 2026-09-09 — Welle 8a: das Regressionsprojekt ist vollständig gemessen
 
 Einzelheiten in `docs/UMSETZUNG-WELLE-8A.md`.

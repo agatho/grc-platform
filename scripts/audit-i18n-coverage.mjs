@@ -12,6 +12,7 @@
 // Limitation: nur Schluessel-Parity, nicht inhaltlich korrekte Uebersetzung.
 
 import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
+import { format as prettierFormat, resolveConfig } from "prettier";
 import { join, relative } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(
@@ -193,7 +194,27 @@ async function main() {
     md.push(``);
   }
 
-  await writeFile(OUT_MD, md.join("\n"));
+  // [ARCTOS-FULL-2026-08-31 · Welle 8c] Derselbe Befund wie in OP-074, nur
+  // an einem anderen Generator: der Report ist eingecheckt und faellt damit
+  // unter den Format-Schritt aus ci.yml (`prettier --check "**/*.md"`).
+  // Geschrieben wurde bisher rohes Markdown — der Generator schreibt
+  // `|---|`, prettier `| --- |`. Wer den Report neu erzeugte, machte damit
+  // das Format-Tor rot, ohne dass irgendetwas darauf hinwies; gemessen am
+  // 2026-09-09 an genau diesem Weg.
+  //
+  // `audit-dead-exports.mjs` und `audit-secrets.mjs` loesen das seit OP-074
+  // so: der Generator formatiert selbst, mit der Konfiguration des
+  // Repositories. Dieser hier zog nicht nach. Jetzt schon — ein Lauf ist
+  // damit in sich abgeschlossen.
+  const cfg = (await resolveConfig(OUT_MD)) ?? {};
+  await writeFile(
+    OUT_MD,
+    await prettierFormat(md.join("\n"), {
+      ...cfg,
+      filepath: OUT_MD,
+      parser: "markdown",
+    }),
+  );
   console.log(`Files: DE=${deFiles.length}, EN=${enFiles.length}`);
   console.log(`Missing EN: ${totalMissingEn}, Missing DE: ${totalMissingDe}`);
   console.log(

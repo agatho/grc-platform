@@ -268,9 +268,20 @@ export function ArctosBpmnCanvas({
   // beim Rendern — ein Schreibzugriff auf einen Verweis waehrend des Renderns
   // wirkt auch aus einem verworfenen Rendervorgang.
   const tRef = useRef(t);
+  // [ARCTOS-FULL-2026-08-31 · Welle 8b] Der Hinweistext wird HIER statisch
+  // aufgeloest und nur der fertige Text im Verweis nachgezogen. Grund: der
+  // Zaehler in `scripts/audit-i18n-usage.mjs` erkennt eine Aufrufstelle nur
+  // an der direkten Form der Bindung und sieht den Umweg ueber
+  // `tRef.current` nicht — seit Welle 7b galt
+  // `bpmn.chrome.disabledReason` deshalb als nie erreicht, und das Budget
+  // `--max-unused 2133` war auf HEAD rot, ohne dass ein Schluessel wirklich
+  // verwaist war. Die Abhaengigkeiten des Aufbau-Effekts bleiben unberuehrt.
+  const disabledReason = t("chrome.disabledReason");
+  const disabledReasonRef = useRef(disabledReason);
   useEffect(() => {
     tRef.current = t;
-  }, [t]);
+    disabledReasonRef.current = disabledReason;
+  }, [t, disabledReason]);
 
   const onElementClickRef = useRef(onElementClick);
   onElementClickRef.current = onElementClick;
@@ -345,7 +356,7 @@ export function ArctosBpmnCanvas({
             // Hinweistext bleibt in der Sprache stehen, die beim Aufbau galt.
             // Der zugaengliche Name der Flaeche folgt der Sprache (eigener
             // Effekt weiter unten), dieser Hinweis nicht.
-            disabledReason: tRef.current("chrome.disabledReason"),
+            disabledReason: disabledReasonRef.current,
           },
           // Die Modellschicht ausdrücklich mitgeben: `BpmnCanvas` würde sie
           // sonst über einen dynamischen Modulpfad nachladen, der sich mit

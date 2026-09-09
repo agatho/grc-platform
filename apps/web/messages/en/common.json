@@ -947,7 +947,8 @@
     "teaser": {
       "activate": "Activate Module",
       "contact": "Contact Support",
-      "addon": "This module requires an add-on license"
+      "addon": "This module requires an add-on license",
+      "activateFailed": "The module could not be activated. Please contact an administrator."
     },
     "disableConfirm": "Disabling {name} will hide this module for all users of your organization. Your data is not deleted and can be reactivated at any time.",
     "depNotMet": "Requires: {deps}",
@@ -1231,7 +1232,38 @@
       "bcm": "BCM"
     },
     "workItemsTab": "Work Items",
-    "workItemsDescription": "Linked work items for this asset"
+    "workItemsDescription": "Linked work items for this asset",
+    "detail": {
+      "editClassification": "Edit classification",
+      "tabOverview": "Overview",
+      "tabClassification": "Classification",
+      "tabVulnerabilities": "Vulnerabilities",
+      "tabIncidents": "Incidents",
+      "tabHistory": "History",
+      "assetInfo": "Asset information",
+      "visibleInModules": "Visible in modules",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "updatedAt": "Updated: {date}",
+      "latestAudit": "Last audit: {date}",
+      "latestAuditResult": "Audit result: {result}",
+      "protectionNeeds": "Protection needs assessment",
+      "edit": "Edit",
+      "overallProtection": "Overall protection need",
+      "classifiedAt": "Classified on {date}",
+      "noReason": "No justification given",
+      "nextReview": "Next review: {date}",
+      "notClassified": "This asset has not been classified yet.",
+      "classifyNow": "Classify now",
+      "vulnerabilities": "Vulnerabilities",
+      "noVulnerabilities": "No vulnerabilities recorded for this asset.",
+      "incidents": "Security incidents",
+      "noIncidents": "No incidents reported for this asset.",
+      "changeHistory": "Change history",
+      "noHistory": "No changes logged yet.",
+      "systemUser": "System",
+      "entityFallback": "Asset"
+    }
   },
   "cia": {
     "confidentiality": "Confidentiality",
@@ -1776,6 +1808,10 @@
       "riskTitle": "Risk",
       "riskOwner": "Owner",
       "noRisks": "No risks registered yet"
+    },
+    "fromCatalog": {
+      "source": "From catalogue: {code} — {name}",
+      "prefilled": "Title and description have been pre-filled"
     }
   },
   "process": {
@@ -2688,6 +2724,18 @@
       "bulkDescription": "Assign this catalog entry to multiple entities at once",
       "selectedCount": "{count} selected",
       "assignedCount": "{count} assigned"
+    },
+    "workqueue": {
+      "loading": "Loading catalogues …",
+      "summaryRisk": "{count, plural, one {# active risk catalogue} other {# active risk catalogues}}",
+      "summaryControl": "{count, plural, one {# active control catalogue} other {# active control catalogues}}",
+      "openEntries": "{count, plural, one {# open entry} other {# open entries}}",
+      "hint": "From activated catalogues — click to view",
+      "allCatalogs": "All catalogues",
+      "empty": "No open entries in this catalogue.",
+      "createRisk": "Create risk",
+      "createControl": "Create control",
+      "shown": "Showing {shown} of {total} open entries"
     }
   },
   "isms": {
@@ -2909,6 +2957,64 @@
       "duration": "Duration",
       "slaStatus": "SLA Status",
       "allTasksCompleted": "All tasks completed"
+    },
+    "threatDetail": {
+      "notFound": "Threat not found",
+      "backToList": "Back to list",
+      "system": "System",
+      "tabOverview": "Overview",
+      "tabScenarios": "Risk scenarios",
+      "tabHistory": "History",
+      "details": "Threat details",
+      "title": "Title",
+      "code": "Code",
+      "category": "Category",
+      "likelihood": "Likelihood",
+      "description": "Description",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "type": "Type: {type}",
+      "typeSystem": "System threat",
+      "typeCustom": "Custom",
+      "fromCatalog": "Linked from catalogue",
+      "linkedScenarios": "Linked risk scenarios",
+      "noScenarios": "No risk scenarios linked to this threat.",
+      "scenarioFallback": "Risk scenario",
+      "changeHistory": "Change history",
+      "historyLoading": "Loading history …",
+      "likelihoodRating": {
+        "1": "Very low",
+        "2": "Low",
+        "3": "Medium",
+        "4": "High",
+        "5": "Very high"
+      }
+    },
+    "vulnDetail": {
+      "notFound": "Vulnerability not found",
+      "backToList": "Back to list",
+      "tabOverview": "Overview",
+      "tabAsset": "Affected asset",
+      "tabMitigation": "Mitigation",
+      "tabHistory": "History",
+      "details": "Vulnerability details",
+      "title": "Title",
+      "severity": "Severity",
+      "status": "Status",
+      "cveReference": "CVE reference",
+      "description": "Description",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "affectedAsset": "Affected asset",
+      "showDetails": "Show details",
+      "noAsset": "No asset assigned.",
+      "mitigation": "Mitigation",
+      "linkedControl": "Linked control",
+      "controlId": "ID: {id}",
+      "showControl": "Show control",
+      "noMitigation": "No mitigation assigned.",
+      "changeHistory": "Change history",
+      "historyLoading": "Loading history …"
     }
   },
   "ismsAssessment": {
@@ -3654,10 +3760,33 @@
         "high": "High"
       },
       "legalBasisValues": {
-        "adequacy": "Adequacy Decision",
-        "sccs": "Standard Contractual Clauses",
-        "bcrs": "Binding Corporate Rules",
-        "derogation": "Derogation"
+        "adequacy": "Adequacy decision (Art. 45 GDPR)",
+        "sccs": "Standard contractual clauses (Art. 46(2)(c) GDPR)",
+        "bcrs": "Binding corporate rules (Art. 47 GDPR)",
+        "derogation": "Derogation (Art. 49 GDPR)"
+      },
+      "detail": {
+        "notFound": "Transfer impact assessment not found.",
+        "back": "Back to overview",
+        "reviewOverdueBadge": "Review overdue",
+        "transferDetails": "Transfer details",
+        "targetCountry": "Destination country",
+        "schremsIi": "Schrems II assessment",
+        "schremsIiEmpty": "No Schrems II assessment recorded.",
+        "riskAndSafeguards": "Risk assessment and safeguards",
+        "riskClassification": "Risk rating: {rating}",
+        "riskHigh": "High risk: additional safeguards and, if necessary, suspension of the transfer are required.",
+        "riskMedium": "Medium risk: supplementary safeguards recommended.",
+        "riskLow": "Low risk: standard safeguards are sufficient.",
+        "documents": "Supporting documents",
+        "documentsEmpty": "No documents attached.",
+        "responsibility": "Responsibility and dates",
+        "responsible": "Responsible",
+        "assessmentDate": "Assessment date",
+        "nextReview": "Next review",
+        "createdAt": "Created on",
+        "reviewOverdue": "Review overdue",
+        "reviewOverdueHint": "The next review was due on {date}. Please update the assessment promptly."
       }
     }
   },
@@ -3980,6 +4109,25 @@
     },
     "empty": {
       "noVendors": "No vendors found"
+    },
+    "riskOverview": {
+      "title": "Vendor risk overview",
+      "subtitle": "Aggregated risk view of all third parties, with ERM synchronisation",
+      "refresh": "Refresh",
+      "kpiTotal": "Vendor risks total",
+      "kpiCritical": "Critical (score ≥ 15)",
+      "kpiSynced": "Synchronised in ERM",
+      "kpiUnsyncedHigh": "Not synchronised (high)",
+      "tableTitle": "Vendor risk assessments",
+      "colVendor": "Vendor",
+      "colTier": "Tier",
+      "colInherent": "Inherent score",
+      "colResidual": "Residual score",
+      "colStatus": "Status",
+      "colErmSync": "ERM sync",
+      "empty": "No vendor risks recorded",
+      "notSynced": "Not synchronised in ERM",
+      "synced": "Synchronised in ERM"
     }
   },
   "contracts": {
@@ -4456,6 +4604,55 @@
       "at_risk": "At Risk",
       "off_track": "Off Track",
       "achieved": "Achieved"
+    },
+    "taxonomy": {
+      "title": "EU taxonomy alignment",
+      "subtitle": "Assessment of taxonomy alignment of economic activities under the EU Taxonomy Regulation",
+      "refresh": "Refresh",
+      "addActivity": "Add activity",
+      "dialogTitle": "New taxonomy activity",
+      "activityName": "Activity name",
+      "activityNamePlaceholder": "e.g. Electricity generation from wind power",
+      "naceCode": "NACE code",
+      "naceCodePlaceholder": "e.g. D35.1.1",
+      "reportingYear": "Reporting year",
+      "cancel": "Cancel",
+      "create": "Create",
+      "createFailed": "The activity could not be created.",
+      "kpiEligible": "Taxonomy-eligible",
+      "kpiAligned": "Taxonomy-aligned",
+      "kpiRate": "Alignment rate",
+      "kpiTurnover": "Turnover (aligned)",
+      "kpiCapex": "CapEx (aligned)",
+      "kpiOpex": "OpEx (aligned)",
+      "colActivity": "Activity",
+      "colNace": "NACE",
+      "colObjective": "Environmental objective",
+      "colEligible": "Eligible",
+      "colAligned": "Aligned",
+      "colSc": "SC",
+      "colDnsh": "DNSH",
+      "colMs": "MS",
+      "colTurnover": "Turnover",
+      "colStatus": "Status",
+      "empty": "No taxonomy activities recorded yet.",
+      "emptyHint": "Click “Add activity” to begin.",
+      "yes": "Yes",
+      "no": "No",
+      "objective": {
+        "climate_mitigation": "Climate change mitigation",
+        "climate_adaptation": "Climate change adaptation",
+        "water": "Water",
+        "circular_economy": "Circular economy",
+        "pollution": "Pollution",
+        "biodiversity": "Biodiversity"
+      },
+      "status": {
+        "draft": "Draft",
+        "in_review": "In review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
     }
   },
   "intelligence": {
@@ -5643,5 +5840,23 @@
       "continuityTitle": "Business continuity",
       "continuityDesc": "Tested business continuity plans and disaster recovery."
     }
+  },
+  "accessReview": {
+    "title": "Access review",
+    "subtitle": "Periodic review of all user access and role permissions",
+    "refresh": "Refresh",
+    "loadError": "Users could not be loaded. The list below is incomplete.",
+    "totalUsers": "Users total",
+    "approvedCount": "Approved",
+    "revokedCount": "Revoked",
+    "progress": "Progress",
+    "listTitle": "Review user access",
+    "department": "Department: {name}",
+    "lastLogin": "Last login: {date}",
+    "neverLoggedIn": "Never logged in",
+    "badgeApproved": "✓ Approved",
+    "badgeRevoked": "✗ Revoked",
+    "approve": "Approve",
+    "revoke": "Revoke"
   }
 }

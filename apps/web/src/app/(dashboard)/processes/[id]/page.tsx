@@ -799,7 +799,6 @@ function OverviewTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
-  const _tGov = useTranslations("processGovernance");
   const tDrill = useTranslations("bpmOverhaul");
   const tMap = useTranslations("processMap");
   const router = useRouter();

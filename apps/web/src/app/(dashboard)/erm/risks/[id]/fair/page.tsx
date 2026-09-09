@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Loader2,
   Play,
@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format-date";
 
 interface FAIRParams {
   lefMin: number;
@@ -102,6 +103,7 @@ export default function FAIRParametersPage() {
 
 function FAIRParametersInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const riskId = params.id as string;
@@ -458,27 +460,27 @@ function FAIRParametersInner() {
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">{t("aleP50")}</p>
               <p className="text-2xl font-bold text-green-700">
-                {formatEUR(Number(latestResult.aleP50))}
+                {formatEUR(locale, Number(latestResult.aleP50))}
               </p>
               <p className="text-xs text-muted-foreground">{t("median")}</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">{t("aleP95")}</p>
               <p className="text-2xl font-bold text-red-700">
-                {formatEUR(Number(latestResult.aleP95))}
+                {formatEUR(locale, Number(latestResult.aleP95))}
               </p>
               <p className="text-xs text-muted-foreground">VaR (95%)</p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">{t("aleMean")}</p>
               <p className="text-2xl font-bold">
-                {formatEUR(Number(latestResult.aleMean))}
+                {formatEUR(locale, Number(latestResult.aleMean))}
               </p>
             </div>
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">{t("aleStdDev")}</p>
               <p className="text-2xl font-bold text-muted-foreground">
-                {formatEUR(Number(latestResult.aleStdDev))}
+                {formatEUR(locale, Number(latestResult.aleStdDev))}
               </p>
             </div>
           </div>
@@ -496,10 +498,12 @@ function FAIRParametersInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }

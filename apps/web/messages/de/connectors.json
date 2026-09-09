@@ -96,5 +96,17 @@
     "controls": "Kontrollen",
     "covered": "abgedeckt",
     "missing": "fehlend"
+  },
+  "detail": {
+    "notFound": "Connector nicht gefunden",
+    "runTests": "Tests ausführen",
+    "runHealthCheck": "Health-Check ausführen",
+    "delete": "Connector löschen",
+    "confirmDelete": "Diesen Connector löschen?",
+    "deleteFailed": "Der Connector konnte nicht gelöscht werden.",
+    "testResults": "Testergebnisse",
+    "noTestResults": "Noch keine Testergebnisse. „Tests ausführen“ klicken.",
+    "scanned": "{category} – {count} geprüft",
+    "durationMs": "{ms} ms"
   }
 }

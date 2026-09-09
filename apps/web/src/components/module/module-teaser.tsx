@@ -23,6 +23,7 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
   const { definition, isAdmin } = useModuleConfig(moduleKey);
   const { refetch } = useAllModuleConfigs();
   const [activating, setActivating] = useState(false);
+  const [activateError, setActivateError] = useState<string | null>(null);
 
   const displayName =
     locale === "de"
@@ -38,6 +39,7 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
   const handleActivate = async () => {
     if (!definition) return;
     setActivating(true);
+    setActivateError(null);
     try {
       const res = await fetch(
         `/api/v1/organizations/current/modules/${moduleKey}`,
@@ -47,11 +49,18 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
           body: JSON.stringify({ uiStatus: "enabled" }),
         },
       );
+      // [ARCTOS-FULL-2026-08-31 · OP-219, Welle 8b] Hier stand `if (res.ok)`
+      // ohne `else`, und der `catch` verwarf den Fehler ausdruecklich
+      // („handled silently"). Dieselbe Signatur wie OP-216/OP-217: ein
+      // Administrator drueckte „Modul aktivieren", die Antwort war 403 oder
+      // 409, und die Seite blieb unveraendert stehen — ohne jeden Hinweis.
       if (res.ok) {
         refetch();
+        return;
       }
+      setActivateError(t("modules.teaser.activateFailed"));
     } catch {
-      // handled silently; admin page has full error handling
+      setActivateError(t("modules.teaser.activateFailed"));
     } finally {
       setActivating(false);
     }
@@ -76,6 +85,12 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
       {isAddon && (
         <p className="text-xs text-amber-600 mb-4">
           {t("modules.teaser.addon")}
+        </p>
+      )}
+
+      {activateError && (
+        <p className="mb-4 text-sm text-red-600" role="alert">
+          {activateError}
         </p>
       )}
 

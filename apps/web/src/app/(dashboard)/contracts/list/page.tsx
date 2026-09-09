@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ContractRow {
   id: string;
@@ -81,6 +82,7 @@ export default function ContractListPage() {
 
 function ContractListInner() {
   const t = useTranslations("contracts");
+  const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
 
   const [contracts, setContracts] = useState<ContractRow[]>([]);
@@ -132,15 +134,21 @@ function ContractListInner() {
     return result;
   }, [contracts, debouncedSearch, typeFilter, statusFilter]);
 
-  const formatValue = (val?: string, currency?: string) => {
-    if (!val) return "\u2014";
-    const num = parseFloat(val);
-    if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: currency || "EUR",
-    }).format(num);
-  };
+  // [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Vorher eine gewoehnliche
+  // Funktion im Rumpf: sie hing an nichts Reaktivem, und `exhaustive-deps`
+  // hat sie deshalb nicht als Abhaengigkeit der Spalten verlangt. Mit
+  // `money` aus `useDateFormat()` haengt sie am Gebietsschema — also
+  // `useCallback` und in die Abhaengigkeiten der Spalten, sonst behielten
+  // die Spalten nach einem Sprachwechsel den alten Formatierer.
+  const formatValue = useCallback(
+    (val?: string, currency?: string) => {
+      if (!val) return "\u2014";
+      const num = parseFloat(val);
+      if (isNaN(num)) return "\u2014";
+      return money(num, currency || "EUR");
+    },
+    [money],
+  );
 
   const columns: ColumnDef<ContractRow, unknown>[] = useMemo(
     () => [
@@ -239,7 +247,7 @@ function ContractListInner() {
         ),
       },
     ],
-    [t],
+    [t, formatValue],
   );
 
   if (loading && contracts.length === 0) {

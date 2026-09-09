@@ -31,6 +31,8 @@ on:
       - "apps/web/scripts/build-messages.ts"
       - "scripts/audit-i18n-coverage.mjs"
       - "scripts/audit-i18n-usage.mjs"
+      - "scripts/i18n-key-inventory.mjs"
+      - ".i18n-keys-ratchet.json"
       - ".github/workflows/i18n-coverage.yml"
 
 permissions:
@@ -49,6 +51,33 @@ jobs:
 
       - name: Run i18n coverage audit
         run: node scripts/audit-i18n-coverage.mjs
+
+      # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 · Welle 8c] Kein Schluessel verschwindet
+      # unbemerkt.
+      #
+      # Der Schritt darueber vergleicht DE gegen EN. Wird ein Schluessel in
+      # BEIDEN Sprachen geloescht oder ueberschrieben, bleiben beide Seiten
+      # deckungsgleich und er meldet nichts. Der Unused-Key-Ratchet weiter
+      # unten meldet ebenfalls nichts, im Gegenteil: war der Schluessel
+      # unbenutzt, SINKT dessen Zahl und der Check wird gruener.
+      #
+      # Damit war ein verschwundener Schluessel die einzige Aenderung am
+      # Katalog, die kein Check sehen konnte — und zugleich die einzige, die
+      # der Nutzer sofort sieht, naemlich als rohen Schluessel auf der Seite.
+      # Gemessen: in Welle 8b sind so 24 `esgAdvanced.materiality.*`-Eintraege
+      # ueberschrieben worden, beide Sprachen, alle Checks gruen.
+      #
+      # Gegenprobe zu diesem Schritt: bei einer symmetrischen Loeschung endet
+      # `audit-i18n-coverage.mjs` mit Exit 0, `i18n-key-inventory.mjs --check`
+      # mit Exit 1.
+      #
+      # Wachsen darf der Bestand frei. Eine Absenkung ist nicht verboten, aber
+      # begruendungspflichtig:
+      #   node scripts/i18n-key-inventory.mjs --update --reason "..."
+      # ────────────────────────────────────────────────────────────────
+      - name: Kein Schluesselverlust im Katalog
+        run: node scripts/i18n-key-inventory.mjs --check
 
       - name: Upload report as artifact
         if: always()
@@ -172,8 +201,22 @@ jobs:
       # vollstaendig in beiden Sprachen da und von NULL Aufrufstellen
       # erreicht. Das ist der dritte unabhaengige Grund, warum die Liste
       # aus OP-073 keine Loeschliste ist.
+      #
+      # [Welle 8b] 2133 -> 2104. Zwei Ursachen, beide gemessen:
+      # (a) Die 11 Seiten aus OP-202 haben Katalogknoten angeschlossen, die
+      #     laengst in beiden Sprachen dalagen und von einer hartkodierten
+      #     deutschen Zweitfassung verdraengt wurden --
+      #     `dpms.tia.legalBasisValues.*`, `assets.tiers.*`,
+      #     `isms.vulnerabilityStatus.*`. Das ist derselbe Befund wie in
+      #     Welle 5a; fuer die Bereiche der Welle 6b traf er nicht zu.
+      # (b) `bpmn.chrome.disabledReason` galt seit Welle 7b als nie erreicht:
+      #     der Aufruf lief ueber `tRef.current`, und der Zaehler erkennt
+      #     eine Aufrufstelle nur an der direkten Form der Bindung. Der
+      #     Schluessel WAR benutzt -- das Budget 2133 war auf 66de0a95
+      #     trotzdem rot (2134). Behoben in der Komponente, nicht im Budget.
+      # Beide Richtungen geprueft: gruen bei 2128, rot bei 2127.
       - name: Unused-key ratchet
-        run: node scripts/audit-i18n-usage.mjs --max-unused 2133
+        run: node scripts/audit-i18n-usage.mjs --max-unused 2128
 
       # [WP12 - S14-14] Zweite Ratsche: Dateien, die Text zeigen, ihn aber nicht
       # uebersetzen. Stand 2026-09-02: 78 von 482 Pages und 73 von 134
@@ -209,7 +252,17 @@ jobs:
         # wird; siehe `bindsButNeverCalls` in scripts/audit-i18n-usage.mjs.
         # 118 ist damit die erste ehrliche Zahl dieser Ratsche. Beide
         # Richtungen geprueft: gruen bei 118, rot bei 117.
-        run: node scripts/audit-i18n-usage.mjs --max-untranslated 118
+        #
+        # [Welle 8b · OP-202] 118 -> 107. Die 11 Dateien mit Scheinbindung
+        # ausserhalb `ai-act` sind umgestellt; das war der ganze Rest der
+        # Klasse, die Welle 6b beziffert hat. Zusaetzlich sind drei tote
+        # Bindungen NEBEN einer benutzten entfernt worden
+        # (`processes/[id]`, `processes`, `work-items/[id]`) -- die sieht
+        # `bindsButNeverCalls` nicht, weil es verlangt, dass ALLE Bindungen
+        # einer Datei tot sind; `wave8b-surfaces.test.ts` §4 prueft das
+        # schaerfer und ohne Ausnahme. Beide Richtungen geprueft: gruen bei
+        # 107, rot bei 106.
+        run: node scripts/audit-i18n-usage.mjs --max-untranslated 107
 
       # [OP-072] Hier stand ein Schritt "messages/{de,en}.json muessen
       # reproduzierbar sein", der `git diff` auf genau diese zwei Dateien rief.

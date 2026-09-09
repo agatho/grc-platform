@@ -31,11 +31,7 @@ interface MaterialityAssessment {
   completionPercent?: number;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Entwurf",
-  in_progress: "In Bearbeitung",
-  completed: "Abgeschlossen",
-};
+const STATUS_KEYS = ["draft", "in_progress", "completed"];
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -54,11 +50,12 @@ export default function Page() {
 
 function PageInner() {
   const { formatDate } = useDateFormat();
-  const _t = useTranslations("esgAdvanced");
+  const t = useTranslations("esgAdvanced");
   const [assessments, setAssessments] = useState<MaterialityAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const fetchAssessments = useCallback(async () => {
     setLoading(true);
@@ -93,9 +90,16 @@ function PageInner() {
           reportingPeriodYear: year,
         }),
       });
+      // [ARCTOS-FULL-2026-08-31 · Welle 8b] Hier stand `if (res.ok)` ohne
+      // `else` — dieselbe Signatur wie OP-216/OP-217. Bei einer abgelehnten
+      // Antwort blieb der Dialog offen und sagte nicht, dass nichts
+      // angelegt wurde.
       if (res.ok) {
         setDialogOpen(false);
+        setCreateError(null);
         void fetchAssessments();
+      } else {
+        setCreateError(t("materiality.createFailed"));
       }
     } finally {
       setSaving(false);
@@ -120,26 +124,33 @@ function PageInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Doppelte Wesentlichkeitsanalyse
+            {t("materiality.title")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            CSRD-konforme Wesentlichkeitsanalysen nach Berichtsjahren
+            {t("materiality.subtitle")}
           </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus size={14} className="mr-1" />
-              Neue Analyse starten
+              {t("materiality.newAssessment")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Neue Wesentlichkeitsanalyse</DialogTitle>
+              <DialogTitle>{t("materiality.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
+              {createError && (
+                <p className="text-sm text-red-600" role="alert">
+                  {createError}
+                </p>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="reportingYear">Berichtsjahr</Label>
+                <Label htmlFor="reportingYear">
+                  {t("materiality.reportingYear")}
+                </Label>
                 <Input
                   id="reportingYear"
                   name="reportingYear"
@@ -156,13 +167,13 @@ function PageInner() {
                   variant="outline"
                   onClick={() => setDialogOpen(false)}
                 >
-                  Abbrechen
+                  {t("materiality.cancel")}
                 </Button>
                 <Button type="submit" disabled={saving}>
                   {saving && (
                     <Loader2 size={14} className="mr-1 animate-spin" />
                   )}
-                  Erstellen
+                  {t("materiality.create")}
                 </Button>
               </div>
             </form>
@@ -175,7 +186,7 @@ function PageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Analysen gesamt
+              {t("materiality.kpiTotal")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -188,7 +199,7 @@ function PageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Abgeschlossen
+              {t("materiality.kpiCompleted")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -201,7 +212,7 @@ function PageInner() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              In Bearbeitung
+              {t("materiality.kpiInProgress")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -221,10 +232,8 @@ function PageInner() {
         <Card>
           <CardContent className="py-12 text-center text-gray-400">
             <BarChart3 size={32} className="mx-auto mb-2 text-gray-500" />
-            <p>Noch keine Wesentlichkeitsanalysen vorhanden.</p>
-            <p className="text-xs mt-1">
-              Klicken Sie auf &quot;Neue Analyse starten&quot;, um zu beginnen.
-            </p>
+            <p>{t("materiality.empty")}</p>
+            <p className="text-xs mt-1">{t("materiality.emptyHint")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -235,25 +244,29 @@ function PageInner() {
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-semibold">
-                      Berichtsjahr {a.reportingPeriodYear}
+                      {t("materiality.cardYear", {
+                        year: String(a.reportingPeriodYear),
+                      })}
                     </CardTitle>
                     <Badge
                       variant="outline"
                       className={`text-[10px] ${STATUS_COLORS[a.status] ?? ""}`}
                     >
-                      {STATUS_LABELS[a.status] ?? a.status}
+                      {STATUS_KEYS.includes(a.status)
+                        ? t(`materiality.status.${a.status}`)
+                        : a.status}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
-                      <span>Erstellt</span>
+                      <span>{t("materiality.createdAt")}</span>
                       <span>{formatDate(a.createdAt)}</span>
                     </div>
                     {a.finalizedAt && (
                       <div className="flex justify-between">
-                        <span>Abgeschlossen</span>
+                        <span>{t("materiality.finalizedAt")}</span>
                         <span>{formatDate(a.finalizedAt)}</span>
                       </div>
                     )}

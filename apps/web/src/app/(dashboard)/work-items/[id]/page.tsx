@@ -524,7 +524,6 @@ function HistoryTab({
   itemId: string;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const _tAudit = useTranslations("auditLog");
   const { formatDateTime } = useDateFormat();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);

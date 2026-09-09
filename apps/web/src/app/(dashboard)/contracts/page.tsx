@@ -18,6 +18,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ContractDashboard {
   totalContracts: number;
@@ -57,6 +58,7 @@ export default function ContractsDashboardPage() {
 
 function ContractsDashboardInner() {
   const t = useTranslations("contracts");
+  const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
   const [data, setData] = useState<ContractDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,10 +93,7 @@ function ContractsDashboardInner() {
   const formatCurrency = (val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-    }).format(num);
+    return money(num, "EUR");
   };
 
   return (

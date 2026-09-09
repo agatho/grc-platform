@@ -1,6 +1,6 @@
 {
   "_comment": "#S13-17 ESLint-Ratsche über alle zwölf Workspaces, getrennt nach Bereich (je Bereich eine eigene Flat Config, siehe _scopes). Zahlen dürfen nur SINKEN, und sie werden NICHT über Bereiche hinweg aufgerechnet. Neu setzen: node scripts/lint-ratchet.mjs --update. Eine Anhebung — oder das Entfernen eines Bereichs — verlangt zusätzlich --reason und wird in _history festgehalten.",
-  "_updatedAt": "2026-09-07",
+  "_updatedAt": "2026-09-09",
   "_scopes": {
     "root": {
       "cwd": ".",
@@ -25,8 +25,7 @@
       "@typescript-eslint/no-require-imports": 1,
       "@typescript-eslint/no-unused-vars": 12,
       "no-control-regex": 3,
-      "no-empty": 2,
-      "no-useless-escape": 1
+      "no-empty": 2
     },
     "apps/web": {}
   },
@@ -77,6 +76,13 @@
         "root · @typescript-eslint/no-unused-vars: 16 → 12"
       ],
       "reason": "Welle 6a / N-2 (Nachtrag): zwei weitere ungenutzte Test-Bindungen im Worker abgetragen (gemessen 2026-09-07)."
+    },
+    {
+      "date": "2026-09-09",
+      "total": 44,
+      "changed": [
+        "root · no-useless-escape: 1 → 0"
+      ]
     }
   ]
 }

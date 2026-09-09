@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Loader2, BarChart3 } from "lucide-react";
 import {
@@ -18,6 +18,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency } from "@/lib/format-date";
 
 interface CompareRisk {
   riskId: string;
@@ -45,6 +46,7 @@ export default function FAIRComparePage() {
 
 function FAIRCompareInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const riskIds = searchParams.get("riskIds") ?? "";
 
@@ -128,7 +130,7 @@ function FAIRCompareInner() {
               />
               <YAxis type="category" dataKey="name" width={200} fontSize={11} />
               <RechartsTooltip
-                formatter={(val: unknown) => formatEUR(Number(val))}
+                formatter={(val: unknown) => formatEUR(locale, Number(val))}
               />
               <Legend />
               <Bar dataKey="P5" fill="#86efac" name="P5" stackId="range" />
@@ -168,16 +170,16 @@ function FAIRCompareInner() {
                       <Badge variant="outline">{r.riskCategory}</Badge>
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP50)}
+                      {formatEUR(locale, r.aleP50)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP95)}
+                      {formatEUR(locale, r.aleP95)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP95)}
+                      {formatEUR(locale, r.aleP95)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleMean)}
+                      {formatEUR(locale, r.aleMean)}
                     </td>
                   </tr>
                 ))}
@@ -189,12 +191,14 @@ function FAIRCompareInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }
 
 function formatCompactEUR(value: number): string {

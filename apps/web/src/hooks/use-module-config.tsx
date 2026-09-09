@@ -35,11 +35,30 @@ const ModuleConfigContext = createContext<ModuleConfigContextValue>({
 
 interface ModuleConfigProviderProps {
   orgId: string | null;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-218, Welle 8b] True, solange die Sitzung
+   * noch laedt.
+   *
+   * `orgId` kommt aus `useSession()` und ist in ZWEI voellig verschiedenen
+   * Lagen `null`: „die Sitzung ist noch nicht da" und „die Sitzung ist da und
+   * hat keine Organisation". Der Anbieter hat beide gleich behandelt und
+   * `loading: false` mit leerer Liste gemeldet — fuer jedes `ModuleGate` ist
+   * das `status: "disabled"`, also der Teaser. Auf JEDER Modulseite blitzte
+   * deshalb kurz der Teaser mit dem ROHEN Modulschluessel auf
+   * (`definition?.displayNameDe ?? moduleKey`), dazu eine Konsolenwarnung,
+   * die dem Betreiber eine fehlende `module_definition`-Zeile meldete, die
+   * es gar nicht gab.
+   *
+   * Die Vorgabe ist `false`: ein Aufrufer, der das Flag nicht setzt,
+   * verhaelt sich wie bisher.
+   */
+  sessionLoading?: boolean;
   children: ReactNode;
 }
 
 export function ModuleConfigProvider({
   orgId,
+  sessionLoading = false,
   children,
 }: ModuleConfigProviderProps) {
   const [configs, setConfigs] = useState<ModuleConfig[]>([]);
@@ -49,7 +68,13 @@ export function ModuleConfigProvider({
   const fetchConfigs = useCallback(async () => {
     if (!orgId) {
       setConfigs([]);
-      setLoading(false);
+      setError(null);
+      // Solange die Sitzung laedt, ist „keine Organisation" kein Ergebnis,
+      // sondern ein Zwischenstand — und ein Zwischenstand darf nicht als
+      // „Modul abgeschaltet" durchgehen. Ist die Sitzung fertig und hat
+      // trotzdem keine Organisation, faellt das Flag und der Teaser
+      // erscheint wie bisher (kein Dauerladekreis).
+      setLoading(sessionLoading);
       return;
     }
 
@@ -74,7 +99,7 @@ export function ModuleConfigProvider({
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [orgId, sessionLoading]);
 
   useEffect(() => {
     void fetchConfigs();
@@ -82,7 +107,14 @@ export function ModuleConfigProvider({
 
   return (
     <ModuleConfigContext.Provider
-      value={{ configs, loading, error, refetch: fetchConfigs }}
+      value={{
+        configs,
+        // Der erste Rendervorgang liegt vor dem ersten Effektlauf; ohne
+        // diese Oder-Verknuepfung bliebe genau dieses eine Bild uebrig.
+        loading: sessionLoading || loading,
+        error,
+        refetch: fetchConfigs,
+      }}
     >
       {children}
     </ModuleConfigContext.Provider>
@@ -124,7 +156,20 @@ export function useModuleConfig(moduleKey: ModuleKey) {
 
   // Surface the missing-definition footgun. `loading` guards against
   // the initial render before the configs fetch resolves.
-  if (!loading && !config && !warnedMissingKeys.has(moduleKey)) {
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-218, Welle 8b] `configs.length > 0` ist neu
+  // und traegt die halbe Aussage der Warnung: Ist die Liste LEER, wissen wir
+  // ueber `module_definition` gar nichts — dann ist „keine Zeile gefunden"
+  // eine Behauptung, die der Anbieter nicht belegen kann, und sie hat den
+  // Betreiber genau in die falsche Richtung geschickt (die Zeile existierte).
+  // Gewarnt wird jetzt nur, wenn Konfigurationen geladen wurden und dieser
+  // eine Schluessel nicht darunter ist.
+  if (
+    !loading &&
+    configs.length > 0 &&
+    !config &&
+    !warnedMissingKeys.has(moduleKey)
+  ) {
     warnedMissingKeys.add(moduleKey);
     // Intentional console.warn: surfaces a provisioning gap that would
     // otherwise silently default-disable the page. (`no-console` is not
