@@ -2117,3 +2117,61 @@ Seite bleibt stehen. **Kein `eslint-disable`.**
 3m00s — zusammen 11m47s gegen das 10-Minuten-Budget, das der gemeinsame Job
 hatte. Die Trennung aus OP-242 war keine Kosmetik; ohne sie wäre dieser Befund
 zum vierten Mal in einem Timeout verschwunden.
+
+### Nachtrag 2026-09-09 — Welle 8l: zwei Befunde aus dem Abhängigkeits-Update
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                            | Beleg                                      | Art                          | Stand                    |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ---------------------------- | ------------------------ |
+| OP-244 | **`Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert.** Die eigene Angabe lautet `(MIT OR GPL-3.0-or-later)`; die GitHub-Lizenzdatenbank normalisiert das zu „GPL-3.0-only OR MIT", und die Action bewertet einen ODER-Ausdruck nicht als Wahl, sondern fällt über den Zweig auf der Sperrliste. Sie meldet also nicht, dass GPL-Code ausgeliefert wird, sondern dass sie den Ausdruck nicht auswerten kann. | Lauf `34345848114`                         | Tor                          | behoben                  |
+| OP-245 | **`eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile Anwendungscode geändert hätte.** 384 davon `react-hooks/set-state-in-effect`, die Regel, die Welle 7b mit 20 Fundstellen auf 0 gebracht hat. Der Sprung ist die Regel, nicht der Code.                                                                                                                                           | Eigene Messung 2026-09-09 gegen `a3ff1b07` | Entscheidung des Eigentümers | **offen — Entscheidung** |
+
+**OP-244, warum das keine Aufweichung ist.** Der Eintrag steht in
+`allow-dependencies-licenses`, aber aus einem anderen Grund als trufflehog:
+trufflehog ist AGPL und läuft nur in CI, jszip liegt im Web-Bundle
+(Offline-Prüfarchiv, ADR-011 rev.3). Die Begründung ist nicht „läuft nur in
+CI", sondern „ist gar kein Copyleft-Paket" — der Urheber räumt die Wahl
+ausdrücklich ein, ARCTOS nimmt MIT. Die Regel „nur CI-/Dev-Werkzeuge in dieser
+Liste" gilt unverändert weiter; dieser Eintrag ist die benannte Ausnahme davon
+und fällt weg, sobald die Action ODER-Ausdrücke auswertet. jszip kam mit
+`ccd171f4` und liegt in `main` — neu ist die Meldung, nicht das Paket: erst
+`3.10.1 → 3.10.2` aus OP-234 hat es in den PR-Diff gebracht, den die Action
+prüft.
+
+**OP-245, die Messung.** Gegen denselben Commit `a3ff1b07`, dieselbe
+`apps/web/eslint.config.mjs`, nur die Version des Plugins getauscht:
+
+| `eslint-plugin-react-hooks` | Fehler in `apps/web`  |
+| --------------------------- | --------------------- |
+| 7.0.1                       | **0**                 |
+| 7.1.1                       | **416** (354 Dateien) |
+
+Aufgeschlüsselt bei 7.1.1:
+
+| Regel                                     | Fundstellen |
+| ----------------------------------------- | ----------- |
+| `react-hooks/set-state-in-effect`         | 384         |
+| `react-hooks/refs`                        | 15          |
+| `react-hooks/purity`                      | 9           |
+| `react-hooks/static-components`           | 4           |
+| `react-hooks/immutability`                | 3           |
+| `react-hooks/preserve-manual-memoization` | 1           |
+
+**Warum das eine Entscheidung ist und keine Aufgabe.** Welle 7b hat
+`set-state-in-effect` einzeln durchgearbeitet — 20 Fundstellen, sieben
+Gestalten, jede mit eigener Auflösung (`@tanstack/react-query`, Einhängen
+statt Effekt, `useSyncExternalStore`, Ableitung beim Rendern), Beleg in
+`docs/UMSETZUNG-WELLE-7B.md`. Auf denselben Maßstab gebracht sind 384
+Fundstellen in 354 Dateien kein Audit-Befund mehr, sondern ein eigenes
+Vorhaben in der Größenordnung XL — und der Anlass ist ein Minor-Sprung eines
+Lint-Plugins, nicht ein Defekt, den jemand eingebaut hat.
+
+Drei Wege, alle mit ihrem Preis:
+
+| Weg                                                                                           | Was er kostet                                                                  | Was er aufgibt                                                                                   |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| **A** `eslint-plugin-react-hooks` auf `~7.0.1` festnageln, OP-245 als eigenes Vorhaben führen | eine Zeile; das Sicherheits-Update aus OP-234 (Next, sharp) bleibt vollständig | die neuen Prüfungen wirken vorerst nicht — datiert und benannt, nicht vergessen                  |
+| **B** die 416 jetzt abarbeiten                                                                | 354 Dateien, Maßstab Welle 7b; Wochen, nicht Stunden                           | die Testinstanz bleibt so lange auf dem alten Stand                                              |
+| **C** die sechs Regeln auf `warn` und unter die Ratsche mit dem gemessenen Stand              | wenige Zeilen; die Zahl kann nur noch fallen                                   | `apps/web` ist nicht mehr bei 0 gedeckelt — der Deckel, den Welle 4b-5 gesetzt hat, wird weicher |
+
+**Kein Weg gewählt.** Bis dahin ist der Lint-Job auf diesem Branch rot. Ich
+habe die Regeln **nicht** abgeschaltet und die Ratsche **nicht** angehoben.

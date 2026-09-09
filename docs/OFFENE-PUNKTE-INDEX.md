@@ -9,9 +9,9 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **243**
+Nummern: **245**
 
-## offen (5)
+## offen (6)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -20,6 +20,7 @@ Nummern: **243**
 | OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | offen — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando ben… | 2026-09-09   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
 | OP-234 | Zwei kritische Advisories gegen die ausgelieferte Next-Version, dazu eines mit hoher Schwere in `sharp`. `GHS… | offen — höchste Priorität                                                                  | 2026-09-09   |
+| OP-245 | `eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile A… | offen — Entscheidung                                                                       | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -196,7 +197,7 @@ _keine_
 | OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung a… | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsbera… | Haupttabelle |
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 
-## behoben (77)
+## behoben (78)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -277,3 +278,4 @@ _keine_
 | OP-241 | Vier Jobs in zwei Workflow-Dateien provisionierten in der falschen Reihenfolge, und die Korrektur aus OP-238 … | behoben                                                                                    | 2026-09-09 |
 | OP-242 | Der Job `Lint & Type Check` lag mit 9m09s bis 10m14s auf seinem 10-Minuten-Budget — sein Ergebnis hing an der… | behoben                                                                                    | 2026-09-09 |
 | OP-243 | Sieben Stellen in `apps/web` navigierten mit `window.location.href` statt mit dem Router — jede davon ein vol… | behoben                                                                                    | 2026-09-09 |
+| OP-244 | `Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert. Die eigene Angabe laute… | behoben                                                                                    | 2026-09-09 |
