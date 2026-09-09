@@ -612,6 +612,43 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8h: die Frage „was ist offen?" war nur über eine Sortierregel zu beantworten
+
+**Eigener Fehler, siebte Instanz — und zweimal am selben Tag.** Ich habe dem
+Eigentümer fünf Punkte als offen gemeldet (OP-175, OP-176, OP-177, OP-179,
+OP-180), von denen vier längst behoben waren, und OP-173 dazu. Beide Male habe
+ich den Stand aus der **Reihenfolge** der Nachträge erschlossen statt ihn
+nachzuschlagen — erst mit der falschen Regel (letzte Fundstelle = neueste; es
+ist die erste, weil Nachträge oben eingefügt werden), dann mit der richtigen
+Regel, die aber **nicht durchgehend gilt**: der Nachtrag an Zeile 566 ist auf
+2026-09-03 datiert und steht über Nachträgen vom 2026-09-09.
+
+Die Ursache ist nicht Unaufmerksamkeit. Sie ist, dass die einfachste Frage an
+ein Register — _welche Punkte sind offen?_ — erschlossen werden musste, statt
+irgendwo zu stehen.
+
+**`scripts/op-index.mjs` schreibt sie jetzt hin.** Je Nummer der jüngste
+Eintrag, bestimmt nach dem **Datum** des Nachtrags und bei Gleichstand nach
+der Position; Ergebnis ist `docs/OFFENE-PUNKTE-INDEX.md`. Ohne Argument prüft
+das Skript, dass der eingecheckte Index dem Register entspricht — dieselbe
+Mechanik wie bei der generierten API-Doku, und aus demselben Grund: ein Index,
+den niemand nachzieht, beantwortet die Frage falsch statt gar nicht.
+
+**Gemessener Stand aus dem Index (238 Nummern):** 6 offen, 1 teilweise,
+2 Entscheidung, **159 ohne Stand**, 70 behoben.
+
+**Die 159 sind der eigentliche Befund.** Die Haupttabelle des Registers hat
+gar keine Stand-Spalte — für zwei Drittel aller Punkte ist „ist das erledigt?"
+aus dem Register **nicht** zu beantworten, nur aus den Nachträgen, und nur für
+die, die je einen bekommen haben. Das ist keine Nachlässigkeit im Einzelfall,
+sondern eine Lücke in der Form des Registers. Sie ist hier benannt und nicht
+behoben: eine Stand-Spalte für 166 Altpunkte nachzutragen heißt, 166 Punkte
+gegen den Code zu prüfen — das ist Arbeit, keine Formatierung.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                          | Beleg                                                                | Art  | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ---- | ------- |
+| OP-173 | „`apps/web` hat keine Lint-Ratsche" — das galt bis Welle 4b-5 und steht seitdem falsch im Register. `.eslint-ratchet.json._scopes` führt `root` **und** `apps/web`; der Lauf misst dort 2.301 Dateien gegen Baseline 0, in einem eigenen Arbeitsverzeichnis mit der strengeren `apps/web/eslint.config.mjs`. | `[apps/web] . (cwd apps/web): 0 Befunde (Baseline 0), 2.301 Dateien` | Doku | behoben |
+
 ### Nachtrag 2026-09-09 — OP-238: eine frische Installation, die migriert bevor sie die Rolle anlegt, bekommt keine Anwendung
 
 | OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                                                                                    | Art         | Stand                        |

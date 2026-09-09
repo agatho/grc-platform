@@ -212,6 +212,16 @@ jobs:
       - name: OP-Nummern sind eindeutig und im Register bekannt
         run: node scripts/check-op-numbers.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8h] Die Frage „welche Punkte sind
+      # offen?" war bisher nur ueber die Reihenfolge der Nachtraege zu
+      # beantworten — und die Reihenfolge gilt nicht durchgehend (ein
+      # Nachtrag vom 2026-09-03 steht ueber welchen vom 2026-09-09). Zweimal
+      # an einem Tag kam so eine falsche Liste heraus. `op-index.mjs` leitet
+      # den Stand je Nummer ab und haelt fest, dass der eingecheckte Index
+      # zum Register passt.
+      - name: Der Punkte-Index passt zum Register
+        run: node scripts/op-index.mjs
+
       # [ARCTOS-FULL-2026-08-31 · Welle 8g] Ein Job, der nichts installiert,
       # aber ein Skript aufruft, das ein Paket importiert, stirbt an
       # `ERR_MODULE_NOT_FOUND` — und hat dann NICHTS geprueft, waehrend die

@@ -70,6 +70,14 @@ const GATE_INPUTS = [
     "docs/OFFENE-PUNKTE-REGISTER.md",
     "scripts/check-op-numbers.mjs (OP-Nummern eindeutig und bekannt)",
   ],
+  // [ARCTOS-FULL-2026-08-31 · Welle 8h] Der abgeleitete Index. Er ist
+  // Ausgabe UND Eingabe: `op-index.mjs` ohne Argument vergleicht ihn mit dem
+  // Register. Faellt er aus dem Repository, prueft der Schritt eine Datei,
+  // die niemand mehr sieht — dieselbe Mechanik wie bei OP-074.
+  [
+    "docs/OFFENE-PUNKTE-INDEX.md",
+    "scripts/op-index.mjs (Stand je Punkt, gegen das Register geprueft)",
+  ],
   [".env.example", "scripts/check-env-example.mjs"],
   ["scripts/db-integrity-baseline.json", "DB-Integritätsprüfung"],
   [
