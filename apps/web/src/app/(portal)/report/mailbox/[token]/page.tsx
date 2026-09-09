@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useNow } from "@/hooks/use-now";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -56,9 +58,6 @@ const STATUS_STEPS = [
 
 export default function MailboxPage() {
   const { token } = useParams<{ token: string }>();
-  const [data, setData] = useState<MailboxData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -67,27 +66,38 @@ export default function MailboxPage() {
   // waehrend `wbPortal.*` seit jeher in beiden Katalogen liegt und von keiner
   // Aufrufstelle erreicht wurde. Der Umschalter sitzt jetzt im Portalrahmen.
   const t = useTranslations("wbPortal");
+  const now = useNow();
   const locale = useLocale();
 
-  const fetchMailbox = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhaengen ueber `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Die Abfrage wirft einen
+  // Schluessel statt eines Textes: eine nicht-ok-Antwort heisst wie vorher
+  // „ungueltig oder abgelaufen", jeder andere Fehlschlag „Verbindungsfehler";
+  // uebersetzt wird beim Rendern, damit ein Sprachwechsel den Text mitnimmt.
+  const {
+    data = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<MailboxData | null>({
+    queryKey: ["portal", "mailbox", token],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/portal/mailbox/${token}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      } else {
-        setError(t("invalidOrExpired"));
-      }
-    } catch {
-      setError(t("connectionError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [token, t]);
+      if (!res.ok) throw new Error("invalidOrExpired");
+      const json = await res.json();
+      return (json.data ?? null) as MailboxData | null;
+    },
+  });
+  const error = queryError
+    ? queryError.message === "invalidOrExpired"
+      ? t("invalidOrExpired")
+      : t("connectionError")
+    : null;
 
-  useEffect(() => {
-    fetchMailbox();
-  }, [fetchMailbox]);
+  const fetchMailbox = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,12 +171,11 @@ export default function MailboxPage() {
   );
 
   const daysUntilAck = Math.ceil(
-    (new Date(data.acknowledgeDeadline).getTime() - Date.now()) /
+    (new Date(data.acknowledgeDeadline).getTime() - now) /
       (1000 * 60 * 60 * 24),
   );
   const daysUntilResponse = Math.ceil(
-    (new Date(data.responseDeadline).getTime() - Date.now()) /
-      (1000 * 60 * 60 * 24),
+    (new Date(data.responseDeadline).getTime() - now) / (1000 * 60 * 60 * 24),
   );
 
   return (

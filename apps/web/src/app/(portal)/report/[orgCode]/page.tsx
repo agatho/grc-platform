@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -54,11 +55,9 @@ const MAX_DESCRIPTION_CHARS = 10000;
 
 export default function ReportPage() {
   const { orgCode } = useParams<{ orgCode: string }>();
-  const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SubmitResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Form state
@@ -86,32 +85,39 @@ export default function ReportPage() {
   const t = useTranslations("wbPortal");
   const locale = useLocale();
 
-  const fetchOrgInfo = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/portal/report/${orgCode}`);
-      if (res.ok) {
-        const json = await res.json();
-        setOrgInfo(json.data);
-      } else {
-        setError(t("orgNotFound"));
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlertext des Abrufs
+  // (Organisation unbekannt / Verbindungsfehler) kommt wie vorher uebersetzt
+  // aus der Abfrage selbst — nur der Fehlertext des ABSENDENS lebt noch in
+  // einem eigenen Zustand; beide muenden wie vorher in dasselbe `error`.
+  const { data: orgLoad, isPending: loading } = useQuery<{
+    orgInfo: OrgInfo | null;
+    error: string | null;
+  }>({
+    queryKey: ["portal", "report", orgCode],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/v1/portal/report/${orgCode}`);
+        if (res.ok) {
+          const json = await res.json();
+          return { orgInfo: json.data as OrgInfo, error: null };
+        }
+        return { orgInfo: null, error: t("orgNotFound") };
+      } catch {
+        return { orgInfo: null, error: t("connectionError") };
       }
-    } catch {
-      setError(t("connectionError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [orgCode, t]);
-
-  useEffect(() => {
-    fetchOrgInfo();
-  }, [fetchOrgInfo]);
+    },
+  });
+  const orgInfo = orgLoad?.orgInfo ?? null;
+  const error = submitError ?? orgLoad?.error ?? null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!category || description.length < 20) return;
 
     setSubmitting(true);
-    setError(null);
+    setSubmitError(null);
 
     try {
       const res = await fetch(`/api/v1/portal/report/${orgCode}`, {
@@ -134,10 +140,10 @@ export default function ReportPage() {
         setResult(json.data);
       } else {
         const json = await res.json();
-        setError(json.error || t("submitError"));
+        setSubmitError(json.error || t("submitError"));
       }
     } catch {
-      setError(t("connectionError"));
+      setSubmitError(t("connectionError"));
     } finally {
       setSubmitting(false);
     }
