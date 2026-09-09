@@ -232,6 +232,16 @@ jobs:
       - name: Jedes Workflow-Skript laeuft in seinem Job
         run: node scripts/check-workflow-script-deps.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8i] Ein doppelter `env:`-Schluessel in
+      # diesem Job hat den GESAMTEN CI-Workflow drei Commits lang nicht
+      # starten lassen — GitHub meldet dann nur "This run likely failed
+      # because of a workflow file issue", und die PR-Uebersicht sieht wegen
+      # der uebrigen Workflows trotzdem teilweise gruen aus. Geprueft hatte
+      # ich es mit `yaml.safe_load`, und der nimmt doppelte Schluessel
+      # stillschweigend hin: die Pruefung konnte den Fehler nicht finden.
+      - name: Die Workflow-Dateien sind wohlgeformt
+        run: node scripts/check-workflow-yaml.mjs
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────
@@ -294,11 +304,10 @@ jobs:
       # dieser Schritt dort weg, ist dieser Opt-out sofort unzulaessig.
       - name: Run tests
         env:
-          ALLOW_SKIP_DB_TESTS: "1"
-        run: npx turbo test -- --reporter=verbose --coverage
-        env:
           # [WP10 · S08-09] Nur hier — turbo ist der einzige Verbraucher.
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          ALLOW_SKIP_DB_TESTS: "1"
+        run: npx turbo test -- --reporter=verbose --coverage
 
       # [ARCTOS-FULL-2026-08-31 · OP-093] Der a11y-Lauf, benannt.
       #

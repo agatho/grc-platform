@@ -612,6 +612,30 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8i: ein doppelter Schlüssel, und eine Prüfung, die ihn nicht finden konnte
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                             | Art | Stand   |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | --- | ------- |
+| OP-239 | **Ein doppelter `env:`-Schlüssel in `ci.yml` hat den gesamten CI-Workflow drei Commits lang nicht starten lassen.** GitHub quittiert das nur mit `This run likely failed because of a workflow file issue` — kein Job, kein Protokoll, keine Zeile, die auf die Stelle zeigt. Und die Übersicht des Pull Requests sah trotzdem teilweise grün aus, weil die übrigen, eigenständigen Workflows davon nichts wissen. Von mir verursacht: ich habe einem Schritt ein `env:` gegeben, der schon eines hatte. | `f102816f`, `cd6e551d`, `d07362ee` — CI jeweils `failure` nach unter einer Minute | Tor | behoben |
+
+**Geprüft hatte ich es** — mit `yaml.safe_load`, und genau das ist der Befund.
+Die YAML-Spezifikation verbietet doppelte Schlüssel; die verbreiteten Lader
+nehmen sie stillschweigend hin und behalten den letzten. **Die Prüfung war
+grün, weil sie blind war** — dieselbe Klasse wie die achtzehn Checks, die
+dieses Audit gesammelt hat, diesmal in meinem eigenen Werkzeug.
+
+`scripts/check-workflow-yaml.mjs` liest jede Workflow-Datei mit einem Lader,
+der bei doppelten Schlüsseln abbricht, und prüft zusätzlich die zwei anderen
+Formfehler, die GitHub mit derselben Zeile quittiert: ein Job ohne `steps`,
+ein Schritt ohne `uses` und ohne `run`.
+
+Gegenprobe, an derselben Datei gemessen:
+
+| Prüfung                   | Ergebnis                     |
+| ------------------------- | ---------------------------- |
+| `yaml.safe_load`          | „ohne Befund"                |
+| `check-workflow-yaml.mjs` | Exit 1, mit Datei und Stelle |
+
 ### Nachtrag 2026-09-09 — Welle 8h: die Frage „was ist offen?" war nur über eine Sortierregel zu beantworten
 
 **Eigener Fehler, siebte Instanz — und zweimal am selben Tag.** Ich habe dem
