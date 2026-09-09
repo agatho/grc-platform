@@ -9,9 +9,9 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **252**
+Nummern: **253**
 
-## offen (6)
+## offen (7)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -21,6 +21,7 @@ Nummern: **252**
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
 | OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                          | 2026-09-09   |
 | OP-251 | Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden. `auth.setup.ts` verlangt seit der Mehr-Konten-T… | offen                                                                                      | 2026-09-09   |
+| OP-253 | Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht. Der Schritt, der `cairosvg` für die Ras… | offen                                                                                      | 2026-09-09   |
 
 ## teilweise (0)
 
