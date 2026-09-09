@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Award, Download } from "lucide-react";
 
@@ -28,22 +29,29 @@ export default function CertificatesPage() {
 function CertificatesList() {
   const t = useTranslations("academy");
   const { formatDate } = useDateFormat();
-  const [items, setItems] = useState<Certificate[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage.
+  const {
+    data: items = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Certificate[]>({
+    queryKey: ["academy", "certificates"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/academy/certificates");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Certificate[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/academy/certificates");
-      if (res.ok) setItems((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -60,9 +68,9 @@ function CertificatesList() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
