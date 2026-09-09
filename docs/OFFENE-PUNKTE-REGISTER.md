@@ -621,12 +621,12 @@ Unit Tests und E2E Smoke seitdem nie gelaufen. Mit dem Lint-Job auf 0
 liefen sie zum ersten Mal — und zeigten drei Dinge, von denen keines zu
 OP-245 gehört, aber jedes vor OP-245 unsichtbar war.
 
-| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Beleg                                                                                                                                                                                                               | Art                                                     | Stand       |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------- |
-| OP-250 | **Ein E-Mail-Test lud `EmailService` per `await import()` im Testkörper — und damit alle React-Email-Templates innerhalb des 5-Sekunden-Limits des Tests.** Auf dem CI-Runner braucht das 6,1 s (die Import-Phase der Datei liegt dort bei ~23 s kalt), lokal 0,6 s; der Test `renders every registered key without throwing` fiel, bevor ein einziges Template gerendert war. Der Import steht jetzt auf Modulebene, wo vitest ihn nicht gegen ein Zeitlimit misst; der Test selbst braucht 6 ms. `vi.mock("resend")` ist gehoistet und wirkt wie zuvor. Keine Erwartung und kein Zeitlimit wurde geändert.                                                                                                                                                                                              | CI-Lauf 34371008020, Job Unit Tests: `Test timed out in 5000ms` bei `template-coverage.test.ts:157`; lokal danach 10/10, tsc 0, eslint 0                                                                            | Testsuite (latent seit 2026-09-01, erst jetzt sichtbar) | **behoben** |
-| OP-251 | **Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden.** `auth.setup.ts` verlangt seit der Mehr-Konten-Testbasis (`81200d89`) ein `E2E_ROLE_PASSWORD` und Konten, die `npm run db:seed:e2e-users` mit genau diesem Passwort angelegt hat. `ci.yml` seedet diese Konten nirgends, und der Schritt, der fällt (`Run Playwright smoke (fast fail)`), bekommt nicht einmal die vorhandenen Secrets `E2E_EMAIL`/`E2E_PASSWORD` — die stehen nur am Schritt danach. Die Meldung ist klar und gewollt (ein stiller Skip wäre wieder ein Tor, das nichts prüft), aber der Job ist damit seit einer Woche ein sicherer Rotfall. Nicht angefasst: `.github/workflows/**` liegt bei der Cloud-Sitzung (Vorgabe des Eigentümers).                                                                            | CI-Lauf 34371008020, Job E2E Smoke Tests: `No password for the primary E2E account. Provision it with E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users`                                                    | CI-Workflow (Cloud-Sitzung)                             | offen       |
-| OP-252 | **`notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei.** `generate-notice.mjs` schrieb unausgerichtete Markdown-Tabellen (`\|---\|---:\|`), der Prettier-Schritt im Lint-Job verlangt ausgerichtete. Die eingecheckte `THIRD-PARTY-LICENSES.md` war seit `da7f5505` (2026-09-01, „Vollverifikation") die Prettier-Fassung — damit war `notice:check` seitdem in jedem Lauf rot; als `452205ad` die Erzeuger-Fassung einspielte, wurde stattdessen Prettier rot. Der Erzeuger formatiert seine Markdown-Ausgabe jetzt selbst mit Prettier (Repo-Konfiguration), vor dem Schreiben und vor dem Vergleich. Kein Tor wurde gelockert.                                                                                                                                      | CI-Läufe 34371008020 (Security Audit: `✗ veraltet`) und 34374305993 (Lint: `[warn] THIRD-PARTY-LICENSES.md`); Linux-Klon auf `2d815a66`: `--check` grün, `prettier --check` grün                                    | Werkzeug (zwei Tore gegeneinander, seit 2026-09-01)     | **behoben** |
-| OP-253 | **Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht.** Der Schritt, der `cairosvg` für die Raster-Tests installiert, beginnt mit `sudo apt-get update -qq` unter `set -euo pipefail`; auf dem Runner-Image ist die Google-Chrome-Quelle (`dl.google.com/linux/chrome-stable`) vorkonfiguriert, und wenn deren Index gerade rotiert (`Hash Sum mismatch`), stirbt der Job mit Exit 100, **bevor ein Test läuft**. Am 2026-09-09 zwischen 17:16 und 18:10 UTC dreimal hintereinander auf `d3637701`, in drei Versuchen; der E2E-Job traf es im selben Fenster zweimal beim Playwright-Install. Abhilfe liegt in `ci.yml` (Quelle vor dem Update entfernen oder das Update auf die benötigten Quellen beschränken) — nicht angefasst, `.github/workflows/**` liegt bei der Cloud-Sitzung. | Lauf 34382535195, Versuche 1–3, Job Unit Tests, Schritt der cairosvg-Installation: `E: Failed to fetch https://dl.google.com/linux/chrome-stable/deb/dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch` | CI-Workflow (Cloud-Sitzung)                             | offen       |
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Beleg                                                                                                                                                                                                               | Art                                                     | Stand                             |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | --------------------------------- |
+| OP-250 | **Ein E-Mail-Test lud `EmailService` per `await import()` im Testkörper — und damit alle React-Email-Templates innerhalb des 5-Sekunden-Limits des Tests.** Auf dem CI-Runner braucht das 6,1 s (die Import-Phase der Datei liegt dort bei ~23 s kalt), lokal 0,6 s; der Test `renders every registered key without throwing` fiel, bevor ein einziges Template gerendert war. Der Import steht jetzt auf Modulebene, wo vitest ihn nicht gegen ein Zeitlimit misst; der Test selbst braucht 6 ms. `vi.mock("resend")` ist gehoistet und wirkt wie zuvor. Keine Erwartung und kein Zeitlimit wurde geändert.                                                                                                                                                                                              | CI-Lauf 34371008020, Job Unit Tests: `Test timed out in 5000ms` bei `template-coverage.test.ts:157`; lokal danach 10/10, tsc 0, eslint 0                                                                            | Testsuite (latent seit 2026-09-01, erst jetzt sichtbar) | **behoben**                       |
+| OP-251 | **Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden.** `auth.setup.ts` verlangt seit der Mehr-Konten-Testbasis (`81200d89`) ein `E2E_ROLE_PASSWORD` und Konten, die `npm run db:seed:e2e-users` mit genau diesem Passwort angelegt hat. `ci.yml` seedet diese Konten nirgends, und der Schritt, der fällt (`Run Playwright smoke (fast fail)`), bekommt nicht einmal die vorhandenen Secrets `E2E_EMAIL`/`E2E_PASSWORD` — die stehen nur am Schritt danach. Die Meldung ist klar und gewollt (ein stiller Skip wäre wieder ein Tor, das nichts prüft), aber der Job ist damit seit einer Woche ein sicherer Rotfall. Nicht angefasst: `.github/workflows/**` liegt bei der Cloud-Sitzung (Vorgabe des Eigentümers).                                                                            | CI-Lauf 34371008020, Job E2E Smoke Tests: `No password for the primary E2E account. Provision it with E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users`                                                    | CI-Workflow (Cloud-Sitzung)                             | **behoben 2026-09-09** (Welle 8m) |
+| OP-252 | **`notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei.** `generate-notice.mjs` schrieb unausgerichtete Markdown-Tabellen (`\|---\|---:\|`), der Prettier-Schritt im Lint-Job verlangt ausgerichtete. Die eingecheckte `THIRD-PARTY-LICENSES.md` war seit `da7f5505` (2026-09-01, „Vollverifikation") die Prettier-Fassung — damit war `notice:check` seitdem in jedem Lauf rot; als `452205ad` die Erzeuger-Fassung einspielte, wurde stattdessen Prettier rot. Der Erzeuger formatiert seine Markdown-Ausgabe jetzt selbst mit Prettier (Repo-Konfiguration), vor dem Schreiben und vor dem Vergleich. Kein Tor wurde gelockert.                                                                                                                                      | CI-Läufe 34371008020 (Security Audit: `✗ veraltet`) und 34374305993 (Lint: `[warn] THIRD-PARTY-LICENSES.md`); Linux-Klon auf `2d815a66`: `--check` grün, `prettier --check` grün                                    | Werkzeug (zwei Tore gegeneinander, seit 2026-09-01)     | **behoben**                       |
+| OP-253 | **Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht.** Der Schritt, der `cairosvg` für die Raster-Tests installiert, beginnt mit `sudo apt-get update -qq` unter `set -euo pipefail`; auf dem Runner-Image ist die Google-Chrome-Quelle (`dl.google.com/linux/chrome-stable`) vorkonfiguriert, und wenn deren Index gerade rotiert (`Hash Sum mismatch`), stirbt der Job mit Exit 100, **bevor ein Test läuft**. Am 2026-09-09 zwischen 17:16 und 18:10 UTC dreimal hintereinander auf `d3637701`, in drei Versuchen; der E2E-Job traf es im selben Fenster zweimal beim Playwright-Install. Abhilfe liegt in `ci.yml` (Quelle vor dem Update entfernen oder das Update auf die benötigten Quellen beschränken) — nicht angefasst, `.github/workflows/**` liegt bei der Cloud-Sitzung. | Lauf 34382535195, Versuche 1–3, Job Unit Tests, Schritt der cairosvg-Installation: `E: Failed to fetch https://dl.google.com/linux/chrome-stable/deb/dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch` | CI-Workflow (Cloud-Sitzung)                             | **behoben 2026-09-09** (Welle 8m) |
 
 **CI auf `6e3991d4`** (der Push mit den 95 Commits): acht von zehn Workflows grün. Rot: Coverage (siehe unten — seit `a3ff1b07`) und der CI-Workflow, dort allein der Lint-Job am Schritt `op-index.mjs`, weil `docs/OFFENE-PUNKTE-INDEX.md` nach dem neuen Nachtrag nicht neu erzeugt war (mit `194aeda1` nachgezogen). Der Lint-Job selbst: 0 ESLint-Fehler mit 7.1.1, Ratsche 0/0 — die Cloud-Sitzung hatte ihn zuletzt mit 416 Fehlern rot gesehen (`3351dcb2`).
 
@@ -2510,3 +2510,99 @@ zuletzt der Pin.
 `refs`-Befunde liegen in `components/bpmn/arctos-bpmn-canvas.tsx` — der
 eigenen Engine. Wo die Regel recht hat und die Behebung ein Umbau wäre, gehört
 das in dieses Register, nicht in ein erzwungenes Refactoring.
+
+### Nachtrag 2026-09-09 — Welle 8m: die zwei CI-Punkte aus OP-245, beide in `.github/workflows/**`
+
+Die lokale Sitzung hat OP-251 und OP-253 benannt und ausdrücklich nicht
+angefasst, weil `.github/workflows/**` bei der Cloud-Sitzung liegt. Beide sind
+hier behoben.
+
+| OP     | Was                                                                                                                                                                           | Beleg                                         | Art     | Stand   |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------- | ------- |
+| OP-251 | **Der E2E-Smoke-Job legte die Konten nie an, auf die er sich anmeldet — und das Passwort kam aus einer Quelle, aus der es gar nicht kommen kann.**                            | Lauf `34371008020`; eigene Messung 2026-09-09 | Betrieb | behoben |
+| OP-253 | **Der Unit-Job starb an einem Paketspiegel, den er nicht braucht** — der Google-Chrome-Quelle des Runner-Images. Drei von vier Anläufen an einem Tag, bevor je ein Test lief. | Lauf `34382535195`, Versuche 1–3              | Betrieb | behoben |
+
+**OP-253 — die Abhilfe ist eine Action, nicht drei Kopien.** Der Schritt
+begann mit `sudo apt-get update -qq` unter `set -euo pipefail`; rotiert der
+Chrome-Index gerade, endet das mit `Hash Sum mismatch` und Exit 100, und der
+Job ist tot, bevor ein Test läuft. Betroffen waren **drei** Stellen in **zwei**
+Dateien — `ci.yml` (`unit-tests`, und `e2e-smoke` über
+`playwright install --with-deps`, das intern `apt-get` ruft) und
+`coverage.yml`. Drei gleiche Fälle sind eine Klasse.
+
+`.github/actions/apt-ohne-fremdquellen` schaltet vor jedem apt-Zugriff **alle**
+Fremdquellen unter `sources.list.d` ab — nicht über einen festen Dateinamen,
+der still wirkungslos wäre, sobald das Image ihn ändert, sondern über alles,
+was nicht die Ubuntu-Quelle ist, mit gezählter Ausgabe. Zwei Sicherungen
+gehören dazu: bleibt danach **keine** Ubuntu-Quelle übrig, bricht die Action ab
+(sonst wäre die Folgemeldung `Unable to locate package` und damit irreführend);
+und der Exit-Code von `apt-get update` entscheidet nichts mehr — die Frage ist,
+ob sich die gebrauchten Pakete installieren lassen, und die beantwortet
+`apt-get install`, das weiterhin hart fällt. Ein kaputter **Ubuntu**-Index wird
+also nicht verschluckt, er fällt eine Zeile später mit der richtigen Meldung.
+
+`scripts/check-apt-sources.mjs` hält das fest: jeder Job, der `apt-get`,
+`apt install` oder `playwright install --with-deps` benutzt, muss die Action
+vorher aufrufen. Sie ist 14. Tor-Eingabe. Gegenproben, gemessen — der
+Fehlschlag jeweils im Protokoll:
+
+- Aufruf im Job `unit-tests` entfernt: Exit 1, `benutzt apt (Zeile 340), ruft
+aber ./.github/actions/apt-ohne-fremdquellen nicht auf`.
+- Action selbst entfernt: Exit 1 statt „0 Jobs, grün" — dieselbe
+  OP-092-Vorsorge wie bei `check-provision-order.mjs`.
+- Und noch eine, ungeplant: `check-gate-inputs.mjs` hat die neue Action
+  gemeldet, bevor sie `git add` gesehen hatte — „ist NICHT von git verfolgt".
+  Das Tor aus OP-090 hat an seinem eigenen Neuzugang funktioniert.
+
+**OP-251 — zwei Fehler, und der zweite ist der interessantere.**
+
+_Erstens:_ `auth.setup.ts` verlangt seit `81200d89` ein `E2E_ROLE_PASSWORD` und
+vier Konten, die `db:seed:e2e-users` mit **genau diesem** Passwort angelegt
+hat. `ci.yml` hat sie nie angelegt und reichte stattdessen
+`secrets.E2E_PASSWORD` durch. Das **kann** nicht stimmen: die Datenbank dieses
+Jobs entsteht in diesem Job neu, aus Migrationen und Seed; gegen ein frisch
+gehashtes Konto passt nur das Passwort, mit dem es gerade angelegt wurde. Ein
+Wert aus den Repository-Secrets ist per Bauart nicht dieses Passwort. Der Job
+erzeugt es jetzt selbst aus `/dev/urandom` (24 Zeichen), maskiert es mit
+`::add-mask::`, seedet damit und wirft es mit dem Lauf weg. **Kein Secret, kein
+Wert im Repository**, und die Konten leben nur in dieser Wegwerf-Datenbank.
+`secrets.E2E_EMAIL` behält seinen Sinn — es benennt, welches Konto das primäre
+ist, und der Seeder legt genau dieses an.
+
+_Zweitens, und das hätte auch mit richtigem Passwort nicht funktioniert:_
+`E2E_ORG_ID` war nicht gesetzt, und die Vorgabe des Seeders ist die
+Demo-Mandanten-UUID `ccc4cc1c-4b09-499c-8420-ebd8da655cd7`, die **nur**
+`packages/db/sql/seed_demo_00_platform.sql` schreibt. Der E2E-Job läuft aber
+`src/seed.ts`, und der legt „Meridian Holdings GmbH" mit einer **erzeugten** id
+an. Nachgemessen im Container gegen eine frisch migrierte Datenbank
+(429/429 Migrationen, `src/seed.ts` grün):
+
+```
+SELECT count(*) FROM organization WHERE id='ccc4cc1c-4b09-499c-8420-ebd8da655cd7';
+ 0
+SELECT id, name FROM organization ORDER BY created_at LIMIT 1;
+ 3410dec6-35a4-48a6-b112-3541bf91f316  Meridian Holdings GmbH
+```
+
+Die id wird deshalb aus der Datenbank gelesen, nicht angenommen; findet der
+Schritt keinen Demo-Mandanten, bricht er ab und gibt die vorhandenen
+Organisationen aus, statt in eine unverständliche Playwright-Meldung zu laufen.
+
+**Die ganze Kette ist im Container durchgespielt worden**, nicht nur die
+Änderung gelesen: Rollen → 429/429 Migrationen → Grants → `src/seed.ts` →
+id ermitteln → `seed-e2e-users --org <id>` mit erzeugtem Passwort. Ergebnis
+Exit 0, vier Konten:
+
+```
+e2e-admin@arctos.local      roles=admin                       memberships=1
+e2e-owner@arctos.local      roles=process_owner               memberships=1
+e2e-reviewer@arctos.local   roles=auditor,compliance_officer  memberships=2
+e2e-approver@arctos.local   roles=admin                       memberships=1
+```
+
+Das primäre Konto hält seine einzige Mitgliedschaft im geseedeten Mandanten —
+genau die Bedingung, gegen die `auth.setup.ts` `currentOrgId` prüft.
+
+**Was hier NICHT behoben ist.** Das Pilot Readiness Gate fällt ohne
+`STAGING_URL` weiterhin laut statt still (#S13-30). Das ist so gewollt und ein
+Secret, keine Workflow-Frage — es bleibt beim Eigentümer.

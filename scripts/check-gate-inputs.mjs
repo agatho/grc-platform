@@ -99,6 +99,15 @@ const GATE_INPUTS = [
     "deploy/provision-grc-app.sh",
     "scripts/check-provision-order.mjs (Rollen vor, Grants nach den Migrationen)",
   ],
+  // [ARCTOS-FULL-2026-08-31 · OP-253] Dieselbe Mechanik wie eine Zeile
+  // darueber: `check-apt-sources.mjs` verlangt, dass jeder apt-Job diese
+  // Action aufruft. Faellt sie aus dem Repository, koennte kein Job die
+  // Vorgabe erfuellen — die Pruefung faengt das selbst ab, und hier faellt es
+  // eine Stufe frueher auf.
+  [
+    ".github/actions/apt-ohne-fremdquellen/action.yml",
+    "scripts/check-apt-sources.mjs (kein apt-Zugriff ohne abgeschaltete Fremdquellen)",
+  ],
 ];
 
 function git(args) {

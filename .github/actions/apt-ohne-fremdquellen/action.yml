@@ -1,0 +1,64 @@
+name: apt ohne Fremdquellen
+description: >-
+  Schaltet die vorkonfigurierten Fremdquellen des Runner-Images ab, bevor ein
+  Schritt `apt-get` benutzt. Ohne das stirbt der Job an einem Paketspiegel, den
+  er gar nicht braucht (OP-253).
+
+runs:
+  using: composite
+  steps:
+    # ── [ARCTOS-FULL-2026-08-31 · OP-253] ──────────────────────────────────
+    #
+    # Das ubuntu-latest-Image bringt Quellen mit, die mit diesem Projekt
+    # nichts zu tun haben — allen voran Google Chrome. Rotiert deren Index
+    # gerade, meldet `apt-get update`
+    #
+    #   E: Failed to fetch https://dl.google.com/linux/chrome-stable/deb/
+    #      dists/stable/main/binary-amd64/Packages.gz  Hash Sum mismatch
+    #
+    # und beendet sich mit 100. Unter `set -e` ist damit der ganze Job tot,
+    # BEVOR ein Test laeuft. Am 2026-09-09 hat das im Lauf 34382535195 drei
+    # von vier Anlaeufen gekostet (Unit Tests dreimal, E2E zweimal).
+    #
+    # Zwei Sachen zusammen loesen das, und beide sind noetig:
+    #
+    #   1. Die Fremdquellen kommen weg. Nicht ueber einen festen Dateinamen —
+    #      der waere still wirkungslos, sobald das Image ihn aendert, und
+    #      genau diese Form von stiller Ausnahme ist in diesem Audit
+    #      mehrfach die Ursache gewesen. Stattdessen: alles unter
+    #      `sources.list.d`, ausser den Ubuntu-Quellen selbst. Der Schritt
+    #      sagt, wie viele es waren.
+    #
+    #   2. Der Exit-Code von `apt-get update` entscheidet nichts mehr. Er ist
+    #      nicht die Frage — die Frage ist, ob sich die gebrauchten Pakete
+    #      installieren lassen, und die beantwortet `apt-get install`, das
+    #      weiterhin hart faellt. Ein kaputter Ubuntu-Index wird also NICHT
+    #      verschluckt: er faellt eine Zeile spaeter, mit der richtigen
+    #      Meldung.
+    - name: Fremdquellen des Runner-Images abschalten (OP-253)
+      shell: bash
+      run: |
+        set -uo pipefail
+
+        ABGESCHALTET=0
+        shopt -s nullglob
+        for QUELLE in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+          case "$(basename "$QUELLE")" in
+            ubuntu.sources | ubuntu.list | official-package-repositories.list) continue ;;
+          esac
+          sudo mv "$QUELLE" "$QUELLE.op-253-aus"
+          echo "  abgeschaltet: $QUELLE"
+          ABGESCHALTET=$((ABGESCHALTET + 1))
+        done
+        echo "Fremdquellen abgeschaltet: $ABGESCHALTET"
+
+        # Die Distributionsquellen muessen uebrig bleiben, sonst findet das
+        # folgende `install` gar nichts mehr und die Fehlermeldung waere
+        # irrefuehrend ("Unable to locate package") statt aussagekraeftig.
+        if ! ls /etc/apt/sources.list /etc/apt/sources.list.d/ubuntu.sources >/dev/null 2>&1; then
+          echo "✗ Nach dem Abschalten ist keine Ubuntu-Quelle mehr da — abgebrochen." >&2
+          exit 1
+        fi
+
+        sudo apt-get update -qq \
+          || echo "WARNUNG: apt-get update war nicht fehlerfrei; entscheidend ist das folgende install."

@@ -11,7 +11,7 @@ nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 
 Nummern: **253**
 
-## offen (7)
+## offen (5)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -20,8 +20,6 @@ Nummern: **253**
 | OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | offen — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando ben… | 2026-09-09   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
 | OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                          | 2026-09-09   |
-| OP-251 | Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden. `auth.setup.ts` verlangt seit der Mehr-Konten-T… | offen                                                                                      | 2026-09-09   |
-| OP-253 | Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht. Der Schritt, der `cairosvg` für die Ras… | offen                                                                                      | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -199,7 +197,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (84)
+## behoben (86)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -286,4 +284,6 @@ _keine_
 | OP-247 | Rückgängig/Wiederholen im Prozesseditor blieben nach der ersten Änderung stehen. `canUndo`/`canRedo` wurden b… | behoben (mit OP-245)                                                                       | 2026-09-09 |
 | OP-248 | Ungespeicherte Risikobewertung im Krisenszenario wurde vom nächsten Abruf überschrieben. Jeder `fetchData()` … | behoben (mit OP-245)                                                                       | 2026-09-09 |
 | OP-250 | Ein E-Mail-Test lud `EmailService` per `await import()` im Testkörper — und damit alle React-Email-Templates … | behoben                                                                                    | 2026-09-09 |
+| OP-251 | Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden. `auth.setup.ts` verlangt seit der Mehr-Konten-T… | behoben 2026-09-09 (Welle 8m)                                                              | 2026-09-09 |
 | OP-252 | `notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei. `generate-notice.mjs`… | behoben                                                                                    | 2026-09-09 |
+| OP-253 | Der Unit-Test-Job hängt an einem Paket-Spiegel, den er nicht braucht. Der Schritt, der `cairosvg` für die Ras… | behoben 2026-09-09 (Welle 8m)                                                              | 2026-09-09 |

@@ -207,6 +207,11 @@ jobs:
       - name: Rollen vor den Migrationen, Grants danach
         run: node scripts/check-provision-order.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · OP-253] Drei apt-Stellen in zwei Dateien —
+      # eine Klasse. Die Antwort ist eine Pruefung.
+      - name: Kein apt-Zugriff ohne abgeschaltete Fremdquellen
+        run: node scripts/check-apt-sources.mjs
+
   # ────────────────────────────────────────────────
   # 1b. Type check — eigener Job
   # ────────────────────────────────────────────────
@@ -334,10 +339,14 @@ jobs:
       # `packages/bpmn` NIE eine coverage-summary.json erzeugt hat und die
       # Aggregation seit jeher mit "no coverage-summary.json for:
       # packages/bpmn" endete. Die Werkzeuge werden jetzt installiert.
+      # [ARCTOS-FULL-2026-08-31 · OP-253] Vor jedem apt-Zugriff: die
+      # Fremdquellen des Runner-Images weg. Begruendung und Messung in der
+      # Action selbst.
+      - uses: ./.github/actions/apt-ohne-fremdquellen
+
       - name: Bildvergleichs-Werkzeuge fuer packages/bpmn
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
           sudo apt-get install -y -qq imagemagick libcairo2
           pip install --break-system-packages cairosvg
           python3 -c "import cairosvg; print('cairosvg', cairosvg.__version__)"
@@ -815,9 +824,87 @@ jobs:
         working-directory: packages/db
         run: npx tsx src/seed.ts
 
+      # ── [ARCTOS-FULL-2026-08-31 · OP-251] Die E2E-Konten ────────────────
+      #
+      # `auth.setup.ts` verlangt seit `81200d89` ein `E2E_ROLE_PASSWORD` und
+      # vier Konten, die `db:seed:e2e-users` mit genau diesem Passwort
+      # angelegt hat. Dieser Job hat sie nie angelegt — der E2E-Job war damit
+      # seit dem 2026-09-02 ein sicherer Rotfall:
+      #
+      #   No password for the primary E2E account. Provision it with
+      #   E2E_ROLE_PASSWORD='<12+ chars>' npm run db:seed:e2e-users
+      #
+      # Zwei Dinge waren falsch, und das zweite ist das interessantere.
+      #
+      # 1. Das Passwort kam aus `secrets.E2E_PASSWORD`. Das KANN nicht
+      #    stimmen: die Datenbank dieses Jobs entsteht in diesem Job neu, aus
+      #    Migrationen und Seed. Gegen ein frisch gehashtes Konto passt nur
+      #    das Passwort, mit dem es GERADE angelegt wurde — ein Wert aus den
+      #    Repository-Secrets kann es per Bauart nicht sein. Deshalb wird das
+      #    Passwort hier erzeugt, maskiert, verwendet und mit dem Lauf
+      #    weggeworfen. Es steht in keinem Secret und in keiner Datei; die
+      #    Konten existieren nur in dieser Wegwerf-Datenbank.
+      #
+      # 2. `E2E_ORG_ID` wurde nicht gesetzt, und die Vorgabe des Seeders ist
+      #    die Demo-Mandanten-UUID `ccc4cc1c-…`, die nur
+      #    `packages/db/sql/seed_demo_00_platform.sql` schreibt. Dieser Job
+      #    laeuft aber `src/seed.ts`, und der legt „Meridian Holdings GmbH"
+      #    mit einer ERZEUGTEN id an. Nachgemessen am 2026-09-09 gegen eine
+      #    frisch migrierte Datenbank: nach `src/seed.ts` ist
+      #    `SELECT count(*) … WHERE id = 'ccc4cc1c-…'` gleich **0**. Die id
+      #    wird deshalb aus der Datenbank gelesen, nicht angenommen.
+      #
+      # `secrets.E2E_EMAIL` behaelt seinen Sinn: es benennt, WELCHES Konto das
+      # primaere ist. Der Seeder legt genau dieses an — ist das Secret leer,
+      # gilt seine Vorgabe `e2e-admin@arctos.local`.
+      - name: E2E-Konten anlegen (Passwort gilt nur fuer diesen Lauf)
+        working-directory: packages/db
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+          PGPASSWORD: grc_test_password
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+        run: |
+          set -euo pipefail
+
+          ORG_ID=$(psql -h localhost -U grc -d grc_platform_test -tAc \
+            "SELECT id FROM organization
+               WHERE name = 'Meridian Holdings GmbH' AND deleted_at IS NULL
+               LIMIT 1" | tr -d '[:space:]')
+          if [ -z "$ORG_ID" ]; then
+            echo "✗ Kein Demo-Mandant in der Datenbank — hat 'Run seed' gewirkt?" >&2
+            psql -h localhost -U grc -d grc_platform_test \
+              -c "SELECT id, name FROM organization ORDER BY created_at LIMIT 10" >&2
+            exit 1
+          fi
+          echo "Demo-Mandant: $ORG_ID"
+
+          # 24 Zeichen aus /dev/urandom. Der Seeder verlangt >= 12; die
+          # Pruefung steht trotzdem hier, damit ein leerer Wert nicht als
+          # „kein Passwort" durchrutscht.
+          E2E_PW=$(head -c 48 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)
+          if [ "${#E2E_PW}" -lt 12 ]; then
+            echo "✗ Passworterzeugung ergab ${#E2E_PW} Zeichen." >&2
+            exit 1
+          fi
+          echo "::add-mask::$E2E_PW"
+
+          E2E_ROLE_PASSWORD="$E2E_PW" npx tsx src/seed-e2e-users.ts --org "$ORG_ID"
+
+          {
+            echo "E2E_ORG_ID=$ORG_ID"
+            echo "E2E_EMAIL=${E2E_EMAIL:-e2e-admin@arctos.local}"
+            echo "E2E_PASSWORD=$E2E_PW"
+            echo "E2E_ROLE_PASSWORD=$E2E_PW"
+          } >> "$GITHUB_ENV"
+
       - name: Build web app
         working-directory: apps/web
         run: npm run build
+
+      # [ARCTOS-FULL-2026-08-31 · OP-253] Vor jedem apt-Zugriff: die
+      # Fremdquellen des Runner-Images weg. Begruendung und Messung in der
+      # Action selbst.
+      - uses: ./.github/actions/apt-ohne-fremdquellen
 
       - name: Install Playwright browsers
         working-directory: apps/web
@@ -856,17 +943,19 @@ jobs:
         working-directory: apps/web
         run: npx playwright test e2e/ci-smoke.spec.ts --reporter=list
 
-      # E2E_EMAIL/E2E_PASSWORD kommen aus Repository-Secrets. Der frueher
-      # hartkodierte Login `admin@arctos.dev / admin123` ist mit WP3/S02-01
-      # entfallen; `auth.setup.ts` bricht ohne diese Werte mit einer klaren
-      # Meldung ab, statt an einem Selektor zu scheitern. Sind die Secrets
-      # nicht gesetzt, faellt DIESER Schritt auf — genau so gewollt, denn ein
-      # stiller Skip waere wieder ein Gate, das nichts pruefet.
+      # [ARCTOS-FULL-2026-08-31 · OP-251] Hier standen
+      # `E2E_EMAIL: ${{ secrets.E2E_EMAIL }}` und
+      # `E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}`. Beide sind entfallen —
+      # nicht, weil die Pruefung weicher werden soll, sondern weil sie die
+      # Werte UEBERSCHRIEBEN haetten, die der Seeding-Schritt oben gerade
+      # angelegt hat. Gegen ein Konto, das in diesem Lauf frisch gehasht
+      # wurde, passt kein Passwort aus einem Repository-Secret.
+      #
+      # `auth.setup.ts` bricht weiterhin laut ab, wenn kein Passwort da ist —
+      # ein stiller Skip waere wieder ein Tor, das nichts prueft. Nur kommt
+      # das Passwort jetzt von dort, wo es herkommen muss.
       - name: Run full Playwright suite (root config — web + regression)
         run: npm run test:e2e -- --reporter=list
-        env:
-          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
-          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
 
       # ── Wave-21-C2: perf-baseline gated on percentile thresholds ──
       # P95<500 / P99<1000 for risks-list, P95<200 for health.

@@ -81,10 +81,14 @@ jobs:
       # `packages/bpmn` NIE eine coverage-summary.json erzeugt hat und die
       # Aggregation seit jeher mit "no coverage-summary.json for:
       # packages/bpmn" endete. Die Werkzeuge werden jetzt installiert.
+      # [ARCTOS-FULL-2026-08-31 · OP-253] Vor jedem apt-Zugriff: die
+      # Fremdquellen des Runner-Images weg. Begruendung und Messung in der
+      # Action selbst.
+      - uses: ./.github/actions/apt-ohne-fremdquellen
+
       - name: Bildvergleichs-Werkzeuge fuer packages/bpmn
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
           sudo apt-get install -y -qq imagemagick libcairo2
           pip install --break-system-packages cairosvg
           python3 -c "import cairosvg; print('cairosvg', cairosvg.__version__)"
