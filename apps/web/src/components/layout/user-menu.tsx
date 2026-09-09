@@ -23,6 +23,11 @@ export function UserMenu() {
   const ref = useRef<HTMLDivElement>(null);
 
   const currentLanguage = (session?.user as UnvalidatedJson)?.language ?? "de";
+  // [OP-245] `react-hooks/preserve-manual-memoization`: der Rueckruf las
+  // `session.user.id` ueber `session`, die Abhaengigkeitsliste nannte aber nur
+  // `session?.user?.id` — enger als das, was der Compiler ableitet. Die Kennung
+  // wird einmal hier gelesen, damit Rumpf und Liste dieselbe Groesse nennen.
+  const userId = session?.user?.id;
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -36,11 +41,10 @@ export function UserMenu() {
 
   const handleLanguageSwitch = useCallback(
     async (lang: string) => {
-      if (lang === currentLanguage || switchingLang || !session?.user?.id)
-        return;
+      if (lang === currentLanguage || switchingLang || !userId) return;
       setSwitchingLang(true);
       try {
-        const res = await fetch(`/api/v1/users/${session.user.id}/profile`, {
+        const res = await fetch(`/api/v1/users/${userId}/profile`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ language: lang }),
@@ -57,7 +61,7 @@ export function UserMenu() {
         setSwitchingLang(false);
       }
     },
-    [currentLanguage, switchingLang, session?.user?.id, update, router],
+    [currentLanguage, switchingLang, userId, update, router],
   );
 
   const initials = (session?.user?.name ?? "U")
