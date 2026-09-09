@@ -7,7 +7,7 @@ import {
   useModuleConfig,
   useAllModuleConfigs,
 } from "@/hooks/use-module-config";
-import { getLucideIcon } from "./icon-map";
+import { ModuleIcon } from "./module-icon";
 
 interface ModuleTeaserProps {
   moduleKey: ModuleKey;
@@ -34,7 +34,6 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
     locale === "de" ? definition?.descriptionDe : definition?.descriptionEn;
 
   const isAddon = definition?.licenseTier === "addon";
-  const Icon = getLucideIcon(definition?.icon ?? "Box");
 
   const handleActivate = async () => {
     if (!definition) return;
@@ -71,7 +70,10 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
       <div // [ARCTOS-FULL-2026-08-31 · OP-049] 4,46:1 — knapp unter 4,5.
         className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gray-100 text-gray-500"
       >
-        <Icon size={32} />
+        {/* [OP-245] `<ModuleIcon>` statt eines Nachschlags im Rumpf — dieselbe
+            Aufloesung wie Welle 7a (`module-icon.tsx`) fuer
+            `react-hooks/static-components`. */}
+        <ModuleIcon name={definition?.icon} size={32} />
       </div>
 
       <h2 className="text-xl font-semibold text-gray-900 mb-2">
