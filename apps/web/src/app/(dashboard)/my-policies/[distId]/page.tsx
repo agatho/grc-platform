@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import {
@@ -56,10 +57,26 @@ export default function AcknowledgePolicyPage() {
   const params = useParams();
   const distId = params.distId as string;
 
-  const [policy, setPolicy] = useState<PolicyDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `policy` wie vorher leer („nicht gefunden").
+  const { data: policy = null, isPending: loading } =
+    useQuery<PolicyDetail | null>({
+      queryKey: ["policies", "my-pending", distId],
+      queryFn: async () => {
+        const res = await fetch(`/api/v1/policies/my-pending/${distId}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return (json.data ?? null) as PolicyDetail | null;
+      },
+    });
+
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  // Vorher setzte der Abruf `submitted` auf true, wenn der Server bereits
+  // „acknowledged" meldete; das ist jetzt eine Ableitung aus `policy.status`.
+  const [submittedLocally, setSubmitted] = useState(false);
+  const submitted = submittedLocally || policy?.status === "acknowledged";
   const [submitResult, setSubmitResult] = useState<{
     status: string;
     signatureHash?: string;
@@ -79,26 +96,6 @@ export default function AcknowledgePolicyPage() {
   const [quizResponses, setQuizResponses] = useState<
     Array<{ questionIndex: number; selectedOptionIndex: number }>
   >([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/policies/my-pending/${distId}`);
-      if (res.ok) {
-        const json = await res.json();
-        setPolicy(json.data);
-        if (json.data?.status === "acknowledged") {
-          setSubmitted(true);
-        }
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [distId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // Timer: tracks reading time while page is visible
   useEffect(() => {

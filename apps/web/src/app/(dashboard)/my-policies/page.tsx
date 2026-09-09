@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -29,25 +30,27 @@ import { useDateFormat } from "@/lib/format-date";
 export default function MyPoliciesPage() {
   const t = useTranslations("policies");
   const _router = useRouter();
-  const [policies, setPolicies] = useState<MyPendingPolicy[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: policies = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<MyPendingPolicy[]>({
+    queryKey: ["policies", "my-pending"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/policies/my-pending");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MyPendingPolicy[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/policies/my-pending");
-      if (res.ok) {
-        const json = await res.json();
-        setPolicies(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const overdue = policies.filter((p) => p.status === "overdue");
   const pending = policies.filter(
