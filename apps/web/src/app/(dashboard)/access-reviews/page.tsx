@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
@@ -34,22 +35,28 @@ export default function AccessReviewsPage() {
   const t = useTranslations("accessReview");
   const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
-  const [users, setUsers] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
   const [_reviewing, _setReviewing] = useState<Set<string>>(new Set());
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [revoked, setRevoked] = useState<Set<string>>(new Set());
-  const [loadError, setLoadError] = useState(false);
 
   // [ARCTOS-FULL-2026-08-31 · OP-050] Vorher `limit=200` + `if (res.ok)` ohne
   // else. Der Server lehnt `limit > 100` mit 422 ab (#NIGHT-059), also stand
   // hier für jeden Mandanten eine leere Zugriffsüberprüfung — und eine leere
   // Zugriffsüberprüfung liest sich wie das Ergebnis „keine Berechtigungen zu
   // prüfen", nicht wie ein Fehler. Jetzt geblättert und der Fehler benannt.
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
+  //
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Ein Fehler wird wie vorher
+  // protokolliert und landet im Fehlerzustand der Abfrage.
+  const {
+    data: users = [],
+    isPending: loading,
+    isError: loadError,
+    refetch,
+  } = useQuery<UserRole[]>({
+    queryKey: ["access-reviews", "users"],
+    queryFn: async () => {
       // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `(u: any)` — typed to the
       // fields this mapper actually reads.
       type UserRow = {
@@ -64,9 +71,9 @@ export default function AccessReviewsPage() {
         lastLoginAt?: string | null;
         isActive?: boolean;
       };
-      const rows = await fetchAllPages<UserRow>("/api/v1/users");
-      setUsers(
-        rows.map((u) => ({
+      try {
+        const rows = await fetchAllPages<UserRow>("/api/v1/users");
+        return rows.map((u) => ({
           userId: u.id,
           userName: u.name ?? "Unknown",
           userEmail: u.email ?? "",
@@ -75,20 +82,17 @@ export default function AccessReviewsPage() {
           department: u.roles?.[0]?.department ?? null,
           lastLogin: u.lastLoginAt ?? null,
           isActive: u.isActive ?? true,
-        })),
-      );
-    } catch (err) {
-      console.error("access-reviews: Nutzerliste nicht geladen", err);
-      setUsers([]);
-      setLoadError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        }));
+      } catch (err) {
+        console.error("access-reviews: Nutzerliste nicht geladen", err);
+        throw err;
+      }
+    },
+  });
 
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
+  const fetchUsers = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleApprove = (userId: string) => {
     setApproved((prev) => new Set([...prev, userId]));
