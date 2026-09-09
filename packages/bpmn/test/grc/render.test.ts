@@ -136,82 +136,93 @@ const index: Array<{
   notes: string;
 }> = [];
 
+// [OP-246, Zeitlimit unter Last] Dieselbe Klasse und derselbe Korpus wie die
+// drei Tests in `decorate.test.ts`: `07-conformance-grossprozess` brauchte im
+// CI-Unit-Job 7 993 ms gegen vitests 5-s-Vorgabe (Lauf 34395761770), auf dieser
+// Maschine unter voller Last 1 524 ms. Nicht der Code ist langsamer geworden,
+// der Laeufer ist es. Ausdrueckliches Budget wie dort, Erwartungen unveraendert.
+const CORPUS_TIMEOUT = 30_000;
+
 describe("Sichtbare Belege", () => {
   for (const entry of CASES) {
-    it(`${entry.file}: ${entry.title}`, async () => {
-      const scene = await corpusScene(entry.corpus);
-      const result = renderGrcScene(scene, entry.data(), {
-        view: viewById(entry.view),
-        title: entry.title,
-        legend: true,
-        ...(entry.filter ? { filter: entry.filter } : {}),
-      });
+    it(
+      `${entry.file}: ${entry.title}`,
+      async () => {
+        const scene = await corpusScene(entry.corpus);
+        const result = renderGrcScene(scene, entry.data(), {
+          view: viewById(entry.view),
+          title: entry.title,
+          legend: true,
+          ...(entry.filter ? { filter: entry.filter } : {}),
+        });
 
-      const svg = toGrcSvgString(result);
-      writeFileSync(join(RENDERED_DIR, `${entry.file}.svg`), svg, "utf8");
+        const svg = toGrcSvgString(result);
+        writeFileSync(join(RENDERED_DIR, `${entry.file}.svg`), svg, "utf8");
 
-      const alternative = buildGrcTextAlternative(scene, result.model);
-      writeFileSync(
-        join(RENDERED_DIR, `${entry.file}.txt`),
-        [
-          entry.title,
-          "",
-          ...alternative.notes,
-          "",
-          alternative.prose,
-          "",
-          ...alternative.rows.map((row) =>
-            [
-              `${String(row.index)}. ${row.name || row.id} (${row.typeLabel})`,
-              ...alternative.columns.map((column) =>
-                row.grc[column.layerId]
-                  ? `    ${column.header}: ${row.grc[column.layerId] ?? ""}`
-                  : "",
-              ),
-            ]
-              .filter((line) => line !== "")
-              .join("\n"),
+        const alternative = buildGrcTextAlternative(scene, result.model);
+        writeFileSync(
+          join(RENDERED_DIR, `${entry.file}.txt`),
+          [
+            entry.title,
+            "",
+            ...alternative.notes,
+            "",
+            alternative.prose,
+            "",
+            ...alternative.rows.map((row) =>
+              [
+                `${String(row.index)}. ${row.name || row.id} (${row.typeLabel})`,
+                ...alternative.columns.map((column) =>
+                  row.grc[column.layerId]
+                    ? `    ${column.header}: ${row.grc[column.layerId] ?? ""}`
+                    : "",
+                ),
+              ]
+                .filter((line) => line !== "")
+                .join("\n"),
+            ),
+          ].join("\n"),
+          "utf8",
+        );
+
+        index.push({
+          file: entry.file,
+          title: entry.title,
+          shows: entry.shows,
+          notes: alternative.notes.join(" "),
+        });
+
+        // Zusicherungen, die man dem Bild nicht ansieht:
+        expect(svg).not.toContain("NaN");
+        expect(svg).not.toContain("undefined");
+        expect(result.decoration.decoratedElements).toBeGreaterThan(0);
+        expect(svg.length).toBeGreaterThan(2000);
+
+        // Die Dekoration liegt vollständig im sichtbaren Bereich.
+        const viewBox =
+          result.svg.getAttribute("viewBox")?.split(/\s+/).map(Number) ?? [];
+        const [vx, vy, vw, vh] = viewBox;
+        expect(vw).toBeGreaterThan(0);
+        for (const node of Array.from(
+          result.svg.querySelectorAll(
+            '[data-grc="badge"] rect, [data-grc="banner"] rect',
           ),
-        ].join("\n"),
-        "utf8",
-      );
-
-      index.push({
-        file: entry.file,
-        title: entry.title,
-        shows: entry.shows,
-        notes: alternative.notes.join(" "),
-      });
-
-      // Zusicherungen, die man dem Bild nicht ansieht:
-      expect(svg).not.toContain("NaN");
-      expect(svg).not.toContain("undefined");
-      expect(result.decoration.decoratedElements).toBeGreaterThan(0);
-      expect(svg.length).toBeGreaterThan(2000);
-
-      // Die Dekoration liegt vollständig im sichtbaren Bereich.
-      const viewBox =
-        result.svg.getAttribute("viewBox")?.split(/\s+/).map(Number) ?? [];
-      const [vx, vy, vw, vh] = viewBox;
-      expect(vw).toBeGreaterThan(0);
-      for (const node of Array.from(
-        result.svg.querySelectorAll(
-          '[data-grc="badge"] rect, [data-grc="banner"] rect',
-        ),
-      )) {
-        const x = Number(node.getAttribute("x"));
-        const y = Number(node.getAttribute("y"));
-        expect(Number.isFinite(x) && Number.isFinite(y)).toBe(true);
-        expect(x, `${entry.file} x`).toBeGreaterThanOrEqual((vx ?? 0) - 1);
-        expect(y, `${entry.file} y`).toBeGreaterThanOrEqual((vy ?? 0) - 1);
-        expect(x, `${entry.file} x max`).toBeLessThanOrEqual(
-          (vx ?? 0) + (vw ?? 0),
-        );
-        expect(y, `${entry.file} y max`).toBeLessThanOrEqual(
-          (vy ?? 0) + (vh ?? 0),
-        );
-      }
-    });
+        )) {
+          const x = Number(node.getAttribute("x"));
+          const y = Number(node.getAttribute("y"));
+          expect(Number.isFinite(x) && Number.isFinite(y)).toBe(true);
+          expect(x, `${entry.file} x`).toBeGreaterThanOrEqual((vx ?? 0) - 1);
+          expect(y, `${entry.file} y`).toBeGreaterThanOrEqual((vy ?? 0) - 1);
+          expect(x, `${entry.file} x max`).toBeLessThanOrEqual(
+            (vx ?? 0) + (vw ?? 0),
+          );
+          expect(y, `${entry.file} y max`).toBeLessThanOrEqual(
+            (vy ?? 0) + (vh ?? 0),
+          );
+        }
+      },
+      CORPUS_TIMEOUT,
+    );
   }
 
   it("schreibt eine Übersichtsseite", () => {

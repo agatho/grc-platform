@@ -164,6 +164,14 @@ describe("Frontend components — module integrity (auto-discovered)", () => {
     expect(Object.keys(componentModules).length).toBeGreaterThanOrEqual(100);
   });
 
+  // [OP-246, Zeitlimit unter Last] Dieser Test importiert JEDES Bauteil
+  // unter src/components — die Arbeit waechst mit dem Verzeichnis, nicht mit
+  // der Aussage. Gemessen: allein auf dieser Maschine 6 s, im vollen Lauf
+  // derselben Maschine 17,9 s, im CI-Unit-Job 15,03 s gegen die 15 s aus
+  // vitest.config.ts (Lauf 34395761770). Die Vorgabe war also knapp
+  // UNTERHALB der gemessenen Dauer, und der Test fiel an der Uhr statt an
+  // einem kaputten Import. Eigenes, ausdrueckliches Budget; die Erwartung
+  // (kein Modul wirft) bleibt unveraendert.
   it("imports every component module without throwing", async () => {
     const broken: string[] = [];
     for (const [path, importer] of Object.entries(componentModules)) {
@@ -180,7 +188,7 @@ describe("Frontend components — module integrity (auto-discovered)", () => {
       broken,
       `component modules that fail to import:\n${broken.join("\n")}`,
     ).toEqual([]);
-  });
+  }, 60_000);
 
   it("exports at least one component from every component module", async () => {
     const empty: string[] = [];

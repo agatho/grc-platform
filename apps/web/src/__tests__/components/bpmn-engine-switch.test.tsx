@@ -172,6 +172,16 @@ describe("Schalter ARCTOS_BPMN_ENGINE", () => {
   });
 });
 
+// [OP-246, Zeitlimit unter Last] Die Tests, die auf das Zeichnen der eigenen
+// Engine warten, tragen zwei Budgets: das von `waitFor` und das des Tests.
+// Bindend war das ERSTE — `waitFor` lief nach 10 s aus und meldete die letzte
+// Zusicherung ("expected null not to be null"), waehrend das Bauteil im DOM
+// noch sichtbar im Ladezustand stand (CI-Unit-Job, Lauf 34395761770,
+// 10 058 ms). Auf dieser Maschine im Alleinlauf: 4 970 ms — keine zwei Fach
+// Luft, und der CI-Laeufer ist langsamer. Beide Budgets sind jetzt am
+// gemessenen Wert bemessen statt knapp darueber. Alle Wartepunkte dieser
+// Datei sind dieselbe Gestalt (auf die asynchron gezeichnete Engine warten)
+// und werden deshalb gleich behandelt; keine Zusicherung ist veraendert.
 describe("Weiche: dieselbe Prop-Oberfläche, zwei Engines", () => {
   const props = {
     xml: XML,
@@ -213,7 +223,7 @@ describe("Weiche: dieselbe Prop-Oberfläche, zwei Engines", () => {
           document.querySelector('[data-bpmn-engine="arctos"] svg'),
         ).not.toBeNull();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
     expect(navigatedViewerCtor).not.toHaveBeenCalled();
 
@@ -221,7 +231,7 @@ describe("Weiche: dieselbe Prop-Oberfläche, zwei Engines", () => {
     const root = document.querySelector('[data-bpmn-engine="arctos"]');
     expect(root?.querySelector('[data-element-id="Task_1"]')).not.toBeNull();
     expect(root?.querySelector('[data-element-id="Start_1"]')).not.toBeNull();
-  }, 20_000);
+  }, 45_000);
 
   it("arctos: liefert die Textalternative zum Bild", async () => {
     render(<BpmnViewer {...props} engine="arctos" />);
@@ -229,9 +239,9 @@ describe("Weiche: dieselbe Prop-Oberfläche, zwei Engines", () => {
       () => {
         expect(screen.getByText("Antrag pruefen")).toBeDefined();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
-  }, 20_000);
+  }, 45_000);
 
   it("beide Stellungen nehmen dieselben Props ohne Sonderfall an", () => {
     expect(viewerEngineFor({ engine: "legacy" })).toBe("legacy");
@@ -284,12 +294,12 @@ describe("Der Bearbeitungspfad auf der eigenen Engine", () => {
           document.querySelector('[data-bpmn-engine="arctos"] svg'),
         ).not.toBeNull();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
     expect(navigatedViewerCtor).not.toHaveBeenCalled();
     // Die Palette ist der Grund, aus dem der Rückfall bestand.
     expect(document.querySelector(".djs-palette")).not.toBeNull();
-  }, 20_000);
+  }, 45_000);
 
   it("saveXml gibt Unbearbeitetes byteweise zurück und Bearbeitetes aus dem Modell", async () => {
     const ref = React.createRef<BpmnEditorRef>();
@@ -307,7 +317,7 @@ describe("Der Bearbeitungspfad auf der eigenen Engine", () => {
           document.querySelector('[data-bpmn-engine="arctos"] svg'),
         ).not.toBeNull();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
 
     // Z-D: nichts bearbeitet, also der Eingabetext — Zeichen für Zeichen.
@@ -335,7 +345,7 @@ describe("Der Bearbeitungspfad auf der eigenen Engine", () => {
     expect(ref.current?.canUndo()).toBe(true);
     ref.current?.undo();
     expect(ref.current?.canRedo()).toBe(true);
-  }, 20_000);
+  }, 45_000);
 });
 
 /**
@@ -374,11 +384,11 @@ describe("GRC-Dekoration", () => {
       () => {
         expect(document.querySelector("[data-grc]")).not.toBeNull();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
     // Der HTML-Badge-Kanal bleibt still, solange die Dekoration zeichnet.
     expect(document.querySelector(".djs-overlay")).toBeNull();
-  }, 20_000);
+  }, 45_000);
 
   it("zeichnet ohne Datensatz nicht und lässt die Badges wie bisher laufen", async () => {
     render(
@@ -395,10 +405,10 @@ describe("GRC-Dekoration", () => {
       () => {
         expect(document.querySelector(".djs-overlay")).not.toBeNull();
       },
-      { timeout: 10_000 },
+      { timeout: 30_000 },
     );
     expect(document.querySelector("[data-grc]")).toBeNull();
-  }, 20_000);
+  }, 45_000);
 });
 
 describe("Brücke von den API-Routen auf den GRC-Vertrag", () => {
