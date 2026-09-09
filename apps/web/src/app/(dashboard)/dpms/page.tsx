@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,25 +33,40 @@ export default function DpmsPage() {
   );
 }
 
+interface PrivacyRiskSummary {
+  total: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  syncedToErm: number;
+}
+
+interface DpmsDashboardBundle {
+  data: DpmsDashboard | null;
+  activeBreaches: DataBreach[];
+  urgentDsrs: Dsr[];
+  privacyRisks: PrivacyRiskSummary | null;
+}
+
 function DpmsDashboardInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
-  const [data, setData] = useState<DpmsDashboard | null>(null);
-  const [activeBreaches, setActiveBreaches] = useState<DataBreach[]>([]);
-  const [urgentDsrs, setUrgentDsrs] = useState<Dsr[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [privacyRisks, setPrivacyRisks] = useState<{
-    total: number;
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    syncedToErm: number;
-  } | null>(null);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage, die ein
+  // Bündel liefert. Nicht-ok-Antworten ergeben wie vorher `null` bzw. eine
+  // leere Liste.
+  const {
+    data: bundle,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<DpmsDashboardBundle>({
+    queryKey: ["dpms", "dashboard-bundle"],
+    queryFn: async () => {
       const [dashRes, breachRes, dsrRes, riskRes] = await Promise.all([
         fetch("/api/v1/dpms/dashboard"),
         fetch(
@@ -60,30 +76,39 @@ function DpmsDashboardInner() {
         fetch("/api/v1/dpms/erm-sync?check=true"),
       ]);
 
+      const result: DpmsDashboardBundle = {
+        data: null,
+        activeBreaches: [],
+        urgentDsrs: [],
+        privacyRisks: null,
+      };
       if (dashRes.ok) {
         const json = await dashRes.json();
-        setData(json.data);
+        result.data = (json.data ?? null) as DpmsDashboard | null;
       }
       if (breachRes.ok) {
         const json = await breachRes.json();
-        setActiveBreaches(json.data ?? []);
+        result.activeBreaches = (json.data ?? []) as DataBreach[];
       }
       if (dsrRes.ok) {
         const json = await dsrRes.json();
-        setUrgentDsrs(json.data ?? []);
+        result.urgentDsrs = (json.data ?? []) as Dsr[];
       }
       if (riskRes.ok) {
         const json = await riskRes.json();
-        setPrivacyRisks(json.data ?? null);
+        result.privacyRisks = (json.data ?? null) as PrivacyRiskSummary | null;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return result;
+    },
+  });
+  const data = bundle?.data ?? null;
+  const activeBreaches = bundle?.activeBreaches ?? [];
+  const urgentDsrs = bundle?.urgentDsrs ?? [];
+  const privacyRisks = bundle?.privacyRisks ?? null;
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -107,9 +132,9 @@ function DpmsDashboardInner() {
           variant="outline"
           size="sm"
           onClick={fetchDashboard}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

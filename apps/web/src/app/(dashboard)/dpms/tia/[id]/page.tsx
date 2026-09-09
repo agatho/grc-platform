@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -70,25 +70,19 @@ function TiaDetailInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<TiaDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (die Seite zeigt dann „nicht gefunden").
+  const { data = null, isPending: loading } = useQuery<TiaDetail | null>({
+    queryKey: ["dpms", "tia", id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/dpms/tia/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as TiaDetail | null;
+    },
+  });
 
   if (loading && !data) {
     return (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -46,8 +47,6 @@ export default function RopaListPage() {
 function RopaListInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
-  const [items, setItems] = useState<RopaEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [legalBasisFilter, setLegalBasisFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -65,27 +64,33 @@ function RopaListInner() {
   const [dataCategories, setDataCategories] = useState<CatalogOption[]>([]);
   const [catalogLoading, setCatalogLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Filter stehen im Schlüssel;
+  // eine nicht-ok-Antwort liefert wie vorher eine leere Liste. Der
+  // Katalogabruf beim Öffnen des Dialogs (unten) ist kein Effekt und bleibt.
+  const {
+    data: items = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<RopaEntry[]>({
+    queryKey: ["dpms", "ropa", statusFilter, legalBasisFilter, search],
+    queryFn: async () => {
       const params = new URLSearchParams({ limit: "100" });
       if (statusFilter) params.set("status", statusFilter);
       if (legalBasisFilter) params.set("legalBasis", legalBasisFilter);
       if (search) params.set("search", search);
 
       const res = await fetch(`/api/v1/dpms/ropa?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, legalBasisFilter, search]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as RopaEntry[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Fetch catalog data when dialog opens
   const fetchCatalogData = useCallback(async () => {

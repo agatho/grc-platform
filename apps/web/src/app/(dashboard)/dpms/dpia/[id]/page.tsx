@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -129,58 +130,57 @@ function DpiaDetailInner() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const { formatDate: _formatDate } = useDateFormat();
-  const [data, setData] = useState<DpiaDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<WizardStep>("prescreen");
   const [signingOff, setSigningOff] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [criteria, setCriteria] = useState<CriteriaCatalogEntry[]>([]);
-  const [criteriaLoading, setCriteriaLoading] = useState(false);
   const [checkedCriteria, setCheckedCriteria] = useState<Set<string>>(
     new Set(),
   );
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Zwei Abrufe beim Einhängen über
+  // `@tanstack/react-query` statt Effekt plus gespiegeltem Lade- und
+  // Datenzustand (Muster aus Welle 7b, `catalogs/objects/page.tsx`). Eine
+  // nicht-ok-Antwort liefert wie vorher `null` bzw. eine leere Liste.
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<DpiaDetail | null>({
+    queryKey: ["dpms", "dpia", id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/dpms/dpia/${id}`);
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      if (!res.ok) return null;
+      return ((await res.json()).data ?? null) as DpiaDetail | null;
+    },
+  });
 
-  const fetchCriteria = useCallback(async () => {
-    setCriteriaLoading(true);
-    try {
+  const { data: criteria = [], isPending: criteriaLoading } = useQuery<
+    CriteriaCatalogEntry[]
+  >({
+    queryKey: ["dpms", "templates", "arctos_dpia_criteria"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/dpms/templates?source=arctos_dpia_criteria",
       );
-      if (res.ok) {
-        const json = await res.json();
-        const items = json.data?.items ?? json.data ?? [];
-        setCriteria(
-          Array.isArray(items)
-            ? items.map((i: Record<string, string>) => ({
-                id: i.id,
-                code: i.code,
-                title: i.nameDe || i.name || i.code,
-                description: i.descriptionDe || i.description,
-              }))
-            : [],
-        );
-      }
-    } finally {
-      setCriteriaLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      const items = json.data?.items ?? json.data ?? [];
+      return Array.isArray(items)
+        ? items.map((i: Record<string, string>) => ({
+            id: i.id,
+            code: i.code,
+            title: i.nameDe || i.name || i.code,
+            description: i.descriptionDe || i.description,
+          }))
+        : [];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-    void fetchCriteria();
-  }, [fetchData, fetchCriteria]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const dpiaRequired = checkedCriteria.size >= 2;
 
