@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -50,8 +51,6 @@ export default function DashboardListPage() {
   const t = useTranslations("dashboard");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -61,29 +60,34 @@ export default function DashboardListPage() {
   >("personal");
   const [isCreating, setIsCreating] = useState(false);
 
-  const fetchDashboards = useCallback(async () => {
-    setIsLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der aktive Reiter steht im
+  // Schlüssel. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste; ein
+  // Netzfehler wird nicht mehr verschluckt, sondern landet im Fehlerzustand
+  // der Abfrage.
+  const {
+    data: dashboards = [],
+    isPending: isLoading,
+    refetch,
+  } = useQuery<DashboardListItem[]>({
+    queryKey: ["dashboards", "list", activeTab],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (activeTab === "personal") params.set("visibility", "personal");
       if (activeTab === "team") params.set("visibility", "team");
       if (activeTab === "defaults") params.set("isDefault", "true");
 
       const res = await fetch(`/api/v1/dashboards?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setDashboards(json.data ?? []);
-      }
-    } catch {
-      // Silently handle
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeTab]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DashboardListItem[];
+    },
+  });
 
-  useEffect(() => {
-    fetchDashboards();
-  }, [fetchDashboards]);
+  const fetchDashboards = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   async function handleCreate() {
     if (!createName.trim()) return;
