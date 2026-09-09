@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Play, Settings, AlertTriangle } from "lucide-react";
@@ -28,25 +29,27 @@ const AGENT_ICONS: Record<string, string> = {
 export default function AgentDashboardPage() {
   const t = useTranslations("agents");
   const { formatDateTime } = useDateFormat();
-  const [data, setData] = useState<AgentDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response leaves the spinner up, as
+  // before (`data` stays null).
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<AgentDashboard | null>({
+    queryKey: ["agents", "dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/agents/dashboard");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data as AgentDashboard;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/agents/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading || !data) {
     return (
