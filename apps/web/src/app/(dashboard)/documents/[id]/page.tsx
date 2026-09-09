@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -66,6 +67,16 @@ interface AuditLogEntry {
   createdAt: string;
 }
 
+interface DocumentDetailData {
+  doc: DocumentDetail | null;
+  versions: DocumentVersion[];
+  files: DocumentFile[];
+  entityLinks: DocumentEntityLink[];
+  acknowledgments: AckUser[];
+  signatureRequests: SignatureRequestEntry[];
+  auditLog: AuditLogEntry[];
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -102,24 +113,23 @@ function DocumentDetailInner() {
   const router = useRouter();
   const docId = params.id as string;
 
-  const [doc, setDoc] = useState<DocumentDetail | null>(null);
-  const [versions, setVersions] = useState<DocumentVersion[]>([]);
-  const [files, setFiles] = useState<DocumentFile[]>([]);
-  const [entityLinks, setEntityLinks] = useState<DocumentEntityLink[]>([]);
-  const [acknowledgments, setAcknowledgments] = useState<AckUser[]>([]);
-  const [signatureRequests, setSignatureRequests] = useState<
-    SignatureRequestEntry[]
-  >([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   // D1: point-in-time lookup ("Which version was effective on …?")
   const [pitDate, setPitDate] = useState("");
   const [pitResult, setPitResult] = useState<DocumentVersion | null>(null);
   const [pitNotFound, setPitNotFound] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die sieben Anfragen wurden immer
+  // gemeinsam gestellt, daher eine Abfrage mit einem Objekt als Ergebnis.
+  // Nicht-ok-Antworten lassen wie vorher den jeweiligen Teil leer.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<DocumentDetailData>({
+    queryKey: ["documents", "detail", docId],
+    queryFn: async () => {
       const [docRes, versionsRes, filesRes, linksRes, acksRes, sigRes, logRes] =
         await Promise.all([
           fetch(`/api/v1/documents/${docId}`),
@@ -132,44 +142,58 @@ function DocumentDetailInner() {
             `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
           ),
         ]);
+      const result: DocumentDetailData = {
+        doc: null,
+        versions: [],
+        files: [],
+        entityLinks: [],
+        acknowledgments: [],
+        signatureRequests: [],
+        auditLog: [],
+      };
       if (docRes.ok) {
         const json = await docRes.json();
-        setDoc(json.data ?? null);
+        result.doc = json.data ?? null;
       }
       if (versionsRes.ok) {
         const json = await versionsRes.json();
-        setVersions(json.data ?? []);
+        result.versions = json.data ?? [];
       }
       if (filesRes.ok) {
         const json = await filesRes.json();
-        setFiles(json.data ?? []);
+        result.files = json.data ?? [];
       }
       if (linksRes.ok) {
         const json = await linksRes.json();
-        setEntityLinks(json.data ?? []);
+        result.entityLinks = json.data ?? [];
       }
       if (acksRes.ok) {
         const json = await acksRes.json();
-        setAcknowledgments(json.data ?? []);
+        result.acknowledgments = json.data ?? [];
       }
       if (sigRes.ok) {
         const json = await sigRes.json();
-        setSignatureRequests(json.data ?? []);
+        result.signatureRequests = json.data ?? [];
       }
       if (logRes.ok) {
         const json = await logRes.json();
-        setAuditLog(json.data ?? []);
+        result.auditLog = json.data ?? [];
       }
-    } catch {
-      // handled by null checks
-    } finally {
-      setLoading(false);
-    }
-  }, [docId]);
+      return result;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const doc = data?.doc ?? null;
+  const versions = data?.versions ?? [];
+  const files = data?.files ?? [];
+  const entityLinks = data?.entityLinks ?? [];
+  const acknowledgments = data?.acknowledgments ?? [];
+  const signatureRequests = data?.signatureRequests ?? [];
+  const auditLog = data?.auditLog ?? [];
+
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSendReminder = async () => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -114,9 +115,31 @@ function DocumentsPageInner() {
   const router = useRouter();
   const { formatDate } = useDateFormat();
 
-  const [documents, setDocuments] = useState<DocumentRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: documents = [],
+    isPending: loading,
+    isFetching,
+    isError: error,
+    refetch,
+  } = useQuery<DocumentRow[]>({
+    queryKey: ["documents", "list"],
+    queryFn: async () => {
+      const res = await fetch(
+        "/api/v1/documents?limit=100&sortBy=title&sortDir=asc",
+      );
+      if (!res.ok) throw new Error("Failed");
+      const json = await res.json();
+      return (json.data ?? []) as DocumentRow[];
+    },
+  });
+
+  const fetchDocuments = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,28 +151,6 @@ function DocumentsPageInner() {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  const fetchDocuments = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const res = await fetch(
-        "/api/v1/documents?limit=100&sortBy=title&sortDir=asc",
-      );
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      setDocuments(json.data ?? []);
-    } catch {
-      setError(true);
-      setDocuments([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchDocuments();
-  }, [fetchDocuments]);
 
   const filtered = useMemo(() => {
     let result = documents;
@@ -295,9 +296,12 @@ function DocumentsPageInner() {
             variant="outline"
             size="sm"
             onClick={() => fetchDocuments()}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <AiDraftPolicyDialog />
           <Button size="sm" onClick={() => router.push("/documents/new")}>

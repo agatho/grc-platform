@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -41,26 +42,28 @@ export default function CompliancePage() {
 
 function CompliancePageInner() {
   const t = useTranslations("documents");
-  const [rows, setRows] = useState<ComplianceRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ComplianceRow[]>({
+    queryKey: ["documents", "compliance"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/documents/compliance");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ComplianceRow[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/documents/compliance");
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      setRows(json.data ?? []);
-    } catch {
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   // Aggregate metrics
   const totalDocs = rows.length;
@@ -94,7 +97,7 @@ function CompliancePageInner() {
           variant="outline"
           size="sm"
           onClick={() => fetchData()}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw size={14} />
         </Button>
