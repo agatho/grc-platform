@@ -18,6 +18,7 @@
 // ============================================================================
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
+import * as prettier from "prettier";
 import { collectDependencies, rootManifest } from "./lib/dep-tree.mjs";
 
 const ROOT = process.cwd();
@@ -235,12 +236,23 @@ for (const e of prodEntries) {
   md.push("");
 }
 
+// [OP-252] Die Markdown-Ausgabe läuft durch Prettier mit der Repo-Konfiguration,
+// bevor sie geschrieben oder verglichen wird. Vorher stand dieses Gate gegen
+// das Prettier-Gate im Lint-Job: `--check` verlangte die rohen Bytes des
+// Erzeugers (unausgerichtete Tabellen), `prettier --check` verlangte die
+// ausgerichteten — dieselbe Datei konnte nie beide bestehen. Die eingecheckte
+// Fassung war seit 2026-09-01 die Prettier-Fassung, also war `notice:check`
+// seitdem in jedem Lauf rot; gesehen hat es niemand, weil der Security-Audit-Job
+// hinter dem Lint-Job hängt und der bis OP-245 zuerst fiel.
+const licensesFile = join(resolve(ROOT), "THIRD-PARTY-LICENSES.md");
+const licensesMd = await prettier.format(md.join("\n").trimEnd() + "\n", {
+  ...(await prettier.resolveConfig(licensesFile)),
+  filepath: licensesFile,
+});
+
 const outputs = [
   { file: join(resolve(ROOT), "NOTICE"), content: notice.trimEnd() + "\n" },
-  {
-    file: join(resolve(ROOT), "THIRD-PARTY-LICENSES.md"),
-    content: md.join("\n").trimEnd() + "\n",
-  },
+  { file: licensesFile, content: licensesMd },
 ];
 
 if (CHECK) {
