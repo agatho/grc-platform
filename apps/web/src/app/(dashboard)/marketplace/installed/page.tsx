@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Trash2, Settings } from "lucide-react";
 
@@ -29,22 +30,28 @@ export default function InstalledPage() {
 function InstalledList() {
   const t = useTranslations("marketplace");
   const { formatDate } = useDateFormat();
-  const [items, setItems] = useState<Installation[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before; the refresh button follows `isFetching`.
+  const {
+    data: items = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Installation[]>({
+    queryKey: ["marketplace", "installations"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/marketplace/installations");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Installation[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/marketplace/installations");
-      if (res.ok) setItems((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const handleUninstall = async (id: string) => {
     await fetch(`/api/v1/marketplace/installations/${id}`, {
@@ -68,9 +75,9 @@ function InstalledList() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

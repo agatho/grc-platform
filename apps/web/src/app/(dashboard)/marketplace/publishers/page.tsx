@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, ShieldCheck } from "lucide-react";
 
@@ -27,22 +28,28 @@ export default function PublishersPage() {
 
 function PublisherPortal() {
   const t = useTranslations("marketplace");
-  const [publishers, setPublishers] = useState<Publisher[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before; the refresh button follows `isFetching`.
+  const {
+    data: publishers = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Publisher[]>({
+    queryKey: ["marketplace", "publishers"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/marketplace/publishers");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Publisher[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/marketplace/publishers");
-      if (res.ok) setPublishers((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -60,9 +67,12 @@ function PublisherPortal() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -69,30 +69,39 @@ function ListingDetail() {
   const t = useTranslations("marketplace");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [listing, setListing] = useState<ListingDetail | null>(null);
-  const [versions, setVersions] = useState<Version[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). The three requests were always issued and
+  // consumed together, so one `queryFn` returns them as one object; each
+  // non-ok response falls back to its previous default (null / empty list).
+  const { data, isPending: loading } = useQuery<{
+    listing: ListingDetail | null;
+    versions: Version[];
+    reviews: Review[];
+  }>({
+    queryKey: ["marketplace", "listings", id, "detail"],
+    queryFn: async () => {
       const [listRes, verRes, revRes] = await Promise.all([
         fetch(`/api/v1/marketplace/listings/${id}`),
         fetch(`/api/v1/marketplace/versions?listingId=${id}`),
         fetch(`/api/v1/marketplace/reviews?listingId=${id}`),
       ]);
-      if (listRes.ok) setListing((await listRes.json()).data);
-      if (verRes.ok) setVersions((await verRes.json()).data ?? []);
-      if (revRes.ok) setReviews((await revRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      return {
+        listing: listRes.ok
+          ? ((await listRes.json()).data as ListingDetail)
+          : null,
+        versions: verRes.ok
+          ? (((await verRes.json()).data ?? []) as Version[])
+          : [],
+        reviews: revRes.ok
+          ? (((await revRes.json()).data ?? []) as Review[])
+          : [],
+      };
+    },
+  });
+  const listing = data?.listing ?? null;
+  const versions = data?.versions ?? [];
+  const reviews = data?.reviews ?? [];
 
   const handleInstall = async () => {
     const latestVersion = versions.find((v) => v.status === "approved");
