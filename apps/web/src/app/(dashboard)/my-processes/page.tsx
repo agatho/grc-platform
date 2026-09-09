@@ -4,7 +4,8 @@
 // in which the logged-in user has a role (owner / RACI) or an open
 // acknowledgment. UX modelled on /my-policies.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNow, useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -56,26 +57,30 @@ function hasPendingAcknowledgment(item: MyProcessItem): boolean {
 
 export default function MyProcessesPage() {
   const t = useTranslations("processPortal");
-  const [items, setItems] = useState<MyProcessItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Suche filtert wie vorher
+  // clientseitig und gehoert daher nicht in den Schluessel. Eine nicht-ok-
+  // Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: items = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<MyProcessItem[]>({
+    queryKey: ["bpm", "my-processes"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bpm/my-processes");
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MyProcessItem[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
