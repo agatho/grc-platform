@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -125,9 +126,6 @@ export default function CalendarPage() {
   const { formatDate, formatDateTime } = useDateFormat();
 
   // State
-  const [events, setEvents] = useState<AggregatedCalendarEvent[]>([]);
-  const [heatmap, setHeatmap] = useState<CapacityHeatmapEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<CalendarView>("month");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -191,9 +189,30 @@ export default function CalendarPage() {
   // ──────────────────────────────────────────────────────────
   // Fetch events
   // ──────────────────────────────────────────────────────────
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Zeitraum, Modulfilter und Ansicht
+  // stehen im Schlüssel; Termine und Kapazitäts-Heatmap kommen aus einem
+  // Abruf als ein Objekt. `loading` ist hier `isFetching`, weil der kleine
+  // Kreisel neben dem Titel wie vorher bei JEDEM Abruf laufen soll, auch beim
+  // Aktualisieren über den Knopf.
+  const {
+    data: calendarData,
+    isFetching: loading,
+    refetch,
+  } = useQuery<{
+    events: AggregatedCalendarEvent[];
+    heatmap: CapacityHeatmapEntry[];
+  }>({
+    queryKey: [
+      "calendar",
+      "events",
+      dateRange.from.toISOString(),
+      dateRange.to.toISOString(),
+      selectedModules,
+      view,
+    ],
+    queryFn: async () => {
       const params = new URLSearchParams({
         from: dateRange.from.toISOString(),
         to: dateRange.to.toISOString(),
@@ -209,23 +228,26 @@ export default function CalendarPage() {
           : Promise.resolve(null),
       ]);
 
+      let events: AggregatedCalendarEvent[] = [];
+      let heatmap: CapacityHeatmapEntry[] = [];
       if (eventsRes.ok) {
         const json = await eventsRes.json();
-        setEvents(json.data ?? []);
+        events = json.data ?? [];
       }
 
       if (heatmapRes && heatmapRes.ok) {
         const json = await heatmapRes.json();
-        setHeatmap(json.data ?? []);
+        heatmap = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange, selectedModules, view]);
+      return { events, heatmap };
+    },
+  });
+  const events = useMemo(() => calendarData?.events ?? [], [calendarData]);
+  const heatmap = useMemo(() => calendarData?.heatmap ?? [], [calendarData]);
 
-  useEffect(() => {
-    void fetchEvents();
-  }, [fetchEvents]);
+  const fetchEvents = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ──────────────────────────────────────────────────────────
   // Group events by date
