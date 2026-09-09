@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
@@ -57,6 +58,10 @@ interface UserRecord {
   created_at: string;
   roles: UserRoleRecord[];
 }
+
+// Stable empty default for the query data, so `filteredData` (a memo on
+// `users`) keeps its identity while the query is still pending.
+const NO_USERS: UserRecord[] = [];
 
 // ---------- Constants ----------
 
@@ -115,8 +120,6 @@ export default function UsersPage() {
   const { formatDateTime } = useDateFormat();
   const t = useTranslations();
 
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showInvite, setShowInvite] = useState(false);
   const [invEmail, setInvEmail] = useState("");
   const [invRole, setInvRole] = useState<UserRole>("viewer");
@@ -143,48 +146,52 @@ export default function UsersPage() {
 
   // ---------- Fetch users + their roles ----------
 
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerpfad bleibt wie er
+  // war: ein Toast, und die zuletzt geladene Liste bleibt stehen — dafür
+  // wirft die Abfrage nach dem Toast weiter. `retry: false`, weil die
+  // Voreinstellung des Providers (ein Wiederholungsversuch) den Toast
+  // sonst zweimal zeigte; vorher gab es keinen Wiederholungsversuch.
+  const {
+    data: users = NO_USERS,
+    isPending: loading,
+    refetch,
+  } = useQuery<UserRecord[]>({
+    queryKey: ["users", "with-roles", { limit: 100 }],
+    retry: false,
+    queryFn: async () => {
+      try {
+        // Fetch the user list (paginated, up to 100)
+        const res = await fetch("/api/v1/users?limit=100");
+        if (!res.ok) throw new Error("Failed to fetch users");
+        const { data: userList } = (await res.json()) as {
+          data: Omit<UserRecord, "roles">[];
+        };
+
+        // Fetch roles for each user in parallel
+        const withRoles = await Promise.all(
+          userList.map(async (u) => {
+            const detailRes = await fetch(`/api/v1/users/${u.id}`);
+            if (!detailRes.ok) return { ...u, roles: [] as UserRoleRecord[] };
+            const { data } = (await detailRes.json()) as {
+              data: { roles: UserRoleRecord[] };
+            };
+            return { ...u, roles: data.roles };
+          }),
+        );
+
+        return withRoles;
+      } catch (err) {
+        toast.error(t("users.loadError"));
+        throw err;
+      }
+    },
+  });
+
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Fetch the user list (paginated, up to 100)
-      const res = await fetch("/api/v1/users?limit=100");
-      if (!res.ok) throw new Error("Failed to fetch users");
-      const { data: userList } = (await res.json()) as {
-        data: Omit<UserRecord, "roles">[];
-      };
-
-      // Fetch roles for each user in parallel
-      const withRoles = await Promise.all(
-        userList.map(async (u) => {
-          const detailRes = await fetch(`/api/v1/users/${u.id}`);
-          if (!detailRes.ok) return { ...u, roles: [] as UserRoleRecord[] };
-          const { data } = (await detailRes.json()) as {
-            data: { roles: UserRoleRecord[] };
-          };
-          return { ...u, roles: data.roles };
-        }),
-      );
-
-      setUsers(withRoles);
-    } catch {
-      toast.error(t("users.loadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
-
-  // ---------- Auto-suggest LoD when role changes ----------
-
-  useEffect(() => {
-    if (selectedRole) {
-      const suggested = suggestLod(selectedRole as UserRole);
-      setSelectedLod(suggested ?? "none");
-    }
-  }, [selectedRole]);
+    await refetch();
+  }, [refetch]);
 
   // ---------- Assign Role ----------
 
@@ -578,7 +585,14 @@ export default function UsersPage() {
               <Label>{t("users.selectRole")}</Label>
               <Select
                 value={selectedRole}
-                onValueChange={(val) => setSelectedRole(val as UserRole)}
+                onValueChange={(val) => {
+                  const role = val as UserRole;
+                  setSelectedRole(role);
+                  // [OP-245 · Gestalt E] Die LoD-Vorbelegung folgt der
+                  // Rollenwahl — sie gehört in den Handler, der die Rolle
+                  // ändert, nicht in einen nachlaufenden Effekt.
+                  setSelectedLod(suggestLod(role) ?? "none");
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={t("users.selectRole")} />
