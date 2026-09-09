@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -109,80 +110,31 @@ const EU_COUNTRIES = [
 // Component
 // ---------------------------------------------------------------------------
 
+// [OP-245 · Gestalt A] Die Seite rief ihren Abruf in einem Effekt und schrieb
+// Ergebnis, Ladezustand UND die beiden Formulare synchron zurueck
+// (`react-hooks/set-state-in-effect`). Der Abruf liegt jetzt in
+// `@tanstack/react-query` (Muster aus Welle 7b,
+// `processes/[id]/ropa/page.tsx`): der Serverstand ist die SAAT der
+// Formulare, nicht ihr Inhalt. Die Formulare sind deshalb in ein eigenes
+// Bauteil gewandert, das mit dem geladenen Stand EINGEHAENGT wird — React
+// setzt den Anfangswert beim Einhaengen, ein spiegelnder Effekt entfaellt.
 export default function OrganizationDetailPage() {
   const params = useParams();
   const orgId = params.id as string;
   const t = useTranslations("organizations");
-  const tGdpr = useTranslations("organizations.gdpr");
-  const tStatus = useTranslations("status");
-  const tActions = useTranslations("actions");
 
-  const [org, setOrg] = useState<OrgDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // GDPR form
-  const [gdprForm, setGdprForm] = useState<GdprFormData>({
-    orgCode: "",
-    isDataController: false,
-    supervisoryAuthority: "",
-    dataResidency: "",
-    dpoUserId: "",
-  });
-  const [gdprSaving, setGdprSaving] = useState(false);
-  const [orgCodeLocked, setOrgCodeLocked] = useState(false);
-
-  // Overview form
-  const [overviewSaving, setOverviewSaving] = useState(false);
-  const [overviewForm, setOverviewForm] = useState({
-    name: "",
-    shortName: "",
-    type: "subsidiary" as string,
-    country: "",
-    legalForm: "",
-    parentOrgId: "" as string,
-  });
-
-  // DPO users
-  const [dpoUsers, setDpoUsers] = useState<OrgUser[]>([]);
-
-  // Candidate parent orgs (all orgs in scope minus self — to prevent
-  // trivial cycles; deeper cycle prevention lives server-side).
-  const [parentOptions, setParentOptions] = useState<
-    Array<{ id: string; name: string; type?: string }>
-  >([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/v1/organizations?limit=100");
-        if (!res.ok) return;
-        const json = await res.json();
-        const rows = (json.data ?? [])
-          .filter((r: Record<string, unknown>) => String(r.id) !== orgId)
-          .map((r: Record<string, unknown>) => ({
-            id: String(r.id),
-            name: String(r.name),
-            type: r.type ? String(r.type) : undefined,
-          }));
-        if (!cancelled) setParentOptions(rows);
-      } catch {
-        /* non-critical */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [orgId]);
-
-  // Fetch organization
-  const fetchOrg = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // Fetch organization. Eine nicht-ok-Antwort ergibt wie vorher `null` (die
+  // „nicht gefunden"-Ansicht); ein Netzfehler landet im Fehlerzustand.
+  const {
+    data: org = null,
+    isPending: loading,
+    isError: error,
+    refetch,
+  } = useQuery<OrgDetail | null>({
+    queryKey: ["organizations", orgId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/organizations/${orgId}`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return null;
       const json = await res.json();
       const raw = (json.data ?? json) as Record<string, unknown>;
 
@@ -217,32 +169,120 @@ export default function OrganizationDetailPage() {
         createdAt: String(raw.createdAt ?? raw.created_at ?? ""),
         deletedAt: (raw.deletedAt ?? raw.deleted_at ?? null) as string | null,
       };
-      setOrg(data);
+      return data;
+    },
+  });
 
-      // Populate forms
-      setOverviewForm({
-        name: data.name,
-        shortName: data.shortName ?? "",
-        type: data.type,
-        country: data.country,
-        legalForm: data.legalForm ?? "",
-        parentOrgId: data.parentOrgId ?? "",
-      });
+  // Der Schluessel wird NUR nach einem erfolgreichen Speichern erhoeht, nicht
+  // bei jedem Abruf. Sonst risse ein Hintergrundabruf dem Nutzer das Formular
+  // unter den Haenden weg.
+  const [seedVersion, setSeedVersion] = useState(0);
 
-      const hasOrgCode = Boolean(data.orgCode);
-      setOrgCodeLocked(hasOrgCode);
-      setGdprForm({
-        orgCode: data.orgCode ?? "",
-        isDataController: data.isDataController ?? false,
-        supervisoryAuthority: data.supervisoryAuthority ?? "",
-        dataResidency: data.dataResidency ?? "",
-        dpoUserId: data.dpoUserId ?? "",
-      });
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error || !org) {
+    return (
+      <div className="space-y-4">
+        <Link href="/organizations">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft size={16} />
+            {t("backToList")}
+          </Button>
+        </Link>
+        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+          <AlertCircle size={32} className="mb-2" />
+          <p className="text-sm">{t("notFound")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <OrganizationDetailForm
+      key={seedVersion}
+      orgId={orgId}
+      org={org}
+      onSaved={async () => {
+        await refetch();
+        setSeedVersion((v) => v + 1);
+      }}
+    />
+  );
+}
+
+function OrganizationDetailForm({
+  orgId,
+  org,
+  onSaved,
+}: {
+  orgId: string;
+  org: OrgDetail;
+  onSaved: () => Promise<void>;
+}) {
+  const t = useTranslations("organizations");
+  const tGdpr = useTranslations("organizations.gdpr");
+  const tStatus = useTranslations("status");
+  const tActions = useTranslations("actions");
+
+  // GDPR form — seeded from the loaded organization on mount
+  const [gdprForm, setGdprForm] = useState<GdprFormData>(() => ({
+    orgCode: org.orgCode ?? "",
+    isDataController: org.isDataController ?? false,
+    supervisoryAuthority: org.supervisoryAuthority ?? "",
+    dataResidency: org.dataResidency ?? "",
+    dpoUserId: org.dpoUserId ?? "",
+  }));
+  const [gdprSaving, setGdprSaving] = useState(false);
+  const orgCodeLocked = Boolean(org.orgCode);
+
+  // Overview form — seeded from the loaded organization on mount
+  const [overviewSaving, setOverviewSaving] = useState(false);
+  const [overviewForm, setOverviewForm] = useState(() => ({
+    name: org.name,
+    shortName: org.shortName ?? "",
+    type: org.type as string,
+    country: org.country,
+    legalForm: org.legalForm ?? "",
+    parentOrgId: org.parentOrgId ?? "",
+  }));
+
+  // DPO users
+  const [dpoUsers, setDpoUsers] = useState<OrgUser[]>([]);
+
+  // Candidate parent orgs (all orgs in scope minus self — to prevent
+  // trivial cycles; deeper cycle prevention lives server-side).
+  const [parentOptions, setParentOptions] = useState<
+    Array<{ id: string; name: string; type?: string }>
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/organizations?limit=100");
+        if (!res.ok) return;
+        const json = await res.json();
+        const rows = (json.data ?? [])
+          .filter((r: Record<string, unknown>) => String(r.id) !== orgId)
+          .map((r: Record<string, unknown>) => ({
+            id: String(r.id),
+            name: String(r.name),
+            type: r.type ? String(r.type) : undefined,
+          }));
+        if (!cancelled) setParentOptions(rows);
+      } catch {
+        /* non-critical */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   // Fetch DPO users (users with dpo role in this org)
@@ -272,10 +312,6 @@ export default function OrganizationDetailPage() {
       });
   }, [orgId]);
 
-  useEffect(() => {
-    void fetchOrg();
-  }, [fetchOrg]);
-
   // Save overview
   const handleOverviewSave = async () => {
     setOverviewSaving(true);
@@ -295,7 +331,7 @@ export default function OrganizationDetailPage() {
       });
       if (!res.ok) throw new Error("Failed");
       toast.success(t("saved"));
-      await fetchOrg();
+      await onSaved();
     } catch {
       toast.error(t("saveError"));
     } finally {
@@ -330,38 +366,13 @@ export default function OrganizationDetailPage() {
       });
       if (!res.ok) throw new Error("Failed");
       toast.success(tGdpr("saved"));
-      await fetchOrg();
+      await onSaved();
     } catch {
       toast.error(tGdpr("saveError"));
     } finally {
       setGdprSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  if (error || !org) {
-    return (
-      <div className="space-y-4">
-        <Link href="/organizations">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft size={16} />
-            {t("backToList")}
-          </Button>
-        </Link>
-        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-          <AlertCircle size={32} className="mb-2" />
-          <p className="text-sm">{t("notFound")}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

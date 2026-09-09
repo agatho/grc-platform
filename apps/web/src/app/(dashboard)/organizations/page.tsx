@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Plus, Pencil, Trash2, GitBranch } from "lucide-react";
@@ -348,9 +349,6 @@ export default function OrganizationsPage() {
   const tStatus = useTranslations("status");
   const { formatDate } = useDateFormat();
 
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-
   // Form dialog state
   const [formOpen, setFormOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -362,22 +360,28 @@ export default function OrganizationsPage() {
   const [deleting, setDeleting] = useState(false);
 
   // ── Fetch organizations ──
-  const fetchOrganizations = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste (leere Tabelle); ein Netzfehler wird nicht mehr
+  // verschluckt, sondern landet im Fehlerzustand der Abfrage.
+  const {
+    data: organizations = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<Organization[]>({
+    queryKey: ["organizations", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/organizations?limit=100");
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) return [];
       const json = (await res.json()) as { data: Organization[] };
-      setOrganizations(json.data);
-    } catch {
-      // Silently handle — table will show empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    void fetchOrganizations();
-  }, [fetchOrganizations]);
+  const fetchOrganizations = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ── Create / Update ──
   const handleSave = async (data: OrgFormData) => {

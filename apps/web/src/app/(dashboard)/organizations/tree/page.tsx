@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   ChevronRight,
@@ -206,37 +207,38 @@ export default function OrganizationTreePage() {
   const t = useTranslations("organizations");
   const tCommon = useTranslations("common");
 
-  const [tree, setTree] = useState<OrgNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-
-  const fetchTree = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher einen leeren Baum; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage.
+  const { data: tree = [], isPending: loading } = useQuery<OrgNode[]>({
+    queryKey: ["organizations", "tree"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/organizations/tree");
-      if (!res.ok) throw new Error("Failed to fetch tree");
+      if (!res.ok) return [];
       const json = (await res.json()) as { data: OrgNode[] };
-      setTree(json.data);
-      // Auto-expand the first level
-      const firstLevelIds = new Set(
-        json.data
-          .filter((n: OrgNode) => n.children.length > 0)
-          .map((n: OrgNode) => n.id),
-      );
-      setExpanded(firstLevelIds);
-    } catch {
-      // Table will show empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    void fetchTree();
-  }, [fetchTree]);
+  // Auto-expand the first level. Vorher setzte der Abruf `expanded` nach dem
+  // Laden einmal auf die erste Ebene; jetzt ist die erste Ebene der
+  // ABGELEITETE Vorgabewert, solange der Nutzer noch nichts auf- oder
+  // zugeklappt hat (`null`). Ab dem ersten Klick gilt sein Zustand.
+  const [expandedOverride, setExpandedOverride] = useState<Set<string> | null>(
+    null,
+  );
+  const expanded = useMemo(
+    () =>
+      expandedOverride ??
+      new Set(tree.filter((n) => n.children.length > 0).map((n) => n.id)),
+    [expandedOverride, tree],
+  );
 
   const toggleNode = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
+    setExpandedOverride((prev) => {
+      const next = new Set(prev ?? expanded);
       if (next.has(id)) {
         next.delete(id);
       } else {
@@ -247,11 +249,11 @@ export default function OrganizationTreePage() {
   };
 
   const expandAll = () => {
-    setExpanded(collectIds(tree));
+    setExpandedOverride(collectIds(tree));
   };
 
   const collapseAll = () => {
-    setExpanded(new Set());
+    setExpandedOverride(new Set());
   };
 
   return (
