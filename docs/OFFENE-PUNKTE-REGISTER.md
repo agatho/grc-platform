@@ -821,9 +821,9 @@ Verhalten, das die Umstellung sichtbar gemacht hat und das je einzeln eine
 Entscheidung braucht (ein Sammelpunkt, damit keine Nummer ohne Zeile
 existiert):
 
-| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                  | Art     | Stand                             |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------- | --------------------------------- |
-| OP-249 | **Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht:** (1) `programmes/[id]/steps/[stepId]`: die drei Freigabe-Knöpfe `await fetch(...)` ohne `r.ok` — ein 4xx/5xx ist stumm, die Seite lädt nur neu; (2) `graph/explorer`: ein gescheiterter Teilgraph-Abruf hat keine Meldung — vorher blieb still der alte Graph stehen, jetzt steht still der Leerzustand; (3) `catalogs/controls` und `catalogs/risks`: bei Nicht-ok blieben die Zuweisungen des _vorigen_ Eintrags unter dem neu gewählten stehen (jetzt leer, aber weiter ohne Meldung); (4) `admin/sso`: der Aktiv-Schalter sät das ganze Formular neu und verwirft ungespeicherte Eingaben — so war es, so ist es; (5) `processes/[id]/compare`: gleiche Version links und rechts liess den vorigen Vergleich unter falscher Beschriftung stehen (jetzt Leerzustand). | Agentenberichte OP-245 | Produkt | offen — je einzeln zu entscheiden |
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                  | Art     | Stand                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------- | ----------------------------------------------------------------------------------------- |
+| OP-249 | **Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht:** (1) `programmes/[id]/steps/[stepId]`: die drei Freigabe-Knöpfe `await fetch(...)` ohne `r.ok` — ein 4xx/5xx ist stumm, die Seite lädt nur neu; (2) `graph/explorer`: ein gescheiterter Teilgraph-Abruf hat keine Meldung — vorher blieb still der alte Graph stehen, jetzt steht still der Leerzustand; (3) `catalogs/controls` und `catalogs/risks`: bei Nicht-ok blieben die Zuweisungen des _vorigen_ Eintrags unter dem neu gewählten stehen (jetzt leer, aber weiter ohne Meldung); (4) `admin/sso`: der Aktiv-Schalter sät das ganze Formular neu und verwirft ungespeicherte Eingaben — so war es, so ist es; (5) `processes/[id]/compare`: gleiche Version links und rechts liess den vorigen Vergleich unter falscher Beschriftung stehen (jetzt Leerzustand). | Agentenberichte OP-245 | Produkt | **behoben 2026-09-10** (lokale Sitzung; fuenfter Fall nach Entscheidung des Eigentuemers) |
 
 **Windows-Ränder (OP-246), unverändert:** die sieben bekannten Windows-Ausfälle
 der Suite (CRLF, Pfadtrenner, die PoC-Datei ausserhalb des Repos) bleiben,
@@ -2881,3 +2881,46 @@ eigenen Doku, wurde nicht wieder gelesen“ — und sie hat diesmal zusätzlich
 eine dritte Variable zutage gefördert, die die Triage übersehen hatte:
 `RATE_LIMIT_AUTH` (10/60 s, adressgeschlüsselt, fail-closed), die erst rot
 geworden wäre, nachdem das Standardbudget nicht mehr alles davor verdeckt.
+
+### Nachtrag 2026-09-10 — Welle 8q: nachgeprüft, und zwei Entscheidungen des Eigentümers
+
+**Die drei Testumgebungs-Budgets (`64845984`, `8cb10ebd`) — geprüft, nicht
+geglaubt.** Die lokale Sitzung hat `.github/workflows/**` angefasst, was laut
+Übergabe hier liegt; auf Ansage des Eigentümers, und mit einer Diagnose, die
+schärfer ist als meine Vermutung war. Ich hatte für die 503 den fehlenden
+AI-Provider verdächtigt — es war ClamAV.
+
+Weil alle drei Schalter eine Kontrolle lockern, geprüft:
+
+| Frage                                                          | Befund                                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sind die Werte erfunden?                                       | **Nein.** `.env.example` Zeilen 205–210 führen `RATE_LIMIT_DEFAULT=3000/60`, `RATE_LIMIT_AUTH=1000/60`, `CLAMAV_OPTIONAL=1` seit dem 2026-09-02 (E2E-TRIAGE-3/-4), ausdrücklich „gehören in die Umgebung des E2E-SERVERS … und NIEMALS in eine produktive Instanz". |
+| Behauptet ein E2E-Test einen 429 oder eine abgelehnte Malware? | Nein — keine Fundstelle in `apps/web/e2e` oder `tests/e2e`.                                                                                                                                                                                                         |
+| Bleiben die Kontrollen anderswo geprüft?                       | Ja. `apps/web/src/__tests__/lib/rate-limit.test.ts`, 429-Assertions in `ai-router-health` und `ai-assist-routes`; für ClamAV `packages/shared/tests/clamav.test.ts` und `documents-upload-immutability.test.ts`.                                                    |
+| Laufen die im selben Job mit den neuen Variablen?              | Nein — sie liegen im Job `unit-tests`; die Variablen stehen job-lokal im `env:` von `e2e-smoke`.                                                                                                                                                                    |
+| Ist `CLAMAV_OPTIONAL` ein vorgesehener Schalter?               | Ja: `packages/shared/src/lib/clamav.ts:85`, dokumentiert in Zeile 82.                                                                                                                                                                                               |
+
+**Damit ist keine Zusicherung aufgeweicht.** Der Begrenzer bleibt an — 3.000/60
+ist ein Lasterzeuger-Budget, kein abgeschaltetes Tor —, die übrigen Politiken
+(portal, intake, export, import, upload, ai, copilot) stehen unverändert auf
+ihren Produktwerten, und beide Kontrollen werden weiterhin dort geprüft, wo sie
+geprüft gehören. Hätte ein E2E-Test einen 429 behauptet, wäre die Antwort eine
+andere gewesen.
+
+**Bemerkenswert an dem Fund:** die Empfehlung stand seit dem 2026-09-02
+wortgleich in `.env.example` und ist nie angewandt worden — weil der E2E-Job
+seit demselben Zeitraum nie so weit kam, dass sie gebraucht worden wäre. Eine
+niedergeschriebene Abhilfe, die auf ein Tor wartet, das nicht läuft, ist keine
+Abhilfe. Das ist dieselbe Mechanik wie bei OP-092 und OP-240, nur andersherum.
+
+**Entscheidung des Eigentümers zum Pilot Readiness Gate (2026-09-09).** Es
+bleibt rot und wird **nicht** required, bis die neue Test-/Staging-Version
+steht. Kein stiller Skip — #S13-30 gilt unverändert —, und der Job wird auch
+nicht entfernt: der rote Check ist die ehrliche Aussage „gegen kein Deployment
+geprüft". Sobald das Deployment steht, bekommt er `STAGING_URL` und wird
+required. Bis dahin gehört er **nicht** in die Required-Liste, sonst blockiert
+er den eigenen Merge.
+
+**Entscheidung des Eigentümers zu OP-224 (2026-09-09).** Zurückgestellt bis zum
+neuen Test-Deployment; das Deployment ist der Schwerpunkt. Offen und benannt,
+nicht abgeräumt.

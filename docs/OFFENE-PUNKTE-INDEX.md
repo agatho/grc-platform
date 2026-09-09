@@ -11,14 +11,13 @@ nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 
 Nummern: **256**
 
-## offen (4)
+## offen (3)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                  | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
 | OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)       | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.         | Haupttabelle |
 | OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten. | 2026-09-03   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                | 2026-09-09   |
-| OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                    | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -196,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (90)
+## behoben (91)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -283,6 +282,7 @@ _keine_
 | OP-245 | `eslint-plugin-react-hooks` 7.1.1 bleibt, die 416 Fundstellen sind abgetragen, der Pin auf 7.0.1 ist entfernt… | behoben                                                                                    | 2026-09-09 |
 | OP-247 | Rückgängig/Wiederholen im Prozesseditor blieben nach der ersten Änderung stehen. `canUndo`/`canRedo` wurden b… | behoben (mit OP-245)                                                                       | 2026-09-09 |
 | OP-248 | Ungespeicherte Risikobewertung im Krisenszenario wurde vom nächsten Abruf überschrieben. Jeder `fetchData()` … | behoben (mit OP-245)                                                                       | 2026-09-09 |
+| OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | behoben 2026-09-10 (lokale Sitzung; fuenfter Fall nach Entscheidung des Eigentuemers)      | 2026-09-09 |
 | OP-250 | Ein E-Mail-Test lud `EmailService` per `await import()` im Testkörper — und damit alle React-Email-Templates … | behoben                                                                                    | 2026-09-09 |
 | OP-251 | Der E2E-Smoke-Job kann seit dem 2026-09-02 nicht grün werden. `auth.setup.ts` verlangt seit der Mehr-Konten-T… | behoben 2026-09-09 (Welle 8m)                                                              | 2026-09-09 |
 | OP-252 | `notice:check` und `prettier --check` verlangten verschiedene Bytes für dieselbe Datei. `generate-notice.mjs`… | behoben                                                                                    | 2026-09-09 |
