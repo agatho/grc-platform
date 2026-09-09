@@ -9,7 +9,12 @@
 // (mandatory reason) and the limited edit (conditions / validUntil /
 // tags — only while status is active).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import {
+  keepPreviousData,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -110,6 +115,18 @@ interface PaginationMeta {
 
 const PAGE_SIZE = 20;
 
+interface AcceptanceListResult {
+  rows: AcceptanceListRow[];
+  pagination: PaginationMeta | null;
+}
+
+const DEFAULT_PAGINATION: PaginationMeta = {
+  page: 1,
+  limit: PAGE_SIZE,
+  total: 0,
+  totalPages: 1,
+};
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -127,17 +144,6 @@ function RiskAcceptancesInner() {
   const t = useTranslations("risk.acceptance");
   const { formatDate, formatDateTime } = useDateFormat();
 
-  // List state
-  const [rows, setRows] = useState<AcceptanceListRow[]>([]);
-  const [pagination, setPagination] = useState<PaginationMeta>({
-    page: 1,
-    limit: PAGE_SIZE,
-    total: 0,
-    totalPages: 1,
-  });
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-
   // Filters
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
@@ -145,8 +151,6 @@ function RiskAcceptancesInner() {
 
   // Detail dialog
   const [detailId, setDetailId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<AcceptanceDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   // Edit dialog
   const [editOpen, setEditOpen] = useState(false);
@@ -168,10 +172,26 @@ function RiskAcceptancesInner() {
   // Data fetching
   // ---------------------------------------------------------------------------
 
-  const fetchList = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
-    try {
+  const queryClient = useQueryClient();
+
+  // [OP-245 · Gestalt A] List and detail come from `@tanstack/react-query`
+  // instead of two effects mirroring loading, error and data state (pattern
+  // from wave 7b, `catalogs/objects/page.tsx`). `keepPreviousData` keeps the
+  // old rows while a page or filter change is in flight, so — as before —
+  // there is no full-page spinner as long as rows are on screen.
+  const {
+    data: list,
+    isFetching,
+    isError,
+    refetch: refetchList,
+  } = useQuery<AcceptanceListResult>({
+    queryKey: [
+      "risk-acceptances",
+      "list",
+      { page, statusFilter, expiringOnly },
+    ],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       const qs = buildAcceptanceListQuery({
         page,
         limit: PAGE_SIZE,
@@ -184,38 +204,51 @@ function RiskAcceptancesInner() {
       const res = await fetch(`/api/v1/risk-acceptances?${qs}`);
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      setRows(json.data ?? []);
-      if (json.pagination) setPagination(json.pagination);
-    } catch {
-      setLoadError(true);
-      setRows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, expiringOnly]);
+      return {
+        rows: (json.data ?? []) as AcceptanceListRow[],
+        pagination: (json.pagination ?? null) as PaginationMeta | null,
+      };
+    },
+  });
 
-  useEffect(() => {
-    void fetchList();
-  }, [fetchList]);
+  // As before: a failed request empties the rows, and a retry lifts the
+  // error state while it runs (the spinner shows, not the error block).
+  const rows = isError ? [] : (list?.rows ?? []);
+  const pagination = list?.pagination ?? DEFAULT_PAGINATION;
+  const loading = isFetching;
+  const loadError = isError && !isFetching;
 
-  const fetchDetail = useCallback(async (id: string) => {
-    setDetailLoading(true);
-    setDetail(null);
-    try {
-      const res = await fetch(`/api/v1/risk-acceptances/${id}`);
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      setDetail(json.data ?? null);
-    } catch {
-      setDetail(null);
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
+  const fetchList = useCallback(async () => {
+    await refetchList();
+  }, [refetchList]);
 
-  useEffect(() => {
-    if (detailId) void fetchDetail(detailId);
-  }, [detailId, fetchDetail]);
+  // `staleTime: 0`: the old code re-requested the record on every open of the
+  // dialog; the provider default of 60 s would show a cached detail instead.
+  const { data: detail = null, isFetching: detailLoading } =
+    useQuery<AcceptanceDetail | null>({
+      queryKey: ["risk-acceptances", "detail", detailId],
+      enabled: Boolean(detailId),
+      staleTime: 0,
+      queryFn: async () => {
+        try {
+          const res = await fetch(`/api/v1/risk-acceptances/${detailId}`);
+          if (!res.ok) return null;
+          const json = await res.json();
+          return (json.data ?? null) as AcceptanceDetail | null;
+        } catch {
+          return null;
+        }
+      },
+    });
+
+  const fetchDetail = useCallback(
+    async (id: string) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["risk-acceptances", "detail", id],
+      });
+    },
+    [queryClient],
+  );
 
   // ---------------------------------------------------------------------------
   // Actions
@@ -564,10 +597,7 @@ function RiskAcceptancesInner() {
       <Dialog
         open={detailId !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            setDetailId(null);
-            setDetail(null);
-          }
+          if (!open) setDetailId(null);
         }}
       >
         <DialogContent className="sm:max-w-2xl">
