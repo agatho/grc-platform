@@ -78,11 +78,22 @@ vi.mock("@/hooks/use-module-config", async (orig) => {
 
 const teaserStub = { aktiv: false };
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ModuleConfigProvider } from "@/hooks/use-module-config";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTeaser } from "@/components/module/module-teaser";
 
 const MODULE_KEY = "erm" as never;
+
+// [OP-245] `ModuleConfigProvider` holt seine Konfigurationen jetzt ueber
+// `useQuery`; im Baum steht der Anbieter im Wurzel-Layout, hier stellt ihn
+// die Pruefung selbst bereit.
+function withQuery(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 describe("Welle 8b — der Teaser-Blitz mit dem rohen Modulschluessel", () => {
   let warn: { mockRestore: () => void };
@@ -108,11 +119,13 @@ describe("Welle 8b — der Teaser-Blitz mit dem rohen Modulschluessel", () => {
 
   it("zeigt waehrend der Sitzung KEINEN Teaser mit dem rohen Schluessel", () => {
     render(
-      <ModuleConfigProvider orgId={null} sessionLoading>
-        <ModuleGate moduleKey={MODULE_KEY}>
-          <div>Modulinhalt</div>
-        </ModuleGate>
-      </ModuleConfigProvider>,
+      withQuery(
+        <ModuleConfigProvider orgId={null} sessionLoading>
+          <ModuleGate moduleKey={MODULE_KEY}>
+            <div>Modulinhalt</div>
+          </ModuleGate>
+        </ModuleConfigProvider>,
+      ),
     );
     // Der rohe Schluessel stand als UEBERSCHRIFT auf dem Bildschirm —
     // `definition?.displayNameDe ?? moduleKey`. Genau das ist der Beleg aus
@@ -129,11 +142,13 @@ describe("Welle 8b — der Teaser-Blitz mit dem rohen Modulschluessel", () => {
     // weil die Warnung schon im Fall darueber verbraucht war. Eine Pruefung,
     // die aus diesem Grund besteht, ist keine.
     render(
-      <ModuleConfigProvider orgId={null} sessionLoading>
-        <ModuleGate moduleKey={"isms" as never}>
-          <div>Modulinhalt</div>
-        </ModuleGate>
-      </ModuleConfigProvider>,
+      withQuery(
+        <ModuleConfigProvider orgId={null} sessionLoading>
+          <ModuleGate moduleKey={"isms" as never}>
+            <div>Modulinhalt</div>
+          </ModuleGate>
+        </ModuleConfigProvider>,
+      ),
     );
     // Die Warnung schickte den Betreiber in die falsche Richtung: sie nannte
     // eine fehlende Zeile in `module_definition`, die es gab.
@@ -150,11 +165,13 @@ describe("Welle 8b — der Teaser-Blitz mit dem rohen Modulschluessel", () => {
     // koennen; der Beweis fuer die Behebung liegt im ersten Fall.
     sessionState.status = "authenticated";
     render(
-      <ModuleConfigProvider orgId={null} sessionLoading={false}>
-        <ModuleGate moduleKey={MODULE_KEY}>
-          <div>Modulinhalt</div>
-        </ModuleGate>
-      </ModuleConfigProvider>,
+      withQuery(
+        <ModuleConfigProvider orgId={null} sessionLoading={false}>
+          <ModuleGate moduleKey={MODULE_KEY}>
+            <div>Modulinhalt</div>
+          </ModuleGate>
+        </ModuleConfigProvider>,
+      ),
     );
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "erm" })).toBeTruthy(),

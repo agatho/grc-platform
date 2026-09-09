@@ -35,6 +35,7 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { render, screen, cleanup, waitFor } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
@@ -71,10 +72,17 @@ function messagesFor(locale: string): Record<string, unknown> {
 }
 
 function renderIn(locale: string, ui: React.ReactNode) {
+  // [OP-245] Die Seiten holen ihre Daten jetzt ueber `useQuery`; im Baum
+  // steht der Anbieter im Wurzel-Layout, hier stellt ihn die Pruefung bereit.
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return render(
-    <NextIntlClientProvider locale={locale} messages={messagesFor(locale)}>
-      {ui}
-    </NextIntlClientProvider>,
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale={locale} messages={messagesFor(locale)}>
+        {ui}
+      </NextIntlClientProvider>
+    </QueryClientProvider>,
   );
 }
 

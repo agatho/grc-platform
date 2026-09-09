@@ -57,8 +57,19 @@ import {
   defaultChromeFor,
 } from "@/components/bpmn/arctos-bpmn-canvas";
 import { BpmnGrcViewer, BpmnViewer } from "@/components/bpmn/bpmn-viewer";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 installSvgPolyfills();
+
+// [OP-245] `BpmnGrcViewer` holt Overlay und Voreinstellung jetzt ueber
+// `useQuery`; im Baum steht der Anbieter im Wurzel-Layout, hier stellt ihn
+// die Pruefung selbst bereit.
+function withQuery(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 afterEach(() => {
   cleanup();
@@ -310,7 +321,9 @@ describe("OP-026 — GRC-Sichtwahl auf lesenden Flächen", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<BpmnGrcViewer xml={FLAT} processId="p-1" engine="arctos" />);
+    render(
+      withQuery(<BpmnGrcViewer xml={FLAT} processId="p-1" engine="arctos" />),
+    );
     await drawn();
 
     const select = screen.getByLabelText("bpmn.grcView.label");
@@ -339,7 +352,7 @@ describe("OP-026 — GRC-Sichtwahl auf lesenden Flächen", () => {
   }, 20_000);
 
   it("lässt sie weg, wo es keinen Prozess zu fragen gibt", async () => {
-    render(<BpmnGrcViewer xml={FLAT} engine="arctos" />);
+    render(withQuery(<BpmnGrcViewer xml={FLAT} engine="arctos" />));
     await drawn();
     expect(screen.queryByLabelText("bpmn.grcView.label")).toBeNull();
   }, 20_000);
@@ -352,12 +365,14 @@ describe("OP-026 — GRC-Sichtwahl auf lesenden Flächen", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     render(
-      <BpmnGrcViewer
-        xml={FLAT}
-        processId="p-1"
-        versionId="v-3"
-        engine="arctos"
-      />,
+      withQuery(
+        <BpmnGrcViewer
+          xml={FLAT}
+          processId="p-1"
+          versionId="v-3"
+          engine="arctos"
+        />,
+      ),
     );
     await drawn();
 

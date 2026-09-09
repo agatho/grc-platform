@@ -34,6 +34,17 @@ import {
   GRC_VIEWS_WITH_FRAMEWORK,
   formatStand,
 } from "@/components/bpmn/grc-view-select";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// [OP-245] Die Sichtwahl holt ihre Voreinstellung jetzt ueber `useQuery`; im
+// Baum steht der Anbieter im Wurzel-Layout, hier stellt ihn die Pruefung
+// selbst bereit.
+function withQuery(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 // [ARCTOS-FULL-2026-08-31 · OP-003] Die Komponente liest die Prozesskennung
 // notfalls aus der Route. Ohne Prozessbezug tut sie nichts — genau das ist der
@@ -149,7 +160,9 @@ describe("GRC_VIEWS_WITH_FRAMEWORK", () => {
 
 describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
   it("fragt ohne Prozessbezug niemanden", async () => {
-    render(<GrcViewSelect value={null} onChange={() => undefined} />);
+    render(
+      withQuery(<GrcViewSelect value={null} onChange={() => undefined} />),
+    );
     await waitFor(() => {
       expect(screen.getByLabelText("bpmn.grcView.label")).toBeTruthy();
     });
@@ -162,7 +175,7 @@ describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
       data: { activeView: "privacy", frameworkCode: null },
     };
     const onChange = vi.fn();
-    render(<GrcViewSelect value={null} onChange={onChange} />);
+    render(withQuery(<GrcViewSelect value={null} onChange={onChange} />));
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith("privacy");
     });
@@ -177,7 +190,7 @@ describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
     mockParams = { id: "p-1" };
     preferenceBody = { data: { activeView: "privacy", frameworkCode: null } };
     const onChange = vi.fn();
-    render(<GrcViewSelect value="continuity" onChange={onChange} />);
+    render(withQuery(<GrcViewSelect value="continuity" onChange={onChange} />));
     await waitFor(() => {
       expect(fetchCalls.length).toBeGreaterThan(0);
     });
@@ -186,7 +199,9 @@ describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
 
   it("speichert jede Wahl — auch das Ausschalten", async () => {
     mockParams = { id: "p-1" };
-    render(<GrcViewSelect value={null} onChange={() => undefined} />);
+    render(
+      withQuery(<GrcViewSelect value={null} onChange={() => undefined} />),
+    );
     await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(0));
 
     fireEvent.change(screen.getByLabelText("bpmn.grcView.label"), {
@@ -225,7 +240,7 @@ describe("Sichtwahl mit Gedaechtnis (OP-003)", () => {
       vi.fn(() => Promise.reject(new Error("netz weg"))),
     );
     const onChange = vi.fn();
-    render(<GrcViewSelect value={null} onChange={onChange} />);
+    render(withQuery(<GrcViewSelect value={null} onChange={onChange} />));
     const select = screen.getByLabelText("bpmn.grcView.label");
     fireEvent.change(select, { target: { value: "privacy" } });
     expect(onChange).toHaveBeenCalledWith("privacy");
@@ -252,7 +267,9 @@ describe("Rahmenwerkauswahl (OP-016)", () => {
   it("zeigt kein Feld in einer Sicht ohne framework-Layer", async () => {
     mockParams = { id: "p-1" };
     overlayBody = FRAMEWORKS;
-    render(<GrcViewSelect value="privacy" onChange={() => undefined} />);
+    render(
+      withQuery(<GrcViewSelect value="privacy" onChange={() => undefined} />),
+    );
     await waitFor(() => expect(fetchCalls.length).toBeGreaterThan(0));
     expect(screen.queryByLabelText("bpmn.grcView.frameworkLabel")).toBeNull();
     // Und holt die Liste gar nicht erst.
@@ -264,7 +281,11 @@ describe("Rahmenwerkauswahl (OP-016)", () => {
   it("bietet in der Compliance-Sicht die zugeordneten Rahmenwerke an", async () => {
     mockParams = { id: "p-1" };
     overlayBody = FRAMEWORKS;
-    render(<GrcViewSelect value="compliance" onChange={() => undefined} />);
+    render(
+      withQuery(
+        <GrcViewSelect value="compliance" onChange={() => undefined} />,
+      ),
+    );
     const select = await screen.findByLabelText("bpmn.grcView.frameworkLabel");
     const values = Array.from(select.querySelectorAll("option")).map(
       (o) => (o as HTMLOptionElement).value,
@@ -277,7 +298,11 @@ describe("Rahmenwerkauswahl (OP-016)", () => {
     // Eine Auswahlliste, die man nicht belegen kann, ist schlechter als keine.
     mockParams = { id: "p-1" };
     overlayBody = { data: { elements: {} } };
-    render(<GrcViewSelect value="compliance" onChange={() => undefined} />);
+    render(
+      withQuery(
+        <GrcViewSelect value="compliance" onChange={() => undefined} />,
+      ),
+    );
     await waitFor(() => {
       expect(fetchCalls.some((c) => c.url.includes("layers=framework"))).toBe(
         true,
@@ -291,11 +316,13 @@ describe("Rahmenwerkauswahl (OP-016)", () => {
     overlayBody = FRAMEWORKS;
     const onReload = vi.fn();
     render(
-      <GrcViewSelect
-        value="compliance"
-        onChange={() => undefined}
-        onReloadRequest={onReload}
-      />,
+      withQuery(
+        <GrcViewSelect
+          value="compliance"
+          onChange={() => undefined}
+          onReloadRequest={onReload}
+        />,
+      ),
     );
     const select = await screen.findByLabelText("bpmn.grcView.frameworkLabel");
     fireEvent.change(select, { target: { value: "iso-27001" } });
@@ -315,7 +342,7 @@ describe("Rahmenwerkauswahl (OP-016)", () => {
 describe("GrcViewSelect", () => {
   it("meldet `null` für »aus« und die Kennung für eine Sicht", () => {
     const onChange = vi.fn();
-    render(<GrcViewSelect value={null} onChange={onChange} />);
+    render(withQuery(<GrcViewSelect value={null} onChange={onChange} />));
     const select = screen.getByLabelText("bpmn.grcView.label");
     fireEvent.change(select, { target: { value: "privacy" } });
     expect(onChange).toHaveBeenCalledWith("privacy");
@@ -324,7 +351,9 @@ describe("GrcViewSelect", () => {
   });
 
   it("bietet alle neun Sichten plus »aus« an", () => {
-    render(<GrcViewSelect value={null} onChange={() => undefined} />);
+    render(
+      withQuery(<GrcViewSelect value={null} onChange={() => undefined} />),
+    );
     const options = screen.getAllByRole("option");
     expect(options).toHaveLength(GRC_VIEW_OPTIONS.length + 1);
     expect(options.map((o) => (o as HTMLOptionElement).value)).toEqual([
@@ -335,11 +364,13 @@ describe("GrcViewSelect", () => {
 
   it("nennt den Datenstand, sobald eine Sicht aktiv ist", () => {
     render(
-      <GrcViewSelect
-        value="risk-control"
-        onChange={() => undefined}
-        computedAt="2026-09-02T10:00:00Z"
-      />,
+      withQuery(
+        <GrcViewSelect
+          value="risk-control"
+          onChange={() => undefined}
+          computedAt="2026-09-02T10:00:00Z"
+        />,
+      ),
     );
     // Der Zeitstempel geht als Platzhalter durch — geprüft wird, dass er
     // formatiert ankommt und nicht als ISO-Rohwert.
@@ -350,11 +381,13 @@ describe("GrcViewSelect", () => {
 
   it("zeigt im Fehlerfall den Fehler statt eines erfundenen Standes", () => {
     render(
-      <GrcViewSelect
-        value="risk-control"
-        onChange={() => undefined}
-        error="overlay 500"
-      />,
+      withQuery(
+        <GrcViewSelect
+          value="risk-control"
+          onChange={() => undefined}
+          error="overlay 500"
+        />,
+      ),
     );
     const line = screen.getByText(/^bpmn\.grcView\.error/u);
     expect(line.textContent).toContain("overlay 500");
@@ -362,11 +395,13 @@ describe("GrcViewSelect", () => {
 
   it("sagt nichts über den Stand, solange die Sicht aus ist", () => {
     render(
-      <GrcViewSelect
-        value={null}
-        onChange={() => undefined}
-        computedAt="2026-09-02T10:00:00Z"
-      />,
+      withQuery(
+        <GrcViewSelect
+          value={null}
+          onChange={() => undefined}
+          computedAt="2026-09-02T10:00:00Z"
+        />,
+      ),
     );
     expect(screen.queryByText(/^bpmn\.grcView\.computedAt/u)).toBeNull();
   });

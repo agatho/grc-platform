@@ -47,6 +47,7 @@ import {
   act,
 } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { useEffect } from "react";
@@ -107,13 +108,20 @@ function Wrap({
   locale: string;
   children: React.ReactNode;
 }) {
+  // [OP-245] Die Seiten holen ihre Daten jetzt ueber `useQuery`; die
+  // Pruefung stellt den Anbieter bereit, wie es das Wurzel-Layout tut.
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
   return (
-    <NextIntlClientProvider locale={locale} messages={messagesFor(locale)}>
-      <TabProvider>
-        <TabBar />
-        {children}
-      </TabProvider>
-    </NextIntlClientProvider>
+    <QueryClientProvider client={client}>
+      <NextIntlClientProvider locale={locale} messages={messagesFor(locale)}>
+        <TabProvider>
+          <TabBar />
+          {children}
+        </TabProvider>
+      </NextIntlClientProvider>
+    </QueryClientProvider>
   );
 }
 
