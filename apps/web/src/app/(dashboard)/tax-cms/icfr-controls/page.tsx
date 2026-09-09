@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,20 +16,17 @@ const RESULT_COLORS: Record<string, string> = {
 
 export default function TaxIcfrControlsPage() {
   const t = useTranslations("taxCms");
-  const [rows, setRows] = useState<TaxIcfrControl[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: rows = [], isPending: loading } = useQuery<TaxIcfrControl[]>({
+    queryKey: ["tax-cms", "icfr-controls"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/tax-cms/icfr-controls?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as TaxIcfrControl[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

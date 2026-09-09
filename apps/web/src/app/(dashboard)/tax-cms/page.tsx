@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { FileText, Scale, Archive } from "lucide-react";
@@ -11,20 +11,17 @@ import { useDateFormat } from "@/lib/format-date";
 export default function TaxCmsDashboardPage() {
   const t = useTranslations("taxCms");
   const { formatCurrency: money } = useDateFormat();
-  const [data, setData] = useState<TaxCmsDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data = null, isPending: loading } = useQuery<TaxCmsDashboard | null>({
+    queryKey: ["tax-cms", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/tax-cms/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      return ((await res.json()).data ?? null) as TaxCmsDashboard | null;
+    },
+  });
   if (loading || !data)
     return (
       <div className="flex items-center justify-center h-64">
