@@ -62,6 +62,14 @@ const GATE_INPUTS = [
     ".i18n-keys-ratchet.json",
     "scripts/i18n-key-inventory.mjs --check (i18n-Schluesselbestand)",
   ],
+  // [ARCTOS-FULL-2026-08-31 · Welle 8f] Das Register ist die massgebliche
+  // Liste der offenen Punkte und Eingabe von `check-op-numbers.mjs`. Faellt
+  // es aus dem Repository, prueft dieser Check eine Datei, die niemand mehr
+  // sieht — und jede OP-Nummer im Code waere schlagartig "unbekannt".
+  [
+    "docs/OFFENE-PUNKTE-REGISTER.md",
+    "scripts/check-op-numbers.mjs (OP-Nummern eindeutig und bekannt)",
+  ],
   [".env.example", "scripts/check-env-example.mjs"],
   ["scripts/db-integrity-baseline.json", "DB-Integritätsprüfung"],
   [

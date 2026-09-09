@@ -199,6 +199,19 @@ jobs:
       - name: Jede Tor-Eingabe steht im Repository
         run: node scripts/check-gate-inputs.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · Welle 8f] Welle 8b hat OP-218 und OP-219 im
+      # Protokoll und im Quelltext vergeben, aber nicht ins Register
+      # eingetragen. Der naechste Schreiber — ich — hat dieselben zwei Nummern
+      # an zwei ANDERE Punkte vergeben. Danach sagte der Kommentar in
+      # `hooks/use-module-config.tsx` etwas anderes ueber OP-218 als das
+      # Register, und beides klang richtig.
+      #
+      # Geprueft wird deshalb beides: keine Nummer zweimal in derselben
+      # Tabelle, und keine Nummer im Code, die das Register nicht kennt.
+      # Beide Richtungen gegengeprueft (siehe docs/UMSETZUNG-WELLE-8F.md).
+      - name: OP-Nummern sind eindeutig und im Register bekannt
+        run: node scripts/check-op-numbers.mjs
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────
