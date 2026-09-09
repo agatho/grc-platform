@@ -15,6 +15,7 @@ coverage/
 # /compliance/coverage path; we generalize to any /api/v1/**/coverage/
 # so future routes (e.g. processes/[id]/coverage) are tracked too.
 !apps/web/src/app/api/v1/**/coverage/
+
 # [ARCTOS-FULL-2026-08-31 · OP-066] Hier standen vier Zeilen, die
 # `coverage/coverage-baseline.json` wieder einschliessen sollten:
 #
@@ -109,3 +110,27 @@ test-results/
 # Datei laesst sich nicht wieder einschliessen, wenn ihr Verzeichnis
 # ausgeschlossen ist.
 !apps/web/src/app/api/v1/**/coverage/
+
+# [ARCTOS-FULL-2026-08-31 · Welle 8g] Dieselbe Klasse ein zweites Mal, und
+# derselbe Schaden. `test-results/` (Zeile 88, gedacht fuer die Ausgabe von
+# Playwright) verschluckt DREI weitere API-Routen:
+#
+#   apps/web/src/app/api/v1/connectors/[id]/test-results/route.ts
+#   apps/web/src/app/api/v1/devops-connectors/test-results/route.ts
+#   apps/web/src/app/api/v1/identity-connectors/test-results/route.ts
+#
+# Sie sind vollstaendige Handler mit withAuth, Modulpruefung, Paginierung und
+# org-gebundenen Abfragen — und sie stehen in keinem Klon. Gemessen: die
+# generierte API-Doku aus einem frischen Checkout kennt 1.358 Pfade, die aus
+# dem Arbeitsbaum 1.361. Die drei fehlenden sind genau diese. Und
+# `app/(dashboard)/connectors/[id]/page.tsx:67` RUFT die erste davon —
+# `/api/v1/connectors/${id}/test-results?limit=20` — in Produktion also gegen
+# eine 404.
+#
+# Gefunden hat es nicht ein Mensch, sondern der Widerspruch zwischen zwei
+# Laeufen desselben Generators: der Check "Generated API docs are
+# reproducible" war rot, und die naheliegende Erklaerung ("die Doku ist
+# veraltet") war die falsche.
+#
+# Wieder das Verzeichnis ausnehmen, nicht die Datei darin.
+!apps/web/src/app/api/v1/**/test-results/

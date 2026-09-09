@@ -8,6 +8,13 @@
 --   Sprint 85: scenarioEngineScenario, simulationRunResult          (Simulation Engine)
 --   ABAC-bound: processSimulationResult                             (Process-Simulation)
 --
+-- [ARCTOS-FULL-2026-08-31 / S09-01] Diese Datei ist in der Remediation
+-- geaendert worden; die Begruendung steht weiter unten am Block, der
+-- simulation_run_result betrifft. Der Marker steht ZUSAETZLICH hier oben,
+-- weil der Forward-only-Check aus migration-policy.yml nur die ersten 40
+-- Zeilen liest — an Zeile 171 hat er ihn nicht gefunden, und die Datei
+-- galt ihm deshalb als unerlaubt geaenderte, ausgelieferte Migration.
+--
 -- Idempotent: CREATE TABLE IF NOT EXISTS + CREATE TYPE via DO-Block.
 -- Kann auf bereits teilweise migrierten Tenants gefahrlos erneut laufen.
 

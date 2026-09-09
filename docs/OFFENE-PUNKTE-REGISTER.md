@@ -612,6 +612,34 @@ ausloest, ist kein Tor. Der neue Test prueft am Aufrufmuster nach, DASS der
 Kontext gesetzt wird, und braucht dafuer weder Rolle noch Server. Gegen den
 alten Stand von `notify.ts` faellt er (nachgemessen), gegen den neuen laeuft er.
 
+### Nachtrag 2026-09-09 — Welle 8g, zweiter Durchgang: der PR-Lauf hat drei fehlende API-Routen aufgedeckt
+
+Nach dem Zusammenführen mit `189cb05a` (OP-167) lief die CI erneut. Drei von
+vier neu betrachteten Fehlschlägen waren **keine** Nachwehen der Reparatur,
+sondern eigene Befunde.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                                                             | Art               | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ----------------- | ------- |
+| OP-235 | **Drei API-Routen liegen auf der Platte und in keinem Klon — und die Oberfläche ruft eine davon.** `.gitignore:89 test-results/` (gedacht für die Ausgabe von Playwright) verschluckt `connectors/[id]/test-results/`, `devops-connectors/test-results/` und `identity-connectors/test-results/`. Es sind vollständige Handler mit `withAuth`, Modulprüfung, Paginierung und org-gebundenen Abfragen. `app/(dashboard)/connectors/[id]/page.tsx:67` ruft `/api/v1/connectors/${id}/test-results?limit=20` — in Produktion also gegen eine **404**. Das ist **C-15 zum zweiten Mal**, mit einer anderen Regel und drei anderen Routen. | frischer Checkout: 1.358 Pfade, Arbeitsbaum: 1.361                | **Produktdefekt** | behoben |
+| OP-236 | **`packages/bpmn` hat in CI noch nie eine Coverage-Summary erzeugt.** Der Bildvergleichstest rastert SVG über `cairosvg` und vergleicht über ImageMagick; beides sind Prozesse, keine npm-Abhängigkeiten, und kein Job installierte sie. Der Test bricht **zu Recht** hart ab statt zu überspringen — die Folge war aber, dass die Aggregation seit jeher mit „no coverage-summary.json for: packages/bpmn" endete.                                                                                                                                                                                                                   | `AssertionError: cairosvg is not importable`                      | Testlücke         | behoben |
+| OP-237 | Der Forward-only-Check liest die ersten **40** Zeilen einer Migration nach dem Remediation-Marker. In `0099_phase2_missing_tables.sql` steht er auf **Zeile 171** — die Datei galt dem Check deshalb als unerlaubt geänderte, ausgelieferte Migration.                                                                                                                                                                                                                                                                                                                                                                                | `##[error]ADR-014 is forward-only` bei genau einer von 28 Dateien | Tor               | behoben |
+
+**Wie OP-235 gefunden wurde, ist der Teil, der zählt.** Der Check „Generated
+API docs are reproducible" war rot, und die naheliegende Erklärung — „die Doku
+ist veraltet" — war die falsche. Ich hatte sie neu erzeugt und committet, und
+CI erzeugte trotzdem eine **andere**: 76 Zeilen weniger. Erst der Vergleich
+zweier Läufe desselben Generators, einmal im Arbeitsbaum und einmal in einem
+frischen `git worktree` auf denselben Commit, zeigte den Unterschied — drei
+Pfade, die es nur auf der Platte gibt.
+
+**Die Antwort ist diesmal nicht eine dritte Ausnahme.** Auf C-15 folgte eine
+Ausnahme für `coverage/`; sie hat den nächsten Fall mit `test-results/` nicht
+verhindert. `scripts/check-gate-inputs.mjs` fragt jetzt nicht mehr nach
+einzelnen Regeln, sondern: **liegt unter `apps/web/src/app` eine Quelldatei,
+die git nicht sieht?** Das fängt jede künftige Regel, gleich wie sie heißt.
+Gegengeprüft mit einer neu angelegten Route unter einem ignorierten Pfad:
+Exit 1 mit Regel und Fundstelle; mit Ausnahme Exit 0.
+
 ### Nachtrag 2026-09-09 — OP-167 geschlossen: elf Bauläufe gegen eine Umgebungsvariable
 
 Lokale Sitzung auf der Maschine des Eigentümers, Checkout `1649027f`, Next

@@ -66,6 +66,30 @@ jobs:
       # (`if: always()`), damit der Report auch im Fehlerfall am PR haengt —
       # das war das legitime Anliegen hinter dem alten continue-on-error.
       # ────────────────────────────────────────────────────────────────
+      # [ARCTOS-FULL-2026-08-31 · Welle 8g] `packages/bpmn` hat einen
+      # Bildvergleichstest (`test/verify/raster.test.ts`), der SVG ueber
+      # `cairosvg` rastert und ueber ImageMagick vergleicht. Beides sind
+      # Prozesse, keine npm-Abhaengigkeiten — und in keinem CI-Job war eines
+      # davon installiert. Der Test bricht deshalb hart ab:
+      #
+      #   AssertionError: cairosvg is not importable —
+      #   `pip install --break-system-packages cairosvg`
+      #
+      # Er bricht ZU RECHT ab statt zu ueberspringen; ein Bildtest, der sich
+      # bei fehlendem Werkzeug still abschaltet, ist genau das, was dieses
+      # Audit sonst als stummes Tor bezeichnet. Folge war aber, dass
+      # `packages/bpmn` NIE eine coverage-summary.json erzeugt hat und die
+      # Aggregation seit jeher mit "no coverage-summary.json for:
+      # packages/bpmn" endete. Die Werkzeuge werden jetzt installiert.
+      - name: Bildvergleichs-Werkzeuge fuer packages/bpmn
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick libcairo2
+          pip install --break-system-packages cairosvg
+          python3 -c "import cairosvg; print('cairosvg', cairosvg.__version__)"
+          convert -version | head -1
+
       - name: Run vitest with coverage in all packages
         id: coverage_run
         run: npm run test:coverage

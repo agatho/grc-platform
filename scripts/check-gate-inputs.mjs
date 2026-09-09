@@ -126,6 +126,68 @@ for (const [file, gate] of GATE_INPUTS) {
 }
 
 // ---------------------------------------------------------------------------
+// [ARCTOS-FULL-2026-08-31 · Welle 8g] Kein Produktcode darf ignoriert sein.
+//
+// C-15 hat drei API-Routen unter `api/v1/**/coverage/` gekostet, weil
+// `**/coverage/` die Ausnahme darueber wieder aufhob. Die Antwort damals war
+// eine zweite Ausnahme — fuer `coverage/`. Welle 8g hat dieselbe Klasse ein
+// zweites Mal gefunden, mit einer anderen Regel und drei anderen Routen:
+// `test-results/`, gedacht fuer die Ausgabe von Playwright, verschluckte
+//
+//   apps/web/src/app/api/v1/connectors/[id]/test-results/route.ts
+//   apps/web/src/app/api/v1/devops-connectors/test-results/route.ts
+//   apps/web/src/app/api/v1/identity-connectors/test-results/route.ts
+//
+// und `app/(dashboard)/connectors/[id]/page.tsx:67` ruft die erste davon.
+// In Produktion antwortete sie mit 404.
+//
+// Zweimal dieselbe Klasse heisst: die Ausnahme ist nicht die Loesung, die
+// Pruefung ist es. Hier wird deshalb nicht mehr nach einzelnen Regeln gesucht,
+// sondern gefragt: liegt unter `apps/web/src/app` eine Quelldatei, die git
+// nicht sieht? Das faengt jede kuenftige Regel, gleich wie sie heisst.
+// ---------------------------------------------------------------------------
+{
+  const APP_DIR = "apps/web/src/app";
+  let ignoriert = [];
+  try {
+    // `--others --ignored --exclude-standard` listet genau die Dateien, die
+    // existieren, nicht verfolgt sind UND von einer Ignore-Regel getroffen
+    // werden.
+    ignoriert = git([
+      "ls-files",
+      "--others",
+      "--ignored",
+      "--exclude-standard",
+      "--",
+      APP_DIR,
+    ])
+      .split("\n")
+      .filter(Boolean)
+      .filter((f) => /\.(ts|tsx|js|jsx|css|json)$/.test(f));
+  } catch {
+    /* leeres Ergebnis liefert bei manchen git-Fassungen Status 1 */
+  }
+
+  for (const f of ignoriert) {
+    let regel = "";
+    try {
+      regel = git(["check-ignore", "-v", f]);
+    } catch {
+      /* nicht ignoriert — dann steht sie hier nicht */
+    }
+    failures.push(
+      `${f} liegt unter ${APP_DIR}, ist aber IGNORIERT und damit in keinem Klon.\n` +
+        (regel ? `      ausgeschlossen durch: ${regel}\n` : "") +
+        "      Produktcode, den git nicht sieht, fehlt in jedem Bau aus einem\n" +
+        "      frischen Checkout — die Route antwortet dort mit 404. Das ist\n" +
+        "      C-15, und in Welle 8g ein zweites Mal mit `test-results/`.\n" +
+        "      Die Ausnahme gehoert NACH die ausschliessende Regel, und das\n" +
+        "      VERZEICHNIS ist auszunehmen, nicht die Datei darin.\n",
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // [ARCTOS-FULL-2026-08-31 · Welle 3, Abnahme] Die Sperrdatei muss sagen, was
 // die Manifeste sagen.
 //
