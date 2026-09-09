@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, XCircle } from "lucide-react";
 
@@ -32,22 +33,27 @@ export default function SessionsPage() {
 function SessionsList() {
   const t = useTranslations("portals");
   const { formatDateTime } = useDateFormat();
-  const [sessions, setSessions] = useState<SessionItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: sessions = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<SessionItem[]>({
+    queryKey: ["portals", "sessions"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/portals/sessions?limit=50");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as SessionItem[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/portals/sessions?limit=50");
-      if (res.ok) setSessions((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const handleRevoke = async (id: string) => {
     await fetch(`/api/v1/portals/sessions/${id}`, { method: "DELETE" });
@@ -76,9 +82,9 @@ function SessionsList() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

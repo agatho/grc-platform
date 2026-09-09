@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -33,22 +33,20 @@ function ConfigDetail() {
   const t = useTranslations("portals");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [config, setConfig] = useState<PortalConfigDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/portals/configs/${id}`);
-      if (res.ok) setConfig((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher `null`.
+  const { data: config = null, isPending: loading } =
+    useQuery<PortalConfigDetail | null>({
+      queryKey: ["portals", "configs", id],
+      queryFn: async () => {
+        const res = await fetch(`/api/v1/portals/configs/${id}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return (json.data ?? null) as PortalConfigDetail | null;
+      },
+    });
 
   if (loading) {
     return (

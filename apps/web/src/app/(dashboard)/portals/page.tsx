@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -38,22 +39,27 @@ export default function PortalsPage() {
 function PortalsDashboard() {
   const t = useTranslations("portals");
   const _router = useRouter();
-  const [configs, setConfigs] = useState<PortalConfigItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: configs = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<PortalConfigItem[]>({
+    queryKey: ["portals", "configs"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/portals/configs");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as PortalConfigItem[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/portals/configs");
-      if (res.ok) setConfigs((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const portalTypeIcons: Record<string, React.ReactNode> = {
     vendor: <Users size={18} className="text-blue-600" />,
@@ -79,9 +85,12 @@ function PortalsDashboard() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>
