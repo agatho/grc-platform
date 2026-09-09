@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Code, GitPullRequest } from "lucide-react";
 
@@ -31,22 +32,28 @@ export default function ContributionsPage() {
 function ContributionsList() {
   const t = useTranslations("community");
   const { formatDate } = useDateFormat();
-  const [items, setItems] = useState<Contribution[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; der Aktualisieren-Knopf ist ein erneuter Abruf,
+  // deshalb `isFetching`.
+  const {
+    data: items = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Contribution[]>({
+    queryKey: ["community", "contributions", 50],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/community/contributions?limit=50");
+      if (!res.ok) return [];
+      return ((await res.json()).data ?? []) as Contribution[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/community/contributions?limit=50");
-      if (res.ok) setItems((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const statusColors: Record<string, string> = {
     submitted: "bg-blue-50 text-blue-700",
@@ -71,9 +78,9 @@ function ContributionsList() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
