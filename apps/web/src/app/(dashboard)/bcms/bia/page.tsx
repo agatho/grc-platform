@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -34,28 +35,22 @@ function BiaListInner() {
   const t = useTranslations("bcms");
   const { formatDate } = useDateFormat();
   const router = useRouter();
-  const [items, setItems] = useState<BiaAssessment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: items = [], isPending: loading } = useQuery<BiaAssessment[]>({
+    queryKey: ["bcms", "bia"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bcms/bia?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as BiaAssessment[];
+    },
+  });
 
   const handleCreate = async () => {
     if (!newName.trim()) return;

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, CheckCircle } from "lucide-react";
@@ -46,12 +47,9 @@ function ExerciseDetailInner() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [exercise, setExercise] = useState<BcExercise | null>(null);
-  const [findings, setFindings] = useState<BcExerciseFinding[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "objectives" | "findings" | "lessons"
   >("overview");
-  const [loading, setLoading] = useState(true);
 
   // Complete form
   const [showComplete, setShowComplete] = useState(false);
@@ -71,29 +69,43 @@ function ExerciseDetailInner() {
   const [findingDesc, setFindingDesc] = useState("");
   const [addingFinding, setAddingFinding] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Übung und Feststellungen wurden
+  // immer zusammen geladen und gelesen — daher eine Abfrage mit einem Objekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    exercise: BcExercise | null;
+    findings: BcExerciseFinding[];
+  }>({
+    queryKey: ["bcms", "exercises", id],
+    queryFn: async () => {
       const [eRes, fRes] = await Promise.all([
         fetch(`/api/v1/bcms/exercises/${id}`),
         fetch(`/api/v1/bcms/exercises/${id}/findings?limit=100`),
       ]);
+      let exercise: BcExercise | null = null;
+      let findings: BcExerciseFinding[] = [];
       if (eRes.ok) {
         const j = await eRes.json();
-        setExercise(j.data);
+        exercise = j.data ?? null;
       }
       if (fRes.ok) {
         const j = await fRes.json();
-        setFindings(j.data ?? []);
+        findings = j.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { exercise, findings };
+    },
+  });
+  const exercise = data?.exercise ?? null;
+  const findings = data?.findings ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleComplete = async () => {
     setCompleting(true);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -40,29 +41,23 @@ function CrisisListInner() {
   const t = useTranslations("bcms");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [items, setItems] = useState<CrisisScenario[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState("it_outage");
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: items = [], isPending: loading } = useQuery<CrisisScenario[]>({
+    queryKey: ["bcms", "crisis"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bcms/crisis?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as CrisisScenario[];
+    },
+  });
 
   const handleCreate = async () => {
     if (!newName.trim()) return;

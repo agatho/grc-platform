@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -125,28 +126,37 @@ function doraBadge(crisis: ActiveCrisis) {
 
 export default function BcmsReadinessMonitorPage() {
   const { formatDateTime } = useDateFormat();
-  const [data, setData] = useState<MonitorResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher; die Meldung kommt aus dem Fehlerzustand der Abfrage.
+  const {
+    data = null,
+    isPending,
+    isFetching,
+    error: queryError,
+    refetch,
+  } = useQuery<MonitorResponse>({
+    queryKey: ["bcms", "readiness-monitor"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bcms/readiness-monitor");
       if (!res.ok) throw new Error(`API ${res.status}`);
       const json = (await res.json()) as { data: MonitorResponse };
-      setData(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data;
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Fehler"
+    : null;
+  // Beim erneuten Versuch nach einem Fehler zeigte die Seite vorher den
+  // Ladekreis (Fehler wurde vor dem Abruf geleert); `isFetching` deckt das ab.
+  const loading = isPending || (queryError !== null && isFetching);
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (

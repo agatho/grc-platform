@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -25,93 +26,154 @@ export default function BiaWizardPage() {
   );
 }
 
+interface ImpactForm {
+  processId: string;
+  mtpdHours: number | undefined;
+  rtoHours: number | undefined;
+  rpoHours: number | undefined;
+  impact1h: number | undefined;
+  impact4h: number | undefined;
+  impact24h: number | undefined;
+  impact72h: number | undefined;
+  impact1w: number | undefined;
+  impact1m: number | undefined;
+  impactReputation: number | undefined;
+  impactLegal: number | undefined;
+  impactOperational: number | undefined;
+  impactFinancial: number | undefined;
+  impactSafety: number | undefined;
+  criticalResources: string;
+  minimumStaff: number | undefined;
+  alternateLocation: string;
+  peakPeriods: string;
+  isEssential: boolean;
+}
+
+const EMPTY_FORM: ImpactForm = {
+  processId: "",
+  mtpdHours: undefined,
+  rtoHours: undefined,
+  rpoHours: undefined,
+  impact1h: undefined,
+  impact4h: undefined,
+  impact24h: undefined,
+  impact72h: undefined,
+  impact1w: undefined,
+  impact1m: undefined,
+  impactReputation: undefined,
+  impactLegal: undefined,
+  impactOperational: undefined,
+  impactFinancial: undefined,
+  impactSafety: undefined,
+  criticalResources: "",
+  minimumStaff: undefined,
+  alternateLocation: "",
+  peakPeriods: "",
+  isEssential: false,
+};
+
+function impactToForm(imp: BiaProcessImpact): ImpactForm {
+  return {
+    processId: imp.processId,
+    mtpdHours: imp.mtpdHours ?? undefined,
+    rtoHours: imp.rtoHours ?? undefined,
+    rpoHours: imp.rpoHours ?? undefined,
+    impact1h: imp.impact1h ? parseFloat(imp.impact1h) : undefined,
+    impact4h: imp.impact4h ? parseFloat(imp.impact4h) : undefined,
+    impact24h: imp.impact24h ? parseFloat(imp.impact24h) : undefined,
+    impact72h: imp.impact72h ? parseFloat(imp.impact72h) : undefined,
+    impact1w: imp.impact1w ? parseFloat(imp.impact1w) : undefined,
+    impact1m: imp.impact1m ? parseFloat(imp.impact1m) : undefined,
+    impactReputation: imp.impactReputation ?? undefined,
+    impactLegal: imp.impactLegal ?? undefined,
+    impactOperational: imp.impactOperational ?? undefined,
+    impactFinancial: imp.impactFinancial ?? undefined,
+    impactSafety: imp.impactSafety ?? undefined,
+    criticalResources: imp.criticalResources ?? "",
+    minimumStaff: imp.minimumStaff ?? undefined,
+    alternateLocation: imp.alternateLocation ?? "",
+    peakPeriods: imp.peakPeriods ?? "",
+    isEssential: imp.isEssential,
+  };
+}
+
+// [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+// statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+// Welle 7b, `catalogs/objects/page.tsx`). Wie in `processes/[id]/ropa`
+// ist der Serverstand die SAAT des Formulars: der Assistent wandert in ein
+// eigenes Bauteil, das mit dem geladenen Stand EINGEHÄNGT wird und sein
+// Formular beim Einhängen aus dem ersten Impact befüllt — ohne Effekt.
 function BiaWizardInner() {
   const t = useTranslations("bcms");
-  const { formatCurrency: money } = useDateFormat();
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
-  const [assessment, setAssessment] = useState<BiaAssessment | null>(null);
-  const [impacts, setImpacts] = useState<BiaProcessImpact[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  // Current impact form state
-  const [form, setForm] = useState({
-    processId: "",
-    mtpdHours: undefined as number | undefined,
-    rtoHours: undefined as number | undefined,
-    rpoHours: undefined as number | undefined,
-    impact1h: undefined as number | undefined,
-    impact4h: undefined as number | undefined,
-    impact24h: undefined as number | undefined,
-    impact72h: undefined as number | undefined,
-    impact1w: undefined as number | undefined,
-    impact1m: undefined as number | undefined,
-    impactReputation: undefined as number | undefined,
-    impactLegal: undefined as number | undefined,
-    impactOperational: undefined as number | undefined,
-    impactFinancial: undefined as number | undefined,
-    impactSafety: undefined as number | undefined,
-    criticalResources: "",
-    minimumStaff: undefined as number | undefined,
-    alternateLocation: "",
-    peakPeriods: "",
-    isEssential: false,
-  });
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { data, isPending: loading } = useQuery<{
+    assessment: BiaAssessment | null;
+    impacts: BiaProcessImpact[];
+  }>({
+    queryKey: ["bcms", "bia", id],
+    queryFn: async () => {
       const [aRes, iRes] = await Promise.all([
         fetch(`/api/v1/bcms/bia/${id}`),
         fetch(`/api/v1/bcms/bia/${id}/impacts?limit=100`),
       ]);
+      let assessment: BiaAssessment | null = null;
+      let impacts: BiaProcessImpact[] = [];
       if (aRes.ok) {
         const json = await aRes.json();
-        setAssessment(json.data);
+        assessment = json.data ?? null;
       }
       if (iRes.ok) {
         const json = await iRes.json();
-        setImpacts(json.data ?? []);
-        if (json.data?.length > 0) {
-          loadImpact(json.data[0]);
-        }
+        impacts = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { assessment, impacts };
+    },
+  });
+  const assessment = data?.assessment ?? null;
+  const impacts = data?.impacts ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  if (loading && !assessment) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!assessment) {
+    return (
+      <p className="text-center text-gray-400 py-12">{t("bia.notFound")}</p>
+    );
+  }
+
+  return <BiaWizardForm id={id} assessment={assessment} impacts={impacts} />;
+}
+
+function BiaWizardForm({
+  id,
+  assessment,
+  impacts,
+}: {
+  id: string;
+  assessment: BiaAssessment;
+  impacts: BiaProcessImpact[];
+}) {
+  const t = useTranslations("bcms");
+  const { formatCurrency: money } = useDateFormat();
+  const router = useRouter();
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [saving, setSaving] = useState(false);
+
+  // Current impact form state — seeded from the first impact on mount
+  const [form, setForm] = useState<ImpactForm>(() =>
+    impacts.length > 0 ? impactToForm(impacts[0]) : EMPTY_FORM,
+  );
 
   const loadImpact = (imp: BiaProcessImpact) => {
-    setForm({
-      processId: imp.processId,
-      mtpdHours: imp.mtpdHours ?? undefined,
-      rtoHours: imp.rtoHours ?? undefined,
-      rpoHours: imp.rpoHours ?? undefined,
-      impact1h: imp.impact1h ? parseFloat(imp.impact1h) : undefined,
-      impact4h: imp.impact4h ? parseFloat(imp.impact4h) : undefined,
-      impact24h: imp.impact24h ? parseFloat(imp.impact24h) : undefined,
-      impact72h: imp.impact72h ? parseFloat(imp.impact72h) : undefined,
-      impact1w: imp.impact1w ? parseFloat(imp.impact1w) : undefined,
-      impact1m: imp.impact1m ? parseFloat(imp.impact1m) : undefined,
-      impactReputation: imp.impactReputation ?? undefined,
-      impactLegal: imp.impactLegal ?? undefined,
-      impactOperational: imp.impactOperational ?? undefined,
-      impactFinancial: imp.impactFinancial ?? undefined,
-      impactSafety: imp.impactSafety ?? undefined,
-      criticalResources: imp.criticalResources ?? "",
-      minimumStaff: imp.minimumStaff ?? undefined,
-      alternateLocation: imp.alternateLocation ?? "",
-      peakPeriods: imp.peakPeriods ?? "",
-      isEssential: imp.isEssential,
-    });
+    setForm(impactToForm(imp));
   };
 
   const handleSave = async () => {
@@ -135,20 +197,6 @@ function BiaWizardInner() {
       setSaving(false);
     }
   };
-
-  if (loading && !assessment) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  if (!assessment) {
-    return (
-      <p className="text-center text-gray-400 py-12">{t("bia.notFound")}</p>
-    );
-  }
 
   const assessedCount = impacts.filter((i) => i.rtoHours != null).length;
   const totalCount = impacts.length;
