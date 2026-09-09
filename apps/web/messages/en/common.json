@@ -1185,6 +1185,11 @@
       "dependencies": "Dependencies",
       "dependenciesHint": "This module requires the following modules to be enabled:",
       "loadError": "The module configuration could not be loaded"
+    },
+    "unavailable": {
+      "title": "The module configuration could not be loaded",
+      "description": "Whether this module is enabled could not be determined just now. This is a temporary error, not a disabled module — please try again.",
+      "retry": "Try again"
     }
   },
   "assets": {

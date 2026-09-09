@@ -211,3 +211,81 @@ describe("Welle 8b — OP-219: die abgelehnte Aktivierung", () => {
     });
   });
 });
+
+describe("Ein fehlgeschlagener Abruf ist kein abgeschaltetes Modul", () => {
+  // Gefunden im E2E-Lauf 34398654753 (W22-C1-03): der Abruf von
+  // `/api/v1/organizations/<id>/modules` bekam 429, und die Finding-
+  // Detailseite zeigte 60 Sekunden lang den Teaser mit dem ROHEN
+  // Modulschluessel statt des angelegten Findings.
+  //
+  // Der Anbieter liefert bei einem Fehler eine LEERE Liste plus `error`. Das
+  // Tor las nur die Liste: kein Eintrag → `status: "disabled"` → Teaser. Die
+  // Anwendung behauptete damit etwas ueber den Vertrag („nicht
+  // freigeschaltet"), wo nur eine wiederholbare Anfrage gescheitert war.
+  beforeEach(() => {
+    sessionState.status = "authenticated";
+  });
+
+  afterEach(() => {
+    cleanup();
+    vi.unstubAllGlobals();
+  });
+
+  it("zeigt den benannten Fehler statt des Teasers", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) })),
+    );
+
+    render(
+      withQuery(
+        <ModuleConfigProvider orgId="org-1" sessionLoading={false}>
+          <ModuleGate moduleKey={MODULE_KEY}>
+            <div>Modulinhalt</div>
+          </ModuleGate>
+        </ModuleConfigProvider>,
+      ),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "modules.unavailable.title",
+      ),
+    );
+    // Gegen den alten Stand faellt genau das hier: dort stand die
+    // Teaser-Ueberschrift mit dem rohen Schluessel.
+    expect(screen.queryByRole("heading", { name: "erm" })).toBeNull();
+    expect(screen.queryByText("Modulinhalt")).toBeNull();
+  });
+
+  it("laesst den Abruf wiederholen, statt die Seite tot stehen zu lassen", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: false,
+      status: 429,
+      json: async () => ({}),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      withQuery(
+        <ModuleConfigProvider orgId="org-1" sessionLoading={false}>
+          <ModuleGate moduleKey={MODULE_KEY}>
+            <div>Modulinhalt</div>
+          </ModuleGate>
+        </ModuleConfigProvider>,
+      ),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "modules.unavailable.retry" }),
+      ).toBeTruthy(),
+    );
+    const versucheVorher = fetchMock.mock.calls.length;
+    screen.getByRole("button", { name: "modules.unavailable.retry" }).click();
+
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(versucheVorher),
+    );
+  });
+});

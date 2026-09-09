@@ -1185,6 +1185,11 @@
       "dependencies": "Abhängigkeiten",
       "dependenciesHint": "Dieses Modul setzt voraus, dass folgende Module aktiv sind:",
       "loadError": "Modul-Konfiguration konnte nicht geladen werden"
+    },
+    "unavailable": {
+      "title": "Die Modulkonfiguration konnte nicht geladen werden",
+      "description": "Ob dieses Modul freigeschaltet ist, liess sich gerade nicht ermitteln. Das ist ein voruebergehender Fehler, kein abgeschaltetes Modul — bitte erneut versuchen.",
+      "retry": "Erneut versuchen"
     }
   },
   "assets": {

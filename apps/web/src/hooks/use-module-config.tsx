@@ -148,7 +148,7 @@ export function useAllModuleConfigs() {
 const warnedMissingKeys = new Set<string>();
 
 export function useModuleConfig(moduleKey: ModuleKey) {
-  const { configs, loading } = useAllModuleConfigs();
+  const { configs, loading, error, refetch } = useAllModuleConfigs();
   const { data: session } = useSession();
 
   const config = configs.find((m) => m.moduleKey === moduleKey);
@@ -200,6 +200,18 @@ export function useModuleConfig(moduleKey: ModuleKey) {
     isAdmin,
     /** Full module config + definition data */
     definition: config ?? null,
+    /**
+     * Meldung, wenn die Konfiguration NICHT geladen werden konnte.
+     *
+     * [ARCTOS-FULL-2026-08-31 · 2026-09-09] Ohne dieses Feld war der Fehler
+     * fuer jeden Aufrufer von aussen nicht von „Modul abgeschaltet" zu
+     * unterscheiden: der Anbieter liefert bei einem Fehler eine LEERE Liste,
+     * und `status` faellt dann auf `"disabled"` zurueck. `ModuleGate` liest
+     * es und zeigt einen eigenen, wiederholbaren Zustand.
+     */
+    error,
+    /** Erneuter Abruf der Konfigurationen (prueft `orgId` selbst). */
+    refetch,
     /** Loading state */
     loading,
   };
