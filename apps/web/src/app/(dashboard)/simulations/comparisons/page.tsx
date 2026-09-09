@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, GitCompare } from "lucide-react";
 
@@ -25,22 +26,27 @@ export default function ComparisonsPage() {
 
 function ComparisonsList() {
   const t = useTranslations("simulations");
-  const [items, setItems] = useState<Comparison[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: items = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Comparison[]>({
+    queryKey: ["simulations", "comparisons"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/simulations/comparisons");
+      if (!res.ok) return [];
+      return ((await res.json()).data ?? []) as Comparison[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/simulations/comparisons");
-      if (res.ok) setItems((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -57,9 +63,9 @@ function ComparisonsList() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
