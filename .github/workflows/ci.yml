@@ -136,48 +136,6 @@ jobs:
           npx prettier --check "**/*.{ts,tsx,js,json,md}" \
             --ignore-path .gitignore --ignore-path .prettierignore
 
-      - name: TypeScript (type check — web)
-        run: npx tsc --noEmit -p apps/web/tsconfig.json
-        env:
-          NODE_OPTIONS: "--max-old-space-size=4096"
-
-      - name: TypeScript (type check — worker)
-        run: npx tsc --noEmit -p apps/worker/tsconfig.json
-
-      # [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] The two steps above were the
-      # WHOLE type-check. Six of the twelve workspace packages had no
-      # tsconfig.json at all (`tsc -p tsconfig.json` → TS5058) and four more had
-      # one that CI never invoked — so `packages/shared` (all Zod schemas and
-      # state machines), `packages/db` (the data model) and `packages/auth`
-      # (RBAC, OIDC, SAML, SCIM) were verified only as far as apps/web and
-      # apps/worker happened to import them. The loop is discovery-driven: a
-      # new package is covered the day it gets a tsconfig.json, and one that
-      # loses it fails here rather than dropping out silently.
-      - name: TypeScript (type check — all workspace packages)
-        run: |
-          set -euo pipefail
-          failed=0
-          for cfg in packages/*/tsconfig.json; do
-            pkg="$(basename "$(dirname "$cfg")")"
-            echo "::group::tsc $pkg"
-            if npx tsc --noEmit -p "$cfg"; then
-              echo "$pkg OK"
-            else
-              echo "::error::TypeScript errors in packages/$pkg"
-              failed=1
-            fi
-            echo "::endgroup::"
-          done
-          # Every package must HAVE a config — S14-25 was the absence, not the
-          # errors. A new package without one is the regression to catch.
-          for dir in packages/*/; do
-            if [ ! -f "$dir/tsconfig.json" ]; then
-              echo "::error::$dir has no tsconfig.json and is therefore never type-checked (S14-25)."
-              failed=1
-            fi
-          done
-          exit "$failed"
-
       # [WP10 · S08-05/S08-08] Die Zusage "pin all GitHub Actions by commit
       # SHA" stand als Kommentar in coverage.yml, waehrend 42 von 50 Refs an
       # beweglichen Tags hingen — darunter aquasecurity/trivy-action@master
@@ -242,6 +200,100 @@ jobs:
       - name: Die Workflow-Dateien sind wohlgeformt
         run: node scripts/check-workflow-yaml.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Vier gleiche Faelle in zwei Dateien:
+      # Rolle nach der Migration angelegt, Grants auf eine leere Datenbank.
+      # Die Antwort auf eine Klasse ist eine Pruefung.
+      - name: Rollen vor den Migrationen, Grants danach
+        run: node scripts/check-provision-order.mjs
+
+  # ────────────────────────────────────────────────
+  # 1b. Type check — eigener Job
+  # ────────────────────────────────────────────────
+  #
+  # [ARCTOS-FULL-2026-08-31 · OP-242] Diese drei Schritte standen im Job
+  # `lint`, hinter ESLint, Ratsche und Prettier. Zusammen brauchte der Job
+  # zwischen 9m09s und 10m14s bei einem Budget von 10 Minuten — sein Ergebnis
+  # hing damit an der Tagesform des Runners, nicht am Code:
+  #
+  #   34329853763  ✓ 9m09s
+  #   34327735425  ✗ 10m12s  „exceeded the maximum execution time of 10m0s"
+  #   34341489367  ✗ 10m14s  abgebrochen im letzten der drei tsc-Schritte
+  #
+  # Ein Tor, das bei unveraendertem Code mal gruen und mal rot ist, sagt
+  # nichts aus — und die sechs Schritte NACH dem Typecheck (Tor-Eingaben,
+  # OP-Nummern, Punkte-Index, Workflow-Pruefungen) sind in den beiden roten
+  # Laeufen nie gelaufen, obwohl sie zusammen unter einer Sekunde brauchen.
+  #
+  # Getrennt laufen beide Jobs parallel, jeder mit einem Budget, das zu ihm
+  # passt. `npm ci` faellt dafuer ein zweites Mal an (~27 s) — der Preis ist
+  # kleiner als der eines Tors, das wuerfelt.
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      # [WP10 · S08-09/S08-19] Lifecycle-Skripte des gesamten Baums nicht
+      # ausfuehren; die zwei Pakete des Produktionsbaums, die tatsaechlich
+      # Code ausfuehren, gezielt nachziehen. Identisch zum Dockerfile.
+      - name: Install dependencies
+        run: |
+          npm ci --ignore-scripts
+          npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
+
+      # Bleibt als schnelle, unabhaengige Messung stehen: dieser Schritt faellt
+      # bei jedem ESLint-ERROR in apps/web, ohne dass eine Baselinedatei
+      # gelesen wird. Die Ratsche darunter deckelt zusaetzlich die WARNUNGEN
+      # (die hier nicht failen) und meldet jede neue Regelklasse.
+
+      - name: TypeScript (type check — web)
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: TypeScript (type check — worker)
+        run: npx tsc --noEmit -p apps/worker/tsconfig.json
+
+      # [ARCTOS-FULL-2026-08-31 / WP12 · S14-25] The two steps above were the
+      # WHOLE type-check. Six of the twelve workspace packages had no
+      # tsconfig.json at all (`tsc -p tsconfig.json` → TS5058) and four more had
+      # one that CI never invoked — so `packages/shared` (all Zod schemas and
+      # state machines), `packages/db` (the data model) and `packages/auth`
+      # (RBAC, OIDC, SAML, SCIM) were verified only as far as apps/web and
+      # apps/worker happened to import them. The loop is discovery-driven: a
+      # new package is covered the day it gets a tsconfig.json, and one that
+      # loses it fails here rather than dropping out silently.
+      - name: TypeScript (type check — all workspace packages)
+        run: |
+          set -euo pipefail
+          failed=0
+          for cfg in packages/*/tsconfig.json; do
+            pkg="$(basename "$(dirname "$cfg")")"
+            echo "::group::tsc $pkg"
+            if npx tsc --noEmit -p "$cfg"; then
+              echo "$pkg OK"
+            else
+              echo "::error::TypeScript errors in packages/$pkg"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          # Every package must HAVE a config — S14-25 was the absence, not the
+          # errors. A new package without one is the regression to catch.
+          for dir in packages/*/; do
+            if [ ! -f "$dir/tsconfig.json" ]; then
+              echo "::error::$dir has no tsconfig.json and is therefore never type-checked (S14-25)."
+              failed=1
+            fi
+          done
+          exit "$failed"
+
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
   # ────────────────────────────────────────────────
@@ -249,7 +301,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: lint
+    needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
@@ -351,7 +403,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: lint
+    needs: [lint, typecheck]
 
     services:
       postgres:
@@ -422,7 +474,10 @@ jobs:
       # nicht nach (es vergibt EXECUTE bewusst nicht pauschal, weil 0398 es
       # gezielt entzogen hat). Die Rolle muss deshalb VOR den Migrationen da
       # sein — in CI wie in einer frischen Installation.
-      - name: Provision grc_app + grc_worker roles (same script as deploy)
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Nur die ROLLEN — die Grants kommen
+      # nach den Migrationen. `GRANT … ON ALL TABLES` wirkt auf die Tabellen,
+      # die es im Moment des GRANT gibt; hier ist die Datenbank leer.
+      - name: grc_app-Rollen anlegen (derselbe Weg wie Deploy/Produktion)
         env:
           DIRECT_PSQL: "1"
           PGHOST: localhost
@@ -430,7 +485,7 @@ jobs:
           PGPASSWORD: grc_test_password
           GRC_APP_PASSWORD: grc_app_dev_password
           GRC_WORKER_PASSWORD: grc_worker_dev_password
-        run: bash deploy/provision-grc-app.sh grc_platform_test
+        run: bash deploy/provision-grc-app.sh --nur-rollen
 
       # [WP10, uebernommen aus WP2/S01-15] Das RLS-Coverage-Werkzeug misst
       # gegen die LAUFENDE Datenbank. Ohne diesen Schritt kann die
@@ -474,6 +529,19 @@ jobs:
       - name: Build schema from migrations
         working-directory: packages/db
         run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
+
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Zweite Haelfte: die Grants auf die
+      # jetzt existierenden Tabellen, samt Abnahme aus OP-238
+      # (`has_function_privilege('grc_app', 'app_current_org_scope()')`).
+      - name: grc_app-Grants + Abnahme (derselbe Weg wie Deploy/Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_dev_password
+          GRC_WORKER_PASSWORD: grc_worker_dev_password
+        run: bash deploy/provision-grc-app.sh grc_platform_test
 
       # [WP10, uebernommen aus WP2/S01-09 und WP9] Beide Laufzeitrollen
       # werden hier mit demselben Skript angelegt, das auch im Deploy laeuft
@@ -598,7 +666,6 @@ jobs:
           APP_DATABASE_URL: postgresql://grc_app:grc_app_dev_password@localhost:5432/grc_platform_test
         run: npm test
 
-
       - name: Route-chain RLS test (real withErrorHandler→withAuth→db)
         # #SEC-F01b-RUN — drives the REAL Next route pipeline (withErrorHandler →
         # withAuth → establishRequestScopedContext → requireModule → route db
@@ -621,7 +688,7 @@ jobs:
     name: E2E Smoke Tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    needs: lint
+    needs: [lint, typecheck]
 
     services:
       postgres:
@@ -713,7 +780,27 @@ jobs:
       # frische Produktionsinstallation, die migriert bevor sie die Rolle
       # anlegt, bekommt dasselbe, und dann scheitert JEDE Abfrage der
       # Anwendung.
-      - name: grc_app provisionieren (derselbe Weg wie Produktion)
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Nur die ROLLEN — die Grants kommen
+      # nach den Migrationen. `GRANT … ON ALL TABLES` wirkt auf die Tabellen,
+      # die es im Moment des GRANT gibt; hier ist die Datenbank leer.
+      - name: grc_app-Rollen anlegen (derselbe Weg wie Deploy/Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_pass
+        run: bash deploy/provision-grc-app.sh --nur-rollen
+
+      - name: Build schema from migrations
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
+
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Zweite Haelfte: die Grants auf die
+      # jetzt existierenden Tabellen, samt Abnahme aus OP-238
+      # (`has_function_privilege('grc_app', 'app_current_org_scope()')`).
+      - name: grc_app-Grants + Abnahme (derselbe Weg wie Deploy/Produktion)
         env:
           DIRECT_PSQL: "1"
           PGHOST: localhost
@@ -722,10 +809,6 @@ jobs:
           PGPASSWORD: grc_test_password
           GRC_APP_PASSWORD: grc_app_pass
         run: bash deploy/provision-grc-app.sh grc_platform_test
-
-      - name: Build schema from migrations
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/migrate-all.ts
 
       - name: Run seed (admin user + demo data)
         working-directory: packages/db
@@ -944,7 +1027,27 @@ jobs:
       # frische Produktionsinstallation, die migriert bevor sie die Rolle
       # anlegt, bekommt dasselbe, und dann scheitert JEDE Abfrage der
       # Anwendung.
-      - name: grc_app provisionieren (derselbe Weg wie Produktion)
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Nur die ROLLEN — die Grants kommen
+      # nach den Migrationen. `GRANT … ON ALL TABLES` wirkt auf die Tabellen,
+      # die es im Moment des GRANT gibt; hier ist die Datenbank leer.
+      - name: grc_app-Rollen anlegen (derselbe Weg wie Deploy/Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: grc
+          PGPASSWORD: grc_test_password
+          GRC_APP_PASSWORD: grc_app_pass
+        run: bash deploy/provision-grc-app.sh --nur-rollen
+
+      - name: Build schema from migrations
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/migrate-all.ts
+
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Zweite Haelfte: die Grants auf die
+      # jetzt existierenden Tabellen, samt Abnahme aus OP-238
+      # (`has_function_privilege('grc_app', 'app_current_org_scope()')`).
+      - name: grc_app-Grants + Abnahme (derselbe Weg wie Deploy/Produktion)
         env:
           DIRECT_PSQL: "1"
           PGHOST: localhost
@@ -953,10 +1056,6 @@ jobs:
           PGPASSWORD: grc_test_password
           GRC_APP_PASSWORD: grc_app_pass
         run: bash deploy/provision-grc-app.sh grc_platform
-
-      - name: Build schema from migrations
-        working-directory: packages/db
-        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/migrate-all.ts
 
       - name: Run catalog and framework seeds
         run: |
@@ -1300,7 +1399,7 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: lint
+    needs: [lint, typecheck]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

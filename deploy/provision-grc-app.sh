@@ -62,8 +62,34 @@
 
 set -uo pipefail
 
-if [ "$#" -lt 1 ]; then
-  echo "Usage: GRC_APP_PASSWORD=... bash deploy/provision-grc-app.sh <DB_NAME> [<DB_NAME> ...]" >&2
+# ── [ARCTOS-FULL-2026-08-31 · OP-241] Zwei Phasen, zwei Zeitpunkte ──────────
+#
+# Die Rolle `grc_app` muss VOR den Migrationen existieren: `0396_rls_log_
+# tables.sql:117` vergibt EXECUTE auf `app_current_org_scope()` nur
+# `IF EXISTS (… rolname = 'grc_app')`, und `0398` entzieht den pauschalen
+# Grant wieder. Fehlt die Rolle beim Migrieren, faellt der GRANT still aus
+# (OP-238).
+#
+# Die Grants dagegen muessen NACH den Migrationen laufen: `GRANT … ON ALL
+# TABLES` wirkt auf die Tabellen, die es im Moment des GRANT gibt. Auf einer
+# leeren Datenbank ist das keine, und die Selbstpruefung am Ende von Phase 2
+# sagt das auch — sie war nur bis OP-240 nicht zu hoeren.
+#
+# Deshalb ist das Skript ab hier in zwei Modi aufteilbar:
+#
+#   bash deploy/provision-grc-app.sh --nur-rollen        # vor den Migrationen
+#   bash deploy/provision-grc-app.sh <DB> [<DB> ...]     # danach, wie bisher
+#
+# Ohne Flag verhaelt es sich unveraendert (Rollen + Grants + Abnahme), damit
+# eine bestehende Installation und jeder bisherige Aufruf gleich bleiben.
+NUR_ROLLEN=0
+if [ "${1:-}" = "--nur-rollen" ] || [ "${1:-}" = "--roles-only" ]; then
+  NUR_ROLLEN=1
+  shift
+fi
+
+if [ "$NUR_ROLLEN" = "0" ] && [ "$#" -lt 1 ]; then
+  echo "Usage: GRC_APP_PASSWORD=... bash deploy/provision-grc-app.sh [--nur-rollen] <DB_NAME> [<DB_NAME> ...]" >&2
   exit 1
 fi
 
@@ -154,7 +180,34 @@ END \$\$;
 ALTER ROLE grc_app NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS;
 SQL
 )
-if printf '%s\n' "$ROLE_SQL" | psql_db postgres 2>&1 | grep -E '^(ERROR|FATAL):'; then
+# [ARCTOS-FULL-2026-08-31 · OP-240] Das Muster war `^(ERROR|FATAL):` — mit
+# Anker. psql stellt einer Fehlerzeile aber seinen eigenen Ort voran, sobald es
+# aus einer Datei liest, und `psql_db` liest ueber `-f -` genau so:
+#
+#   $ psql -d leer -f - <<< "DO \$\$ BEGIN RAISE EXCEPTION 'x'; END \$\$;"
+#   psql:<stdin>:1: ERROR:  x
+#
+# Der Anker passte darauf nie. Damit war JEDE Fehlerpruefung dieses Skripts
+# tot: Rollenanlage, Worker-Rolle und der ganze Grant-Block meldeten
+# ausnahmslos Erfolg, auch bei abgebrochenem SQL — einschliesslich der
+# Selbstpruefung „grc_app hat auf keine einzige Tabelle SELECT".
+# Gemessen am 2026-09-09 an einer leeren Datenbank: das Skript sagte
+# „✓ Grants + Default-Privileges + FORCE RLS gesetzt.", waehrend psql
+# `psql:<stdin>:6: ERROR: … Grants wirkungslos` ausgab.
+#
+# Beim Nachmessen kam eine dritte Fehlerform dazu, die der Anker ebenfalls
+# nicht traf — die abgelehnte Verbindung selbst:
+#
+#   psql: error: connection to server at "localhost" (127.0.0.1), port 5432
+#         failed: FATAL:  password authentication failed for user "postgres"
+#
+# Auch dabei meldete das Skript „✓ Rolle grc_app bereit.", obwohl es keine
+# einzige Anweisung ausgefuehrt hatte. Das Muster deckt jetzt alle drei
+# Formen ab: Fehler am Zeilenanfang, Fehler hinter dem psql-Ortsvermerk, und
+# psqls eigene `psql: error:`-Zeile.
+PSQL_FEHLER='^psql: error:|(^|: )(ERROR|FATAL):'
+
+if printf '%s\n' "$ROLE_SQL" | psql_db postgres 2>&1 | grep -E "$PSQL_FEHLER"; then
   echo "  WARNUNG: Fehler beim Anlegen/Ändern der Rolle grc_app (siehe oben)." >&2
 else
   echo "  ✓ Rolle grc_app bereit."
@@ -177,7 +230,7 @@ END \$\$;
 ALTER ROLE grc_worker NOSUPERUSER NOCREATEDB NOCREATEROLE BYPASSRLS;
 SQL
 )
-  if printf '%s\n' "$WORKER_SQL" | psql_db postgres 2>&1 | grep -E '^(ERROR|FATAL):'; then
+  if printf '%s\n' "$WORKER_SQL" | psql_db postgres 2>&1 | grep -E "$PSQL_FEHLER"; then
     echo "  WARNUNG: Fehler beim Anlegen/Ändern der Rolle grc_worker." >&2
   else
     echo "  ✓ Rolle grc_worker bereit (BYPASSRLS, NOSUPERUSER)."
@@ -185,6 +238,13 @@ SQL
 fi
 
 # ── 2. Per-DB grants + default privileges + FORCE RLS on organization ──
+# [OP-241] Im Modus `--nur-rollen` endet das Skript hier: die Tabellen, auf
+# die Phase 2 Rechte vergibt, legen die Migrationen erst danach an.
+if [ "$NUR_ROLLEN" = "1" ]; then
+  echo "[2/2] uebersprungen (--nur-rollen) — die Grants laufen NACH den Migrationen."
+  exit 0
+fi
+
 echo "[2/2] Grants pro Datenbank..."
 FAILED=0
 for DB in "$@"; do
@@ -287,7 +347,7 @@ BEGIN
 END $$;
 SQL
 )
-  ERRS=$(printf '%s\n' "$GRANT_SQL" | psql_db "$DB" 2>&1 | grep -E '^(ERROR|FATAL):' || true)
+  ERRS=$(printf '%s\n' "$GRANT_SQL" | psql_db "$DB" 2>&1 | grep -E "$PSQL_FEHLER" || true)
   if [ -n "$ERRS" ]; then
     echo "  ✗ $DB: Fehler bei Grants:" >&2
     printf '%s\n' "$ERRS" | head -5 | sed 's/^/      /' >&2

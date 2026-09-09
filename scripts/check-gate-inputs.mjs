@@ -90,6 +90,15 @@ const GATE_INPUTS = [
   // gefunden" — laut, aber erst im CI. Hier faellt es eine Stufe frueher auf.
   ["docker-compose.production.yml", "scripts/check-compose-db-roles.mjs"],
   ["deploy/docker-compose.yml", "scripts/check-compose-db-roles.mjs"],
+  // [ARCTOS-FULL-2026-08-31 · OP-241] Das Provisionierungsskript ist Eingabe
+  // von `check-provision-order.mjs`: die Pruefung liest die Workflows, aber
+  // ihre ganze Aussage haengt daran, dass es dieses Skript und seine zwei
+  // Phasen gibt. Faellt es aus dem Repository, meldet die Pruefung „0 Jobs
+  // rufen es auf" und ist gruen — genau die Form von Tor, die OP-092 hatte.
+  [
+    "deploy/provision-grc-app.sh",
+    "scripts/check-provision-order.mjs (Rollen vor, Grants nach den Migrationen)",
+  ],
 ];
 
 function git(args) {

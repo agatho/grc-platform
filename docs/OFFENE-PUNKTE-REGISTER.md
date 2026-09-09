@@ -1979,3 +1979,103 @@ Bis dahin ist der Produktionsbau blockiert und mit ihm der Playwright-Lauf.
 Alles andere — 13 Typprüfungen, 6.680 Tests, 426 Migrationen von Null, die RLS-
 und Integritätssuiten und alle Tore — ist grün und von diesem Punkt nicht
 berührt.
+
+### Nachtrag 2026-09-09 — Welle 8j: das Provisionierungsskript konnte keinen Fehler melden
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Beleg                                                                                                  | Art     | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------- | ------- |
+| OP-240 | **`deploy/provision-grc-app.sh` hat drei Fehlerprüfungen, und alle drei konnten nie auslösen.** Das Muster war `grep -E '^(ERROR\|FATAL):'` — mit Anker. psql stellt einer Fehlerzeile aber seinen eigenen Ortsvermerk voran, sobald es aus einer Datei liest, und der Wrapper `psql_db` liest über `-f -` genau so. Damit meldeten Rollenanlage, Worker-Rolle und der gesamte Grant-Block **ausnahmslos Erfolg** — auch bei abgebrochenem SQL und selbst bei abgelehnter Verbindung. | Eigene Messung 2026-09-09, Container-Postgres 16                                                       | Tor     | behoben |
+| OP-241 | **Vier Jobs in zwei Workflow-Dateien provisionierten in der falschen Reihenfolge**, und die Korrektur aus OP-238 hat den Fehler nur verschoben: das Skript lief nun _ganz_ vor den Migrationen, also vergab es `GRANT … ON ALL TABLES` auf eine leere Datenbank. Das Skript hat jetzt zwei Phasen (`--nur-rollen` vor den Migrationen, der volle Lauf danach), und eine Prüfung hält die Reihenfolge in jedem Job fest.                                                               | CI-Lauf `34340833273` (`schema-drift.yml`); `ci.yml` Jobs `integration-tests`, `e2e-smoke`, `database` | Betrieb | behoben |
+
+**Wie OP-240 gefunden wurde.** Nicht durch Lesen. Der CI-Lauf `34340833273`
+meldete in `schema-drift.yml` genau den Befund, den die Abnahme aus OP-238
+sucht: `grc_app darf app_current_org_scope() NICHT ausführen`. Beim Nachstellen
+im Container fiel auf, dass der Schritt davor — derselbe Lauf, dieselbe
+Datenbank — `✓ grc_drift: Grants + Default-Privileges + FORCE RLS gesetzt.`
+gesagt hatte. Beides zugleich kann nicht stimmen.
+
+Nachgemessen an einer leeren Datenbank:
+
+```
+$ psql -d leer -f - < grant-block.sql
+psql:<stdin>:90: ERROR:  grc_app hat auf keine einzige Tabelle SELECT — Grants wirkungslos
+
+$ … | grep -E '^(ERROR|FATAL):'
+(keine Ausgabe)
+```
+
+Die Selbstprüfung am Ende des Grant-Blocks (`RAISE EXCEPTION`, eingebaut unter
+WP2/S01-10 gegen genau diesen Fall) hat die ganze Zeit korrekt ausgelöst. Nur
+gehört hat sie niemand. Beim Nachmessen kam eine dritte Fehlerform dazu, die
+der Anker ebenfalls nicht traf — `psql: error: connection to server … failed:
+FATAL: password authentication failed`: auch bei **abgelehnter Verbindung**
+meldete das Skript `✓ Rolle grc_app bereit.`, ohne eine einzige Anweisung
+ausgeführt zu haben.
+
+Gegenprobe, gemessen:
+
+| Lauf                               | vorher                     | nachher                                                     |
+| ---------------------------------- | -------------------------- | ----------------------------------------------------------- |
+| leere Datenbank, voller Lauf       | `✓ … gesetzt.`, Exit **0** | `✗ … Grants wirkungslos`, Exit **1**                        |
+| `--nur-rollen`, leere Datenbank    | (gab es nicht)             | `✓ Rolle grc_app bereit.`, Phase 2 übersprungen, Exit **0** |
+| Datenbank mit Tabelle, voller Lauf | `✓`, Exit 0                | `✓`, Exit 0 — unverändert                                   |
+
+**Warum OP-241 kein zweiter Anlauf von OP-238 ist.** OP-238 war richtig
+diagnostiziert (die Rolle muss vor den Migrationen da sein, sonst fällt der
+`IF EXISTS`-Grant aus `0396_rls_log_tables.sql:117` still aus) und falsch
+behoben: ich habe den **ganzen** Aufruf vor die Migrationen gezogen. Das
+Skript hat aber zwei Phasen mit zwei verschiedenen richtigen Zeitpunkten —
+die Rolle davor, die Grants danach, weil `GRANT … ON ALL TABLES IN SCHEMA
+public` nur auf die Tabellen wirkt, die es im Moment des GRANT gibt. Dass das
+in CI trotzdem grün aussah, lag an OP-240.
+
+**Die Prüfung.** Vier gleiche Fälle in zwei Dateien sind eine Klasse, und die
+Antwort auf eine Klasse ist eine Prüfung, keine fünfte Einzelkorrektur:
+`scripts/check-provision-order.mjs` liest jeden Workflow-Job und verlangt die
+Rollen vor der ersten und die Grants nach der letzten Migration. Sie ist als 13. Tor-Eingabe eingetragen und meldet beide Nullfälle als Befund (Skript
+fehlt, oder kein Job ruft es auf) — ein Tor, das ohne Eingabe grün ist, ist
+kein Tor (OP-092).
+
+Gegenproben, gemessen — jeweils mit dem Fehlschlag im Protokoll:
+
+- Rollen-Hälfte aus `schema-drift.yml` entfernt (Stand vor dieser Welle):
+  Exit 1, `Job schema-and-rls migriert (Zeile 88), ohne vorher die Rollen anzulegen`.
+- `ci.yml` auf den ausgelieferten Stand zurückgesetzt: Exit 1, **sechs**
+  Befunde über die Jobs `integration-tests`, `e2e-smoke`, `database` — je
+  einer für die fehlende Rollen-Hälfte und einer für die Grants vor der
+  Migration.
+- `deploy/provision-grc-app.sh` entfernt: Exit 1 statt „0 Jobs, grün".
+
+### Nachtrag 2026-09-09 — Welle 8j, zweiter Befund: ein Tor, das würfelt
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                              | Beleg                                                                       | Art | Stand   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --- | ------- |
+| OP-242 | **Der Job `Lint & Type Check` lag mit 9m09s bis 10m14s auf seinem 10-Minuten-Budget** — sein Ergebnis hing an der Tagesform des Runners, nicht am Code. Und die sechs Prüfschritte hinter dem Typecheck (Tor-Eingaben, OP-Nummern, Punkte-Index, Workflow-Prüfungen) sind in beiden roten Läufen nie gelaufen, obwohl sie zusammen unter einer Sekunde brauchen. | Läufe `34329853763` ✓ 9m09s, `34327735425` ✗ 10m12s, `34341489367` ✗ 10m14s | Tor | behoben |
+
+**Gemessen aus dem Protokoll von `34341489367`** — Schrittdauern, aus den
+Zeitstempeln der `##[group]`-Marken:
+
+| Schritt              | Dauer        |
+| -------------------- | ------------ |
+| `npm ci`             | 27 s         |
+| ESLint (apps/web)    | 1 m 05 s     |
+| ESLint-Ratsche       | 1 m 18 s     |
+| Dead-Exports-Ratsche | 2 s          |
+| Prettier             | 53 s         |
+| **tsc — web**        | **5 m 32 s** |
+| tsc — worker         | 27 s         |
+| tsc — alle Pakete    | abgebrochen  |
+
+Der Typecheck ist zwei Drittel des Jobs und hat mit Lint nichts zu tun. Er
+läuft jetzt als eigener Job `typecheck` (Budget 20 Minuten) parallel zu
+`lint` (Budget 10, gemessener Bedarf rund 4 Minuten); die vier nachgelagerten
+Jobs hängen an `needs: [lint, typecheck]`, verlieren also keine Absicherung.
+`npm ci` fällt dafür ein zweites Mal an — rund 27 Sekunden, und damit
+billiger als ein Tor, dessen Aussage vom Zufall abhängt.
+
+**Warum das kein reines Budgetproblem ist.** Die naheliegende Antwort wäre
+`timeout-minutes: 20` für denselben Job gewesen. Sie hätte den Lauf grün
+gemacht und die eigentliche Eigenschaft gelassen: ein serieller Block, in dem
+ein langsamer Schritt sechs schnelle Prüfungen mit sich reißt, die er nicht
+einmal kennt. Genau so sind in den Läufen `34327735425` und `34341489367`
+die Prüfungen aus den Wellen 8f–8j nie zur Ausführung gekommen.

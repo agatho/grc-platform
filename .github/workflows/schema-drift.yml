@@ -83,6 +83,23 @@ jobs:
             CREATE EXTENSION IF NOT EXISTS timescaledb;
           "
 
+      # [ARCTOS-FULL-2026-08-31 · OP-241] Die ROLLE muss vor den Migrationen
+      # da sein: `0396_rls_log_tables.sql:117` vergibt EXECUTE auf
+      # `app_current_org_scope()` nur `IF EXISTS (… rolname = 'grc_app')`.
+      # Fehlt sie hier, faellt der GRANT still aus — und die Abnahme unten
+      # meldete genau das (Lauf 34340833273, „grc_app darf
+      # app_current_org_scope() NICHT ausfuehren"). Die GRANTS bleiben unten,
+      # nach den Migrationen, weil sie auf die Tabellen wirken.
+      - name: grc_app-Rollen anlegen (derselbe Weg wie Deploy/Produktion)
+        env:
+          DIRECT_PSQL: "1"
+          PGPASSWORD: grc_test_password
+          PGHOST: localhost
+          PGUSER: grc
+          GRC_APP_PASSWORD: grc_app_dev_password
+          GRC_WORKER_PASSWORD: grc_worker_dev_password
+        run: bash deploy/provision-grc-app.sh --nur-rollen
+
       - name: Build the schema from the migrations
         working-directory: packages/db
         run: npx tsx src/migrate-all.ts
@@ -91,7 +108,7 @@ jobs:
         working-directory: packages/db
         run: npx tsx tests/schema-drift-report.ts --fail-on-drift
 
-      - name: Provision grc_app + grc_worker (same script as deploy)
+      - name: grc_app-Grants + Abnahme (derselbe Weg wie Deploy/Produktion)
         env:
           DIRECT_PSQL: "1"
           PGPASSWORD: grc_test_password

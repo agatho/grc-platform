@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **239**
+Nummern: **242**
 
 ## offen (5)
 
@@ -196,7 +196,7 @@ _keine_
 | OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung a… | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsbera… | Haupttabelle |
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 
-## behoben (73)
+## behoben (76)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -273,3 +273,6 @@ _keine_
 | OP-237 | Der Forward-only-Check liest die ersten 40 Zeilen einer Migration nach dem Remediation-Marker. In `0099_phase… | behoben                                                                                    | 2026-09-09 |
 | OP-238 | Der EXECUTE-Grant auf `app_current_org_scope()` ist an die Existenz der Rolle zum Migrationszeitpunkt gebunde… | behoben                                                                                    | 2026-09-09 |
 | OP-239 | Ein doppelter `env:`-Schlüssel in `ci.yml` hat den gesamten CI-Workflow drei Commits lang nicht starten lasse… | behoben                                                                                    | 2026-09-09 |
+| OP-240 | `deploy/provision-grc-app.sh` hat drei Fehlerprüfungen, und alle drei konnten nie auslösen. Das Muster war `g… | behoben                                                                                    | 2026-09-09 |
+| OP-241 | Vier Jobs in zwei Workflow-Dateien provisionierten in der falschen Reihenfolge, und die Korrektur aus OP-238 … | behoben                                                                                    | 2026-09-09 |
+| OP-242 | Der Job `Lint & Type Check` lag mit 9m09s bis 10m14s auf seinem 10-Minuten-Budget — sein Ergebnis hing an der… | behoben                                                                                    | 2026-09-09 |
