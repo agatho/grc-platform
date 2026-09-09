@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Loader2, Trash2, Sparkles } from "lucide-react";
 
@@ -55,24 +56,30 @@ const frameworkLabels: Record<string, string> = {
 };
 
 export function ProcessComplianceTab({ processId }: { processId: string }) {
-  const [mappings, setMappings] = useState<Mapping[]>([]);
-  const [loading, setLoading] = useState(true);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggesting, setSuggesting] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const resp = await fetch(`/api/v1/processes/${processId}/coverage`);
-    if (resp.ok) {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list,
+  // as before.
+  const {
+    data: mappings = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<Mapping[]>({
+    queryKey: ["processes", processId, "coverage"],
+    queryFn: async () => {
+      const resp = await fetch(`/api/v1/processes/${processId}/coverage`);
+      if (!resp.ok) return [];
       const j = await resp.json();
-      setMappings(j.data?.mappings ?? []);
-    }
-    setLoading(false);
-  }, [processId]);
+      return (j.data?.mappings ?? []) as Mapping[];
+    },
+  });
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const suggest = useCallback(async () => {
     setSuggesting(true);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Loader2, Unlink, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -61,9 +62,6 @@ const statusColor: Record<string, string> = {
 };
 
 export function ProcessControlsTab({ processId }: { processId: string }) {
-  const [links, setLinks] = useState<ProcessControlLink[]>([]);
-  const [summary, setSummary] = useState<CoverageSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [available, setAvailable] = useState<Control[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -74,29 +72,43 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
   const [pickerError, setPickerError] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). Both requests were always issued together,
+  // so one query returns an object with both parts.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    links: ProcessControlLink[];
+    summary: CoverageSummary | null;
+  }>({
+    queryKey: ["processes", processId, "controls"],
+    queryFn: async () => {
       const [linksResp, coverageResp] = await Promise.all([
         fetch(`/api/v1/processes/${processId}/controls`),
         fetch(`/api/v1/processes/${processId}/control-coverage`),
       ]);
+      let links: ProcessControlLink[] = [];
+      let summary: CoverageSummary | null = null;
       if (linksResp.ok) {
         const j = await linksResp.json();
-        setLinks(j.data ?? []);
+        links = j.data ?? [];
       }
       if (coverageResp.ok) {
         const j = await coverageResp.json();
-        setSummary(j.data?.summary ?? null);
+        summary = j.data?.summary ?? null;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      return { links, summary };
+    },
+  });
+  const links = data?.links ?? [];
+  const summary = data?.summary ?? null;
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // [ARCTOS-FULL-2026-08-31 · OP-050] Hier stand
   // `fetch("/api/v1/controls?limit=200")` mit `if (resp.ok)` und ohne `else`.

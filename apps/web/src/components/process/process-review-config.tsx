@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Calendar, Loader2, Save, RefreshCw } from "lucide-react";
@@ -50,43 +51,28 @@ interface ProcessReviewConfigProps {
 
 const INTERVAL_OPTIONS = [3, 6, 12, 24, 36, 48, 60];
 
+// [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead of
+// an effect plus mirrored loading/data state (pattern from wave 7b,
+// `processes/[id]/ropa/page.tsx`). The server state is the SEED of the form,
+// not its content — so the form moved into its own component that is mounted
+// with the loaded schedule; React sets the initial values on mount and no
+// mirroring effect is needed. The exported component and its props are
+// unchanged.
 export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
-  const t = useTranslations("processGovernance");
-  const { formatDate } = useDateFormat();
-
-  const [schedule, setSchedule] = useState<ReviewSchedule | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [users, setUsers] = useState<UserOption[]>([]);
-  // [OP-050] Der Grund, aus dem die Liste leer ist, gehört an die Oberfläche.
-  const [usersError, setUsersError] = useState<string | null>(null);
-
-  // Local edit state
-  const [isActive, setIsActive] = useState(false);
-  const [intervalMonths, setIntervalMonths] = useState(12);
-  const [reviewerId, setReviewerId] = useState<string>("");
-
-  // Fetch schedule
-  const fetchSchedule = useCallback(async () => {
-    setLoading(true);
-    try {
+  const {
+    data: schedule = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<ReviewSchedule | null>({
+    queryKey: ["processes", processId, "review-schedule"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/processes/${processId}/review-schedule`);
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data as ReviewSchedule | null;
-        setSchedule(data);
-        if (data) {
-          setIsActive(data.isActive);
-          setIntervalMonths(data.reviewIntervalMonths);
-          setReviewerId(data.assignedReviewerId ?? "");
-        }
-      }
-    } catch {
       // No schedule exists yet — that is fine
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as ReviewSchedule | null;
+    },
+  });
 
   // Nutzerliste für die Prüferauswahl.
   //
@@ -97,31 +83,80 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
   // und der `catch` hat den einzigen Hinweis darauf verschluckt. Wer eine
   // Prüfung terminieren wollte, fand niemanden, den er als Prüfer eintragen
   // konnte, und bekam keinen Grund genannt.
-  const fetchUsers = useCallback(async () => {
-    try {
+  const { data: users = [], error: usersQueryError } = useQuery<UserOption[]>({
+    queryKey: ["processes", "review-config", "users"],
+    queryFn: async () => {
       const rows = await fetchAllPages<Record<string, string>>("/api/v1/users");
-      setUsers(
-        rows.map((u) => ({
-          id: u.id!,
-          name: u.name ?? u.email!,
-          email: u.email!,
-        })),
-      );
-      setUsersError(null);
-    } catch (err) {
-      setUsers([]);
-      setUsersError(
-        err instanceof ApiRequestError
-          ? `Prüferliste nicht geladen (${err.status})`
-          : "Prüferliste nicht geladen",
-      );
-    }
-  }, []);
+      return rows.map((u) => ({
+        id: u.id!,
+        name: u.name ?? u.email!,
+        email: u.email!,
+      }));
+    },
+  });
+  // [OP-050] Der Grund, aus dem die Liste leer ist, gehört an die Oberfläche.
+  const usersError: string | null = usersQueryError
+    ? usersQueryError instanceof ApiRequestError
+      ? `Prüferliste nicht geladen (${usersQueryError.status})`
+      : "Prüferliste nicht geladen"
+    : null;
 
-  useEffect(() => {
-    void fetchSchedule();
-    void fetchUsers();
-  }, [fetchSchedule, fetchUsers]);
+  // The seed key is bumped ONLY after a successful save, not on every fetch —
+  // otherwise a background refetch would pull the form out from under the
+  // user's hands.
+  const [seedVersion, setSeedVersion] = useState(0);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <ReviewConfigForm
+      key={seedVersion}
+      processId={processId}
+      schedule={schedule}
+      users={users}
+      usersError={usersError}
+      onSaved={async () => {
+        await refetch();
+        setSeedVersion((v) => v + 1);
+      }}
+    />
+  );
+}
+
+function ReviewConfigForm({
+  processId,
+  schedule,
+  users,
+  usersError,
+  onSaved,
+}: {
+  processId: string;
+  schedule: ReviewSchedule | null;
+  users: UserOption[];
+  usersError: string | null;
+  onSaved: () => Promise<void>;
+}) {
+  const t = useTranslations("processGovernance");
+  const { formatDate } = useDateFormat();
+
+  const [saving, setSaving] = useState(false);
+
+  // Local edit state, seeded from the loaded schedule on mount
+  const [isActive, setIsActive] = useState(schedule?.isActive ?? false);
+  const [intervalMonths, setIntervalMonths] = useState(
+    schedule?.reviewIntervalMonths ?? 12,
+  );
+  const [reviewerId, setReviewerId] = useState<string>(
+    schedule?.assignedReviewerId ?? "",
+  );
 
   // Save schedule
   const handleSave = async () => {
@@ -141,23 +176,13 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
       );
       if (!res.ok) throw new Error("Failed to save review schedule");
       toast.success(t("review.saved"));
-      void fetchSchedule();
+      await onSaved();
     } catch {
       toast.error("Failed to save review schedule");
     } finally {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-6">
-          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>

@@ -4,7 +4,8 @@
 // steps of the latest chain (review → approval → acknowledgment), lets the
 // responsible user decide their step and tracks acknowledgment compliance.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -70,38 +71,49 @@ export function ProcessApprovalTab({
   const t = useTranslations("process");
   const { formatDateTime } = useDateFormat();
 
-  const [steps, setSteps] = useState<ProcessApprovalStep[]>([]);
-  const [ack, setAck] = useState<AckOverview | null>(null);
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [rejectStep, setRejectStep] = useState<ProcessApprovalStep | null>(
     null,
   );
   const [rejectComment, setRejectComment] = useState("");
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). Both requests were always issued together,
+  // so one query returns an object with both parts.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    steps: ProcessApprovalStep[];
+    ack: AckOverview | null;
+  }>({
+    queryKey: ["processes", processId, "approval-steps"],
+    queryFn: async () => {
       const [stepsRes, ackRes] = await Promise.all([
         fetch(`/api/v1/processes/${processId}/approval-steps`),
         fetch(`/api/v1/processes/${processId}/acknowledge`),
       ]);
+      let steps: ProcessApprovalStep[] = [];
+      let ack: AckOverview | null = null;
       if (stepsRes.ok) {
         const j = await stepsRes.json();
-        setSteps(j.data ?? []);
+        steps = j.data ?? [];
       }
       if (ackRes.ok) {
         const j = await ackRes.json();
-        setAck(j.data ?? null);
+        ack = j.data ?? null;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      return { steps, ack };
+    },
+  });
+  const steps = useMemo(() => data?.steps ?? [], [data]);
+  const ack = data?.ack ?? null;
 
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Show only the latest chain (highest versionNumber present).
   const latestChain = useMemo(() => {
