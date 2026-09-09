@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,18 @@ import type { DoraTlptPlan } from "@grc/shared";
 
 export default function DoraTlptPlansPage() {
   const t = useTranslations("dora");
-  const [rows, setRows] = useState<DoraTlptPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: rows = [], isPending: loading } = useQuery<DoraTlptPlan[]>({
+    queryKey: ["dora", "tlpt-plans"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/dora/tlpt-plans?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DoraTlptPlan[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Shield, AlertTriangle, Server } from "lucide-react";
@@ -12,22 +12,19 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 export default function DoraDashboardPage() {
   const t = useTranslations("dora");
-  const [data, setData] = useState<DoraDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher `null`.
+  const { data = null, isPending: loading } = useQuery<DoraDashboard | null>({
+    queryKey: ["dora", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/dora/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as DoraDashboard | null;
+    },
+  });
 
   if (loading || !data) {
     return (
