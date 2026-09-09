@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Globe, Plus } from "lucide-react";
 
@@ -11,22 +11,20 @@ import type { RegulatorySource } from "@grc/shared";
 
 export default function RegulatorySourcesPage() {
   const t = useTranslations("regulatory");
-  const [sources, setSources] = useState<RegulatorySource[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchSources = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: sources = [], isPending: loading } = useQuery<
+    RegulatorySource[]
+  >({
+    queryKey: ["regulatory", "sources"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/regulatory-changes/sources");
-      if (res.ok) setSources((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchSources();
-  }, [fetchSources]);
+      if (!res.ok) return [];
+      return (await res.json()).data as RegulatorySource[];
+    },
+  });
 
   if (loading) {
     return (

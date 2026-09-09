@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,22 +24,20 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function RegulatoryChangesPage() {
   const t = useTranslations("regulatory");
-  const [changes, setChanges] = useState<RegulatoryChange[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchChanges = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: changes = [], isPending: loading } = useQuery<
+    RegulatoryChange[]
+  >({
+    queryKey: ["regulatory", "changes"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/regulatory-changes/changes?limit=50");
-      if (res.ok) setChanges((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchChanges();
-  }, [fetchChanges]);
+      if (!res.ok) return [];
+      return (await res.json()).data as RegulatoryChange[];
+    },
+  });
 
   if (loading) {
     return (
