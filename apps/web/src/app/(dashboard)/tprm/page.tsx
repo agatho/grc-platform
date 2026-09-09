@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -58,8 +59,6 @@ export default function TprmDashboardPage() {
 function TprmDashboardInner() {
   const t = useTranslations("tprm");
   const router = useRouter();
-  const [data, setData] = useState<VendorDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
@@ -87,24 +86,29 @@ function TprmDashboardInner() {
     }
   }, []);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `data` wie vorher leer; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<VendorDashboard | null>({
+    queryKey: ["vendors", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/vendors/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as VendorDashboard | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -136,9 +140,12 @@ function TprmDashboardInner() {
             variant="outline"
             size="sm"
             onClick={fetchDashboard}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/tprm/vendors")}>
             <Building2 size={16} />

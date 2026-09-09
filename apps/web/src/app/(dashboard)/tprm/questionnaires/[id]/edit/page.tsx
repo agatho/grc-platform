@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useId } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -162,7 +163,56 @@ export default function QuestionnaireEditPage() {
   );
 }
 
+// [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+// statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+// Welle 7b, `catalogs/objects/page.tsx`). Wie in `processes/[id]/ropa` ist
+// der Serverstand die SAAT des Editors, nicht sein Inhalt: der Editor wandert
+// in ein eigenes Bauteil, das mit der geladenen Vorlage EINGEHÄNGT wird und
+// Vorlage sowie aufgeklappte Abschnitte beim Einhängen setzt — ohne Effekt.
 function QuestionnaireEditInner() {
+  const { id } = useParams<{ id: string }>();
+
+  const { data, isPending: loading } = useQuery<Template | null>({
+    queryKey: ["questionnaire-templates", id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/v1/questionnaire-templates/${id}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return (json.data ?? null) as Template | null;
+      } catch {
+        toast.error("Failed to load template");
+        return null;
+      }
+    },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Template not found</p>
+      </div>
+    );
+  }
+
+  return <QuestionnaireEditor id={id} initial={data} />;
+}
+
+function QuestionnaireEditor({
+  id,
+  initial,
+}: {
+  id: string;
+  initial: Template;
+}) {
   // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
   // instance, so every <label htmlFor> below points at its own control
   // even when this component is rendered more than once on a page.
@@ -170,10 +220,8 @@ function QuestionnaireEditInner() {
 
   const t = useTranslations("questionnaire");
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
 
-  const [template, setTemplate] = useState<Template | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [template, setTemplate] = useState<Template | null>(initial);
   const [saving, setSaving] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -181,8 +229,9 @@ function QuestionnaireEditInner() {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
     null,
   );
+  // Expand all sections by default
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(),
+    () => new Set<string>(initial.sections.map((s) => s.id)),
   );
 
   // Import from Framework state
@@ -194,34 +243,6 @@ function QuestionnaireEditInner() {
     Set<string>
   >(new Set());
   const [importing, setImporting] = useState(false);
-
-  // ──────────────────────────────────────────────────────────────
-  // Fetch template
-  // ──────────────────────────────────────────────────────────────
-
-  const fetchTemplate = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/questionnaire-templates/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setTemplate(json.data);
-        // Expand all sections by default
-        const sectionIds = new Set<string>(
-          (json.data?.sections ?? []).map((s: Section) => s.id),
-        );
-        setExpandedSections(sectionIds);
-      }
-    } catch {
-      toast.error("Failed to load template");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchTemplate();
-  }, [fetchTemplate]);
 
   // ──────────────────────────────────────────────────────────────
   // Save
@@ -498,14 +519,6 @@ function QuestionnaireEditInner() {
   // ──────────────────────────────────────────────────────────────
   // Render
   // ──────────────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
 
   if (!template) {
     return (

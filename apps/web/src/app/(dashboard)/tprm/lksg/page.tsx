@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, AlertTriangle, Pencil } from "lucide-react";
 import Link from "next/link";
@@ -66,8 +67,6 @@ export default function LksgPage() {
 
 function LksgPageInner() {
   const t = useTranslations("tprm");
-  const [data, setData] = useState<LksgDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
   const [editVendor, setEditVendor] = useState<LksgVendor | null>(null);
   const [editData, setEditData] = useState<LksgAssessmentEdit>({
     overallRiskLevel: "low",
@@ -77,20 +76,29 @@ function LksgPageInner() {
   });
   const [saving, setSaving] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `data` wie vorher leer; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<LksgDashboard | null>({
+    queryKey: ["lksg", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/lksg");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as LksgDashboard | null;
+    },
+  });
+
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const openEditDialog = useCallback(async (vendor: LksgVendor) => {
     setEditVendor(vendor);
@@ -156,10 +164,6 @@ function LksgPageInner() {
     }
   }, [editVendor, editData, fetchData]);
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -182,9 +186,9 @@ function LksgPageInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

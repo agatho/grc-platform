@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -85,8 +86,6 @@ function VendorsPageInner() {
   const t = useTranslations("tprm");
   const router = useRouter();
 
-  const [vendors, setVendors] = useState<VendorRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [tierFilter, setTierFilter] = useState<string>("__all__");
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
@@ -98,24 +97,29 @@ function VendorsPageInner() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchVendors = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data: vendors = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<VendorRow[]>({
+    queryKey: ["vendors", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/vendors?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setVendors(json.data ?? []);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as VendorRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchVendors();
-  }, [fetchVendors]);
+  const fetchVendors = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = vendors;
@@ -256,9 +260,12 @@ function VendorsPageInner() {
             variant="outline"
             size="sm"
             onClick={fetchVendors}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button
             size="sm"
