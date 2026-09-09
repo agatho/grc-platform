@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Languages,
   Download,
@@ -67,6 +67,7 @@ const STATUS_OPTIONS = [
 
 export default function TranslationQueuePage() {
   const t = useTranslations("translations");
+  const router = useRouter();
   const { formatDate } = useDateFormat();
   const searchParams = useSearchParams();
 
@@ -157,7 +158,7 @@ export default function TranslationQueuePage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => (window.location.href = "/admin/languages/exchange")}
+            onClick={() => router.push("/admin/languages/exchange")}
           >
             <Upload className="mr-2 h-4 w-4" />
             {t("importTranslations")}
@@ -298,7 +299,9 @@ export default function TranslationQueuePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            (window.location.href = `/admin/languages/queue?entityType=${item.entityType}&entityId=${item.entityId}`)
+                            router.push(
+                              `/admin/languages/queue?entityType=${item.entityType}&entityId=${item.entityId}`,
+                            )
                           }
                         >
                           <Languages className="h-4 w-4" />

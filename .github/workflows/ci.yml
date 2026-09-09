@@ -40,7 +40,8 @@ jobs:
   # 1. Lint, type-check, format
   # ────────────────────────────────────────────────
   lint:
-    name: Lint & Type Check
+    # [OP-242] Der Typecheck ist seit dieser Welle der Job `typecheck`.
+    name: Lint & Ratschen
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

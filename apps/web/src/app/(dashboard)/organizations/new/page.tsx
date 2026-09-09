@@ -292,7 +292,7 @@ export default function NewOrganizationPage() {
       // session endpoint request that a subsequent SWR revalidation triggers,
       // and — crucially — the first RSC render after the load runs the
       // session callback fresh. This guarantees the new org is visible.
-      window.location.href = `/organizations`;
+      router.push("/organizations");
       return;
     } finally {
       setSaving(false);

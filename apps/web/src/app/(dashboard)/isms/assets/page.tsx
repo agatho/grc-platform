@@ -254,9 +254,7 @@ function IsmsAssetsInner() {
                 <tr
                   key={a.id}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() =>
-                    (window.location.href = `/isms/assets/${a.id}`)
-                  }
+                  onClick={() => router.push(`/isms/assets/${a.id}`)}
                 >
                   <td className="px-4 py-3">
                     <Link

@@ -103,7 +103,8 @@ Betreiberpunkt).
 
 | Check-Name in GitHub                                                   | Workflow                      | required?                    |
 | ---------------------------------------------------------------------- | ----------------------------- | ---------------------------- |
-| `Lint & Type Check`                                                    | `ci.yml`                      | ja                           |
+| `Lint & Ratschen`                                                      | `ci.yml`                      | ja                           |
+| `Type Check`                                                           | `ci.yml`                      | ja                           |
 | `Unit Tests`                                                           | `ci.yml`                      | ja                           |
 | `Integration Tests`                                                    | `ci.yml`                      | ja                           |
 | `E2E Smoke Tests`                                                      | `ci.yml`                      | ja                           |
@@ -123,6 +124,18 @@ Betreiberpunkt).
 | `CodeQL Analysis`                                                      | `codeql.yml`                  | nein (warn-only, bewusst)    |
 | `Review Dependencies`                                                  | `dependency-review.yml`       | nein (warn-only)             |
 | `Full-history secret scan (weekly)`                                    | `secret-scanning.yml`         | nein (Zeitplan, nicht je PR) |
+
+> **[Welle 8j · OP-242, 2026-09-09]** `Lint & Type Check` heisst jetzt
+> `Lint & Ratschen` und hat den Typecheck an den neuen Job `Type Check`
+> abgegeben — der alte Job lag mit 9m09s bis 10m14s auf seinem
+> 10-Minuten-Budget. Wer die Liste eintraegt, traegt **beide** ein; der alte
+> Name existiert nicht mehr.
+>
+> **Am 2026-09-09 nachgemessen:** `GET /repos/agatho/grc-platform/branches/
+main/protection` antwortet `404 Branch not protected`. Es ist also **kein
+> einziger** der hier als „ja" gefuehrten Checks tatsaechlich required —
+> die Spalte ist die Soll-Liste aus OP-150/OP-151, nicht der Ist-Zustand.
+> Solange das so bleibt, kann ein Pull Request mit rotem CI gemergt werden.
 
 **Die Falle bei den pfadgefilterten Checks:** `migration-policy.yml`,
 `schema-drift.yml`, `openapi-breaking-change.yml` und `i18n-coverage.yml`

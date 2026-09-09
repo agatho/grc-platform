@@ -2079,3 +2079,41 @@ gemacht und die eigentliche Eigenschaft gelassen: ein serieller Block, in dem
 ein langsamer Schritt sechs schnelle Prüfungen mit sich reißt, die er nicht
 einmal kennt. Genau so sind in den Läufen `34327735425` und `34341489367`
 die Prüfungen aus den Wellen 8f–8j nie zur Ausführung gekommen.
+
+### Nachtrag 2026-09-09 — Welle 8k: was Next 16.3.4 an der Oberfläche gefunden hat
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                       | Beleg                                                           | Art           | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------- | ------- |
+| OP-243 | **Sieben Stellen in `apps/web` navigierten mit `window.location.href` statt mit dem Router** — jede davon ein vollständiger Seitenneuaufbau mitten in der Anwendung: React-State weg, Übersetzungen und Layout neu geladen, sichtbares Flackern. Gefunden von der neuen Regel `@next/next/no-location-assign-relative-destination`, die mit Next 16.3.4 dazugekommen ist. | Lauf `34342970651`, Job `Lint & Type Check`; lokal nachgemessen | Produktdefekt | behoben |
+
+**Die Ratsche hat das Richtige getan.** `apps/web` ist seit Welle 4b-5 bei
+**0** gedeckelt, und der Lauf meldete:
+
+```
+[apps/web] . (cwd apps/web): 7 Befunde (Baseline 0), 2301 Dateien.
+      7  @next/next/no-location-assign-relative-destination  (Baseline 0)
+✗ Neue Regelverletzung … — in der Baseline nicht vorhanden.
+  Beheben, nicht in die Ratsche aufnehmen.
+```
+
+Genau so ist es gemacht worden — die Ratsche steht unverändert bei 0.
+
+**Sechs der sieben** waren Navigationen zu eigenen Seiten und sind auf
+`useRouter().push()` umgestellt (`admin/languages`, `admin/languages/queue`
+je zweimal, `isms/assets`, `organizations/new`). In den ersten beiden Dateien
+gab es den Hook noch nicht; er ist dazugekommen.
+
+**Die siebte** ist ein CSV-Export
+(`/api/v1/audit-mgmt/audits/…/export?format=csv`, ISO 17021-1 § 9.5) und
+damit weder Seitennavigation noch ein Fall für eine Ausnahme: `router.push`
+wäre hier falsch, weil es die API-Route als Seite zu laden versuchte. Sie ist
+jetzt ein `<a download>` im `asChild`-Button — der Browser holt die Datei, die
+Seite bleibt stehen. **Kein `eslint-disable`.**
+
+**Nachgemessen:** Ratsche `apps/web` 7 → 0 Befunde, `root` unverändert 44;
+`tsc --noEmit -p apps/web/tsconfig.json` grün.
+
+**Am Rande, aus demselben Lauf:** `Type Check` brauchte 8m47s und `Lint`
+3m00s — zusammen 11m47s gegen das 10-Minuten-Budget, das der gemeinsame Job
+hatte. Die Trennung aus OP-242 war keine Kosmetik; ohne sie wäre dieser Befund
+zum vierten Mal in einem Timeout verschwunden.

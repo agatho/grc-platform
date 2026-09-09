@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { Globe, Check, Plus, Star, ArrowRight, Settings2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,6 +76,7 @@ function getHeatmapColor(pct: number): string {
 
 export default function LanguageConfigPage() {
   const t = useTranslations("translations");
+  const router = useRouter();
 
   const [languages, setLanguages] = useState<LanguageConfig[]>([]);
   const [activeLanguages, setActiveLanguages] = useState<string[]>([]);
@@ -202,7 +204,7 @@ export default function LanguageConfigPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => (window.location.href = "/admin/languages/queue")}
+            onClick={() => router.push("/admin/languages/queue")}
           >
             {t("translationQueue")}
             <ArrowRight className="ml-2 h-4 w-4" />
@@ -325,7 +327,9 @@ export default function LanguageConfigPage() {
                                     <Badge
                                       className={`cursor-pointer ${getHeatmapColor(pct)}`}
                                       onClick={() =>
-                                        (window.location.href = `/admin/languages/queue?entityType=${et}&targetLocale=${lang}`)
+                                        router.push(
+                                          `/admin/languages/queue?entityType=${et}&targetLocale=${lang}`,
+                                        )
                                       }
                                     >
                                       {pct}%

@@ -2298,16 +2298,21 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           {/* CSV-Export der aktuell selektierten Checkliste (ISO 17021-1 § 9.5
               Arbeitspapier-Archivierung) */}
           {selectedChecklist && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                window.location.href = `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`;
-              }}
-              title="Als CSV exportieren (Excel-kompatibel)"
-            >
-              <Download size={14} className="mr-1" />
-              CSV
+            // [ARCTOS-FULL-2026-08-31 · OP-243] Ein Download, keine
+            // Seitennavigation: `router.push` waere hier falsch (es wuerde die
+            // API-Route als Seite zu laden versuchen), und
+            // `window.location.href` verlaesst die Anwendung fuer einen
+            // Moment ganz. Ein Anker mit `download` ist beides nicht — der
+            // Browser holt die Datei und laesst die Seite stehen.
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={`/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`}
+                download
+                title="Als CSV exportieren (Excel-kompatibel)"
+              >
+                <Download size={14} className="mr-1" />
+                CSV
+              </a>
             </Button>
           )}
         </div>
