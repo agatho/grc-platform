@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
@@ -273,11 +274,6 @@ export default function ScheduledNotificationsPage() {
   const { formatDateTime } = useDateFormat();
   const { data: session } = useSession();
 
-  const [notifications, setNotifications] = useState<ScheduledNotification[]>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -285,25 +281,32 @@ export default function ScheduledNotificationsPage() {
   const isAdmin = (session?.user?.roles ?? []).some((r) => r.role === "admin");
 
   // Fetch
-  const fetchNotifications = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: notifications = [],
+    isPending,
+    isFetching,
+    isError: error,
+    refetch,
+  } = useQuery<ScheduledNotification[]>({
+    queryKey: ["notifications", "scheduled"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/notifications/scheduled");
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      setNotifications(json.data ?? []);
-    } catch {
-      setError(true);
-      setNotifications([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as ScheduledNotification[];
+    },
+  });
+  // Beim erneuten Versuch nach einem Fehler zeigte die Seite vorher den
+  // Ladekreis (Fehler wurde vor dem Abruf geleert); `isFetching` deckt das ab.
+  const loading = isPending || (error && isFetching);
 
-  useEffect(() => {
-    void fetchNotifications();
-  }, [fetchNotifications]);
+  const fetchNotifications = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Create
   const handleCreate = async (data: ScheduledFormData) => {

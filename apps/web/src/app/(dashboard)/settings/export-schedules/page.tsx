@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
@@ -59,6 +60,8 @@ const ENTITY_TYPES = [
   "ropa_entry",
 ] as const;
 
+const EXPORT_SCHEDULES_KEY = ["export", "schedules"];
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -67,9 +70,8 @@ export default function ExportSchedulesPage() {
   const t = useTranslations("import.export.schedules");
   const tTypes = useTranslations("import.entityTypes");
   const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
 
-  const [schedules, setSchedules] = useState<ExportScheduleRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Form state
@@ -79,23 +81,32 @@ export default function ExportSchedulesPage() {
   const [formEmails, setFormEmails] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchSchedules = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/export/schedules");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setSchedules(data.data);
-    } catch {
-      toast.error("Failed to load schedules");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerpfad (Toast + leere
+  // Liste) bleibt wie er war.
+  const {
+    data: schedules = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ExportScheduleRow[]>({
+    queryKey: EXPORT_SCHEDULES_KEY,
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/export/schedules");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        return (data.data ?? []) as ExportScheduleRow[];
+      } catch {
+        toast.error("Failed to load schedules");
+        return [];
+      }
+    },
+  });
 
-  useEffect(() => {
-    fetchSchedules();
-  }, [fetchSchedules]);
+  const fetchSchedules = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = useCallback(async () => {
     if (!formName || formEntityTypes.length === 0 || !formEmails) {
@@ -135,18 +146,26 @@ export default function ExportSchedulesPage() {
     }
   }, [formName, formEntityTypes, formFormat, formEmails, fetchSchedules]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    try {
-      const res = await fetch(`/api/v1/export/schedules/${id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) throw new Error("Failed to delete");
-      setSchedules((prev) => prev.filter((s) => s.id !== id));
-      toast.success("Schedule deleted");
-    } catch {
-      toast.error("Failed to delete schedule");
-    }
-  }, []);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/v1/export/schedules/${id}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Failed to delete");
+        // Lokale Sofort-Aktualisierung wie vorher (`setSchedules(prev => …)`),
+        // jetzt direkt im Abfrage-Cache unter demselben Schlüssel.
+        queryClient.setQueryData<ExportScheduleRow[]>(
+          EXPORT_SCHEDULES_KEY,
+          (prev) => (prev ?? []).filter((s) => s.id !== id),
+        );
+        toast.success("Schedule deleted");
+      } catch {
+        toast.error("Failed to delete schedule");
+      }
+    },
+    [queryClient],
+  );
 
   const toggleEntityType = useCallback((type: string) => {
     setFormEntityTypes((prev) =>

@@ -14,9 +14,8 @@ import {
   BookOpen,
   ExternalLink,
   Loader2,
-  type LucideIcon,
 } from "lucide-react";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { ModuleIcon } from "@/components/module/module-icon";
 import type { ModuleConfig, ModuleKey } from "@grc/shared";
 
 /**
@@ -319,7 +318,6 @@ export default function ModuleSettingsPage() {
     );
   }
 
-  const Icon: LucideIcon = getLucideIcon(config.icon);
   const displayName =
     locale === "de" ? config.displayNameDe : config.displayNameEn;
   const description =
@@ -350,7 +348,10 @@ export default function ModuleSettingsPage() {
       {/* Header */}
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 text-white shadow-md">
-          <Icon size={22} />
+          {/* [OP-245] `<ModuleIcon>` statt eines Nachschlags im Rumpf — dieselbe
+              Aufloesung wie Welle 7a (`module-icon.tsx`) fuer
+              `react-hooks/static-components`. */}
+          <ModuleIcon name={config.icon} size={22} />
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{displayName}</h1>
