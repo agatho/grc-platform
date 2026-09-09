@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { FileDown } from "lucide-react";
 
@@ -20,27 +20,33 @@ export default function ArchitectureHealthPage() {
 
 function HealthInner() {
   const t = useTranslations("eam");
-  const [score, setScore] = useState<ArchHealthScore | null>(null);
-  const [trend, setTrend] = useState<UnvalidatedJson[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (null bzw. leere Liste).
+  const { data, isPending: loading } = useQuery<{
+    score: ArchHealthScore | null;
+    trend: UnvalidatedJson[];
+  }>({
+    queryKey: ["eam", "health-score"],
+    queryFn: async () => {
       const [scoreRes, trendRes] = await Promise.all([
         fetch("/api/v1/eam/health-score"),
         fetch("/api/v1/eam/health-score/trend"),
       ]);
-      if (scoreRes.ok) setScore((await scoreRes.json()).data);
-      if (trendRes.ok) setTrend((await trendRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const score: ArchHealthScore | null = scoreRes.ok
+        ? ((await scoreRes.json()).data as ArchHealthScore)
+        : null;
+      const trend: UnvalidatedJson[] = trendRes.ok
+        ? (((await trendRes.json()).data ?? []) as UnvalidatedJson[])
+        : [];
+      return { score, trend };
+    },
+  });
+  const score = data?.score ?? null;
+  const trend = data?.trend ?? [];
 
   if (loading || !score) {
     return (

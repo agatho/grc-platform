@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
@@ -28,25 +28,19 @@ export default function CapabilitiesPage() {
 
 function CapabilitiesInner() {
   const t = useTranslations("eam");
-  const [tree, setTree] = useState<UnvalidatedJson[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: tree = [], isPending: loading } = useQuery<UnvalidatedJson[]>({
+    queryKey: ["eam", "capabilities"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/eam/capabilities");
-      if (res.ok) {
-        const json = await res.json();
-        setTree(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as UnvalidatedJson[];
+    },
+  });
 
   if (loading) {
     return (

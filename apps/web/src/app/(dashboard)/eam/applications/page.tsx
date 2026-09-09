@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -42,13 +43,15 @@ function ApplicationsInner() {
   // Zahlenformat, obwohl die Seite uebersetzt ist.
   const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("eam");
-  const [apps, setApps] = useState<UnvalidatedJson[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"list" | "quadrant" | "timeline">("list");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste und wird wie vorher protokolliert.
+  const { data: apps = [], isPending: loading } = useQuery<UnvalidatedJson[]>({
+    queryKey: ["eam", "applications"],
+    queryFn: async () => {
       // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` steht hier bewusst
       // stehen und ist trotzdem ein Befund: `GET /api/v1/eam/applications`
       // benutzt `paginate()` NICHT, sondern klemmt selbst
@@ -59,23 +62,17 @@ function ApplicationsInner() {
       // diese Paarung und wird rot, sobald die Route `paginate()` benutzt.
       // Die Umstellung der Route gehört Strang 1a (siehe UMSETZUNG-WELLE-1B.md).
       const res = await fetch("/api/v1/eam/applications?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        setApps(json.data ?? []);
-      } else {
+      if (!res.ok) {
         console.error(
           "eam/applications: Anwendungsliste nicht geladen",
           res.status,
         );
+        return [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const json = await res.json();
+      return (json.data ?? []) as UnvalidatedJson[];
+    },
+  });
 
   if (loading) {
     return (

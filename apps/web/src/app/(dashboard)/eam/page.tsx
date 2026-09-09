@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Layers, AppWindow, Plus, Upload, FileSpreadsheet } from "lucide-react";
@@ -30,12 +30,14 @@ export default function EamDashboardPage() {
 
 function EamDashboardInner() {
   const t = useTranslations("eam");
-  const [data, setData] = useState<EamDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Anfragen liefen immer
+  // zusammen und ergeben ein Kennzahlenobjekt; nicht-ok-Antworten zaehlen wie
+  // vorher als leere Listen.
+  const { data = null, isPending: loading } = useQuery<EamDashboardData>({
+    queryKey: ["eam", "dashboard"],
+    queryFn: async () => {
       const [elemRes, eolRes, spofRes, violRes] = await Promise.all([
         fetch("/api/v1/eam/elements?limit=100"),
         fetch("/api/v1/eam/applications/approaching-eol?months=6"),
@@ -48,7 +50,7 @@ function EamDashboardInner() {
       const spofs = spofRes.ok ? (await spofRes.json()).data : [];
       const violations = violRes.ok ? (await violRes.json()).data : [];
 
-      setData({
+      return {
         totalElements: elements.length,
         byLayer: {
           business: elements.filter(
@@ -64,15 +66,9 @@ function EamDashboardInner() {
         approachingEol: eolApps.length,
         spofCount: spofs.length,
         violations: violations.length,
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      };
+    },
+  });
 
   if (loading || !data) {
     return (

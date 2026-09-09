@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Plus } from "lucide-react";
@@ -37,25 +37,21 @@ export default function ChangeRequestsPage() {
 
 function ChangeRequestsInner() {
   const t = useTranslations("eam");
-  const [acrs, setAcrs] = useState<ArchitectureChangeRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: acrs = [], isPending: loading } = useQuery<
+    ArchitectureChangeRequest[]
+  >({
+    queryKey: ["eam", "change-requests"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/eam/change-requests");
-      if (res.ok) {
-        const json = await res.json();
-        setAcrs(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ArchitectureChangeRequest[];
+    },
+  });
 
   if (loading) {
     return (
