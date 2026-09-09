@@ -7,6 +7,7 @@
     "loading": "Graphdaten werden geladen...",
     "empty": "Keine Entitäten gefunden. Erstellen Sie Risiken, Kontrollen oder Assets und verknuepfen Sie diese, um den Graphen zu sehen.",
     "noResults": "Keine passenden Entitäten für aktuelle Filter.",
+    "loadError": "Graph konnte nicht geladen werden",
     "nodeCount": "{count} Knoten",
     "edgeCount": "{count} Kanten",
     "depth": "Tiefe",

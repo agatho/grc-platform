@@ -188,6 +188,7 @@
     "labelPlaceholder": "Name or short description",
     "urlLabel": "URL",
     "notesLabel": "Note",
+    "suggestionsError": "Suggestions could not be loaded",
     "kind": {
       "risk": "Risk",
       "control": "Control",
@@ -208,6 +209,11 @@
       "deliverable": "deliverable",
       "reference": "reference"
     }
+  },
+  "approval": {
+    "requestError": "The approval could not be requested",
+    "approveError": "The approval could not be granted",
+    "rejectError": "The approval could not be rejected"
   },
   "gantt": {
     "title": "Gantt chart",

@@ -1,6 +1,6 @@
 # i18n-Coverage-Report
 
-_Generated: 2026-09-09T02:32:48.347Z_
+_Generated: 2026-09-09T21:30:54.223Z_
 
 Vergleicht `apps/web/messages/de/*.json` gegen `apps/web/messages/en/*.json`. Nur Schluessel-Parity, nicht Qualitaet der Uebersetzung.
 
@@ -40,7 +40,7 @@ Vergleicht `apps/web/messages/de/*.json` gegen `apps/web/messages/en/*.json`. Nu
 | ✅ `cci.json`                     | 37      | 37      | 0        | 0        | 0              | 0              |
 | ✅ `cert-wizard.json`             | 43      | 43      | 0        | 0        | 0              | 0              |
 | ✅ `certifications.json`          | 50      | 50      | 0        | 0        | 0              | 0              |
-| ✅ `common.json`                  | 4812    | 4812    | 0        | 0        | 0              | 0              |
+| ✅ `common.json`                  | 4819    | 4819    | 0        | 0        | 0              | 0              |
 | ✅ `community.json`               | 37      | 37      | 0        | 0        | 0              | 0              |
 | ✅ `connectors.json`              | 88      | 88      | 0        | 0        | 0              | 0              |
 | ✅ `control-testing.json`         | 28      | 28      | 0        | 0        | 0              | 0              |
@@ -66,7 +66,7 @@ Vergleicht `apps/web/messages/de/*.json` gegen `apps/web/messages/en/*.json`. Nu
 | ✅ `extensions.json`              | 15      | 15      | 0        | 0        | 0              | 0              |
 | ✅ `fair.json`                    | 115     | 115     | 0        | 0        | 0              | 0              |
 | ✅ `frameworks.json`              | 61      | 61      | 0        | 0        | 0              | 0              |
-| ✅ `graph.json`                   | 135     | 135     | 0        | 0        | 0              | 0              |
+| ✅ `graph.json`                   | 136     | 136     | 0        | 0        | 0              | 0              |
 | ✅ `grc-ux.json`                  | 73      | 73      | 0        | 0        | 0              | 0              |
 | ✅ `horizon-scanner.json`         | 25      | 25      | 0        | 0        | 0              | 0              |
 | ✅ `ics-advanced.json`            | 36      | 36      | 0        | 0        | 0              | 0              |
@@ -86,7 +86,7 @@ Vergleicht `apps/web/messages/de/*.json` gegen `apps/web/messages/en/*.json`. Nu
 | ✅ `process-grc.json`             | 99      | 99      | 0        | 0        | 0              | 0              |
 | ✅ `process-map.json`             | 32      | 32      | 0        | 0        | 0              | 0              |
 | ✅ `process-portal.json`          | 42      | 42      | 0        | 0        | 0              | 0              |
-| ✅ `programme.json`               | 213     | 213     | 0        | 0        | 0              | 0              |
+| ✅ `programme.json`               | 217     | 217     | 0        | 0        | 0              | 0              |
 | ✅ `propagation.json`             | 25      | 25      | 0        | 0        | 0              | 0              |
 | ✅ `regulatory.json`              | 28      | 28      | 0        | 0        | 0              | 0              |
 | ✅ `reporting.json`               | 140     | 140     | 0        | 0        | 0              | 0              |

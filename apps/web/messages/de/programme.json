@@ -188,6 +188,7 @@
     "labelPlaceholder": "Name oder Kurzbeschreibung",
     "urlLabel": "URL",
     "notesLabel": "Notiz",
+    "suggestionsError": "Vorschläge konnten nicht geladen werden",
     "kind": {
       "risk": "Risiko",
       "control": "Kontrolle",
@@ -208,6 +209,11 @@
       "deliverable": "Deliverable",
       "reference": "Referenz"
     }
+  },
+  "approval": {
+    "requestError": "Approval konnte nicht angefragt werden",
+    "approveError": "Approval konnte nicht erteilt werden",
+    "rejectError": "Approval konnte nicht abgelehnt werden"
   },
   "gantt": {
     "title": "Gantt-Diagramm",

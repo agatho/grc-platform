@@ -4,6 +4,7 @@ import { use, useCallback, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -355,6 +356,9 @@ export default function StepDetailPage({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
+  // [OP-249] Ein misslungener Abruf liess den Knopf einmal drehen und schwieg
+  // danach — kein Fehler, keine Vorschläge, kein Unterschied zu „es gibt
+  // nichts". Der Erfolgsweg ist unverändert.
   async function loadSuggestions() {
     setSuggestionsLoading(true);
     try {
@@ -364,7 +368,11 @@ export default function StepDetailPage({
       if (r.ok) {
         const j = await r.json();
         setSuggestions(j.data?.suggestions ?? []);
+      } else {
+        toast.error(t("link.suggestionsError"));
       }
+    } catch {
+      toast.error(t("link.suggestionsError"));
     } finally {
       setSuggestionsLoading(false);
     }
@@ -1464,16 +1472,28 @@ export default function StepDetailPage({
                     "Optionale Notiz für Reviewer:",
                     "",
                   );
-                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: "request",
-                      stepId,
-                      targetStatus: target,
-                      notes,
-                    }),
-                  });
+                  // [OP-249] Die Antwort wurde nicht gelesen: ein 4xx/5xx
+                  // führte trotzdem zum Neuladen, und die Seite sah aus wie
+                  // nach einer erfolgreichen Anfrage.
+                  try {
+                    const res = await fetch(
+                      `/api/v1/programmes/journeys/${id}/approval`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "request",
+                          stepId,
+                          targetStatus: target,
+                          notes,
+                        }),
+                      },
+                    );
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                  } catch {
+                    toast.error(t("approval.requestError"));
+                    return;
+                  }
                   await load();
                 }}
               >
@@ -1484,15 +1504,26 @@ export default function StepDetailPage({
                 variant="outline"
                 onClick={async () => {
                   const notes = window.prompt("Approval-Notiz (Reviewer):", "");
-                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: "approve",
-                      stepId,
-                      notes,
-                    }),
-                  });
+                  // [OP-249] Wie oben: eine abgelehnte Genehmigung sah aus
+                  // wie eine erteilte.
+                  try {
+                    const res = await fetch(
+                      `/api/v1/programmes/journeys/${id}/approval`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "approve",
+                          stepId,
+                          notes,
+                        }),
+                      },
+                    );
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                  } catch {
+                    toast.error(t("approval.approveError"));
+                    return;
+                  }
                   await load();
                 }}
                 className="text-emerald-700"
@@ -1505,15 +1536,26 @@ export default function StepDetailPage({
                 onClick={async () => {
                   const notes = window.prompt("Begründung für Ablehnung:", "");
                   if (!notes) return;
-                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      action: "reject",
-                      stepId,
-                      notes,
-                    }),
-                  });
+                  // [OP-249] Wie oben: eine misslungene Ablehnung sah aus wie
+                  // eine vollzogene.
+                  try {
+                    const res = await fetch(
+                      `/api/v1/programmes/journeys/${id}/approval`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          action: "reject",
+                          stepId,
+                          notes,
+                        }),
+                      },
+                    );
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                  } catch {
+                    toast.error(t("approval.rejectError"));
+                    return;
+                  }
                   await load();
                 }}
                 className="text-red-700"

@@ -4,6 +4,7 @@ import { useMemo, useState, useId } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -124,7 +125,14 @@ function CompareContent() {
         const res = await fetch(
           `/api/v1/processes/${processId}/compare?from=${versionFrom}&to=${versionTo}`,
         );
-        if (!res.ok) return null;
+        // [ARCTOS-FULL-2026-08-31 · OP-249] Eine abgelehnte Anfrage ergab
+        // `null` und damit denselben leeren Bereich wie „noch nichts
+        // ausgewählt". Der Vergleich bleibt leer, der Fehlschlag wird
+        // gemeldet.
+        if (!res.ok) {
+          toast.error(t("compare.loadError"));
+          return null;
+        }
         const json = await res.json();
         return (json.data ?? null) as VersionComparison | null;
       },
@@ -132,6 +140,13 @@ function CompareContent() {
   // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht die
   // Vorbedingung auch in der Ableitung des Ladezustands.
   const loading = compareEnabled && comparisonPending;
+
+  // [ARCTOS-FULL-2026-08-31 · OP-249] Zwei gleiche Versionen schalten die
+  // Abfrage ab; der leere Bereich sagte dazu nichts. Jetzt steht dort, warum
+  // es nichts zu sehen gibt.
+  const sameVersionSelected = Boolean(
+    versionFrom && versionTo && versionFrom === versionTo,
+  );
 
   const stats = comparison?.diff?.stats ?? {
     added: 0,
@@ -336,7 +351,9 @@ function CompareContent() {
         <div className="text-center py-12">
           <GitCompare className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">
-            Select two different versions to compare
+            {sameVersionSelected
+              ? t("compare.sameVersion")
+              : t("compare.selectTwoVersions")}
           </p>
         </div>
       )}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Search,
   ChevronRight,
@@ -156,7 +157,15 @@ export default function ControlCatalogBrowserPage() {
       const res = await fetch(
         `/api/v1/catalog-references?catalogEntryId=${selectedEntryId}`,
       );
-      if (!res.ok) return [];
+      // [ARCTOS-FULL-2026-08-31 · OP-249] Eine abgelehnte Anfrage ergab eine
+      // leere Liste ohne jeden Hinweis — „die Abfrage ist gescheitert" sah aus
+      // wie „dieser Eintrag hat keine Zuweisungen". Die Liste bleibt leer (die
+      // Zuweisungen des vorigen Eintrags dürfen nicht stehenbleiben), der
+      // Fehlschlag wird zusätzlich gemeldet.
+      if (!res.ok) {
+        toast.error(t("assign.loadError"));
+        return [];
+      }
       return ((await res.json()).data ?? []) as CatalogAssignment[];
     },
   });

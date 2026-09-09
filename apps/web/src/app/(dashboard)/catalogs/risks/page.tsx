@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Search,
   ChevronRight,
@@ -155,7 +156,12 @@ export default function RiskCatalogBrowserPage() {
       const res = await fetch(
         `/api/v1/catalog-references?catalogEntryId=${selectedEntryId}`,
       );
-      if (!res.ok) return [];
+      // [ARCTOS-FULL-2026-08-31 · OP-249] siehe catalogs/controls — die leere
+      // Liste bleibt der richtige Ausgang, das Schweigen war der Fehler.
+      if (!res.ok) {
+        toast.error(t("assign.loadError"));
+        return [];
+      }
       const json = await res.json();
       return (json.data ?? []) as CatalogAssignment[];
     },

@@ -2099,7 +2099,10 @@
       "removed": "Entfernt",
       "modified": "Geändert",
       "attributeDiff": "Attributänderungen",
-      "version": "Version"
+      "version": "Version",
+      "loadError": "Versionsvergleich konnte nicht geladen werden",
+      "sameVersion": "Auf beiden Seiten steht dieselbe Version — es gibt nichts zu vergleichen.",
+      "selectTwoVersions": "Wählen Sie zwei verschiedene Versionen zum Vergleich aus."
     },
     "comments": {
       "title": "Kommentare",
@@ -2720,6 +2723,7 @@
       "alreadyAssigned": "Bereits dieser Entität zugewiesen",
       "assignedEntities": "Zugewiesene Entitäten",
       "noAssignments": "Keine Entitäten diesem Katalogeintrag zugewiesen",
+      "loadError": "Zuweisungen konnten nicht geladen werden",
       "bulkAssign": "Mehrfachzuweisung",
       "bulkDescription": "Diesen Katalogeintrag mehreren Entitäten gleichzeitig zuweisen",
       "selectedCount": "{count} ausgewählt",

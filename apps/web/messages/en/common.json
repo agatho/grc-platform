@@ -2099,7 +2099,10 @@
       "removed": "Removed",
       "modified": "Modified",
       "attributeDiff": "Attribute Changes",
-      "version": "Version"
+      "version": "Version",
+      "loadError": "The version comparison could not be loaded",
+      "sameVersion": "Both sides show the same version — there is nothing to compare.",
+      "selectTwoVersions": "Select two different versions to compare."
     },
     "comments": {
       "title": "Comments",
@@ -2720,6 +2723,7 @@
       "alreadyAssigned": "Already assigned to this entity",
       "assignedEntities": "Assigned Entities",
       "noAssignments": "No entities assigned to this catalog entry",
+      "loadError": "Assignments could not be loaded",
       "bulkAssign": "Bulk Assign",
       "bulkDescription": "Assign this catalog entry to multiple entities at once",
       "selectedCount": "{count} selected",

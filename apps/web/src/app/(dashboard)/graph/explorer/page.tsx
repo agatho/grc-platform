@@ -5,6 +5,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Network,
   Search,
@@ -709,6 +710,7 @@ export default function GraphExplorerPage() {
   const {
     data: graphData = null,
     isPending: graphPending,
+    error: graphError,
     refetch: refetchGraph,
   } = useQuery<SubgraphResponse | null>({
     queryKey: ["graph", "subgraph", request],
@@ -739,6 +741,19 @@ export default function GraphExplorerPage() {
   // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht die
   // Anforderung auch in der Ableitung des Ladezustands.
   const loading = request !== null && graphPending;
+
+  // [OP-249] Der Fehler stand bisher nur auf der Konsole: die Fläche zeigte
+  // den Leerzustand („keine Entitäten gefunden"), also genau das Bild eines
+  // leeren Graphen — der Abruf war aber fehlgeschlagen. Jetzt sagt es eine
+  // Meldung, und der Leerzustand unten nennt den Grund. Der Merker sorgt
+  // dafür, dass je Fehlschlag genau einmal gemeldet wird.
+  const reportedGraphError = useRef<unknown>(null);
+  useEffect(() => {
+    if (graphError && reportedGraphError.current !== graphError) {
+      reportedGraphError.current = graphError;
+      toast.error(t("explorer.loadError"));
+    }
+  }, [graphError, t]);
 
   // Fetch subgraph — the name and signature stay for the callers; the
   // request captures the sidebar filters as they are at this moment.
@@ -1089,7 +1104,9 @@ export default function GraphExplorerPage() {
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
               <Network className="h-16 w-16 mb-4 opacity-20" />
               <p className="text-lg font-medium">{t("explorer.title")}</p>
-              <p className="text-sm mt-1">{t("explorer.empty")}</p>
+              <p className="text-sm mt-1">
+                {graphError ? t("explorer.loadError") : t("explorer.empty")}
+              </p>
               <p className="text-xs mt-4">{t("filter.search")}</p>
             </div>
           ) : (

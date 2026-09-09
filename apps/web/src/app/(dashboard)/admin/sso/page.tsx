@@ -91,10 +91,9 @@ export default function SsoConfigPage() {
     },
   });
 
-  // Der Schluessel wird NUR ueber `fetchConfig()` erhoeht — nach dem Speichern
-  // und nach dem Umschalten von „aktiv", also genau dort, wo bisher
-  // `populateForm` das Formular neu befuellte. Ein Hintergrundabruf laesst die
-  // Eingaben stehen.
+  // Der Schluessel wird NUR ueber `fetchConfig()` erhoeht — seit OP-249 nur
+  // noch nach dem Speichern, nicht mehr beim Umschalten von „aktiv" (siehe
+  // `handleToggleActive`). Ein Hintergrundabruf laesst die Eingaben stehen.
   const [seedVersion, setSeedVersion] = useState(0);
   const fetchConfig = useCallback(async () => {
     await refetch();
@@ -143,6 +142,16 @@ function SsoConfigForm({
   );
   const [saving, setSaving] = useState(false);
   const [showEnforceDialog, setShowEnforceDialog] = useState(false);
+
+  // [OP-249] Bewusste Verhaltensaenderung: der „aktiv"-Schalter fuehrt einen
+  // EIGENEN Zustand und laedt das Formular nicht mehr neu. Bis hierher rief
+  // `handleToggleActive` `fetchConfig()`, was den `seedVersion`-Schluessel der
+  // Seite erhoehte und diese Komponente neu einhaengte — dabei wurde jedes
+  // Feld aus dem Serverstand neu gesaet und alles, was der Administrator noch
+  // nicht gespeichert hatte, ging verloren. Umschalten aendert jetzt nur den
+  // aktiven Zustand; alle uebrigen Eingaben bleiben unangetastet. Ein echtes
+  // Neuladen der Seite (und das Speichern) saet weiterhin vom Server.
+  const [isActive, setIsActive] = useState(config?.isActive ?? false);
 
   // Form state — seeded from `config` exactly as `populateForm` did.
   const [displayName, setDisplayName] = useState(config?.displayName ?? "");
@@ -293,7 +302,7 @@ function SsoConfigForm({
   }
 
   async function handleToggleActive() {
-    const newActive = !config?.isActive;
+    const newActive = !isActive;
     try {
       const res = await fetch("/api/v1/admin/sso", {
         method: "PUT",
@@ -304,7 +313,11 @@ function SsoConfigForm({
         const json = await res.json();
         throw new Error(json.error);
       }
-      fetchConfig();
+      // [OP-249] Vorher stand hier `fetchConfig()`, das die Komponente neu
+      // einhaengte und damit ungespeicherte Eingaben verwarf. Der Schalter
+      // uebernimmt jetzt nur seinen eigenen Zustand — persistiert ist er durch
+      // das PUT oben bereits.
+      setIsActive(newActive);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("toggleError"));
     }
@@ -331,17 +344,14 @@ function SsoConfigForm({
             <Badge
               variant="outline"
               className={
-                config.isActive
+                isActive
                   ? "border-green-200 bg-green-50 text-green-700"
                   : "border-gray-200 bg-gray-50 text-gray-500"
               }
             >
-              {config.isActive ? t("active") : t("inactive")}
+              {isActive ? t("active") : t("inactive")}
             </Badge>
-            <Switch
-              checked={config.isActive}
-              onCheckedChange={handleToggleActive}
-            />
+            <Switch checked={isActive} onCheckedChange={handleToggleActive} />
           </div>
         )}
       </div>
