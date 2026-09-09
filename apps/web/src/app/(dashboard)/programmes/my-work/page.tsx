@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
@@ -67,34 +68,37 @@ const MS_TYPES = [
 
 export default function MyWorkPage() {
   const t = useTranslations("programme");
-  const [data, setData] = useState<MyWorkResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [includeCompleted, setIncludeCompleted] = useState(false);
   const [msTypeFilter, setMsTypeFilter] = useState<string>("");
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
+  // [Welle 7a · OP-080] Die Ladefunktion stand in `useCallback` und in den
+  // Abhaengigkeiten des Effekts.
+  //
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Daten- und Fehlerzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Filter stehen im Schlüssel;
+  // `keepPreviousData` haelt wie vorher die alte Liste sichtbar, waehrend die
+  // neue geladen wird (die Seite hatte keinen Ladezustand pro Filterwechsel).
+  // Eine nicht-ok-Antwort wirft wie vorher; der Fehlertext kommt aus dem
+  // Fehlerzustand der Abfrage.
+  const { data = null, error: queryError } = useQuery<MyWorkResponse | null>({
+    queryKey: ["programmes", "my-work", includeCompleted, msTypeFilter],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (includeCompleted) params.set("includeCompleted", "1");
       if (msTypeFilter) params.set("msType", msTypeFilter);
       const r = await fetch(`/api/v1/programmes/my-work?${params}`);
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
-      setData(j.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [includeCompleted, msTypeFilter]);
-
-  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
-  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
-  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
-  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
-  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
-  useEffect(() => {
-    void load();
-  }, [load]);
+      return (j.data ?? null) as MyWorkResponse | null;
+    },
+  });
+  const error: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : String(queryError)
+    : null;
 
   if (error) {
     return (

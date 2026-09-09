@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
@@ -106,11 +107,22 @@ interface StepDetail {
     evidenceLinks: Array<{ type: string; id: string; label?: string }>;
     targetModuleLink: { module?: string; route?: string };
     isMilestone: boolean;
+    // Read by the header editor's seed; the API returns them, the old code
+    // read them off the untyped JSON.
+    costEstimate?: number | string | null;
+    effortHours?: number | null;
   };
   template: {
     description: string | null;
     prerequisiteStepCodes: string[];
   } | null;
+}
+
+interface StepHeaderPayload {
+  ownerId: string | null;
+  dueDate: string | null;
+  costEstimate: number | null;
+  effortHours: number | null;
 }
 
 function StatusIcon({ status }: { status: SubtaskStatus }) {
@@ -123,6 +135,114 @@ function StatusIcon({ status }: { status: SubtaskStatus }) {
   return <Circle className="size-4 text-slate-400" />;
 }
 
+// [OP-245 · Gestalt E] The header edit form is its own component. The loaded
+// step is the SEED of the form, not its content: the fields are initialised
+// once on mount via `useState` initialisers, and the parent remounts the
+// editor with `key={seedVersion}` exactly where the old `load()` re-seeded
+// the four fields (after save, transitions, approvals). A background refetch
+// therefore does not wipe the user's input, and the parent's unrelated UI
+// state (select mode, open forms) is not reset (pattern from wave 7b,
+// `processes/[id]/ropa/page.tsx`).
+function StepHeaderEditor({
+  step,
+  users,
+  onSave,
+  onCancel,
+}: {
+  step: StepDetail["step"];
+  users: OrgUser[];
+  onSave: (payload: StepHeaderPayload) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const t = useTranslations("programme");
+  const [editOwnerId, setEditOwnerId] = useState<string>(
+    () => step.ownerId ?? "",
+  );
+  const [editDueDate, setEditDueDate] = useState(() => step.dueDate ?? "");
+  const [editCostEstimate, setEditCostEstimate] = useState<string>(
+    () => step.costEstimate?.toString() ?? "",
+  );
+  const [editEffortHours, setEditEffortHours] = useState<string>(
+    () => step.effortHours?.toString() ?? "",
+  );
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1.5">
+        <Label htmlFor="step-owner">{t("step.owner")}</Label>
+        <select
+          id="step-owner"
+          value={editOwnerId}
+          onChange={(e) => setEditOwnerId(e.target.value)}
+          className="flex h-9 w-full rounded-lg border border-slate-200 bg-transparent px-3 py-1 text-sm dark:border-slate-800"
+        >
+          <option value="">{t("step.unassigned")}</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name || u.email}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="step-due">{t("step.dueDate")}</Label>
+        <Input
+          id="step-due"
+          type="date"
+          value={editDueDate}
+          onChange={(e) => setEditDueDate(e.target.value)}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label htmlFor="step-cost">Kosten-Schätzung (EUR)</Label>
+          <Input
+            id="step-cost"
+            type="number"
+            min="0"
+            step="100"
+            value={editCostEstimate}
+            onChange={(e) => setEditCostEstimate(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="step-effort">Aufwand (Stunden)</Label>
+          <Input
+            id="step-effort"
+            type="number"
+            min="0"
+            step="1"
+            value={editEffortHours}
+            onChange={(e) => setEditEffortHours(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          {t("step.cancel")}
+        </Button>
+        <Button
+          size="sm"
+          onClick={() =>
+            void onSave({
+              ownerId: editOwnerId || null,
+              dueDate: editDueDate || null,
+              costEstimate: editCostEstimate
+                ? parseFloat(editCostEstimate)
+                : null,
+              effortHours: editEffortHours
+                ? parseInt(editEffortHours, 10)
+                : null,
+            })
+          }
+        >
+          {t("step.save")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function StepDetailPage({
   params,
 }: {
@@ -130,18 +250,78 @@ export default function StepDetailPage({
 }) {
   const { id, stepId } = use(params);
   const t = useTranslations("programme");
-  const [data, setData] = useState<StepDetail | null>(null);
-  const [subtasks, setSubtasks] = useState<Subtask[]>([]);
-  const [links, setLinks] = useState<StepLink[]>([]);
-  const [users, setUsers] = useState<OrgUser[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  // Step header edit state
+  // [OP-245 · Gestalt A] The four resources `load()` used to fetch in one
+  // effect are four queries. Keys sit under `["programmes", "steps", stepId]`
+  // so one invalidation of that prefix reloads the step bundle; the users
+  // list is a step-independent resource with its own key.
+  const stepKey = ["programmes", "steps", stepId, "detail", id];
+  const subtasksKey = ["programmes", "steps", stepId, "subtasks", id];
+  const linksKey = ["programmes", "steps", stepId, "links", id];
+  const usersKey = ["programmes", "users"];
+
+  const stepQuery = useQuery<StepDetail>({
+    queryKey: stepKey,
+    queryFn: async () => {
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}`,
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      return j.data as StepDetail;
+    },
+  });
+  // Subtasks, links and users: as before, a non-OK answer keeps what was
+  // there (the old code only wrote state on `ok`).
+  const { data: subtasks = [] } = useQuery<Subtask[]>({
+    queryKey: subtasksKey,
+    queryFn: async () => {
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/subtasks`,
+      );
+      if (!r.ok) return queryClient.getQueryData<Subtask[]>(subtasksKey) ?? [];
+      const j = await r.json();
+      return (j.data ?? []) as Subtask[];
+    },
+  });
+  const { data: links = [] } = useQuery<StepLink[]>({
+    queryKey: linksKey,
+    queryFn: async () => {
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/links`,
+      );
+      if (!r.ok) return queryClient.getQueryData<StepLink[]>(linksKey) ?? [];
+      const j = await r.json();
+      return (j.data ?? []) as StepLink[];
+    },
+  });
+  const { data: users = [] } = useQuery<OrgUser[]>({
+    queryKey: usersKey,
+    queryFn: async () => {
+      const r = await fetch(`/api/v1/programmes/users`);
+      if (!r.ok) return queryClient.getQueryData<OrgUser[]>(usersKey) ?? [];
+      const j = await r.json();
+      return (j.data ?? []) as OrgUser[];
+    },
+  });
+  const data = stepQuery.data ?? null;
+
+  // `error` carries the action errors (save, patch, delete, …); the load
+  // error of the step request comes from its query. Both used to share one
+  // state; the render sites below read the union.
+  const [error, setError] = useState<string | null>(null);
+  const loadError = stepQuery.error
+    ? stepQuery.error instanceof Error
+      ? stepQuery.error.message
+      : String(stepQuery.error)
+    : null;
+  const shownError = error ?? loadError;
+
+  // Step header edit state — the field values live in `StepHeaderEditor`,
+  // seeded from the loaded step; `seedVersion` remounts it on `load()`.
   const [editingHeader, setEditingHeader] = useState(false);
-  const [editOwnerId, setEditOwnerId] = useState<string>("");
-  const [editDueDate, setEditDueDate] = useState("");
-  const [editCostEstimate, setEditCostEstimate] = useState<string>("");
-  const [editEffortHours, setEditEffortHours] = useState<string>("");
+  const [seedVersion, setSeedVersion] = useState(0);
 
   // Bulk-select state
   const [selectMode, setSelectMode] = useState(false);
@@ -215,7 +395,10 @@ export default function StepDetailPage({
         throw new Error(j.error ?? `HTTP ${r.status}`);
       }
       const j = await r.json();
-      setLinks((prev) => [j.data, ...prev]);
+      queryClient.setQueryData<StepLink[]>(linksKey, (prev) => [
+        j.data,
+        ...(prev ?? []),
+      ]);
       setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -237,49 +420,23 @@ export default function StepDetailPage({
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // [OP-245 · Gestalt A] `load` stays as the wrapper the callers use (save,
+  // transition, approvals): it invalidates the step bundle and the users list
+  // — a re-request through the queries — and then bumps `seedVersion`, which
+  // remounts the header editor with the fresh step, exactly where the old
+  // code re-seeded the four edit fields.
   const load = useCallback(async () => {
     setError(null);
-    try {
-      const [stepR, subR, linkR, usersR] = await Promise.all([
-        fetch(`/api/v1/programmes/journeys/${id}/steps/${stepId}`),
-        fetch(`/api/v1/programmes/journeys/${id}/steps/${stepId}/subtasks`),
-        fetch(`/api/v1/programmes/journeys/${id}/steps/${stepId}/links`),
-        fetch(`/api/v1/programmes/users`),
-      ]);
-      if (!stepR.ok) throw new Error(`HTTP ${stepR.status}`);
-      const stepJson = await stepR.json();
-      setData(stepJson.data);
-      setEditOwnerId(stepJson.data.step.ownerId ?? "");
-      setEditDueDate(stepJson.data.step.dueDate ?? "");
-      setEditCostEstimate(stepJson.data.step.costEstimate?.toString() ?? "");
-      setEditEffortHours(stepJson.data.step.effortHours?.toString() ?? "");
-      if (subR.ok) {
-        const j = await subR.json();
-        setSubtasks(j.data ?? []);
-      }
-      if (linkR.ok) {
-        const j = await linkR.json();
-        setLinks(j.data ?? []);
-      }
-      if (usersR.ok) {
-        const j = await usersR.json();
-        setUsers(j.data ?? []);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [id, stepId]);
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: ["programmes", "steps", stepId],
+      }),
+      queryClient.invalidateQueries({ queryKey: ["programmes", "users"] }),
+    ]);
+    setSeedVersion((v) => v + 1);
+  }, [queryClient, stepId]);
 
-  // [Welle 7a · OP-080] Die Ladefunktion steht jetzt in `useCallback` und in
-  // den Abhaengigkeiten des Effekts. Vorher zaehlte die Liste die Werte auf,
-  // von denen die Funktion abhaengt — eine von Hand gefuehrte Kopie, die
-  // stillschweigend falsch wird, sobald die Funktion einen weiteren Wert
-  // liest. Verhalten unveraendert: `useCallback` traegt dieselben Werte.
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  async function saveHeader() {
+  async function saveHeader(payload: StepHeaderPayload) {
     setError(null);
     try {
       const r = await fetch(
@@ -287,14 +444,7 @@ export default function StepDetailPage({
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ownerId: editOwnerId || null,
-            dueDate: editDueDate || null,
-            costEstimate: editCostEstimate
-              ? parseFloat(editCostEstimate)
-              : null,
-            effortHours: editEffortHours ? parseInt(editEffortHours, 10) : null,
-          }),
+          body: JSON.stringify(payload),
         },
       );
       if (!r.ok) {
@@ -331,7 +481,9 @@ export default function StepDetailPage({
         throw new Error(j.reason ?? j.error ?? `HTTP ${r.status}`);
       }
       const j = await r.json();
-      setSubtasks((prev) => prev.map((s) => (s.id === subtaskId ? j.data : s)));
+      queryClient.setQueryData<Subtask[]>(subtasksKey, (prev) =>
+        (prev ?? []).map((s) => (s.id === subtaskId ? j.data : s)),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -381,13 +533,7 @@ export default function StepDetailPage({
         throw new Error(j.error ?? j.reason ?? `HTTP ${r.status}`);
       }
       // Reload all subtasks (server-side date shift needs re-fetch)
-      const sr = await fetch(
-        `/api/v1/programmes/journeys/${id}/steps/${stepId}/subtasks`,
-      );
-      if (sr.ok) {
-        const j = await sr.json();
-        setSubtasks(j.data ?? []);
-      }
+      await queryClient.invalidateQueries({ queryKey: subtasksKey });
       clearSelection();
       setBulkAction("");
     } catch (err) {
@@ -409,7 +555,9 @@ export default function StepDetailPage({
         const j = await r.json();
         throw new Error(j.reason ?? j.error ?? `HTTP ${r.status}`);
       }
-      setSubtasks((prev) => prev.filter((s) => s.id !== subtaskId));
+      queryClient.setQueryData<Subtask[]>(subtasksKey, (prev) =>
+        (prev ?? []).filter((s) => s.id !== subtaskId),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -435,7 +583,10 @@ export default function StepDetailPage({
         throw new Error(j.reason ?? j.error ?? `HTTP ${r.status}`);
       }
       const j = await r.json();
-      setSubtasks((prev) => [...prev, j.data]);
+      queryClient.setQueryData<Subtask[]>(subtasksKey, (prev) => [
+        ...(prev ?? []),
+        j.data,
+      ]);
       setNewSubtaskTitle("");
       setNewSubtaskDescription("");
       setShowNewSubtask(false);
@@ -467,7 +618,10 @@ export default function StepDetailPage({
         throw new Error(j.reason ?? j.error ?? `HTTP ${r.status}`);
       }
       const j = await r.json();
-      setLinks((prev) => [j.data, ...prev]);
+      queryClient.setQueryData<StepLink[]>(linksKey, (prev) => [
+        j.data,
+        ...(prev ?? []),
+      ]);
       setLinkLabel("");
       setLinkUrl("");
       setLinkNotes("");
@@ -493,9 +647,12 @@ export default function StepDetailPage({
         throw new Error(j.error ?? `HTTP ${r.status}`);
       }
       const j = await r.json();
-      // Append the new link to local state
+      // Append the new link to the cached list
       if (j.data?.link) {
-        setLinks((prev) => [j.data.link, ...prev]);
+        queryClient.setQueryData<StepLink[]>(linksKey, (prev) => [
+          j.data.link,
+          ...(prev ?? []),
+        ]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -537,7 +694,9 @@ export default function StepDetailPage({
         const j = await r.json();
         throw new Error(j.reason ?? j.error ?? `HTTP ${r.status}`);
       }
-      setLinks((prev) => prev.filter((l) => l.id !== linkId));
+      queryClient.setQueryData<StepLink[]>(linksKey, (prev) =>
+        (prev ?? []).filter((l) => l.id !== linkId),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -574,12 +733,12 @@ export default function StepDetailPage({
     }
   }
 
-  if (error && !data) {
+  if (shownError && !data) {
     return (
       <ModuleGate moduleKey="programme">
         <div className="p-6">
           <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-            {error}
+            {shownError}
           </div>
         </div>
       </ModuleGate>
@@ -719,73 +878,13 @@ export default function StepDetailPage({
                 </div>
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label htmlFor="step-owner">{t("step.owner")}</Label>
-                  <select
-                    id="step-owner"
-                    value={editOwnerId}
-                    onChange={(e) => setEditOwnerId(e.target.value)}
-                    className="flex h-9 w-full rounded-lg border border-slate-200 bg-transparent px-3 py-1 text-sm dark:border-slate-800"
-                  >
-                    <option value="">{t("step.unassigned")}</option>
-                    {users.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name || u.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="step-due">{t("step.dueDate")}</Label>
-                  <Input
-                    id="step-due"
-                    type="date"
-                    value={editDueDate}
-                    onChange={(e) => setEditDueDate(e.target.value)}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="step-cost">Kosten-Schätzung (EUR)</Label>
-                    <Input
-                      id="step-cost"
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={editCostEstimate}
-                      onChange={(e) => setEditCostEstimate(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="step-effort">Aufwand (Stunden)</Label>
-                    <Input
-                      id="step-effort"
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={editEffortHours}
-                      onChange={(e) => setEditEffortHours(e.target.value)}
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditingHeader(false);
-                      setEditOwnerId(step.ownerId ?? "");
-                      setEditDueDate(step.dueDate ?? "");
-                    }}
-                  >
-                    {t("step.cancel")}
-                  </Button>
-                  <Button size="sm" onClick={saveHeader}>
-                    {t("step.save")}
-                  </Button>
-                </div>
-              </div>
+              <StepHeaderEditor
+                key={seedVersion}
+                step={step}
+                users={users}
+                onSave={saveHeader}
+                onCancel={() => setEditingHeader(false)}
+              />
             )}
           </CardContent>
         </Card>
@@ -1473,9 +1572,9 @@ export default function StepDetailPage({
                   />
                 </div>
               )}
-              {error && (
+              {shownError && (
                 <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                  {error}
+                  {shownError}
                 </div>
               )}
               <div className="flex justify-end">
