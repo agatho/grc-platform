@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Smartphone,
@@ -47,33 +48,43 @@ interface PushNotifRow {
 export default function MobilePage() {
   const t = useTranslations("mobile");
   const { formatDate } = useDateFormat();
-  const [devices, setDevices] = useState<DeviceRow[]>([]);
-  const [notifications, setNotifications] = useState<PushNotifRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen wurden immer
+  // gemeinsam gestellt, daher eine Abfrage mit einem Objekt als Ergebnis.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    devices: DeviceRow[];
+    notifications: PushNotifRow[];
+  }>({
+    queryKey: ["mobile", "overview"],
+    queryFn: async () => {
       const [devRes, notifRes] = await Promise.all([
         fetch("/api/v1/mobile/devices"),
         fetch("/api/v1/mobile/push?limit=10"),
       ]);
+      let devices: DeviceRow[] = [];
+      let notifications: PushNotifRow[] = [];
       if (devRes.ok) {
-        const data = await devRes.json();
-        setDevices(data.data ?? []);
+        const json = await devRes.json();
+        devices = json.data ?? [];
       }
       if (notifRes.ok) {
-        const data = await notifRes.json();
-        setNotifications(data.data ?? []);
+        const json = await notifRes.json();
+        notifications = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { devices, notifications };
+    },
+  });
+  const devices = data?.devices ?? [];
+  const notifications = data?.notifications ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const deactivateDevice = async (id: string) => {
     await fetch(`/api/v1/mobile/devices/${id}`, { method: "DELETE" });
