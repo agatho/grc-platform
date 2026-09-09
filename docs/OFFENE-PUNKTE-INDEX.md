@@ -9,9 +9,9 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **246**
+Nummern: **249**
 
-## offen (4)
+## offen (5)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -19,6 +19,7 @@ Nummern: **246**
 | OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.       | 2026-09-03   |
 | OP-221 | `npm run lint` ist auf diesem Branch rot und war es immer. `turbo lint` bricht bei jedem ESLint-Error ab; im … | offen — Entscheidung: Ratchet in `turbo lint` einhängen oder das maßgebliche Kommando ben… | 2026-09-09   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                      | 2026-09-09   |
+| OP-249 | Fünf Stellen, an denen ein Fehler keinen Nutzer erreicht: (1) `programmes/[id]/steps/[stepId]`: die drei Frei… | offen — je einzeln zu entscheiden                                                          | 2026-09-09   |
 
 ## teilweise (0)
 
@@ -31,7 +32,7 @@ _keine_
 | OP-113 | `custom_sql` bleibt eine Lesefläche: Org-Admin/Auditor kann jede Zeile lesen, die `grc_app` in seiner Org les… | Bewusst akzeptiert; identisch zur Lage bei `bi-reports/execute`. Die Entscheidung gehört … | Haupttabelle |
 | OP-132 | `docs/ADR-023` steht auf _Proposed_, obwohl §1/§3/§4 implementiert sind                                        | Der Entscheidungsstand entspricht der Umsetzung.                                           | Haupttabelle |
 
-## ohne Stand (161)
+## ohne Stand (160)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------ |
@@ -194,10 +195,9 @@ _keine_
 | OP-164 | Erster Staging-Lauf ist der eigentliche Beweis: Backup, Off-Site-Verschlüsselung, DR-Restore, Alarmzustellung… | Alle Kontrollen, die im Betrieb wirken sollen, sind nie gegen eine Produktivumgebung gela… | Haupttabelle |
 | OP-165 | Rechtliche Würdigung steht aus (Signaturklasse, Art. 17 gegen Unveränderlichkeit, ab wann Pseudonymisierung a… | Die Remediation stellt technische Voraussetzungen her; die Bewertung ist keine Rechtsbera… | Haupttabelle |
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
-| OP-245 | `eslint-plugin-react-hooks` 7.0.1 → 7.1.1 bringt 416 neue Fehler in 354 Dateien — ohne dass sich eine Zeile A… | entschieden — in Arbeit (Weg B)                                                            | 2026-09-09   |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (79)
+## behoben (82)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -280,3 +280,6 @@ _keine_
 | OP-242 | Der Job `Lint & Type Check` lag mit 9m09s bis 10m14s auf seinem 10-Minuten-Budget — sein Ergebnis hing an der… | behoben                                                                                    | 2026-09-09 |
 | OP-243 | Sieben Stellen in `apps/web` navigierten mit `window.location.href` statt mit dem Router — jede davon ein vol… | behoben                                                                                    | 2026-09-09 |
 | OP-244 | `Review Dependencies` meldet `jszip` als GPL — das Paket ist aber doppelt lizenziert. Die eigene Angabe laute… | behoben                                                                                    | 2026-09-09 |
+| OP-245 | `eslint-plugin-react-hooks` 7.1.1 bleibt, die 416 Fundstellen sind abgetragen, der Pin auf 7.0.1 ist entfernt… | behoben                                                                                    | 2026-09-09 |
+| OP-247 | Rückgängig/Wiederholen im Prozesseditor blieben nach der ersten Änderung stehen. `canUndo`/`canRedo` wurden b… | behoben (mit OP-245)                                                                       | 2026-09-09 |
+| OP-248 | Ungespeicherte Risikobewertung im Krisenszenario wurde vom nächsten Abruf überschrieben. Jeder `fetchData()` … | behoben (mit OP-245)                                                                       | 2026-09-09 |
