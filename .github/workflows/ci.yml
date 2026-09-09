@@ -1065,10 +1065,25 @@ jobs:
       - name: Run k6 perf baseline (Wave-21-C2)
         env:
           ARCTOS_BASE: http://localhost:3000
-          # Demo-Seed-Identitaet der CI-Wegwerf-DB — NICHT in einer
-          # Umgebung verwenden, die den Lauf ueberlebt.
-          ARCTOS_EMAIL: admin@arctos.dev
-          ARCTOS_PASSWORD: admin123
+          # [2026-09-10] Hier stand `admin@arctos.dev` / `admin123` — ein
+          # Konto, das es seit WP3/S02-01 nicht mehr gibt. `auth.setup.ts`
+          # sagt es in seiner eigenen Fehlermeldung: „WP3 removed the
+          # `admin123` default account (S02-01), so there is nothing to fall
+          # back on." Die Anmeldung in `ci-baseline.js` schlug damit fehl,
+          # das Skript lief ohne Sitzungskeks weiter, und alle 60 Aufrufe von
+          # `/api/v1/risks` kamen unangemeldet zurueck: `✗ risks status 200
+          # → 0% — ✓ 0 / ✗ 60`, Schwelle
+          # `http_req_failed{scenario:risks_list}` gerissen (Lauf
+          # 34412293280). Aufgefallen ist es erst jetzt, weil dieser Schritt
+          # vorher nie erreicht wurde — der Job starb Schritte frueher.
+          #
+          # Genommen wird jetzt das Konto, das dieser Job sich selbst anlegt
+          # („E2E-Konten anlegen"): dieselbe Identitaet, die auch die
+          # Playwright-Suite benutzt, mit dem Wegwerf-Passwort dieses Laufs
+          # aus `$GITHUB_ENV` (maskiert). Kein Wert im Repository, keine
+          # zweite Wahrheit ueber „wer ist der Admin".
+          ARCTOS_EMAIL: ${{ env.E2E_EMAIL }}
+          ARCTOS_PASSWORD: ${{ env.E2E_PASSWORD }}
         run: k6 run --summary-export=/tmp/k6-summary.json scripts/perf/ci-baseline.js
 
       - name: Upload k6 summary
