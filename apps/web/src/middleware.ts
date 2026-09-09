@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { type NextAuthRequest } from "next-auth";
 import { NextResponse } from "next/server";
 import {
   authConfig,
@@ -118,7 +118,7 @@ function nextWithRoutingHeaders(req: Request, pathname: string) {
   return res;
 }
 
-export default auth(async (req) => {
+export default auth(async (req: NextAuthRequest) => {
   const { pathname } = req.nextUrl;
   const requestId = ensureRequestId(req);
 

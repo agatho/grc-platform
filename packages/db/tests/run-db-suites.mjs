@@ -27,6 +27,20 @@
 //     silently green run that proves nothing.
 
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import path from "node:path";
+
+// [OP-234] Spawn vitest through the current Node binary instead of `npx`:
+// on Windows `spawnSync("npx", …)` without a shell fails with ENOENT before
+// anything runs, and the runner exited 1 with no output — a "failure" that
+// carried no failure. Resolving the vitest entry point directly is the
+// same command on every platform and needs no shell.
+const require = createRequire(import.meta.url);
+const vitestPkgPath = require.resolve("vitest/package.json");
+const vitestBin = path.join(
+  path.dirname(vitestPkgPath),
+  require(vitestPkgPath).bin.vitest,
+);
 
 const DB_URL = process.env.DATABASE_URL ?? process.env.APP_DATABASE_URL;
 
@@ -84,8 +98,8 @@ let failed = 0;
 for (const suite of SUITES) {
   console.log(`\n=== @grc/db: ${suite.name} ===`);
   const res = spawnSync(
-    "npx",
-    ["vitest", "run", "--config", suite.config, "--passWithNoTests"],
+    process.execPath,
+    [vitestBin, "run", "--config", suite.config, "--passWithNoTests"],
     { stdio: "inherit", env: process.env },
   );
   if (res.status !== 0) failed++;

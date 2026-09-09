@@ -40,6 +40,20 @@
 //    Without WORKER_DATABASE_URL the behaviour is unchanged.
 
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import path from "node:path";
+
+// [OP-234] Spawn vitest through the current Node binary instead of `npx`:
+// on Windows `spawnSync("npx", …)` without a shell fails with ENOENT before
+// anything runs, and the runner exited 1 with no output — a "failure" that
+// carried no failure. Resolving the vitest entry point directly is the
+// same command on every platform and needs no shell.
+const require = createRequire(import.meta.url);
+const vitestPkgPath = require.resolve("vitest/package.json");
+const vitestBin = path.join(
+  path.dirname(vitestPkgPath),
+  require(vitestPkgPath).bin.vitest,
+);
 
 const WORKER_URL = process.env.WORKER_DATABASE_URL;
 const DB_URL =
@@ -86,8 +100,12 @@ if (WORKER_URL) {
   env.APP_DATABASE_URL = WORKER_URL;
 }
 
-const res = spawnSync("npx", ["vitest", "run", "--passWithNoTests"], {
-  stdio: "inherit",
-  env,
-});
+const res = spawnSync(
+  process.execPath,
+  [vitestBin, "run", "--passWithNoTests"],
+  {
+    stdio: "inherit",
+    env,
+  },
+);
 process.exit(res.status ?? 1);
