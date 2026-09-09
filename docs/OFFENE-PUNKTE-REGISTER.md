@@ -2765,3 +2765,48 @@ hier eine erfüllbare Zusage.
 **Nicht mitgemacht:** die 44 Altbefunde im Root-Scope bleiben stehen und
 bleiben gedeckelt. Sie verschwinden durch Arbeit, nicht durch eine
 Umverdrahtung.
+
+### Nachtrag 2026-09-09 — Welle 8p: zwei Entscheidungen des Eigentümers, und ein Fehler in der Required-Liste
+
+| OP     | Was                                                                                                                                                                                                                                                                    | Beleg                                | Art | Stand                      |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | --- | -------------------------- |
+| OP-255 | **Die Required-Liste in ADR-016 führt `Build` — einen Job, der auf einer Pull Request gar nicht läuft.** `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`. Als required markiert, ließe er jede PR dauerhaft hängen, denn der Check erscheint nie. | Aus den Workflow-Dateien nachgezählt | Tor | behoben (Liste korrigiert) |
+
+**OP-224 — zurückgestellt, auf Entscheidung des Eigentümers am 2026-09-09.**
+Die sprachrichtige Ausgabe von Benachrichtigungen je Empfänger wartet, bis ein
+neues Test-Deployment steht; das Deployment ist der Schwerpunkt. Der Punkt
+bleibt offen und benannt, er ist nicht abgeräumt.
+
+**OP-255 — wie es aufgefallen ist.** Nicht durch Lesen der Tabelle, sondern
+durch Nachzählen aus den Workflow-Dateien, weil die Liste nach den
+Umbenennungen aus OP-242 ohnehin zu prüfen war. Dabei fiel neben `Build` noch
+auf, dass `npm ci --dry-run (container npm)` pfadgefiltert ist, ohne dass die
+Spalte es sagte.
+
+Die Falle ist dieselbe, die der Absatz unter der Tabelle für pfadgefilterte
+Checks beschreibt — nur trifft sie hier einen Job, der gar nicht
+pfadgefiltert ist, sondern schlicht ein anderes Ereignis bedient. Ein required
+Check, der nie erscheint, ist kein strenges Tor, sondern ein blockierter
+Merge.
+
+**Der belastbare Satz, gemessen.** Auf einer Pull Request gegen `main` laufen
+unbedingt und ohne Pfadfilter:
+
+```
+Lint & Ratschen · Type Check · Unit Tests · Integration Tests ·
+E2E Smoke Tests · DB Migration & Integrity · Security Audit ·
+Aggregate test coverage · gitleaks scan · Review Dependencies · CodeQL Analysis
+```
+
+Dazu `Pilot Readiness Gate`, der erscheint, aber ohne `STAGING_URL`
+absichtlich rot ist (#S13-30). Pfadgefiltert und deshalb nur mit der bekannten
+Vorsicht required zu setzen: `Migration policy`, `Migration rehearsal`,
+`Schema-Drift und RLS-Abdeckung`, `npm ci --dry-run`, `Code vs. catalogue`,
+`DE/EN namespace parity`, `Generated API docs`.
+
+**Das Werkzeug ist da.** Der Token auf der Maschine des Eigentümers hat
+`repo`-Scope und `admin: true` auf dem Repository — nachgemessen am
+2026-09-09 —, `PUT /repos/agatho/grc-platform/branches/main/protection` ist
+damit möglich. **Reihenfolge beachten:** wird der Schutz gesetzt, solange
+E2E Smoke rot ist, blockiert er den eigenen Merge. Erst grün, dann mergen,
+dann schützen.

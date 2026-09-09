@@ -109,14 +109,14 @@ Betreiberpunkt).
 | `Integration Tests`                                                    | `ci.yml`                      | ja                           |
 | `E2E Smoke Tests`                                                      | `ci.yml`                      | ja                           |
 | `DB Migration & Integrity`                                             | `ci.yml`                      | ja                           |
-| `Build`                                                                | `ci.yml`                      | ja                           |
+| `Build`                                                                | `ci.yml`                      | **NEIN — OP-255**            |
 | `Security Audit`                                                       | `ci.yml`                      | ja                           |
 | `Pilot Readiness Gate`                                                 | `ci.yml`                      | ja                           |
 | `Aggregate test coverage`                                              | `coverage.yml`                | ja                           |
 | `Migration policy`                                                     | `migration-policy.yml`        | ja (pfadgefiltert)           |
 | `Migration rehearsal against an empty database (ADR-023 §3)`           | `migration-policy.yml`        | ja (pfadgefiltert)           |
 | `Schema-Drift und RLS-Abdeckung gegen eine frisch migrierte Datenbank` | `schema-drift.yml`            | ja (pfadgefiltert)           |
-| `npm ci --dry-run (container npm)`                                     | `lockfile-check.yml`          | ja                           |
+| `npm ci --dry-run (container npm)`                                     | `lockfile-check.yml`          | ja (pfadgefiltert)           |
 | **`Generated API docs are reproducible, and no endpoint disappears`**  | `openapi-breaking-change.yml` | **fehlt — OP-151**           |
 | **`Code vs. catalogue (S14-05, S14-07, S14-08)`**                      | `i18n-coverage.yml`           | **fehlt — OP-151**           |
 | **`DE/EN namespace parity`**                                           | `i18n-coverage.yml`           | **fehlt — OP-151**           |
@@ -136,6 +136,21 @@ main/protection` antwortet `404 Branch not protected`. Es ist also **kein
 > einziger** der hier als „ja" gefuehrten Checks tatsaechlich required —
 > die Spalte ist die Soll-Liste aus OP-150/OP-151, nicht der Ist-Zustand.
 > Solange das so bleibt, kann ein Pull Request mit rotem CI gemergt werden.
+
+> **[Welle 8p · OP-255, 2026-09-09]** Aus den Workflow-Dateien nachgezaehlt,
+> nicht aus dieser Tabelle geglaubt — mit zwei Korrekturen:
+>
+> - **`Build` darf NICHT required sein.** Der Job traegt
+>   `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`, laeuft
+>   also auf einem Pull Request ueberhaupt nicht. Ein required Check, der nie
+>   erscheint, laesst die PR dauerhaft haengen — genau die Falle, vor der der
+>   Absatz unten warnt, hier aber fuer einen Job, der gar nicht pfadgefiltert
+>   ist. Die Tabelle fuehrte ihn seit `2f716205` als „ja".
+> - `npm ci --dry-run (container npm)` ist pfadgefiltert; die Spalte sagte das
+>   nicht.
+>
+> `Pilot Readiness Gate` erscheint dagegen sehr wohl auf einer PR gegen `main`
+> — er ist nur ohne `STAGING_URL` rot (#S13-30, absichtlich laut).
 
 **Die Falle bei den pfadgefilterten Checks:** `migration-policy.yml`,
 `schema-drift.yml`, `openapi-breaking-change.yml` und `i18n-coverage.yml`
