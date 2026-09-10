@@ -3216,3 +3216,73 @@ ausgegeben.
 `check-op-numbers.mjs` meldet sonst eine Nummer, die im Code steht und im
 Register fehlt. Der Eigentümer hatte die Nummer für genau diesen Fall
 freigegeben; die Formulierung der Zeile darf gern überschrieben werden.
+
+### Nachtrag 2026-09-10 — Welle 8u: meine Vorgabe zu OP-261 war unvollständig, und ich hatte das Nachmessen ausdrücklich untersagt
+
+OP-261 ist behoben (lokale Sitzung, `6a60665e`, CI grün). Der Befund ist zu;
+der Eintrag hier gilt dem **Weg dorthin**, weil er einen Fehler von mir
+enthält, den dieses Audit an anderen Stellen als Klasse führt.
+
+**Was ich geschrieben habe.** In der Vorgabe stand: „Exactly one site is open"
+und „Take these as established rather than re-deriving them". Beides war
+falsch. Drei weitere Routen — `ai/draft-policy`, `ai/explain-gap`,
+`ai/suggest-controls` — bauten denselben Fehler von Hand und schrieben den
+Variablentext dabei ab. Wer meiner Anweisung gefolgt wäre, hätte die eine
+Stelle geschlossen und drei Lecks stehen lassen.
+
+**Wie es dazu kam, gemessen.** Meine Erhebung war dieser Befehl:
+
+```
+grep -rnE "OLLAMA_BASE_URL|…" --include=*.ts packages/ai/src apps/web/src \
+  | grep -vE "process\.env|^\S+: *//|\* " | grep -vE "//" | head -10
+```
+
+Gegen denselben Baum (`664cd9d8`) nachgezählt:
+
+| Erhebung                                    | Zeilen |
+| ------------------------------------------- | ------ |
+| mein Befehl, wie ausgeführt                 | **10** |
+| derselbe Befehl **ohne** `head -10`         | 29     |
+| ohne den `//`-Filter, nur `process.env` weg | 36     |
+
+Ich habe **10 von 36** gesehen — 28 Prozent — und daraus eine Aussage über
+Vollständigkeit gemacht. Zwei Fehler, und der zweite ist der schwerere:
+
+1. `grep -vE "//"` wirft **jede** Zeile weg, die irgendwo `//` enthält — auch
+   eine Zeichenkette mit einer URL oder mit einem Kommentar am Zeilenende.
+2. `head -10` schneidet ab. Eine abgeschnittene Liste kann die Frage „gibt es
+   noch mehr?" **per Bauart** nicht beantworten. Genau diese Form — eine
+   Messung, die nicht zeigen kann, was sie zu zeigen behauptet — führt dieses
+   Register seit OP-092 als Befundklasse. Hier stand sie in meiner eigenen
+   Vorgabe.
+
+Dieselbe Wurzel hat der zweite Zahlendreher: ich schrieb „57 Aufrufstellen von
+`aiErrorResponse`". Es sind **29 in 26 Dateien**; die 57 zählten Definition,
+Importe und Kommentare mit, weil ich Zeilen gezählt habe, ohne zu trennen,
+was für Zeilen es sind.
+
+**Die Lehre, als Regel formuliert:** eine Vollständigkeitsaussage („genau
+eine Stelle", „nirgends sonst") darf nie aus einer Ausgabe mit `head`,
+`| wc -l` über gemischte Zeilenarten oder mit Ausschlussfiltern stammen, deren
+Wirkung nicht selbst geprüft wurde. Und eine Vorgabe an die andere Sitzung
+darf das Nachmessen nicht untersagen — Belege weitergeben ja, das Nachrechnen
+verbieten nein. Die lokale Sitzung hat trotz der Anweisung nachgesehen; dass
+der Befund vollständig geschlossen ist, verdankt sich dem.
+
+---
+
+**Und ein Befund aus derselben Arbeit, der eine eigene Klasse ist.** Der
+`@grc/ai`-Mock in `ai-assist-routes.test.ts` warf einen **selbst gebauten**
+Fehler mit dem kurzen Text „Es ist kein KI-Provider konfiguriert." — ohne die
+Variablennamen, die das Original trägt. Gegen diese Attrappe hätte **keine
+Formulierung eines Tests** den Defekt sehen können: die Attrappe war
+harmloser als das, was sie nachstellt.
+
+Das ist die Testseite derselben Sache, die dieses Audit an den Toren
+gefunden hat: eine Prüfung, die nicht auslösen **kann**. Ein Mock, der einen
+erfundenen Fehler wirft, macht jede Zusicherung darüber wertlos, ohne dass
+irgendwo etwas rot wird.
+
+Behoben, und zwar dauerhaft: der Mock wirft jetzt den echten Fehler aus
+`policy.ts`. Wer die Meldung später verbreitert, sieht einen roten Test statt
+sie auszuliefern.
