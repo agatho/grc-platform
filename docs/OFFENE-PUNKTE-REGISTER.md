@@ -2990,3 +2990,45 @@ Freigabe — sie gehört in die Triage, nicht in eine pauschale Abwertung.
 Das Abnahmekriterium des Eigentümers war **grüne Pipeline**. Zwei Checks sind
 rot: das Pilot Readiness Gate (bewusst, entschieden) und dieser hier — und für
 diesen gibt es keine Entscheidung.
+
+### Nachtrag 2026-09-10 — Welle 8s: ein Tor, das ab dem Folgetag nicht mehr bestehen konnte
+
+| OP     | Was                                                                                                                                                                                                                                                  | Beleg                                                           | Art | Stand   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | --- | ------- |
+| OP-258 | **Der Check „Generated API docs are reproducible" konnte ab dem Tag nach dem Commit gar nicht mehr grün werden.** Er erzeugt `docs/API_REFERENCE.md` neu und vergleicht per `git diff` — und der Generator schreibt das **Tagesdatum** in die Datei. | Lauf `34436532724`: `docs/API_REFERENCE.md \| 2 +-`, eine Zeile | Tor | behoben |
+
+Der ganze Unterschied:
+
+```
+-**Generated:** 2026-09-09 · **Source:** `apps/web/src/app/api/**/route.ts`
++**Generated:** 2026-09-10 · **Source:** `apps/web/src/app/api/**/route.ts`
+```
+
+**Das Gegenstück zu OP-092.** Dort war ein Tor, das nicht fallen konnte; hier
+eines, das nicht bestehen kann. Beide sagen nichts über den Code — und dieses
+hätte ab heute **täglich** einen roten Check erzeugt, den nach der dritten
+Woche niemand mehr liest. Genau so verliert eine Prüfliste ihre Bedeutung.
+
+**Die Abhilfe stand schon im Werkzeug.** `generate-api-reference.mjs` kennt den
+Fall und löst ihn richtig: `--check` erzeugt die Referenz aus dem Routenbaum
+und vergleicht sie mit der eingecheckten Datei, wobei genau die Datumszeile
+beidseitig entfernt wird (Zeile 271, Kommentar: „The generation date changes
+daily; compare everything else."). Der Workflow hat diese Prüfung nicht
+benutzt, sondern mit einem schlechteren `git diff` wiederholt — dieselbe
+Mechanik wie bei OP-092, wo der Schritt `--check` ebenfalls vorhanden war und
+durch eine eigene, kaputte Nachbildung ersetzt worden ist.
+
+**Reihenfolge ist hier der Kern, nicht Kosmetik.** `--check` läuft **vor** dem
+Neuerzeugen. Danach hätte er die eben geschriebene Datei mit sich selbst
+verglichen — grün, ohne Aussage. `docs/openapi.yaml` trägt keinen Wert aus der
+Uhr; dort bleibt der Vergleich mit der frisch erzeugten Datei die richtige
+Prüfung und wird weiter so gemacht.
+
+Gegenproben, beide gemessen:
+
+| Lauf                                                    | Ergebnis                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| heutiger Stand, unverändert                             | **Exit 0** — `docs/API_REFERENCE.md is up to date.` (`git diff` wäre rot) |
+| eine Handbearbeitung eingesetzt (`/api/v1` → `/api/v2`) | **Exit 1** — `docs/API_REFERENCE.md is out of date.`                      |
+
+Die Handbearbeitung ist danach zurückgenommen; der Arbeitsbaum ist sauber.

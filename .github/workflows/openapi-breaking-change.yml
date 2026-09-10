@@ -47,16 +47,45 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Regenerate the API surface from the route tree
-        run: |
-          node scripts/generate-openapi.mjs
-          node scripts/generate-api-reference.mjs
+      # ── [ARCTOS-FULL-2026-08-31 · OP-258] ──────────────────────────────
+      #
+      # Hier stand: beide Dateien neu erzeugen, dann `git diff`. Fuer
+      # `docs/openapi.yaml` ist das richtig. Fuer `docs/API_REFERENCE.md`
+      # konnte es ab dem Tag NACH dem Commit gar nicht mehr gruen werden, denn
+      # der Generator schreibt das Tagesdatum in die Datei:
+      #
+      #   -**Generated:** 2026-09-09 · **Source:** `apps/web/src/app/api/**`
+      #   +**Generated:** 2026-09-10 · **Source:** `apps/web/src/app/api/**`
+      #
+      # Das ist ein Tor, das nicht mehr bestehen KANN — das Gegenstueck zu
+      # OP-092, wo eines nicht fallen konnte. Beide sagen nichts ueber den
+      # Code; dieses hier haette ausserdem taeglich einen roten Check erzeugt,
+      # den irgendwann niemand mehr liest.
+      #
+      # `generate-api-reference.mjs` kennt den Fall laengst und loest ihn
+      # richtig: `--check` erzeugt die Referenz aus dem Routenbaum und
+      # vergleicht sie mit der eingecheckten Datei, wobei genau die
+      # Datumszeile beidseitig entfernt wird (Zeile 271). Der Schritt benutzt
+      # jetzt diese Pruefung, statt sie mit einem schlechteren `git diff` zu
+      # wiederholen.
+      #
+      # WICHTIG: `--check` laeuft VOR dem Neuerzeugen. Danach verglichen
+      # haette er die eben geschriebene Datei mit sich selbst — gruen ohne
+      # Aussage.
+      - name: Die erzeugte API-Referenz stimmt mit dem Routenbaum ueberein
+        run: node scripts/generate-api-reference.mjs --check
 
-      - name: Fail if the committed generated docs differ
+      - name: Regenerate the API surface from the route tree
+        run: node scripts/generate-openapi.mjs
+
+      # `docs/openapi.yaml` traegt kein Datum und keinen anderen Wert aus der
+      # Uhr — hier bleibt der Vergleich der eingecheckten Datei mit der frisch
+      # erzeugten die richtige Pruefung.
+      - name: Fail if the committed openapi.yaml differs
         run: |
-          if ! git diff --quiet -- docs/openapi.yaml docs/API_REFERENCE.md; then
-            echo "::error::docs/openapi.yaml and/or docs/API_REFERENCE.md are out of date or were edited by hand. Run 'node scripts/generate-openapi.mjs && node scripts/generate-api-reference.mjs' and commit the result."
-            git --no-pager diff --stat -- docs/openapi.yaml docs/API_REFERENCE.md
+          if ! git diff --quiet -- docs/openapi.yaml; then
+            echo "::error::docs/openapi.yaml is out of date or was edited by hand. Run 'node scripts/generate-openapi.mjs' and commit the result."
+            git --no-pager diff --stat -- docs/openapi.yaml
             exit 1
           fi
 

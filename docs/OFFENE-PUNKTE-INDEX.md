@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **257**
+Nummern: **258**
 
 ## offen (4)
 
@@ -196,7 +196,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (91)
+## behoben (92)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -291,3 +291,4 @@ _keine_
 | OP-254 | Die E2E-Datenbank hatte den Demo-Datensatz nie. Der Job fährt `src/seed.ts` — Organisationen, Benutzer, Rolle… | behoben                                                                                    | 2026-09-09 |
 | OP-255 | Die Required-Liste in ADR-016 führt `Build` — einen Job, der auf einer Pull Request gar nicht läuft. `if: git… | behoben (Liste korrigiert)                                                                 | 2026-09-09 |
 | OP-256 | Ein fehlgeschlagener Abruf der Modulkonfiguration liess jede gate-geschützte Seite behaupten, das Modul sei n… | behoben 2026-09-10                                                                         | 2026-09-10 |
+| OP-258 | Der Check „Generated API docs are reproducible" konnte ab dem Tag nach dem Commit gar nicht mehr grün werden.… | behoben                                                                                    | 2026-09-10 |
