@@ -1,7 +1,27 @@
 {
   "title": "ESG Advanced",
   "materiality": {
-    "title": "Double Materiality Assessment",
+    "title": "Double materiality assessment",
+    "subtitle": "CSRD-compliant materiality assessments by reporting year",
+    "newAssessment": "Start new assessment",
+    "dialogTitle": "New materiality assessment",
+    "reportingYear": "Reporting year",
+    "cancel": "Cancel",
+    "create": "Create",
+    "createFailed": "The assessment could not be created.",
+    "kpiTotal": "Assessments total",
+    "kpiCompleted": "Completed",
+    "kpiInProgress": "In progress",
+    "empty": "No materiality assessments yet.",
+    "emptyHint": "Click “Start new assessment” to begin.",
+    "cardYear": "Reporting year {year}",
+    "createdAt": "Created",
+    "finalizedAt": "Completed",
+    "status": {
+      "draft": "Draft",
+      "in_progress": "In progress",
+      "completed": "Completed"
+    },
     "assessment": "Assessment",
     "iro": "IRO Identification",
     "iroTypes": {
@@ -90,5 +110,39 @@
     "lksg": "LkSG Due Diligence",
     "dashboard": "Supply Chain ESG Dashboard",
     "riskMap": "Geographic Risk Map"
+  },
+  "climateScenarios": {
+    "title": "TCFD climate scenarios",
+    "subtitle": "Physical and transition risks per TCFD recommendations and ESRS E1",
+    "refresh": "Refresh",
+    "kpiTotal": "Scenarios total",
+    "kpiPhysical": "Physical risks",
+    "kpiTransition": "Transition risks",
+    "kpiHighRisk": "High risk (≥ 16)",
+    "pathwayCount": "{count, plural, one {# scenario} other {# scenarios}}",
+    "filterAll": "All",
+    "filterPhysical": "Physical",
+    "filterTransition": "Transition",
+    "empty": "No climate scenarios found. Run migration 0092.",
+    "colScenario": "Scenario",
+    "colType": "Type",
+    "colCategory": "Category",
+    "colPathway": "Pathway",
+    "colHorizon": "Time horizon",
+    "colRisk": "Risk (L×I)",
+    "colFinancial": "Financial impact",
+    "colStatus": "Status",
+    "horizon": {
+      "short": "Short term (< 2030)",
+      "medium": "Medium term (2030–2040)",
+      "long": "Long term (2040–2050+)"
+    },
+    "status": {
+      "draft": "Draft",
+      "identified": "Identified",
+      "assessed": "Assessed",
+      "mitigated": "Mitigated",
+      "closed": "Closed"
+    }
   }
 }

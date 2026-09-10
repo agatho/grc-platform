@@ -37,8 +37,66 @@ const BASELINE = path.join(__dirname, "route-rls-context-baseline.txt");
 
 const RE_AUTH = /\bwithAuth\b/;
 const RE_WEH = /\bwithErrorHandler\b/;
-const RE_RC = /\bwith(Read|Audit|OrgRead|UserRead)Context\b/;
+// [ARCTOS-FULL-2026-08-31 · OP-084] `runWithRequestContext` fehlte in dieser
+// Liste. Es ist der EXPLIZITE Rahmen aus packages/db/src/request-context.ts:
+// es reserviert eine eigene Verbindung, setzt die GUCs darauf und gibt sie
+// danach zurueck — genau das, was die drei Read-Helfer auch tun, nur ohne
+// deren Lesefilter. Eine Route, die ihn benutzt (der iCal-Feed tut es), war
+// damit als Befund gemeldet, obwohl sie den staerkeren der beiden Wege geht.
+const RE_RC =
+  /\b(with(Read|Audit|OrgRead|UserRead)Context|runWithRequestContext)\b/;
 const RE_DBREAD = /\bdb\.(select|query|insert|update|delete|execute)\b/;
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-084] Kommentare und Zeichenketten entfernen,
+ * BEVOR gemustert wird.
+ *
+ * Der Waechter las die Datei roh. Das ist bei diesem Regelwerk fatal, weil die
+ * Begruendungen in diesem Repository die verbotene Form ZITIEREN: der iCal-Feed
+ * erklaert in seinem Kopfkommentar, dass er „uses no `withAuth`" und wie das
+ * frühere `db.execute(...)` aussah — beide Muster trafen, keines davon ist
+ * Code. Ein Waechter, der Kommentare mitliest, bestraft die Dokumentation
+ * eines behobenen Defekts wie den Defekt selbst; ein Autor lernt daraus, den
+ * Grund nicht aufzuschreiben. Genau die Klasse Fehlanreiz, die dieser Audit
+ * an mehreren Toren gefunden hat.
+ *
+ * Bewusst ein Zeichenscanner und kein Parser: er muss nur wissen, wo Code
+ * aufhoert, nicht was der Code bedeutet. Template-Literale bleiben stehen —
+ * `db.execute(sql`…`)` steht IM Code und soll treffen.
+ */
+function stripCommentsAndStrings(src) {
+  let out = "";
+  let i = 0;
+  const n = src.length;
+  while (i < n) {
+    const c = src[i];
+    const c2 = src[i + 1];
+    if (c === "/" && c2 === "/") {
+      while (i < n && src[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && c2 === "*") {
+      i += 2;
+      while (i < n && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i += 2;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      const quote = c;
+      i++;
+      while (i < n && src[i] !== quote) {
+        if (src[i] === "\\") i++;
+        i++;
+      }
+      i++;
+      out += '""';
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
 
 /** Recursively collect every route.ts under API_DIR. */
 function walk(dir, out = []) {
@@ -55,7 +113,8 @@ function rel(fp) {
 }
 
 /** A route "offends" if it authenticates + reads db directly but opens no context frame. */
-function offends(src) {
+function offends(rawSrc) {
+  const src = stripCommentsAndStrings(rawSrc);
   return (
     RE_AUTH.test(src) &&
     RE_DBREAD.test(src) &&
@@ -70,7 +129,17 @@ const current = walk(API_DIR)
   .sort();
 
 if (process.argv.includes("--write-baseline")) {
-  fs.writeFileSync(BASELINE, current.join("\n") + "\n");
+  const header = fs.existsSync(BASELINE)
+    ? fs
+        .readFileSync(BASELINE, "utf8")
+        .split("\n")
+        .filter((l) => l.trimStart().startsWith("#"))
+        .join("\n") + "\n"
+    : "";
+  fs.writeFileSync(
+    BASELINE,
+    header + current.join("\n") + (current.length ? "\n" : ""),
+  );
   console.log(`baseline rewritten: ${current.length} entries`);
   process.exit(0);
 }
@@ -80,7 +149,10 @@ const baseline = fs.existsSync(BASELINE)
       .readFileSync(BASELINE, "utf8")
       .split("\n")
       .map((l) => l.trim())
-      .filter(Boolean)
+      // [ARCTOS-FULL-2026-08-31 · OP-084] Kommentarzeilen zulassen. Die Liste
+      // steht seit dieser Welle auf 0 Eintraegen; ohne Kopftext waere die Datei
+      // leer und niemand wuesste, dass die 0 eine Messung ist und kein Verlust.
+      .filter((l) => l && !l.startsWith("#"))
   : [];
 const baseSet = new Set(baseline);
 const curSet = new Set(current);

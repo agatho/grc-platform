@@ -4,6 +4,10 @@ import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { updateFindingSchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // #WAVE19-P1-01: schema lifted to packages/shared so the canonical
 // enum (with ISO-19011 values like major_nonconformity) stays in
@@ -12,7 +16,7 @@ import { updateFindingSchema } from "@grc/shared";
 // hadn't been updated when the canonical one gained new values.
 
 // GET /api/v1/findings/:id — Finding detail with evidence
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -86,8 +90,7 @@ export async function GET(
     );
 
   return Response.json({ data: { ...row, evidence: evidenceItems } });
-}
-
+});
 // PUT /api/v1/findings/:id — Update finding
 //
 // #RBAC-AUDIT-FIX: role list aligned with POST /findings. The post-Wave-25
@@ -95,7 +98,7 @@ export async function GET(
 // that process_owner and ciso could raise a finding (POST) but were
 // blocked from editing the one they raised (PUT). That mismatch made
 // the workflow unfinishable for either role.
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -209,8 +212,7 @@ export async function PUT(
   });
 
   return Response.json({ data: updated });
-}
-
+});
 // PATCH /api/v1/findings/:id — alias for PUT.
 //
 // #WAVE19-P1-01: Wave-18 QA expected PATCH semantics on findings (the
@@ -221,7 +223,7 @@ export async function PUT(
 export const PATCH = PUT;
 
 // DELETE /api/v1/findings/:id — Soft delete
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -280,4 +282,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { id, deleted: true } });
-}
+});

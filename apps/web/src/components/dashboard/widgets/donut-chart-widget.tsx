@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 import {
   PieChart,
@@ -58,6 +59,13 @@ export function DonutChartWidget({
   isLoading,
   error,
 }: WidgetProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Leerzustand („Keine Daten
+  // verfuegbar") stand in SIEBEN Kachelbausteinen wortgleich und fest
+  // verdrahtet im Quelltext — und zwar mit „verfuegbar" statt „verfügbar".
+  const t = useTranslations("dashboard.widget");
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Das Gebietsschema stand fest auf
+  // `de-DE`: der englische Leser sah „1.234,5" statt „1,234.5".
+  const locale = useLocale();
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -79,7 +87,7 @@ export function DonutChartWidget({
   if (chartData.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Keine Daten verfuegbar
+        {t("dataUnavailable")}
       </div>
     );
   }
@@ -106,7 +114,7 @@ export function DonutChartWidget({
             />
           ))}
         </Pie>
-        <Tooltip formatter={(value) => Number(value).toLocaleString("de-DE")} />
+        <Tooltip formatter={(value) => Number(value).toLocaleString(locale)} />
         {showLegend && (
           <Legend
             verticalAlign="bottom"

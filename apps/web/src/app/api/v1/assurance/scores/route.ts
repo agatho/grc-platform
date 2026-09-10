@@ -4,13 +4,16 @@ import {
   control,
   controlTest,
   evidence,
-  finding,
   moduleConfig,
 } from "@grc/db";
-import { eq, and, isNull, desc, sql, isNotNull } from "drizzle-orm";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { computeAssuranceScore, computeScoreTrend } from "@grc/shared";
 import type { AssuranceModuleScore, ModuleAssuranceData } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const ASSURANCE_MODULES = [
   "erm",
@@ -24,7 +27,7 @@ const ASSURANCE_MODULES = [
 ] as const;
 
 // GET /api/v1/assurance/scores — Current scores per module
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -84,8 +87,7 @@ export async function GET(req: Request) {
     overallScore,
     moduleCount: modules.length,
   });
-}
-
+});
 async function collectModuleData(
   orgId: string,
   _mod: string,
@@ -113,14 +115,6 @@ async function collectModuleData(
     })
     .from(evidence)
     .where(and(eq(evidence.orgId, orgId), isNull(evidence.deletedAt)));
-
-  // Finding stats (measured vs estimated proxy)
-  const [findingStats] = await db
-    .select({
-      totalFindings: sql<number>`COUNT(*)::integer`,
-    })
-    .from(finding)
-    .where(and(eq(finding.orgId, orgId), isNull(finding.deletedAt)));
 
   const totalControls = controlStats?.totalControls ?? 0;
   const testedControls = testedStats?.testedControls ?? 0;

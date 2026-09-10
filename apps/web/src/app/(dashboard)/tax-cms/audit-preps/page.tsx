@@ -1,28 +1,27 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxAuditPrep } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function TaxAuditPrepsPage() {
   const t = useTranslations("taxCms");
-  const [rows, setRows] = useState<TaxAuditPrep[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { formatCurrency: money } = useDateFormat();
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: rows = [], isPending: loading } = useQuery<TaxAuditPrep[]>({
+    queryKey: ["tax-cms", "audit-preps"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/tax-cms/audit-preps?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as TaxAuditPrep[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">
@@ -55,11 +54,9 @@ export default function TaxAuditPrepsPage() {
               <div className="flex gap-2">
                 {prep.totalExposure != null && (
                   <Badge variant="outline">
-                    {new Intl.NumberFormat("de-DE", {
-                      style: "currency",
-                      currency: "EUR",
+                    {money(prep.totalExposure, "EUR", {
                       maximumFractionDigits: 0,
-                    }).format(prep.totalExposure)}
+                    })}
                   </Badge>
                 )}
                 <Badge variant="outline">{prep.status}</Badge>

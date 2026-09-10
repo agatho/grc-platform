@@ -9,6 +9,7 @@ import {
 } from "@grc/db";
 import { eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface SovereigntyCheckerResult {
   rulesChecked: number;
@@ -80,11 +81,27 @@ export const processSovereigntyComplianceChecker = withCronInstrumentation(
               });
             }
           }
-        } catch {
+        } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            {
+              job: "sovereignty-compliance-checker",
+              scope: "Get region code for primary region",
+            },
+            err,
+          );
           result.errors++;
         }
       }
-    } catch {
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        {
+          job: "sovereignty-compliance-checker",
+          scope: "Get region code for primary region",
+        },
+        err,
+      );
       result.errors++;
     }
 

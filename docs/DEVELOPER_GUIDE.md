@@ -354,6 +354,36 @@ Coverage targets: backend > 80%, frontend > 60%.
 3. Define schedule (cron expression)
 4. Use `@grc/db` for database access (same schemas as web)
 
+### Run a production build locally — drei Dateien danach zurueckkopieren
+
+> **[Welle 5b · OP-053, 2026-09-05]** Diese Notiz stand bisher nur in einem
+> Prüfbericht (`docs/bpmn-engine/E2E-TRIAGE-4.md` §5/§7), und sie hat dort
+> zwei vollständige E2E-Läufe gekostet, bevor die Ursache klar war.
+
+`npm run build --workspace=@grc/web` erzeugt `.next/standalone` neu. Das
+Verzeichnis wird dabei **geleert** — alles, was jemand von Hand hineingelegt
+hat, ist weg. Drei Dinge müssen nach jedem Bau zurück, bevor der Standalone-
+Server startet:
+
+```bash
+cd apps/web
+cp -r .next/static  .next/standalone/apps/web/.next/
+cp -r public        .next/standalone/apps/web/
+cp    .env.local    .next/standalone/apps/web/       # ← der teure
+node .next/standalone/apps/web/server.js
+```
+
+Fehlt `.env.local`, startet der Server **ohne `AUTH_SECRET`**. Auth.js meldet
+dann `MissingSecret` und `UntrustedHost`, und **jede** Anmeldung landet auf
+`/api/auth/error` — ohne Hinweis darauf, dass eine Datei fehlt. Der Fehler
+sieht aus wie ein Auth-Defekt und ist ein Build-Artefakt.
+
+**Der Docker-Pfad ist nicht betroffen.** `Dockerfile` kopiert `static` und
+`public` selbst (Zeilen um 153) und bezieht die Konfiguration über
+Umgebungsvariablen aus `docker-compose*.yml` bzw. `env_file`, nicht über
+`.env.local`. Das Problem trifft nur den lokalen Standalone-Lauf — also genau
+den E2E-Pfad.
+
 ---
 
 ## Environment

@@ -403,6 +403,23 @@ VALUES (
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 5. SoA Entries (8 entries linking controls to ISO 27001 Annex A catalog entries)
+--
+-- [E2E-TRIAGE-2026-09-02] `catalog_entry_id` was eight hard-coded UUIDs
+-- (2c598ce1…, 52fc1e05…, …) that no seed ever creates: the ISO 27001 Annex A
+-- entries are inserted by `seed_catalog_iso27001_annex_a.sql` with
+-- `gen_random_uuid()`, and projected into `control_catalog_entry` by
+-- `fix_soa_annex_a.sql` keeping THAT generated id. The eight literals matched
+-- some long-gone database, so every one of these INSERTs failed on
+-- `soa_entry_catalog_entry_id_control_catalog_entry_id_fk`.
+--
+-- Because the whole file runs as one implicit transaction, that error also
+-- rolled back the 40 assets, the threats and the vulnerabilities above it —
+-- which is why `asset` was EMPTY on an environment whose owner had run
+-- `db:seed:demo`, and why the ISMS asset specs found no table rows.
+--
+-- The id is now resolved from the Annex A CODE, which is stable across every
+-- re-seed. A missing catalog leaves `catalog_entry_id` NULL rather than
+-- pointing at a wrong control.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- SoA-001: A.5.1 Informationssicherheitsrichtlinien → CTL-001
@@ -410,7 +427,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000441',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '2c598ce1-7b22-49ea-8d05-6b639e7a74e1', -- A.5.1 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.5.1' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.5.1
   'd0000000-0000-0000-0000-000000000201', -- CTL-001
   'applicable',
   'Zentrale Richtlinie für das gesamte ISMS erforderlich. Geltungsbereich umfasst alle Standorte und Tochtergesellschaften.',
@@ -425,7 +442,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000442',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '52fc1e05-0f7f-4615-b3af-f1c192135ef8', -- A.5.2 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.5.2' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.5.2
   'd0000000-0000-0000-0000-000000000202', -- CTL-002
   'applicable',
   'RBAC und Rezertifizierung sind Pflicht für alle IT-Systeme mit personenbezogenen oder geschäftskritischen Daten.',
@@ -440,7 +457,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000443',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '0abdffa8-fa92-44fc-bfec-6740ef8aa1de', -- A.5.5 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.5.5' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.5.5
   'd0000000-0000-0000-0000-000000000208', -- CTL-008
   'applicable',
   'Kontakt mit Aufsichtsbehoerden und Lieferanten-Sicherheitsbewertung erforderlich aufgrund regulatorischer Anforderungen.',
@@ -455,7 +472,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000444',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '675c001b-87d2-49ec-8cab-6e7964245804', -- A.5.4 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.5.4' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.5.4
   'd0000000-0000-0000-0000-000000000205', -- CTL-005
   'applicable',
   'Leitungsverantwortung für Incident-Management und ISMS-Betrieb ist regulatorische Pflicht (NIS2, DSGVO Art. 33/34).',
@@ -470,7 +487,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000445',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '27ca1e65-1555-4ea4-907a-1f577325b6f9', -- A.6.3 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.6.3' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.6.3
   'd0000000-0000-0000-0000-000000000207', -- CTL-007
   'applicable',
   'Schulungspflicht für alle Mitarbeiter gemäß ISO 27001 und BSI IT-Grundschutz. Besondere Anforderungen für privilegierte Nutzer.',
@@ -485,7 +502,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000446',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '18afef37-2dd9-45bc-b3d1-6e5dbe7cef26', -- A.8.1 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.8.1' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.8.1
   'd0000000-0000-0000-0000-000000000204', -- CTL-004
   'applicable',
   'Endgeraetesicherheit und Schwachstellen-Scanning sind Pflicht für alle Endpunkte und Server im Netzwerk.',
@@ -500,7 +517,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000447',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '89704cc9-eb01-4d68-8384-101474ee56a6', -- A.8.3 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.8.3' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.8.3
   'd0000000-0000-0000-0000-000000000203', -- CTL-003
   'applicable',
   'Zugangsbeschraenkung und Datensicherung sind essenziell für Business Continuity und Ransomware-Resilienz.',
@@ -515,7 +532,7 @@ INSERT INTO soa_entry (id, org_id, catalog_entry_id, control_id, applicability, 
 VALUES (
   'd0000000-0000-0000-0000-000000000448',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  '2f977c19-c854-4f7b-8b17-03da44345818', -- A.8.5 (control_catalog_entry)
+  (SELECT id FROM control_catalog_entry WHERE code = 'A.8.5' AND is_active = true ORDER BY catalog_id LIMIT 1), -- A.8.5
   'd0000000-0000-0000-0000-000000000206', -- CTL-006
   'applicable',
   'Sichere Authentifizierung und Verschlüsselung sind Pflicht gemäß DSGVO Art. 32 und BSI-Vorgaben.',

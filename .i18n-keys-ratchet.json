@@ -1,0 +1,327 @@
+{
+  "_comment": "Bestandsliste der i18n-Schluessel je Namespace und Sprache. Von scripts/i18n-key-inventory.mjs geprueft. Wachsen darf frei; jede Absenkung verlangt --reason und wird in _history festgehalten. Grund: eine symmetrische Loeschung in DE UND EN ist fuer audit-i18n-coverage.mjs unsichtbar und senkt --max-unused sogar.",
+  "_updatedAt": "2026-09-09",
+  "_history": [],
+  "namespaces": {
+    "abac": {
+      "de": 68,
+      "en": 68
+    },
+    "academy": {
+      "de": 46,
+      "en": 46
+    },
+    "admin": {
+      "de": 255,
+      "en": 255
+    },
+    "agents": {
+      "de": 43,
+      "en": 43
+    },
+    "ai-act": {
+      "de": 518,
+      "en": 518
+    },
+    "ai-assist": {
+      "de": 51,
+      "en": 51
+    },
+    "analytics": {
+      "de": 24,
+      "en": 24
+    },
+    "attack-paths": {
+      "de": 28,
+      "en": 28
+    },
+    "audit-advanced": {
+      "de": 114,
+      "en": 114
+    },
+    "automation": {
+      "de": 103,
+      "en": 103
+    },
+    "bcms-advanced": {
+      "de": 40,
+      "en": 40
+    },
+    "benchmarking": {
+      "de": 37,
+      "en": 37
+    },
+    "bi-reporting": {
+      "de": 57,
+      "en": 57
+    },
+    "billing": {
+      "de": 33,
+      "en": 33
+    },
+    "board-kpi": {
+      "de": 66,
+      "en": 66
+    },
+    "bpm-advanced": {
+      "de": 88,
+      "en": 88
+    },
+    "bpm-derived": {
+      "de": 57,
+      "en": 57
+    },
+    "bpm-overhaul": {
+      "de": 70,
+      "en": 70
+    },
+    "bpmn": {
+      "de": 37,
+      "en": 37
+    },
+    "cci": {
+      "de": 37,
+      "en": 37
+    },
+    "cert-wizard": {
+      "de": 43,
+      "en": 43
+    },
+    "certifications": {
+      "de": 50,
+      "en": 50
+    },
+    "common": {
+      "de": 4812,
+      "en": 4812
+    },
+    "community": {
+      "de": 37,
+      "en": 37
+    },
+    "connectors": {
+      "de": 88,
+      "en": 88
+    },
+    "control-testing": {
+      "de": 28,
+      "en": 28
+    },
+    "copilot": {
+      "de": 30,
+      "en": 30
+    },
+    "correlation": {
+      "de": 16,
+      "en": 16
+    },
+    "cve": {
+      "de": 58,
+      "en": 58
+    },
+    "dashboard": {
+      "de": 104,
+      "en": 104
+    },
+    "data-sovereignty": {
+      "de": 40,
+      "en": 40
+    },
+    "developer-portal": {
+      "de": 27,
+      "en": 27
+    },
+    "document-signature": {
+      "de": 67,
+      "en": 67
+    },
+    "dora": {
+      "de": 36,
+      "en": 36
+    },
+    "dpms-advanced": {
+      "de": 46,
+      "en": 46
+    },
+    "eam-ai": {
+      "de": 50,
+      "en": 50
+    },
+    "eam-catalog": {
+      "de": 53,
+      "en": 53
+    },
+    "eam-dashboards": {
+      "de": 98,
+      "en": 98
+    },
+    "eam-data-architecture": {
+      "de": 52,
+      "en": 52
+    },
+    "eam-governance": {
+      "de": 67,
+      "en": 67
+    },
+    "eam": {
+      "de": 106,
+      "en": 106
+    },
+    "erm-advanced": {
+      "de": 32,
+      "en": 32
+    },
+    "erm-evaluation": {
+      "de": 87,
+      "en": 87
+    },
+    "esg-advanced": {
+      "de": 116,
+      "en": 116
+    },
+    "evidence-review": {
+      "de": 32,
+      "en": 32
+    },
+    "extensions": {
+      "de": 15,
+      "en": 15
+    },
+    "fair": {
+      "de": 115,
+      "en": 115
+    },
+    "frameworks": {
+      "de": 61,
+      "en": 61
+    },
+    "graph": {
+      "de": 135,
+      "en": 135
+    },
+    "grc-ux": {
+      "de": 73,
+      "en": 73
+    },
+    "horizon-scanner": {
+      "de": 25,
+      "en": 25
+    },
+    "ics-advanced": {
+      "de": 36,
+      "en": 36
+    },
+    "identity": {
+      "de": 120,
+      "en": 120
+    },
+    "import": {
+      "de": 100,
+      "en": 100
+    },
+    "isms-intelligence": {
+      "de": 69,
+      "en": 69
+    },
+    "management-review": {
+      "de": 95,
+      "en": 95
+    },
+    "marketplace": {
+      "de": 43,
+      "en": 43
+    },
+    "mobile": {
+      "de": 14,
+      "en": 14
+    },
+    "nis2": {
+      "de": 40,
+      "en": 40
+    },
+    "onboarding": {
+      "de": 22,
+      "en": 22
+    },
+    "performance": {
+      "de": 21,
+      "en": 21
+    },
+    "platform-advanced": {
+      "de": 37,
+      "en": 37
+    },
+    "portals": {
+      "de": 33,
+      "en": 33
+    },
+    "predictions": {
+      "de": 15,
+      "en": 15
+    },
+    "predictive-risk": {
+      "de": 35,
+      "en": 35
+    },
+    "process-grc": {
+      "de": 99,
+      "en": 99
+    },
+    "process-map": {
+      "de": 32,
+      "en": 32
+    },
+    "process-portal": {
+      "de": 42,
+      "en": 42
+    },
+    "programme": {
+      "de": 213,
+      "en": 213
+    },
+    "propagation": {
+      "de": 25,
+      "en": 25
+    },
+    "regulatory": {
+      "de": 28,
+      "en": 28
+    },
+    "reporting": {
+      "de": 140,
+      "en": 140
+    },
+    "risk-quantification": {
+      "de": 40,
+      "en": 40
+    },
+    "role-dashboards": {
+      "de": 38,
+      "en": 38
+    },
+    "simulations": {
+      "de": 31,
+      "en": 31
+    },
+    "simulator": {
+      "de": 22,
+      "en": 22
+    },
+    "tax-cms": {
+      "de": 26,
+      "en": 26
+    },
+    "tprm-advanced": {
+      "de": 67,
+      "en": 67
+    },
+    "translations": {
+      "de": 66,
+      "en": 66
+    },
+    "whistleblowing-advanced": {
+      "de": 77,
+      "en": 77
+    }
+  }
+}

@@ -146,7 +146,7 @@ export default function ImprintPage() {
       <section className="space-y-4 rounded-md border border-slate-200 p-6 dark:border-slate-800">
         <h2 className="text-lg font-semibold">Haftungsausschluss</h2>
         <h3 className="text-sm font-semibold">Inhalt des Onlineangebots</h3>
-        <p className="text-sm text-slate-700 dark:text-slate-300">
+        <p className="text-sm text-slate-700 dark:text-slate-500">
           Die Inhalte unseres Online-Dienstes wurden mit größtmöglicher Sorgfalt
           erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität
           übernehmen wir jedoch keine Gewähr. Als Diensteanbieter sind wir gemäß
@@ -157,17 +157,17 @@ export default function ImprintPage() {
         </p>
 
         <h3 className="text-sm font-semibold">Verweise und Links</h3>
-        <p className="text-sm text-slate-700 dark:text-slate-300">
+        <p className="text-sm text-slate-700 dark:text-slate-500">
           Bei direkten oder indirekten Verweisen auf fremde Webseiten
-          („Hyperlinks"), die außerhalb unseres Verantwortungsbereiches liegen,
-          würde eine Haftungsverpflichtung ausschließlich in dem Fall in Kraft
-          treten, in dem wir von den Inhalten Kenntnis haben und es uns
+          („Hyperlinks&quot;), die außerhalb unseres Verantwortungsbereiches
+          liegen, würde eine Haftungsverpflichtung ausschließlich in dem Fall in
+          Kraft treten, in dem wir von den Inhalten Kenntnis haben und es uns
           technisch möglich und zumutbar wäre, die Nutzung im Falle
           rechtswidriger Inhalte zu verhindern.
         </p>
 
         <h3 className="text-sm font-semibold">Urheberrecht</h3>
-        <p className="text-sm text-slate-700 dark:text-slate-300">
+        <p className="text-sm text-slate-700 dark:text-slate-500">
           Die durch die Seitenbetreiber erstellten Inhalte und Werke unterliegen
           dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung,
           Verbreitung und jede Art der Verwertung außerhalb der Grenzen des

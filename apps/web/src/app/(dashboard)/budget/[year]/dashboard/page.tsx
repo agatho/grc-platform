@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -9,7 +11,6 @@ import {
   ArrowLeft,
   TrendingUp,
   TrendingDown,
-  AlertTriangle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,30 +49,38 @@ interface DashboardData {
 }
 
 export default function BudgetDashboardPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const params = useParams();
   const router = useRouter();
   const year = params.year as string;
 
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); das Jahr steht im Schluessel.
+  // Eine nicht-ok-Antwort liefert wie vorher `null`.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<DashboardData | null>({
+    queryKey: ["budget", year, "dashboard"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/budget/${year}/dashboard`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as DashboardData | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/budget/${year}/dashboard`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [year]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -106,9 +115,9 @@ export default function BudgetDashboardPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
@@ -151,13 +160,13 @@ export default function BudgetDashboardPage() {
                 <div className="flex justify-between text-xs text-gray-500 mt-2">
                   <span>
                     {t("dashboard.budget")}:{" "}
-                    {item.planned.toLocaleString("de-DE")}
+                    {item.planned.toLocaleString(numberLocale)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
                   <span>
                     {t("dashboard.actual")}:{" "}
-                    {item.actual.toLocaleString("de-DE")}
+                    {item.actual.toLocaleString(numberLocale)}
                   </span>
                 </div>
                 <Badge
@@ -211,7 +220,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.budget.toLocaleString("de-DE")}
+                          {point.budget.toLocaleString(numberLocale)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -224,7 +233,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.actual.toLocaleString("de-DE")}
+                          {point.actual.toLocaleString(numberLocale)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -237,7 +246,7 @@ export default function BudgetDashboardPage() {
                           />
                         </div>
                         <span className="text-[10px] text-gray-500 w-16 text-right">
-                          {point.forecast.toLocaleString("de-DE")}
+                          {point.forecast.toLocaleString(numberLocale)}
                         </span>
                       </div>
                     </div>
@@ -350,17 +359,17 @@ export default function BudgetDashboardPage() {
                       {t(`areas.${v.grcArea}`)}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">
-                      {v.planned.toLocaleString("de-DE")}
+                      {v.planned.toLocaleString(numberLocale)}
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700">
-                      {v.actual.toLocaleString("de-DE")}
+                      {v.actual.toLocaleString(numberLocale)}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <span
                         className={`font-medium ${v.variance > 0 ? "text-red-600" : "text-green-600"}`}
                       >
                         {v.variance > 0 ? "+" : ""}
-                        {v.variance.toLocaleString("de-DE")}
+                        {v.variance.toLocaleString(numberLocale)}
                       </span>
                     </td>
                   </tr>

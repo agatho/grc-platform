@@ -1,5 +1,32 @@
 /**
  * AI Provider Router (ADR-008)
+ *
+ * [ARCTOS-FULL-2026-08-31 / WP6 · S05-01, S05-02, S05-15]
+ *
+ * Zwei Verhaltensänderungen gegenüber dem Auditstand, die beide die
+ * Produktzusage „keine US-Cloud-Abhängigkeit" betreffen:
+ *
+ *  1. **`claude_cli` ist nicht mehr voreingestellt verfügbar.** Vorher:
+ *
+ *         if (process.env.CLAUDE_CLI_ENABLED !== "false") available.push("claude_cli");
+ *
+ *     Eine Installation ohne eine einzige AI-Variable meldete damit
+ *     `["claude_cli"]` und schickte jeden Prompt an Anthropic, ohne dass
+ *     der Betreiber je etwas entschieden hätte. Jetzt muss der CLI-Pfad
+ *     ausdrücklich freigeschaltet werden (`CLAUDE_CLI_ENABLED=true` oder
+ *     `CLAUDE_CLI_PATH`). Ohne AI-Konfiguration ist die Liste leer und
+ *     jede AI-Route scheitert sichtbar — das ist der gewollte Zustand.
+ *
+ *  2. **Kein stiller Cloud-Fallback für personenbezogene Daten.**
+ *     `containsPersonalData: true` ohne lokales Modell wirft jetzt einen
+ *     `AiPolicyViolationError`, statt auf den Cloud-Default auszuweichen.
+ *     Dieselbe Regel gilt in `aiCompleteWithFailover` — die Privacy-
+ *     Bedingung galt dort vorher nur für den ERSTEN Versuch (S05-15).
+ *
+ * Die org-bezogene Richtlinie (`packages/ai/src/policy.ts`) wird über das
+ * optionale Feld `policy` am Request durchgereicht. Aufrufer, die einen
+ * Org-Kontext haben, benutzen `aiCompleteGoverned()` aus `governed.ts`
+ * und bekommen sie automatisch.
  */
 
 import type {
@@ -7,6 +34,13 @@ import type {
   AiCompletionRequest,
   AiCompletionResponse,
 } from "./types";
+import {
+  AiPolicyViolationError,
+  DEFAULT_LOCAL_REGION,
+  providerPlacements,
+  selectProvider,
+  type OrgAiPolicySnapshot,
+} from "./policy";
 import { callClaudeCli } from "./providers/claude-cli";
 import { callClaudeApi } from "./providers/claude-api";
 import { callOpenAI } from "./providers/openai";
@@ -26,11 +60,40 @@ const PROVIDER_FNS: Record<
   lmstudio: callLmStudio,
 };
 
-/** Check which providers are configured/available. */
+export const ALL_PROVIDERS: AiProvider[] = [
+  "claude_cli",
+  "claude_api",
+  "openai",
+  "gemini",
+  "ollama",
+  "lmstudio",
+];
+
+export function isAiProvider(v: unknown): v is AiProvider {
+  return typeof v === "string" && (ALL_PROVIDERS as string[]).includes(v);
+}
+
+/** Region, in der die lokalen Modelle laufen (Default EU). */
+export function localModelRegion(): string {
+  return process.env.AI_LOCAL_REGION?.trim() || DEFAULT_LOCAL_REGION;
+}
+
+/**
+ * Welche Provider hat der Betreiber ausdrücklich freigeschaltet?
+ *
+ * „Ausdrücklich" ist hier das ganze Design: kein Provider ist ohne eine
+ * gesetzte Variable verfügbar — auch `claude_cli` nicht (S05-02).
+ */
 export function getAvailableProviders(): AiProvider[] {
   const available: AiProvider[] = [];
-  // Claude CLI — check if the binary exists (subscription-based, no API key)
-  if (process.env.CLAUDE_CLI_ENABLED !== "false") {
+
+  // Claude CLI — Abo-basiert, kein API-Key. Muss deshalb explizit
+  // eingeschaltet werden, sonst wäre "nichts konfiguriert" nicht von
+  // "Cloud-Default" zu unterscheiden.
+  if (
+    process.env.CLAUDE_CLI_ENABLED === "true" ||
+    (process.env.CLAUDE_CLI_PATH ?? "").trim().length > 0
+  ) {
     available.push("claude_cli");
   }
   if (process.env.ANTHROPIC_API_KEY) available.push("claude_api");
@@ -48,74 +111,92 @@ export function getAvailableProviders(): AiProvider[] {
   return available;
 }
 
-/** Get the default provider from env or first available. */
-export function getDefaultProvider(): AiProvider {
-  const explicit = process.env.AI_DEFAULT_PROVIDER as AiProvider | undefined;
-  if (explicit && PROVIDER_FNS[explicit]) return explicit;
-
-  const available = getAvailableProviders();
-  return available[0] ?? "claude_cli";
+/** Lokale (egress-freie) Provider unter den konfigurierten. */
+export function getLocalProviders(): AiProvider[] {
+  const placements = providerPlacements(localModelRegion());
+  return getAvailableProviders().filter((p) => placements[p].kind === "local");
 }
 
 /**
- * Route an AI completion request to the appropriate provider.
+ * Der vom Betreiber gewünschte Default — oder `null`.
  *
- * Privacy routing: if containsPersonalData is true AND Ollama is available,
- * the request is routed to Ollama regardless of other settings.
+ * Vorher endete diese Funktion mit `?? "claude_cli"`: sie lieferte auch
+ * dann einen Cloud-Provider, wenn keiner konfiguriert war. Jetzt ist
+ * „keiner" ein darstellbarer Zustand, den die Aufrufer behandeln müssen.
+ */
+export function getDefaultProvider(): AiProvider | null {
+  const explicit = process.env.AI_DEFAULT_PROVIDER as AiProvider | undefined;
+  const available = getAvailableProviders();
+  if (explicit && isAiProvider(explicit) && available.includes(explicit)) {
+    return explicit;
+  }
+  return available[0] ?? null;
+}
+
+/**
+ * Richtlinien-Schnappschuss für Aufrufer ohne Org-Kontext (Systemjobs,
+ * Health-Probe). Er wertet nur die Betreiber-Ebene aus; die Org-Ebene
+ * liefert `org-policy.ts`.
+ */
+export function operatorPolicySnapshot(): OrgAiPolicySnapshot {
+  return {
+    orgId: "",
+    egressMode: "any_configured",
+    allowedProviders: [],
+    allowUserProviderChoice: true,
+    defaultProvider: null,
+    dataResidency: null,
+    residencyRules: [],
+    localRegion: localModelRegion(),
+    modeSource: "operator_default",
+  };
+}
+
+/**
+ * Route an AI completion request to a provider.
+ *
+ * Reihenfolge der Entscheidung:
+ *   1. `request.policy` (Org-Richtlinie) — falls gesetzt, entscheidet
+ *      ausschließlich `selectProvider()`. Der Nutzerwunsch
+ *      (`request.provider`) wird dort gegen die Richtlinie geprüft.
+ *   2. Ohne Richtlinie: Betreiber-Ebene, aber weiterhin fail-closed für
+ *      `containsPersonalData`.
  */
 export async function aiComplete(
   request: AiCompletionRequest,
 ): Promise<AiCompletionResponse> {
-  let provider: AiProvider;
+  const policy = request.policy ?? operatorPolicySnapshot();
+  const selection = selectProvider({
+    policy,
+    configured: getAvailableProviders(),
+    operatorDefault: getDefaultProvider(),
+    requested: request.provider ?? null,
+    containsPersonalData: request.containsPersonalData,
+  });
 
-  if (request.containsPersonalData) {
-    // Privacy routing: prefer local models for personal data (GDPR Art. 5(1)(f))
-    const available = getAvailableProviders();
-    if (available.includes("ollama")) {
-      provider = "ollama";
-    } else if (available.includes("lmstudio")) {
-      provider = "lmstudio";
-    } else if (request.provider) {
-      provider = request.provider;
-    } else {
-      provider = getDefaultProvider();
-    }
-  } else if (request.provider) {
-    provider = request.provider;
-  } else {
-    provider = getDefaultProvider();
-  }
-
-  const fn = PROVIDER_FNS[provider];
+  const fn = PROVIDER_FNS[selection.provider];
   if (!fn) {
-    throw new Error(`Unknown AI provider: ${provider}`);
+    throw new Error(`Unknown AI provider: ${selection.provider}`);
   }
 
-  return fn(request);
+  // Der gewählte Provider wird explizit mitgegeben, damit die
+  // Provider-Implementierung und die Protokollierung dasselbe sehen.
+  return fn({ ...request, provider: selection.provider });
 }
 
 export { aiComplete as aiRouter };
+export { AiPolicyViolationError };
 
 // ──────────────────────────────────────────────────────────────────
 // Failover wrapper (Wave-19-N2)
 // ──────────────────────────────────────────────────────────────────
 //
-// `aiComplete` itself is single-provider — it picks one and returns
-// whatever that provider returns (or throws). Wave-19 spec asks for
-// multi-provider failover: if the primary provider times out or
-// errors, automatically retry against a fallback list. This wrapper
-// adds that without changing the existing aiComplete contract — old
-// callers keep their behavior; new callers opt in.
-//
-// Usage:
-//   await aiCompleteWithFailover(req, {
-//     fallbackProviders: ["openai", "gemini", "ollama"],
-//     timeoutMs: 30_000,
-//   })
-//
-// Audit-log: each attempt is reported via the optional `onAttempt`
-// callback so the route handler can persist per-attempt provider +
-// outcome to the AI audit table (separate from this package).
+// [WP6 · S05-15] `fallbackProviders` wurde vorher ungefiltert an die
+// Versuchsliste angehängt. Ein Timeout des lokalen Modells schickte
+// damit genau die Inhalte an OpenAI, die das `containsPersonalData`-Flag
+// schützen sollte. Die Liste läuft jetzt durch dieselbe
+// Richtlinienprüfung wie der Erstversuch; unzulässige Fallbacks werden
+// verworfen, nicht versucht.
 
 export interface FailoverOptions {
   /** Providers to try in order if the primary attempt fails. */
@@ -130,6 +211,8 @@ export interface FailoverOptions {
     error?: string;
     elapsedMs: number;
   }) => void | Promise<void>;
+  /** Fallbacks, die die Richtlinie ausschließt (nur zur Anzeige). */
+  onRejectedFallback?: (provider: AiProvider, reasons: string[]) => void;
 }
 
 export class AllProvidersFailedError extends Error {
@@ -171,31 +254,51 @@ export async function aiCompleteWithFailover(
 ): Promise<AiCompletionResponse> {
   const { fallbackProviders = [], timeoutMs, onAttempt } = options;
 
-  // Build the ordered attempt list: primary first, then fallbacks.
-  // Primary is whatever aiComplete would have picked — we resolve it
-  // explicitly so the audit trail records the actual provider name
-  // even if the request didn't specify one.
-  let primary: AiProvider;
-  if (request.containsPersonalData) {
-    const av = getAvailableProviders();
-    primary = av.includes("ollama")
-      ? "ollama"
-      : av.includes("lmstudio")
-        ? "lmstudio"
-        : (request.provider ?? getDefaultProvider());
-  } else {
-    primary = request.provider ?? getDefaultProvider();
+  const policy = request.policy ?? operatorPolicySnapshot();
+  const configured = getAvailableProviders();
+
+  // Der Erstversuch ist genau der, den aiComplete gewählt hätte —
+  // inklusive Richtlinienprüfung. Wirft, wenn nichts zulässig ist.
+  const primarySelection = selectProvider({
+    policy,
+    configured,
+    operatorDefault: getDefaultProvider(),
+    requested: request.provider ?? null,
+    containsPersonalData: request.containsPersonalData,
+  });
+  const primary = primarySelection.provider;
+
+  // Fallbacks müssen dieselbe Prüfung bestehen. `selectProvider` mit
+  // `requested` liefert entweder genau diesen Provider oder wirft — der
+  // Wurf wird hier in ein Verwerfen übersetzt.
+  const permittedFallbacks: AiProvider[] = [];
+  for (const candidate of fallbackProviders) {
+    if (candidate === primary) continue;
+    if (!configured.includes(candidate)) continue;
+    try {
+      selectProvider({
+        policy: { ...policy, allowUserProviderChoice: true },
+        configured,
+        requested: candidate,
+        containsPersonalData: request.containsPersonalData,
+      });
+      permittedFallbacks.push(candidate);
+    } catch (err) {
+      options.onRejectedFallback?.(
+        candidate,
+        err instanceof AiPolicyViolationError ? [err.message] : [String(err)],
+      );
+    }
   }
 
-  const order: AiProvider[] = [
-    primary,
-    ...fallbackProviders.filter((p) => p !== primary),
-  ];
-
+  const order: AiProvider[] = [primary, ...permittedFallbacks];
   const attempts: Array<{ provider: AiProvider; error: string }> = [];
 
-  for (let i = 0; i < order.length; i++) {
-    const provider = order[i];
+  // [OP-065] `order[i]` war `AiProvider | undefined` und wurde als Schlüssel
+  // in `PROVIDER_FNS` benutzt sowie in jeden `attempts`-Eintrag geschrieben.
+  // `entries()` reicht Rang und Anbieter gemeinsam heraus und kennt kein
+  // `undefined` — der Zugriff verschwindet, statt abgesichert zu werden.
+  for (const [i, provider] of order.entries()) {
     const fn = PROVIDER_FNS[provider];
     if (!fn) {
       attempts.push({ provider, error: "unknown_provider" });

@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 interface MetroStationProps {
   processName: string;
   health: string;

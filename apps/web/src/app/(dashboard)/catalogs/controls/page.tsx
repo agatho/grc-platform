@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   Search,
   ChevronRight,
@@ -20,6 +22,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface ControlCatalog {
   id: string;
@@ -49,6 +53,25 @@ interface ControlCatalogEntry {
   isActive: boolean;
 }
 
+interface EntityOption {
+  id: string;
+  title: string;
+}
+
+interface CatalogAssignment {
+  id: string;
+  entityType: string;
+  entityId: string;
+}
+
+const ENTITY_ENDPOINTS: Record<string, string> = {
+  risk: "/api/v1/risks",
+  control: "/api/v1/controls",
+  asset: "/api/v1/assets",
+  process: "/api/v1/processes",
+  finding: "/api/v1/findings",
+};
+
 export default function ControlCatalogBrowserPage() {
   const t = useTranslations("catalogs");
 
@@ -56,7 +79,6 @@ export default function ControlCatalogBrowserPage() {
   const [selectedCatalog, setSelectedCatalog] = useState<ControlCatalog | null>(
     null,
   );
-  const [entries, setEntries] = useState<ControlCatalogEntry[]>([]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [childrenMap, setChildrenMap] = useState<
     Record<string, ControlCatalogEntry[]>
@@ -65,7 +87,6 @@ export default function ControlCatalogBrowserPage() {
     useState<ControlCatalogEntry | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const [loadingEntries, setLoadingEntries] = useState(false);
 
   // Catalog activation state
   const [activating, setActivating] = useState(false);
@@ -76,14 +97,7 @@ export default function ControlCatalogBrowserPage() {
   // Assignment state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignEntityType, setAssignEntityType] = useState("control");
-  const [entityOptions, setEntityOptions] = useState<
-    Array<{ id: string; title: string }>
-  >([]);
   const [entitySearch, setEntitySearch] = useState("");
-  const [loadingEntities, setLoadingEntities] = useState(false);
-  const [assignments, setAssignments] = useState<
-    Array<{ id: string; entityType: string; entityId: string }>
-  >([]);
   const [assigning, setAssigning] = useState(false);
 
   const ENTITY_TYPES = [
@@ -94,41 +108,71 @@ export default function ControlCatalogBrowserPage() {
     { value: "finding", label: "Finding" },
   ];
 
-  const loadEntities = useCallback(async (type: string, q: string) => {
-    setLoadingEntities(true);
-    const endpoints: Record<string, string> = {
-      risk: "/api/v1/risks",
-      control: "/api/v1/controls",
-      asset: "/api/v1/assets",
-      process: "/api/v1/processes",
-      finding: "/api/v1/findings",
-    };
-    const ep = endpoints[type];
-    if (!ep) {
-      setLoadingEntities(false);
-      return;
-    }
-    const params = new URLSearchParams({ limit: "50" });
-    if (q) params.set("search", q);
-    const res = await fetch(`${ep}?${params}`);
-    if (res.ok) {
+  // [OP-245 · Gestalt A] Die Kandidatenliste des Zuweisungsdialogs kam aus
+  // einem Effekt, der bei offenem Dialog `loadEntities` rief und Ergebnis
+  // samt Ladezustand synchron zurückschrieb. Jetzt eine Abfrage über
+  // `@tanstack/react-query` (Muster aus Welle 7b, `catalogs/objects/page.tsx`):
+  // `enabled` ersetzt das `if (assignDialogOpen)`, Typ und Suchbegriff stehen
+  // im Schlüssel. Eine nicht-ok-Antwort liefert wie vorher keine Einträge.
+  const { data: entityOptions = [], isPending: entitiesPending } = useQuery<
+    EntityOption[]
+  >({
+    queryKey: [
+      "catalogs",
+      "assignable-entities",
+      assignEntityType,
+      entitySearch,
+    ],
+    enabled: assignDialogOpen,
+    queryFn: async () => {
+      const ep = ENTITY_ENDPOINTS[assignEntityType];
+      if (!ep) return [];
+      const params = new URLSearchParams({ limit: "50" });
+      if (entitySearch) params.set("search", entitySearch);
+      const res = await fetch(`${ep}?${params}`);
+      if (!res.ok) return [];
       const json = await res.json();
-      setEntityOptions(
-        (json.data ?? []).map((e: any) => ({
-          id: e.id,
-          title: e.title ?? e.name ?? e.id,
-        })),
-      );
-    }
-    setLoadingEntities(false);
-  }, []);
+      return (json.data ?? []).map((e: UnvalidatedJson) => ({
+        id: e.id,
+        title: e.title ?? e.name ?? e.id,
+      })) as EntityOption[];
+    },
+  });
+  // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht der
+  // Dialogzustand auch in der Ableitung des Ladezustands.
+  const loadingEntities = assignDialogOpen && entitiesPending;
 
-  const loadAssignments = useCallback(async (entryId: string) => {
-    const res = await fetch(
-      `/api/v1/catalog-references?catalogEntryId=${entryId}`,
-    );
-    if (res.ok) setAssignments((await res.json()).data ?? []);
-  }, []);
+  // [OP-245 · Gestalt A] Bestehende Zuweisungen des gewählten Eintrags —
+  // vorher `if (selectedEntry) loadAssignments(id) else setAssignments([])`
+  // im Effekt. Ohne gewählten Eintrag ist die Abfrage abgeschaltet und die
+  // Liste leer; `loadAssignments` bleibt als dünne Hülle für die Aufrufer
+  // nach Zuweisen und Entfernen.
+  const selectedEntryId = selectedEntry?.id ?? null;
+  const { data: assignments = [], refetch: refetchAssignments } = useQuery<
+    CatalogAssignment[]
+  >({
+    queryKey: ["catalogs", "assignments", selectedEntryId],
+    enabled: selectedEntryId !== null,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/catalog-references?catalogEntryId=${selectedEntryId}`,
+      );
+      // [ARCTOS-FULL-2026-08-31 · OP-249] Eine abgelehnte Anfrage ergab eine
+      // leere Liste ohne jeden Hinweis — „die Abfrage ist gescheitert" sah aus
+      // wie „dieser Eintrag hat keine Zuweisungen". Die Liste bleibt leer (die
+      // Zuweisungen des vorigen Eintrags dürfen nicht stehenbleiben), der
+      // Fehlschlag wird zusätzlich gemeldet.
+      if (!res.ok) {
+        toast.error(t("assign.loadError"));
+        return [];
+      }
+      return ((await res.json()).data ?? []) as CatalogAssignment[];
+    },
+  });
+
+  const loadAssignments = useCallback(async () => {
+    await refetchAssignments();
+  }, [refetchAssignments]);
 
   const assignEntry = useCallback(
     async (entityType: string, entityId: string) => {
@@ -143,7 +187,7 @@ export default function ControlCatalogBrowserPage() {
           entityId,
         }),
       });
-      await loadAssignments(selectedEntry.id);
+      await loadAssignments();
       setAssigning(false);
     },
     [selectedEntry, loadAssignments],
@@ -154,19 +198,10 @@ export default function ControlCatalogBrowserPage() {
       await fetch(`/api/v1/catalog-references?id=${refId}`, {
         method: "DELETE",
       });
-      if (selectedEntry) await loadAssignments(selectedEntry.id);
+      if (selectedEntry) await loadAssignments();
     },
     [selectedEntry, loadAssignments],
   );
-
-  useEffect(() => {
-    if (selectedEntry) loadAssignments(selectedEntry.id);
-    else setAssignments([]);
-  }, [selectedEntry, loadAssignments]);
-
-  useEffect(() => {
-    if (assignDialogOpen) loadEntities(assignEntityType, entitySearch);
-  }, [assignDialogOpen, assignEntityType, entitySearch, loadEntities]);
 
   useEffect(() => {
     (async () => {
@@ -190,7 +225,7 @@ export default function ControlCatalogBrowserPage() {
           if (activeRes.ok) {
             const activeJson = await activeRes.json();
             const activeIds = new Set(
-              (activeJson.data ?? []).map((a: any) => a.catalogId),
+              (activeJson.data ?? []).map((a: UnvalidatedJson) => a.catalogId),
             );
             setActivatedCatalogs(activeIds as Set<string>);
           }
@@ -203,36 +238,61 @@ export default function ControlCatalogBrowserPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    if (!selectedCatalog) return;
-    setLoadingEntries(true);
+  // [OP-245 · Gestalt A] Wurzeleinträge des gewählten Katalogs (mit
+  // Suchbegriff) — vorher ein Effekt, der `loadingEntries` synchron setzte und
+  // dann abrief. Katalog-Id und Suchbegriff stehen im Schlüssel; die
+  // OP-050-Fehlerbehandlung (Konsole + leere Liste) bleibt unverändert. Das
+  // Zurücksetzen von Aufklapp-, Kinder- und Auswahlzustand, das derselbe
+  // Effekt bei Katalog- oder Suchwechsel erledigte, geschieht jetzt in den
+  // Ereignisbehandlern, die den Wechsel auslösen (`resetBrowserState`).
+  const selectedCatalogId = selectedCatalog?.id ?? null;
+  const { data: entries = [], isPending: entriesPending } = useQuery<
+    ControlCatalogEntry[]
+  >({
+    queryKey: ["catalogs", "controls", selectedCatalogId, "entries", search],
+    enabled: selectedCatalogId !== null,
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] Hier fehlte jede Statusprüfung:
+      // `json.data ?? []` macht aus dem 422-problem+json (das kein `data` hat)
+      // eine leere Liste. Ein Kontrollkatalog ohne Einträge sieht aus wie ein
+      // leerer Katalog, nicht wie eine abgelehnte Anfrage — und die
+      // Wurzelebene eines ISO-27002-Katalogs hat mehr als 100 Einträge, also
+      // wird geblättert statt gekappt.
+      const params: Record<string, string> = { parentEntryId: "root" };
+      if (search) params.search = search;
+      try {
+        return await fetchAllPages<ControlCatalogEntry>(
+          `/api/v1/catalogs/controls/${selectedCatalogId}/entries`,
+          { params },
+        );
+      } catch (err) {
+        console.error("catalogs/controls: Einträge nicht geladen", err);
+        return [];
+      }
+    },
+  });
+  const loadingEntries = selectedCatalogId !== null && entriesPending;
+
+  const resetBrowserState = useCallback(() => {
     setExpandedIds(new Set());
     setChildrenMap({});
     setSelectedEntry(null);
-
-    (async () => {
-      const params = new URLSearchParams({
-        parentEntryId: "root",
-        limit: "200",
-      });
-      if (search) params.set("search", search);
-      const res = await fetch(
-        `/api/v1/catalogs/controls/${selectedCatalog.id}/entries?${params}`,
-      );
-      const json = await res.json();
-      setEntries(json.data ?? []);
-      setLoadingEntries(false);
-    })();
-  }, [selectedCatalog, search]);
+  }, []);
 
   const loadChildren = useCallback(
     async (entryId: string) => {
       if (!selectedCatalog || childrenMap[entryId]) return;
-      const res = await fetch(
-        `/api/v1/catalogs/controls/${selectedCatalog.id}/entries?parentEntryId=${entryId}&limit=200`,
-      );
-      const json = await res.json();
-      setChildrenMap((prev) => ({ ...prev, [entryId]: json.data ?? [] }));
+      // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Unterebene: ein
+      // aufgeklappter Knoten ohne Kinder ist eine Aussage über den Katalog.
+      try {
+        const children = await fetchAllPages<ControlCatalogEntry>(
+          `/api/v1/catalogs/controls/${selectedCatalog.id}/entries`,
+          { params: { parentEntryId: entryId } },
+        );
+        setChildrenMap((prev) => ({ ...prev, [entryId]: children }));
+      } catch (err) {
+        console.error("catalogs/controls: Unterebene nicht geladen", err);
+      }
     },
     [selectedCatalog, childrenMap],
   );
@@ -355,7 +415,10 @@ export default function ControlCatalogBrowserPage() {
           value={selectedCatalog?.id ?? ""}
           onChange={(e) => {
             const cat = catalogs.find((c) => c.id === e.target.value);
-            if (cat) setSelectedCatalog(cat);
+            if (cat) {
+              resetBrowserState();
+              setSelectedCatalog(cat);
+            }
           }}
         >
           {catalogs.map((c) => (
@@ -397,12 +460,18 @@ export default function ControlCatalogBrowserPage() {
             type="text"
             placeholder={t("searchPlaceholder")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              resetBrowserState();
+              setSearch(e.target.value);
+            }}
             className="w-full rounded-md border border-gray-300 pl-9 pr-8 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           {search && (
             <button
-              onClick={() => setSearch("")}
+              onClick={() => {
+                resetBrowserState();
+                setSearch("");
+              }}
               className="absolute right-2 top-1/2 -translate-y-1/2"
             >
               <X className="h-4 w-4 text-gray-400" />

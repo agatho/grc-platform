@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Plus, Loader2, Box } from "lucide-react";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -13,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CatalogObjectType } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { useModalDialog } from "@/components/ui/modal-shell";
 
 interface ObjectRow {
   id: string;
@@ -43,11 +45,14 @@ const objectTypeColors: Record<string, string> = {
 export default function ObjectCatalogPage() {
   const t = useTranslations("catalogs");
   const { formatDate } = useDateFormat();
-  const router = useRouter();
-  const [objects, setObjects] = useState<ObjectRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  // [WP12 · S14-13] Escape, focus trap and focus restoration for the
+  // hand-built create dialog below.
+  const createDialog = useModalDialog(showCreateDialog, () =>
+    setShowCreateDialog(false),
+  );
   const [creating, setCreating] = useState(false);
   const [newObject, setNewObject] = useState({
     name: "",
@@ -55,19 +60,36 @@ export default function ObjectCatalogPage() {
     description: "",
   });
 
-  useEffect(() => {
-    fetchObjects();
-  }, [typeFilter]);
+  // [Welle 7a · OP-080] Zwei Befunde standen an dieser Stelle: der Effekt lag
+  // VOR der Erklaerung von `fetchObjects` und rief eine Bindung auf, die zum
+  // Zeitpunkt des Renderns noch in der zeitlichen Totzone lag
+  // (`react-hooks/immutability`), und `fetchObjects` fehlte in seinen
+  // Abhaengigkeiten (`react-hooks/exhaustive-deps`).
+  //
+  // [Welle 7b · OP-080, Gestalt A] Der dritte Befund an derselben Stelle wurde
+  // erst sichtbar, NACHDEM der `immutability`-Befund behoben war — vorher brach
+  // der Compiler an ihm ab (siehe UMSETZUNG-WELLE-7A.md §5.1). Es war
+  // `set-state-in-effect`: ein Abruf beim Einhaengen, der Ergebnis und
+  // Ladezustand synchron im Effekt zurueckschrieb. Beides kommt jetzt aus
+  // `@tanstack/react-query`; Effekt und gespiegelter Zustand entfallen.
+  const {
+    data: objects = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ObjectRow[]>({
+    queryKey: ["catalogs", "objects", typeFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "100" });
+      if (typeFilter) params.set("objectType", typeFilter);
+      const res = await fetch(`/api/v1/catalogs/objects?${params}`);
+      const json = await res.json();
+      return (json.data ?? []) as ObjectRow[];
+    },
+  });
 
-  const fetchObjects = async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ limit: "100" });
-    if (typeFilter) params.set("objectType", typeFilter);
-    const res = await fetch(`/api/v1/catalogs/objects?${params}`);
-    const json = await res.json();
-    setObjects(json.data ?? []);
-    setLoading(false);
-  };
+  const fetchObjects = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     if (!newObject.name.trim()) return;
@@ -158,7 +180,13 @@ export default function ObjectCatalogPage() {
         cell: ({ row }) => formatDate(row.original.updatedAt),
       },
     ],
-    [t],
+    // [Welle 7a · OP-080] `formatDate` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, formatDate],
   );
 
   if (loading && objects.length === 0) {
@@ -213,8 +241,17 @@ export default function ObjectCatalogPage() {
       {/* Create Dialog */}
       {showCreateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold">{t("createObject")}</h2>
+          {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-13] Hand-built dialog: no
+              role="dialog", no aria-modal, no aria-labelledby, no Escape, no
+              focus return, background stayed tabbable.
+              See components/ui/modal-shell.tsx. */}
+          <div
+            {...createDialog.dialogProps}
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl focus:outline-none"
+          >
+            <h2 id={createDialog.titleId} className="text-lg font-semibold">
+              {t("createObject")}
+            </h2>
             <div className="mt-4 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-700">

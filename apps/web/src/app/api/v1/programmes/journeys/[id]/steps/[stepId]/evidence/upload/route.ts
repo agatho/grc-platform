@@ -24,6 +24,10 @@ import { eq, and, isNull } from "drizzle-orm";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { randomUUID, createHash } from "crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const UPLOAD_DIR =
   process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
@@ -48,7 +52,7 @@ const ALLOWED_MIMES = new Set([
   "text/xml",
 ]);
 
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string; stepId: string }> },
 ) {
@@ -213,4 +217,4 @@ export async function POST(
     },
     { status: 201 },
   );
-}
+});

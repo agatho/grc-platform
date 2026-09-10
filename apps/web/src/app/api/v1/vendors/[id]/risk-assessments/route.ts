@@ -3,6 +3,10 @@ import { createVendorRiskAssessmentSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/vendors/:id/risk-assessments — Create risk assessment
 //
@@ -10,7 +14,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // They own the vendor lifecycle; locking them out of risk-assessment
 // creation forced them to delegate to risk_manager for every routine
 // vendor review.
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -92,10 +96,9 @@ export async function POST(
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/vendors/:id/risk-assessments — List assessments
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -119,4 +122,4 @@ export async function GET(
     .orderBy(desc(vendorRiskAssessment.assessmentDate));
 
   return Response.json({ data: rows });
-}
+});

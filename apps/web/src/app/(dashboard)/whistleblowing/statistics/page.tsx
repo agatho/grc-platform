@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -43,25 +44,27 @@ const RESOLUTION_LABELS: Record<string, { de: string; en: string }> = {
 
 function StatisticsInner() {
   const t = useTranslations("whistleblowing");
-  const [data, setData] = useState<WbStatistics | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (die Seite zeigt dann „keine Statistik").
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<WbStatistics | null>({
+    queryKey: ["whistleblowing", "statistics"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/whistleblowing/statistics");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as WbStatistics | null;
+    },
+  });
 
   const fetchStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/whistleblowing/statistics");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (

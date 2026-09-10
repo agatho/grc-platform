@@ -111,6 +111,54 @@ export function validateTiaQuality(snapshot: TiaSnapshot): Blocker[] {
 // EU-Adequacy-Decisions (Stand 2026-04): Liste ist in Realitaet dynamisch
 // (abrufbar via Commission-Feed), hier statisch fuer offline-safe Check.
 
+// EU- und EWR-Staaten (EU-27 + IS/LI/NO). Die eine gueltige Deklaration.
+//
+// [Welle 8c] Sie lag vorher an ZWEI Stellen: als lokale Kopie in
+// `apps/web/src/app/api/v1/tprm/sub-processors/route.ts` (OP-201) und als
+// Array in `types/eam-advanced.ts` — letzteres seit e40ab5a5 und ohne einen
+// Verwender. Beim Zusammenfuehren ist hier zunaechst eine DRITTE entstanden,
+// weil nur die Kopie in der Route gesucht wurde; das ist in derselben Welle
+// korrigiert und in `types/eam-advanced.ts` ausfuehrlich protokolliert.
+//
+// Sie gehoert hierher, neben die Angemessenheitsliste: beide beantworten
+// dieselbe Frage und muessen zusammen gepflegt werden. Dass es genau eine
+// Deklaration je Name bleibt, prueft
+// `packages/shared/tests/dpms-tia-retention.test.ts`.
+export const EU_EEA_COUNTRIES = new Set([
+  // EU-27
+  "AT",
+  "BE",
+  "BG",
+  "CY",
+  "CZ",
+  "DE",
+  "DK",
+  "EE",
+  "ES",
+  "FI",
+  "FR",
+  "GR",
+  "HR",
+  "HU",
+  "IE",
+  "IT",
+  "LT",
+  "LU",
+  "LV",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SE",
+  "SI",
+  "SK",
+  // EWR ohne EU
+  "IS",
+  "LI",
+  "NO",
+]);
+
 export const ADEQUACY_COUNTRIES = new Set([
   "AD", // Andorra
   "AR", // Argentina (partial)

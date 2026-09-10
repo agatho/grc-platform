@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -38,6 +39,15 @@ const STATUS_COLORS: Record<string, string> = {
   terminated: "bg-gray-200 text-gray-500",
 };
 
+interface VendorDetailBundle {
+  vendor: Record<string, unknown> | null;
+  contacts: Array<Record<string, unknown>>;
+  ddRecords: Array<Record<string, unknown>>;
+  assessments: Array<Record<string, unknown>>;
+  lksgRecords: Array<Record<string, unknown>>;
+  contracts: Array<Record<string, unknown>>;
+}
+
 export default function VendorDetailPage() {
   return (
     <ModuleGate moduleKey="tprm">
@@ -52,26 +62,21 @@ function VendorDetailInner() {
   const { id } = useParams<{ id: string }>();
   const { formatDate } = useDateFormat();
 
-  const [vendor, setVendor] = useState<Record<string, unknown> | null>(null);
-  const [contacts, setContacts] = useState<Array<Record<string, unknown>>>([]);
-  const [ddRecords, setDdRecords] = useState<Array<Record<string, unknown>>>(
-    [],
-  );
-  const [assessments, setAssessments] = useState<
-    Array<Record<string, unknown>>
-  >([]);
-  const [lksgRecords, setLksgRecords] = useState<
-    Array<Record<string, unknown>>
-  >([]);
-  const [contracts, setContracts] = useState<Array<Record<string, unknown>>>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die sechs Abrufe liefen immer
+  // zusammen — daher eine Abfrage mit einem Objekt. Ein Netzfehler wird nicht
+  // mehr verschluckt, sondern landet im Fehlerzustand der Abfrage; die Seite
+  // zeigt dann wie vorher „nicht gefunden".
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<VendorDetailBundle>({
+    queryKey: ["vendors", id, "detail"],
+    queryFn: async () => {
       const [vendorRes, contactRes, ddRes, assessRes, contractRes] =
         await Promise.all([
           fetch(`/api/v1/vendors/${id}`),
@@ -81,33 +86,47 @@ function VendorDetailInner() {
           fetch(`/api/v1/contracts?vendorId=${id}&limit=50`),
         ]);
 
+      const result: VendorDetailBundle = {
+        vendor: null,
+        contacts: [],
+        ddRecords: [],
+        assessments: [],
+        lksgRecords: [],
+        contracts: [],
+      };
+
       if (vendorRes.ok) {
         const json = await vendorRes.json();
-        setVendor(json.data);
+        result.vendor = json.data ?? null;
 
         // Fetch LkSG if relevant
         if (json.data?.isLksgRelevant) {
           const lksgRes = await fetch(`/api/v1/lksg/${id}/assessment`);
           if (lksgRes.ok) {
             const lksgJson = await lksgRes.json();
-            setLksgRecords(lksgJson.data ?? []);
+            result.lksgRecords = lksgJson.data ?? [];
           }
         }
       }
-      if (contactRes.ok) setContacts((await contactRes.json()).data ?? []);
-      if (ddRes.ok) setDdRecords((await ddRes.json()).data ?? []);
-      if (assessRes.ok) setAssessments((await assessRes.json()).data ?? []);
-      if (contractRes.ok) setContracts((await contractRes.json()).data ?? []);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      if (contactRes.ok) result.contacts = (await contactRes.json()).data ?? [];
+      if (ddRes.ok) result.ddRecords = (await ddRes.json()).data ?? [];
+      if (assessRes.ok)
+        result.assessments = (await assessRes.json()).data ?? [];
+      if (contractRes.ok)
+        result.contracts = (await contractRes.json()).data ?? [];
+      return result;
+    },
+  });
+  const vendor = bundle?.vendor ?? null;
+  const contacts = bundle?.contacts ?? [];
+  const ddRecords = bundle?.ddRecords ?? [];
+  const assessments = bundle?.assessments ?? [];
+  const lksgRecords = bundle?.lksgRecords ?? [];
+  const contracts = bundle?.contracts ?? [];
 
-  useEffect(() => {
-    void fetchAll();
-  }, [fetchAll]);
+  const fetchAll = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSendDD = useCallback(async () => {
     try {

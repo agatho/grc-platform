@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
   Plus,
   Loader2,
@@ -14,7 +15,6 @@ import {
   Download,
   RefreshCcw,
   AlertTriangle,
-  ChevronDown,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -118,7 +118,7 @@ const STATUSES: RiskStatus[] = [
   "closed",
 ];
 
-const STRATEGIES: TreatmentStrategy[] = [
+const _STRATEGIES: TreatmentStrategy[] = [
   "mitigate",
   "accept",
   "transfer",
@@ -168,6 +168,9 @@ function reviewDateClass(dateStr?: string): string {
 // Main Page
 // ---------------------------------------------------------------------------
 
+// [OP-245] Stabile leere Liste (react-hooks/exhaustive-deps), s. isms/cve.
+const EMPTY_RISKS: RiskRow[] = [];
+
 export default function RisksPage() {
   return (
     <ModuleGate moduleKey="erm">
@@ -181,14 +184,11 @@ function RisksPageInner() {
   const t = useTranslations("risk");
   const tActions = useTranslations("actions");
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
 
-  // Data state
-  const [risks, setRisks] = useState<RiskRow[]>([]);
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  // Data state — Risiken und Zusammenfassung kommen aus `useQuery`, siehe
+  // „Data fetching" unten.
 
   // View mode
   const [viewMode, setViewMode] = useState<"list" | "heatmap">("list");
@@ -229,10 +229,21 @@ function RisksPageInner() {
   // Data fetching
   // ---------------------------------------------------------------------------
 
-  const fetchRisks = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Die drei Antworten wurden
+  // immer zusammen geholt und zusammengefuehrt — daher EINE Abfrage. Eine
+  // nicht-ok-Antwort der Risikoliste wirft wie vorher und landet im
+  // Fehlerzustand; die Zusammenfassung bleibt bei nicht-ok wie vorher leer.
+  const {
+    data,
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<{ risks: RiskRow[]; summary: DashboardSummary | null }>({
+    queryKey: ["risks", "list-with-summary"],
+    queryFn: async () => {
       const [risksRes, summaryRes, auditImpactRes] = await Promise.all([
         fetch("/api/v1/risks?limit=100&sortBy=riskScoreResidual&sortDir=desc"),
         fetch("/api/v1/risks/dashboard-summary"),
@@ -268,23 +279,21 @@ function RisksPageInner() {
             }
           : r;
       });
-      setRisks(enriched);
 
+      let summary: DashboardSummary | null = null;
       if (summaryRes.ok) {
         const summaryJson = await summaryRes.json();
-        setSummary(summaryJson.data ?? null);
+        summary = (summaryJson.data ?? null) as DashboardSummary | null;
       }
-    } catch {
-      setError(true);
-      setRisks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { risks: enriched, summary };
+    },
+  });
+  const risks = data?.risks ?? EMPTY_RISKS;
+  const summary = data?.summary ?? null;
 
-  useEffect(() => {
-    void fetchRisks();
-  }, [fetchRisks]);
+  const fetchRisks = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ---------------------------------------------------------------------------
   // Unique owners for filter
@@ -643,13 +652,22 @@ function RisksPageInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] Icon-only: with no text child its
+              accessible name is empty, which axe reports as `button-name`,
+              impact CRITICAL, on /risks. */}
           <Button
             variant="outline"
             size="sm"
+            aria-label={tActions("refresh")}
+            title={tActions("refresh")}
             onClick={() => fetchRisks()}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              aria-hidden="true"
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/risks/new")}>
             <Plus size={16} />
@@ -697,7 +715,10 @@ function RisksPageInner() {
 
             {/* Status */}
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectTrigger
+                className="w-[140px] h-8 text-xs"
+                aria-label={t("form.status")}
+              >
                 <SelectValue placeholder={t("form.status")} />
               </SelectTrigger>
               <SelectContent>
@@ -714,7 +735,10 @@ function RisksPageInner() {
 
             {/* Category */}
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectTrigger
+                className="w-[140px] h-8 text-xs"
+                aria-label={t("form.category")}
+              >
                 <SelectValue placeholder={t("form.category")} />
               </SelectTrigger>
               <SelectContent>
@@ -732,7 +756,10 @@ function RisksPageInner() {
             {/* Owner — wider trigger so "Alle Verantwortlichen" doesn't truncate (QA-007) */}
             {owners.length > 0 && (
               <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-                <SelectTrigger className="w-[200px] h-8 text-xs">
+                <SelectTrigger
+                  className="w-[200px] h-8 text-xs"
+                  aria-label={t("form.owner")}
+                >
                   <SelectValue placeholder={t("form.owner")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -783,7 +810,10 @@ function RisksPageInner() {
               <Select
                 onValueChange={(v) => handleBulkStatusChange(v as RiskStatus)}
               >
-                <SelectTrigger className="w-[160px] h-7 text-xs">
+                <SelectTrigger
+                  className="w-[160px] h-7 text-xs"
+                  aria-label={t("bulk.statusChange")}
+                >
                   <SelectValue placeholder={t("bulk.statusChange")} />
                 </SelectTrigger>
                 <SelectContent>

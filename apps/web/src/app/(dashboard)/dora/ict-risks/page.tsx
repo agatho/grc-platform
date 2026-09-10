@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { DoraIctRisk } from "@grc/shared";
 
 const RISK_COLORS: Record<string, string> = {
@@ -18,22 +17,18 @@ const RISK_COLORS: Record<string, string> = {
 
 export default function DoraIctRisksPage() {
   const t = useTranslations("dora");
-  const [rows, setRows] = useState<DoraIctRisk[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: rows = [], isPending: loading } = useQuery<DoraIctRisk[]>({
+    queryKey: ["dora", "ict-risks"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/dora/ict-risks?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DoraIctRisk[];
+    },
+  });
 
   if (loading)
     return (

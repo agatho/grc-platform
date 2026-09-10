@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -41,22 +42,27 @@ export default function AcademyPage() {
 function AcademyDashboard() {
   const t = useTranslations("academy");
   const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher keine Daten (`null`).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<DashboardData | null>({
+    queryKey: ["academy", "dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/academy/dashboard");
+      if (!res.ok) return null;
+      return (await res.json()).data as DashboardData | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/academy/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -80,9 +86,12 @@ function AcademyDashboard() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

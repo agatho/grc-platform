@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 interface MyBPMHomepageProps {
   recentlyViewed: { id: string; name: string; lastViewed: string }[];
   ownedProcesses: {

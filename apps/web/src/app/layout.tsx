@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter, Instrument_Sans } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { NextIntlClientProvider } from "next-intl";
@@ -38,6 +39,15 @@ export default async function RootLayout({
   const locale = await getLocale();
   const messages = await getMessages();
 
+  // [E2E-TRIAGE-2026-09-02 · C-06] The per-request CSP nonce, minted by the
+  // middleware and forwarded on the `x-nonce` request header
+  // (`apps/web/src/middleware.ts`). Next stamps it onto its OWN inline
+  // bootstrap scripts automatically; `next-themes` renders one of its own that
+  // Next never sees, so it has to be handed the nonce explicitly — otherwise
+  // our `script-src 'nonce-…' 'strict-dynamic'` policy blocks it. See
+  // `components/theme-provider.tsx`.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang={locale}
@@ -54,7 +64,7 @@ export default async function RootLayout({
         */}
         <SessionProvider refetchOnWindowFocus={false} refetchInterval={0}>
           <ReactQueryProvider>
-            <ThemeProvider>
+            <ThemeProvider nonce={nonce}>
               <NextIntlClientProvider messages={messages}>
                 <div className="flex min-h-screen flex-col">
                   <div className="flex-1">{children}</div>

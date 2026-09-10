@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,20 +17,18 @@ const CLASS_COLORS: Record<string, string> = {
 export default function HorizonScanItemsPage() {
   const t = useTranslations("horizonScanner");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<HorizonScanItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const { data: rows = [], isPending: loading } = useQuery<HorizonScanItem[]>({
+    queryKey: ["horizon-scanner", "items"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/horizon-scanner/items?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as HorizonScanItem[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

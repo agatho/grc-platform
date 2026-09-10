@@ -1,17 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Loader2,
-  RefreshCcw,
-  AlertTriangle,
-  Shield,
-  Clock,
-  Filter,
-} from "lucide-react";
+import { Loader2, RefreshCcw, Shield, Filter } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -77,34 +71,40 @@ function CaseListInner() {
   const t = useTranslations("whistleblowing");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [cases, setCases] = useState<WbCaseListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [priorityFilter, setPriorityFilter] = useState<string>("");
 
-  const fetchCases = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Seite und Filter stehen im
+  // Schlüssel; eine nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ cases: WbCaseListItem[]; total: number }>({
+    queryKey: ["whistleblowing", "cases", page, statusFilter, priorityFilter],
+    queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (statusFilter) params.set("status", statusFilter);
       if (priorityFilter) params.set("priority", priorityFilter);
 
       const res = await fetch(`/api/v1/whistleblowing/cases?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setCases(json.data ?? []);
-        setTotal(json.pagination?.total ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter, priorityFilter]);
+      if (!res.ok) return { cases: [], total: 0 };
+      const json = await res.json();
+      return {
+        cases: (json.data ?? []) as WbCaseListItem[],
+        total: (json.pagination?.total ?? 0) as number,
+      };
+    },
+  });
+  const cases = bundle?.cases ?? [];
+  const total = bundle?.total ?? 0;
 
-  useEffect(() => {
-    fetchCases();
-  }, [fetchCases]);
+  const fetchCases = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">

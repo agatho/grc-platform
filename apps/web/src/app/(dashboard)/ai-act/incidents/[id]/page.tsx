@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +20,18 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch mit
+ * transliterierten Umlauten ("Zurueck", "ueberschritten", "Eindaemmung",
+ * "Praeventivmassnahmen", "Behoerde"). Der Katalog schreibt sie richtig.
+ *
+ * `getDeadlineInfo` steht ausserhalb der Komponente und rechnet nur noch;
+ * die Beschriftung des Countdowns wird in der Komponente aus dem Katalog
+ * geholt, weil eine Hilfsfunktion keinen Hook lesen kann.
+ */
 interface AiIncident {
   id: string;
   ai_system_id: string | null;
@@ -74,50 +85,27 @@ function getDeadlineInfo(deadline: string | null) {
   return { overdue, diffH: Math.abs(diffH), diffD: Math.abs(diffD), date: dl };
 }
 
+const incidentKey = (id: string) => ["ai-act", "incidents", id] as const;
+
 function IncidentDetailInner() {
-  const router = useRouter();
-  const { formatDate, formatDateTime } = useDateFormat();
+  const _router = useRouter();
+  const t = useTranslations("aiAct");
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<AiIncident | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<AiIncident>>({});
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`): das Formular wird aus dem
+  // Serverstand gesät, deshalb lebt es in einer eigenen Komponente, die erst
+  // eingehängt wird, wenn die Daten da sind. Eine nicht-ok-Antwort liefert
+  // wie vorher „nicht gefunden".
+  const { data = null, isPending: loading } = useQuery<AiIncident | null>({
+    queryKey: incidentKey(id),
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/incidents/${id}`);
-      if (res.ok) {
-        const row = (await res.json()).data;
-        setData(row);
-        setForm(row);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/v1/ai-act/incidents/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        setData(updated);
-        setForm(updated);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!res.ok) return null;
+      return (await res.json()).data as AiIncident;
+    },
+  });
 
   if (loading) {
     return (
@@ -130,10 +118,43 @@ function IncidentDetailInner() {
   if (!data) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        Vorfall nicht gefunden
+        {t("incidentDetail.notFound")}
       </div>
     );
   }
+
+  return <IncidentForm id={id} initial={data} />;
+}
+
+function IncidentForm({ id, initial }: { id: string; initial: AiIncident }) {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate, formatDateTime } = useDateFormat();
+  const queryClient = useQueryClient();
+  const [data, setData] = useState<AiIncident>(initial);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Partial<AiIncident>>(initial);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/ai-act/incidents/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = (await res.json()).data as AiIncident;
+        setData(updated);
+        setForm(updated);
+        // Den Abfrage-Cache mitziehen, damit ein erneutes Einhängen nicht den
+        // alten Stand als Saat nimmt.
+        queryClient.setQueryData(incidentKey(id), updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const set = (key: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -146,7 +167,7 @@ function IncidentDetailInner() {
           href="/ai-act/incidents"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
+          <ArrowLeft className="h-4 w-4" /> {t("shared.backToList")}
         </Link>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
@@ -154,7 +175,7 @@ function IncidentDetailInner() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Speichern
+          {tCommon("actions.save")}
         </Button>
       </div>
 
@@ -171,7 +192,8 @@ function IncidentDetailInner() {
         </Badge>
         {data.is_serious && (
           <Badge className="bg-red-600 text-white">
-            <AlertTriangle className="h-3 w-3 mr-1" /> Schwerwiegend
+            <AlertTriangle className="h-3 w-3 mr-1" />{" "}
+            {t("incidentDetail.serious")}
           </Badge>
         )}
       </div>
@@ -192,14 +214,34 @@ function IncidentDetailInner() {
             <div>
               <p className="font-semibold">
                 {deadlineInfo.overdue
-                  ? `Meldefrist ueberschritten seit ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tagen` : `${deadlineInfo.diffH} Stunden`}`
-                  : `Meldefrist: noch ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tage` : `${deadlineInfo.diffH} Stunden`}`}
+                  ? t("incidentDetail.deadlineOverdue", {
+                      span:
+                        deadlineInfo.diffD > 0
+                          ? t("incidentDetail.days", {
+                              days: deadlineInfo.diffD,
+                            })
+                          : t("incidentDetail.hours", {
+                              hours: deadlineInfo.diffH,
+                            }),
+                    })
+                  : t("incidentDetail.deadlineRemaining", {
+                      span:
+                        deadlineInfo.diffD > 0
+                          ? t("incidentDetail.days", {
+                              days: deadlineInfo.diffD,
+                            })
+                          : t("incidentDetail.hours", {
+                              hours: deadlineInfo.diffH,
+                            }),
+                    })}
               </p>
               <p className="text-sm text-muted-foreground">
-                Frist: {formatDateTime(deadlineInfo.date)}
+                {t("incidentDetail.deadlineAt", {
+                  value: formatDateTime(deadlineInfo.date),
+                })}
                 {data.is_serious
-                  ? " (2 Tage - schwerwiegend)"
-                  : " (15 Tage - Standard)"}
+                  ? t("incidentDetail.deadlineWindowSerious")
+                  : t("incidentDetail.deadlineWindowStandard")}
               </p>
             </div>
           </CardContent>
@@ -209,18 +251,18 @@ function IncidentDetailInner() {
       {/* Stammdaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Stammdaten</CardTitle>
+          <CardTitle>{t("shared.masterData")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <Label>Titel</Label>
+            <Label>{t("shared.title")}</Label>
             <Input
               value={form.title ?? ""}
               onChange={(e) => set("title", e.target.value)}
             />
           </div>
           <div className="md:col-span-2">
-            <Label>Beschreibung</Label>
+            <Label>{t("shared.description")}</Label>
             <Textarea
               value={form.description ?? ""}
               onChange={(e) => set("description", e.target.value)}
@@ -228,7 +270,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Schweregrad</Label>
+            <Label>{t("incidentDetail.severity")}</Label>
             <Select
               value={form.severity ?? "medium"}
               onValueChange={(v) => set("severity", v)}
@@ -237,15 +279,23 @@ function IncidentDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="critical">Kritisch</SelectItem>
-                <SelectItem value="high">Hoch</SelectItem>
-                <SelectItem value="medium">Mittel</SelectItem>
-                <SelectItem value="low">Niedrig</SelectItem>
+                <SelectItem value="critical">
+                  {t("incidentDetail.severityOption.critical")}
+                </SelectItem>
+                <SelectItem value="high">
+                  {t("incidentDetail.severityOption.high")}
+                </SelectItem>
+                <SelectItem value="medium">
+                  {t("incidentDetail.severityOption.medium")}
+                </SelectItem>
+                <SelectItem value="low">
+                  {t("incidentDetail.severityOption.low")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Status</Label>
+            <Label>{t("shared.status")}</Label>
             <Select
               value={form.status ?? "detected"}
               onValueChange={(v) => set("status", v)}
@@ -254,11 +304,21 @@ function IncidentDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="detected">Erkannt</SelectItem>
-                <SelectItem value="investigating">Untersuchung</SelectItem>
-                <SelectItem value="mitigating">Eindaemmung</SelectItem>
-                <SelectItem value="resolved">Behoben</SelectItem>
-                <SelectItem value="closed">Geschlossen</SelectItem>
+                <SelectItem value="detected">
+                  {t("incidentDetail.statusOption.detected")}
+                </SelectItem>
+                <SelectItem value="investigating">
+                  {t("incidentDetail.statusOption.investigating")}
+                </SelectItem>
+                <SelectItem value="mitigating">
+                  {t("incidentDetail.statusOption.mitigating")}
+                </SelectItem>
+                <SelectItem value="resolved">
+                  {t("incidentDetail.statusOption.resolved")}
+                </SelectItem>
+                <SelectItem value="closed">
+                  {t("incidentDetail.statusOption.closed")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -267,10 +327,10 @@ function IncidentDetailInner() {
               checked={form.is_serious ?? false}
               onCheckedChange={(v) => set("is_serious", v)}
             />
-            <Label>Schwerwiegender Vorfall (Art. 73 Abs. 4)</Label>
+            <Label>{t("incidentDetail.seriousIncident")}</Label>
           </div>
           <div>
-            <Label>Betroffene Personen (Anzahl)</Label>
+            <Label>{t("incidentDetail.affectedPersons")}</Label>
             <Input
               type="number"
               value={form.affected_persons_count ?? ""}
@@ -283,7 +343,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Erkannt am</Label>
+            <Label>{t("incidentDetail.detectedAt")}</Label>
             <Input
               type="datetime-local"
               value={form.detected_at ? form.detected_at.slice(0, 16) : ""}
@@ -296,19 +356,19 @@ function IncidentDetailInner() {
       {/* Schaden & Ursache */}
       <Card>
         <CardHeader>
-          <CardTitle>Schaden und Ursachenanalyse</CardTitle>
+          <CardTitle>{t("incidentDetail.harmSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Art des Schadens</Label>
+              <Label>{t("incidentDetail.harmType")}</Label>
               <Input
                 value={form.harm_type ?? ""}
                 onChange={(e) => set("harm_type", e.target.value)}
               />
             </div>
             <div>
-              <Label>Ursachenkategorie</Label>
+              <Label>{t("incidentDetail.rootCauseCategory")}</Label>
               <Input
                 value={form.root_cause_category ?? ""}
                 onChange={(e) => set("root_cause_category", e.target.value)}
@@ -316,7 +376,7 @@ function IncidentDetailInner() {
             </div>
           </div>
           <div>
-            <Label>Schadensbeschreibung</Label>
+            <Label>{t("incidentDetail.harmDescription")}</Label>
             <Textarea
               value={form.harm_description ?? ""}
               onChange={(e) => set("harm_description", e.target.value)}
@@ -324,7 +384,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Ursachenanalyse</Label>
+            <Label>{t("incidentDetail.rootCause")}</Label>
             <Textarea
               value={form.root_cause ?? ""}
               onChange={(e) => set("root_cause", e.target.value)}
@@ -337,11 +397,11 @@ function IncidentDetailInner() {
       {/* Massnahmen */}
       <Card>
         <CardHeader>
-          <CardTitle>Massnahmen</CardTitle>
+          <CardTitle>{t("incidentDetail.measuresSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Sofortmassnahmen</Label>
+            <Label>{t("incidentDetail.remediationActions")}</Label>
             <Textarea
               value={form.remediation_actions ?? ""}
               onChange={(e) => set("remediation_actions", e.target.value)}
@@ -349,7 +409,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Praeventivmassnahmen</Label>
+            <Label>{t("incidentDetail.preventiveMeasures")}</Label>
             <Textarea
               value={form.preventive_measures ?? ""}
               onChange={(e) => set("preventive_measures", e.target.value)}
@@ -357,7 +417,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Erkenntnisse (Lessons Learned)</Label>
+            <Label>{t("incidentDetail.lessonsLearned")}</Label>
             <Textarea
               value={form.lessons_learned ?? ""}
               onChange={(e) => set("lessons_learned", e.target.value)}
@@ -370,11 +430,11 @@ function IncidentDetailInner() {
       {/* Behoerdenbenachrichtigung */}
       <Card>
         <CardHeader>
-          <CardTitle>Behoerdenbenachrichtigung</CardTitle>
+          <CardTitle>{t("incidentDetail.authoritySection")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Behoerde benachrichtigt am</Label>
+            <Label>{t("incidentDetail.authorityNotifiedAt")}</Label>
             <Input
               type="datetime-local"
               value={
@@ -388,7 +448,7 @@ function IncidentDetailInner() {
             />
           </div>
           <div>
-            <Label>Aktenzeichen Behoerde</Label>
+            <Label>{t("incidentDetail.authorityReference")}</Label>
             <Input
               value={form.authority_reference ?? ""}
               onChange={(e) => set("authority_reference", e.target.value)}
@@ -400,27 +460,34 @@ function IncidentDetailInner() {
       {/* Metadaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Metadaten</CardTitle>
+          <CardTitle>{t("shared.metadata")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("shared.createdAt")}
+            </span>{" "}
             {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
-              Aktualisiert am:
+              {t("shared.updatedAt")}
             </span>{" "}
             {formatDate(data.updated_at)}
           </div>
           {data.resolved_at && (
             <div>
-              <span className="font-medium text-foreground">Behoben am:</span>{" "}
+              <span className="font-medium text-foreground">
+                {t("incidentDetail.resolvedAt")}
+              </span>{" "}
               {formatDate(data.resolved_at)}
             </div>
           )}
           <div>
-            <span className="font-medium text-foreground">ID:</span> {data.id}
+            <span className="font-medium text-foreground">
+              {t("shared.id")}
+            </span>{" "}
+            {data.id}
           </div>
         </CardContent>
       </Card>

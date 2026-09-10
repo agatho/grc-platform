@@ -1,22 +1,54 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": [".env"],
+  "globalDependencies": [".env", "vitest.coverage.shared.ts"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "APP_DATABASE_URL",
+    "WORKER_DATABASE_URL",
+    "ALLOW_SKIP_DB_TESTS",
+    "E2E_BASE_URL",
+    "E2E_EMAIL",
+    "E2E_PASSWORD",
+    "CI",
+    "NODE_OPTIONS"
+  ],
   "tasks": {
-    "dev": { "cache": false, "persistent": true },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "dist/**"]
     },
-    "lint": { "dependsOn": ["^build"] },
-    "test": { "dependsOn": ["^build"] },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
     "test:coverage": {
       "dependsOn": ["^build"],
+      "cache": false,
       "outputs": ["coverage/**"]
     },
-    "test:integration": { "dependsOn": ["^build"], "cache": false },
-    "test:rls": { "dependsOn": ["^build"], "cache": false },
-    "db:generate": { "cache": false },
-    "db:migrate": { "cache": false },
-    "db:seed": { "cache": false }
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "test:rls": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:seed": {
+      "cache": false
+    }
   }
 }

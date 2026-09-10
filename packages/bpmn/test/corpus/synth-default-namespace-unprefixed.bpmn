@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             id="Definitions_Unprefixed" targetNamespace="http://www.trisotech.com/definitions/_1">
+  <process id="Process_Unprefixed" isExecutable="false">
+    <startEvent id="UP_Start" name="Start">
+      <outgoing>UP_F1</outgoing>
+    </startEvent>
+    <task id="UP_Task" name="Arbeit erledigen">
+      <incoming>UP_F1</incoming>
+      <outgoing>UP_F2</outgoing>
+    </task>
+    <endEvent id="UP_End" name="Ende">
+      <incoming>UP_F2</incoming>
+    </endEvent>
+    <sequenceFlow id="UP_F1" sourceRef="UP_Start" targetRef="UP_Task"/>
+    <sequenceFlow id="UP_F2" sourceRef="UP_Task" targetRef="UP_End"/>
+  </process>
+  <bpmndi:BPMNDiagram id="Diagram_Unprefixed">
+    <bpmndi:BPMNPlane id="Plane_Unprefixed" bpmnElement="Process_Unprefixed">
+      <bpmndi:BPMNShape id="UP_Start_di" bpmnElement="UP_Start">
+        <omgdc:Bounds x="152" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UP_Task_di" bpmnElement="UP_Task">
+        <omgdc:Bounds x="240" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UP_End_di" bpmnElement="UP_End">
+        <omgdc:Bounds x="402" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="UP_F1_di" bpmnElement="UP_F1">
+        <omgdi:waypoint x="188" y="120"/>
+        <omgdi:waypoint x="240" y="120"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="UP_F2_di" bpmnElement="UP_F2">
+        <omgdi:waypoint x="340" y="120"/>
+        <omgdi:waypoint x="402" y="120"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

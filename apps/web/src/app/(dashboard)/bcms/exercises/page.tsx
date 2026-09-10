@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,8 +49,6 @@ function ExerciseListInner() {
   const t = useTranslations("bcms");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [items, setItems] = useState<BcExercise[]>([]);
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [showCreate, setShowCreate] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -57,22 +56,18 @@ function ExerciseListInner() {
   const [newDate, setNewDate] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: items = [], isPending: loading } = useQuery<BcExercise[]>({
+    queryKey: ["bcms", "exercises"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bcms/exercises?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as BcExercise[];
+    },
+  });
 
   const handleCreate = async () => {
     if (!newTitle.trim() || !newDate) return;

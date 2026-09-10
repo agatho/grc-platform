@@ -18,12 +18,6 @@ const auditStatusValues = [
   "completed",
   "cancelled",
 ] as const;
-const auditPlanStatusValues = [
-  "draft",
-  "approved",
-  "active",
-  "completed",
-] as const;
 // ISO 19011 § 3.4 / ISO/IEC 17021-1 § 9.4.8 — DAkkS-/TÜV-Praxisstandard.
 // positive                    — Positive Feststellung / Commendation
 // conforming                  — Konform (erfüllt Kriterium)

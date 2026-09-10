@@ -53,9 +53,14 @@ export function EvaluationProgressBar({
               onClick={() => onPhaseClick?.(phase)}
               className={cn(
                 "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                isCompleted && "bg-teal-600 text-white",
-                isCurrent && "border-2 border-teal-600 text-teal-600 bg-white",
-                isPending && "bg-gray-100 text-gray-400",
+                // [ARCTOS-FULL-2026-08-31 · OP-049] Weiss auf teal-600 =
+                // 3,66:1, teal-600 auf Weiss ebenso, gray-400 auf
+                // gray-100 = 4,46:1. Der RAHMEN bleibt teal-600: er ist
+                // Nicht-Text und liegt mit 3,66:1 über der dafür
+                // geltenden Schwelle von 3:1 (WCAG 1.4.11).
+                isCompleted && "bg-teal-700 text-white",
+                isCurrent && "border-2 border-teal-600 text-teal-700 bg-white",
+                isPending && "bg-gray-100 text-gray-500",
               )}
             >
               {isCompleted && (

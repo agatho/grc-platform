@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -40,33 +41,28 @@ export default function BreachListPage() {
 function BreachListInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
-  const [items, setItems] = useState<DataBreach[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [severityFilter, setSeverityFilter] = useState("");
   const [search, setSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Filter stehen im Schlüssel;
+  // eine nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const { data: items = [], isPending: loading } = useQuery<DataBreach[]>({
+    queryKey: ["dpms", "breaches", statusFilter, severityFilter, search],
+    queryFn: async () => {
       const params = new URLSearchParams({ limit: "100" });
       if (statusFilter) params.set("status", statusFilter);
       if (severityFilter) params.set("severity", severityFilter);
       if (search) params.set("search", search);
 
       const res = await fetch(`/api/v1/dpms/breaches?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, severityFilter, search]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DataBreach[];
+    },
+  });
 
   return (
     <div className="space-y-6">

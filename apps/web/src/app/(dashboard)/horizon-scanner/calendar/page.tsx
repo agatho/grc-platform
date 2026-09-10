@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,22 +16,22 @@ const PRIO_COLORS: Record<string, string> = {
 
 export default function HorizonCalendarPage() {
   const t = useTranslations("horizonScanner");
-  const [rows, setRows] = useState<HorizonCalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const { data: rows = [], isPending: loading } = useQuery<
+    HorizonCalendarEvent[]
+  >({
+    queryKey: ["horizon-scanner", "calendar"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/horizon-scanner/calendar?limit=50&isCompleted=false",
       );
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as HorizonCalendarEvent[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

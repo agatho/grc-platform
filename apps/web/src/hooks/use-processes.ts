@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { Process, ProcessVersion, ProcessStep } from "@grc/shared";
 import type { RiskOverlayData } from "@/components/bpmn/bpmn-editor";
 
@@ -43,45 +44,55 @@ interface StepRiskInfo {
   }>;
 }
 
+// [OP-245 · Gestalt A] All four hooks fetched on mount through an effect that
+// wrote result, loading and error state back synchronously. They now sit on
+// `@tanstack/react-query` (pattern from wave 7b, `catalogs/objects/page.tsx`);
+// the return shape of every hook is unchanged for its callers: `loading`
+// starts true (`isPending`), `error` is the same string as before or null,
+// `refetch` is the same thin async wrapper. Hooks that used to skip the
+// request for an empty id pass `enabled` instead and keep `refetch` a no-op
+// in that case, so the caller-visible behaviour is identical.
+
+/** Turns the query error into the string the hooks always exposed. */
+function errorMessage(err: unknown, fallback: string): string | null {
+  if (!err) return null;
+  return err instanceof Error ? err.message : fallback;
+}
+
 // ---------------------------------------------------------------------------
 // useProcess — fetch single process with detail
 // ---------------------------------------------------------------------------
 
 export function useProcess(id: string) {
-  const [data, setData] = useState<ProcessDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetch_ = useCallback(async () => {
-    if (!id) return;
-    setLoading(true);
-    setError(null);
-    try {
+  const enabled = id !== "";
+  const {
+    data,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<ProcessDetail>({
+    queryKey: ["processes", id],
+    enabled,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/processes/${id}`);
       if (!res.ok) {
-        if (res.status === 404) {
-          setError("not_found");
-          return;
-        }
+        if (res.status === 404) throw new Error("not_found");
         throw new Error("Failed to load process");
       }
       const json = await res.json();
-      setData(json.data as ProcessDetail);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return json.data as ProcessDetail;
+    },
+  });
 
-  useEffect(() => {
-    void fetch_();
-  }, [fetch_]);
+  const fetch_ = useCallback(async () => {
+    if (!enabled) return;
+    await refetch();
+  }, [enabled, refetch]);
 
   return {
-    process: data,
+    process: data ?? null,
     loading,
-    error,
+    error: errorMessage(queryError, "Failed to load"),
     refetch: fetch_,
   };
 }
@@ -90,37 +101,35 @@ export function useProcess(id: string) {
 // useProcessTree — fetch process tree
 // ---------------------------------------------------------------------------
 
-export function useProcessTree(parentId?: string) {
-  const [nodes, setNodes] = useState<ProcessTreeNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const EMPTY_NODES: ProcessTreeNode[] = [];
 
-  const fetch_ = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+export function useProcessTree(parentId?: string) {
+  const {
+    data: nodes = EMPTY_NODES,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<ProcessTreeNode[]>({
+    queryKey: ["processes", "tree", { parentId: parentId ?? null }],
+    queryFn: async () => {
       const url = parentId
         ? `/api/v1/processes/tree?parentId=${parentId}`
         : `/api/v1/processes/tree`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load process tree");
       const json = await res.json();
-      setNodes(json.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load tree");
-    } finally {
-      setLoading(false);
-    }
-  }, [parentId]);
+      return (json.data ?? []) as ProcessTreeNode[];
+    },
+  });
 
-  useEffect(() => {
-    void fetch_();
-  }, [fetch_]);
+  const fetch_ = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return {
     nodes,
     loading,
-    error,
+    error: errorMessage(queryError, "Failed to load tree"),
     refetch: fetch_,
   };
 }
@@ -129,35 +138,35 @@ export function useProcessTree(parentId?: string) {
 // useProcessVersions — fetch versions for a process
 // ---------------------------------------------------------------------------
 
-export function useProcessVersions(processId: string) {
-  const [versions, setVersions] = useState<ProcessVersion[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const EMPTY_VERSIONS: ProcessVersion[] = [];
 
-  const fetch_ = useCallback(async () => {
-    if (!processId) return;
-    setLoading(true);
-    setError(null);
-    try {
+export function useProcessVersions(processId: string) {
+  const enabled = processId !== "";
+  const {
+    data: versions = EMPTY_VERSIONS,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<ProcessVersion[]>({
+    queryKey: ["processes", processId, "versions"],
+    enabled,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/processes/${processId}/versions`);
       if (!res.ok) throw new Error("Failed to load versions");
       const json = await res.json();
-      setVersions(json.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load versions");
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      return (json.data ?? []) as ProcessVersion[];
+    },
+  });
 
-  useEffect(() => {
-    void fetch_();
-  }, [fetch_]);
+  const fetch_ = useCallback(async () => {
+    if (!enabled) return;
+    await refetch();
+  }, [enabled, refetch]);
 
   return {
     versions,
     loading,
-    error,
+    error: errorMessage(queryError, "Failed to load versions"),
     refetch: fetch_,
   };
 }
@@ -166,17 +175,20 @@ export function useProcessVersions(processId: string) {
 // useProcessStepRisks — fetch risk overlay data for BPMN elements
 // ---------------------------------------------------------------------------
 
-export function useProcessStepRisks(processId: string) {
-  const [stepRisks, setStepRisks] = useState<StepRiskInfo[]>([]);
-  const [overlayData, setOverlayData] = useState<RiskOverlayData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const EMPTY_STEP_RISKS: StepRiskInfo[] = [];
+const EMPTY_OVERLAY: RiskOverlayData[] = [];
 
-  const fetch_ = useCallback(async () => {
-    if (!processId) return;
-    setLoading(true);
-    setError(null);
-    try {
+export function useProcessStepRisks(processId: string) {
+  const enabled = processId !== "";
+  const {
+    data,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<{ stepRisks: StepRiskInfo[]; overlayData: RiskOverlayData[] }>({
+    queryKey: ["processes", processId, "risks"],
+    enabled,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/processes/${processId}/risks`);
       if (!res.ok) throw new Error("Failed to load step risks");
       const json = await res.json();
@@ -223,36 +235,30 @@ export function useProcessStepRisks(processId: string) {
       }
 
       const stepRiskArray = Array.from(stepMap.values());
-      setStepRisks(stepRiskArray);
 
       // Convert to overlay data
-      setOverlayData(
-        stepRiskArray
-          .filter((s) => s.riskCount > 0)
-          .map((s) => ({
-            bpmnElementId: s.bpmnElementId,
-            riskCount: s.riskCount,
-            highestScore: s.highestScore,
-          })),
-      );
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load step risks",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      const overlay: RiskOverlayData[] = stepRiskArray
+        .filter((s) => s.riskCount > 0)
+        .map((s) => ({
+          bpmnElementId: s.bpmnElementId,
+          riskCount: s.riskCount,
+          highestScore: s.highestScore,
+        }));
 
-  useEffect(() => {
-    void fetch_();
-  }, [fetch_]);
+      return { stepRisks: stepRiskArray, overlayData: overlay };
+    },
+  });
+
+  const fetch_ = useCallback(async () => {
+    if (!enabled) return;
+    await refetch();
+  }, [enabled, refetch]);
 
   return {
-    stepRisks,
-    overlayData,
+    stepRisks: data?.stepRisks ?? EMPTY_STEP_RISKS,
+    overlayData: data?.overlayData ?? EMPTY_OVERLAY,
     loading,
-    error,
+    error: errorMessage(queryError, "Failed to load step risks"),
     refetch: fetch_,
   };
 }

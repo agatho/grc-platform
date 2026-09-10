@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -18,6 +19,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CrisisScenario, CrisisLog as CrisisLogEntry } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { useNow } from "@/hooks/use-now";
+
+// Die Route liefert neben dem geteilten `CrisisScenario` die Felder der
+// Risikobewertung (ERM-Bruecke); die Seite las sie bisher aus dem ungetypten
+// JSON bzw. ueber einen `Record<string, unknown>`-Cast.
+type CrisisWithRisk = CrisisScenario & {
+  likelihood?: number | null;
+  treatmentStrategy?: string | null;
+  ermRiskId?: string | null;
+  ermSyncedAt?: string | null;
+};
 
 interface TeamMember {
   id: string;
@@ -37,6 +49,46 @@ const LOG_TYPE_ICONS: Record<string, string> = {
   observation: "O",
 };
 
+// ── Risk Assessment helpers (ERM Bridge) ──
+const SEVERITY_MAP: Record<string, number> = {
+  low: 1,
+  moderate: 2,
+  high: 3,
+  very_high: 4,
+  catastrophic: 5,
+};
+
+const LIKELIHOOD_LABELS: Record<number, string> = {
+  1: "Sehr niedrig",
+  2: "Niedrig",
+  3: "Mittel",
+  4: "Hoch",
+  5: "Sehr hoch",
+};
+
+const TREATMENT_OPTIONS = [
+  { value: "mitigate", label: "Mindern" },
+  { value: "accept", label: "Akzeptieren" },
+  { value: "transfer", label: "Transferieren" },
+  { value: "avoid", label: "Vermeiden" },
+];
+
+function riskColor(score: number): string {
+  if (score >= 20) return "bg-red-600 text-white";
+  if (score >= 15) return "bg-red-500 text-white";
+  if (score >= 9) return "bg-orange-500 text-white";
+  if (score >= 4) return "bg-yellow-400 text-yellow-900";
+  return "bg-green-400 text-green-900";
+}
+
+function riskLabel(score: number): string {
+  if (score >= 20) return "Kritisch";
+  if (score >= 15) return "Sehr hoch";
+  if (score >= 9) return "Hoch";
+  if (score >= 4) return "Mittel";
+  return "Niedrig";
+}
+
 export default function CrisisDetailPage() {
   return (
     <ModuleGate moduleKey="bcms">
@@ -51,12 +103,12 @@ function CrisisDetailInner() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  // [OP-245 · purity] `Date.now()` stand in der Dauer-Berechnung unten; die
+  // Uhr kommt jetzt aus `useNow` (einmal je Minute erneuert), sodass die
+  // Krisendauer auch ohne Neu-Rendern mitlaeuft.
+  const now = useNow();
 
-  const [crisis, setCrisis] = useState<CrisisScenario | null>(null);
-  const [logEntries, setLogEntries] = useState<CrisisLogEntry[]>([]);
-  const [team, setTeam] = useState<TeamMember[]>([]);
   const [activeTab, setActiveTab] = useState<"log" | "team">("log");
-  const [loading, setLoading] = useState(true);
 
   // Log entry form
   const [showAddLog, setShowAddLog] = useState(false);
@@ -65,46 +117,71 @@ function CrisisDetailInner() {
   const [logDesc, setLogDesc] = useState("");
   const [addingLog, setAddingLog] = useState(false);
 
-  // Risk Assessment (ERM Bridge)
-  const [likelihood, setLikelihood] = useState<number>(0);
-  const [treatmentStrategy, setTreatmentStrategy] = useState<string>("");
-  const [savingRisk, setSavingRisk] = useState(false);
-  const [syncingErm, setSyncingErm] = useState(false);
-
   // Actions
   const [activating, setActivating] = useState(false);
   const [resolving, setResolving] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [cRes, lRes, tRes] = await Promise.all([
-        fetch(`/api/v1/bcms/crisis/${id}`),
-        fetch(`/api/v1/bcms/crisis/${id}/log?limit=100`),
-        fetch(`/api/v1/bcms/crisis/${id}/team?limit=50`),
-      ]);
-      if (cRes.ok) {
-        const j = await cRes.json();
-        setCrisis(j.data);
-        if (j.data.likelihood) setLikelihood(j.data.likelihood);
-        if (j.data.treatmentStrategy)
-          setTreatmentStrategy(j.data.treatmentStrategy);
-      }
-      if (lRes.ok) {
-        const j = await lRes.json();
-        setLogEntries(j.data ?? []);
-      }
-      if (tRes.ok) {
-        const j = await tRes.json();
-        setTeam(j.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Drei Abfragen, je eine je
+  // Endpunkt, damit wie vorher jede Antwort einzeln gilt: eine nicht-ok-
+  // Antwort wirft, react-query behaelt dann den letzten guten Stand (so wie
+  // die alten `if (res.ok)`-Zweige den vorherigen Zustand stehen liessen).
+  const {
+    data: crisis = null,
+    isPending: crisisPending,
+    refetch: refetchCrisis,
+  } = useQuery<CrisisWithRisk | null>({
+    queryKey: ["bcms", "crisis", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/bcms/crisis/${id}`);
+      if (!res.ok) throw new Error(`crisis ${res.status}`);
+      const j = await res.json();
+      return (j.data ?? null) as CrisisWithRisk | null;
+    },
+  });
+  const {
+    data: logEntries = [],
+    isPending: logPending,
+    refetch: refetchLog,
+  } = useQuery<CrisisLogEntry[]>({
+    queryKey: ["bcms", "crisis", id, "log"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/bcms/crisis/${id}/log?limit=100`);
+      if (!res.ok) throw new Error(`crisis log ${res.status}`);
+      const j = await res.json();
+      return (j.data ?? []) as CrisisLogEntry[];
+    },
+  });
+  const {
+    data: team = [],
+    isPending: teamPending,
+    refetch: refetchTeam,
+  } = useQuery<TeamMember[]>({
+    queryKey: ["bcms", "crisis", id, "team"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/bcms/crisis/${id}/team?limit=50`);
+      if (!res.ok) throw new Error(`crisis team ${res.status}`);
+      const j = await res.json();
+      return (j.data ?? []) as TeamMember[];
+    },
+  });
+  const loading = crisisPending || logPending || teamPending;
 
-  useEffect(() => {
-    void fetchData();
+  const fetchData = useCallback(async () => {
+    await Promise.all([refetchCrisis(), refetchLog(), refetchTeam()]);
+  }, [refetchCrisis, refetchLog, refetchTeam]);
+
+  // Die Risikobewertung ist ein Formular, dessen SAAT der Serverstand ist
+  // (Welle 7b, `processes/[id]/ropa`): sie lebt in einer eigenen Komponente,
+  // die mit dem geladenen Stand eingehaengt wird. Der Schluessel wird NUR
+  // nach einem erfolgreichen Speichern erhoeht — ein Hintergrundabruf (Log-
+  // Eintrag, Team-Aenderung, Aktivieren) reisst dem Nutzer die Auswahl nicht
+  // mehr unter den Haenden weg.
+  const [seedVersion, setSeedVersion] = useState(0);
+  const handleRiskSaved = useCallback(async () => {
+    await fetchData();
+    setSeedVersion((v) => v + 1);
   }, [fetchData]);
 
   const handleActivate = async () => {
@@ -162,78 +239,7 @@ function CrisisDetailInner() {
     void fetchData();
   };
 
-  // ── Risk Assessment helpers ──
-  const SEVERITY_MAP: Record<string, number> = {
-    low: 1,
-    moderate: 2,
-    high: 3,
-    very_high: 4,
-    catastrophic: 5,
-  };
-  const severityLevel = crisis ? (SEVERITY_MAP[crisis.severity] ?? 3) : 0;
-  const riskScore = likelihood * severityLevel;
-
-  const LIKELIHOOD_LABELS: Record<number, string> = {
-    1: "Sehr niedrig",
-    2: "Niedrig",
-    3: "Mittel",
-    4: "Hoch",
-    5: "Sehr hoch",
-  };
-
-  const TREATMENT_OPTIONS = [
-    { value: "mitigate", label: "Mindern" },
-    { value: "accept", label: "Akzeptieren" },
-    { value: "transfer", label: "Transferieren" },
-    { value: "avoid", label: "Vermeiden" },
-  ];
-
-  function riskColor(score: number): string {
-    if (score >= 20) return "bg-red-600 text-white";
-    if (score >= 15) return "bg-red-500 text-white";
-    if (score >= 9) return "bg-orange-500 text-white";
-    if (score >= 4) return "bg-yellow-400 text-yellow-900";
-    return "bg-green-400 text-green-900";
-  }
-
-  function riskLabel(score: number): string {
-    if (score >= 20) return "Kritisch";
-    if (score >= 15) return "Sehr hoch";
-    if (score >= 9) return "Hoch";
-    if (score >= 4) return "Mittel";
-    return "Niedrig";
-  }
-
-  const handleSaveRiskAssessment = async () => {
-    if (!likelihood) return;
-    setSavingRisk(true);
-    try {
-      const res = await fetch(`/api/v1/bcms/crisis/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          likelihood,
-          riskScore: likelihood * severityLevel,
-          treatmentStrategy: treatmentStrategy || null,
-        }),
-      });
-      if (res.ok) void fetchData();
-    } finally {
-      setSavingRisk(false);
-    }
-  };
-
-  const handleErmSync = async () => {
-    setSyncingErm(true);
-    try {
-      const res = await fetch("/api/v1/bcms/erm-sync", { method: "POST" });
-      if (res.ok) void fetchData();
-    } finally {
-      setSyncingErm(false);
-    }
-  };
-
-  if (loading && !crisis) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-gray-400" />
@@ -249,7 +255,7 @@ function CrisisDetailInner() {
 
   const isActive = crisis.status === "activated";
   const duration = crisis.activatedAt
-    ? Math.round((Date.now() - new Date(crisis.activatedAt).getTime()) / 60000)
+    ? Math.round((now - new Date(crisis.activatedAt).getTime()) / 60000)
     : 0;
   const durationHours = Math.floor(duration / 60);
   const durationMins = duration % 60;
@@ -366,132 +372,12 @@ function CrisisDetailInner() {
       </div>
 
       {/* ── Risikobewertung (ERM Bridge) ── */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
-            <Shield size={16} className="text-blue-600" />
-            Risikobewertung
-          </h2>
-          {Boolean(
-            (crisis as unknown as Record<string, unknown>).ermRiskId,
-          ) && (
-            <Badge variant="outline" className="text-blue-600 border-blue-200">
-              <ArrowRight size={10} className="mr-1" /> ERM-Register
-            </Badge>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Likelihood selector */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Eintrittswahrscheinlichkeit
-            </label>
-            <select
-              value={likelihood}
-              onChange={(e) => setLikelihood(Number(e.target.value))}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value={0}>-- Auswahl --</option>
-              {[1, 2, 3, 4, 5].map((v) => (
-                <option key={v} value={v}>
-                  {v} - {LIKELIHOOD_LABELS[v]}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Severity (read-only) */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Schweregrad (aus Szenario)
-            </label>
-            <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-              {severityLevel} - {crisis.severity.replace(/_/g, " ")}
-            </div>
-          </div>
-
-          {/* Risk Score */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Risikobewertung (L x S)
-            </label>
-            {likelihood > 0 ? (
-              <div
-                className={`rounded-md px-3 py-2 text-sm font-bold text-center ${riskColor(riskScore)}`}
-              >
-                {riskScore} - {riskLabel(riskScore)}
-              </div>
-            ) : (
-              <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 text-center">
-                --
-              </div>
-            )}
-          </div>
-
-          {/* Treatment Strategy */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">
-              Behandlungsstrategie
-            </label>
-            <select
-              value={treatmentStrategy}
-              onChange={(e) => setTreatmentStrategy(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">-- Auswahl --</option>
-              {TREATMENT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
-          <Button
-            size="sm"
-            onClick={handleSaveRiskAssessment}
-            disabled={savingRisk || !likelihood}
-          >
-            {savingRisk ? (
-              <Loader2 size={14} className="animate-spin mr-1" />
-            ) : null}
-            Bewertung speichern
-          </Button>
-          {likelihood > 0 &&
-            riskScore >= 12 &&
-            !(crisis as unknown as Record<string, unknown>).ermRiskId && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-blue-300 text-blue-700 hover:bg-blue-50"
-                onClick={handleErmSync}
-                disabled={syncingErm}
-              >
-                {syncingErm ? (
-                  <Loader2 size={14} className="animate-spin mr-1" />
-                ) : (
-                  <ArrowRight size={14} className="mr-1" />
-                )}
-                Ins ERM synchronisieren
-              </Button>
-            )}
-          {Boolean(
-            (crisis as unknown as Record<string, unknown>).ermSyncedAt,
-          ) && (
-            <span className="text-xs text-gray-400 ml-auto">
-              Synchronisiert:{" "}
-              {formatDateTime(
-                (crisis as unknown as Record<string, unknown>)
-                  .ermSyncedAt as string,
-              )}
-            </span>
-          )}
-        </div>
-      </div>
+      <RiskAssessmentPanel
+        key={`${crisis.id}:${seedVersion}`}
+        crisis={crisis}
+        onSaved={handleRiskSaved}
+        onSynced={fetchData}
+      />
 
       {/* Log Tab */}
       {activeTab === "log" && (
@@ -676,6 +562,197 @@ function CrisisDetailInner() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// [OP-245 · Gestalt A] Formular, dessen Saat der Serverstand ist. Der Anfangs-
+// wert wird beim Einhaengen aus `crisis` gelesen; bis zum naechsten Schluessel-
+// wechsel (siehe `seedVersion` im Elternteil) gehoert der Zustand dem Nutzer.
+function RiskAssessmentPanel({
+  crisis,
+  onSaved,
+  onSynced,
+}: {
+  crisis: CrisisWithRisk;
+  onSaved: () => Promise<void>;
+  onSynced: () => Promise<void>;
+}) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+  const { formatDateTime } = useDateFormat();
+
+  const [likelihood, setLikelihood] = useState<number>(
+    () => crisis.likelihood ?? 0,
+  );
+  const [treatmentStrategy, setTreatmentStrategy] = useState<string>(
+    () => crisis.treatmentStrategy ?? "",
+  );
+  const [savingRisk, setSavingRisk] = useState(false);
+  const [syncingErm, setSyncingErm] = useState(false);
+
+  const severityLevel = SEVERITY_MAP[crisis.severity] ?? 3;
+  const riskScore = likelihood * severityLevel;
+
+  const handleSaveRiskAssessment = async () => {
+    if (!likelihood) return;
+    setSavingRisk(true);
+    try {
+      const res = await fetch(`/api/v1/bcms/crisis/${crisis.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          likelihood,
+          riskScore: likelihood * severityLevel,
+          treatmentStrategy: treatmentStrategy || null,
+        }),
+      });
+      if (res.ok) await onSaved();
+    } finally {
+      setSavingRisk(false);
+    }
+  };
+
+  const handleErmSync = async () => {
+    setSyncingErm(true);
+    try {
+      const res = await fetch("/api/v1/bcms/erm-sync", { method: "POST" });
+      if (res.ok) void onSynced();
+    } finally {
+      setSyncingErm(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <Shield size={16} className="text-blue-600" />
+          Risikobewertung
+        </h2>
+        {Boolean(crisis.ermRiskId) && (
+          <Badge variant="outline" className="text-blue-600 border-blue-200">
+            <ArrowRight size={10} className="mr-1" /> ERM-Register
+          </Badge>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Likelihood selector */}
+        <div>
+          <label
+            htmlFor={`${a11yId}-eintrittswahrscheinlichkeit`}
+            className="block text-xs font-medium text-gray-500 mb-1"
+          >
+            Eintrittswahrscheinlichkeit
+          </label>
+          <select
+            id={`${a11yId}-eintrittswahrscheinlichkeit`}
+            value={likelihood}
+            onChange={(e) => setLikelihood(Number(e.target.value))}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value={0}>-- Auswahl --</option>
+            {[1, 2, 3, 4, 5].map((v) => (
+              <option key={v} value={v}>
+                {v} - {LIKELIHOOD_LABELS[v]}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Severity (read-only) */}
+        <div>
+          {/* [WP12 · S14-09] Read-only derived value, not a form control —
+              a <label> here names nothing. */}
+          <span className="block text-xs font-medium text-gray-500 mb-1">
+            Schweregrad (aus Szenario)
+          </span>
+          <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+            {severityLevel} - {crisis.severity.replace(/_/g, " ")}
+          </div>
+        </div>
+
+        {/* Risk Score */}
+        <div>
+          {/* [WP12 · S14-09] Read-only derived value, not a form control —
+              a <label> here names nothing. */}
+          <span className="block text-xs font-medium text-gray-500 mb-1">
+            Risikobewertung (L x S)
+          </span>
+          {likelihood > 0 ? (
+            <div
+              className={`rounded-md px-3 py-2 text-sm font-bold text-center ${riskColor(riskScore)}`}
+            >
+              {riskScore} - {riskLabel(riskScore)}
+            </div>
+          ) : (
+            <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 text-center">
+              --
+            </div>
+          )}
+        </div>
+
+        {/* Treatment Strategy */}
+        <div>
+          <label
+            htmlFor={`${a11yId}-behandlungsstrategie`}
+            className="block text-xs font-medium text-gray-500 mb-1"
+          >
+            Behandlungsstrategie
+          </label>
+          <select
+            id={`${a11yId}-behandlungsstrategie`}
+            value={treatmentStrategy}
+            onChange={(e) => setTreatmentStrategy(e.target.value)}
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">-- Auswahl --</option>
+            {TREATMENT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+        <Button
+          size="sm"
+          onClick={handleSaveRiskAssessment}
+          disabled={savingRisk || !likelihood}
+        >
+          {savingRisk ? (
+            <Loader2 size={14} className="animate-spin mr-1" />
+          ) : null}
+          Bewertung speichern
+        </Button>
+        {likelihood > 0 && riskScore >= 12 && !crisis.ermRiskId && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-blue-300 text-blue-700 hover:bg-blue-50"
+            onClick={handleErmSync}
+            disabled={syncingErm}
+          >
+            {syncingErm ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <ArrowRight size={14} className="mr-1" />
+            )}
+            Ins ERM synchronisieren
+          </Button>
+        )}
+        {Boolean(crisis.ermSyncedAt) && (
+          <span className="text-xs text-gray-400 ml-auto">
+            Synchronisiert: {formatDateTime(crisis.ermSyncedAt as string)}
+          </span>
+        )}
+      </div>
     </div>
   );
 }

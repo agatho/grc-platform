@@ -57,7 +57,6 @@
   "statusGenerating": "Generating",
   "statusCompleted": "Completed",
   "statusFailed": "Failed",
-
   "schedulesTitle": "Scheduled Reports",
   "schedulesSubtitle": "Automatic report generation and email distribution",
   "createSchedule": "Create New Schedule",
@@ -84,7 +83,6 @@
   "recipientEmails": "Recipient Emails",
   "recipientEmailsPlaceholder": "email1@example.com, email2@example.com",
   "recipientEmailsHint": "Comma-separated email addresses",
-
   "builderTitle": "Template Builder",
   "builderSubtitle": "Create a custom report template",
   "preview": "Preview",
@@ -112,7 +110,6 @@
   "textPlaceholder": "Enter free text (variables: {{report.date}}, {{period.label}} etc.)",
   "variables": "Variables",
   "variablesHint": "Click to copy. Usable in title and text sections.",
-
   "threatTitle": "Threat Landscape",
   "threatSubtitle": "Aggregated threat analysis for CISOs",
   "kpiActiveThreats": "Active Threats",
@@ -137,7 +134,6 @@
   "noFeedData": "No feed entries available.",
   "coverageTitle": "Control Coverage",
   "noCoverageData": "No coverage data available.",
-
   "threatNotFound": "Threat not found.",
   "backToLandscape": "Back to Threat Landscape",
   "threatDetails": "Threat Details",
@@ -147,5 +143,6 @@
   "firstDetected": "First Detected",
   "timeline": "Timeline",
   "threatCreated": "Threat created",
-  "planMeasure": "Plan Measure"
+  "planMeasure": "Plan Measure",
+  "copyVariable": "Copy variable {variable}"
 }

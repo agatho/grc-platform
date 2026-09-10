@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Loader2, BarChart3 } from "lucide-react";
 import {
@@ -18,6 +18,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface CompareRisk {
   riskId: string;
@@ -45,34 +46,28 @@ export default function FAIRComparePage() {
 
 function FAIRCompareInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const riskIds = searchParams.get("riskIds") ?? "";
 
-  const [loading, setLoading] = useState(true);
-  const [risks, setRisks] = useState<CompareRisk[]>([]);
-
-  const fetchData = useCallback(async () => {
-    if (!riskIds) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Ohne `riskIds` fragt die Abfrage
+  // nichts ab (`enabled`); `isPending` bliebe dann wahr, deshalb geht die
+  // Bedingung auch in den Ladezustand ein. Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage statt still verschluckt zu werden (Anzeige bleibt: leere Liste).
+  const { data: risks = [], isPending } = useQuery<CompareRisk[]>({
+    queryKey: ["erm", "fair", "compare", riskIds],
+    enabled: riskIds !== "",
+    queryFn: async () => {
       const res = await fetch(`/api/v1/erm/fair/compare?riskIds=${riskIds}`);
-      if (res.ok) {
-        const data = await res.json();
-        setRisks(data.data ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [riskIds]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as CompareRisk[];
+    },
+  });
+  const loading = riskIds !== "" && isPending;
 
   if (loading) {
     return (
@@ -123,12 +118,14 @@ function FAIRCompareInner() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis
                 type="number"
-                tickFormatter={formatCompactEUR}
+                tickFormatter={(v: number) =>
+                  formatCompactCurrency(locale, v, "EUR")
+                }
                 fontSize={11}
               />
               <YAxis type="category" dataKey="name" width={200} fontSize={11} />
               <RechartsTooltip
-                formatter={(val: unknown) => formatEUR(Number(val))}
+                formatter={(val: unknown) => formatEUR(locale, Number(val))}
               />
               <Legend />
               <Bar dataKey="P5" fill="#86efac" name="P5" stackId="range" />
@@ -161,23 +158,23 @@ function FAIRCompareInner() {
             <tbody>
               {risks
                 .sort((a, b) => b.aleP50 - a.aleP50)
-                .map((r, idx) => (
+                .map((r, _idx) => (
                   <tr key={r.riskId} className="border-b last:border-0">
                     <td className="p-2 font-medium">{r.riskTitle}</td>
                     <td className="p-2">
                       <Badge variant="outline">{r.riskCategory}</Badge>
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP50)}
+                      {formatEUR(locale, r.aleP50)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP95)}
+                      {formatEUR(locale, r.aleP95)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleP95)}
+                      {formatEUR(locale, r.aleP95)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(r.aleMean)}
+                      {formatEUR(locale, r.aleMean)}
                     </td>
                   </tr>
                 ))}
@@ -189,16 +186,12 @@ function FAIRCompareInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }

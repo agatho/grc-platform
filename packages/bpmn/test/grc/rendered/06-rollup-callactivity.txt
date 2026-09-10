@@ -1,0 +1,26 @@
+Auftragsabwicklung — Roll-up über die Call Activity
+
+Sicht: Risiko & Kontrolle — Wo ballt sich Restrisiko und wo fehlt die wirksame Kontrolle?
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+
+Der Prozess beginnt mit „Auftrag eingegangen“. Schritt 1: „Auftrag eingegangen“ führt zu „Auftrag annehmen und pruefen“. Schritt 2: „Auftrag annehmen und pruefen“ führt zu „Tourenplanung und Logistik“. Schritt 3: „Tourenplanung und Logistik“ führt zu „Bearbeitung und Auslieferung“. Schritt 4: „Bearbeitung und Auslieferung“ führt zu „Auftrag abgeschlossen“. Schritt 5: „Auftrag abgeschlossen“ endet hier. 3 Elemente tragen GRC-Hinweise in der Sicht „Risiko & Kontrolle".
+
+1. Auftrag eingegangen (Startereignis)
+2. Auftrag annehmen und pruefen (Aufgabe)
+    Kontrollabdeckung: Kontrollabdeckung 100 % des Restrisikos; alle Risiken haben eine wirksame Kontrolle.
+    Risiken: 1 Risiko, höchster Restwert 6 (niedrig), Summe 6.
+    Kontrollen: 1 Kontrolle, davon 1 wirksam.
+    Verantwortung (RACI): Durchführung: Vertrieb.
+    Kommentare: Kommentare: 1 offen von 3.
+3. Tourenplanung und Logistik (Aufruf eines Unterprozesses)
+    Kontrollabdeckung: Kontrollabdeckung 35 % des Restrisikos, geerbt aus „Tourenplanung".
+    Risiken: 3 Risiken, höchster Restwert 20 (hoch), Summe 34. Davon geerbt aus: Tourenplanung.
+    Aufgerufener Prozess: Ruft den Prozess „Tourenplanung" auf. Geerbt: 3 Risiken, höchster Restwert 20, Kontrollabdeckung 35 %, 2 offene Feststellungen.
+    Verantwortung (RACI): Durchführung: Disposition. Rechenschaft: Bereichsleitung.
+    Weitere Hinweise: Durchführung: Disposition. Rechenschaft: Bereichsleitung.
+4. Bearbeitung und Auslieferung (Aufgabe)
+    Kontrollabdeckung: Kontrollabdeckung 0 % des Restrisikos; 1 Risiko ohne wirksame Kontrolle: „Auslieferung ohne Empfangsbestätigung" (Restwert 12).
+    Risiken: 1 Risiko, höchster Restwert 12 (mittel), Summe 12.
+    Feststellungen: 1 offene Feststellung, 1 fällig in 14 Tagen.
+    Verteidigungslinie: 1. Verteidigungslinie.
+5. Auftrag abgeschlossen (Endereignis)

@@ -3,14 +3,14 @@
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/data-table";
-import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function CostManagementDashboardPage() {
   const t = useTranslations("eamDashboards");
+  const { formatCurrency: money } = useDateFormat();
   const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [treemapApps, setTreemapApps] = useState<Record<
+  const [_treemapApps, setTreemapApps] = useState<Record<
     string,
     unknown
   > | null>(null);
@@ -51,11 +51,9 @@ export default function CostManagementDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat("de-DE", {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(
+                {money(
                   (data as Record<string, number>)?.totalApplicationCost ?? 0,
+                  "EUR",
                 )}
               </p>
             </CardContent>
@@ -80,11 +78,9 @@ export default function CostManagementDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat("de-DE", {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(
+                {money(
                   (data as Record<string, number>)?.totalComponentCost ?? 0,
+                  "EUR",
                 )}
               </p>
             </CardContent>

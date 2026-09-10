@@ -11,8 +11,22 @@
 //
 // Pattern follows risks-create-rbac.test.ts (getter-based mocks so each
 // test drives its own branch).
+//
+// [ARCTOS-FULL-2026-08-31 · OP-109] Jede der drei `describe`-Bloecke hatte
+// einen `beforeAll`, der die Route mit 90 s Zeitlimit einmal vorwaermte —
+// noetig, weil ein kalter Routen-Import unter Coverage-Instrumentierung das
+// 15-s-Zeitlimit eines einzelnen Tests reisst. Unter Last hat dieser Hook
+// einmal nicht gereicht, und ein fehlgeschlagener `beforeAll` **ueberspringt**
+// in vitest die Tests seines Blocks: zehn Tests standen als Skip in der
+// Zusammenfassung und sahen aus wie eine bewusste Auslassung. Genau die
+// Verwechslung, die S11-02 beschreibt.
+//
+// Der Vorwaermer ist deshalb kein Hook mehr, sondern ein geteiltes Promise pro
+// Route (`routeModule`), auf das jeder Test selbst wartet, mit dem Zeitlimit am
+// `describe`. Ein langsamer Import macht den Test jetzt langsam; ein
+// fehlgeschlagener macht ihn rot. Beides ist sichtbar, ein Skip war es nicht.
 
-import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { makeMockDb, chainable, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
@@ -78,41 +92,115 @@ vi.mock("@/lib/rate-limit", () => ({
   getClientIp: vi.fn(() => "127.0.0.1"),
 }));
 
-vi.mock("@grc/ai", () => ({
-  get aiComplete() {
-    return aiCompleteMock;
-  },
-  get getAvailableProviders() {
-    return getAvailableProvidersMock;
-  },
-  get getEmbeddingProvider() {
-    return getEmbeddingProviderMock;
-  },
-  get generateEmbedding() {
-    return generateEmbeddingMock;
-  },
-  // Prompt builders: minimal message arrays — the real builders are
-  // covered by packages/ai/tests/ai-assist-prompts.test.ts.
-  buildPolicyDraftPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  buildControlAdvisorPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  buildGapExplanationPrompt: vi.fn(() => [
-    { role: "system", content: "s" },
-    { role: "user", content: "u" },
-  ]),
-  safeJsonParse: (text: string) => {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return null;
-    }
-  },
-}));
+// [ARCTOS-FULL-2026-08-31 / WP6] Die drei Routen rufen nicht mehr
+// `aiComplete()` direkt, sondern `aiCompleteGoverned()` — den zentralen
+// Aufrufpunkt mit Richtlinienpruefung, Ausgabevalidierung und
+// Protokollierung. Der Mock bildet genau dieses Verhalten nach, damit die
+// bestehenden Faelle unveraendert gelten:
+//   * `getAvailableProvidersMock` leer -> AiPolicyViolationError
+//     (`no_provider_configured`) -> 503
+//   * `outputSchema` schlaegt fehl     -> AiOutputInvalidError -> 422
+// Die echten Fehlerklassen kommen aus dem echten Modul, damit die
+// `instanceof`-Pruefung in `_shared/ai-route.ts` greift.
+vi.mock("@grc/ai", async () => {
+  const actual = await vi.importActual<typeof import("@grc/ai")>("@grc/ai");
+  return {
+    ...actual,
+    get aiComplete() {
+      return aiCompleteMock;
+    },
+    aiCompleteGoverned: async (req: {
+      parse?: (raw: string) => unknown;
+      outputSchema?: {
+        safeParse: (v: unknown) => { success: boolean; data?: unknown };
+      };
+    }) => {
+      if ((getAvailableProvidersMock() ?? []).length === 0) {
+        // [OP-261] Der ECHTE Fehler aus `policy.ts`, nicht ein selbst
+        // gebauter mit eigenem Text. Vorher stand hier
+        // `message: "Es ist kein KI-Provider konfiguriert."` — kuerzer als
+        // das, was die Anwendung wirklich wirft, und ohne
+        // `operatorHint`. Eine Attrappe, die harmloser ist als das Original,
+        // kann den Unterschied nicht pruefen, um den es hier geht: dieser
+        // Zweig trug die Namen der Provider-Umgebungsvariablen an jedes
+        // angemeldete Konto aus, und die Attrappe haette das nie gezeigt.
+        throw actual.noProviderConfiguredError();
+      }
+      const resp = await aiCompleteMock(req);
+      const raw = req.parse ? req.parse(resp.text) : resp.text;
+      let data: unknown = raw;
+      if (req.outputSchema) {
+        const parsed = req.outputSchema.safeParse(raw);
+        if (!parsed.success || parsed.data === undefined) {
+          throw new actual.AiOutputInvalidError(
+            "Die Modellausgabe entspricht nicht dem erwarteten Schema.",
+            String(resp.text ?? "").slice(0, 300),
+          );
+        }
+        data = parsed.data;
+      }
+      return {
+        data,
+        text: resp.text,
+        provider: resp.provider ?? "ollama",
+        model: resp.model ?? "test-model",
+        usage: resp.usage,
+        latencyMs: 1,
+        egressLogId: null,
+        promptSha256: "0".repeat(64),
+        policy: actual.defaultPolicySnapshot("org-1"),
+        disclosure: {
+          feature: "test",
+          aiGenerated: true,
+          provider: resp.provider ?? "ollama",
+          model: resp.model ?? "test-model",
+          processing: "local",
+          processingCountry: "DE",
+          processingController: "self-hosted",
+          thirdCountryTransfer: false,
+          egressMode: "any_configured",
+          policySource: "operator_default",
+          notice: "KI-generierter Vorschlag.",
+          humanReviewRequired: true,
+        },
+      };
+    },
+    loadOrgAiPolicy: async (orgId: string) => ({
+      ...actual.defaultPolicySnapshot(orgId),
+      requireTransparencyNotice: true,
+    }),
+    get getAvailableProviders() {
+      return getAvailableProvidersMock;
+    },
+    get getEmbeddingProvider() {
+      return getEmbeddingProviderMock;
+    },
+    get generateEmbedding() {
+      return generateEmbeddingMock;
+    },
+    // Prompt builders: minimal message arrays — the real builders are
+    // covered by packages/ai/tests/ai-assist-prompts.test.ts.
+    buildPolicyDraftPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    buildControlAdvisorPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    buildGapExplanationPrompt: vi.fn(() => [
+      { role: "system", content: "s" },
+      { role: "user", content: "u" },
+    ]),
+    safeJsonParse: (text: string) => {
+      try {
+        return JSON.parse(text);
+      } catch {
+        return null;
+      }
+    },
+  };
+});
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
@@ -183,7 +271,7 @@ beforeEach(() => {
 // POST /api/v1/ai/draft-policy
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/draft-policy", () => {
+describe("POST /api/v1/ai/draft-policy", { timeout: 90_000 }, () => {
   const validBody = {
     catalogEntryIds: [UUID_A],
     documentCategory: "policy",
@@ -191,12 +279,13 @@ describe("POST /api/v1/ai/draft-policy", () => {
     context: "Test org",
   };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/draft-policy/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/draft-policy/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/draft-policy/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/draft-policy", body));
   }
 
@@ -253,7 +342,10 @@ describe("POST /api/v1/ai/draft-policy", () => {
     const res = await call(validBody);
     expect(res.status).toBe(503);
     const json = await res.json();
-    expect(json.error).toMatch(/provider/i);
+    // [WP6] Fehlerantworten der AI-Routen sind RFC-7807 (problem+json)
+    // statt `{ error }` — einheitlich ueber `_shared/ai-route.ts`.
+    expect(json.detail).toMatch(/provider/i);
+    expect(json.code).toBe("no_provider_configured");
     expect(aiCompleteMock).not.toHaveBeenCalled();
   });
 
@@ -292,7 +384,15 @@ describe("POST /api/v1/ai/draft-policy", () => {
     expect(json.data.coveredRequirements).toEqual(["A.5.1"]);
     expect(json.data.provider).toBe("ollama");
     // Usage was logged to ai_prompt_log
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {
@@ -318,7 +418,9 @@ describe("POST /api/v1/ai/draft-policy", () => {
     const res = await call(validBody);
     expect(res.status).toBe(422);
     const json = await res.json();
-    expect(json.error).toMatch(/unparseable|invalid/i);
+    expect(`${json.title} ${json.detail}`).toMatch(
+      /unbrauchbar|erwarteten Format/i,
+    );
   });
 
   it("returns 502 when the AI provider throws", async () => {
@@ -335,9 +437,21 @@ describe("POST /api/v1/ai/draft-policy", () => {
         },
       ]),
     );
-    aiCompleteMock.mockRejectedValue(new Error("provider down"));
+    aiCompleteMock.mockRejectedValue(
+      new Error("connect ECONNREFUSED ollama.internal:11434"),
+    );
     const res = await call(validBody);
     expect(res.status).toBe(502);
+
+    // Die Antwort trägt die Meldung des Providers nicht mehr. Sie war
+    // kein Stacktrace und der Pfad ist angemeldet — sie nennt aber
+    // Hostnamen, Ports und gelegentlich Tabellen- und Spaltennamen, die
+    // ein Mandantennutzer nicht sehen muss. Der volle Text steht im Log
+    // (`component: "ai-route"`), siehe `_shared/ai-route.ts`.
+    const json = await res.json();
+    expect(JSON.stringify(json)).not.toContain("ECONNREFUSED");
+    expect(JSON.stringify(json)).not.toContain("ollama.internal");
+    expect(json.detail).toMatch(/nicht erreichbar/i);
   });
 });
 
@@ -345,15 +459,16 @@ describe("POST /api/v1/ai/draft-policy", () => {
 // POST /api/v1/ai/suggest-controls
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/suggest-controls", () => {
+describe("POST /api/v1/ai/suggest-controls", { timeout: 90_000 }, () => {
   const validBody = { riskId: UUID_A };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/suggest-controls/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/suggest-controls/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/suggest-controls/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/suggest-controls", body));
   }
 
@@ -457,7 +572,15 @@ describe("POST /api/v1/ai/suggest-controls", () => {
     );
     expect(linkSuggestion.controlId).toBe(UUID_B);
     expect(linkSuggestion.controlTitle).toBe("Endpoint detection and response");
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {
@@ -595,15 +718,16 @@ describe("POST /api/v1/ai/suggest-controls", () => {
 // POST /api/v1/ai/explain-gap
 // ─────────────────────────────────────────────────────────────────
 
-describe("POST /api/v1/ai/explain-gap", () => {
+describe("POST /api/v1/ai/explain-gap", { timeout: 90_000 }, () => {
   const validBody = { soaEntryId: UUID_A };
 
-  beforeAll(async () => {
-    await import("../../app/api/v1/ai/explain-gap/route");
-  }, 90_000);
+  // Einmal importiert, von jedem Test abgewartet: der kalte Import kostet
+  // unter Instrumentierung Sekunden, ein Fehlschlag daran ist ein Fehlschlag
+  // des Tests und kein Skip (OP-109).
+  const routeModule = import("../../app/api/v1/ai/explain-gap/route");
 
   async function call(body: unknown) {
-    const { POST } = await import("../../app/api/v1/ai/explain-gap/route");
+    const { POST } = await routeModule;
     return POST(post("http://localhost/api/v1/ai/explain-gap", body));
   }
 
@@ -692,7 +816,15 @@ describe("POST /api/v1/ai/explain-gap", () => {
     expect(json.data.suggestedSteps).toHaveLength(3);
     expect(json.data.suggestedEvidence).toHaveLength(3);
     expect(json.data.soaEntryId).toBe(UUID_A);
-    expect(mockDb.insert).toHaveBeenCalledTimes(1);
+    // [WP6] Die Route schreibt `ai_prompt_log` nicht mehr selbst — das
+    // tut `aiCompleteGoverned` zusammen mit `ai_egress_log`. Statt der
+    // Insert-Zaehlung wird hier die Transparenzangabe geprueft, die
+    // seit S05-12 mit JEDER AI-Antwort ausgeliefert wird.
+    expect(json.data.aiDisclosure).toMatchObject({
+      aiGenerated: true,
+      provider: expect.any(String),
+      processing: expect.stringMatching(/local|third_country/),
+    });
   });
 
   it("returns 422 when the AI response is not parseable JSON", async () => {
@@ -706,3 +838,86 @@ describe("POST /api/v1/ai/explain-gap", () => {
     expect(res.status).toBe(422);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────
+// [OP-261] Der 503-Zweig trennt jetzt zwei Empfaenger
+// ─────────────────────────────────────────────────────────────────────
+//
+// Vorher stand beides in EINER Zeichenkette: der Zustand ("kein Provider
+// freigeschaltet") und die Anleitung fuer den Betreiber (die Namen der
+// Umgebungsvariablen). `aiErrorResponse` bekommt einen Fehler, keine Rolle,
+// und hat die ganze Kette als `detail` zurueckgegeben — an jedes angemeldete
+// Konto, ueber alle AI-Routen.
+//
+// Die Rollenpruefung laeuft wie bei den Nachbarn ueber `ctx.roles`
+// (`ai/router/health/route.ts:61`), die Trennung sitzt in `policy.ts`.
+describe(
+  "OP-261 — die Namen der Provider-Variablen",
+  { timeout: 90_000 },
+  () => {
+    const validBody = {
+      catalogEntryIds: [UUID_A],
+      documentCategory: "policy",
+      language: "de",
+      context: "Test org",
+    };
+
+    const routeModule = import("../../app/api/v1/ai/draft-policy/route");
+
+    async function callAs(roles: string[]) {
+      withAuthMock.mockResolvedValue({ ...AUTH_CTX, roles });
+      getAvailableProvidersMock.mockReturnValue([]);
+      const { POST } = await routeModule;
+      const res = await POST(
+        post("http://localhost/api/v1/ai/draft-policy", validBody),
+      );
+      return { res, json: (await res.json()) as { detail?: string } };
+    }
+
+    // Die Namen einzeln, nicht als ein Muster: faellt einer heraus, soll der
+    // Fehlschlag sagen welcher.
+    const VARIABLEN = [
+      "OLLAMA_BASE_URL",
+      "LMSTUDIO_BASE_URL",
+      "ANTHROPIC_API_KEY",
+      "OPENAI_API_KEY",
+      "GOOGLE_AI_API_KEY",
+      "CLAUDE_CLI_ENABLED",
+    ];
+
+    it("nennt sie einem gewoehnlichen Konto nicht", async () => {
+      const { res, json } = await callAs(["risk_manager"]);
+
+      expect(res.status).toBe(503);
+      // Der Zustand bleibt sichtbar — das ist der Punkt der Trennung, nicht
+      // eine stillere Antwort.
+      expect(json.detail).toMatch(/kein KI-Provider/i);
+      expect(json.detail).toMatch(/Administration/i);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).not.toContain(name);
+      }
+    });
+
+    it("nennt sie der Administration", async () => {
+      const { res, json } = await callAs(["admin"]);
+
+      expect(res.status).toBe(503);
+      expect(json.detail).toMatch(/kein KI-Provider/i);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).toContain(name);
+      }
+    });
+
+    it("schweigt, wenn die Rolle gar nicht durchgereicht wird", async () => {
+      // Die Vorgabe von `aiErrorResponse` ohne `opts`: eine Aufrufstelle, die
+      // den Kontext vergisst, bekommt die ENGERE Antwort. Ein vergessener
+      // Parameter soll etwas verschweigen, nicht etwas ausplaudern.
+      const { res, json } = await callAs([]);
+
+      expect(res.status).toBe(503);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).not.toContain(name);
+      }
+    });
+  },
+);

@@ -15,7 +15,10 @@
 import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const SCHEMA_DIR = join(ROOT, "packages/db/src/schema");
 const DRIZZLE_DIR = join(ROOT, "packages/db/drizzle");
 const OUT_TS = join(SCHEMA_DIR, "_generated_stubs.ts");
@@ -39,7 +42,8 @@ async function extractDdls() {
   for (const f of files) {
     const c = await readFile(join(DRIZZLE_DIR, f), "utf8");
     // Balanced-ish parser: find CREATE TABLE, capture until matching );
-    const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["]?([a-z_][a-z0-9_]*)["]?\s*\(([^;]+?)\);/gis;
+    const re =
+      /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["]?([a-z_][a-z0-9_]*)["]?\s*\(([^;]+?)\);/gis;
     let m;
     while ((m = re.exec(c)) !== null) {
       const name = m[1];
@@ -58,7 +62,8 @@ function sqlTypeToDrizzle(sqlType, columnName) {
     return `varchar("${columnName}", { length: ${m ? m[1] : 255} })`;
   }
   if (t === "text") return `text("${columnName}")`;
-  if (t.startsWith("int") || t.startsWith("smallint") || t.startsWith("bigint")) return `integer("${columnName}")`;
+  if (t.startsWith("int") || t.startsWith("smallint") || t.startsWith("bigint"))
+    return `integer("${columnName}")`;
   if (t.startsWith("numeric") || t.startsWith("decimal")) {
     const m = sqlType.match(/\((\d+)\s*,\s*(\d+)\)/);
     return m
@@ -66,11 +71,13 @@ function sqlTypeToDrizzle(sqlType, columnName) {
       : `numeric("${columnName}")`;
   }
   if (t === "boolean" || t === "bool") return `boolean("${columnName}")`;
-  if (t.includes("timestamp")) return `timestamp("${columnName}", { withTimezone: true })`;
+  if (t.includes("timestamp"))
+    return `timestamp("${columnName}", { withTimezone: true })`;
   if (t.includes("date")) return `date("${columnName}")`;
   if (t === "jsonb") return `jsonb("${columnName}")`;
   if (t === "json") return `jsonb("${columnName}")`;
-  if (t === "inet") return `varchar("${columnName}", { length: 45 }) /* was inet */`;
+  if (t === "inet")
+    return `varchar("${columnName}", { length: 45 }) /* was inet */`;
   return `varchar("${columnName}", { length: 500 }) /* TYPE: ${sqlType.trim()} */`;
 }
 
@@ -86,7 +93,8 @@ function pascalCase(snake) {
 function parseColumns(body) {
   // Split on commas that are NOT inside parens (naive, good enough for DDL)
   const parts = [];
-  let depth = 0, buf = "";
+  let depth = 0,
+    buf = "";
   for (const ch of body) {
     if (ch === "(") depth++;
     else if (ch === ")") depth--;
@@ -102,22 +110,32 @@ function parseColumns(body) {
   const columns = [];
   for (const part of parts) {
     // Skip CONSTRAINT clauses, PRIMARY KEY at table level, etc.
-    if (/^\s*(CONSTRAINT|PRIMARY\s+KEY|UNIQUE|FOREIGN\s+KEY|CHECK)\b/i.test(part)) continue;
-    const m = part.match(/^["]?([a-z_][a-z0-9_]*)["]?\s+([A-Za-z][A-Za-z0-9_\s()]+?)(?:\s+(?:NOT\s+)?NULL|\s+DEFAULT|\s+REFERENCES|\s+PRIMARY\s+KEY|\s+UNIQUE|$)/is);
+    if (
+      /^\s*(CONSTRAINT|PRIMARY\s+KEY|UNIQUE|FOREIGN\s+KEY|CHECK)\b/i.test(part)
+    )
+      continue;
+    const m = part.match(
+      /^["]?([a-z_][a-z0-9_]*)["]?\s+([A-Za-z][A-Za-z0-9_\s()]+?)(?:\s+(?:NOT\s+)?NULL|\s+DEFAULT|\s+REFERENCES|\s+PRIMARY\s+KEY|\s+UNIQUE|$)/is,
+    );
     if (!m) continue;
     const colName = m[1];
     const sqlType = m[2].trim();
     const isNotNull = /NOT\s+NULL/i.test(part);
     const isPrimaryKey = /PRIMARY\s+KEY/i.test(part);
-    const defaultMatch = part.match(/DEFAULT\s+([^,]+?)(?:\s+(?:NOT\s+)?NULL|$|\s+REFERENCES)/i);
-    const references = part.match(/REFERENCES\s+["]?([a-z_]+)["]?\s*\(([^)]+)\)/i);
+    const defaultMatch = part.match(
+      /DEFAULT\s+([^,]+?)(?:\s+(?:NOT\s+)?NULL|$|\s+REFERENCES)/i,
+    );
+    const references = part.match(
+      /REFERENCES\s+["]?([a-z_]+)["]?\s*\(([^)]+)\)/i,
+    );
 
     let expr = sqlTypeToDrizzle(sqlType, colName);
     if (isPrimaryKey) expr += `.primaryKey()`;
     if (defaultMatch) {
       const def = defaultMatch[1].trim();
       if (def === "gen_random_uuid()") expr += `.defaultRandom()`;
-      else if (def === "now()" || def === "CURRENT_TIMESTAMP") expr += `.defaultNow()`;
+      else if (def === "now()" || def === "CURRENT_TIMESTAMP")
+        expr += `.defaultNow()`;
       else if (/^['"].*['"]$/.test(def)) expr += `.default(${def})`;
       else if (/^(true|false|[0-9]+)$/.test(def)) expr += `.default(${def})`;
       else expr += `/* DEFAULT ${def} */`;
@@ -221,4 +239,7 @@ async function main() {
   console.log(`→ Wrote ${OUT_MD}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

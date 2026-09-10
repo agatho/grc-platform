@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Der Demo-Seed-Block referenziert die Organisation c2446a5c, die keine Migration anlegt (Phantom-Org). Er laeuft jetzt nur noch, wenn die Org existiert; sonst No-Op statt 23503-Abbruch (S09-07).
 -- Migration 0086: ISMS Corrective Action Plan (CAP)
 -- ISO 27001:2022 Kap. 10.1-10.2 Nonconformity & Corrective Action
 
@@ -77,37 +82,48 @@ EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
 -- Demo data
-INSERT INTO isms_nonconformity (id, org_id, nc_code, title, description, source_type, severity, iso_clause, identified_at, due_date, root_cause, root_cause_method, status) VALUES
-('b0000000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'NC-001', 'Fehlende Verschlüsselung auf Backup-Medien',
- 'Bei der internen Revision wurde festgestellt, dass Backup-Bänder ohne Verschlüsselung transportiert werden. Verstoß gegen A.8.24 (Einsatz von Kryptographie).',
- 'internal_audit', 'major', 'A.8.24',
- '2026-01-20', '2026-03-31',
- 'Backup-Software unterstützt Verschlüsselung, wurde aber bei der Migration auf das neue System nicht konfiguriert. Kein 4-Augen-Check bei der Konfigurationsänderung.',
- 'five_why', 'in_progress'),
-('b0000000-0000-0000-0000-000000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'NC-002', 'Zugriffsrechte-Review nicht fristgerecht durchgeführt',
- 'Die quartalsweise Rezertifizierung der Zugriffsrechte für Q4/2025 wurde nicht innerhalb der vorgeschriebenen Frist abgeschlossen. 3 von 8 Systemen ausstehend.',
- 'management_review', 'minor', 'A.5.18',
- '2026-02-15', '2026-04-30',
- 'Ressourcenmangel im IAM-Team durch Krankheitsausfälle und Priorisierung des ERP-Migrationsprojekts.',
- 'ishikawa', 'action_planned')
-ON CONFLICT (id) DO NOTHING;
+DO $seed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM organization WHERE id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41') THEN
+    RAISE NOTICE '0086: Demo-Org c2446a5c nicht vorhanden - ISMS-Demodaten uebersprungen';
+    RETURN;
+  END IF;
 
-INSERT INTO isms_corrective_action (id, org_id, nonconformity_id, title, description, action_type, due_date, status, verification_required) VALUES
-('b0000000-0000-0000-0000-000000000011', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'b0000000-0000-0000-0000-000000000001',
- 'AES-256 Verschlüsselung für alle Backup-Medien aktivieren',
- 'Konfiguration der Backup-Software (Veeam) für AES-256 Verschlüsselung aller Backup-Jobs. Schlüsselmanagement über bestehendes HSM.',
- 'corrective', '2026-02-28', 'in_progress', true),
-('b0000000-0000-0000-0000-000000000012', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'b0000000-0000-0000-0000-000000000001',
- 'Änderungsmanagement-Prozess für Sicherheitskonfigurationen',
- 'Einführung eines 4-Augen-Prinzips bei Änderungen an sicherheitsrelevanten Konfigurationen. Checkliste und Freigabeworkflow implementieren.',
- 'preventive', '2026-03-31', 'planned', true),
-('b0000000-0000-0000-0000-000000000013', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
- 'b0000000-0000-0000-0000-000000000002',
- 'Automatisierte Rezertifizierungs-Erinnerungen',
- 'Implementierung automatischer Erinnerungen 2 Wochen vor Rezertifizierungsfrist. Eskalation an CISO bei Fristüberschreitung.',
- 'corrective', '2026-03-15', 'planned', true)
-ON CONFLICT (id) DO NOTHING;
+  INSERT INTO isms_nonconformity (id, org_id, nc_code, title, description, source_type, severity, iso_clause, identified_at, due_date, root_cause, root_cause_method, status) VALUES
+  ('b0000000-0000-0000-0000-000000000001', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+   'NC-001', 'Fehlende Verschlüsselung auf Backup-Medien',
+   'Bei der internen Revision wurde festgestellt, dass Backup-Bänder ohne Verschlüsselung transportiert werden. Verstoß gegen A.8.24 (Einsatz von Kryptographie).',
+   'internal_audit', 'major', 'A.8.24',
+   '2026-01-20', '2026-03-31',
+   'Backup-Software unterstützt Verschlüsselung, wurde aber bei der Migration auf das neue System nicht konfiguriert. Kein 4-Augen-Check bei der Konfigurationsänderung.',
+   'five_why', 'in_progress'),
+  ('b0000000-0000-0000-0000-000000000002', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+   'NC-002', 'Zugriffsrechte-Review nicht fristgerecht durchgeführt',
+   'Die quartalsweise Rezertifizierung der Zugriffsrechte für Q4/2025 wurde nicht innerhalb der vorgeschriebenen Frist abgeschlossen. 3 von 8 Systemen ausstehend.',
+   'management_review', 'minor', 'A.5.18',
+   '2026-02-15', '2026-04-30',
+   'Ressourcenmangel im IAM-Team durch Krankheitsausfälle und Priorisierung des ERP-Migrationsprojekts.',
+   'ishikawa', 'action_planned')
+  ON CONFLICT (id) DO NOTHING;
+
+
+  INSERT INTO isms_corrective_action (id, org_id, nonconformity_id, title, description, action_type, due_date, status, verification_required) VALUES
+  ('b0000000-0000-0000-0000-000000000011', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+   'b0000000-0000-0000-0000-000000000001',
+   'AES-256 Verschlüsselung für alle Backup-Medien aktivieren',
+   'Konfiguration der Backup-Software (Veeam) für AES-256 Verschlüsselung aller Backup-Jobs. Schlüsselmanagement über bestehendes HSM.',
+   'corrective', '2026-02-28', 'in_progress', true),
+  ('b0000000-0000-0000-0000-000000000012', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+   'b0000000-0000-0000-0000-000000000001',
+   'Änderungsmanagement-Prozess für Sicherheitskonfigurationen',
+   'Einführung eines 4-Augen-Prinzips bei Änderungen an sicherheitsrelevanten Konfigurationen. Checkliste und Freigabeworkflow implementieren.',
+   'preventive', '2026-03-31', 'planned', true),
+  ('b0000000-0000-0000-0000-000000000013', 'c2446a5c-64f1-40a7-862a-8ab084f66f41',
+   'b0000000-0000-0000-0000-000000000002',
+   'Automatisierte Rezertifizierungs-Erinnerungen',
+   'Implementierung automatischer Erinnerungen 2 Wochen vor Rezertifizierungsfrist. Eskalation an CISO bei Fristüberschreitung.',
+   'corrective', '2026-03-15', 'planned', true)
+  ON CONFLICT (id) DO NOTHING;
+END
+$seed$;
+

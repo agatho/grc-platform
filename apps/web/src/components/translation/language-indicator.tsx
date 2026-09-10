@@ -42,7 +42,9 @@ export function LanguageIndicator({
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger>
-            <Badge className="bg-green-100 text-green-700 border-green-200 text-[10px] px-1 py-0">
+            <Badge // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+              className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1 py-0"
+            >
               <Languages className="h-2.5 w-2.5 mr-0.5" />
               {count}/{activeLanguageCount}
             </Badge>

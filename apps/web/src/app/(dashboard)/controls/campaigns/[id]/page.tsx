@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Loader2, ClipboardList } from "lucide-react";
@@ -92,35 +92,36 @@ function CampaignDetailInner() {
   const router = useRouter();
   const campaignId = params.id as string;
 
-  const [campaign, setCampaign] = useState<CampaignDetail | null>(null);
-  const [tests, setTests] = useState<CampaignTestRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen wurden immer
+  // gemeinsam gestellt, daher eine Abfrage mit einem Objekt als Ergebnis.
+  const { data, isPending: loading } = useQuery<{
+    campaign: CampaignDetail | null;
+    tests: CampaignTestRow[];
+  }>({
+    queryKey: ["controls", "campaigns", "detail", campaignId],
+    queryFn: async () => {
       const [campaignRes, testsRes] = await Promise.all([
         fetch(`/api/v1/controls/campaigns/${campaignId}`),
         fetch(`/api/v1/controls/campaigns/${campaignId}/tests`),
       ]);
+      let campaign: CampaignDetail | null = null;
+      let tests: CampaignTestRow[] = [];
       if (campaignRes.ok) {
         const json = await campaignRes.json();
-        setCampaign(json.data ?? null);
+        campaign = json.data ?? null;
       }
       if (testsRes.ok) {
         const json = await testsRes.json();
-        setTests(json.data ?? []);
+        tests = json.data ?? [];
       }
-    } catch {
-      // handled by null checks
-    } finally {
-      setLoading(false);
-    }
-  }, [campaignId]);
+      return { campaign, tests };
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const campaign = data?.campaign ?? null;
+  const tests = data?.tests ?? [];
 
   if (loading) {
     return (

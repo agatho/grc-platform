@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Zirkulaere Abhaengigkeit zu 0085a aufgeloest: der FK ai_incident.gpai_model_id -> ai_gpai_model wird nicht mehr hier, sondern in 0382_ai_act_fk_closure.sql angelegt.
 -- Migration 0085: EU AI Act Complete Module
 -- Creates base tables (from Sprint 73 schema) + new Gap tables
 
@@ -171,7 +176,13 @@ CREATE TABLE IF NOT EXISTS ai_incident (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES organization(id),
   ai_system_id UUID REFERENCES ai_system(id),
-  gpai_model_id UUID REFERENCES ai_gpai_model(id),
+  -- [ARCTOS-FULL-2026-08-31 / S09-01] FK auf ai_gpai_model entfernt.
+  -- 0085_ai_act_complete erzeugt ai_system und brauchte hier
+  -- ai_gpai_model; 0085a_ai_act_full_compliance erzeugt ai_gpai_model
+  -- und braucht ai_system — eine zirkulaere Abhaengigkeit zwischen zwei
+  -- Dateien, die unter Transaktionsklammer unaufloesbar ist (42P01).
+  -- Der FK wird nachgezogen von 0382_ai_act_fk_closure.sql.
+  gpai_model_id UUID,
   incident_code VARCHAR(50),
   title VARCHAR(500) NOT NULL,
   description TEXT,
@@ -366,6 +377,15 @@ BEGIN
     'ai_gpai_model', 'ai_incident', 'ai_prohibited_screening',
     'ai_provider_qms', 'ai_corrective_action', 'ai_authority_communication', 'ai_penalty'
   ]) LOOP
+    -- [ARCTOS-FULL-2026-08-31 / S09-01] to_regclass-Guard: die Liste
+    -- enthaelt Tabellen (ai_gpai_model, ai_incident, ai_penalty,
+    -- ai_prohibited_screening, ai_provider_qms, ai_corrective_action,
+    -- ai_authority_communication), die erst 0085a_ai_act_full_compliance.sql
+    -- anlegt. Ohne Guard scheiterte das ALTER TABLE mit 42P01 und riss die
+    -- gesamte Datei mit — inklusive der hier erzeugten ai_system-Tabelle.
+    -- 0105_phase3_rls_audit_triggers.sql setzt RLS fuer die spaeteren
+    -- Tabellen nach.
+    CONTINUE WHEN to_regclass('public.' || tbl) IS NULL;
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
     BEGIN
       EXECUTE format('CREATE POLICY rls_%s ON %I USING (org_id = current_setting(''app.current_org_id'')::uuid)', replace(tbl, '.', '_'), tbl);

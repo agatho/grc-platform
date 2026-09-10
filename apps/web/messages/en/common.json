@@ -332,7 +332,8 @@
       "platformData": "Import & Search",
       "platformCatalogs": "Catalogs & Frameworks",
       "platformAdmin": "Administration"
-    }
+    },
+    "title": "Main navigation"
   },
   "orgSwitcher": {
     "label": "Organization",
@@ -517,6 +518,160 @@
         "cancelled": "Cancelled",
         "failed": "Failed"
       }
+    },
+    "hub": {
+      "section": {
+        "platform": "Platform & organization",
+        "access": "Users, roles & access",
+        "compliance": "Compliance & methodology",
+        "modules": "Modules, automation & AI",
+        "communication": "Communication & notifications",
+        "security": "Security, audit & privacy"
+      },
+      "card": {
+        "organizations": {
+          "title": "Organizations",
+          "description": "Manage tenants, corporate hierarchy, and master data."
+        },
+        "branding": {
+          "title": "Branding & theme",
+          "description": "Logo, colors and email header for reports and notifications."
+        },
+        "calendar": {
+          "title": "Calendar & holidays",
+          "description": "Fiscal year, holiday calendar, and deadline calculation."
+        },
+        "languages": {
+          "title": "Languages & translations",
+          "description": "Available UI languages and AI-assisted translation pipelines."
+        },
+        "users": {
+          "title": "User management",
+          "description": "Invite, deactivate users, enforce MFA."
+        },
+        "roles": {
+          "title": "Roles & permissions",
+          "description": "Three-lines-of-defense role matrix and custom roles."
+        },
+        "abac": {
+          "title": "ABAC policies",
+          "description": "Attribute-based access control and policy simulator."
+        },
+        "sso": {
+          "title": "SSO (SAML / OIDC)",
+          "description": "Enterprise SSO per organization (Okta, Azure AD, Keycloak, Google)."
+        },
+        "scim": {
+          "title": "SCIM provisioning",
+          "description": "Automatic user lifecycle and role sync from the IdP."
+        },
+        "risk_methodology": {
+          "title": "Risk methodology",
+          "description": "Scales, matrix, tolerances and FAIR parameters per organization."
+        },
+        "catalogs": {
+          "title": "Catalogs & frameworks",
+          "description": "Activate, exclude, override 46 frameworks."
+        },
+        "catalogsMappings": {
+          "title": "Framework coverage",
+          "description": "Cross-framework mapping and gap analysis."
+        },
+        "review_cycles": {
+          "title": "Review cycles",
+          "description": "Automatic periodic reviews (SoA, RCSA, assessments)."
+        },
+        "modules": {
+          "title": "Enable modules",
+          "description": "Enable/disable the 15 core modules per tenant."
+        },
+        "ai_providers": {
+          "title": "AI providers",
+          "description": "Configure Anthropic, OpenAI, Gemini, Ollama, LM Studio and privacy routing."
+        },
+        "ai_usage": {
+          "title": "AI usage & cost",
+          "description": "Tokens, cost per model, cache hit ratio."
+        },
+        "automation": {
+          "title": "Automation",
+          "description": "Rule engine, event triggers, and workflow templates."
+        },
+        "webhooks": {
+          "title": "Webhooks",
+          "description": "HMAC-signed outbound webhooks per event type."
+        },
+        "connectors": {
+          "title": "Connectors",
+          "description": "Cloud, IAM, and DevOps evidence connectors."
+        },
+        "notifications": {
+          "title": "Notification preferences",
+          "description": "Email, in-app, Slack routing, and quiet hours."
+        },
+        "messaging": {
+          "title": "Messaging channels",
+          "description": "Slack / Teams / Webex bot integration."
+        },
+        "reminders": {
+          "title": "Reminders",
+          "description": "Global reminder rules (controls, evidence, assessments)."
+        },
+        "export_schedules": {
+          "title": "Export schedules",
+          "description": "Recurring PDF/Excel exports for executive / audit use."
+        },
+        "audit_log": {
+          "title": "Audit log",
+          "description": "Append-only change history with SHA-256 hash chain."
+        },
+        "access_log": {
+          "title": "Access log",
+          "description": "Login, session, and permission events."
+        },
+        "data_sovereignty": {
+          "title": "Data sovereignty",
+          "description": "Hosting region, export policies, third-country transfers."
+        },
+        "dpmsRetention": {
+          "title": "Retention (GDPR Art. 5)",
+          "description": "Deletion deadlines per entity type — storage limitation."
+        },
+        "events": {
+          "title": "Event bus",
+          "description": "Domain events, dead-letter queue, and retry configuration."
+        }
+      },
+      "title": "Platform settings",
+      "description": "Central configuration for organization, access, compliance methodology, modules, and integrations.",
+      "footer": "Module-specific settings are configured per tenant via “Enable modules”. All changes are automatically recorded in the audit log.",
+      "badge": {
+        "new": "new",
+        "admin": "admin"
+      }
+    },
+    "aiProviders": {
+      "title": "AI providers",
+      "description": "Configuration for the available large language model providers. Keys and endpoints are read from environment variables so secrets never land in the database or the browser.",
+      "loadError": "The provider list could not be loaded",
+      "defaultProvider": "Default provider",
+      "defaultProviderHint": "Provider selected by default when no explicit provider is requested.",
+      "privacyRouting": "Privacy routing",
+      "privacyRoutingHint": "When containsPersonalData=true, requests are automatically routed to Ollama or LM Studio.",
+      "enabled": "enabled",
+      "disabled": "disabled",
+      "default": "Default",
+      "type": {
+        "cloud": "Cloud",
+        "local": "Local",
+        "subscription": "Subscription"
+      },
+      "model": "Model",
+      "configured": "Configured",
+      "notConfigured": "Not configured",
+      "envVars": "Environment variables",
+      "footerTitle": "Updating keys and endpoints",
+      "footerBody": "Set the values in the deployment's .env file and restart the Node process. This page only shows the configuration status — no keys are ever displayed or editable. That protects against accidental exposure via browser cache, screenshots, or support sessions."
     }
   },
   "actions": {
@@ -652,7 +807,8 @@
     "entries": "entries",
     "errorTitle": "Something went wrong",
     "loadError": "Failed to load data",
-    "retry": "Retry"
+    "retry": "Retry",
+    "httpError": "Error {status}"
   },
   "auditLog": {
     "title": "Audit Trail",
@@ -749,7 +905,22 @@
     "revoking": "Revoking...",
     "revokeSuccess": "Invitation revoked",
     "revokeError": "Failed to revoke invitation",
-    "sendError": "Failed to send invitation"
+    "sendError": "Failed to send invitation",
+    "acceptTitle": "Accept invitation",
+    "acceptWelcome": "Welcome to ARCTOS",
+    "acceptDone": "Your invitation has been accepted. You can sign in now.",
+    "acceptGoToLogin": "Go to sign-in",
+    "acceptSubmit": "Accept invitation",
+    "yourName": "Your name",
+    "namePlaceholder": "Jane Doe",
+    "password": "Password",
+    "passwordPlaceholder": "At least {count} characters",
+    "confirmPassword": "Confirm password",
+    "confirmPasswordPlaceholder": "Repeat password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least {count} characters long",
+    "acceptError": "The invitation could not be accepted",
+    "selfHostedNote": "Self-hosted. ISO 27001 compliant. Your data stays with you."
   },
   "accessLog": {
     "title": "Access Log",
@@ -776,7 +947,8 @@
     "teaser": {
       "activate": "Activate Module",
       "contact": "Contact Support",
-      "addon": "This module requires an add-on license"
+      "addon": "This module requires an add-on license",
+      "activateFailed": "The module could not be activated. Please contact an administrator."
     },
     "disableConfirm": "Disabling {name} will hide this module for all users of your organization. Your data is not deleted and can be reactivated at any time.",
     "depNotMet": "Requires: {deps}",
@@ -788,7 +960,237 @@
       "addon": "Add-on",
       "enterprise": "Enterprise"
     },
-    "configure": "Settings"
+    "configure": "Settings",
+    "detail": {
+      "module": {
+        "erm": {
+          "description": "Enterprise risk management — register, KRIs, assessment methodology.",
+          "links": {
+            "settings_risk_methodology": {
+              "label": "Risk methodology",
+              "description": "Assessment scales, matrix, FAIR parameters."
+            },
+            "erm_risk_appetite": {
+              "label": "Risk appetite",
+              "description": "Appetite statements and tolerance thresholds per category."
+            },
+            "catalogs_module_erm": {
+              "label": "Risk catalogs",
+              "description": "Cambridge, WEF, MITRE ATT&CK, BSI threats."
+            }
+          }
+        },
+        "isms": {
+          "description": "Information security management — ISO 27001 / 27002, SoA, risks, maturity.",
+          "links": {
+            "isms_soa": {
+              "label": "Statement of Applicability",
+              "description": "Activate/exclude 93 Annex A controls with rationale."
+            },
+            "isms_reviews": {
+              "label": "Management review cycles",
+              "description": "ISO 27001 clause 9.3 cadence and participants."
+            },
+            "catalogs_module_isms": {
+              "label": "ISMS catalogs",
+              "description": "ISO 27002, BSI, NIST CSF, TISAX, 27017/27018/27701."
+            }
+          }
+        },
+        "ics": {
+          "description": "Internal control system — controls, tests, evidence, RCM.",
+          "links": {
+            "controls": {
+              "label": "Control library",
+              "description": "Custom and framework-based controls."
+            },
+            "admin_review_cycles": {
+              "label": "Test cycles",
+              "description": "Automatic control test campaigns (monthly, quarterly, yearly)."
+            }
+          }
+        },
+        "dpms": {
+          "description": "Privacy management — GDPR Art. 30 RoPA, DPIA, data subject rights.",
+          "links": {
+            "dpms_retention": {
+              "label": "Retention (Art. 5)",
+              "description": "Deletion deadlines per data category — storage limitation."
+            },
+            "dpms_tia": {
+              "label": "Transfer impact assessments",
+              "description": "Schrems II third-country transfer assessments."
+            },
+            "dpms_consent": {
+              "label": "Consent management",
+              "description": "Consent records per subject, withdrawal workflows."
+            }
+          }
+        },
+        "bcms": {
+          "description": "Business continuity — ISO 22301, BIA, BCP, crises, exercises.",
+          "links": {
+            "bcms_bia": {
+              "label": "BIA methodology",
+              "description": "RTO/RPO, MTPD and MBCO per process."
+            },
+            "bcms_exercises": {
+              "label": "Exercise plan",
+              "description": "ISO 22301 clause 8.5 — at least annual exercises."
+            }
+          }
+        },
+        "audit": {
+          "description": "Audit management — IIA standards, universe, plan, execution, QA.",
+          "links": {
+            "audit_universe": {
+              "label": "Audit universe",
+              "description": "Auditable units and risk score per unit."
+            },
+            "audit_plans": {
+              "label": "Annual audit plan",
+              "description": "Risk-based annual plan with CAE approval."
+            }
+          }
+        },
+        "tprm": {
+          "description": "Third-party risk — vendors, DD, concentration, LkSG supply chain.",
+          "links": {
+            "tprm_lksg": {
+              "label": "LkSG assessments",
+              "description": "Supply chain due diligence — annual assessments."
+            },
+            "tprm_concentration": {
+              "label": "Concentration risks",
+              "description": "Thresholds for vendor and cluster dependency."
+            }
+          }
+        },
+        "contract": {
+          "description": "Contract management — lifecycle, SLA, obligations.",
+          "links": {
+            "contracts_sla": {
+              "label": "SLA templates",
+              "description": "Standard SLA clauses for audit, security, DR."
+            },
+            "contracts_obligations": {
+              "label": "Obligation library",
+              "description": "Recurring contract obligations per contract type."
+            }
+          }
+        },
+        "esg": {
+          "description": "ESG & sustainability — ESRS/CSRD, materiality, metrics.",
+          "links": {
+            "esg_materiality": {
+              "label": "Double materiality",
+              "description": "Impact and financial materiality per ESRS."
+            },
+            "esg_datapoints": {
+              "label": "ESRS datapoints",
+              "description": "Mandatory and voluntary datapoints per standard."
+            }
+          }
+        },
+        "bpm": {
+          "description": "Process management — BPMN 2.0, governance, mining.",
+          "links": {
+            "processes_governance": {
+              "label": "Process governance",
+              "description": "Approval workflows, process owners, review cycles."
+            }
+          }
+        },
+        "dms": {
+          "description": "Document management — versioning, approvals, distribution lists.",
+          "links": {
+            "documents_compliance": {
+              "label": "Compliance documents",
+              "description": "Binding policies with read receipts."
+            }
+          }
+        },
+        "whistleblowing": {
+          "description": "Whistleblowing — HinSchG-compliant, isolated, role-locked.",
+          "links": {
+            "whistleblowing_statistics": {
+              "label": "Reporting parameters",
+              "description": "Anonymisation rules and statistics export."
+            }
+          }
+        },
+        "eam": {
+          "description": "Enterprise architecture management — capabilities, apps, data, tech radar.",
+          "links": {
+            "eam_governance": {
+              "label": "Architecture governance",
+              "description": "Architecture board, review queues, exceptions."
+            },
+            "eam_tech_radar": {
+              "label": "Technology radar",
+              "description": "Adopt/Trial/Assess/Hold per technology."
+            }
+          }
+        },
+        "reporting": {
+          "description": "Reporting engine — templates, scheduling, distribution.",
+          "links": {
+            "settings_export_schedules": {
+              "label": "Export schedules",
+              "description": "Recurring PDF/Excel reports."
+            }
+          }
+        },
+        "academy": {
+          "description": "GRC Academy — trainings, onboarding, certificates.",
+          "links": {
+            "academy": {
+              "label": "Course management",
+              "description": "Custom trainings, mandatory training per role."
+            }
+          }
+        },
+        "community": {
+          "description": "Community edition — open-source contributions, extensions, shared content."
+        },
+        "marketplace": {
+          "description": "Marketplace — extensions, connectors, templates.",
+          "links": {
+            "marketplace": {
+              "label": "Open marketplace",
+              "description": "Browse available extensions."
+            }
+          }
+        },
+        "simulations": {
+          "description": "Simulation engine — scenarios, Monte Carlo, stress tests."
+        },
+        "portals": {
+          "description": "Stakeholder portals — vendor, customer, regulator portals.",
+          "links": {
+            "portals": {
+              "label": "Manage portals",
+              "description": "Portal configuration, branding, access."
+            }
+          }
+        }
+      },
+      "backToOverview": "Back to module overview",
+      "overview": "Module overview",
+      "noConfig": "No configuration exists for this module key in this tenant.",
+      "purpose": "Module purpose",
+      "configuration": "Module configuration",
+      "noPages": "This module currently has no dedicated configuration pages.",
+      "rawConfig": "Advanced: raw config (JSON)",
+      "dependencies": "Dependencies",
+      "dependenciesHint": "This module requires the following modules to be enabled:",
+      "loadError": "The module configuration could not be loaded"
+    },
+    "unavailable": {
+      "title": "The module configuration could not be loaded",
+      "description": "Whether this module is enabled could not be determined just now. This is a temporary error, not a disabled module — please try again.",
+      "retry": "Try again"
+    }
   },
   "assets": {
     "title": "Assets",
@@ -835,7 +1237,38 @@
       "bcm": "BCM"
     },
     "workItemsTab": "Work Items",
-    "workItemsDescription": "Linked work items for this asset"
+    "workItemsDescription": "Linked work items for this asset",
+    "detail": {
+      "editClassification": "Edit classification",
+      "tabOverview": "Overview",
+      "tabClassification": "Classification",
+      "tabVulnerabilities": "Vulnerabilities",
+      "tabIncidents": "Incidents",
+      "tabHistory": "History",
+      "assetInfo": "Asset information",
+      "visibleInModules": "Visible in modules",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "updatedAt": "Updated: {date}",
+      "latestAudit": "Last audit: {date}",
+      "latestAuditResult": "Audit result: {result}",
+      "protectionNeeds": "Protection needs assessment",
+      "edit": "Edit",
+      "overallProtection": "Overall protection need",
+      "classifiedAt": "Classified on {date}",
+      "noReason": "No justification given",
+      "nextReview": "Next review: {date}",
+      "notClassified": "This asset has not been classified yet.",
+      "classifyNow": "Classify now",
+      "vulnerabilities": "Vulnerabilities",
+      "noVulnerabilities": "No vulnerabilities recorded for this asset.",
+      "incidents": "Security incidents",
+      "noIncidents": "No incidents reported for this asset.",
+      "changeHistory": "Change history",
+      "noHistory": "No changes logged yet.",
+      "systemUser": "System",
+      "entityFallback": "Asset"
+    }
   },
   "cia": {
     "confidentiality": "Confidentiality",
@@ -1380,6 +1813,10 @@
       "riskTitle": "Risk",
       "riskOwner": "Owner",
       "noRisks": "No risks registered yet"
+    },
+    "fromCatalog": {
+      "source": "From catalogue: {code} — {name}",
+      "prefilled": "Title and description have been pre-filled"
     }
   },
   "process": {
@@ -1418,7 +1855,8 @@
       "risks": "Risks",
       "history": "History",
       "comments": "Comments",
-      "approval": "Approval"
+      "approval": "Approval",
+      "documents": "Documents"
     },
     "status": {
       "draft": "Draft",
@@ -1666,7 +2104,10 @@
       "removed": "Removed",
       "modified": "Modified",
       "attributeDiff": "Attribute Changes",
-      "version": "Version"
+      "version": "Version",
+      "loadError": "The version comparison could not be loaded",
+      "sameVersion": "Both sides show the same version — there is nothing to compare.",
+      "selectTwoVersions": "Select two different versions to compare."
     },
     "comments": {
       "title": "Comments",
@@ -1790,7 +2231,8 @@
       "tests": "Tests",
       "findings": "Findings",
       "rcm": "RCM",
-      "history": "History"
+      "history": "History",
+      "documents": "Documents"
     },
     "tests": {
       "empty": "No tests recorded",
@@ -2286,10 +2728,23 @@
       "alreadyAssigned": "Already assigned to this entity",
       "assignedEntities": "Assigned Entities",
       "noAssignments": "No entities assigned to this catalog entry",
+      "loadError": "Assignments could not be loaded",
       "bulkAssign": "Bulk Assign",
       "bulkDescription": "Assign this catalog entry to multiple entities at once",
       "selectedCount": "{count} selected",
       "assignedCount": "{count} assigned"
+    },
+    "workqueue": {
+      "loading": "Loading catalogues …",
+      "summaryRisk": "{count, plural, one {# active risk catalogue} other {# active risk catalogues}}",
+      "summaryControl": "{count, plural, one {# active control catalogue} other {# active control catalogues}}",
+      "openEntries": "{count, plural, one {# open entry} other {# open entries}}",
+      "hint": "From activated catalogues — click to view",
+      "allCatalogs": "All catalogues",
+      "empty": "No open entries in this catalogue.",
+      "createRisk": "Create risk",
+      "createControl": "Create control",
+      "shown": "Showing {shown} of {total} open entries"
     }
   },
   "isms": {
@@ -2511,6 +2966,64 @@
       "duration": "Duration",
       "slaStatus": "SLA Status",
       "allTasksCompleted": "All tasks completed"
+    },
+    "threatDetail": {
+      "notFound": "Threat not found",
+      "backToList": "Back to list",
+      "system": "System",
+      "tabOverview": "Overview",
+      "tabScenarios": "Risk scenarios",
+      "tabHistory": "History",
+      "details": "Threat details",
+      "title": "Title",
+      "code": "Code",
+      "category": "Category",
+      "likelihood": "Likelihood",
+      "description": "Description",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "type": "Type: {type}",
+      "typeSystem": "System threat",
+      "typeCustom": "Custom",
+      "fromCatalog": "Linked from catalogue",
+      "linkedScenarios": "Linked risk scenarios",
+      "noScenarios": "No risk scenarios linked to this threat.",
+      "scenarioFallback": "Risk scenario",
+      "changeHistory": "Change history",
+      "historyLoading": "Loading history …",
+      "likelihoodRating": {
+        "1": "Very low",
+        "2": "Low",
+        "3": "Medium",
+        "4": "High",
+        "5": "Very high"
+      }
+    },
+    "vulnDetail": {
+      "notFound": "Vulnerability not found",
+      "backToList": "Back to list",
+      "tabOverview": "Overview",
+      "tabAsset": "Affected asset",
+      "tabMitigation": "Mitigation",
+      "tabHistory": "History",
+      "details": "Vulnerability details",
+      "title": "Title",
+      "severity": "Severity",
+      "status": "Status",
+      "cveReference": "CVE reference",
+      "description": "Description",
+      "metadata": "Metadata",
+      "createdAt": "Created: {date}",
+      "affectedAsset": "Affected asset",
+      "showDetails": "Show details",
+      "noAsset": "No asset assigned.",
+      "mitigation": "Mitigation",
+      "linkedControl": "Linked control",
+      "controlId": "ID: {id}",
+      "showControl": "Show control",
+      "noMitigation": "No mitigation assigned.",
+      "changeHistory": "Change history",
+      "historyLoading": "Loading history …"
     }
   },
   "ismsAssessment": {
@@ -2734,7 +3247,9 @@
     },
     "actions": {
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "dismiss": "Dismiss",
+      "retry": "Retry"
     }
   },
   "bcms": {
@@ -3254,10 +3769,33 @@
         "high": "High"
       },
       "legalBasisValues": {
-        "adequacy": "Adequacy Decision",
-        "sccs": "Standard Contractual Clauses",
-        "bcrs": "Binding Corporate Rules",
-        "derogation": "Derogation"
+        "adequacy": "Adequacy decision (Art. 45 GDPR)",
+        "sccs": "Standard contractual clauses (Art. 46(2)(c) GDPR)",
+        "bcrs": "Binding corporate rules (Art. 47 GDPR)",
+        "derogation": "Derogation (Art. 49 GDPR)"
+      },
+      "detail": {
+        "notFound": "Transfer impact assessment not found.",
+        "back": "Back to overview",
+        "reviewOverdueBadge": "Review overdue",
+        "transferDetails": "Transfer details",
+        "targetCountry": "Destination country",
+        "schremsIi": "Schrems II assessment",
+        "schremsIiEmpty": "No Schrems II assessment recorded.",
+        "riskAndSafeguards": "Risk assessment and safeguards",
+        "riskClassification": "Risk rating: {rating}",
+        "riskHigh": "High risk: additional safeguards and, if necessary, suspension of the transfer are required.",
+        "riskMedium": "Medium risk: supplementary safeguards recommended.",
+        "riskLow": "Low risk: standard safeguards are sufficient.",
+        "documents": "Supporting documents",
+        "documentsEmpty": "No documents attached.",
+        "responsibility": "Responsibility and dates",
+        "responsible": "Responsible",
+        "assessmentDate": "Assessment date",
+        "nextReview": "Next review",
+        "createdAt": "Created on",
+        "reviewOverdue": "Review overdue",
+        "reviewOverdueHint": "The next review was due on {date}. Please update the assessment promptly."
       }
     }
   },
@@ -3580,6 +4118,25 @@
     },
     "empty": {
       "noVendors": "No vendors found"
+    },
+    "riskOverview": {
+      "title": "Vendor risk overview",
+      "subtitle": "Aggregated risk view of all third parties, with ERM synchronisation",
+      "refresh": "Refresh",
+      "kpiTotal": "Vendor risks total",
+      "kpiCritical": "Critical (score ≥ 15)",
+      "kpiSynced": "Synchronised in ERM",
+      "kpiUnsyncedHigh": "Not synchronised (high)",
+      "tableTitle": "Vendor risk assessments",
+      "colVendor": "Vendor",
+      "colTier": "Tier",
+      "colInherent": "Inherent score",
+      "colResidual": "Residual score",
+      "colStatus": "Status",
+      "colErmSync": "ERM sync",
+      "empty": "No vendor risks recorded",
+      "notSynced": "Not synchronised in ERM",
+      "synced": "Synchronised in ERM"
     }
   },
   "contracts": {
@@ -3792,7 +4349,7 @@
     "expiredContact": "Please contact {orgName} at {email} for a deadline extension.",
     "completeMessage": "Your questionnaire has been submitted successfully.",
     "completeSummary": "You answered {answered} questions across {sections} sections.",
-    "completeClose": "You may close this window. For questions, contact {email}.",
+    "completeClose": "You may close this window. For questions, contact <mail>{email}</mail>.",
     "deadline": "Deadline",
     "daysRemaining": "{count} days remaining",
     "estimatedTime": "Estimated time: {minutes} minutes",
@@ -3826,7 +4383,18 @@
     "acceptAssessment": "Accept Assessment",
     "requestClarification": "Request Clarification",
     "exportPdf": "Export PDF",
-    "comparison": "Comparison with Previous"
+    "comparison": "Comparison with Previous",
+    "poweredBy": "Powered by ARCTOS",
+    "expiredNoContact": "Please contact the requesting organization for a deadline extension. They can issue a new invitation link.",
+    "completeSubmissionSummary": "Submission Summary",
+    "completeThanks": "Your questionnaire has been submitted successfully. Thank you for your time and cooperation.",
+    "fieldQuestionnaire": "Questionnaire",
+    "fieldVendor": "Vendor",
+    "fieldSubmitted": "Submitted",
+    "fieldQuestionsAnswered": "Questions Answered",
+    "fieldEvidenceFiles": "Evidence Files",
+    "completeCloseNoContact": "You may close this window.",
+    "documentTitle": "ARCTOS — Supplier Portal"
   },
   "ddResults": {
     "title": "Due Diligence Results",
@@ -4045,6 +4613,55 @@
       "at_risk": "At Risk",
       "off_track": "Off Track",
       "achieved": "Achieved"
+    },
+    "taxonomy": {
+      "title": "EU taxonomy alignment",
+      "subtitle": "Assessment of taxonomy alignment of economic activities under the EU Taxonomy Regulation",
+      "refresh": "Refresh",
+      "addActivity": "Add activity",
+      "dialogTitle": "New taxonomy activity",
+      "activityName": "Activity name",
+      "activityNamePlaceholder": "e.g. Electricity generation from wind power",
+      "naceCode": "NACE code",
+      "naceCodePlaceholder": "e.g. D35.1.1",
+      "reportingYear": "Reporting year",
+      "cancel": "Cancel",
+      "create": "Create",
+      "createFailed": "The activity could not be created.",
+      "kpiEligible": "Taxonomy-eligible",
+      "kpiAligned": "Taxonomy-aligned",
+      "kpiRate": "Alignment rate",
+      "kpiTurnover": "Turnover (aligned)",
+      "kpiCapex": "CapEx (aligned)",
+      "kpiOpex": "OpEx (aligned)",
+      "colActivity": "Activity",
+      "colNace": "NACE",
+      "colObjective": "Environmental objective",
+      "colEligible": "Eligible",
+      "colAligned": "Aligned",
+      "colSc": "SC",
+      "colDnsh": "DNSH",
+      "colMs": "MS",
+      "colTurnover": "Turnover",
+      "colStatus": "Status",
+      "empty": "No taxonomy activities recorded yet.",
+      "emptyHint": "Click “Add activity” to begin.",
+      "yes": "Yes",
+      "no": "No",
+      "objective": {
+        "climate_mitigation": "Climate change mitigation",
+        "climate_adaptation": "Climate change adaptation",
+        "water": "Water",
+        "circular_economy": "Circular economy",
+        "pollution": "Pollution",
+        "biodiversity": "Biodiversity"
+      },
+      "status": {
+        "draft": "Draft",
+        "in_review": "In review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
     }
   },
   "intelligence": {
@@ -4256,7 +4873,59 @@
     "noMessages": "No messages yet",
     "replyPlaceholder": "Your reply...",
     "evidence": "Evidence",
-    "encrypted": "All data is end-to-end encrypted"
+    "encrypted": "All data is end-to-end encrypted",
+    "categories": {
+      "fraud": {
+        "label": "Fraud",
+        "description": "Financial fraud, accounting manipulation, embezzlement"
+      },
+      "corruption": {
+        "label": "Corruption",
+        "description": "Bribery, improper advantages"
+      },
+      "discrimination": {
+        "label": "Discrimination",
+        "description": "Discrimination, harassment, bullying"
+      },
+      "privacy": {
+        "label": "Privacy",
+        "description": "GDPR violations, data misuse"
+      },
+      "environmental": {
+        "label": "Environmental",
+        "description": "Pollution, illegal disposal"
+      },
+      "health_safety": {
+        "label": "Health & Safety",
+        "description": "Unsafe conditions, workplace accidents"
+      },
+      "other": {
+        "label": "Other",
+        "description": "Other violations of laws or policies"
+      }
+    },
+    "copy": "Copy",
+    "copied": "Copied",
+    "minChars": "min. {count} characters",
+    "charCount": "{used}/{max}",
+    "orgNotFound": "Organization not found",
+    "connectionError": "Connection error",
+    "submitError": "Submission failed",
+    "codeValidUntil": "The code is valid until {date}. Without this code, access is not possible.",
+    "requiredMark": "Required field",
+    "statusSteps": {
+      "received": "Received",
+      "acknowledged": "Acknowledged",
+      "investigating": "Investigating",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "invalidOrExpired": "Invalid or expired",
+    "mailboxNotFound": "Mailbox not found",
+    "daysRemaining": "{count} days",
+    "sendReply": "Send reply",
+    "uploadEvidence": "Upload evidence",
+    "fileSizeKb": "{size} KB"
   },
   "budget": {
     "title": "GRC Budget",
@@ -4490,7 +5159,9 @@
       "sendEmail": "Send via Email",
       "noReportData": "No report data available for this year"
     },
-    "currency": "EUR"
+    "currency": "EUR",
+    "expandRow": "Show sub-budgets",
+    "collapseRow": "Hide sub-budgets"
   },
   "branding": {
     "title": "Corporate Design & Branding",
@@ -4719,7 +5390,9 @@
       "daysLeft": "days left",
       "comment": "Comment",
       "confidence": "Confidence Level"
-    }
+    },
+    "campaigns": "RCSA campaigns",
+    "campaignsSubtitle": "Manage risk & control self-assessments"
   },
   "policies": {
     "loading": "Loading...",
@@ -4838,11 +5511,11 @@
       "readTime": "Reading time",
       "submit": "Acknowledge",
       "success": "Successfully acknowledged",
-      "successDesc": "Your acknowledgment has been saved. The digital signature serves as proof.",
+      "successDesc": "Your acknowledgment has been saved and recorded in the audit trail. The checksum protects the entry against undetected change.",
       "quizFailed": "Quiz not passed",
       "quizFailedDesc": "You scored {score}%. Required: {threshold}%.",
       "date": "Acknowledged on",
-      "signatureHash": "Digital Signature"
+      "signatureHash": "Acknowledgment checksum"
     },
     "quiz": {
       "title": "Comprehension Questions",
@@ -5111,5 +5784,88 @@
       "postureWeightsDesc": "Weighting of the seven security posture factors (must sum to 100%)"
     }
   },
-  "loading": "Loading..."
+  "loading": "Loading...",
+  "errorReference": "Error reference",
+  "ai": {
+    "disclosureLabel": "AI transparency notice",
+    "providerLine": "Provider: {provider} · Model: {model} · Processed in: {country}",
+    "humanReviewRequired": "The result is a suggestion and must be reviewed before it is accepted."
+  },
+  "table": {
+    "noResults": "No entries found.",
+    "rowCount": "{count} rows",
+    "pageOf": "Page {page} of {total}",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "filterPlaceholder": "Filter …"
+  },
+  "footer": {
+    "copyright": "© {year} ARCTOS — Audit, Risk, Compliance & Trust OS",
+    "imprint": "Imprint",
+    "privacy": "Privacy"
+  },
+  "a11y": {
+    "toggleMenu": "Toggle menu",
+    "close": "Close",
+    "noValue": "no value"
+  },
+  "tags": {
+    "addPlaceholder": "Add tag …",
+    "createNew": "Create \"{input}\" as a new tag",
+    "searchHint": "Type to search or create tags",
+    "remove": "Remove tag \"{tag}\""
+  },
+  "localeSwitch": {
+    "label": "Choose language",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "trust": {
+    "notFoundTitle": "Trust Center not found",
+    "notFoundBody": "The requested organization does not exist.",
+    "subtitle": "Trust Center — security and compliance status",
+    "statusActive": "Compliance status: active",
+    "statusCounts": "{frameworks} active frameworks · {modules} security modules enabled",
+    "statusEmptyTitle": "No information published yet",
+    "statusEmptyBody": "No active frameworks and no enabled security modules are currently recorded for this organization.",
+    "certifications": "Certifications & mandatory standards",
+    "frameworks": "Active compliance frameworks",
+    "modules": "Enabled security modules",
+    "source": "Source: {source}",
+    "activatedOn": "Activated: {date}",
+    "practices": "Security practices",
+    "lastUpdated": "Powered by the ARCTOS GRC platform · Last updated: {date}",
+    "practice": {
+      "dataProcessingTitle": "Data processing",
+      "dataProcessingDesc": "All data is processed and stored within the EU.",
+      "accessControlTitle": "Access control",
+      "accessControlDesc": "Role-based access control with Three Lines of Defense.",
+      "auditTrailTitle": "Audit trail",
+      "auditTrailDesc": "Cryptographically secured audit trail (SHA-256 hash chain).",
+      "encryptionTitle": "Encryption",
+      "encryptionDesc": "Transport encryption with TLS 1.3. Particularly sensitive data — whistleblower reports and connector credentials — is additionally encrypted at the application level with AES-256-GCM. Disk encryption and, where the object store supports it, server-side encryption of the document store are configured by the operator of the installation.",
+      "incidentTitle": "Incident response",
+      "incidentDesc": "Defined incident response process with a 24-hour reporting obligation.",
+      "continuityTitle": "Business continuity",
+      "continuityDesc": "Tested business continuity plans and disaster recovery."
+    }
+  },
+  "accessReview": {
+    "title": "Access review",
+    "subtitle": "Periodic review of all user access and role permissions",
+    "refresh": "Refresh",
+    "loadError": "Users could not be loaded. The list below is incomplete.",
+    "totalUsers": "Users total",
+    "approvedCount": "Approved",
+    "revokedCount": "Revoked",
+    "progress": "Progress",
+    "listTitle": "Review user access",
+    "department": "Department: {name}",
+    "lastLogin": "Last login: {date}",
+    "neverLoggedIn": "Never logged in",
+    "badgeApproved": "✓ Approved",
+    "badgeRevoked": "✗ Revoked",
+    "approve": "Approve",
+    "revoke": "Revoke"
+  }
 }

@@ -65,8 +65,14 @@ npm run db:migrate        # lokal anwenden
 # 4. Test
 cd apps/web
 npm run test
-npm run lint
 npm run typecheck
+
+# Das Lint-Tor gilt fuer den ganzen Baum, nicht fuer ein Verzeichnis —
+# aus der Wurzel aufrufen. [OP-221] `npm run lint` ist seit Welle 8o
+# dasselbe, was CI prueft: die Ratsche ueber alle zwoelf Workspaces.
+# Rohe ESLint-Ausgabe je Workspace, ohne Ratsche: `npm run lint:raw`.
+cd ../..
+npm run lint
 
 # 5. Commit (Conventional Commits)
 git add ...

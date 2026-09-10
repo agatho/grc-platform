@@ -1,4 +1,4 @@
-import { db, dsr, dsrActivity, workItem, notification, user } from "@grc/db";
+import { db, dsr, dsrActivity, workItem, user } from "@grc/db";
 import { createDsrSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {

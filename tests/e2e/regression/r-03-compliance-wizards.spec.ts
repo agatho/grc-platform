@@ -34,14 +34,24 @@ test.describe("R-03: Compliance-Wizard smoke", () => {
     );
     expect(resp?.status()).toBeLessThan(500);
 
-    await expect(page.getByText("AI-Act Compliance Wizard")).toBeVisible({
+    // [ARCTOS-FULL-2026-08-31 · Welle 8a] Beide Assistenten wurden in Welle 6b
+    // (OP-070) übersetzt. Die englischen Erwartungen und `/^Pruefen$/` waren
+    // seither unerfüllbar; rot geworden sind sie nie, weil das
+    // `regression`-Projekt seit Welle 6c ungemessen blieb. Gemessen am
+    // 2026-09-08: `getByText('AI-Act Compliance Wizard')` — element(s) not
+    // found, während die Seite `heading "KI-Verordnung: Konformitätsassistent"`
+    // rendert. Die Zeichenketten stammen aus `apps/web/messages/de.json`
+    // (`aiAct.systemWizard.*`); die Zusicherungen sind unverändert.
+    await expect(
+      page.getByText("KI-Verordnung: Konformitätsassistent"),
+    ).toBeVisible({
       timeout: 15_000,
     });
     await expect(
-      page.getByText("Art. 10 Data-Governance").first(),
+      page.getByText("Daten-Governance (Art. 10)").first(),
     ).toBeVisible();
 
-    // Click the first "Pruefen" button (Data-Governance section).
+    // Click the first "Prüfen" button (Data-Governance section).
     const [response] = await Promise.all([
       page.waitForResponse(
         (r) =>
@@ -52,15 +62,18 @@ test.describe("R-03: Compliance-Wizard smoke", () => {
         { timeout: 15_000 },
       ),
       page
-        .getByRole("button", { name: /^Pruefen$/ })
+        .getByRole("button", { name: /^Prüfen$/ })
         .first()
         .click(),
     ]);
     expect(response.status()).toBeLessThan(500);
 
-    // Wait for either "Pass", "Fail" or "Warnung" pill to appear -- indicates
-    // the result rendered without a crash.
-    await expect(page.getByText(/Pass|Fail|Warnung/).first()).toBeVisible({
+    // Wait for either "Bestanden", "Nicht bestanden" or "Warnung" pill to
+    // appear -- indicates the result rendered without a crash.
+    // (`aiAct.systemWizard.status.*`; vorher englisch `/Pass|Fail|Warnung/`.)
+    await expect(
+      page.getByText(/Bestanden|Nicht bestanden|Warnung/).first(),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -76,11 +89,12 @@ test.describe("R-03: Compliance-Wizard smoke", () => {
     const resp = await page.goto(`/ai-act/gpai/${gpaiId}/compliance-wizard`);
     expect(resp?.status()).toBeLessThan(500);
 
-    await expect(page.getByText("GPAI Compliance Wizard")).toBeVisible({
+    // [Welle 8a] Wie oben: `aiAct.gpaiWizard.*` aus `messages/de.json`.
+    await expect(page.getByText("GPAI-Konformitätsassistent")).toBeVisible({
       timeout: 15_000,
     });
     await expect(
-      page.getByText("Art. 51 Systemic-Risk Classification"),
+      page.getByText("Klassifizierung des systemischen Risikos (Art. 51)"),
     ).toBeVisible();
 
     const [response] = await Promise.all([
@@ -95,8 +109,10 @@ test.describe("R-03: Compliance-Wizard smoke", () => {
     expect(response.status()).toBeLessThan(500);
 
     // One of the three tier badges should appear.
+    // (`aiAct.gpaiWizard.tier.*`; vorher englisch
+    // `/SYSTEMIC|HIGH-CAPABILITY|STANDARD/`.)
     await expect(
-      page.getByText(/SYSTEMIC|HIGH-CAPABILITY|STANDARD/).first(),
+      page.getByText(/SYSTEMISCH|HOHE LEISTUNGSFÄHIGKEIT|STANDARD/).first(),
     ).toBeVisible({ timeout: 10_000 });
   });
 });

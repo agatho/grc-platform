@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 
 interface TableRow {
@@ -45,15 +46,32 @@ function parseTableData(data: unknown): {
   return { rows, columns };
 }
 
-function formatCellValue(value: unknown): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Zwei getrennte Maengel in dieser einen
+ * Funktion:
+ *
+ *  - „Ja"/„Nein" standen fest im Quelltext.
+ *  - Zahlen und Datumsangaben wurden mit dem FESTEN Gebietsschema `de-DE`
+ *    formatiert. Das ist die zweite, unsichtbarere Haelfte von OP-070: eine
+ *    Seite kann vollstaendig uebersetzt sein und dem englischen Leser
+ *    trotzdem „1.234,5" und „31.12.2026" zeigen. Die i18n-Ratsche sieht das
+ *    nicht — sie prueft, ob eine Datei `useTranslations` importiert, nicht,
+ *    mit welchem Gebietsschema sie formatiert.
+ */
+function formatCellValue(
+  value: unknown,
+  locale: string,
+  yes: string,
+  no: string,
+): string {
   if (value === null || value === undefined) return "-";
-  if (typeof value === "boolean") return value ? "Ja" : "Nein";
-  if (typeof value === "number") return value.toLocaleString("de-DE");
+  if (typeof value === "boolean") return value ? yes : no;
+  if (typeof value === "number") return value.toLocaleString(locale);
   if (typeof value === "string") {
     // Check if it looks like a date
     if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
       try {
-        return new Date(value).toLocaleDateString("de-DE");
+        return new Date(value).toLocaleDateString(locale);
       } catch {
         return value;
       }
@@ -76,6 +94,9 @@ export function DataTableWidget({
   isLoading,
   error,
 }: WidgetProps) {
+  const t = useTranslations("dashboard.widget");
+  const locale = useLocale();
+
   if (isLoading) {
     return (
       <div className="flex h-full flex-col gap-2 p-2">
@@ -102,7 +123,7 @@ export function DataTableWidget({
   if (displayRows.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Keine Daten verfuegbar
+        {t("dataUnavailable")}
       </div>
     );
   }
@@ -127,7 +148,7 @@ export function DataTableWidget({
             <tr key={idx} className="border-b last:border-0 hover:bg-muted/50">
               {columns.map((col) => (
                 <td key={col} className="px-2 py-1.5">
-                  {formatCellValue(row[col])}
+                  {formatCellValue(row[col], locale, t("yes"), t("no"))}
                 </td>
               ))}
             </tr>

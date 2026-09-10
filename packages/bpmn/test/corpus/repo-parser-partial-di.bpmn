@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" id="D1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="P1" isExecutable="false">
+    <bpmn:startEvent id="Start_1" name="Start" />
+    <bpmn:userTask id="Task_1" name="Do Work" />
+    <bpmn:endEvent id="End_1" name="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BD1"><bpmndi:BPMNPlane id="BP1" bpmnElement="P1" /></bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, RefreshCcw, ShieldCheck, Info } from "lucide-react";
 
@@ -85,28 +86,32 @@ export default function IsmsProtectionNeedsPage() {
 
 function ProtectionNeedsInner() {
   const t = useTranslations("isms");
-  const [assets, setAssets] = useState<ProtectionNeedRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [protectionFilter, setProtectionFilter] = useState("__all__");
   const [sourceFilter, setSourceFilter] = useState("__all__");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Derselbe Endpunkt wie
+  // `isms/assets`, darum derselbe Schlüssel — beide Seiten teilen den Cache.
+  const {
+    data: assets = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ProtectionNeedRow[]>({
+    queryKey: ["isms", "assets", "classification-overview"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/assets/classification-overview");
-      if (res.ok) {
-        const json = await res.json();
-        setAssets(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ProtectionNeedRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = assets;
@@ -159,9 +164,9 @@ function ProtectionNeedsInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

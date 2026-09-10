@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Shield, Calendar, FileText, AlertCircle } from "lucide-react";
+import { Calendar } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,22 +19,20 @@ const CLASSIFICATION_COLORS: Record<string, string> = {
 
 export default function RegulatoryDashboardPage() {
   const t = useTranslations("regulatory");
-  const [data, setData] = useState<RegulatoryChangeDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/regulatory-changes/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`.
+  const { data = null, isPending: loading } =
+    useQuery<RegulatoryChangeDashboard | null>({
+      queryKey: ["regulatory", "dashboard"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/regulatory-changes/dashboard");
+        if (!res.ok) return null;
+        return ((await res.json()).data ??
+          null) as RegulatoryChangeDashboard | null;
+      },
+    });
 
   if (loading || !data) {
     return (
@@ -58,7 +56,7 @@ export default function RegulatoryDashboardPage() {
           <Link href="/regulatory/calendar">
             <Button variant="outline">
               <Calendar className="h-4 w-4 mr-2" />
-              {t("calendar")}
+              {t("calendar.title")}
             </Button>
           </Link>
         </div>

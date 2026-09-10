@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
@@ -154,25 +154,20 @@ function CapDetailInner() {
   const { formatDate: fmtDate } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<NonconformityDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/isms/nonconformities/${id}`);
-      if (res.ok) {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` („nicht gefunden").
+  const { data = null, isPending: loading } =
+    useQuery<NonconformityDetail | null>({
+      queryKey: ["isms", "nonconformities", id],
+      queryFn: async () => {
+        const res = await fetch(`/api/v1/isms/nonconformities/${id}`);
+        if (!res.ok) return null;
         const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+        return (json.data ?? null) as NonconformityDetail | null;
+      },
+    });
 
   if (loading && !data) {
     return (

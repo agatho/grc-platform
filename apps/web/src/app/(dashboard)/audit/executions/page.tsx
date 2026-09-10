@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,10 +49,13 @@ interface AuditorOption {
 }
 
 function ExecutionsInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
-  const router = useRouter();
-  const [audits, setAudits] = useState<AuditWithLead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -77,27 +81,33 @@ function ExecutionsInner() {
     };
   }, []);
 
-  const fetchAudits = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Suche und Statusfilter stehen im
+  // Schlüssel.
+  const {
+    data: audits = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AuditWithLead[]>({
+    queryKey: ["audit", "audits", search, statusFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (statusFilter) params.set("status", statusFilter);
       params.set("limit", "50");
 
       const res = await fetch(`/api/v1/audit-mgmt/audits?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAudits(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, statusFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditWithLead[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchAudits();
-  }, [fetchAudits]);
+  const fetchAudits = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: FormData) => {
     const parseCsv = (v: string | null): string[] | undefined => {
@@ -210,9 +220,12 @@ function ExecutionsInner() {
             variant="outline"
             size="sm"
             onClick={fetchAudits}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -293,8 +306,14 @@ function ExecutionsInner() {
                     Auditor-Team (ISO 19011 § 5.4.4)
                   </legend>
                   <div>
-                    <label className="text-sm font-medium">Lead-Auditor</label>
+                    <label
+                      htmlFor={`${a11yId}-lead-auditor`}
+                      className="text-sm font-medium"
+                    >
+                      Lead-Auditor
+                    </label>
                     <select
+                      id={`${a11yId}-lead-auditor`}
                       name="leadAuditorId"
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                       defaultValue=""
@@ -309,17 +328,25 @@ function ExecutionsInner() {
                     </select>
                     {auditors.length === 0 && (
                       <p className="text-[11px] text-gray-400 mt-1">
-                        Keine Nutzer mit Rolle „auditor" oder „admin" in dieser
-                        Org — zuerst unter /settings/users zuweisen.
+                        Keine Nutzer mit Rolle „auditor&quot; oder „admin&quot;
+                        in dieser Org — zuerst unter /settings/users zuweisen.
                       </p>
                     )}
                   </div>
                   {auditors.length > 0 && (
                     <div>
-                      <label className="text-sm font-medium">
+                      {/* [WP12 · S14-09] Group name for a checkbox list. */}
+                      <span
+                        id={`${a11yId}-audit-team`}
+                        className="text-sm font-medium"
+                      >
                         Audit-Team (Mitglieder)
-                      </label>
-                      <div className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1">
+                      </span>
+                      <div
+                        role="group"
+                        aria-labelledby={`${a11yId}-audit-team`}
+                        className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1"
+                      >
                         {auditors.map((u) => (
                           <label
                             key={u.id}
@@ -349,10 +376,14 @@ function ExecutionsInner() {
                     Audit-Umfang (ISO 19011 § 5.4)
                   </legend>
                   <div>
-                    <label className="text-sm font-medium">
+                    <label
+                      htmlFor={`${a11yId}-field`}
+                      className="text-sm font-medium"
+                    >
                       Scope-Beschreibung
                     </label>
                     <textarea
+                      id={`${a11yId}-field`}
                       name="scopeDescription"
                       rows={2}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   Loader2,
@@ -9,7 +10,6 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Search as SearchIcon,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -34,6 +34,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface Nonconformity {
   id: string;
@@ -89,8 +92,6 @@ const SOURCE_LABELS: Record<string, string> = {
 function CapInner() {
   const { formatDate } = useDateFormat();
   const router = useRouter();
-  const [items, setItems] = useState<Nonconformity[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
@@ -103,25 +104,31 @@ function CapInner() {
   });
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); der Statusfilter steht im
+  // Schlüssel.
+  const {
+    data: items = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Nonconformity[]>({
+    queryKey: ["isms", "nonconformities", statusFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter) params.set("status", statusFilter);
       params.set("limit", "50");
       const res = await fetch(`/api/v1/isms/nonconformities?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Nonconformity[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -165,7 +172,10 @@ function CapInner() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={fetchData}>
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -334,6 +344,11 @@ function CapInner() {
               key={nc.id}
               className="rounded-lg border p-4 hover:bg-accent/50 transition-colors cursor-pointer"
               onClick={() => router.push(`/isms/cap/${nc.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () => router.push(`/isms/cap/${nc.id}`))
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">

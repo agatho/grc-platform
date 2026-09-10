@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -27,6 +28,11 @@ import { Switch } from "@/components/ui/switch";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. `const _t = useTranslations(…)`
+ * ohne eine einzige Benutzung — fuer die Ratsche uebersetzt, auf dem
+ * Bildschirm durchgehend fest verdrahtetes Deutsch.
+ */
 interface GpaiModel {
   id: string;
   name: string;
@@ -42,8 +48,7 @@ interface GpaiModel {
 
 function GpaiPageInner() {
   const t = useTranslations("aiAct");
-  const [rows, setRows] = useState<GpaiModel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const tCommon = useTranslations("common");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -55,18 +60,25 @@ function GpaiPageInner() {
     version: "1.0",
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<GpaiModel[]>({
+    queryKey: ["ai-act", "gpai"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/gpai?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as GpaiModel[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = {
@@ -108,30 +120,30 @@ function GpaiPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">GPAI-Modellregister</h1>
-          <p className="text-muted-foreground">Art. 51-56 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("gpaiList.title")}</h1>
+          <p className="text-muted-foreground">{t("gpaiList.description")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Modell erfassen
+              {t("gpaiList.create")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>GPAI-Modell erfassen</DialogTitle>
+              <DialogTitle>{t("gpaiList.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Name</Label>
+                <Label>{t("shared.name")}</Label>
                 <Input
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
               <div>
-                <Label>Anbieter</Label>
+                <Label>{t("systemDetail.roleOption.provider")}</Label>
                 <Input
                   value={form.provider}
                   onChange={(e) =>
@@ -140,7 +152,7 @@ function GpaiPageInner() {
                 />
               </div>
               <div>
-                <Label>Modelltyp</Label>
+                <Label>{t("gpai.modelType")}</Label>
                 <Select
                   value={form.model_type}
                   onValueChange={(v) => setForm({ ...form, model_type: v })}
@@ -149,9 +161,15 @@ function GpaiPageInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="foundation">Foundation</SelectItem>
-                    <SelectItem value="fine_tuned">Fine-tuned</SelectItem>
-                    <SelectItem value="open_source">Open Source</SelectItem>
+                    <SelectItem value="foundation">
+                      {t("gpai.modelTypeOption.foundation")}
+                    </SelectItem>
+                    <SelectItem value="fine_tuned">
+                      {t("gpai.modelTypeOption.fine_tuned")}
+                    </SelectItem>
+                    <SelectItem value="open_source">
+                      {t("gpai.modelTypeOption.open_source")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -162,10 +180,10 @@ function GpaiPageInner() {
                     setForm({ ...form, is_systemic_risk: v })
                   }
                 />
-                <Label>Systemisches Risiko</Label>
+                <Label>{t("gpai.systemicRisk")}</Label>
               </div>
               <div>
-                <Label>Trainingsdaten-Zusammenfassung</Label>
+                <Label>{t("gpai.trainingData")}</Label>
                 <Textarea
                   value={form.training_data_summary}
                   onChange={(e) =>
@@ -174,7 +192,7 @@ function GpaiPageInner() {
                 />
               </div>
               <div>
-                <Label>Energieverbrauch (kWh)</Label>
+                <Label>{t("gpai.energyConsumption")}</Label>
                 <Input
                   type="number"
                   value={form.energy_consumption_kwh}
@@ -184,7 +202,7 @@ function GpaiPageInner() {
                 />
               </div>
               <div>
-                <Label>Version</Label>
+                <Label>{t("gpai.version")}</Label>
                 <Input
                   value={form.version}
                   onChange={(e) =>
@@ -197,7 +215,7 @@ function GpaiPageInner() {
                 onClick={handleSubmit}
                 disabled={!form.name || !form.provider}
               >
-                Speichern
+                {tCommon("actions.save")}
               </Button>
             </div>
           </DialogContent>
@@ -218,7 +236,7 @@ function GpaiPageInner() {
                   {m.is_systemic_risk && (
                     <Badge className="bg-red-100 text-red-900">
                       <AlertTriangle className="h-3 w-3 mr-1" />
-                      Systemisch
+                      {t("gpaiList.systemic")}
                     </Badge>
                   )}
                   <Badge variant="outline">{m.status}</Badge>
@@ -229,7 +247,7 @@ function GpaiPageInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Noch keine GPAI-Modelle erfasst
+            {t("gpaiList.empty")}
           </p>
         )}
       </div>

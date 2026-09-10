@@ -34,12 +34,6 @@ const costCategoryValues = [
   "certification",
 ] as const;
 const costTypeValues = ["planned", "actual", "forecast"] as const;
-const roiMethodValues = [
-  "ale_reduction",
-  "penalty_avoidance",
-  "incident_prevention",
-  "roni",
-] as const;
 
 // ─── Budget CRUD ────────────────────────────────────────────
 

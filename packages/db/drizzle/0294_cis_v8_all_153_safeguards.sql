@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Early-Return, wenn der CIS-Katalog-Seed nicht eingespielt ist; Migration ist dann ein No-Op statt eines FK-Abbruchs (S09-07).
 -- ============================================================================
 -- Migration 0294: CIS Controls v8 — alle 153 Safeguards mit IG-Metadata
 --
@@ -15,6 +20,15 @@ DO $$
 DECLARE
   cis_id UUID := 'c0000000-0000-0000-0000-c150c74201a8';
 BEGIN
+  -- [ARCTOS-FULL-2026-08-31 / S09-07] Der CIS-Katalog wird nicht von einer
+  -- Migration, sondern von packages/db/sql/seed_catalog_cis_controls_v8.sql
+  -- angelegt. Ohne diesen Early-Return bricht die Datei mit 23503 ab und
+  -- reisst alle folgenden Anweisungen mit.
+  IF NOT EXISTS (SELECT 1 FROM catalog WHERE id = cis_id) THEN
+    RAISE NOTICE '0294: CIS-Katalog (Seed seed_catalog_cis_controls_v8.sql) nicht vorhanden - uebersprungen';
+    RETURN;
+  END IF;
+
   -- ── CIS-01 Inventory and Control of Enterprise Assets (5 Safeguards) ──
   INSERT INTO catalog_entry (catalog_id, code, name, description, level, sort_order, status, metadata) VALUES
     (cis_id, 'CIS-01.2', 'Address Unauthorized Assets', 'Ensure that a process exists to address unauthorized assets on a weekly basis. IG1.', 1, 102, 'active', jsonb_build_object('ig1', true, 'ig2', true, 'ig3', true, 'ig_scope', 'ig1', 'framework', 'cis_controls_v8')),

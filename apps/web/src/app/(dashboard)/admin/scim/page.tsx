@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Users,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useDateFormat } from "@/lib/format-date";
+import { useNow } from "@/hooks/use-now";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -51,13 +53,18 @@ interface ScimStats {
   activeTokens: number;
 }
 
+interface ScimDashboardData {
+  tokens: ScimTokenData[];
+  logs: ScimLogEntry[];
+  stats: ScimStats | null;
+}
+
 export default function ScimDashboardPage() {
   const t = useTranslations("identity");
   const { formatDateTime } = useDateFormat();
-  const [tokens, setTokens] = useState<ScimTokenData[]>([]);
-  const [logs, setLogs] = useState<ScimLogEntry[]>([]);
-  const [stats, setStats] = useState<ScimStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · purity] `Date.now()` stand im Render-Helfer `timeAgo`; die Uhr
+  // kommt jetzt aus `useNow` (einmal je Minute erneuert).
+  const now = useNow();
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   // Token creation dialog
@@ -68,8 +75,21 @@ export default function ScimDashboardPage() {
   // Revoke dialog
   const [revokeTokenId, setRevokeTokenId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Antworten wurden immer
+  // zusammen geholt und zusammen benutzt, deshalb eine Abfrage mit einem
+  // Objekt. Wie vorher werden die Rümpfe unabhängig vom HTTP-Status gelesen;
+  // ein Netz- oder Parse-Fehler landet im Fehlerzustand der Abfrage und wird
+  // unten wie bisher als `scimLoadError` angezeigt.
+  const {
+    data,
+    isPending: loading,
+    isError: loadFailed,
+    refetch,
+  } = useQuery<ScimDashboardData>({
+    queryKey: ["admin", "scim", "dashboard"],
+    queryFn: async () => {
       const [tokensRes, logsRes, statsRes] = await Promise.all([
         fetch("/api/v1/admin/scim/tokens"),
         fetch("/api/v1/admin/scim/logs?limit=50"),
@@ -78,19 +98,21 @@ export default function ScimDashboardPage() {
       const tokensJson = await tokensRes.json();
       const logsJson = await logsRes.json();
       const statsJson = await statsRes.json();
-      setTokens(tokensJson.data ?? []);
-      setLogs(logsJson.data ?? []);
-      setStats(statsJson.data ?? null);
-    } catch {
-      setError(t("scimLoadError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+      return {
+        tokens: (tokensJson.data ?? []) as ScimTokenData[],
+        logs: (logsJson.data ?? []) as ScimLogEntry[],
+        stats: (statsJson.data ?? null) as ScimStats | null,
+      };
+    },
+  });
+  const tokens = data?.tokens ?? [];
+  const logs = data?.logs ?? [];
+  const stats = data?.stats ?? null;
+  const displayedError = error || (loadFailed ? t("scimLoadError") : "");
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   async function handleCreateToken() {
     setError("");
@@ -138,7 +160,7 @@ export default function ScimDashboardPage() {
 
   function timeAgo(dateStr: string | null) {
     if (!dateStr) return t("never");
-    const diff = Date.now() - new Date(dateStr).getTime();
+    const diff = now - new Date(dateStr).getTime();
     const minutes = Math.floor(diff / 60000);
     if (minutes < 1) return t("justNow");
     if (minutes < 60) return `${minutes} min`;
@@ -166,9 +188,9 @@ export default function ScimDashboardPage() {
       </div>
 
       {/* Feedback */}
-      {error && (
+      {displayedError && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {error}
+          {displayedError}
         </div>
       )}
       {success && (

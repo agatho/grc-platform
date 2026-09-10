@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -15,7 +16,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch, in
+ * HTML-Entitaeten geschrieben (`Datenqualit&auml;tsregeln`,
+ * `Verst&ouml;&szlig;e`).
+ *
+ * Nebenbefund derselben Klasse wie OP-190: Die Fehlerquote wurde mit
+ * `toFixed(1)` gebildet — das ist gebietsschemablind und ergibt IMMER einen
+ * Dezimalpunkt. Ein deutscher Leser sah „12.5 %" statt „12,5 %".
+ * `formatNumber` aus `lib/format-date.ts` gibt es genau dafuer. Das
+ * Prozentzeichen steht im Katalog und nicht in `Intl.NumberFormat`: der Wert
+ * kommt bereits als Prozentzahl (12,5 = 12,5 %), `style: "percent"` wuerde ihn
+ * ein zweites Mal mit 100 multiplizieren. Der Abstand vor dem Zeichen ist
+ * dabei sprachabhaengig — deutsch mit, englisch ohne.
+ */
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,11 +66,6 @@ const statusColors: Record<string, string> = {
   inactive: "bg-gray-100 text-gray-800",
 };
 
-const statusLabels: Record<string, string> = {
-  active: "Aktiv",
-  inactive: "Inaktiv",
-};
-
 const severityColors: Record<string, string> = {
   low: "bg-blue-100 text-blue-800",
   medium: "bg-yellow-100 text-yellow-800",
@@ -61,49 +73,43 @@ const severityColors: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
 };
 
-const severityLabels: Record<string, string> = {
-  low: "Niedrig",
-  medium: "Mittel",
-  high: "Hoch",
-  critical: "Kritisch",
-};
-
-const ruleTypeLabels: Record<string, string> = {
-  range: "Wertebereich",
-  pattern: "Muster",
-  required: "Pflichtfeld",
-  unique: "Eindeutig",
-};
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function DataQualityPage() {
-  const { formatDate } = useDateFormat();
-  const [stats, setStats] = useState<DataQualityStats | null>(null);
-  const [rules, setRules] = useState<DataQualityRule[]>([]);
-  const [loading, setLoading] = useState(true);
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
+  const { formatDate, formatNumber } = useDateFormat();
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher leere Liste und keine Kennzahlen; ein Netzfehler wird nicht
+  // mehr verschluckt, sondern landet im Fehlerzustand der Abfrage (die Seite
+  // zeigt dann ueber die Vorgabewerte dieselbe Leeransicht).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ rules: DataQualityRule[]; stats: DataQualityStats | null }>({
+    queryKey: ["data-quality", "rules"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/data-quality/rules");
+      if (!res.ok) return { rules: [], stats: null };
+      const json = await res.json();
+      return {
+        rules: (json.data ?? []) as DataQualityRule[],
+        stats: (json.stats ?? null) as DataQualityStats | null,
+      };
+    },
+  });
+  const rules = data?.rules ?? [];
+  const stats = data?.stats ?? null;
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/data-quality/rules");
-      if (res.ok) {
-        const json = await res.json();
-        setRules(json.data ?? []);
-        setStats(json.stats ?? null);
-      }
-    } catch {
-      // silently handle
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -119,10 +125,10 @@ export default function DataQualityPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Datenqualit&auml;tsregeln
+            {t("dataQuality.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Automatische Plausibilit&auml;tspr&uuml;fungen auf eingegebene Daten
+            {t("dataQuality.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -130,16 +136,16 @@ export default function DataQualityPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
-            Aktualisieren
+            {tCommon("actions.refresh")}
           </Button>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Regel erstellen
+            {t("reminders.create")}
           </Button>
         </div>
       </div>
@@ -152,7 +158,9 @@ export default function DataQualityPage() {
               <ShieldCheck className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold">{stats?.activeRules ?? 0}</p>
-                <p className="text-xs text-gray-500">Aktive Regeln</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataQuality.kpi.activeRules")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -165,7 +173,9 @@ export default function DataQualityPage() {
                 <p className="text-2xl font-bold">
                   {stats?.lastCheck ? formatDate(stats.lastCheck) : "\u2014"}
                 </p>
-                <p className="text-xs text-gray-500">Letzte Pr&uuml;fung</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataQuality.kpi.lastCheck")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -177,10 +187,17 @@ export default function DataQualityPage() {
               <div>
                 <p className="text-2xl font-bold">
                   {stats?.errorRate != null
-                    ? `${stats.errorRate.toFixed(1)}%`
+                    ? t("dataQuality.percent", {
+                        value: formatNumber(stats.errorRate, {
+                          minimumFractionDigits: 1,
+                          maximumFractionDigits: 1,
+                        }),
+                      })
                     : "\u2014"}
                 </p>
-                <p className="text-xs text-gray-500">Fehlerquote</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataQuality.kpi.errorRate")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -194,7 +211,7 @@ export default function DataQualityPage() {
                   {stats?.openViolations ?? 0}
                 </p>
                 <p className="text-xs text-gray-500">
-                  Verst&ouml;&szlig;e offen
+                  {t("dataQuality.kpi.openViolations")}
                 </p>
               </div>
             </div>
@@ -206,7 +223,7 @@ export default function DataQualityPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Validierungsregeln ({rules.length})
+            {t("dataQuality.tableTitle", { count: rules.length })}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -214,12 +231,9 @@ export default function DataQualityPage() {
             <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-400">
               <CheckCircle2 className="mb-3 h-10 w-10" />
               <p className="font-medium text-gray-500">
-                Keine Regeln konfiguriert
+                {t("dataQuality.empty")}
               </p>
-              <p className="mt-1 text-gray-400">
-                Definieren Sie Plausibilit&auml;tspr&uuml;fungen f&uuml;r Ihre
-                Dateneingaben.
-              </p>
+              <p className="mt-1 text-gray-400">{t("dataQuality.emptyHint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -227,25 +241,25 @@ export default function DataQualityPage() {
                 <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Name
+                      {t("reminders.column.name")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Entit&auml;tstyp
+                      {t("reminders.column.entityType")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Feld
+                      {t("dataQuality.column.field")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Regeltyp
+                      {t("dataQuality.column.ruleType")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Schweregrad
+                      {t("dataQuality.column.severity")}
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
-                      Verst&ouml;&szlig;e
+                      {t("dataQuality.column.violations")}
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
-                      Status
+                      {t("reminders.column.status")}
                     </th>
                   </tr>
                 </thead>
@@ -265,14 +279,14 @@ export default function DataQualityPage() {
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="text-xs">
-                          {ruleTypeLabels[rule.ruleType] ?? rule.ruleType}
+                          {t(`dataQuality.ruleType.${rule.ruleType}`)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
                         <Badge
                           className={`text-xs ${severityColors[rule.severity] ?? ""}`}
                         >
-                          {severityLabels[rule.severity] ?? rule.severity}
+                          {t(`dataQuality.severity.${rule.severity}`)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
@@ -291,7 +305,7 @@ export default function DataQualityPage() {
                             "bg-gray-100 text-gray-800"
                           }
                         >
-                          {statusLabels[rule.status] ?? rule.status}
+                          {t(`dataLinks.status.${rule.status}`)}
                         </Badge>
                       </td>
                     </tr>

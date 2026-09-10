@@ -1,7 +1,7 @@
 "use client";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Eye, LayoutGrid, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useIsHydrated } from "@/hooks/use-hydrated";
 import { useLayout } from "@/hooks/use-layout-preference";
 
 const themes = [
@@ -18,9 +18,16 @@ const layoutOptions = [
 export function ThemeSwitcher() {
   const { theme, setTheme } = useTheme();
   const { layout, setLayout } = useLayout();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  // [Welle 7b · OP-080] Hier stand der `mounted`-Wachtposten
+  //   const [mounted, setMounted] = useState(false);
+  //   useEffect(() => setMounted(true), []);
+  // — eine Fundstelle von `react-hooks/set-state-in-effect`, und weder ein
+  // Abruf noch ein Formular-Reset: der Wachtposten haelt den Server davon ab,
+  // ein Thema zu zeichnen, das er nicht kennen kann. Genau dafuer gibt es
+  // `useSyncExternalStore` mit eigener Server-Momentaufnahme; siehe
+  // `hooks/use-hydrated.ts`.
+  const hydrated = useIsHydrated();
+  if (!hydrated) return null;
 
   return (
     <div className="px-1 py-1">

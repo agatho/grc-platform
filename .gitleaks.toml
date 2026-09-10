@@ -1,0 +1,47 @@
+# gitleaks-Konfiguration für ARCTOS
+#
+# [ARCTOS-FULL-2026-08-31 · Welle 8g]
+#
+# Bis hierher lief gitleaks ohne Konfiguration ("zero config", so steht es im
+# Kopf von .github/workflows/secret-scanning.yml). Das ging gut, bis der
+# PR-Lauf zwei Funde meldete und den Check rot machte — beide Testfixtures:
+#
+#   1. apps/web/src/__tests__/lib/portal-auth.test.ts:110
+#      Ein Testwert mit hoher Entropie. NICHT hier ausgenommen, sondern
+#      GEÄNDERT: der Wert ist beliebig, der Test rechnet nur einen HMAC
+#      damit. Nachgemessen — gitleaks meldet die Zeile nicht mehr.
+#
+#   2. packages/auth/tests/fixtures/idp-test-key.pem
+#      Ein echter RSA-Schlüssel. Der lässt sich nicht "entschärfen": gitleaks
+#      hat recht, es IST ein privater Schlüssel. Er gehört zu einem
+#      langlebigen Testzertifikat für die SAML-Signaturprüfung, und die
+#      Begründung dafür steht ausführlich in
+#      packages/auth/tests/saml-certificate-validity.test.ts: ein Fixture mit
+#      fester Gültigkeit altert und macht den Test irgendwann aus dem
+#      falschen Grund rot; deshalb wird stattdessen die Uhr injiziert.
+#
+# Warum eine Ausnahme nach PFAD und nicht nach Fingerabdruck: ein
+# gitleaks-Fingerabdruck lautet <commit>:<datei>:<regel>:<zeile> und gilt
+# genau für einen Commit. Nach einem Rebase zeigt er ins Leere, und dann ist
+# die Ausnahme still weg — oder, schlimmer, sie deckt beim nächsten Mal etwas
+# anderes. Ein Pfad ist nachlesbar und altert nicht.
+#
+# Diese Datei ist bewusst KEINE Regel-Ausnahme. `private-key` bleibt für das
+# ganze Repository scharf; ausgenommen ist eine einzige, benannte Datei —
+# dieselbe, die scripts/audit-secrets.mjs in KNOWN_TEST_FIXTURES mit derselben
+# Begründung führt. Zwei Scanner, eine Bewertung.
+#
+# Gegengeprüft am 2026-09-09: mit dieser Datei meldet
+# `gitleaks detect --source .` den Schlüssel nicht mehr; nimmt man den
+# Pfad heraus, meldet er ihn sofort wieder.
+
+title = "ARCTOS"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Bewertete Testfixtures — jede Zeile mit Grund, siehe Kopf."
+paths = [
+  '''packages/auth/tests/fixtures/idp-test-key\.pem''',
+]

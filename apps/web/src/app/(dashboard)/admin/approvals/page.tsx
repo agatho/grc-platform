@@ -1,19 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, GitBranch, Plus, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch
+ * ("Entitaetstyp" mit transliteriertem Umlaut). Umgestellt auf den neuen
+ * Namensraum `admin`.
+ */
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,43 +47,37 @@ function workflowTypeBadgeClass(type: string): string {
   }
 }
 
-function workflowTypeLabel(type: string): string {
-  switch (type) {
-    case "sequential":
-      return "Sequenziell";
-    case "parallel":
-      return "Parallel";
-    default:
-      return type;
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export default function ApprovalWorkflowsPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage und zeigt ueber den Vorgabewert dieselbe Leeransicht.
+  const {
+    data: workflows = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ApprovalWorkflow[]>({
+    queryKey: ["approvals", "workflows"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/approvals");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ApprovalWorkflow[];
+    },
+  });
 
   const fetchWorkflows = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/approvals");
-      if (!res.ok) throw new Error("Failed to load");
-      const json = await res.json();
-      setWorkflows(json.data ?? []);
-    } catch {
-      setWorkflows([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchWorkflows();
-  }, [fetchWorkflows]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -90,10 +86,10 @@ export default function ApprovalWorkflowsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <GitBranch className="h-6 w-6" />
-            Freigabe-Workflows
+            {t("approvals.title")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Freigabe-Workflows verwalten und konfigurieren
+            {t("approvals.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -101,21 +97,21 @@ export default function ApprovalWorkflowsPage() {
             variant="outline"
             size="sm"
             onClick={fetchWorkflows}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
-            Aktualisieren
+            {tCommon("actions.refresh")}
           </Button>
           <Link href="/admin/approvals/requests">
             <Button variant="outline" size="sm">
-              Offene Anfragen
+              {t("approvals.openRequests")}
             </Button>
           </Link>
           <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
-            Workflow erstellen
+            {t("approvals.create")}
           </Button>
         </div>
       </div>
@@ -137,21 +133,24 @@ export default function ApprovalWorkflowsPage() {
                       variant="outline"
                       className={workflowTypeBadgeClass(workflow.type)}
                     >
-                      {workflowTypeLabel(workflow.type)}
+                      {workflow.type === "sequential" ||
+                      workflow.type === "parallel"
+                        ? t(`approvals.type.${workflow.type}`)
+                        : workflow.type}
                     </Badge>
                     {workflow.active ? (
                       <Badge
                         variant="outline"
                         className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100/80"
                       >
-                        Aktiv
+                        {tCommon("status.active")}
                       </Badge>
                     ) : (
                       <Badge
                         variant="outline"
                         className="bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-100/80"
                       >
-                        Inaktiv
+                        {tCommon("status.inactive")}
                       </Badge>
                     )}
                   </div>
@@ -160,16 +159,20 @@ export default function ApprovalWorkflowsPage() {
               <CardContent>
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <span>
-                    Entitaetstyp:{" "}
+                    {t("approvals.entityType")}{" "}
                     <Badge variant="secondary">{workflow.entityType}</Badge>
                   </span>
                   <span>
-                    Schritte:{" "}
+                    {t("approvals.steps")}{" "}
                     <span className="font-medium text-foreground">
                       {workflow.stepsCount}
                     </span>
                   </span>
-                  <span>Erstellt: {formatDate(workflow.createdAt)}</span>
+                  <span>
+                    {t("approvals.createdAt", {
+                      value: formatDate(workflow.createdAt),
+                    })}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -179,16 +182,13 @@ export default function ApprovalWorkflowsPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <GitBranch className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-1">
-              Keine Workflows vorhanden
-            </h3>
+            <h3 className="text-lg font-medium mb-1">{t("approvals.empty")}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Erstellen Sie Ihren ersten Freigabe-Workflow, um
-              Genehmigungsprozesse zu automatisieren.
+              {t("approvals.emptyHint")}
             </p>
             <Button size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              Workflow erstellen
+              {t("approvals.create")}
             </Button>
           </CardContent>
         </Card>

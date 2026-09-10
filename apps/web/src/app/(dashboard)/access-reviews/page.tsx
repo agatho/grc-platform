@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
-  Shield,
   Users,
   CheckCircle2,
   AlertTriangle,
@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface UserRole {
   userId: string;
@@ -31,22 +32,48 @@ interface UserRole {
 }
 
 export default function AccessReviewsPage() {
-  const t = useTranslations("accessLog");
-  const { data: session } = useSession();
+  const t = useTranslations("accessReview");
+  const { data: _session } = useSession();
   const { formatDate } = useDateFormat();
-  const [users, setUsers] = useState<UserRole[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [reviewing, setReviewing] = useState<Set<string>>(new Set());
+  const [_reviewing, _setReviewing] = useState<Set<string>>(new Set());
   const [approved, setApproved] = useState<Set<string>>(new Set());
   const [revoked, setRevoked] = useState<Set<string>>(new Set());
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/users?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        const userData = (json.data ?? []).map((u: any) => ({
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Vorher `limit=200` + `if (res.ok)` ohne
+  // else. Der Server lehnt `limit > 100` mit 422 ab (#NIGHT-059), also stand
+  // hier für jeden Mandanten eine leere Zugriffsüberprüfung — und eine leere
+  // Zugriffsüberprüfung liest sich wie das Ergebnis „keine Berechtigungen zu
+  // prüfen", nicht wie ein Fehler. Jetzt geblättert und der Fehler benannt.
+  //
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Ein Fehler wird wie vorher
+  // protokolliert und landet im Fehlerzustand der Abfrage.
+  const {
+    data: users = [],
+    isPending: loading,
+    isError: loadError,
+    refetch,
+  } = useQuery<UserRole[]>({
+    queryKey: ["access-reviews", "users"],
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] `(u: any)` — typed to the
+      // fields this mapper actually reads.
+      type UserRow = {
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        roles?: Array<{
+          role?: string;
+          lineOfDefense?: string | null;
+          department?: string | null;
+        }>;
+        lastLoginAt?: string | null;
+        isActive?: boolean;
+      };
+      try {
+        const rows = await fetchAllPages<UserRow>("/api/v1/users");
+        return rows.map((u) => ({
           userId: u.id,
           userName: u.name ?? "Unknown",
           userEmail: u.email ?? "",
@@ -56,16 +83,16 @@ export default function AccessReviewsPage() {
           lastLogin: u.lastLoginAt ?? null,
           isActive: u.isActive ?? true,
         }));
-        setUsers(userData);
+      } catch (err) {
+        console.error("access-reviews: Nutzerliste nicht geladen", err);
+        throw err;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+  });
 
-  useEffect(() => {
-    void fetchUsers();
-  }, [fetchUsers]);
+  const fetchUsers = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleApprove = (userId: string) => {
     setApproved((prev) => new Set([...prev, userId]));
@@ -110,20 +137,26 @@ export default function AccessReviewsPage() {
 
   return (
     <div className="space-y-6">
+      {/* [ARCTOS-FULL-2026-08-31 · OP-050] Ein Ladefehler darf hier nicht als
+          „keine Berechtigungen zu prüfen" durchgehen. */}
+      {loadError && (
+        <div
+          role="alert"
+          className="flex items-center gap-2 rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+        >
+          <AlertTriangle size={16} />
+          {t("loadError")}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Berechtigungsprüfung
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Periodische Überprüfung aller Nutzerzugriffe und
-            Rollenberechtigungen
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchUsers}>
           <RefreshCcw size={14} className="mr-1.5" />
-          Aktualisieren
+          {t("refresh")}
         </Button>
       </div>
 
@@ -135,7 +168,7 @@ export default function AccessReviewsPage() {
               <Users size={20} className="text-blue-600" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalUsers}</p>
-                <p className="text-xs text-gray-500">Nutzer gesamt</p>
+                <p className="text-xs text-gray-500">{t("totalUsers")}</p>
               </div>
             </div>
           </CardContent>
@@ -148,7 +181,7 @@ export default function AccessReviewsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {approved.size}
                 </p>
-                <p className="text-xs text-gray-500">Bestätigt</p>
+                <p className="text-xs text-gray-500">{t("approvedCount")}</p>
               </div>
             </div>
           </CardContent>
@@ -161,7 +194,7 @@ export default function AccessReviewsPage() {
                 <p className="text-2xl font-bold text-gray-900">
                   {revoked.size}
                 </p>
-                <p className="text-xs text-gray-500">Widerrufen</p>
+                <p className="text-xs text-gray-500">{t("revokedCount")}</p>
               </div>
             </div>
           </CardContent>
@@ -172,7 +205,7 @@ export default function AccessReviewsPage() {
               <Clock size={20} className="text-amber-600" />
               <div>
                 <p className="text-2xl font-bold text-gray-900">{progress}%</p>
-                <p className="text-xs text-gray-500">Fortschritt</p>
+                <p className="text-xs text-gray-500">{t("progress")}</p>
               </div>
             </div>
           </CardContent>
@@ -190,7 +223,7 @@ export default function AccessReviewsPage() {
       {/* User List */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Nutzerzugriffe prüfen</CardTitle>
+          <CardTitle className="text-base">{t("listTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -233,7 +266,7 @@ export default function AccessReviewsPage() {
                     </p>
                     {user.department && (
                       <p className="text-xs text-gray-400 mt-0.5">
-                        Abteilung: {user.department}
+                        {t("department", { name: user.department })}
                       </p>
                     )}
                   </div>
@@ -242,10 +275,14 @@ export default function AccessReviewsPage() {
                   <div className="text-right shrink-0">
                     {user.lastLogin ? (
                       <p className="text-xs text-gray-500">
-                        Letzter Login: {formatDate(user.lastLogin)}
+                        {t("lastLogin", {
+                          date: formatDate(user.lastLogin),
+                        })}
                       </p>
                     ) : (
-                      <p className="text-xs text-red-500">Nie eingeloggt</p>
+                      <p className="text-xs text-red-500">
+                        {t("neverLoggedIn")}
+                      </p>
                     )}
                   </div>
 
@@ -260,7 +297,7 @@ export default function AccessReviewsPage() {
                             : "bg-red-100 text-red-900 border-red-300"
                         }
                       >
-                        {isApproved ? "✓ Bestätigt" : "✗ Widerrufen"}
+                        {isApproved ? t("badgeApproved") : t("badgeRevoked")}
                       </Badge>
                     ) : (
                       <>
@@ -271,7 +308,7 @@ export default function AccessReviewsPage() {
                           className="text-green-700 hover:bg-green-50 border-green-300"
                         >
                           <UserCheck size={14} className="mr-1" />
-                          Bestätigen
+                          {t("approve")}
                         </Button>
                         <Button
                           variant="outline"
@@ -280,7 +317,7 @@ export default function AccessReviewsPage() {
                           className="text-red-700 hover:bg-red-50 border-red-300"
                         >
                           <UserX size={14} className="mr-1" />
-                          Widerrufen
+                          {t("revoke")}
                         </Button>
                       </>
                     )}

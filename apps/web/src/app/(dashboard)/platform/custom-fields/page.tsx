@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, Settings2, Loader2, GripVertical } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { CustomFieldDefinition } from "@grc/shared";
 
 export default function CustomFieldsPage() {
@@ -20,8 +21,6 @@ export default function CustomFieldsPage() {
 
 function CustomFieldsInner() {
   const t = useTranslations("platformAdvanced");
-  const [fields, setFields] = useState<CustomFieldDefinition[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedEntity, setSelectedEntity] = useState("risk");
 
   const entityTypes = [
@@ -35,22 +34,21 @@ function CustomFieldsInner() {
     "finding",
   ];
 
-  const fetchFields = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); der Entitätstyp steht im
+  // Schlüssel.
+  const { data: fields = [], isPending: loading } = useQuery<
+    CustomFieldDefinition[]
+  >({
+    queryKey: ["admin", "custom-fields", selectedEntity],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/admin/custom-fields/${selectedEntity}`);
-      if (res.ok) {
-        const json = await res.json();
-        setFields(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedEntity]);
-
-  useEffect(() => {
-    fetchFields();
-  }, [fetchFields]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as CustomFieldDefinition[];
+    },
+  });
 
   return (
     <div className="space-y-6">

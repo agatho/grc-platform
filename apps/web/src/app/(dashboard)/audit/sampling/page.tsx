@@ -1,17 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  Loader2,
-  Plus,
-  Dice5,
-  BarChart3,
-  CheckCircle2,
-  AlertTriangle,
-  Calculator,
-  Target,
-  Layers,
-} from "lucide-react";
+import { useEffect, useState, useId } from "react";
+import { Loader2, Plus, Dice5, Calculator, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,6 +34,11 @@ const statusColors: Record<string, string> = {
 };
 
 export default function AuditSamplingPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [samples, setSamples] = useState<AuditSample[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -104,20 +99,30 @@ export default function AuditSamplingPage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
             <div>
-              <label className="text-gray-500 text-xs font-medium">
+              <label
+                htmlFor={`${a11yId}-grundgesamtheit`}
+                className="text-gray-500 text-xs font-medium"
+              >
                 Grundgesamtheit
               </label>
               <input
+                id={`${a11yId}-grundgesamtheit`}
                 type="number"
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 placeholder="z.B. 500"
               />
             </div>
             <div>
-              <label className="text-gray-500 text-xs font-medium">
+              <label
+                htmlFor={`${a11yId}-konfidenzniveau`}
+                className="text-gray-500 text-xs font-medium"
+              >
                 Konfidenzniveau
               </label>
-              <select className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <select
+                id={`${a11yId}-konfidenzniveau`}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
                 <option value="90">90%</option>
                 <option value="95" selected>
                   95%
@@ -126,10 +131,16 @@ export default function AuditSamplingPage() {
               </select>
             </div>
             <div>
-              <label className="text-gray-500 text-xs font-medium">
+              <label
+                htmlFor={`${a11yId}-tolerierbare-fehlerrate`}
+                className="text-gray-500 text-xs font-medium"
+              >
                 Tolerierbare Fehlerrate
               </label>
-              <select className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+              <select
+                id={`${a11yId}-tolerierbare-fehlerrate`}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
                 <option value="1">1%</option>
                 <option value="3">3%</option>
                 <option value="5" selected>

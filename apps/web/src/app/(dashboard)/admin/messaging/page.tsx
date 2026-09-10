@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -21,7 +22,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch.
+ * Die Anbieternamen (Slack, Microsoft Teams, Webhook) sind Eigennamen und
+ * bleiben in beiden Katalogen gleich — sie stehen trotzdem dort, damit die
+ * Tabelle nur noch Schluessel fuehrt.
+ */
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -41,20 +50,20 @@ interface MessagingIntegration {
 
 const PROVIDER_CONFIG: Record<
   string,
-  { label: string; icon: typeof MessageSquare; className: string }
+  { key: string; icon: typeof MessageSquare; className: string }
 > = {
   slack: {
-    label: "Slack",
+    key: "slack",
     icon: Hash,
     className: "bg-purple-100 text-purple-800 border-purple-200",
   },
   teams: {
-    label: "Microsoft Teams",
+    key: "teams",
     icon: MessageSquare,
     className: "bg-blue-100 text-blue-800 border-blue-200",
   },
   webhook: {
-    label: "Webhook",
+    key: "webhook",
     icon: Webhook,
     className: "bg-gray-100 text-gray-800 border-gray-200",
   },
@@ -63,30 +72,32 @@ const PROVIDER_CONFIG: Record<
 // ── Component ─────────────────────────────────────────────────
 
 export default function MessagingIntegrationsPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDateTime: formatDate } = useDateFormat();
-  const [integrations, setIntegrations] = useState<MessagingIntegration[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: integrations = [],
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<MessagingIntegration[]>({
+    queryKey: ["messaging", "integrations"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/messaging/integrations");
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
-      setIntegrations(json.data ?? []);
-    } catch {
-      setError(true);
-      setIntegrations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as MessagingIntegration[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -102,11 +113,10 @@ export default function MessagingIntegrationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Messaging-Integrationen
+            {t("messaging.title")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Slack, Microsoft Teams und Webhook-Anbindungen für
-            Benachrichtigungen
+            {t("messaging.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -114,13 +124,17 @@ export default function MessagingIntegrationsPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
+            <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
-            Integration hinzufügen
+            {t("messaging.add")}
           </Button>
         </div>
       </div>
@@ -128,7 +142,7 @@ export default function MessagingIntegrationsPage() {
       {/* Error State */}
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Fehler beim Laden der Integrationen. Bitte erneut versuchen.
+          {t("messaging.loadError")}
         </div>
       )}
 
@@ -136,13 +150,12 @@ export default function MessagingIntegrationsPage() {
       {integrations.length === 0 && !error ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <Unplug size={48} className="text-gray-300 mb-4" />
+            <Unplug size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
-              Keine Integrationen konfiguriert
+              {t("messaging.empty")}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Verbinden Sie Slack, Microsoft Teams oder einen Webhook, um
-              Benachrichtigungen zu versenden.
+              {t("messaging.emptyHint")}
             </p>
           </CardContent>
         </Card>
@@ -167,7 +180,9 @@ export default function MessagingIntegrationsPage() {
                         <CardTitle className="text-base">
                           {integration.name}
                         </CardTitle>
-                        <CardDescription>{providerCfg.label}</CardDescription>
+                        <CardDescription>
+                          {t(`messaging.provider.${providerCfg.key}`)}
+                        </CardDescription>
                       </div>
                     </div>
                     {integration.isActive ? (
@@ -175,14 +190,14 @@ export default function MessagingIntegrationsPage() {
                         variant="outline"
                         className="bg-green-100 text-green-800 border-green-200"
                       >
-                        Aktiv
+                        {tCommon("status.active")}
                       </Badge>
                     ) : (
                       <Badge
                         variant="outline"
                         className="bg-gray-100 text-gray-500 border-gray-200"
                       >
-                        Inaktiv
+                        {tCommon("status.inactive")}
                       </Badge>
                     )}
                   </div>
@@ -190,7 +205,9 @@ export default function MessagingIntegrationsPage() {
                 <CardContent className="space-y-3">
                   {/* Channel */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Kanal</span>
+                    <span className="text-gray-500">
+                      {t("reminders.column.channel")}
+                    </span>
                     <span className="font-medium text-gray-900">
                       {integration.channel}
                     </span>
@@ -199,7 +216,7 @@ export default function MessagingIntegrationsPage() {
                   {/* Event Types */}
                   <div>
                     <span className="text-sm text-gray-500 block mb-1">
-                      Event-Typen
+                      {t("messaging.eventTypes")}
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {integration.eventTypes.map((evt) => (
@@ -213,7 +230,7 @@ export default function MessagingIntegrationsPage() {
                       ))}
                       {integration.eventTypes.length === 0 && (
                         <span className="text-xs text-gray-400">
-                          Keine Events konfiguriert
+                          {t("messaging.noEvents")}
                         </span>
                       )}
                     </div>
@@ -221,7 +238,9 @@ export default function MessagingIntegrationsPage() {
 
                   {/* Last Sent */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Letzter Versand</span>
+                    <span className="text-gray-500">
+                      {t("messaging.lastSent")}
+                    </span>
                     <span className="text-gray-600">
                       {formatDate(integration.lastSentAt)}
                     </span>
@@ -229,7 +248,9 @@ export default function MessagingIntegrationsPage() {
 
                   {/* Error Count */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-500">Fehleranzahl</span>
+                    <span className="text-gray-500">
+                      {t("messaging.errorCount")}
+                    </span>
                     <span
                       className={`font-medium ${
                         integration.errorCount > 0

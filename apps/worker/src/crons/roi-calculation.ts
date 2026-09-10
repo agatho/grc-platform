@@ -12,6 +12,7 @@ import {
 } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface RoiCalculationResult {
   processed: number;
@@ -123,7 +124,12 @@ export const processRoiCalculation = withCronInstrumentation(
             });
 
             processed++;
-          } catch {
+          } catch (err) {
+            // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+            reportJobError(
+              { job: "roi-calculation", scope: "Upsert ROI calculation" },
+              err,
+            );
             errors++;
           }
         }
@@ -188,11 +194,27 @@ export const processRoiCalculation = withCronInstrumentation(
             });
 
             processed++;
-          } catch {
+          } catch (err) {
+            // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+            reportJobError(
+              {
+                job: "roi-calculation",
+                scope: "Simplified: assume control prevents a fractio",
+              },
+              err,
+            );
             errors++;
           }
         }
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "roi-calculation",
+            scope: "Simplified: assume control prevents a fractio",
+          },
+          err,
+        );
         errors++;
       }
     }

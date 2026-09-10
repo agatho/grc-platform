@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { cn } from "../../utils";
 
 interface LinkedTreatment {
@@ -123,8 +122,9 @@ export function NetEvaluationTab({
                   <span
                     className={cn(
                       "text-xs px-2 py-0.5 rounded-full",
+                      // // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1.
                       treatment.status === "completed" &&
-                        "bg-green-100 text-green-700",
+                        "bg-green-100 text-green-800",
                       treatment.status === "in_progress" &&
                         "bg-blue-100 text-blue-700",
                       treatment.status === "planned" &&

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="Defs">
+  <bpmn:process id="Proc">
+    <bpmn:userTask id="Task_1" name="Approve Order"/>
+  </bpmn:process>
+</bpmn:definitions>

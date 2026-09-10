@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -32,23 +33,29 @@ export default function CommunityPage() {
 
 function CommunityDashboard() {
   const t = useTranslations("community");
-  const router = useRouter();
-  const [config, setConfig] = useState<EditionConfig | null>(null);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`; der Aktualisieren-Knopf ist ein erneuter Abruf, deshalb
+  // `isFetching`.
+  const {
+    data: config = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<EditionConfig | null>({
+    queryKey: ["community", "edition-config"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/community/edition-config");
+      if (!res.ok) return null;
+      return ((await res.json()).data ?? null) as EditionConfig | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/community/edition-config");
-      if (res.ok) setConfig((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !config) {
     return (
@@ -76,9 +83,12 @@ function CommunityDashboard() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

@@ -49,12 +49,29 @@ import {
 } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { resolveReviewPeriod } from "@/lib/isms/review-period";
+import { z } from "zod";
+import { parseQueryParams, dateQueryParam } from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const reviewDashboardQuerySchema = z.object({
+  // Period overrides were forwarded to resolveReviewPeriod as raw strings.
+  from: dateQueryParam,
+  to: dateQueryParam,
+});
 
 function toDateString(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -66,6 +83,15 @@ export async function GET(
 
   const { id } = await params;
   const { searchParams } = new URL(req.url);
+  const periodQuery = parseQueryParams(
+    reviewDashboardQuerySchema,
+    searchParams,
+  );
+  if (!periodQuery.ok)
+    return Response.json(
+      { error: periodQuery.message, details: periodQuery.details },
+      { status: 422 },
+    );
 
   const reviewRows = await db
     .select()
@@ -107,8 +133,8 @@ export async function GET(
       periodEnd: review.periodEnd,
     },
     lastCompletedReviewDate: prevReview?.reviewDate ?? null,
-    overrideFrom: searchParams.get("from"),
-    overrideTo: searchParams.get("to"),
+    overrideFrom: periodQuery.data.from ?? null,
+    overrideTo: periodQuery.data.to ?? null,
   });
 
   const from = period.from;
@@ -512,4 +538,4 @@ export async function GET(
       },
     },
   });
-}
+});

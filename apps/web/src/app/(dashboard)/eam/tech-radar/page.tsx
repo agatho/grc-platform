@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle } from "lucide-react";
 
@@ -8,7 +8,8 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const RING_COLORS: Record<string, string> = {
   adopt: "bg-green-100 text-green-900 border-green-300",
@@ -28,30 +29,34 @@ export default function TechRadarPage() {
 
 function TechRadarInner() {
   const t = useTranslations("eam");
-  const [data, setData] = useState<{
-    technologies: any[];
-    quadrants: Record<string, any[]>;
-  } | null>(null);
-  const [holdWithUsage, setHoldWithUsage] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (null bzw. leere Liste).
+  const { data: radar, isPending: loading } = useQuery<{
+    data: {
+      technologies: UnvalidatedJson[];
+      quadrants: Record<string, UnvalidatedJson[]>;
+    } | null;
+    holdWithUsage: UnvalidatedJson[];
+  }>({
+    queryKey: ["eam", "tech-radar"],
+    queryFn: async () => {
       const [radarRes, holdRes] = await Promise.all([
         fetch("/api/v1/eam/technologies/radar"),
         fetch("/api/v1/eam/technologies/hold-with-usage"),
       ]);
-      if (radarRes.ok) setData((await radarRes.json()).data);
-      if (holdRes.ok) setHoldWithUsage((await holdRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const data = radarRes.ok ? (await radarRes.json()).data : null;
+      const holdWithUsage: UnvalidatedJson[] = holdRes.ok
+        ? (((await holdRes.json()).data ?? []) as UnvalidatedJson[])
+        : [];
+      return { data, holdWithUsage };
+    },
+  });
+  const data = radar?.data ?? null;
+  const holdWithUsage = radar?.holdWithUsage ?? [];
 
   if (loading || !data) {
     return (

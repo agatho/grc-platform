@@ -8,6 +8,10 @@ import { db, process } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface Component {
   key: string;
@@ -20,7 +24,11 @@ function clamp(n: number, lo = 0, hi = 100) {
   return Math.max(lo, Math.min(hi, n));
 }
 
-export async function GET(
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Alle fuenf Abfragen liefern
+// ausschliesslich `::int`-Spalten; mehr behauptet dieser Typ nicht.
+type IntRow = Record<string, number>;
+
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -58,7 +66,7 @@ export async function GET(
         WHERE ps.process_id = ${id}
       ) AS uniq
       JOIN risk r ON r.id = uniq.risk_id AND r.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [controls] = (await tx.execute(sql`
       SELECT
@@ -73,7 +81,7 @@ export async function GET(
         WHERE ps.process_id = ${id}
       ) AS uniq
       JOIN control c ON c.id = uniq.control_id AND c.deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [findings] = (await tx.execute(sql`
       SELECT
@@ -86,7 +94,7 @@ export async function GET(
           f.process_id = ${id}
           OR f.process_step_id IN (SELECT id FROM process_step WHERE process_id = ${id})
         )
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [maturity] = (await tx.execute(sql`
       SELECT overall_level::int AS level
@@ -94,13 +102,13 @@ export async function GET(
       WHERE process_id = ${id} AND org_id = ${ctx.orgId}
       ORDER BY assessment_date DESC
       LIMIT 1
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     const [steps] = (await tx.execute(sql`
       SELECT COUNT(*)::int AS total
       FROM process_step
       WHERE process_id = ${id} AND deleted_at IS NULL
-    `)) as any[];
+    `)) as unknown as IntRow[];
 
     return { risks, controls, findings, maturity, steps };
   });
@@ -183,4 +191,4 @@ export async function GET(
       computedAt: new Date().toISOString(),
     },
   });
-}
+});

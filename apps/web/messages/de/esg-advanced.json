@@ -2,6 +2,26 @@
   "title": "ESG Erweitert",
   "materiality": {
     "title": "Doppelte Wesentlichkeitsanalyse",
+    "subtitle": "CSRD-konforme Wesentlichkeitsanalysen nach Berichtsjahren",
+    "newAssessment": "Neue Analyse starten",
+    "dialogTitle": "Neue Wesentlichkeitsanalyse",
+    "reportingYear": "Berichtsjahr",
+    "cancel": "Abbrechen",
+    "create": "Erstellen",
+    "createFailed": "Die Analyse konnte nicht angelegt werden.",
+    "kpiTotal": "Analysen gesamt",
+    "kpiCompleted": "Abgeschlossen",
+    "kpiInProgress": "In Bearbeitung",
+    "empty": "Noch keine Wesentlichkeitsanalysen vorhanden.",
+    "emptyHint": "Klicken Sie auf „Neue Analyse starten“, um zu beginnen.",
+    "cardYear": "Berichtsjahr {year}",
+    "createdAt": "Erstellt",
+    "finalizedAt": "Abgeschlossen",
+    "status": {
+      "draft": "Entwurf",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen"
+    },
     "assessment": "Bewertung",
     "iro": "IRO-Identifikation",
     "iroTypes": {
@@ -90,5 +110,39 @@
     "lksg": "LkSG-Sorgfaltspflichten",
     "dashboard": "Lieferketten-ESG-Dashboard",
     "riskMap": "Geographische Risikokarte"
+  },
+  "climateScenarios": {
+    "title": "TCFD-Klimaszenarien",
+    "subtitle": "Physische und Transitionsrisiken nach TCFD-Empfehlungen und ESRS E1",
+    "refresh": "Aktualisieren",
+    "kpiTotal": "Szenarien gesamt",
+    "kpiPhysical": "Physische Risiken",
+    "kpiTransition": "Transitionsrisiken",
+    "kpiHighRisk": "Hohes Risiko (≥ 16)",
+    "pathwayCount": "{count, plural, one {# Szenario} other {# Szenarien}}",
+    "filterAll": "Alle",
+    "filterPhysical": "Physisch",
+    "filterTransition": "Transition",
+    "empty": "Keine Klimaszenarien vorhanden. Migration 0092 ausführen.",
+    "colScenario": "Szenario",
+    "colType": "Typ",
+    "colCategory": "Kategorie",
+    "colPathway": "Pfad",
+    "colHorizon": "Zeithorizont",
+    "colRisk": "Risiko (L×A)",
+    "colFinancial": "Finanzielle Auswirkung",
+    "colStatus": "Status",
+    "horizon": {
+      "short": "Kurzfristig (< 2030)",
+      "medium": "Mittelfristig (2030–2040)",
+      "long": "Langfristig (2040–2050+)"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "identified": "Erfasst",
+      "assessed": "Bewertet",
+      "mitigated": "Gemindert",
+      "closed": "Abgeschlossen"
+    }
   }
 }

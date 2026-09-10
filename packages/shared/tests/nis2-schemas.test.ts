@@ -187,7 +187,7 @@ describe("NIS2_CHAPTERS", () => {
   });
 
   it("each chapter has DE and EN labels", () => {
-    for (const [key, value] of Object.entries(NIS2_CHAPTERS)) {
+    for (const value of Object.values(NIS2_CHAPTERS)) {
       expect(value.de).toBeTruthy();
       expect(value.en).toBeTruthy();
     }

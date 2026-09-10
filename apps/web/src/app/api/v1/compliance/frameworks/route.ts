@@ -17,7 +17,7 @@
 // apply to a specific ARCTOS module (uses catalog.target_modules).
 
 import { db, catalog, catalogEntry } from "@grc/db";
-import { count, eq, sql, isNull } from "drizzle-orm";
+import { count, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 

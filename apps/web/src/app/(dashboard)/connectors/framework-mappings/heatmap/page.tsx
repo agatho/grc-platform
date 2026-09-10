@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,27 +13,47 @@ interface FrameworkScore {
   trend: string;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 / WP12 · S14-01] Per-category coverage, as measured.
+ *
+ * `categoryCoverageMeasured === false` means no snapshot has ever recorded a
+ * category breakdown — which is a different statement from "coverage is 0"
+ * and must not be rendered as a traffic light.
+ */
+interface HeatmapResponse {
+  frameworkScores: FrameworkScore[];
+  categoryCoverage: Record<string, Record<string, number>>;
+  categoryCoverageMeasured: boolean;
+  categoryCoverageAsOf: string | null;
+}
+
 export default function CoverageHeatmapPage() {
   const t = useTranslations("connectors");
-  const [scores, setScores] = useState<FrameworkScore[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus drei gespiegelten Zustaenden aus einer Antwort (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher die Ausgangswerte (leere Liste, leere Karte, nicht gemessen).
+  const {
+    data: heatmap = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<HeatmapResponse | null>({
+    queryKey: ["connectors", "framework-mappings", "heatmap"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/framework-mappings/dashboard");
+      if (!res.ok) return null;
+      const json: { data: HeatmapResponse } = await res.json();
+      return json.data;
+    },
+  });
+  const scores = heatmap?.frameworkScores ?? [];
+  const categoryCoverage = heatmap?.categoryCoverage ?? {};
+  const categoriesMeasured = Boolean(heatmap?.categoryCoverageMeasured);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/framework-mappings/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setScores(json.data.frameworkScores ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const heatColor = (pct: number): string => {
     if (pct >= 90) return "bg-green-600 text-white";
@@ -50,16 +71,14 @@ export default function CoverageHeatmapPage() {
     );
   }
 
-  const categories = [
-    "iam",
-    "encryption",
-    "logging",
-    "network",
-    "data_protection",
-    "access_control",
-    "configuration",
-    "monitoring",
-  ];
+  // S14-01: the category axis used to be a hardcoded list of eight labels
+  // that no measurement ever referred to. It is derived from the snapshot now,
+  // so an unmeasured installation shows no columns rather than eight fake ones.
+  const categories = Array.from(
+    new Set(
+      Object.values(categoryCoverage).flatMap((byCat) => Object.keys(byCat)),
+    ),
+  ).sort();
 
   return (
     <div className="space-y-6">
@@ -74,11 +93,22 @@ export default function CoverageHeatmapPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw size={14} />
         </Button>
       </div>
+
+      {/* S14-01: the absence of a measurement is stated, not hidden behind
+          plausible-looking colours. */}
+      {!categoriesMeasured && (
+        <div
+          role="status"
+          className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+        >
+          {t("heatmap.categoryNotMeasured")}
+        </div>
+      )}
 
       {scores.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-12">
@@ -98,6 +128,7 @@ export default function CoverageHeatmapPage() {
                 {categories.map((cat) => (
                   <th
                     key={cat}
+                    scope="col"
                     className="px-3 py-3 text-center text-xs font-medium text-gray-500"
                   >
                     {cat}
@@ -118,15 +149,28 @@ export default function CoverageHeatmapPage() {
                       {fw.coverage}%
                     </span>
                   </td>
+                  {/* [WP12 · S14-01] This was
+                        `fw.coverage + Math.floor(Math.random() * 20 - 10)` —
+                        a new number on every render, shown as a traffic light
+                        with a percentage. Only measured values are rendered
+                        now; an unmeasured cell stays empty and says so. */}
                   {categories.map((cat) => {
-                    const score = Math.max(
-                      0,
-                      fw.coverage + Math.floor(Math.random() * 20 - 10),
-                    );
+                    const score = categoryCoverage[fw.framework]?.[cat];
+                    if (typeof score !== "number") {
+                      return (
+                        <td
+                          key={cat}
+                          className="px-3 py-3 text-center text-[10px] text-gray-500"
+                          title={t("heatmap.categoryNotMeasured")}
+                        >
+                          &ndash;
+                        </td>
+                      );
+                    }
                     return (
                       <td key={cat} className="px-3 py-3 text-center">
                         <span
-                          className={`inline-block w-10 h-8 rounded flex items-center justify-center text-[10px] font-bold ${heatColor(score)}`}
+                          className={`inline-flex w-10 h-8 rounded items-center justify-center text-[10px] font-bold ${heatColor(score)}`}
                         >
                           {score}
                         </span>

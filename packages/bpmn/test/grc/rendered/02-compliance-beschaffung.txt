@@ -1,0 +1,29 @@
+Beschaffung — Compliance & Nachweis
+
+Sicht: Compliance & Nachweis — Welche Schritte haben keinen frischen Nachweis — die Vorbereitungsfrage jedes Audits.
+Stand der GRC-Daten: 2026-03-01T09:00:00.000Z
+ISO/IEC 27001:2022: 1 von 3 Anforderungen abgedeckt (33 %), 1 Lücke: A.5.21.
+
+Der Prozess beginnt mit „Bedarf erkannt“. Schritt 1: „Bedarf erkannt“ führt zu „Purchase Request erstellen“. Schritt 2: „Purchase Request erstellen“ führt zu „PR genehmigen“. Schritt 3: „PR genehmigen“ führt zu „Angebot einholen“. Schritt 4: „Angebot einholen“ führt zu „Bestellung aufgeben“. Schritt 5: „Bestellung aufgeben“ führt zu „Bestellung abgeschlossen“. Schritt 6: „Bestellung abgeschlossen“ endet hier. ISO/IEC 27001:2022: 1 von 3 Anforderungen abgedeckt (33 %), 1 Lücke: A.5.21. 4 Elemente tragen GRC-Hinweise in der Sicht „Compliance & Nachweis".
+
+1. Bedarf erkannt (Startereignis)
+2. Purchase Request erstellen (Benutzeraufgabe)
+    Nachweisfälligkeit: Nachweis aktuell, fällig in 345 Tagen, jüngster Nachweis 20 Tage alt.
+    Rahmenwerk: Anforderungen: A.5.19 (Informationssicherheit in Lieferantenbeziehungen) — abgedeckt.
+    Kontrolltests: Kontrolltests: 1 geprüft, 1 bestanden.
+3. PR genehmigen (Benutzeraufgabe)
+    Nachweisfälligkeit: Nachweis fällig, fällig in 21 Tagen, jüngster Nachweis 330 Tage alt.
+    Feststellungen: 1 offene Feststellung.
+    Rahmenwerk: Anforderungen: A.5.20 (Sicherheitsanforderungen in Lieferantenverträgen) — teilweise.
+    Kontrolltests: Kontrolltests: 1 geprüft, 0 bestanden.
+    Weitere Hinweise: Kontrolltests: 1 geprüft, 0 bestanden.
+4. Angebot einholen (Benutzeraufgabe)
+    Nachweisfälligkeit: Nachweis überfällig, überfällig seit 135 Tagen, jüngster Nachweis 500 Tage alt.
+    Rahmenwerk: Anforderungen: A.5.21 (Sicherheit in der IKT-Lieferkette) — Lücke.
+    Kontrolltests: Kontrolltests: 1 geprüft, 0 bestanden, nicht bestanden: „Drei-Angebote-Regel".
+    Kommentare: Kommentare: 3 offen von 4.
+5. Bestellung aufgeben (Benutzeraufgabe)
+    Nachweisfälligkeit: Nachweis: 1 Kontrolle ohne jeden Nachweis („Bestellfreigabe im ERP").
+    Feststellungen: 1 offene Feststellung, 1 überfällig.
+    Rahmenwerk: Anforderungen: A.5.20 (Sicherheitsanforderungen in Lieferantenverträgen) — abgedeckt.
+6. Bestellung abgeschlossen (Endereignis)

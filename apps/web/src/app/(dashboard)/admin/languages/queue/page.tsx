@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Languages,
   Download,
@@ -12,7 +13,7 @@ import {
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,14 +68,11 @@ const STATUS_OPTIONS = [
 
 export default function TranslationQueuePage() {
   const t = useTranslations("translations");
+  const router = useRouter();
   const { formatDate } = useDateFormat();
   const searchParams = useSearchParams();
 
-  const [items, setItems] = useState<QueueItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
 
   // Filters
   const [entityType, setEntityType] = useState(
@@ -87,9 +85,25 @@ export default function TranslationQueuePage() {
     searchParams.get("status") ?? "missing",
   );
 
-  const fetchQueue = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Seite und alle drei Filter gehen
+  // in die Anfrage und stehen deshalb im Schluessel. Eine nicht-ok-Antwort
+  // liefert eine leere Seite.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ items: QueueItem[]; total: number; totalPages: number }>({
+    queryKey: [
+      "translations",
+      "queue",
+      page,
+      entityType,
+      targetLocale,
+      statusFilter,
+    ],
+    queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         limit: "20",
@@ -99,20 +113,22 @@ export default function TranslationQueuePage() {
       if (entityType) params.set("entityType", entityType);
 
       const res = await fetch(`/api/v1/translations/queue?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setItems(data.data);
-        setTotal(data.pagination.total);
-        setTotalPages(data.pagination.totalPages);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, entityType, targetLocale, statusFilter]);
+      if (!res.ok) return { items: [], total: 0, totalPages: 1 };
+      const json = await res.json();
+      return {
+        items: json.data as QueueItem[],
+        total: json.pagination.total as number,
+        totalPages: json.pagination.totalPages as number,
+      };
+    },
+  });
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 1;
 
-  useEffect(() => {
-    fetchQueue();
-  }, [fetchQueue]);
+  const fetchQueue = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleExport = async () => {
     const params = new URLSearchParams({
@@ -157,7 +173,7 @@ export default function TranslationQueuePage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => (window.location.href = "/admin/languages/exchange")}
+            onClick={() => router.push("/admin/languages/exchange")}
           >
             <Upload className="mr-2 h-4 w-4" />
             {t("importTranslations")}
@@ -298,7 +314,9 @@ export default function TranslationQueuePage() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            (window.location.href = `/admin/languages/queue?entityType=${item.entityType}&entityId=${item.entityId}`)
+                            router.push(
+                              `/admin/languages/queue?entityType=${item.entityType}&entityId=${item.entityId}`,
+                            )
                           }
                         >
                           <Languages className="h-4 w-4" />

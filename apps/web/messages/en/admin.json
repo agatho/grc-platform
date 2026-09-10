@@ -1,0 +1,347 @@
+{
+  "approvals": {
+    "title": "Approval workflows",
+    "description": "Manage and configure approval workflows",
+    "openRequests": "Open requests",
+    "create": "Create workflow",
+    "type": {
+      "sequential": "Sequential",
+      "parallel": "Parallel"
+    },
+    "entityType": "Entity type:",
+    "steps": "Steps:",
+    "createdAt": "Created: {value}",
+    "empty": "No workflows yet",
+    "emptyHint": "Create your first approval workflow to automate approval processes."
+  },
+  "approvalRequests": {
+    "description": "Review and process approval requests",
+    "filterStatus": "Filter by status",
+    "allStatuses": "All statuses",
+    "workflows": "Workflows",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "column": {
+      "title": "Title",
+      "entityType": "Entity type",
+      "currentStep": "Current step",
+      "requester": "Requester",
+      "dueDate": "Due",
+      "status": "Status"
+    },
+    "empty": "No requests yet",
+    "emptyFiltered": "No requests found with the selected status. Try a different filter.",
+    "emptyHint": "There are currently no approval requests."
+  },
+  "reminders": {
+    "title": "Reminder rules",
+    "description": "Automatic notifications before a deadline expires or on status changes",
+    "create": "Create rule",
+    "loadError": "Error loading the reminder rules. Please try again.",
+    "empty": "No reminder rules yet",
+    "emptyHint": "Create a rule to set up automatic notifications.",
+    "allRules": "All rules",
+    "ruleCount": "{count, plural, one {# rule configured} other {# rules configured}}",
+    "column": {
+      "name": "Name",
+      "entityType": "Entity type",
+      "condition": "Condition",
+      "channel": "Channel",
+      "status": "Status"
+    },
+    "channel": {
+      "in_app": "In-app",
+      "email": "Email",
+      "slack": "Slack"
+    }
+  },
+  "reviewCycles": {
+    "title": "Review cycles",
+    "description": "Structured approval processes with escalation when a deadline is missed",
+    "create": "Create review cycle",
+    "loadError": "Error loading the review cycles. Please try again.",
+    "empty": "No review cycles yet",
+    "emptyHint": "Create the first review cycle to start structured approval processes.",
+    "allCycles": "All review cycles",
+    "cycleCount": "{count, plural, one {# cycle in total} other {# cycles in total}}",
+    "column": {
+      "entity": "Entity",
+      "reviewers": "Reviewers",
+      "deadline": "Deadline",
+      "escalation": "Escalation (days)"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_review": "In review",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "escalated": "Escalated"
+    },
+    "days": "{count, plural, one {# day} other {# days}}"
+  },
+  "messaging": {
+    "title": "Messaging integrations",
+    "description": "Slack, Microsoft Teams and webhook connections for notifications",
+    "add": "Add integration",
+    "loadError": "Error loading the integrations. Please try again.",
+    "empty": "No integrations configured",
+    "emptyHint": "Connect Slack, Microsoft Teams or a webhook to send notifications.",
+    "provider": {
+      "slack": "Slack",
+      "teams": "Microsoft Teams",
+      "webhook": "Webhook"
+    },
+    "eventTypes": "Event types",
+    "noEvents": "No events configured",
+    "lastSent": "Last sent",
+    "errorCount": "Error count"
+  },
+  "dataLinks": {
+    "title": "Live data links",
+    "description": "Automatic refresh of linked data points across modules",
+    "create": "Create link",
+    "kpi": {
+      "activeLinks": "Active links",
+      "modulesLinked": "Modules linked",
+      "lastSync": "Last synchronisation"
+    },
+    "bidirectional": "Bidirectional",
+    "unidirectional": "Unidirectional",
+    "tableTitle": "Data links ({count})",
+    "empty": "No links yet",
+    "emptyHint": "Create automatic data links between modules.",
+    "column": {
+      "source": "Source",
+      "target": "Target",
+      "type": "Type",
+      "direction": "Direction"
+    },
+    "linkType": {
+      "reference": "Reference",
+      "aggregate": "Aggregate",
+      "mirror": "Mirror"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "error": "Error"
+    }
+  },
+  "dataQuality": {
+    "title": "Data quality rules",
+    "description": "Automatic plausibility checks on entered data",
+    "percent": "{value}%",
+    "kpi": {
+      "activeRules": "Active rules",
+      "lastCheck": "Last check",
+      "errorRate": "Error rate",
+      "openViolations": "Open violations"
+    },
+    "tableTitle": "Validation rules ({count})",
+    "empty": "No rules configured",
+    "emptyHint": "Define plausibility checks for your data entry.",
+    "column": {
+      "field": "Field",
+      "ruleType": "Rule type",
+      "severity": "Severity",
+      "violations": "Violations"
+    },
+    "ruleType": {
+      "range": "Value range",
+      "pattern": "Pattern",
+      "required": "Required",
+      "unique": "Unique"
+    },
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    }
+  },
+  "contentRequests": {
+    "title": "Content requests",
+    "description": "Structured data requests to business units, with tracking",
+    "create": "Create request",
+    "loadError": "Error loading the requests. Please try again.",
+    "status": {
+      "open": "Open",
+      "overdue": "Overdue",
+      "answered": "Answered",
+      "cancelled": "Cancelled"
+    },
+    "daysShort": "{value}d",
+    "avgResponseTime": "Avg. response time",
+    "emptyHint": "Create a request to collect data from business units.",
+    "allRequests": "All requests",
+    "requestCount": "{count, plural, one {# request in total} other {# requests in total}}",
+    "column": {
+      "requestedBy": "Requested by",
+      "recipient": "Recipient",
+      "priority": "Priority"
+    }
+  },
+  "syncLog": {
+    "title": "Synchronisation log",
+    "description": "History of all connector synchronisations",
+    "loadError": "The synchronisation log could not be loaded.",
+    "status": {
+      "success": "Successful",
+      "failed": "Failed",
+      "running": "Running"
+    },
+    "kpi": {
+      "total": "Total"
+    },
+    "filterConnector": "Connector:",
+    "filterStatus": "Status:",
+    "allConnectors": "All connectors",
+    "empty": "No synchronisations found",
+    "emptyHint": "As soon as connectors synchronise, the entries appear here.",
+    "tableTitle": "Synchronisation history",
+    "column": {
+      "connector": "Connector",
+      "pulled": "Pulled",
+      "written": "Written",
+      "errors": "Errors",
+      "duration": "Duration",
+      "timestamp": "Timestamp"
+    },
+    "duration": {
+      "ms": "{value} ms",
+      "s": "{value} s",
+      "ms_s": "{minutes} min {seconds} s",
+      "h_m": "{hours} h {minutes} min"
+    }
+  },
+  "connectors": {
+    "title": "Enterprise connectors",
+    "description": "Connections to SAP, Oracle, Workday, Salesforce, cloud security and other systems",
+    "loadError": "The connector data could not be loaded. Please try again.",
+    "kpi": {
+      "availableTypes": "Available types",
+      "activeSyncs": "Active syncs"
+    },
+    "empty": "No connector types available",
+    "emptyHint": "Connector types are provided through the API.",
+    "available": "Available",
+    "connectorCount": "{count, plural, one {# connector} other {# connectors}}",
+    "instanceCount": "{count, plural, one {# configured instance} other {# configured instances}}",
+    "recordCount": "{value} records",
+    "authMethods": "Authentication methods",
+    "supportedEntities": "Supported entities",
+    "syncOk": "Sync OK",
+    "addInstance": "Add another instance",
+    "setUp": "Set up connector",
+    "category": {
+      "erp": "ERP",
+      "hcm": "HCM",
+      "crm": "CRM",
+      "itsm": "ITSM",
+      "cloud_security": "Cloud security",
+      "vulnerability": "Vulnerability",
+      "utility": "Utility",
+      "esg": "ESG",
+      "messaging": "Messaging"
+    }
+  },
+  "roles": {
+    "title": "Role management",
+    "description": "System and custom roles with per-module permissions",
+    "createNew": "Create new role",
+    "systemRoles": "System roles ({count})",
+    "customRoles": "Custom roles ({count})",
+    "noCustomRoles": "No custom roles created",
+    "system": "System",
+    "deleteConfirm": "Really delete the role “{name}”?",
+    "editRole": "Edit role {name}",
+    "deleteRole": "Delete role {name}",
+    "noPermissions": "No permissions",
+    "action": {
+      "admin": "Admin",
+      "write": "Write",
+      "read": "Read",
+      "none": "No access"
+    },
+    "module": {
+      "erm": "ERM",
+      "isms": "ISMS",
+      "ics": "ICS",
+      "dpms": "DPMS",
+      "bcms": "BCMS",
+      "audit": "Audit",
+      "tprm": "TPRM",
+      "contract": "Contracts",
+      "esg": "ESG",
+      "bpm": "BPM",
+      "eam": "EAM",
+      "reporting": "Reporting",
+      "whistleblowing": "Whistleblowing",
+      "dms": "DMS",
+      "academy": "Academy"
+    },
+    "form": {
+      "name": "Role name *",
+      "namePlaceholder": "e.g. Compliance manager",
+      "description": "Description",
+      "descriptionPlaceholder": "Short description …",
+      "color": "Colour",
+      "permissionMatrix": "Permissions per module",
+      "module": "Module",
+      "permissionOption": "{module}: {action}",
+      "create": "Create role",
+      "update": "Update"
+    }
+  },
+  "rlsAudit": {
+    "title": "RLS audit",
+    "description": "Coverage of row-level-security policies across every tenant-scoped table. ADR-001 enforces org_id isolation at the database layer.",
+    "rerun": "Re-run",
+    "allProtected": "All tenant tables are RLS-protected",
+    "gapsFound": "{gaps} of {total} tenant tables have gaps",
+    "checkedAt": "Checked at {value}. {total} tables in total — {tenant} tenant-scoped and {platform} platform-global.",
+    "chip": {
+      "ok": "OK",
+      "missingRls": "RLS missing",
+      "missingForce": "FORCE missing",
+      "missingPolicies": "Policies missing",
+      "platformTables": "Platform tables"
+    },
+    "filter": {
+      "gaps": "Gaps only",
+      "tenant": "All tenant tables",
+      "all": "Everything"
+    },
+    "column": {
+      "table": "Table",
+      "scope": "Scope",
+      "rls": "RLS",
+      "force": "FORCE",
+      "policies": "Policies",
+      "status": "Status"
+    },
+    "scope": {
+      "tenant": "tenant",
+      "platform": "platform"
+    },
+    "status": {
+      "ok": "OK",
+      "missing_rls": "RLS missing",
+      "missing_force": "FORCE missing",
+      "missing_policies": "Policies missing",
+      "platform_ignored": "Platform"
+    },
+    "cell": {
+      "rlsOn": "RLS enabled",
+      "rlsOff": "RLS missing",
+      "forceOn": "FORCE enabled",
+      "forceOff": "FORCE missing",
+      "notApplicable": "not applicable"
+    },
+    "noGaps": "No gaps — well done.",
+    "noEntries": "No entries."
+  }
+}

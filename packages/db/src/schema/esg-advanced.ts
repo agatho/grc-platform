@@ -84,6 +84,8 @@ export const materialityIro = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    ermRiskId: uuid("erm_risk_id"),
+    ermSyncedAt: timestamp("erm_synced_at", { withTimezone: true }),
   },
   (table) => [
     index("miro_assessment_idx").on(table.assessmentId),

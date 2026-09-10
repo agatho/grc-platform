@@ -2,6 +2,10 @@ import { db, usageRecord, usageMeter } from "@grc/db";
 import { recordUsageSchema, usageQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/usage — Record usage
 //
@@ -9,7 +13,7 @@ import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 // `idempotencyKey` body field). The same key under the same org collapses
 // to one row — necessary to stop double-billing on client/network retries.
 // Length capped at 128 characters; longer keys are rejected (422).
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -107,10 +111,9 @@ export async function POST(req: Request) {
     }
     throw err;
   }
-}
-
+});
 // GET /api/v1/usage — Query usage records
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -157,4 +160,4 @@ export async function GET(req: Request) {
     .where(and(...conditions));
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
-}
+});

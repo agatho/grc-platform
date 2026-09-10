@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Loader2 } from "lucide-react";
 
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
@@ -80,9 +82,15 @@ const AUTH_METHOD_LABELS: Record<string, string> = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema als Parameter statt als
+ * Konstante. Das Protokoll ist die Ansicht, in der Zeitstempel am dichtesten
+ * stehen — sie alle im deutschen Format auszugeben, waehrend die Spalten
+ * daneben englisch beschriftet sind, ist die sichtbarste Form dieses Mangels.
+ */
+function formatTimestamp(locale: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -97,34 +105,32 @@ function formatTimestamp(iso: string): string {
 // ──────────────────────────────────────────────────────────────
 
 export default function AccessLogPage() {
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("accessLog");
 
-  const [entries, setEntries] = useState<AccessLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("__all__");
 
   // Fetch access log entries
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (eventTypeFilter !== "__all__")
-        params.set("event_type", eventTypeFilter);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Ereignisfilter steht im
+  // Schlüssel. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste; ein
+  // Netzfehler landet im Fehlerzustand der Abfrage (Tabelle ebenfalls leer).
+  const { data: entries = [], isPending: loading } = useQuery<AccessLogEntry[]>(
+    {
+      queryKey: ["access-log", eventTypeFilter],
+      queryFn: async () => {
+        const params = new URLSearchParams({ limit: "50" });
+        if (eventTypeFilter !== "__all__")
+          params.set("event_type", eventTypeFilter);
 
-      const res = await fetch(`/api/v1/access-log?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as { data: AccessLogEntry[] };
-      setEntries(json.data);
-    } catch {
-      setEntries([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [eventTypeFilter]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+        const res = await fetch(`/api/v1/access-log?${params.toString()}`);
+        if (!res.ok) return [];
+        const json = (await res.json()) as { data: AccessLogEntry[] };
+        return json.data;
+      },
+    },
+  );
 
   // Table columns
   const columns = useMemo<ColumnDef<AccessLogEntry, unknown>[]>(
@@ -136,7 +142,7 @@ export default function AccessLogPage() {
         ),
         cell: ({ getValue }) => (
           <span className="whitespace-nowrap text-xs text-gray-600">
-            {formatTimestamp(getValue() as string)}
+            {formatTimestamp(numberLocale, getValue() as string)}
           </span>
         ),
       },
@@ -201,7 +207,13 @@ export default function AccessLogPage() {
         },
       },
     ],
-    [t],
+    // [Welle 7a · OP-080] `numberLocale` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, numberLocale],
   );
 
   // Toolbar with event type filter

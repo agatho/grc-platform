@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, TrendingUp, ExternalLink } from "lucide-react";
 import {
@@ -19,6 +19,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -42,29 +43,23 @@ export default function FAIRTopRisksPage() {
 
 function FAIRTopRisksInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [risks, setRisks] = useState<TopRisk[]>([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler landet im Fehlerzustand der
+  // Abfrage statt still verschluckt zu werden (Anzeige bleibt: leere Liste).
+  const { data: risks = [], isPending: loading } = useQuery<TopRisk[]>({
+    queryKey: ["erm", "fair", "top-risks", 10],
+    queryFn: async () => {
       const res = await fetch("/api/v1/erm/fair/top-risks?limit=10");
-      if (res.ok) {
-        const data = await res.json();
-        setRisks(data.data ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as TopRisk[];
+    },
+  });
 
   if (loading) {
     return (
@@ -109,7 +104,9 @@ function FAIRTopRisksInner() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
                   type="number"
-                  tickFormatter={formatCompactEUR}
+                  tickFormatter={(v: number) =>
+                    formatCompactCurrency(locale, v, "EUR")
+                  }
                   fontSize={11}
                 />
                 <YAxis
@@ -119,7 +116,7 @@ function FAIRTopRisksInner() {
                   fontSize={11}
                 />
                 <RechartsTooltip
-                  formatter={(val: unknown) => formatEUR(Number(val))}
+                  formatter={(val: unknown) => formatEUR(locale, Number(val))}
                 />
                 <Legend />
                 <Bar
@@ -171,10 +168,10 @@ function FAIRTopRisksInner() {
                     <Badge variant="secondary">{r.status}</Badge>
                   </td>
                   <td className="p-2 text-right font-mono font-semibold">
-                    {formatEUR(r.aleP50)}
+                    {formatEUR(locale, r.aleP50)}
                   </td>
                   <td className="p-2 text-right font-mono text-red-600">
-                    {formatEUR(r.aleP95)}
+                    {formatEUR(locale, r.aleP95)}
                   </td>
                   <td className="p-2 text-muted-foreground">
                     {r.ownerName ?? "-"}
@@ -206,16 +203,12 @@ function FAIRTopRisksInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }

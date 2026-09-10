@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -43,6 +44,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -159,13 +163,65 @@ export default function QuestionnaireEditPage() {
   );
 }
 
+// [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+// statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+// Welle 7b, `catalogs/objects/page.tsx`). Wie in `processes/[id]/ropa` ist
+// der Serverstand die SAAT des Editors, nicht sein Inhalt: der Editor wandert
+// in ein eigenes Bauteil, das mit der geladenen Vorlage EINGEHÄNGT wird und
+// Vorlage sowie aufgeklappte Abschnitte beim Einhängen setzt — ohne Effekt.
 function QuestionnaireEditInner() {
-  const t = useTranslations("questionnaire");
-  const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
-  const [template, setTemplate] = useState<Template | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isPending: loading } = useQuery<Template | null>({
+    queryKey: ["questionnaire-templates", id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/v1/questionnaire-templates/${id}`);
+        if (!res.ok) return null;
+        const json = await res.json();
+        return (json.data ?? null) as Template | null;
+      } catch {
+        toast.error("Failed to load template");
+        return null;
+      }
+    },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Template not found</p>
+      </div>
+    );
+  }
+
+  return <QuestionnaireEditor id={id} initial={data} />;
+}
+
+function QuestionnaireEditor({
+  id,
+  initial,
+}: {
+  id: string;
+  initial: Template;
+}) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
+  const t = useTranslations("questionnaire");
+  const router = useRouter();
+
+  const [template, setTemplate] = useState<Template | null>(initial);
   const [saving, setSaving] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
     null,
@@ -173,8 +229,9 @@ function QuestionnaireEditInner() {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
     null,
   );
+  // Expand all sections by default
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(),
+    () => new Set<string>(initial.sections.map((s) => s.id)),
   );
 
   // Import from Framework state
@@ -186,34 +243,6 @@ function QuestionnaireEditInner() {
     Set<string>
   >(new Set());
   const [importing, setImporting] = useState(false);
-
-  // ──────────────────────────────────────────────────────────────
-  // Fetch template
-  // ──────────────────────────────────────────────────────────────
-
-  const fetchTemplate = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/questionnaire-templates/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setTemplate(json.data);
-        // Expand all sections by default
-        const sectionIds = new Set<string>(
-          (json.data?.sections ?? []).map((s: Section) => s.id),
-        );
-        setExpandedSections(sectionIds);
-      }
-    } catch {
-      toast.error("Failed to load template");
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchTemplate();
-  }, [fetchTemplate]);
 
   // ──────────────────────────────────────────────────────────────
   // Save
@@ -491,14 +520,6 @@ function QuestionnaireEditInner() {
   // Render
   // ──────────────────────────────────────────────────────────────
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
   if (!template) {
     return (
       <div className="text-center py-12">
@@ -592,6 +613,14 @@ function QuestionnaireEditInner() {
                       setSelectedSectionId(section.id);
                       setSelectedQuestionId(null);
                     }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) =>
+                      activateOnKey(e, () => {
+                        setSelectedSectionId(section.id);
+                        setSelectedQuestionId(null);
+                      })
+                    }
                   >
                     <GripVertical
                       size={12}
@@ -644,6 +673,14 @@ function QuestionnaireEditInner() {
                               setSelectedSectionId(section.id);
                               setSelectedQuestionId(q.id);
                             }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) =>
+                              activateOnKey(e, () => {
+                                setSelectedSectionId(section.id);
+                                setSelectedQuestionId(q.id);
+                              })
+                            }
                           >
                             <Icon
                               size={12}
@@ -1026,10 +1063,14 @@ function QuestionnaireEditInner() {
                 {selectedQuestion.questionType === "yes_no" && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs text-gray-600">
+                      <label
+                        htmlFor={`${a11yId}-field`}
+                        className="text-xs text-gray-600"
+                      >
                         Score for Yes
                       </label>
                       <input
+                        id={`${a11yId}-field`}
                         type="number"
                         min={0}
                         max={10}
@@ -1059,10 +1100,14 @@ function QuestionnaireEditInner() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs text-gray-600">
+                      <label
+                        htmlFor={`${a11yId}-score-for-no`}
+                        className="text-xs text-gray-600"
+                      >
                         Score for No
                       </label>
                       <input
+                        id={`${a11yId}-score-for-no`}
                         type="number"
                         min={0}
                         max={10}

@@ -1,6 +1,6 @@
 // Sprint 60: Worker — Process queued push notifications
 import { db, pushNotification, deviceRegistration } from "@grc/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const processPushNotifications = withCronInstrumentation(

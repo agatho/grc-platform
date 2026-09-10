@@ -48,9 +48,123 @@ function hashPair(left: string, right: string): string {
 }
 
 /**
+ * ── Merkle v2, RFC 6962 domain separation (ARCTOS / S03-17) ───────────
+ *
+ * v1 (`merkleRoot`) follows the Bitcoin convention: an odd level pairs
+ * its last node with itself. That convention carries the CVE-2012-2459
+ * ambiguity — `[a,b,c]` and `[a,b,c,c]` produce the same root — and it
+ * hashes leaves and inner nodes with the same function, so an inner node
+ * can formally be presented as a leaf. The anchored root therefore does
+ * not uniquely determine the set of audit entries it covers; the only
+ * disambiguating value was `audit_anchor.leaf_count`, which lived in the
+ * same unprotected table as the root itself.
+ *
+ * v2 fixes both, following RFC 6962 §2:
+ *
+ *   leaf hash  = SHA256(0x00 || leaf_bytes)
+ *   node hash  = SHA256(0x01 || left || right)
+ *   odd level  = the last node is PROMOTED unchanged to the next level,
+ *                never paired with itself
+ *   root       = SHA256(0x02 || leaf_count_be64 || tree_root)
+ *
+ * The final leaf-count binding means a root commits to how many entries
+ * it covers, so `leaf_count` no longer has to be trusted separately.
+ *
+ * v1 is retained unchanged: anchors already issued were computed with it
+ * and must stay verifiable for ever. `audit_anchor.merkle_version`
+ * records which construction produced a given root (migration 0403).
+ */
+export const MERKLE_VERSION_LEGACY = 1;
+export const MERKLE_VERSION_RFC6962 = 2;
+
+function leafHash(leafHex: string): Buffer {
+  return createHash("sha256")
+    .update(Buffer.concat([Buffer.from([0x00]), Buffer.from(leafHex, "hex")]))
+    .digest();
+}
+
+function nodeHash(left: Buffer, right: Buffer): Buffer {
+  return createHash("sha256")
+    .update(Buffer.concat([Buffer.from([0x01]), left, right]))
+    .digest();
+}
+
+/**
+ * [OP-065] Eine Ebene paarweise durchlaufen.
+ *
+ * Die vier Baum-Schleifen dieses Moduls liefen über `level[i]` und
+ * `level[i + 1]`. Die Invariante stimmt — `i < level.length` sichert das
+ * linke Element, die Bedingung `i + 1 < level.length` das rechte —, aber sie
+ * stand vier Mal im Kopf des Lesers statt einmal im Code. `map` reicht das
+ * linke Element als WERT herein (also ohne `undefined`), `filter` behält die
+ * geraden Positionen, und das fehlende rechte Element bleibt als
+ * `T | undefined` sichtbar. Genau das soll es auch: der ungerade Rest ist der
+ * fachliche Unterschied zwischen v1 (verdoppeln) und v2 (anheben), und die
+ * Verwechslung der beiden ist die Kollision, gegen die `merkleRootV2`
+ * überhaupt gebaut wurde.
+ */
+function levelPairs<T>(level: readonly T[]): Array<{
+  left: T;
+  right: T | undefined;
+}> {
+  return level
+    .map((left, i) => ({ left, right: level[i + 1] }))
+    .filter((_, i) => i % 2 === 0);
+}
+
+/**
+ * Build the v2 (RFC 6962) Merkle root over an ordered list of
+ * hex-encoded SHA-256 leaves. Returns `null` for an empty input.
+ */
+export function merkleRootV2(leaves: string[]): string | null {
+  if (leaves.length === 0) return null;
+
+  let level = leaves.map(leafHash);
+  while (level.length > 1) {
+    const next: Buffer[] = [];
+    for (const { left, right } of levelPairs(level)) {
+      // Odd tail: promote, do NOT duplicate. Duplication is what makes
+      // [a,b,c] and [a,b,c,c] collide.
+      next.push(right !== undefined ? nodeHash(left, right) : left);
+    }
+    level = next;
+  }
+
+  // Die Schleife endet mit genau einem Element: `leaves.length === 0` ist
+  // oben abgefangen, und jede Runde bildet aus n Elementen ceil(n/2) ≥ 1.
+  // Kein Wurzelknoten heisst kein Wurzelwert — dieselbe Antwort wie für
+  // einen leeren Baum, statt einer Behauptung per `!`.
+  const [root] = level;
+  if (root === undefined) return null;
+
+  const count = Buffer.alloc(8);
+  count.writeBigUInt64BE(BigInt(leaves.length));
+  return createHash("sha256")
+    .update(Buffer.concat([Buffer.from([0x02]), count, root]))
+    .digest("hex");
+}
+
+/**
+ * Version-dispatching root. Used by the anchor writers (always v2) and by
+ * the verifiers, which must reproduce whichever version an anchor was
+ * written with.
+ */
+export function merkleRootVersioned(
+  leaves: string[],
+  version: number,
+): string | null {
+  return version >= MERKLE_VERSION_RFC6962
+    ? merkleRootV2(leaves)
+    : merkleRoot(leaves);
+}
+
+/**
  * Build the Merkle root over an ordered list of hex-encoded SHA-256 hashes.
  * Returns `null` for an empty input — the caller must decide what to do
  * with a tenant that had zero audit events on a given day.
+ *
+ * **v1 — kept for anchors issued before ADR-011 rev.4.** New anchors use
+ * `merkleRootV2`. See the block comment above for why.
  */
 export function merkleRoot(leaves: string[]): string | null {
   if (leaves.length === 0) return null;
@@ -58,14 +172,12 @@ export function merkleRoot(leaves: string[]): string | null {
   let level = leaves.slice();
   while (level.length > 1) {
     const next: string[] = [];
-    for (let i = 0; i < level.length; i += 2) {
-      const left = level[i];
-      const right = i + 1 < level.length ? level[i + 1] : left;
-      next.push(hashPair(left, right));
+    for (const { left, right } of levelPairs(level)) {
+      next.push(hashPair(left, right ?? left));
     }
     level = next;
   }
-  return level[0];
+  return level[0] ?? null;
 }
 
 /**
@@ -85,17 +197,21 @@ export function merkleProof(
 
   while (level.length > 1) {
     const pairIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
-    const sibling = pairIdx < level.length ? level[pairIdx] : level[idx];
+    // `?? level[idx]` ist dieselbe Aussage wie `pairIdx < level.length` bei
+    // einem lückenlosen Feld: fehlt der Nachbar, ist man selbst der Partner
+    // (v1 verdoppelt den ungeraden Rest). Bleibt danach `undefined`, gibt es
+    // den Blattpfad nicht — und `null` ist genau die Antwort, die diese
+    // Funktion für „Index ausserhalb" ohnehin schon gibt.
+    const sibling = level[pairIdx] ?? level[idx];
+    if (sibling === undefined) return null;
     proof.push({
       sibling,
       side: idx % 2 === 0 ? "R" : "L", // sibling is on the right when we are the left
     });
 
     const next: string[] = [];
-    for (let i = 0; i < level.length; i += 2) {
-      const left = level[i];
-      const right = i + 1 < level.length ? level[i + 1] : left;
-      next.push(hashPair(left, right));
+    for (const { left, right } of levelPairs(level)) {
+      next.push(hashPair(left, right ?? left));
     }
     level = next;
     idx = Math.floor(idx / 2);
@@ -129,4 +245,64 @@ export function verifyMerkleProof(
  */
 export function rootOfRawValues(values: Array<string | Buffer>): string | null {
   return merkleRoot(values.map((v) => sha256Hex(v)));
+}
+
+/**
+ * v2 inclusion proof. The odd tail is promoted rather than duplicated, so
+ * a level with an odd count contributes no proof step for its last node.
+ */
+export function merkleProofV2(
+  leaves: string[],
+  index: number,
+): MerkleProof[] | null {
+  if (index < 0 || index >= leaves.length) return null;
+
+  const proof: MerkleProof[] = [];
+  let level = leaves.map(leafHash);
+  let idx = index;
+
+  while (level.length > 1) {
+    const pairIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
+    const siblingNode = level[pairIdx];
+    if (siblingNode !== undefined) {
+      proof.push({
+        sibling: siblingNode.toString("hex"),
+        side: idx % 2 === 0 ? "R" : "L",
+      });
+    }
+    const next: Buffer[] = [];
+    for (const { left, right } of levelPairs(level)) {
+      next.push(right !== undefined ? nodeHash(left, right) : left);
+    }
+    level = next;
+    idx = Math.floor(idx / 2);
+  }
+
+  return proof;
+}
+
+/**
+ * Verify a v2 inclusion proof against a root produced by `merkleRootV2`.
+ * `leafCount` is required because the v2 root commits to it — a proof
+ * that reaches the right tree root but claims the wrong number of leaves
+ * is rejected, which is the property v1 lacked.
+ */
+export function verifyMerkleProofV2(
+  leaf: string,
+  proof: MerkleProof[],
+  expectedRoot: string,
+  leafCount: number,
+): boolean {
+  let running = leafHash(leaf);
+  for (const step of proof) {
+    const sib = Buffer.from(step.sibling, "hex");
+    running =
+      step.side === "R" ? nodeHash(running, sib) : nodeHash(sib, running);
+  }
+  const count = Buffer.alloc(8);
+  count.writeBigUInt64BE(BigInt(leafCount));
+  const root = createHash("sha256")
+    .update(Buffer.concat([Buffer.from([0x02]), count, running]))
+    .digest("hex");
+  return root === expectedRoot;
 }

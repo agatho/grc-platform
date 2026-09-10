@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Loader2,
   RefreshCcw,
@@ -9,13 +10,13 @@ import {
   ShieldAlert,
   TrendingUp,
   Zap,
-  Plus,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatCurrency as formatMoney } from "@/lib/format-date";
 
 interface ClimateScenario {
   id: string;
@@ -52,25 +53,24 @@ const STATUS_COLORS: Record<string, string> = {
   closed: "bg-purple-100 text-purple-800",
 };
 
-const HORIZON_LABELS: Record<string, string> = {
-  short: "Kurzfristig (<2030)",
-  medium: "Mittelfristig (2030-2040)",
-  long: "Langfristig (2040-2050+)",
-};
+const HORIZON_KEYS = ["short", "medium", "long"];
+const STATUS_KEYS = ["draft", "identified", "assessed", "mitigated", "closed"];
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt als Parameter.
+ */
 function formatCurrency(
+  locale: string,
   min: number | null,
   max: number | null,
   currency: string,
 ) {
   if (!min && !max) return "-";
-  const fmt = new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  });
-  if (min && max) return `${fmt.format(min)} - ${fmt.format(max)}`;
-  return fmt.format(min || max || 0);
+  const fmt = (v: number) =>
+    formatMoney(locale, v, currency, { maximumFractionDigits: 0 });
+  if (min && max) return `${fmt(min)} - ${fmt(max)}`;
+  return fmt(min || max || 0);
 }
 
 function riskScore(
@@ -99,40 +99,44 @@ export default function ClimateScenarioPage() {
 }
 
 function ClimateScenarioInner() {
-  const t = useTranslations();
-  const [data, setData] = useState<ClimateScenario[]>([]);
-  const [loading, setLoading] = useState(true);
+  const t = useTranslations("esgAdvanced");
+  const locale = useLocale();
   const [filter, setFilter] = useState<"all" | "physical" | "transition">(
     "all",
   );
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Filter steht im Schlüssel.
+  const {
+    data = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<ClimateScenario[]>({
+    queryKey: ["esg", "climate-scenarios", filter],
+    queryFn: async () => {
       const url =
         filter === "all"
           ? "/api/v1/esg/climate-scenarios?limit=100"
           : `/api/v1/esg/climate-scenarios?limit=100&scenario_type=${filter}`;
       const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ClimateScenario[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const physical = data.filter((s) => s.scenario_type === "physical");
   const transition = data.filter((s) => s.scenario_type === "transition");
   const highRisk = data.filter(
     (s) => riskScore(s.likelihood_score, s.impact_score)! >= 16,
   );
-  const assessed = data.filter(
+  const _assessed = data.filter(
     (s) => s.status === "assessed" || s.status === "mitigated",
   );
 
@@ -147,10 +151,10 @@ function ClimateScenarioInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            TCFD Klimaszenarien
+            {t("climateScenarios.title")}
           </h1>
           <p className="text-muted-foreground">
-            Physische und Transitionsrisiken nach TCFD-Empfehlungen und ESRS E1
+            {t("climateScenarios.subtitle")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -158,12 +162,12 @@ function ClimateScenarioInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
             />
-            Aktualisieren
+            {t("climateScenarios.refresh")}
           </Button>
         </div>
       </div>
@@ -173,28 +177,28 @@ function ClimateScenarioInner() {
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Thermometer className="h-4 w-4" />
-            Szenarien gesamt
+            {t("climateScenarios.kpiTotal")}
           </div>
           <p className="mt-1 text-2xl font-bold">{data.length}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Zap className="h-4 w-4 text-orange-500" />
-            Physische Risiken
+            {t("climateScenarios.kpiPhysical")}
           </div>
           <p className="mt-1 text-2xl font-bold">{physical.length}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <TrendingUp className="h-4 w-4 text-blue-500" />
-            Transitionsrisiken
+            {t("climateScenarios.kpiTransition")}
           </div>
           <p className="mt-1 text-2xl font-bold">{transition.length}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <ShieldAlert className="h-4 w-4 text-red-500" />
-            Hohes Risiko ({"\u2265"}16)
+            {t("climateScenarios.kpiHighRisk")}
           </div>
           <p className="mt-1 text-2xl font-bold text-red-600">
             {highRisk.length}
@@ -210,7 +214,9 @@ function ClimateScenarioInner() {
             className={`rounded-lg border p-3 text-center ${PATHWAY_COLORS[p.pathway.replace("°C", "")] ?? ""}`}
           >
             <p className="text-lg font-bold">{p.pathway}</p>
-            <p className="text-sm">{p.count} Szenarien</p>
+            <p className="text-sm">
+              {t("climateScenarios.pathwayCount", { count: p.count })}
+            </p>
           </div>
         ))}
       </div>
@@ -225,10 +231,10 @@ function ClimateScenarioInner() {
             onClick={() => setFilter(f)}
           >
             {f === "all"
-              ? "Alle"
+              ? t("climateScenarios.filterAll")
               : f === "physical"
-                ? "Physisch"
-                : "Transition"}
+                ? t("climateScenarios.filterPhysical")
+                : t("climateScenarios.filterTransition")}
           </Button>
         ))}
       </div>
@@ -240,7 +246,7 @@ function ClimateScenarioInner() {
         </div>
       ) : data.length === 0 ? (
         <div className="rounded-lg border p-8 text-center text-muted-foreground">
-          Keine Klimaszenarien vorhanden. Migration 0092 ausf&uuml;hren.
+          {t("climateScenarios.empty")}
         </div>
       ) : (
         <div className="rounded-lg border">
@@ -248,16 +254,30 @@ function ClimateScenarioInner() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="p-3 text-left font-medium">Szenario</th>
-                  <th className="p-3 text-left font-medium">Typ</th>
-                  <th className="p-3 text-left font-medium">Kategorie</th>
-                  <th className="p-3 text-center font-medium">Pfad</th>
-                  <th className="p-3 text-left font-medium">Zeithorizont</th>
-                  <th className="p-3 text-center font-medium">Risiko (L*I)</th>
-                  <th className="p-3 text-right font-medium">
-                    Finanzielle Auswirkung
+                  <th className="p-3 text-left font-medium">
+                    {t("climateScenarios.colScenario")}
                   </th>
-                  <th className="p-3 text-center font-medium">Status</th>
+                  <th className="p-3 text-left font-medium">
+                    {t("climateScenarios.colType")}
+                  </th>
+                  <th className="p-3 text-left font-medium">
+                    {t("climateScenarios.colCategory")}
+                  </th>
+                  <th className="p-3 text-center font-medium">
+                    {t("climateScenarios.colPathway")}
+                  </th>
+                  <th className="p-3 text-left font-medium">
+                    {t("climateScenarios.colHorizon")}
+                  </th>
+                  <th className="p-3 text-center font-medium">
+                    {t("climateScenarios.colRisk")}
+                  </th>
+                  <th className="p-3 text-right font-medium">
+                    {t("climateScenarios.colFinancial")}
+                  </th>
+                  <th className="p-3 text-center font-medium">
+                    {t("climateScenarios.colStatus")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -279,8 +299,8 @@ function ClimateScenarioInner() {
                       <td className="p-3">
                         <Badge variant="outline">
                           {s.scenario_type === "physical"
-                            ? "Physisch"
-                            : "Transition"}
+                            ? t("climateScenarios.filterPhysical")
+                            : t("climateScenarios.filterTransition")}
                         </Badge>
                       </td>
                       <td className="p-3 capitalize">{s.risk_category}</td>
@@ -292,7 +312,9 @@ function ClimateScenarioInner() {
                         </span>
                       </td>
                       <td className="p-3 text-xs">
-                        {HORIZON_LABELS[s.time_horizon] ?? s.time_horizon}
+                        {HORIZON_KEYS.includes(s.time_horizon)
+                          ? t(`climateScenarios.horizon.${s.time_horizon}`)
+                          : s.time_horizon}
                       </td>
                       <td className={`p-3 text-center ${riskColor(score)}`}>
                         {score
@@ -301,6 +323,7 @@ function ClimateScenarioInner() {
                       </td>
                       <td className="p-3 text-right text-xs">
                         {formatCurrency(
+                          locale,
                           s.financial_impact_min
                             ? Number(s.financial_impact_min)
                             : null,
@@ -314,7 +337,9 @@ function ClimateScenarioInner() {
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? ""}`}
                         >
-                          {s.status}
+                          {STATUS_KEYS.includes(s.status)
+                            ? t(`climateScenarios.status.${s.status}`)
+                            : s.status}
                         </span>
                       </td>
                     </tr>

@@ -1,6 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-12] lucide-react exports an icon
+// literally called `Image`; jsx-a11y's alt-text rule treats every <Image> as
+// an <img> and demanded an alt prop on a decorative SVG icon. Aliased so the
+// rule stays on for real images.
+import { useState, useEffect } from "react";
 import {
   Save,
   Download,
@@ -9,7 +13,7 @@ import {
   Check,
   Loader2,
   FileCode,
-  Image,
+  Image as ImageIcon,
   FileImage,
 } from "lucide-react";
 
@@ -71,18 +75,47 @@ export function BpmnToolbar({
   canUndo = false,
   canRedo = false,
 }: BpmnToolbarProps) {
-  const [showSaved, setShowSaved] = useState(false);
-  const [prevSaving, setPrevSaving] = useState(false);
-
   // Show "Saved" indicator for 2 seconds after save completes
-  useEffect(() => {
+  //
+  // [Welle 7b · OP-080, Gestalt D] Hier stand ein Effekt, der den UEBERGANG
+  // `saving` wahr → falsch erkannte und `setShowSaved(true)` synchron im
+  // Effektrumpf rief (`react-hooks/set-state-in-effect`). Weder ein Abruf noch
+  // ein Formular-Reset; `@tanstack/react-query` ist hier keine Antwort.
+  //
+  // Die Antwort ist die, die React selbst fuer „Zustand anpassen, wenn sich
+  // eine Eigenschaft geaendert hat" gibt: die Anpassung gehoert ins RENDERN,
+  // nicht in einen Effekt. React merkt die Zustandsaenderung waehrend des
+  // Renderns, verwirft die begonnene Ausgabe und rendert unmittelbar erneut —
+  // ohne den Bildschirm dazwischen anzufassen und ohne eine zweite
+  // Festschreibung.
+  //
+  // Der alte Rumpf hatte ausserdem eine stille Eigenheit: `setPrevSaving`
+  // stand NUR im „else"-Zweig, also blieb `prevSaving` nach dem ersten
+  // Speichern fuer immer wahr. Sichtbar wurde das nicht — die Bedingung ergab
+  // zufaellig weiter das Richtige —, aber der Merker log ueber seinen eigenen
+  // Namen. Jetzt wird er in jedem Uebergang nachgezogen.
+  //
+  // `savedNonce` ist noetig, damit zwei Speichervorgaenge kurz hintereinander
+  // die zwei Sekunden neu beginnen: `showSaved` ist dann schon wahr, aendert
+  // sich also nicht, und der Zeitgeber-Effekt liefe ohne diesen Zaehler nicht
+  // erneut an.
+  const [showSaved, setShowSaved] = useState(false);
+  const [prevSaving, setPrevSaving] = useState(saving);
+  const [savedNonce, setSavedNonce] = useState(0);
+
+  if (prevSaving !== saving) {
+    setPrevSaving(saving);
     if (prevSaving && !saving) {
       setShowSaved(true);
-      const timer = setTimeout(() => setShowSaved(false), 2000);
-      return () => clearTimeout(timer);
+      setSavedNonce((n) => n + 1);
     }
-    setPrevSaving(saving);
-  }, [saving, prevSaving]);
+  }
+
+  useEffect(() => {
+    if (!showSaved) return;
+    const timer = setTimeout(() => setShowSaved(false), 2000);
+    return () => clearTimeout(timer);
+  }, [showSaved, savedNonce]);
 
   const saveLabel = saving ? "Saving..." : showSaved ? "Saved" : "Save";
 
@@ -122,7 +155,7 @@ export function BpmnToolbar({
               BPMN XML
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onExportSvg}>
-              <Image size={14} />
+              <ImageIcon size={14} />
               SVG
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onExportPng}>

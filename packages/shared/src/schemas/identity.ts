@@ -88,6 +88,10 @@ export const testSsoLoginSchema = z.object({
 
 export const createScimTokenSchema = z.object({
   description: z.string().max(200).optional(),
+  // #WP3-S02-15: rotation support. Naming the token this one replaces lets an
+  // operator roll a SCIM credential without a provisioning outage; previously
+  // there was no second active hash per org, so rotation meant downtime.
+  rotatesTokenId: z.string().uuid().optional(),
 });
 
 // ─── SCIM Sync Log Filter ───────────────────────────────────
@@ -109,12 +113,6 @@ export const scimSyncLogFilterSchema = z.object({
 });
 
 // ─── SCIM Protocol Schemas (RFC 7644) ───────────────────────
-
-const scimSchemaUri = "urn:ietf:params:scim:schemas:core:2.0:User" as const;
-const scimGroupSchemaUri =
-  "urn:ietf:params:scim:schemas:core:2.0:Group" as const;
-const scimPatchSchemaUri =
-  "urn:ietf:params:scim:api:messages:2.0:PatchOp" as const;
 
 export const scimCreateUserSchema = z.object({
   schemas: z.array(z.string()).min(1),

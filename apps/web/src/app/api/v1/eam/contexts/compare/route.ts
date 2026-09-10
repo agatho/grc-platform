@@ -1,10 +1,15 @@
-import { db, eamContextAttribute, architectureElement } from "@grc/db";
+import { db, eamContextAttribute } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // GET /api/v1/eam/contexts/compare?a=ctx1&b=ctx2 — Compare two contexts
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -19,6 +24,10 @@ export async function GET(req: Request) {
       { error: "Both context IDs (a and b) required" },
       { status: 400 },
     );
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
+  if (!isUuidParam(ctxA)) return invalidUuidParam(req, "a");
+  if (!isUuidParam(ctxB)) return invalidUuidParam(req, "b");
 
   const overridesA = await db
     .select()
@@ -72,4 +81,4 @@ export async function GET(req: Request) {
   return Response.json({
     data: { contextA: ctxA, contextB: ctxB, diffs, totalChanged: diffs.length },
   });
-}
+});

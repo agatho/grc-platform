@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, ShieldX, FileSignature } from "lucide-react";
 
@@ -42,29 +43,46 @@ interface SignOff {
 }
 
 export function ProcessSignOffTab({ processId }: { processId: string }) {
-  const [rows, setRows] = useState<SignOff[]>([]);
-  const [chainValid, setChainValid] = useState(true);
-  const [loading, setLoading] = useState(true);
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [open, setOpen] = useState(false);
   const [signerRole, setSignerRole] = useState("process_owner");
   const [signoffType, setSignoffType] = useState("approval");
   const [comments, setComments] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const resp = await fetch(`/api/v1/processes/${processId}/sign-off`);
-    if (resp.ok) {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response leaves both parts at
+  // their previous defaults (empty list, chain valid).
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    rows: SignOff[];
+    chainValid: boolean;
+  }>({
+    queryKey: ["processes", processId, "sign-off"],
+    queryFn: async () => {
+      const resp = await fetch(`/api/v1/processes/${processId}/sign-off`);
+      if (!resp.ok) return { rows: [], chainValid: true };
       const j = await resp.json();
-      setRows(j.data?.signOffs ?? []);
-      setChainValid(j.data?.chainValid ?? true);
-    }
-    setLoading(false);
-  }, [processId]);
+      return {
+        rows: (j.data?.signOffs ?? []) as SignOff[],
+        chainValid: (j.data?.chainValid ?? true) as boolean,
+      };
+    },
+  });
+  const rows = data?.rows ?? [];
+  const chainValid = data?.chainValid ?? true;
 
-  useEffect(() => {
-    reload();
-  }, [reload]);
+  const reload = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const submit = useCallback(async () => {
     setSubmitting(true);
@@ -126,9 +144,14 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
             </DialogHeader>
             <div className="space-y-3">
               <div>
-                <label className="text-sm font-medium">As role</label>
+                <label
+                  htmlFor={`${a11yId}-as-role`}
+                  className="text-sm font-medium"
+                >
+                  As role
+                </label>
                 <Select value={signerRole} onValueChange={setSignerRole}>
-                  <SelectTrigger>
+                  <SelectTrigger id={`${a11yId}-as-role`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -148,9 +171,14 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Sign-off type</label>
+                <label
+                  htmlFor={`${a11yId}-sign-off-type`}
+                  className="text-sm font-medium"
+                >
+                  Sign-off type
+                </label>
                 <Select value={signoffType} onValueChange={setSignoffType}>
-                  <SelectTrigger>
+                  <SelectTrigger id={`${a11yId}-sign-off-type`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -162,8 +190,14 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Comments</label>
+                <label
+                  htmlFor={`${a11yId}-comments`}
+                  className="text-sm font-medium"
+                >
+                  Comments
+                </label>
                 <Textarea
+                  id={`${a11yId}-comments`}
                   value={comments}
                   onChange={(e) => setComments(e.target.value)}
                 />

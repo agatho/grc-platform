@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Plus, Pencil, Trash2, GitBranch } from "lucide-react";
 import Link from "next/link";
 
@@ -104,24 +105,68 @@ function OrgFormDialog({
   saving: boolean;
 }) {
   const t = useTranslations("organizations");
-  const tActions = useTranslations("actions");
-  const [form, setForm] = useState<OrgFormData>(EMPTY_FORM);
 
-  useEffect(() => {
-    if (open) {
-      if (editingOrg) {
-        setForm({
+  // [Welle 7b · OP-080, Gestalt B] Hier stand ein Effekt, der beim Oeffnen das
+  // Formular mit `setForm(...)` zuruecksetzte
+  // (`react-hooks/set-state-in-effect`). Diese Gestalt ist KEIN Abruf;
+  // `@tanstack/react-query` ist fuer sie keine Antwort. Die Antwort, die React
+  // selbst gibt, ist das EINHAENGEN: ein Bauteil bekommt seinen Anfangszustand
+  // beim Einhaengen, ohne dass ihn jemand nachtraeglich setzen muss.
+  //
+  // `DialogContent` liegt hinter Radix' `DialogPortal` ohne `forceMount` —
+  // seine Kinder sind nur eingehaengt, solange der Dialog offen ist. Der
+  // Formularzustand ist deshalb in ein Bauteil UNTERHALB von `DialogContent`
+  // gewandert und wird bei jedem Oeffnen frisch angelegt. `key` haelt das auch
+  // dann durch, wenn zwischen zwei Oeffnungen eine andere Organisation gewaehlt
+  // wurde.
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{editingOrg ? t("edit") : t("create")}</DialogTitle>
+          <DialogDescription>
+            {editingOrg ? t("edit") : t("create")}
+          </DialogDescription>
+        </DialogHeader>
+        <OrgForm
+          key={editingOrg?.id ?? "__new__"}
+          editingOrg={editingOrg}
+          organizations={organizations}
+          onOpenChange={onOpenChange}
+          onSave={onSave}
+          saving={saving}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function OrgForm({
+  editingOrg,
+  organizations,
+  onOpenChange,
+  onSave,
+  saving,
+}: {
+  editingOrg: Organization | null;
+  organizations: Organization[];
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: OrgFormData) => void;
+  saving: boolean;
+}) {
+  const t = useTranslations("organizations");
+  const tActions = useTranslations("actions");
+  const [form, setForm] = useState<OrgFormData>(() =>
+    editingOrg
+      ? {
           name: editingOrg.name,
           shortName: editingOrg.shortName ?? "",
           type: editingOrg.type,
           country: editingOrg.country,
           parentOrgId: editingOrg.parentOrgId ?? "",
-        });
-      } else {
-        setForm(EMPTY_FORM);
-      }
-    }
-  }, [open, editingOrg]);
+        }
+      : EMPTY_FORM,
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,122 +179,114 @@ function OrgFormDialog({
   );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>{editingOrg ? t("edit") : t("create")}</DialogTitle>
-          <DialogDescription>
-            {editingOrg ? t("edit") : t("create")}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="org-name">{t("name")} *</Label>
-            <Input
-              id="org-name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
-              minLength={1}
-              maxLength={255}
-            />
-          </div>
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Name */}
+        <div className="space-y-2">
+          <Label htmlFor="org-name">{t("name")} *</Label>
+          <Input
+            id="org-name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            required
+            minLength={1}
+            maxLength={255}
+          />
+        </div>
 
-          {/* Short Name */}
-          <div className="space-y-2">
-            <Label htmlFor="org-short-name">{t("shortName")}</Label>
-            <Input
-              id="org-short-name"
-              value={form.shortName}
-              onChange={(e) => setForm({ ...form, shortName: e.target.value })}
-              maxLength={50}
-            />
-          </div>
+        {/* Short Name */}
+        <div className="space-y-2">
+          <Label htmlFor="org-short-name">{t("shortName")}</Label>
+          <Input
+            id="org-short-name"
+            value={form.shortName}
+            onChange={(e) => setForm({ ...form, shortName: e.target.value })}
+            maxLength={50}
+          />
+        </div>
 
-          {/* Type */}
-          <div className="space-y-2">
-            <Label htmlFor="org-type">{t("type")}</Label>
-            <Select
-              value={form.type}
-              onValueChange={(value) =>
-                setForm({
-                  ...form,
-                  type: value as OrgFormData["type"],
-                })
-              }
-            >
-              <SelectTrigger id="org-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ORG_TYPES.map((orgType) => (
-                  <SelectItem key={orgType} value={orgType}>
-                    {t(`types.${orgType}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Country */}
-          <div className="space-y-2">
-            <Label htmlFor="org-country">{t("country")}</Label>
-            <Input
-              id="org-country"
-              value={form.country}
-              onChange={(e) =>
-                setForm({ ...form, country: e.target.value.toUpperCase() })
-              }
-              maxLength={3}
-              placeholder="DEU"
-            />
-          </div>
-
-          {/* Parent Organization */}
-          <div className="space-y-2">
-            <Label htmlFor="org-parent">{t("parentOrg")}</Label>
-            <Select
-              value={form.parentOrgId || "__none__"}
-              onValueChange={(value) =>
-                setForm({
-                  ...form,
-                  parentOrgId: value === "__none__" ? "" : value,
-                })
-              }
-            >
-              <SelectTrigger id="org-parent">
-                <SelectValue placeholder={t("parentOrgPlaceholder")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">
-                  {t("parentOrgPlaceholder")}
+        {/* Type */}
+        <div className="space-y-2">
+          <Label htmlFor="org-type">{t("type")}</Label>
+          <Select
+            value={form.type}
+            onValueChange={(value) =>
+              setForm({
+                ...form,
+                type: value as OrgFormData["type"],
+              })
+            }
+          >
+            <SelectTrigger id="org-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ORG_TYPES.map((orgType) => (
+                <SelectItem key={orgType} value={orgType}>
+                  {t(`types.${orgType}`)}
                 </SelectItem>
-                {parentOptions.map((org) => (
-                  <SelectItem key={org.id} value={org.id}>
-                    {org.name}
-                    {org.shortName ? ` (${org.shortName})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {tActions("cancel")}
-            </Button>
-            <Button type="submit" disabled={saving || !form.name.trim()}>
-              {saving ? "..." : tActions("save")}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        {/* Country */}
+        <div className="space-y-2">
+          <Label htmlFor="org-country">{t("country")}</Label>
+          <Input
+            id="org-country"
+            value={form.country}
+            onChange={(e) =>
+              setForm({ ...form, country: e.target.value.toUpperCase() })
+            }
+            maxLength={3}
+            placeholder="DEU"
+          />
+        </div>
+
+        {/* Parent Organization */}
+        <div className="space-y-2">
+          <Label htmlFor="org-parent">{t("parentOrg")}</Label>
+          <Select
+            value={form.parentOrgId || "__none__"}
+            onValueChange={(value) =>
+              setForm({
+                ...form,
+                parentOrgId: value === "__none__" ? "" : value,
+              })
+            }
+          >
+            <SelectTrigger id="org-parent">
+              <SelectValue placeholder={t("parentOrgPlaceholder")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">
+                {t("parentOrgPlaceholder")}
+              </SelectItem>
+              {parentOptions.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.name}
+                  {org.shortName ? ` (${org.shortName})` : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
+            {tActions("cancel")}
+          </Button>
+          <Button type="submit" disabled={saving || !form.name.trim()}>
+            {saving ? "..." : tActions("save")}
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   );
 }
 
@@ -312,9 +349,6 @@ export default function OrganizationsPage() {
   const tStatus = useTranslations("status");
   const { formatDate } = useDateFormat();
 
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [loading, setLoading] = useState(true);
-
   // Form dialog state
   const [formOpen, setFormOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
@@ -326,22 +360,28 @@ export default function OrganizationsPage() {
   const [deleting, setDeleting] = useState(false);
 
   // ── Fetch organizations ──
-  const fetchOrganizations = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste (leere Tabelle); ein Netzfehler wird nicht mehr
+  // verschluckt, sondern landet im Fehlerzustand der Abfrage.
+  const {
+    data: organizations = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<Organization[]>({
+    queryKey: ["organizations", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/organizations?limit=100");
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) return [];
       const json = (await res.json()) as { data: Organization[] };
-      setOrganizations(json.data);
-    } catch {
-      // Silently handle — table will show empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    void fetchOrganizations();
-  }, [fetchOrganizations]);
+  const fetchOrganizations = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ── Create / Update ──
   const handleSave = async (data: OrgFormData) => {
@@ -404,7 +444,7 @@ export default function OrganizationsPage() {
   };
 
   // ── Open create dialog ──
-  const openCreate = () => {
+  const _openCreate = () => {
     setEditingOrg(null);
     setFormOpen(true);
   };

@@ -53,12 +53,11 @@
   },
   "new": {
     "title": "Neues Programm anlegen",
-    "description": "Wähle eine Norm-Vorlage und passe Eckdaten an. Die Phasen + Schritte werden anschließend automatisch instanziiert.",
+    "description": "Beschreibung (optional)",
     "step1Title": "1. Vorlage wählen",
     "step2Title": "2. Eckdaten festlegen",
     "name": "Programm-Name",
     "namePlaceholder": "z. B. ISO 27001 Erst-Zertifizierung 2026",
-    "description": "Beschreibung (optional)",
     "startedAt": "Startdatum (optional)",
     "estimatedDuration": "Geschätzte Dauer: {days} Tage",
     "submit": "Programm starten",
@@ -189,6 +188,7 @@
     "labelPlaceholder": "Name oder Kurzbeschreibung",
     "urlLabel": "URL",
     "notesLabel": "Notiz",
+    "suggestionsError": "Vorschläge konnten nicht geladen werden",
     "kind": {
       "risk": "Risiko",
       "control": "Kontrolle",
@@ -209,6 +209,11 @@
       "deliverable": "Deliverable",
       "reference": "Referenz"
     }
+  },
+  "approval": {
+    "requestError": "Approval konnte nicht angefragt werden",
+    "approveError": "Approval konnte nicht erteilt werden",
+    "rejectError": "Approval konnte nicht abgelehnt werden"
   },
   "gantt": {
     "title": "Gantt-Diagramm",
@@ -261,5 +266,10 @@
       "skipped": "Übersprungen",
       "cancelled": "Abgebrochen"
     }
+  },
+  "progress": {
+    "label": "Fortschritt",
+    "percent": "{percent} Prozent abgeschlossen",
+    "unknown": "Fortschritt unbekannt"
   }
 }

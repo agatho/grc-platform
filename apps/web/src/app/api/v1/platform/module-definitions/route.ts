@@ -4,8 +4,9 @@
 import { db, moduleDefinition } from "@grc/db";
 import { asc } from "drizzle-orm";
 import { auth } from "@/auth";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET() {
+export const GET = withErrorHandler(async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,4 +18,4 @@ export async function GET() {
     .orderBy(asc(moduleDefinition.navOrder));
 
   return Response.json({ data: rows });
-}
+});

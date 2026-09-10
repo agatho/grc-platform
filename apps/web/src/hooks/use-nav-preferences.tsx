@@ -3,7 +3,7 @@
 import {
   createContext,
   useContext,
-  useEffect,
+  useMemo,
   useState,
   useCallback,
   type ReactNode,
@@ -46,7 +46,7 @@ const DEFAULT_PREFS: NavPreferences = {
 // Groups are collapsed by default — only the active group is expanded.
 // collapsedGroups tracks explicitly OPENED groups (inverted logic).
 // When no user prefs exist, we auto-expand only the group matching the current path.
-const ALL_GROUP_KEYS = [
+const _ALL_GROUP_KEYS = [
   "erm",
   "isms",
   "icsAudit",
@@ -90,13 +90,27 @@ interface NavPreferencesProviderProps {
 // of firing another /nav-preferences fetch.
 const NAV_PREFS_QUERY_KEY = ["user", "me", "nav-preferences"] as const;
 
+// [Welle 7b · OP-080] Dieser Anbieter trug ZWEI Fundstellen von
+// `react-hooks/set-state-in-effect` — und Welle 7a hat sie als „Browserspeicher
+// beim Einhaengen lesen" gefuehrt. Nachgemessen stimmt das nicht: hier wird
+// nichts aus dem Browserspeicher gelesen. Beide Fundstellen sind GESPIEGELTER
+// ZUSTAND, dieselbe Klasse wie `org-switcher` in Welle 7a §4.5:
+//
+//   1. `useEffect(() => { if (serverData) setLocalPrefs(serverData) }, [...])`
+//      spiegelte das Ergebnis von react-query in ein eigenes Zustandsfeld.
+//   2. `useEffect(() => { ... setExpandedGroups(new Set(prefs.collapsedGroups))
+//      }, [loading, prefs.collapsedGroups])` spiegelte einen Teil DIESES
+//      Zustands in einen weiteren.
+//
+// Der Zwischenspeicher der Abfrage ist jetzt der einzige Ort, an dem die
+// Einstellungen liegen — was `persist` mit `queryClient.setQueryData` ohnehin
+// schon voraussetzte, nur eben erst NACH der Antwort des Servers.
 export function NavPreferencesProvider({
   children,
 }: NavPreferencesProviderProps) {
   const queryClient = useQueryClient();
-  const [localPrefs, setLocalPrefs] = useState<NavPreferences>(DEFAULT_PREFS);
 
-  const { data: serverData, isLoading } = useQuery<NavPreferences>({
+  const { data: serverPrefs, isPending } = useQuery<NavPreferences>({
     queryKey: NAV_PREFS_QUERY_KEY,
     queryFn: async () => {
       const res = await fetch("/api/v1/users/me/nav-preferences");
@@ -110,53 +124,58 @@ export function NavPreferencesProvider({
     },
   });
 
-  // Sync server data → local state once (toggle/setActiveGroup mutate
-  // localPrefs directly without round-tripping through react-query).
-  useEffect(() => {
-    if (serverData) setLocalPrefs(serverData);
-  }, [serverData]);
+  const prefs = serverPrefs ?? DEFAULT_PREFS;
+  const loading = isPending;
 
-  const prefs = localPrefs;
-  const loading = isLoading && !serverData;
-
-  // Persist to server + update the shared cache so other consumers
-  // see the new value without a re-fetch.
+  // Sofort sichtbar, dann zum Server. Vorher schrieb `persist` den
+  // Zwischenspeicher erst NACH der Antwort fort und aktualisierte davor ein
+  // zweites, gespiegeltes Zustandsfeld — daher die zusaetzlichen
+  // Renderdurchlaeufe und die Moeglichkeit, dass beide auseinanderlaufen.
   const persist = useCallback(
-    async (updated: NavPreferences) => {
-      try {
-        await fetch("/api/v1/users/me/nav-preferences", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updated),
-        });
-        queryClient.setQueryData(NAV_PREFS_QUERY_KEY, updated);
-      } catch {
-        // Silently fail — preferences are non-critical
-      }
+    (updated: NavPreferences) => {
+      queryClient.setQueryData(NAV_PREFS_QUERY_KEY, updated);
+      void (async () => {
+        try {
+          await fetch("/api/v1/users/me/nav-preferences", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updated),
+          });
+        } catch {
+          // Silently fail — preferences are non-critical
+        }
+      })();
     },
     [queryClient],
   );
 
-  // Wrap setLocalPrefs so old call sites that used setPrefs still work.
-  const setPrefs = setLocalPrefs;
+  const current = useCallback(
+    () =>
+      queryClient.getQueryData<NavPreferences>(NAV_PREFS_QUERY_KEY) ??
+      DEFAULT_PREFS,
+    [queryClient],
+  );
+
+  // [Welle 7a · OP-080] Hier stand `const setPrefs = setLocalPrefs;` — eine
+  // reine Umbenennung ohne Aufrufstelle ausserhalb dieser Datei. Fuer die Regel
+  // war sie eine gewoehnliche, bei jedem Rendern neu gebundene Variable, also
+  // eine fehlende Abhaengigkeit in zwei Rueckrufen; fuer den Leser verdeckte
+  // sie, dass es sich um den unveraenderlichen Setzer aus `useState` handelt.
 
   const togglePin = useCallback(
     (route: string) => {
-      setPrefs((prev) => {
-        const isPinned = prev.pinnedRoutes.includes(route);
-        let next: string[];
-        if (isPinned) {
-          next = prev.pinnedRoutes.filter((r) => r !== route);
-        } else {
-          if (prev.pinnedRoutes.length >= MAX_PINS) return prev;
-          next = [...prev.pinnedRoutes, route];
-        }
-        const updated = { ...prev, pinnedRoutes: next };
-        void persist(updated);
-        return updated;
-      });
+      const prev = current();
+      const isAlreadyPinned = prev.pinnedRoutes.includes(route);
+      let next: string[];
+      if (isAlreadyPinned) {
+        next = prev.pinnedRoutes.filter((r) => r !== route);
+      } else {
+        if (prev.pinnedRoutes.length >= MAX_PINS) return;
+        next = [...prev.pinnedRoutes, route];
+      }
+      persist({ ...prev, pinnedRoutes: next });
     },
-    [persist],
+    [current, persist],
   );
 
   const isPinned = useCallback(
@@ -167,34 +186,44 @@ export function NavPreferencesProvider({
   // NEW LOGIC: Groups are collapsed by default. collapsedGroups now tracks
   // which groups are EXPANDED (despite the field name, for backward compat).
   // If collapsedGroups is empty (fresh user), all groups start collapsed.
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  //
+  // [Welle 7b · OP-080] PRODUKTDEFEKT: **die Gruppe der aufgerufenen Seite fiel
+  // wieder zu, sobald die gespeicherten Einstellungen eintrafen.**
+  //
+  // Die Seitenleiste ruft `setActiveGroup(<Gruppe des Pfads>)` beim ersten
+  // Rendern — also BEVOR die Abfrage geantwortet hat. Der Effekt, der hier
+  // stand, lief danach und setzte `expandedGroups` auf den GESPEICHERTEN Stand.
+  // Wer `/risks` aufrief, sah die ERM-Gruppe aufgehen und einen Augenblick
+  // spaeter wieder zuklappen, waehrend statt dessen eine andere aufging.
+  //
+  // Es war ein Wettlauf zweier Setzer um dasselbe Feld. Aufgeloest wird er
+  // nicht durch eine andere Reihenfolge, sondern dadurch, dass es nur noch
+  // EINEN Stand gibt: der gespeicherte Stand ist die SAAT, und was in dieser
+  // Sitzung ausdruecklich auf- oder zugeklappt wurde, liegt als Auflage
+  // darueber. Eine Auflage kann die Saat nicht mehr verlieren, und die Saat
+  // kann die Auflage nicht mehr ueberschreiben.
+  const [expandedOverride, setExpandedOverride] = useState<Set<string> | null>(
+    null,
+  );
 
-  // Sync expanded state from loaded prefs
-  useEffect(() => {
-    if (!loading && prefs.collapsedGroups.length > 0) {
-      // Legacy: collapsedGroups used to mean "collapsed". Now we invert:
-      // all groups EXCEPT those in collapsedGroups are expanded.
-      // But for new accordion behavior, treat them as expanded groups.
-      setExpandedGroups(new Set(prefs.collapsedGroups));
-    }
-  }, [loading, prefs.collapsedGroups]);
+  const expandedGroups = useMemo(
+    () => expandedOverride ?? new Set(prefs.collapsedGroups),
+    [expandedOverride, prefs.collapsedGroups],
+  );
 
   const toggleGroupCollapse = useCallback(
     (groupKey: string) => {
-      setExpandedGroups((prev) => {
-        const next = new Set(prev);
-        if (next.has(groupKey)) {
-          next.delete(groupKey);
-        } else {
-          next.add(groupKey);
-        }
-        // Persist (store expanded groups in collapsedGroups field for backward compat)
-        const updated = { ...prefs, collapsedGroups: Array.from(next) };
-        void persist(updated);
-        return next;
-      });
+      const next = new Set(expandedGroups);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+      }
+      setExpandedOverride(next);
+      // Persist (store expanded groups in collapsedGroups field for backward compat)
+      persist({ ...current(), collapsedGroups: Array.from(next) });
     },
-    [persist, prefs],
+    [current, expandedGroups, persist],
   );
 
   const isGroupCollapsed = useCallback(
@@ -202,24 +231,20 @@ export function NavPreferencesProvider({
     [expandedGroups],
   );
 
-  const setActiveGroup = useCallback((groupKey: string) => {
-    setExpandedGroups((prev) => {
-      if (prev.has(groupKey)) return prev;
-      const next = new Set<string>();
-      next.add(groupKey);
-      return next;
-    });
-  }, []);
+  const setActiveGroup = useCallback(
+    (groupKey: string) => {
+      if (expandedGroups.has(groupKey)) return;
+      setExpandedOverride(new Set([groupKey]));
+    },
+    [expandedGroups],
+  );
 
   const toggleSidebarMode = useCallback(() => {
-    setPrefs((prev) => {
-      const newMode: SidebarMode =
-        prev.sidebarMode === "condensed" ? "full" : "condensed";
-      const updated = { ...prev, sidebarMode: newMode };
-      void persist(updated);
-      return updated;
-    });
-  }, [persist]);
+    const prev = current();
+    const newMode: SidebarMode =
+      prev.sidebarMode === "condensed" ? "full" : "condensed";
+    persist({ ...prev, sidebarMode: newMode });
+  }, [current, persist]);
 
   return (
     <NavPreferencesContext.Provider

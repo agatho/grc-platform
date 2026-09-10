@@ -6,9 +6,19 @@ import {
   generateCsv,
   parseCsv,
   type XliffDocument,
-  type XliffTranslationUnit,
   type CsvRow,
 } from "../src/utils/xliff";
+
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
 
 describe("generateXliff", () => {
   it("should generate valid XLIFF 2.0 XML", () => {
@@ -105,11 +115,11 @@ describe("parseXliff", () => {
     expect(doc.sourceLanguage).toBe("de");
     expect(doc.targetLanguage).toBe("en");
     expect(doc.units).toHaveLength(1);
-    expect(doc.units[0].entityType).toBe("risk");
-    expect(doc.units[0].entityId).toBe("abc");
-    expect(doc.units[0].field).toBe("title");
-    expect(doc.units[0].source).toBe("Lieferkettenrisiko");
-    expect(doc.units[0].target).toBe("Supply Chain Risk");
+    expect(at(doc.units, 0).entityType).toBe("risk");
+    expect(at(doc.units, 0).entityId).toBe("abc");
+    expect(at(doc.units, 0).field).toBe("title");
+    expect(at(doc.units, 0).source).toBe("Lieferkettenrisiko");
+    expect(at(doc.units, 0).target).toBe("Supply Chain Risk");
   });
 
   it("should throw for missing language attributes", () => {
@@ -139,7 +149,100 @@ describe("parseXliff", () => {
 
     const doc = parseXliff(xml);
     // The target should have HTML entities escaped
-    expect(doc.units[0].target).not.toContain("<script>");
+    expect(at(doc.units, 0).target).not.toContain("<script>");
+  });
+
+  // [ARCTOS-FULL-2026-08-31 · CodeQL js/double-escaping] Gegenprobe zu
+  // `unescapeXml`: die alte Fassung entschlüsselte `&amp;` ZUERST und war
+  // damit nicht die Umkehrung von `escapeXml` (das `&` korrekt zuerst
+  // verschlüsselt). Ein gespeichertes, wörtliches `&lt;` steht in der Datei
+  // als `&amp;lt;` und wurde zweimal entschlüsselt — der Import machte daraus
+  // ein `<`. Der Text änderte sich also beim Import.
+  it("entschlüsselt &amp;lt; genau einmal, nicht zweimal", () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0"
+  srcLang="de" trgLang="en">
+  <file id="test">
+    <unit id="test:1:title">
+      <metadata>
+        <meta type="entityType">risk</meta>
+        <meta type="entityId">1</meta>
+        <meta type="field">title</meta>
+      </metadata>
+      <segment>
+        <source xml:lang="de">&amp;lt;</source>
+        <target xml:lang="en">&amp;lt;</target>
+      </segment>
+    </unit>
+  </file>
+</xliff>`;
+
+    const doc = parseXliff(xml);
+    // `source` geht ohne Sanitisierung durch: eine Runde Entschlüsselung,
+    // also das wörtliche `&lt;` — kein `<`.
+    expect(at(doc.units, 0).source).toBe("&lt;");
+    // `target` läuft danach noch durch `escapeHtmlEntities()`; aus dem
+    // wörtlichen `&lt;` wird dort `&amp;lt;`. Unter der alten Fassung stand
+    // hier `&lt;`, weil aus dem Text bereits ein `<` geworden war.
+    expect(at(doc.units, 0).target).toBe("&amp;lt;");
+  });
+
+  it("bewahrt ein wörtliches &lt; über generate → parse", () => {
+    const original: XliffDocument = {
+      sourceLanguage: "de",
+      targetLanguage: "en",
+      units: [
+        {
+          id: "risk:1:title",
+          entityType: "risk",
+          entityId: "1",
+          field: "title",
+          source: "&lt; und &amp; im Fachtext",
+          target: "unverändert",
+        },
+      ],
+    };
+
+    const parsed = parseXliff(generateXliff(original));
+    expect(at(parsed.units, 0).source).toBe("&lt; und &amp; im Fachtext");
+  });
+
+  // [ARCTOS-FULL-2026-08-31 · CodeQL js/polynomial-redos] Wächter für die
+  // beiden quadratischen Muster. `parseXliff()` läuft auf dem Rumpf einer
+  // hochgeladenen Übersetzungsdatei (POST /api/v1/translations/import, bis
+  // 50 MB); quadratische Laufzeit dort blockiert die Node-Event-Loop des
+  // ganzen Prozesses. Das Zeitbudget ist grosszügig gewählt — die reparierte
+  // Fassung braucht Millisekunden, die alte Sekunden.
+  describe("fehlerhafte Eingaben laufen nicht quadratisch", () => {
+    const BUDGET_MS = 2000;
+
+    // 60 000 statt 20 000 Öffner: die Kosten des alten Musters wachsen mit
+    // der ANZAHL der Öffner im Quadrat, nicht mit der Eingabelänge. Bei
+    // 20 000 blieb die alte Fassung mit ~0,7 s noch unter dem Budget und der
+    // Test hätte nichts bewiesen; bei 60 000 braucht sie ~6 s.
+    it("verwirft 60 000 <unit>-Öffner ohne </unit> in linearer Zeit", () => {
+      const opener = '<unit id="a">Fuelltext';
+      const xml = `<xliff srcLang="de" trgLang="en">${opener.repeat(60_000)}</xliff>`;
+
+      const started = Date.now();
+      const doc = parseXliff(xml);
+      const elapsedMs = Date.now() - started;
+
+      expect(doc.units).toHaveLength(0);
+      expect(elapsedMs).toBeLessThan(BUDGET_MS);
+    });
+
+    it("verwirft 20 000 <source-/<target-Fragmente ohne > in linearer Zeit", () => {
+      const body = "<source".repeat(20_000) + "<target".repeat(20_000);
+      const xml = `<xliff srcLang="de" trgLang="en"><unit id="a">${body}</unit></xliff>`;
+
+      const started = Date.now();
+      const doc = parseXliff(xml);
+      const elapsedMs = Date.now() - started;
+
+      expect(doc.units).toHaveLength(0);
+      expect(elapsedMs).toBeLessThan(BUDGET_MS);
+    });
   });
 
   it("should round-trip: generate then parse", () => {
@@ -172,9 +275,9 @@ describe("parseXliff", () => {
     expect(parsed.sourceLanguage).toBe("de");
     expect(parsed.targetLanguage).toBe("en");
     expect(parsed.units).toHaveLength(2);
-    expect(parsed.units[0].source).toBe("Risiko A");
-    expect(parsed.units[0].target).toBe("Risk A");
-    expect(parsed.units[1].field).toBe("description");
+    expect(at(parsed.units, 0).source).toBe("Risiko A");
+    expect(at(parsed.units, 0).target).toBe("Risk A");
+    expect(at(parsed.units, 1).field).toBe("description");
   });
 });
 
@@ -223,8 +326,8 @@ risk:1:desc,risk,1,description,Beschreibung,Description`;
     expect(result.sourceLanguage).toBe("de");
     expect(result.targetLanguage).toBe("en");
     expect(result.rows).toHaveLength(2);
-    expect(result.rows[0].source).toBe("Risiko");
-    expect(result.rows[0].target).toBe("Risk");
+    expect(at(result.rows, 0).source).toBe("Risiko");
+    expect(at(result.rows, 0).target).toBe("Risk");
   });
 
   it("should throw for invalid header", () => {
@@ -244,6 +347,6 @@ risk:1:desc,risk,1,description,Beschreibung,Description`;
 test:1:title,risk,1,title,"Text, with commas",Normal`;
 
     const result = parseCsv(csv);
-    expect(result.rows[0].source).toBe("Text, with commas");
+    expect(at(result.rows, 0).source).toBe("Text, with commas");
   });
 });

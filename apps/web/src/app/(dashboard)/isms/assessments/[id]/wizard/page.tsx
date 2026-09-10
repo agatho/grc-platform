@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -16,6 +17,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { AssessmentRun, EvalResult, RiskDecision } from "@grc/shared";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface AssetItem {
   id: string;
@@ -48,22 +50,106 @@ export default function WizardPage() {
   );
 }
 
+interface WizardSeed {
+  assessment: AssessmentRun | null;
+  assets: AssetItem[];
+  controls: ControlItem[];
+  scenarios: RiskScenarioItem[];
+}
+
+// [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+// statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+// Welle 7b, `processes/[id]/ropa/page.tsx`). Die Stammdaten sind die SAAT
+// des Assistenten (die Asset-Vorauswahl wird aus der geladenen Liste
+// gebildet), darum wird das Formular erst mit dem geladenen Stand
+// EINGEHÄNGT — ein eigenes Bauteil, kein spiegelnder Effekt.
 function WizardInner() {
-  const t = useTranslations("ismsAssessment");
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
 
-  const [assessment, setAssessment] = useState<AssessmentRun | null>(null);
+  const {
+    data,
+    isPending: loading,
+    isError: loadError,
+  } = useQuery<WizardSeed>({
+    queryKey: ["isms", "assessments", id, "wizard-seed"],
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] Drei von vier Aufrufen standen auf
+      // `limit=200` und liefen in 422; die `if (…Res.ok)`-Kaskade hat alle drei
+      // verschluckt. Der Assistent zeigte danach Schritt für Schritt leere
+      // Auswahllisten — keine Assets, keine Kontrollen, keine Szenarien — und
+      // liess sich trotzdem abschliessen. Eine Schutzbedarfsfeststellung über
+      // null Assets ist eine Aussage, die dieses Modul nicht machen darf.
+      const [assessmentRes, assets, controls, scenarios] = await Promise.all([
+        fetch(`/api/v1/isms/assessments/${id}`),
+        fetchAllPages<AssetItem>("/api/v1/assets"),
+        fetchAllPages<ControlItem>("/api/v1/controls"),
+        fetchAllPages<RiskScenarioItem>("/api/v1/isms/risk-scenarios"),
+      ]);
+      const assessment: AssessmentRun | null = assessmentRes.ok
+        ? ((await assessmentRes.json()).data ?? null)
+        : null;
+      return { assessment, assets, controls, scenarios };
+    },
+  });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  // [ARCTOS-FULL-2026-08-31 · OP-050] Ein Assistent, dessen Stammdaten nicht
+  // geladen sind, darf nicht mit leeren Listen weiterlaufen.
+  if (loadError || !data) {
+    return (
+      <div
+        role="alert"
+        className="rounded border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+      >
+        Assets, Kontrollen oder Risikoszenarien konnten nicht geladen werden.
+        Der Assistent würde sonst über leeren Listen bewertet.
+      </div>
+    );
+  }
+
+  return (
+    <WizardForm
+      id={id}
+      assessment={data.assessment}
+      assets={data.assets}
+      controls={data.controls}
+      riskScenarios={data.scenarios}
+    />
+  );
+}
+
+function WizardForm({
+  id,
+  assessment,
+  assets,
+  controls,
+  riskScenarios,
+}: {
+  id: string;
+  assessment: AssessmentRun | null;
+  assets: AssetItem[];
+  controls: ControlItem[];
+  riskScenarios: RiskScenarioItem[];
+}) {
+  const t = useTranslations("ismsAssessment");
+  const router = useRouter();
+
   const [currentStep, setCurrentStep] = useState<Step>("assets");
-  const [loading, setLoading] = useState(true);
 
   // Step 1: Assets
-  const [assets, setAssets] = useState<AssetItem[]>([]);
-  const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set());
+  const [selectedAssets, setSelectedAssets] = useState<Set<string>>(
+    () => new Set(assets.map((a) => a.id)),
+  );
 
   // Step 2: Controls
-  const [controls, setControls] = useState<ControlItem[]>([]);
   const [controlIndex, setControlIndex] = useState(0);
   const [evalResult, setEvalResult] = useState<EvalResult>("not_evaluated");
   const [currentMaturity, setCurrentMaturity] = useState<number>(1);
@@ -72,47 +158,11 @@ function WizardInner() {
   const [notes, setNotes] = useState("");
 
   // Step 3: Risk Scenarios
-  const [riskScenarios, setRiskScenarios] = useState<RiskScenarioItem[]>([]);
   const [riskIndex, setRiskIndex] = useState(0);
   const [residualLikelihood, setResidualLikelihood] = useState(3);
   const [residualImpact, setResidualImpact] = useState(3);
   const [riskDecision, setRiskDecision] = useState<RiskDecision>("pending");
   const [riskJustification, setRiskJustification] = useState("");
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [aRes, assetRes, ctrlRes, rsRes] = await Promise.all([
-        fetch(`/api/v1/isms/assessments/${id}`),
-        fetch("/api/v1/assets?limit=200"),
-        fetch("/api/v1/controls?limit=200"),
-        fetch("/api/v1/isms/risk-scenarios?limit=200"),
-      ]);
-      if (aRes.ok) {
-        const j = await aRes.json();
-        setAssessment(j.data);
-      }
-      if (assetRes.ok) {
-        const j = await assetRes.json();
-        setAssets(j.data ?? []);
-        setSelectedAssets(new Set((j.data ?? []).map((a: AssetItem) => a.id)));
-      }
-      if (ctrlRes.ok) {
-        const j = await ctrlRes.json();
-        setControls(j.data ?? []);
-      }
-      if (rsRes.ok) {
-        const j = await rsRes.json();
-        setRiskScenarios(j.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
 
   const toggleAsset = (assetId: string) => {
     setSelectedAssets((prev) => {
@@ -176,14 +226,6 @@ function WizardInner() {
       setRiskJustification("");
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
 
   const stepIndex = STEPS.indexOf(currentStep);
 

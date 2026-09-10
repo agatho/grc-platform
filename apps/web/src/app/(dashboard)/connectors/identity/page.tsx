@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Shield,
@@ -24,25 +25,28 @@ interface IdentityDashboard {
 
 export default function IdentityConnectorsPage() {
   const t = useTranslations("connectors");
-  const [dashboard, setDashboard] = useState<IdentityDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`.
+  const {
+    data: dashboard = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<IdentityDashboard | null>({
+    queryKey: ["connectors", "identity", "dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/identity-connectors/dashboard");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as IdentityDashboard | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/identity-connectors/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setDashboard(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !dashboard) {
     return (
@@ -65,9 +69,9 @@ export default function IdentityConnectorsPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

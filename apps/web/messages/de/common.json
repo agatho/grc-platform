@@ -332,7 +332,8 @@
       "platformData": "Import & Suche",
       "platformCatalogs": "Kataloge & Frameworks",
       "platformAdmin": "Administration"
-    }
+    },
+    "title": "Hauptnavigation"
   },
   "orgSwitcher": {
     "label": "Organisation",
@@ -517,6 +518,160 @@
         "cancelled": "Abgebrochen",
         "failed": "Fehlgeschlagen"
       }
+    },
+    "hub": {
+      "section": {
+        "platform": "Plattform & Organisation",
+        "access": "Nutzer, Rollen & Zugriff",
+        "compliance": "Compliance & Methodik",
+        "modules": "Module, Automatisierung & AI",
+        "communication": "Kommunikation & Benachrichtigungen",
+        "security": "Sicherheit, Audit & Datenschutz"
+      },
+      "card": {
+        "organizations": {
+          "title": "Organisationen",
+          "description": "Mandanten, Corporate-Hierarchie und Stammdaten verwalten."
+        },
+        "branding": {
+          "title": "Branding & Theme",
+          "description": "Logo, Farben und E-Mail-Kopf für Reports und Benachrichtigungen."
+        },
+        "calendar": {
+          "title": "Kalender & Feiertage",
+          "description": "Geschäftsjahr, Feiertagskalender und Fristberechnung."
+        },
+        "languages": {
+          "title": "Sprachen & Übersetzungen",
+          "description": "Verfügbare UI-Sprachen und AI-gestützte Übersetzungspipelines."
+        },
+        "users": {
+          "title": "Nutzerverwaltung",
+          "description": "Nutzer einladen, deaktivieren, MFA erzwingen."
+        },
+        "roles": {
+          "title": "Rollen & Berechtigungen",
+          "description": "Three-Lines-of-Defense-Rollenmatrix und benutzerdefinierte Rollen."
+        },
+        "abac": {
+          "title": "ABAC-Richtlinien",
+          "description": "Attributbasierte Zugriffskontrolle und Policy-Simulator."
+        },
+        "sso": {
+          "title": "SSO (SAML / OIDC)",
+          "description": "Enterprise-SSO pro Organisation (Okta, Azure AD, Keycloak, Google)."
+        },
+        "scim": {
+          "title": "SCIM-Provisioning",
+          "description": "Automatisches Anlegen, Sperren und Rollenabgleich aus dem IdP."
+        },
+        "risk_methodology": {
+          "title": "Risiko-Methodik",
+          "description": "Skalen, Matrix, Toleranzen und FAIR-Parameter je Organisation."
+        },
+        "catalogs": {
+          "title": "Kataloge & Frameworks",
+          "description": "46 Frameworks aktivieren, ausschließen, überschreiben."
+        },
+        "catalogsMappings": {
+          "title": "Framework-Coverage",
+          "description": "Cross-Framework-Mapping-Pflege und Gap-Analyse."
+        },
+        "review_cycles": {
+          "title": "Review-Zyklen",
+          "description": "Periodische Prüfungen (SoA, RCSA, Assessments) automatisch starten."
+        },
+        "modules": {
+          "title": "Module aktivieren",
+          "description": "15 Kernmodule je Mandant aktivieren / deaktivieren."
+        },
+        "ai_providers": {
+          "title": "KI-Anbieter",
+          "description": "Anthropic, OpenAI, Gemini, Ollama, LM Studio konfigurieren und Privacy-Routing festlegen."
+        },
+        "ai_usage": {
+          "title": "KI-Nutzung & Kosten",
+          "description": "Tokens, Kosten pro Modell, Cache-Trefferquote."
+        },
+        "automation": {
+          "title": "Automatisierung",
+          "description": "Regel-Engine, Ereignistrigger und Workflow-Vorlagen."
+        },
+        "webhooks": {
+          "title": "Webhooks",
+          "description": "HMAC-signierte Outbound-Webhooks pro Ereignis-Typ."
+        },
+        "connectors": {
+          "title": "Konnektoren",
+          "description": "Cloud-, IAM- und DevOps-Evidence-Konnektoren."
+        },
+        "notifications": {
+          "title": "Benachrichtigungseinstellungen",
+          "description": "E-Mail, In-App, Slack-Routing und Ruhezeiten."
+        },
+        "messaging": {
+          "title": "Messaging-Kanäle",
+          "description": "Slack / Teams / Webex Bot-Anbindung."
+        },
+        "reminders": {
+          "title": "Erinnerungen",
+          "description": "Globale Erinnerungsregeln (Controls, Evidence, Assessments)."
+        },
+        "export_schedules": {
+          "title": "Export-Zeitpläne",
+          "description": "Wiederkehrende PDF/Excel-Exporte für Executive / Audit."
+        },
+        "audit_log": {
+          "title": "Audit-Log",
+          "description": "Append-only Änderungshistorie mit SHA-256 Hash-Chain."
+        },
+        "access_log": {
+          "title": "Access-Log",
+          "description": "Login-, Session- und Berechtigungsereignisse."
+        },
+        "data_sovereignty": {
+          "title": "Datensouveränität",
+          "description": "Hosting-Region, Export-Richtlinien, Third-Country-Transfers."
+        },
+        "dpmsRetention": {
+          "title": "Aufbewahrung (GDPR Art. 5)",
+          "description": "Löschfristen je Entitätstyp — Speicherbegrenzung."
+        },
+        "events": {
+          "title": "Event-Bus",
+          "description": "Domain-Events, Dead-Letter-Queue und Retry-Konfiguration."
+        }
+      },
+      "title": "Plattform-Einstellungen",
+      "description": "Zentrale Konfiguration für Organisation, Zugriff, Compliance-Methodik, Module und Integrationen.",
+      "footer": "Einstellungen, die sich auf einzelne Module beziehen, werden über „Module aktivieren“ je Mandant konfiguriert. Alle Änderungen werden automatisch im Audit-Log protokolliert.",
+      "badge": {
+        "new": "neu",
+        "admin": "admin"
+      }
+    },
+    "aiProviders": {
+      "title": "KI-Anbieter",
+      "description": "Konfiguration der verfügbaren Anbieter grosser Sprachmodelle. Schlüssel und Endpunkte werden aus Umgebungsvariablen gelesen — das garantiert, dass Geheimnisse nicht in der Datenbank oder im Browser landen.",
+      "loadError": "Anbieterliste konnte nicht geladen werden",
+      "defaultProvider": "Standard-Anbieter",
+      "defaultProviderHint": "Anbieter, der standardmässig ausgewählt wird, wenn kein Anbieter ausdrücklich angefordert wurde.",
+      "privacyRouting": "Datenschutz-Weiterleitung",
+      "privacyRoutingHint": "Bei personenbezogenen Daten (containsPersonalData=true) wird automatisch an Ollama oder LM Studio weitergeleitet.",
+      "enabled": "aktiv",
+      "disabled": "inaktiv",
+      "default": "Standard",
+      "type": {
+        "cloud": "Cloud",
+        "local": "Lokal",
+        "subscription": "Abo"
+      },
+      "model": "Modell",
+      "configured": "Konfiguriert",
+      "notConfigured": "Nicht konfiguriert",
+      "envVars": "Umgebungsvariablen",
+      "footerTitle": "Schlüssel und Endpunkte ändern",
+      "footerBody": "Tragen Sie die Werte in der .env-Datei der Installation ein und starten Sie den Node-Prozess neu. Diese Seite zeigt ausschliesslich den Konfigurationsstand — es werden keine Schlüssel angezeigt oder bearbeitet. Das schützt vor versehentlicher Offenlegung über Browser-Zwischenspeicher, Bildschirmfotos oder Support-Sitzungen."
     }
   },
   "actions": {
@@ -652,7 +807,8 @@
     "entries": "Einträge",
     "errorTitle": "Etwas ist schiefgelaufen",
     "loadError": "Daten konnten nicht geladen werden",
-    "retry": "Erneut versuchen"
+    "retry": "Erneut versuchen",
+    "httpError": "Fehler {status}"
   },
   "auditLog": {
     "title": "Änderungshistorie",
@@ -749,7 +905,22 @@
     "revoking": "Wird widerrufen...",
     "revokeSuccess": "Einladung widerrufen",
     "revokeError": "Einladung konnte nicht widerrufen werden",
-    "sendError": "Einladung konnte nicht gesendet werden"
+    "sendError": "Einladung konnte nicht gesendet werden",
+    "acceptTitle": "Einladung annehmen",
+    "acceptWelcome": "Willkommen bei ARCTOS",
+    "acceptDone": "Ihre Einladung wurde angenommen. Sie können sich jetzt anmelden.",
+    "acceptGoToLogin": "Zur Anmeldung",
+    "acceptSubmit": "Einladung annehmen",
+    "yourName": "Ihr Name",
+    "namePlaceholder": "Max Mustermann",
+    "password": "Passwort",
+    "passwordPlaceholder": "Mindestens {count} Zeichen",
+    "confirmPassword": "Passwort bestätigen",
+    "confirmPasswordPlaceholder": "Passwort wiederholen",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "passwordTooShort": "Passwort muss mindestens {count} Zeichen lang sein",
+    "acceptError": "Einladung konnte nicht angenommen werden",
+    "selfHostedNote": "Self-hosted. ISO-27001-konform. Ihre Daten bleiben bei Ihnen."
   },
   "accessLog": {
     "title": "Zugriffsprotokoll",
@@ -776,7 +947,8 @@
     "teaser": {
       "activate": "Modul aktivieren",
       "contact": "Support kontaktieren",
-      "addon": "Dieses Modul erfordert eine Zusatzlizenz"
+      "addon": "Dieses Modul erfordert eine Zusatzlizenz",
+      "activateFailed": "Das Modul konnte nicht aktiviert werden. Bitte wenden Sie sich an einen Administrator."
     },
     "disableConfirm": "Das Deaktivieren von {name} verbirgt dieses Modul für alle Benutzer Ihrer Organisation. Ihre Daten werden nicht gelöscht und können jederzeit reaktiviert werden.",
     "depNotMet": "Erfordert: {deps}",
@@ -788,7 +960,237 @@
       "addon": "Zusatzmodul",
       "enterprise": "Enterprise"
     },
-    "configure": "Einstellungen"
+    "configure": "Einstellungen",
+    "detail": {
+      "module": {
+        "erm": {
+          "description": "Enterprise-Risk-Management — Risikoregister, KRIs, Bewertungsmethodik.",
+          "links": {
+            "settings_risk_methodology": {
+              "label": "Risiko-Methodik",
+              "description": "Bewertungsskalen, Matrix, FAIR-Parameter."
+            },
+            "erm_risk_appetite": {
+              "label": "Risikoappetit",
+              "description": "Appetitdeklaration und Toleranzschwellen je Kategorie."
+            },
+            "catalogs_module_erm": {
+              "label": "Risikokataloge",
+              "description": "Cambridge, WEF, MITRE ATT&CK, BSI Elementargefährdungen."
+            }
+          }
+        },
+        "isms": {
+          "description": "Information Security Management — ISO 27001 / 27002, SoA, Risiken, Reife.",
+          "links": {
+            "isms_soa": {
+              "label": "Statement of Applicability",
+              "description": "93 Annex-A-Kontrollen aktivieren / ausschließen + Begründung."
+            },
+            "isms_reviews": {
+              "label": "Management-Review-Zyklen",
+              "description": "ISO 27001 Kap. 9.3 Turnusse und Teilnehmer."
+            },
+            "catalogs_module_isms": {
+              "label": "ISMS-Kataloge",
+              "description": "ISO 27002, BSI, NIST CSF, TISAX, 27017/27018/27701."
+            }
+          }
+        },
+        "ics": {
+          "description": "Internes Kontrollsystem — Kontrollen, Tests, Evidence, RCM.",
+          "links": {
+            "controls": {
+              "label": "Kontrollbibliothek",
+              "description": "Eigene und framework-basierte Kontrollen."
+            },
+            "admin_review_cycles": {
+              "label": "Test-Zyklen",
+              "description": "Automatische Kontrolltest-Kampagnen (monatlich, quartalsweise, jährlich)."
+            }
+          }
+        },
+        "dpms": {
+          "description": "Datenschutz-Managementsystem — GDPR Art. 30 RoPA, DPIA, Betroffenenrechte.",
+          "links": {
+            "dpms_retention": {
+              "label": "Aufbewahrungsfristen (Art. 5)",
+              "description": "Löschfristen je Datenkategorie — Speicherbegrenzung."
+            },
+            "dpms_tia": {
+              "label": "Transfer-Impact-Assessments",
+              "description": "Schrems II Drittlandtransfer-Bewertungen."
+            },
+            "dpms_consent": {
+              "label": "Einwilligungsverwaltung",
+              "description": "Consent-Records je Betroffenen, Rückruf-Workflows."
+            }
+          }
+        },
+        "bcms": {
+          "description": "Business Continuity — ISO 22301, BIA, BCP, Krisen, Übungen.",
+          "links": {
+            "bcms_bia": {
+              "label": "BIA-Methodik",
+              "description": "RTO/RPO, MTPD und MBCO pro Prozess."
+            },
+            "bcms_exercises": {
+              "label": "Übungsplan",
+              "description": "ISO 22301 Kap. 8.5 — mindestens jährliche Übungen."
+            }
+          }
+        },
+        "audit": {
+          "description": "Audit-Management — IIA Standards, Universe, Plan, Durchführung, QA.",
+          "links": {
+            "audit_universe": {
+              "label": "Audit-Universe",
+              "description": "Prüfbare Einheiten und Risiko-Score je Einheit."
+            },
+            "audit_plans": {
+              "label": "Jahres-Auditplan",
+              "description": "Risikoorientierter Jahresplan mit CAE-Freigabe."
+            }
+          }
+        },
+        "tprm": {
+          "description": "Third-Party Risk Management — Vendoren, DD, Konzentrationsrisiken, LkSG.",
+          "links": {
+            "tprm_lksg": {
+              "label": "LkSG-Assessments",
+              "description": "Lieferkettensorgfaltspflichten — jährliche Bewertung."
+            },
+            "tprm_concentration": {
+              "label": "Konzentrationsrisiken",
+              "description": "Schwellenwerte für Vendor- und Cluster-Abhängigkeit."
+            }
+          }
+        },
+        "contract": {
+          "description": "Vertragsmanagement — Lifecycle, SLA, Obligations.",
+          "links": {
+            "contracts_sla": {
+              "label": "SLA-Vorlagen",
+              "description": "Standard-SLA-Klauseln für Audit, Security, DR."
+            },
+            "contracts_obligations": {
+              "label": "Pflichtenbibliothek",
+              "description": "Wiederkehrende Vertragspflichten je Vertragstyp."
+            }
+          }
+        },
+        "esg": {
+          "description": "ESG & Nachhaltigkeit — ESRS/CSRD, Materialität, Metriken.",
+          "links": {
+            "esg_materiality": {
+              "label": "Doppelte Wesentlichkeit",
+              "description": "Impact- und Finanz-Materialität nach ESRS."
+            },
+            "esg_datapoints": {
+              "label": "ESRS-Datenpunkte",
+              "description": "Pflicht- und Wahldatenpunkte pro Standard."
+            }
+          }
+        },
+        "bpm": {
+          "description": "Prozessmanagement — BPMN 2.0, Governance, Mining.",
+          "links": {
+            "processes_governance": {
+              "label": "Prozess-Governance",
+              "description": "Genehmigungs-Workflows, Prozess-Owner, Review-Zyklen."
+            }
+          }
+        },
+        "dms": {
+          "description": "Dokumentenmanagement — Versionierung, Genehmigungen, Verteilerlisten.",
+          "links": {
+            "documents_compliance": {
+              "label": "Compliance-Dokumente",
+              "description": "Verbindliche Policies mit Read-Receipt."
+            }
+          }
+        },
+        "whistleblowing": {
+          "description": "Hinweisgebersystem — HinSchG-konform, isoliert und rollenbeschränkt.",
+          "links": {
+            "whistleblowing_statistics": {
+              "label": "Berichtsparameter",
+              "description": "Anonymisierungsregeln und Statistik-Export."
+            }
+          }
+        },
+        "eam": {
+          "description": "Enterprise Architecture Management — Capabilities, Apps, Daten, Tech-Radar.",
+          "links": {
+            "eam_governance": {
+              "label": "Architektur-Governance",
+              "description": "Architecture-Board, Review-Queues, Ausnahmen."
+            },
+            "eam_tech_radar": {
+              "label": "Technologie-Radar",
+              "description": "Adopt/Trial/Assess/Hold je Technologie."
+            }
+          }
+        },
+        "reporting": {
+          "description": "Report-Engine — Templates, Planung, Verteilung.",
+          "links": {
+            "settings_export_schedules": {
+              "label": "Export-Zeitpläne",
+              "description": "Wiederkehrende PDF/Excel-Reports."
+            }
+          }
+        },
+        "academy": {
+          "description": "GRC Academy — Trainings, Onboarding, Zertifikate.",
+          "links": {
+            "academy": {
+              "label": "Kursverwaltung",
+              "description": "Eigene Trainings, Pflichtschulungen je Rolle."
+            }
+          }
+        },
+        "community": {
+          "description": "Community Edition — Open-Source-Beiträge, Extensions, Shared-Content."
+        },
+        "marketplace": {
+          "description": "Marketplace — Erweiterungen, Konnektoren, Templates.",
+          "links": {
+            "marketplace": {
+              "label": "Marktplatz öffnen",
+              "description": "Browse verfügbare Erweiterungen."
+            }
+          }
+        },
+        "simulations": {
+          "description": "Simulation Engine — Szenarien, Monte-Carlo, Stress-Tests."
+        },
+        "portals": {
+          "description": "Stakeholder-Portale — Vendor-, Kunden-, Regulator-Portale.",
+          "links": {
+            "portals": {
+              "label": "Portale verwalten",
+              "description": "Portal-Konfiguration, Branding, Zugriffe."
+            }
+          }
+        }
+      },
+      "backToOverview": "Zurück zur Modul-Übersicht",
+      "overview": "Modul-Übersicht",
+      "noConfig": "Für diesen Modulschlüssel existiert keine Konfiguration in diesem Mandanten.",
+      "purpose": "Zweck dieses Moduls",
+      "configuration": "Modul-Einstellungen",
+      "noPages": "Für dieses Modul sind aktuell keine spezifischen Konfigurationsseiten verfügbar.",
+      "rawConfig": "Erweitert: Rohkonfiguration (JSON)",
+      "dependencies": "Abhängigkeiten",
+      "dependenciesHint": "Dieses Modul setzt voraus, dass folgende Module aktiv sind:",
+      "loadError": "Modul-Konfiguration konnte nicht geladen werden"
+    },
+    "unavailable": {
+      "title": "Die Modulkonfiguration konnte nicht geladen werden",
+      "description": "Ob dieses Modul freigeschaltet ist, liess sich gerade nicht ermitteln. Das ist ein voruebergehender Fehler, kein abgeschaltetes Modul — bitte erneut versuchen.",
+      "retry": "Erneut versuchen"
+    }
   },
   "assets": {
     "title": "Assets",
@@ -835,7 +1237,38 @@
       "bcm": "BCM"
     },
     "workItemsTab": "Arbeitsobjekte",
-    "workItemsDescription": "Verknüpfte Arbeitsobjekte für dieses Asset"
+    "workItemsDescription": "Verknüpfte Arbeitsobjekte für dieses Asset",
+    "detail": {
+      "editClassification": "Klassifizierung bearbeiten",
+      "tabOverview": "Übersicht",
+      "tabClassification": "Klassifizierung",
+      "tabVulnerabilities": "Schwachstellen",
+      "tabIncidents": "Vorfälle",
+      "tabHistory": "Verlauf",
+      "assetInfo": "Asset-Informationen",
+      "visibleInModules": "Sichtbar in Modulen",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "updatedAt": "Aktualisiert: {date}",
+      "latestAudit": "Letztes Audit: {date}",
+      "latestAuditResult": "Audit-Ergebnis: {result}",
+      "protectionNeeds": "Schutzbedarfsfeststellung",
+      "edit": "Bearbeiten",
+      "overallProtection": "Gesamtschutzbedarf",
+      "classifiedAt": "Klassifiziert am {date}",
+      "noReason": "Keine Begründung angegeben",
+      "nextReview": "Nächste Überprüfung: {date}",
+      "notClassified": "Dieses Asset wurde noch nicht klassifiziert.",
+      "classifyNow": "Jetzt klassifizieren",
+      "vulnerabilities": "Schwachstellen",
+      "noVulnerabilities": "Keine Schwachstellen für dieses Asset erfasst.",
+      "incidents": "Sicherheitsvorfälle",
+      "noIncidents": "Keine Vorfälle für dieses Asset gemeldet.",
+      "changeHistory": "Änderungsverlauf",
+      "noHistory": "Noch keine Änderungen protokolliert.",
+      "systemUser": "System",
+      "entityFallback": "Asset"
+    }
   },
   "cia": {
     "confidentiality": "Vertraulichkeit",
@@ -1380,6 +1813,10 @@
       "riskTitle": "Risiko",
       "riskOwner": "Verantwortlicher",
       "noRisks": "Noch keine Risiken erfasst"
+    },
+    "fromCatalog": {
+      "source": "Aus Katalog: {code} — {name}",
+      "prefilled": "Titel und Beschreibung wurden vorausgefüllt"
     }
   },
   "process": {
@@ -1418,7 +1855,8 @@
       "risks": "Risiken",
       "history": "Historie",
       "comments": "Kommentare",
-      "approval": "Freigabe"
+      "approval": "Freigabe",
+      "documents": "Dokumente"
     },
     "status": {
       "draft": "Entwurf",
@@ -1666,7 +2104,10 @@
       "removed": "Entfernt",
       "modified": "Geändert",
       "attributeDiff": "Attributänderungen",
-      "version": "Version"
+      "version": "Version",
+      "loadError": "Versionsvergleich konnte nicht geladen werden",
+      "sameVersion": "Auf beiden Seiten steht dieselbe Version — es gibt nichts zu vergleichen.",
+      "selectTwoVersions": "Wählen Sie zwei verschiedene Versionen zum Vergleich aus."
     },
     "comments": {
       "title": "Kommentare",
@@ -1790,7 +2231,8 @@
       "tests": "Tests",
       "findings": "Feststellungen",
       "rcm": "RKM",
-      "history": "Historie"
+      "history": "Historie",
+      "documents": "Dokumente"
     },
     "tests": {
       "empty": "Keine Tests erfasst",
@@ -2286,10 +2728,23 @@
       "alreadyAssigned": "Bereits dieser Entität zugewiesen",
       "assignedEntities": "Zugewiesene Entitäten",
       "noAssignments": "Keine Entitäten diesem Katalogeintrag zugewiesen",
+      "loadError": "Zuweisungen konnten nicht geladen werden",
       "bulkAssign": "Mehrfachzuweisung",
       "bulkDescription": "Diesen Katalogeintrag mehreren Entitäten gleichzeitig zuweisen",
       "selectedCount": "{count} ausgewählt",
       "assignedCount": "{count} zugewiesen"
+    },
+    "workqueue": {
+      "loading": "Kataloge werden geladen …",
+      "summaryRisk": "{count, plural, one {# aktiver Risikokatalog} other {# aktive Risikokataloge}}",
+      "summaryControl": "{count, plural, one {# aktiver Kontrollkatalog} other {# aktive Kontrollkataloge}}",
+      "openEntries": "{count, plural, one {# offener Eintrag} other {# offene Einträge}}",
+      "hint": "Aus aktivierten Katalogen — klicken zum Anzeigen",
+      "allCatalogs": "Alle Kataloge",
+      "empty": "Keine offenen Einträge in diesem Katalog.",
+      "createRisk": "Risiko erstellen",
+      "createControl": "Kontrolle erstellen",
+      "shown": "{shown} von {total} offenen Einträgen angezeigt"
     }
   },
   "isms": {
@@ -2511,6 +2966,64 @@
       "duration": "Dauer",
       "slaStatus": "SLA-Status",
       "allTasksCompleted": "Alle Aufgaben abgeschlossen"
+    },
+    "threatDetail": {
+      "notFound": "Bedrohung nicht gefunden",
+      "backToList": "Zurück zur Liste",
+      "system": "System",
+      "tabOverview": "Übersicht",
+      "tabScenarios": "Risikoszenarien",
+      "tabHistory": "Verlauf",
+      "details": "Bedrohungsdetails",
+      "title": "Titel",
+      "code": "Code",
+      "category": "Kategorie",
+      "likelihood": "Eintrittswahrscheinlichkeit",
+      "description": "Beschreibung",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "type": "Typ: {type}",
+      "typeSystem": "Systembedrohung",
+      "typeCustom": "Benutzerdefiniert",
+      "fromCatalog": "Aus Katalog verknüpft",
+      "linkedScenarios": "Verknüpfte Risikoszenarien",
+      "noScenarios": "Keine Risikoszenarien mit dieser Bedrohung verknüpft.",
+      "scenarioFallback": "Risikoszenario",
+      "changeHistory": "Änderungsverlauf",
+      "historyLoading": "Verlauf wird geladen …",
+      "likelihoodRating": {
+        "1": "Sehr gering",
+        "2": "Gering",
+        "3": "Mittel",
+        "4": "Hoch",
+        "5": "Sehr hoch"
+      }
+    },
+    "vulnDetail": {
+      "notFound": "Schwachstelle nicht gefunden",
+      "backToList": "Zurück zur Liste",
+      "tabOverview": "Übersicht",
+      "tabAsset": "Betroffenes Asset",
+      "tabMitigation": "Maßnahmen",
+      "tabHistory": "Verlauf",
+      "details": "Schwachstellendetails",
+      "title": "Titel",
+      "severity": "Schweregrad",
+      "status": "Status",
+      "cveReference": "CVE-Referenz",
+      "description": "Beschreibung",
+      "metadata": "Metadaten",
+      "createdAt": "Erstellt: {date}",
+      "affectedAsset": "Betroffenes Asset",
+      "showDetails": "Details anzeigen",
+      "noAsset": "Kein Asset zugeordnet.",
+      "mitigation": "Gegenmaßnahmen",
+      "linkedControl": "Verknüpfte Kontrolle",
+      "controlId": "ID: {id}",
+      "showControl": "Kontrolle anzeigen",
+      "noMitigation": "Keine Gegenmaßnahme zugeordnet.",
+      "changeHistory": "Änderungsverlauf",
+      "historyLoading": "Verlauf wird geladen …"
     }
   },
   "ismsAssessment": {
@@ -2734,7 +3247,9 @@
     },
     "actions": {
       "cancel": "Abbrechen",
-      "save": "Speichern"
+      "save": "Speichern",
+      "dismiss": "Verwerfen",
+      "retry": "Erneut versuchen"
     }
   },
   "bcms": {
@@ -3254,10 +3769,33 @@
         "high": "Hoch"
       },
       "legalBasisValues": {
-        "adequacy": "Angemessenheitsbeschluss",
-        "sccs": "Standardvertragsklauseln",
-        "bcrs": "Verbindliche interne Datenschutzvorschriften",
-        "derogation": "Ausnahmetatbestand"
+        "adequacy": "Angemessenheitsbeschluss (Art. 45 DSGVO)",
+        "sccs": "Standardvertragsklauseln (Art. 46 Abs. 2 lit. c DSGVO)",
+        "bcrs": "Verbindliche interne Datenschutzvorschriften (Art. 47 DSGVO)",
+        "derogation": "Ausnahme (Art. 49 DSGVO)"
+      },
+      "detail": {
+        "notFound": "Transfer Impact Assessment nicht gefunden.",
+        "back": "Zurück zur Übersicht",
+        "reviewOverdueBadge": "Review überfällig",
+        "transferDetails": "Transferdetails",
+        "targetCountry": "Zielland",
+        "schremsIi": "Schrems-II-Bewertung",
+        "schremsIiEmpty": "Keine Schrems-II-Bewertung erfasst.",
+        "riskAndSafeguards": "Risikobewertung und Schutzmaßnahmen",
+        "riskClassification": "Risikoeinstufung: {rating}",
+        "riskHigh": "Hohes Risiko: Zusätzliche Schutzmaßnahmen und ggf. Aussetzung des Transfers erforderlich.",
+        "riskMedium": "Mittleres Risiko: Ergänzende Schutzmaßnahmen empfohlen.",
+        "riskLow": "Niedriges Risiko: Standardschutzmaßnahmen ausreichend.",
+        "documents": "Unterstützende Dokumente",
+        "documentsEmpty": "Keine Dokumente hinterlegt.",
+        "responsibility": "Verantwortung und Termine",
+        "responsible": "Verantwortlich",
+        "assessmentDate": "Bewertungsdatum",
+        "nextReview": "Nächste Überprüfung",
+        "createdAt": "Erstellt am",
+        "reviewOverdue": "Überprüfung überfällig",
+        "reviewOverdueHint": "Die nächste Überprüfung war am {date} fällig. Bitte aktualisieren Sie die Bewertung zeitnah."
       }
     }
   },
@@ -3580,6 +4118,25 @@
     },
     "empty": {
       "noVendors": "Keine Lieferanten gefunden"
+    },
+    "riskOverview": {
+      "title": "Lieferanten-Risikoübersicht",
+      "subtitle": "Aggregierte Risikoansicht aller Drittparteien mit ERM-Synchronisation",
+      "refresh": "Aktualisieren",
+      "kpiTotal": "Lieferantenrisiken gesamt",
+      "kpiCritical": "Kritisch (Score ≥ 15)",
+      "kpiSynced": "Im ERM synchronisiert",
+      "kpiUnsyncedHigh": "Nicht synchronisiert (hoch)",
+      "tableTitle": "Lieferanten-Risikobewertungen",
+      "colVendor": "Lieferant",
+      "colTier": "Tier",
+      "colInherent": "Inhärenter Score",
+      "colResidual": "Restrisiko-Score",
+      "colStatus": "Status",
+      "colErmSync": "ERM-Sync",
+      "empty": "Keine Lieferantenrisiken vorhanden",
+      "notSynced": "Nicht im ERM synchronisiert",
+      "synced": "Im ERM synchronisiert"
     }
   },
   "contracts": {
@@ -3792,7 +4349,7 @@
     "expiredContact": "Bitte kontaktieren Sie {orgName} unter {email} für eine Fristverlaengerung.",
     "completeMessage": "Ihr Fragebogen wurde erfolgreich eingereicht.",
     "completeSummary": "Sie haben {answered} Fragen in {sections} Abschnitten beantwortet.",
-    "completeClose": "Sie können dieses Fenster schließen. Bei Rückfragen wenden Sie sich an {email}.",
+    "completeClose": "Sie können dieses Fenster schließen. Bei Rückfragen wenden Sie sich an <mail>{email}</mail>.",
     "deadline": "Frist",
     "daysRemaining": "Noch {count} Tage verbleibend",
     "estimatedTime": "Geschätzte Dauer: {minutes} Minuten",
@@ -3826,7 +4383,18 @@
     "acceptAssessment": "Bewertung akzeptieren",
     "requestClarification": "Klaerung anfordern",
     "exportPdf": "PDF exportieren",
-    "comparison": "Vergleich mit vorheriger Bewertung"
+    "comparison": "Vergleich mit vorheriger Bewertung",
+    "poweredBy": "Bereitgestellt von ARCTOS",
+    "expiredNoContact": "Bitte wenden Sie sich an die anfragende Organisation, um eine Fristverlängerung zu erhalten. Sie kann einen neuen Zugangslink ausstellen.",
+    "completeSubmissionSummary": "Zusammenfassung der Einreichung",
+    "completeThanks": "Ihr Fragebogen wurde erfolgreich eingereicht. Vielen Dank für Ihre Zeit und Mitwirkung.",
+    "fieldQuestionnaire": "Fragebogen",
+    "fieldVendor": "Lieferant",
+    "fieldSubmitted": "Eingereicht am",
+    "fieldQuestionsAnswered": "Beantwortete Fragen",
+    "fieldEvidenceFiles": "Nachweisdateien",
+    "completeCloseNoContact": "Sie können dieses Fenster schließen.",
+    "documentTitle": "ARCTOS — Lieferantenportal"
   },
   "ddResults": {
     "title": "Due-Diligence-Ergebnisse",
@@ -4045,6 +4613,55 @@
       "at_risk": "Gefährdet",
       "off_track": "Nicht im Plan",
       "achieved": "Erreicht"
+    },
+    "taxonomy": {
+      "title": "EU-Taxonomie-Alignment",
+      "subtitle": "Bewertung der Taxonomie-Konformität wirtschaftlicher Aktivitäten gemäß EU-Taxonomie-Verordnung",
+      "refresh": "Aktualisieren",
+      "addActivity": "Aktivität hinzufügen",
+      "dialogTitle": "Neue Taxonomie-Aktivität",
+      "activityName": "Aktivitätsname",
+      "activityNamePlaceholder": "z. B. Stromerzeugung aus Windkraft",
+      "naceCode": "NACE-Code",
+      "naceCodePlaceholder": "z. B. D35.1.1",
+      "reportingYear": "Berichtsjahr",
+      "cancel": "Abbrechen",
+      "create": "Erstellen",
+      "createFailed": "Die Aktivität konnte nicht angelegt werden.",
+      "kpiEligible": "Taxonomie-fähig",
+      "kpiAligned": "Taxonomie-konform",
+      "kpiRate": "Alignment-Quote",
+      "kpiTurnover": "Umsatz (aligned)",
+      "kpiCapex": "CapEx (aligned)",
+      "kpiOpex": "OpEx (aligned)",
+      "colActivity": "Aktivität",
+      "colNace": "NACE",
+      "colObjective": "Umweltziel",
+      "colEligible": "Fähig",
+      "colAligned": "Konform",
+      "colSc": "SC",
+      "colDnsh": "DNSH",
+      "colMs": "MS",
+      "colTurnover": "Umsatz",
+      "colStatus": "Status",
+      "empty": "Noch keine Taxonomie-Aktivitäten erfasst.",
+      "emptyHint": "Klicken Sie auf „Aktivität hinzufügen“, um zu beginnen.",
+      "yes": "Ja",
+      "no": "Nein",
+      "objective": {
+        "climate_mitigation": "Klimaschutz",
+        "climate_adaptation": "Klimaanpassung",
+        "water": "Wasser",
+        "circular_economy": "Kreislaufwirtschaft",
+        "pollution": "Umweltverschmutzung",
+        "biodiversity": "Biodiversität"
+      },
+      "status": {
+        "draft": "Entwurf",
+        "in_review": "In Prüfung",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt"
+      }
     }
   },
   "intelligence": {
@@ -4256,7 +4873,59 @@
     "noMessages": "Noch keine Nachrichten",
     "replyPlaceholder": "Ihre Antwort...",
     "evidence": "Beweismittel",
-    "encrypted": "Alle Daten sind Ende-zu-Ende verschlüsselt"
+    "encrypted": "Alle Daten sind Ende-zu-Ende verschlüsselt",
+    "categories": {
+      "fraud": {
+        "label": "Betrug",
+        "description": "Finanzbetrug, Bilanzmanipulation, Unterschlagung"
+      },
+      "corruption": {
+        "label": "Korruption",
+        "description": "Bestechung, unzulässige Vorteilsnahme"
+      },
+      "discrimination": {
+        "label": "Diskriminierung",
+        "description": "Diskriminierung, Belästigung, Mobbing"
+      },
+      "privacy": {
+        "label": "Datenschutz",
+        "description": "Verstöße gegen die DSGVO, Datenmissbrauch"
+      },
+      "environmental": {
+        "label": "Umwelt",
+        "description": "Umweltverschmutzung, illegale Entsorgung"
+      },
+      "health_safety": {
+        "label": "Arbeitsschutz",
+        "description": "Unsichere Arbeitsbedingungen, Arbeitsunfälle"
+      },
+      "other": {
+        "label": "Sonstiges",
+        "description": "Andere Verstöße gegen Gesetze oder Richtlinien"
+      }
+    },
+    "copy": "Kopieren",
+    "copied": "Kopiert",
+    "minChars": "mind. {count} Zeichen",
+    "charCount": "{used}/{max}",
+    "orgNotFound": "Organisation nicht gefunden",
+    "connectionError": "Verbindungsfehler",
+    "submitError": "Fehler beim Einreichen",
+    "codeValidUntil": "Der Code ist gültig bis {date}. Ohne diesen Code ist kein Zugriff möglich.",
+    "requiredMark": "Pflichtfeld",
+    "statusSteps": {
+      "received": "Eingegangen",
+      "acknowledged": "Bestätigt",
+      "investigating": "In Bearbeitung",
+      "resolved": "Gelöst",
+      "closed": "Geschlossen"
+    },
+    "invalidOrExpired": "Ungültig oder abgelaufen",
+    "mailboxNotFound": "Postfach nicht gefunden",
+    "daysRemaining": "{count} Tage",
+    "sendReply": "Antwort senden",
+    "uploadEvidence": "Beweismittel hochladen",
+    "fileSizeKb": "{size} KB"
   },
   "budget": {
     "title": "GRC Budget",
@@ -4490,7 +5159,9 @@
       "sendEmail": "Per E-Mail senden",
       "noReportData": "Keine Berichtsdaten für dieses Jahr verfügbar"
     },
-    "currency": "EUR"
+    "currency": "EUR",
+    "expandRow": "Unterbudgets einblenden",
+    "collapseRow": "Unterbudgets ausblenden"
   },
   "branding": {
     "title": "Corporate Design & Branding",
@@ -4719,7 +5390,9 @@
       "daysLeft": "Tage verbleibend",
       "comment": "Kommentar",
       "confidence": "Konfidenzgrad"
-    }
+    },
+    "campaigns": "RCSA-Kampagnen",
+    "campaignsSubtitle": "Risk & Control Self-Assessments verwalten"
   },
   "policies": {
     "loading": "Laden...",
@@ -4838,11 +5511,11 @@
       "readTime": "Lesezeit",
       "submit": "Bestätigen",
       "success": "Erfolgreich bestätigt",
-      "successDesc": "Ihre Bestätigung wurde gespeichert. Die digitale Signatur dient als Nachweis.",
+      "successDesc": "Ihre Bestätigung wurde gespeichert und im Audit-Trail protokolliert. Die Prüfsumme sichert die Unverändertheit des Eintrags.",
       "quizFailed": "Quiz nicht bestanden",
       "quizFailedDesc": "Sie haben {score}% erreicht. Erforderlich sind {threshold}%.",
       "date": "Bestätigt am",
-      "signatureHash": "Digitale Signatur"
+      "signatureHash": "Bestätigungs-Prüfsumme"
     },
     "quiz": {
       "title": "Verstaendnisfragen",
@@ -5111,5 +5784,88 @@
       "postureWeightsDesc": "Gewichtung der sieben Security-Posture-Faktoren (Summe muss 100% ergeben)"
     }
   },
-  "loading": "Laden..."
+  "loading": "Laden...",
+  "errorReference": "Fehlerkennung",
+  "ai": {
+    "disclosureLabel": "Transparenzhinweis zur KI-Nutzung",
+    "providerLine": "Anbieter: {provider} · Modell: {model} · Verarbeitung in: {country}",
+    "humanReviewRequired": "Das Ergebnis ist ein Vorschlag und muss vor der Übernahme geprüft werden."
+  },
+  "table": {
+    "noResults": "Keine Einträge gefunden.",
+    "rowCount": "{count} Zeilen",
+    "pageOf": "Seite {page} von {total}",
+    "previousPage": "Vorherige Seite",
+    "nextPage": "Nächste Seite",
+    "filterPlaceholder": "Filtern …"
+  },
+  "footer": {
+    "copyright": "© {year} ARCTOS — Audit, Risk, Compliance & Trust OS",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz"
+  },
+  "a11y": {
+    "toggleMenu": "Menü umschalten",
+    "close": "Schließen",
+    "noValue": "kein Wert"
+  },
+  "tags": {
+    "addPlaceholder": "Tag hinzufügen …",
+    "createNew": "„{input}“ als neues Tag erstellen",
+    "searchHint": "Tippen Sie, um Tags zu suchen oder zu erstellen",
+    "remove": "Tag „{tag}“ entfernen"
+  },
+  "localeSwitch": {
+    "label": "Sprache wählen",
+    "de": "Deutsch",
+    "en": "English"
+  },
+  "trust": {
+    "notFoundTitle": "Trust Center nicht gefunden",
+    "notFoundBody": "Die angeforderte Organisation existiert nicht.",
+    "subtitle": "Trust Center — Sicherheits- und Compliance-Status",
+    "statusActive": "Compliance-Status: Aktiv",
+    "statusCounts": "{frameworks} aktive Frameworks · {modules} Sicherheitsmodule aktiviert",
+    "statusEmptyTitle": "Noch keine Angaben veröffentlicht",
+    "statusEmptyBody": "Für diese Organisation sind derzeit keine aktiven Frameworks und keine aktivierten Sicherheitsmodule hinterlegt.",
+    "certifications": "Zertifizierungen & verpflichtende Standards",
+    "frameworks": "Aktive Compliance-Frameworks",
+    "modules": "Aktivierte Sicherheitsmodule",
+    "source": "Quelle: {source}",
+    "activatedOn": "Aktiviert: {date}",
+    "practices": "Sicherheitspraktiken",
+    "lastUpdated": "Bereitgestellt von der ARCTOS-GRC-Plattform · Zuletzt aktualisiert: {date}",
+    "practice": {
+      "dataProcessingTitle": "Datenverarbeitung",
+      "dataProcessingDesc": "Alle Daten werden in der EU verarbeitet und gespeichert.",
+      "accessControlTitle": "Zugriffskontrolle",
+      "accessControlDesc": "Rollenbasierte Zugriffskontrolle mit Three Lines of Defense.",
+      "auditTrailTitle": "Audit-Trail",
+      "auditTrailDesc": "Kryptographisch gesicherter Audit-Trail (SHA-256 Hash-Chain).",
+      "encryptionTitle": "Verschlüsselung",
+      "encryptionDesc": "Transportverschlüsselung mit TLS 1.3. Besonders schutzbedürftige Daten — Hinweisgebermeldungen und Zugangsdaten von Konnektoren — sind zusätzlich applikativ mit AES-256-GCM verschlüsselt. Die Verschlüsselung des Datenträgers und, wo der Objektspeicher es unterstützt, die serverseitige Verschlüsselung des Dokumentenspeichers werden vom Betreiber der Installation konfiguriert.",
+      "incidentTitle": "Incident Response",
+      "incidentDesc": "Definierter Incident-Response-Prozess mit 24h-Meldepflicht.",
+      "continuityTitle": "Business Continuity",
+      "continuityDesc": "Getestete Business-Continuity-Pläne und Disaster Recovery."
+    }
+  },
+  "accessReview": {
+    "title": "Berechtigungsprüfung",
+    "subtitle": "Periodische Überprüfung aller Nutzerzugriffe und Rollenberechtigungen",
+    "refresh": "Aktualisieren",
+    "loadError": "Benutzer konnten nicht geladen werden. Die Liste unten ist unvollständig.",
+    "totalUsers": "Nutzer gesamt",
+    "approvedCount": "Bestätigt",
+    "revokedCount": "Widerrufen",
+    "progress": "Fortschritt",
+    "listTitle": "Nutzerzugriffe prüfen",
+    "department": "Abteilung: {name}",
+    "lastLogin": "Letzter Login: {date}",
+    "neverLoggedIn": "Nie eingeloggt",
+    "badgeApproved": "✓ Bestätigt",
+    "badgeRevoked": "✗ Widerrufen",
+    "approve": "Bestätigen",
+    "revoke": "Widerrufen"
+  }
 }

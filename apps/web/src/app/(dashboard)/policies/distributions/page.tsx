@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Plus, Loader2, RefreshCcw, Send, FileText } from "lucide-react";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
+import { Plus, Loader2, RefreshCcw, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -60,32 +61,36 @@ function statusBadgeClass(status: PolicyDistributionStatus): string {
 
 export default function PolicyDistributionsPage() {
   const t = useTranslations("policies");
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate } = useDateFormat();
 
-  const [rows, setRows] = useState<DistributionRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Filter steht im Schlüssel;
+  // eine nicht-ok-Antwort liefert wie vorher eine leere Liste. Der
+  // Aktualisieren-Knopf ist ein erneuter Abruf, deshalb `isFetching`.
+  const {
+    data: rows = [],
+    isFetching,
+    refetch,
+  } = useQuery<DistributionRow[]>({
+    queryKey: ["policies", "distributions", statusFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (statusFilter !== "all") params.set("status", statusFilter);
       params.set("limit", "100");
       const res = await fetch(`/api/v1/policies/distributions?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setRows(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DistributionRow[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const columns = useMemo<ColumnDef<DistributionRow>[]>(
     () => [
@@ -188,9 +193,9 @@ export default function PolicyDistributionsPage() {
               variant="outline"
               size="icon"
               onClick={fetchData}
-              disabled={loading}
+              disabled={isFetching}
             >
-              {loading ? (
+              {isFetching ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCcw className="h-4 w-4" />

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  id="Definitions_Collab" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_Bank" name="Bank" processRef="Process_Bank"/>
+    <bpmn:participant id="Participant_Kunde" name="Kunde" processRef="Process_Kunde"/>
+    <bpmn:messageFlow id="MessageFlow_1" name="Antrag" sourceRef="Task_Kunde_Antrag" targetRef="Task_Bank_Pruefen"/>
+    <bpmn:messageFlow id="MessageFlow_2" name="Bescheid" sourceRef="Task_Bank_Entscheiden" targetRef="Task_Kunde_Empfang"/>
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Bank" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Bank">
+      <bpmn:lane id="Lane_Sachbearbeitung" name="Sachbearbeitung">
+        <bpmn:flowNodeRef>Start_Bank</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_Bank_Pruefen</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Genehmigung" name="Genehmigung">
+        <bpmn:flowNodeRef>Task_Bank_Entscheiden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_Bank</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Bank" name="Antrag eingegangen">
+      <bpmn:outgoing>Flow_B1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_Bank_Pruefen" name="Antrag pruefen">
+      <bpmn:incoming>Flow_B1</bpmn:incoming>
+      <bpmn:outgoing>Flow_B2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:userTask id="Task_Bank_Entscheiden" name="Entscheiden">
+      <bpmn:incoming>Flow_B2</bpmn:incoming>
+      <bpmn:outgoing>Flow_B3</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="End_Bank" name="Bearbeitet">
+      <bpmn:incoming>Flow_B3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_B1" sourceRef="Start_Bank" targetRef="Task_Bank_Pruefen"/>
+    <bpmn:sequenceFlow id="Flow_B2" sourceRef="Task_Bank_Pruefen" targetRef="Task_Bank_Entscheiden"/>
+    <bpmn:sequenceFlow id="Flow_B3" sourceRef="Task_Bank_Entscheiden" targetRef="End_Bank"/>
+  </bpmn:process>
+  <bpmn:process id="Process_Kunde" isExecutable="false">
+    <bpmn:startEvent id="Start_Kunde">
+      <bpmn:outgoing>Flow_K1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sendTask id="Task_Kunde_Antrag" name="Antrag stellen">
+      <bpmn:incoming>Flow_K1</bpmn:incoming>
+      <bpmn:outgoing>Flow_K2</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="Task_Kunde_Empfang" name="Bescheid empfangen">
+      <bpmn:incoming>Flow_K2</bpmn:incoming>
+      <bpmn:outgoing>Flow_K3</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:endEvent id="End_Kunde">
+      <bpmn:incoming>Flow_K3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_K1" sourceRef="Start_Kunde" targetRef="Task_Kunde_Antrag"/>
+    <bpmn:sequenceFlow id="Flow_K2" sourceRef="Task_Kunde_Antrag" targetRef="Task_Kunde_Empfang"/>
+    <bpmn:sequenceFlow id="Flow_K3" sourceRef="Task_Kunde_Empfang" targetRef="End_Kunde"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Collab">
+    <bpmndi:BPMNPlane id="Plane_Collab" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_Bank_di" bpmnElement="Participant_Bank" isHorizontal="true">
+        <dc:Bounds x="130" y="80" width="700" height="260"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Sachbearbeitung_di" bpmnElement="Lane_Sachbearbeitung" isHorizontal="true">
+        <dc:Bounds x="160" y="80" width="670" height="130"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_Genehmigung_di" bpmnElement="Lane_Genehmigung" isHorizontal="true">
+        <dc:Bounds x="160" y="210" width="670" height="130"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Bank_di" bpmnElement="Start_Bank">
+        <dc:Bounds x="212" y="122" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Bank_Pruefen_di" bpmnElement="Task_Bank_Pruefen">
+        <dc:Bounds x="300" y="100" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Bank_Entscheiden_di" bpmnElement="Task_Bank_Entscheiden">
+        <dc:Bounds x="450" y="230" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Bank_di" bpmnElement="End_Bank">
+        <dc:Bounds x="620" y="252" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_B1_di" bpmnElement="Flow_B1">
+        <di:waypoint x="248" y="140"/>
+        <di:waypoint x="300" y="140"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B2_di" bpmnElement="Flow_B2">
+        <di:waypoint x="400" y="140"/>
+        <di:waypoint x="425" y="140"/>
+        <di:waypoint x="425" y="270"/>
+        <di:waypoint x="450" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_B3_di" bpmnElement="Flow_B3">
+        <di:waypoint x="550" y="270"/>
+        <di:waypoint x="620" y="270"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Participant_Kunde_di" bpmnElement="Participant_Kunde" isHorizontal="true">
+        <dc:Bounds x="130" y="400" width="700" height="180"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Kunde_di" bpmnElement="Start_Kunde">
+        <dc:Bounds x="212" y="472" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Kunde_Antrag_di" bpmnElement="Task_Kunde_Antrag">
+        <dc:Bounds x="300" y="450" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Kunde_Empfang_di" bpmnElement="Task_Kunde_Empfang">
+        <dc:Bounds x="450" y="450" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Kunde_di" bpmnElement="End_Kunde">
+        <dc:Bounds x="620" y="472" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_K1_di" bpmnElement="Flow_K1">
+        <di:waypoint x="248" y="490"/>
+        <di:waypoint x="300" y="490"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_K2_di" bpmnElement="Flow_K2">
+        <di:waypoint x="400" y="490"/>
+        <di:waypoint x="450" y="490"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_K3_di" bpmnElement="Flow_K3">
+        <di:waypoint x="550" y="490"/>
+        <di:waypoint x="620" y="490"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_1_di" bpmnElement="MessageFlow_1">
+        <di:waypoint x="350" y="450"/>
+        <di:waypoint x="350" y="180"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="MessageFlow_2_di" bpmnElement="MessageFlow_2">
+        <di:waypoint x="500" y="310"/>
+        <di:waypoint x="500" y="450"/>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

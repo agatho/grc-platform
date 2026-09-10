@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,8 +27,19 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch mit
+ * transliterierten Umlauten ("Zurueck", "Begruendung", "Faehigkeiten",
+ * "Einschraenkungen", "EU-Bevollmaechtigter", "erfuellt").
+ *
+ * `ART56_CHECKLIST` trug die sieben Anforderungen als fertige BESCHRIFTUNG;
+ * sie fuehrt jetzt nur noch den Schluessel. Aufgeloest wird ueber ein
+ * Template (`t(`gpai.art56.${item.key}`)`) — die Form, die der Detektor in
+ * `scripts/audit-i18n-usage.mjs` kennt.
+ */
 interface GpaiModel {
   id: string;
   name: string;
@@ -56,32 +68,13 @@ interface GpaiModel {
 
 // Art. 56 Code of Practice checklist items
 const ART56_CHECKLIST = [
-  {
-    key: "transparency_obligations",
-    label: "Transparenzpflichten gemaess Art. 53 eingehalten",
-  },
-  {
-    key: "copyright_policy",
-    label:
-      "Urheberrechtsrichtlinie und Zusammenfassung der Trainingsdaten dokumentiert",
-  },
-  {
-    key: "risk_identification",
-    label: "Systemische Risiken identifiziert und bewertet",
-  },
-  { key: "risk_mitigation", label: "Risikominderungsmassnahmen implementiert" },
-  {
-    key: "incident_reporting",
-    label: "Verfahren zur Meldung schwerwiegender Vorfaelle eingerichtet",
-  },
-  {
-    key: "cybersecurity_measures",
-    label: "Angemessene Cybersicherheitsmassnahmen umgesetzt",
-  },
-  {
-    key: "energy_reporting",
-    label: "Energieverbrauch und Rechenressourcen dokumentiert",
-  },
+  { key: "transparency_obligations" },
+  { key: "copyright_policy" },
+  { key: "risk_identification" },
+  { key: "risk_mitigation" },
+  { key: "incident_reporting" },
+  { key: "cybersecurity_measures" },
+  { key: "energy_reporting" },
 ] as const;
 
 interface CodeOfPracticeData {
@@ -104,50 +97,27 @@ function serializeCodeOfPracticeNotes(data: CodeOfPracticeData): string {
   return JSON.stringify(data);
 }
 
+const gpaiKey = (id: string) => ["ai-act", "gpai", id] as const;
+
 function GpaiDetailInner() {
-  const router = useRouter();
-  const { formatDate } = useDateFormat();
+  const _router = useRouter();
+  const t = useTranslations("aiAct");
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<GpaiModel | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<Partial<GpaiModel>>({});
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`): das Formular wird aus dem
+  // Serverstand gesät, deshalb lebt es in einer eigenen Komponente, die erst
+  // eingehängt wird, wenn die Daten da sind. Eine nicht-ok-Antwort liefert
+  // wie vorher „nicht gefunden".
+  const { data = null, isPending: loading } = useQuery<GpaiModel | null>({
+    queryKey: gpaiKey(id),
+    queryFn: async () => {
       const res = await fetch(`/api/v1/ai-act/gpai/${id}`);
-      if (res.ok) {
-        const row = (await res.json()).data;
-        setData(row);
-        setForm(row);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/v1/ai-act/gpai/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        const updated = (await res.json()).data;
-        setData(updated);
-        setForm(updated);
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
+      if (!res.ok) return null;
+      return (await res.json()).data as GpaiModel;
+    },
+  });
 
   if (loading) {
     return (
@@ -160,10 +130,43 @@ function GpaiDetailInner() {
   if (!data) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        GPAI-Modell nicht gefunden
+        {t("gpai.notFound")}
       </div>
     );
   }
+
+  return <GpaiForm id={id} initial={data} />;
+}
+
+function GpaiForm({ id, initial }: { id: string; initial: GpaiModel }) {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
+  const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
+  const [data, setData] = useState<GpaiModel>(initial);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Partial<GpaiModel>>(initial);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/ai-act/gpai/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        const updated = (await res.json()).data as GpaiModel;
+        setData(updated);
+        setForm(updated);
+        // Den Abfrage-Cache mitziehen, damit ein erneutes Einhängen nicht den
+        // alten Stand als Saat nimmt.
+        queryClient.setQueryData(gpaiKey(id), updated);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const set = (key: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -175,7 +178,7 @@ function GpaiDetailInner() {
           href="/ai-act/gpai"
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
+          <ArrowLeft className="h-4 w-4" /> {t("shared.backToList")}
         </Link>
         <Button onClick={handleSave} disabled={saving}>
           {saving ? (
@@ -183,7 +186,7 @@ function GpaiDetailInner() {
           ) : (
             <Save className="h-4 w-4 mr-2" />
           )}
-          Speichern
+          {tCommon("actions.save")}
         </Button>
       </div>
 
@@ -191,7 +194,7 @@ function GpaiDetailInner() {
         <h1 className="text-2xl font-bold">{data.name}</h1>
         {data.is_systemic_risk && (
           <Badge className="bg-red-100 text-red-900">
-            <AlertTriangle className="h-3 w-3 mr-1" /> Systemisches Risiko
+            <AlertTriangle className="h-3 w-3 mr-1" /> {t("gpai.systemicRisk")}
           </Badge>
         )}
         <Badge variant="outline">{data.status}</Badge>
@@ -200,25 +203,25 @@ function GpaiDetailInner() {
       {/* Stammdaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Stammdaten</CardTitle>
+          <CardTitle>{t("shared.masterData")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Name</Label>
+            <Label>{t("shared.name")}</Label>
             <Input
               value={form.name ?? ""}
               onChange={(e) => set("name", e.target.value)}
             />
           </div>
           <div>
-            <Label>Anbieter</Label>
+            <Label>{t("systemDetail.roleOption.provider")}</Label>
             <Input
               value={form.provider ?? ""}
               onChange={(e) => set("provider", e.target.value)}
             />
           </div>
           <div>
-            <Label>Modelltyp</Label>
+            <Label>{t("gpai.modelType")}</Label>
             <Select
               value={form.model_type ?? "general_purpose"}
               onValueChange={(v) => set("model_type", v)}
@@ -227,22 +230,30 @@ function GpaiDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="general_purpose">General Purpose</SelectItem>
-                <SelectItem value="foundation">Foundation</SelectItem>
-                <SelectItem value="fine_tuned">Fine-tuned</SelectItem>
-                <SelectItem value="open_source">Open Source</SelectItem>
+                <SelectItem value="general_purpose">
+                  {t("gpai.modelTypeOption.general_purpose")}
+                </SelectItem>
+                <SelectItem value="foundation">
+                  {t("gpai.modelTypeOption.foundation")}
+                </SelectItem>
+                <SelectItem value="fine_tuned">
+                  {t("gpai.modelTypeOption.fine_tuned")}
+                </SelectItem>
+                <SelectItem value="open_source">
+                  {t("gpai.modelTypeOption.open_source")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Version</Label>
+            <Label>{t("gpai.version")}</Label>
             <Input
               value={form.version ?? ""}
               onChange={(e) => set("version", e.target.value)}
             />
           </div>
           <div>
-            <Label>Status</Label>
+            <Label>{t("shared.status")}</Label>
             <Select
               value={form.status ?? "draft"}
               onValueChange={(v) => set("status", v)}
@@ -251,16 +262,26 @@ function GpaiDetailInner() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="draft">Entwurf</SelectItem>
-                <SelectItem value="registered">Registriert</SelectItem>
-                <SelectItem value="under_review">In Pruefung</SelectItem>
-                <SelectItem value="compliant">Konform</SelectItem>
-                <SelectItem value="non_compliant">Nicht konform</SelectItem>
+                <SelectItem value="draft">
+                  {t("systemDetail.systemStatus.draft")}
+                </SelectItem>
+                <SelectItem value="registered">
+                  {t("systemDetail.systemStatus.registered")}
+                </SelectItem>
+                <SelectItem value="under_review">
+                  {t("systemDetail.systemStatus.under_review")}
+                </SelectItem>
+                <SelectItem value="compliant">
+                  {t("systemDetail.systemStatus.compliant")}
+                </SelectItem>
+                <SelectItem value="non_compliant">
+                  {t("systemDetail.systemStatus.non_compliant")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div>
-            <Label>Veroeffentlichungsdatum</Label>
+            <Label>{t("gpai.releaseDate")}</Label>
             <Input
               type="date"
               value={form.release_date ?? ""}
@@ -273,7 +294,7 @@ function GpaiDetailInner() {
       {/* Systemisches Risiko (Art. 51) */}
       <Card>
         <CardHeader>
-          <CardTitle>Systemisches Risiko (Art. 51)</CardTitle>
+          <CardTitle>{t("gpai.systemicRiskSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
@@ -281,10 +302,10 @@ function GpaiDetailInner() {
               checked={form.is_systemic_risk ?? false}
               onCheckedChange={(v) => set("is_systemic_risk", v)}
             />
-            <Label>Systemisches Risiko</Label>
+            <Label>{t("gpai.systemicRisk")}</Label>
           </div>
           <div>
-            <Label>Begruendung systemisches Risiko</Label>
+            <Label>{t("gpai.systemicRiskJustification")}</Label>
             <Textarea
               value={form.systemic_risk_justification ?? ""}
               onChange={(e) =>
@@ -299,11 +320,11 @@ function GpaiDetailInner() {
       {/* Technische Details (Art. 52-53) */}
       <Card>
         <CardHeader>
-          <CardTitle>Technische Details (Art. 52-53)</CardTitle>
+          <CardTitle>{t("gpai.technicalSection")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label>Trainingsdaten-Zusammenfassung</Label>
+            <Label>{t("gpai.trainingData")}</Label>
             <Textarea
               value={form.training_data_summary ?? ""}
               onChange={(e) => set("training_data_summary", e.target.value)}
@@ -311,7 +332,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Rechenressourcen</Label>
+            <Label>{t("gpai.computationalResources")}</Label>
             <Textarea
               value={form.computational_resources ?? ""}
               onChange={(e) => set("computational_resources", e.target.value)}
@@ -319,7 +340,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Energieverbrauch (kWh)</Label>
+            <Label>{t("gpai.energyConsumption")}</Label>
             <Input
               type="number"
               value={form.energy_consumption_kwh ?? ""}
@@ -332,7 +353,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Faehigkeiten</Label>
+            <Label>{t("gpai.capabilities")}</Label>
             <Textarea
               value={form.capabilities_summary ?? ""}
               onChange={(e) => set("capabilities_summary", e.target.value)}
@@ -340,7 +361,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Einschraenkungen</Label>
+            <Label>{t("gpai.limitations")}</Label>
             <Textarea
               value={form.limitations_summary ?? ""}
               onChange={(e) => set("limitations_summary", e.target.value)}
@@ -348,7 +369,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Vorgesehene Verwendung</Label>
+            <Label>{t("gpai.intendedUse")}</Label>
             <Textarea
               value={form.intended_use ?? ""}
               onChange={(e) => set("intended_use", e.target.value)}
@@ -356,7 +377,7 @@ function GpaiDetailInner() {
             />
           </div>
           <div>
-            <Label>Cybersicherheitsmassnahmen</Label>
+            <Label>{t("gpai.cybersecurityMeasures")}</Label>
             <Textarea
               value={form.cybersecurity_measures ?? ""}
               onChange={(e) => set("cybersecurity_measures", e.target.value)}
@@ -369,18 +390,18 @@ function GpaiDetailInner() {
       {/* EU-Vertreter (Art. 54) */}
       <Card>
         <CardHeader>
-          <CardTitle>EU-Bevollmaechtigter (Art. 54)</CardTitle>
+          <CardTitle>{t("gpai.euRepresentativeSection")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label>Name des EU-Vertreters</Label>
+            <Label>{t("gpai.euRepresentativeName")}</Label>
             <Input
               value={form.eu_representative_name ?? ""}
               onChange={(e) => set("eu_representative_name", e.target.value)}
             />
           </div>
           <div>
-            <Label>Kontakt des EU-Vertreters</Label>
+            <Label>{t("gpai.euRepresentativeContact")}</Label>
             <Input
               value={form.eu_representative_contact ?? ""}
               onChange={(e) => set("eu_representative_contact", e.target.value)}
@@ -394,7 +415,7 @@ function GpaiDetailInner() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ClipboardCheck className="h-5 w-5" />
-            Verhaltenskodex (Art. 56)
+            {t("gpai.codeOfPracticeSection")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -405,11 +426,13 @@ function GpaiDetailInner() {
                 checked={form.code_of_practice_adherence ?? false}
                 onCheckedChange={(v) => set("code_of_practice_adherence", v)}
               />
-              <Label className="font-medium">Einhaltung Verhaltenskodex</Label>
+              <Label className="font-medium">
+                {t("gpai.codeOfPracticeAdherence")}
+              </Label>
             </div>
             <div className="flex items-center gap-2">
               <Label className="text-sm text-muted-foreground">
-                Datum der Zusage:
+                {t("gpai.adherenceDate")}
               </Label>
               <Input
                 type="date"
@@ -437,7 +460,7 @@ function GpaiDetailInner() {
           {/* Art. 56 Requirements Checklist */}
           <div>
             <Label className="font-medium mb-3 block">
-              Anforderungen nach Art. 56 AI Act
+              {t("gpai.art56Title")}
             </Label>
             <div className="space-y-3 rounded-md border p-4">
               {ART56_CHECKLIST.map((item) => {
@@ -471,7 +494,7 @@ function GpaiDetailInner() {
                       htmlFor={`cop-${item.key}`}
                       className="text-sm leading-tight cursor-pointer"
                     >
-                      {item.label}
+                      {t(`gpai.art56.${item.key}`)}
                     </label>
                   </div>
                 );
@@ -486,14 +509,14 @@ function GpaiDetailInner() {
                 const done = ART56_CHECKLIST.filter(
                   (i) => copData.checklist?.[i.key],
                 ).length;
-                return `${done} von ${total} Anforderungen erfuellt`;
+                return t("gpai.art56Progress", { done, total });
               })()}
             </p>
           </div>
 
           {/* Notes */}
           <div>
-            <Label>Anmerkungen zum Verhaltenskodex</Label>
+            <Label>{t("gpai.codeOfPracticeNotes")}</Label>
             <Textarea
               value={
                 parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null)
@@ -512,7 +535,7 @@ function GpaiDetailInner() {
                 );
               }}
               rows={3}
-              placeholder="Weitere Anmerkungen zur Einhaltung des Verhaltenskodex..."
+              placeholder={t("gpai.codeOfPracticeNotesPlaceholder")}
             />
           </div>
         </CardContent>
@@ -521,21 +544,26 @@ function GpaiDetailInner() {
       {/* Metadaten */}
       <Card>
         <CardHeader>
-          <CardTitle>Metadaten</CardTitle>
+          <CardTitle>{t("shared.metadata")}</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
-            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            <span className="font-medium text-foreground">
+              {t("shared.createdAt")}
+            </span>{" "}
             {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
-              Aktualisiert am:
+              {t("shared.updatedAt")}
             </span>{" "}
             {formatDate(data.updated_at)}
           </div>
           <div>
-            <span className="font-medium text-foreground">ID:</span> {data.id}
+            <span className="font-medium text-foreground">
+              {t("shared.id")}
+            </span>{" "}
+            {data.id}
           </div>
         </CardContent>
       </Card>

@@ -7,6 +7,7 @@
     "loading": "Loading graph data...",
     "empty": "No entities found. Create risks, controls, or assets and link them to see the graph.",
     "noResults": "No matching entities for current filters.",
+    "loadError": "The graph could not be loaded",
     "nodeCount": "{count} nodes",
     "edgeCount": "{count} edges",
     "depth": "Depth",

@@ -3,6 +3,10 @@ import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const numericScoreSchema = z.object({
   numericLikelihood: z.number().int().min(1).max(5),
@@ -14,7 +18,7 @@ const numericScoreSchema = z.object({
  * Updates the numeric_likelihood and numeric_impact on a dpia_risk row.
  * risk_score is a GENERATED ALWAYS column in Postgres, so it auto-computes.
  */
-export async function PATCH(
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string; riskId: string }> },
 ) {
@@ -74,4 +78,4 @@ export async function PATCH(
       riskScore: computedScore,
     },
   });
-}
+});

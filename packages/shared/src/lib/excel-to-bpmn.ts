@@ -2,6 +2,9 @@
 // Parses an Excel file (via ExcelJS) and generates valid BPMN 2.0 XML
 
 import type { ExcelImportResult } from "../schemas/bpm-derived";
+// #S04-04: decompression-bomb pre-flight, shared with the CSV/XLSX import
+// pipeline (apps/web/src/lib/import-export/file-parser.ts).
+import { assertZipWithinLimits } from "./zip-safety";
 
 interface ExcelRow {
   stepNumber: number;
@@ -22,62 +25,156 @@ const REQUIRED_COLUMNS = [
   "Next Step",
 ];
 
+// [OP-114 · Welle 5c] Obergrenzen dieses Einlesepfads.
+//
+// Der Import erzeugt aus jeder Zeile einen BPMN-Knoten. Ein Prozessmodell
+// mit 10.000 Aktivitäten ist keine Fachlichkeit mehr, sondern ein
+// Speicherangriff: die erzeugte XML-Zeichenkette allein läge bei rund
+// einer Million Zeichen, bevor sie als Prozessversion in die Datenbank
+// geht. Die Zellgrenze fängt den zweiten Weg ab — wenige Zeilen mit
+// zehntausenden Spalten.
+//
+// Bewusst als Konstanten und nicht als Umgebungsvariablen: eine neue
+// `process.env`-Lesung müsste in `.env.example` nachgezogen werden
+// (scripts/check-env-example.mjs), und ein Grenzwert, den der Betreiber
+// hochdrehen kann, ist bei einer Schutzschranke die falsche Voreinstellung.
+// Aufrufer, die eine andere Grenze brauchen, übergeben sie als Argument.
+const MAX_BPMN_IMPORT_ROWS = 10_000;
+const CELLS_PER_ROW_ALLOWANCE = 32;
+
 /**
  * Convert an Excel buffer to BPMN 2.0 XML.
  *
  * Expected columns: Step Number, Activity Name, Responsible Role,
  * Activity Type (task/decision/event), Decision Options (comma-separated),
  * Next Step (number or decision-dependent), Documents, Applications
+ *
+ * @param limits Obergrenzen für diesen Aufruf. Ohne Angabe gelten
+ *   {@link MAX_BPMN_IMPORT_ROWS} Zeilen und das 32-fache davon an Zellen.
  */
 export async function convertExcelToBPMN(
   buffer: ArrayBuffer,
+  limits: { maxRows?: number; maxCells?: number } = {},
 ): Promise<ExcelImportResult> {
+  const maxRows = limits.maxRows ?? MAX_BPMN_IMPORT_ROWS;
+  const maxCells = limits.maxCells ?? maxRows * CELLS_PER_ROW_ALLOWANCE;
+
+  // #S04-04 (ARCTOS-FULL-2026-08-31) Schicht 1: das ZIP-Zentralverzeichnis
+  // nennt die entpackte Grösse jedes Eintrags. Ein Archiv, das die
+  // Tabellengrenzen sprengen würde, wird abgelehnt, bevor ein einziges Byte
+  // entpackt wird. Wirft ZipBombError, was die aufrufende Route als 4xx
+  // ausgibt.
+  //
+  // [OP-114 · Welle 5c] Schicht 1 war hier bis zu dieser Welle die EINZIGE
+  // Schicht — anders als im CSV/XLSX-Importpfad
+  // (apps/web/src/lib/import-export/file-parser.ts), der drei hat. Und
+  // Schicht 1 allein genügt nicht: sie glaubt dem Zentralverzeichnis, und
+  // sie lässt jede Datei durch, die unter 100 MB entpackt. Eine Tabelle mit
+  // 300.000 Zeilen liegt weit darunter und hätte `wb.xlsx.load()` trotzdem
+  // den ganzen Objektgraphen bauen lassen. Deshalb stehen jetzt auch hier
+  // die beiden anderen Schichten.
+  assertZipWithinLimits(new Uint8Array(buffer));
+
   // Dynamic import of exceljs to keep bundling optional
   const ExcelJS = await import("exceljs");
-  const wb = new ExcelJS.Workbook();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // Recent @types/node narrows Buffer into a generic (`Buffer<ArrayBuffer>`)
-  // while the published exceljs d.ts still uses the legacy non-generic
-  // `Buffer`. Runtime behaviour is identical; any-cast bridges the types
-  // without pulling an incompatible exceljs version.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await wb.xlsx.load(Buffer.from(buffer) as any);
-  const sheet = wb.worksheets[0];
+  // `node:stream` ebenfalls dynamisch: dieses Modul wird über
+  // `packages/shared/src/index.ts` re-exportiert und ist damit aus
+  // Client-Komponenten erreichbar. Gemessen am 2026-09-05 baut Next 16.2.11
+  // (Turbopack) auch einen statischen `node:`-Import an dieser Stelle ohne
+  // Fehler — die Warnung in index.ts stammt aus der Webpack-Zeit. Der
+  // dynamische Aufruf hält den STATISCHEN Modulgraphen trotzdem frei von
+  // Node-Built-ins, kostet nichts (die Funktion ist ohnehin async und lädt
+  // exceljs schon so) und gilt damit auch, falls jemand wieder mit
+  // `--webpack` baut.
+  const { Readable } = await import("node:stream");
 
-  if (!sheet) {
+  // #S04-04 Schicht 2: strömendes Lesen. `Workbook.xlsx.load(buffer)` baut
+  // das gesamte Blatt als Objektgraph auf, bevor die erste Zeile sichtbar
+  // ist; `WorkbookReader` liefert Zeile für Zeile, sodass die Grenzen
+  // unten mittendrin abbrechen können.
+  const reader = new ExcelJS.stream.xlsx.WorkbookReader(
+    Readable.from(Buffer.from(buffer)),
+    {
+      entries: "emit",
+      sharedStrings: "cache",
+      hyperlinks: "ignore",
+      styles: "ignore",
+      worksheets: "emit",
+    },
+  );
+
+  const rawData: Record<string, string>[] = [];
+  const headers: string[] = [];
+  let sawSheet = false;
+  let cellCount = 0;
+  let limitExceeded: string | null = null;
+
+  sheets: for await (const worksheet of reader) {
+    sawSheet = true;
+    for await (const row of worksheet) {
+      if (row.number === 1) {
+        row.eachCell((cell, colNumber) => {
+          headers[colNumber] = String(cell.value ?? "").trim();
+        });
+        continue;
+      }
+
+      // #S04-04 Schicht 3: harte Obergrenzen, geprüft BEVOR die Zeile
+      // behalten wird. Auch eine Datei, die an Schicht 1 vorbeikommt, kann
+      // das Ergebnis damit nicht unbegrenzt wachsen lassen.
+      if (rawData.length >= maxRows) {
+        limitExceeded = `Spreadsheet exceeds the import limit of ${maxRows} rows.`;
+        break sheets;
+      }
+
+      const record: Record<string, string> = {};
+      row.eachCell((cell, colNumber) => {
+        cellCount++;
+        const header = headers[colNumber];
+        if (header) {
+          record[header] = String(cell.value ?? "").trim();
+        }
+      });
+
+      if (cellCount > maxCells) {
+        limitExceeded = `Spreadsheet exceeds the import limit of ${maxCells} cells.`;
+        break sheets;
+      }
+
+      // Only include rows that have at least one non-empty value
+      if (Object.values(record).some((v) => v !== "")) {
+        rawData.push(record);
+      }
+    }
+    // Nur das erste Arbeitsblatt wird importiert — dasselbe Verhalten wie
+    // das frühere `wb.worksheets[0]`. Der Abbruch hier hält den Leser
+    // ausserdem davon ab, die übrigen Blätter einer mehrblättrigen Bombe
+    // überhaupt zu lesen.
+    break;
+  }
+
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  if (limitExceeded) {
     return {
       bpmnXml: "",
       activityCount: 0,
       laneCount: 0,
-      warnings: [],
-      errors: ["No worksheet found in file"],
+      warnings,
+      errors: [limitExceeded],
     };
   }
 
-  // Convert worksheet rows to array of key-value objects (matching sheet_to_json behavior)
-  const rawData: Record<string, string>[] = [];
-  const headerRow = sheet.getRow(1);
-  const headers: string[] = [];
-  headerRow.eachCell((cell, colNumber) => {
-    headers[colNumber] = String(cell.value ?? "").trim();
-  });
-
-  sheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return; // skip header row
-    const record: Record<string, string> = {};
-    row.eachCell((cell, colNumber) => {
-      const header = headers[colNumber];
-      if (header) {
-        record[header] = String(cell.value ?? "").trim();
-      }
-    });
-    // Only include rows that have at least one non-empty value
-    if (Object.values(record).some((v) => v !== "")) {
-      rawData.push(record);
-    }
-  });
-  const warnings: string[] = [];
-  const errors: string[] = [];
+  if (!sawSheet) {
+    return {
+      bpmnXml: "",
+      activityCount: 0,
+      laneCount: 0,
+      warnings,
+      errors: ["No worksheet found in file"],
+    };
+  }
 
   // Validate columns
   if (rawData.length === 0) {
@@ -90,7 +187,9 @@ export async function convertExcelToBPMN(
     };
   }
 
-  const columns = Object.keys(rawData[0]);
+  // [OP-065] `rawData.length === 0` ist direkt darüber abgefangen; `?? {}`
+  // schreibt das auf, ohne einen erreichbaren Zweig hinzuzufügen.
+  const columns = Object.keys(rawData[0] ?? {});
   for (const required of REQUIRED_COLUMNS) {
     if (!columns.includes(required)) {
       errors.push(`Missing required column: ${required}`);
@@ -103,8 +202,11 @@ export async function convertExcelToBPMN(
 
   // Parse rows
   const rows: ExcelRow[] = [];
-  for (let i = 0; i < rawData.length; i++) {
-    const raw = rawData[i];
+  // [OP-065] Über die Werte statt über den Index: `raw` war als
+  // `Record<string, unknown>` deklariert und konnte `undefined` sein, womit
+  // `raw["Step Number"]` geworfen hätte. `entries()` liefert Zeilennummer und
+  // Zeile gemeinsam und kennt kein `undefined`.
+  for (const [i, raw] of rawData.entries()) {
     const stepNumber = parseInt(String(raw["Step Number"] ?? ""), 10);
     if (isNaN(stepNumber)) {
       warnings.push(`Row ${i + 2}: Invalid step number, skipping`);
@@ -233,8 +335,16 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
   let flowIdx = 1;
 
   // Start event -> first step
-  if (rows.length > 0) {
-    const firstNodeId = nodeIds.get(rows[0].stepNumber)!;
+  // [OP-065] Vorher: `nodeIds.get(rows[0].stepNumber)!`. Zwei Annahmen in
+  // einer Zeile — dass es eine erste Zeile gibt und dass ihre Nummer in der
+  // Karte steht. Beide stimmen, aber `!` hätte im Fehlerfall das Wort
+  // „undefined" in das erzeugte BPMN-XML geschrieben statt den Fluss
+  // wegzulassen. Jetzt wird die erste Zeile entnommen und der Fluss nur
+  // erzeugt, wenn es ein Ziel dafür gibt.
+  const firstRow = rows[0];
+  const firstNodeId =
+    firstRow === undefined ? undefined : nodeIds.get(firstRow.stepNumber);
+  if (firstNodeId !== undefined) {
     flowLines.push(
       `      <bpmn:sequenceFlow id="Flow_${flowIdx++}" sourceRef="${startEventId}" targetRef="${firstNodeId}" />`,
     );
@@ -258,8 +368,8 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
 
     const options = row.decisionOptions.split(",").map((o) => o.trim());
 
-    for (let i = 0; i < nextSteps.length; i++) {
-      const targetNum = parseInt(nextSteps[i], 10);
+    for (const [i, nextStep] of nextSteps.entries()) {
+      const targetNum = parseInt(nextStep, 10);
       const targetId = nodeIds.get(targetNum);
       if (targetId) {
         const label = options[i] ?? "";

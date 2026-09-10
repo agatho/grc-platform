@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
   Plus,
   Loader2,
@@ -38,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -81,8 +83,6 @@ function QuestionnairesInner() {
   const router = useRouter();
   const { formatDate } = useDateFormat();
 
-  const [templates, setTemplates] = useState<TemplateRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
   const [createOpen, setCreateOpen] = useState(false);
@@ -100,24 +100,35 @@ function QuestionnairesInner() {
   // Fetch
   // ──────────────────────────────────────────────────────────────
 
-  const fetchTemplates = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/questionnaire-templates?limit=200");
-      if (res.ok) {
-        const json = await res.json();
-        setTemplates(json.data ?? []);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerpfad (Konsole + leere
+  // Liste) bleibt wie er war.
+  const {
+    data: templates = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<TemplateRow[]>({
+    queryKey: ["questionnaire-templates", "list"],
+    queryFn: async () => {
+      try {
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422, danach
+        // `catch { /* ignore */ }` — die Vorlagenliste war leer und die Seite
+        // sagte nichts dazu.
+        return await fetchAllPages<TemplateRow>(
+          "/api/v1/questionnaire-templates",
+        );
+      } catch (err) {
+        console.error("tprm/questionnaires: Vorlagen nicht geladen", err);
+        return [];
       }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+  });
 
-  useEffect(() => {
-    void fetchTemplates();
-  }, [fetchTemplates]);
+  const fetchTemplates = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ──────────────────────────────────────────────────────────────
   // Actions
@@ -368,9 +379,12 @@ function QuestionnairesInner() {
             variant="outline"
             size="sm"
             onClick={fetchTemplates}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
 
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>

@@ -22,15 +22,26 @@ const PAGES: Array<{ name: string; path: string; expectedText: string }> = [
     path: "/grc-risk-sync",
     expectedText: "Cross-Module Risk Sync",
   },
+  // [ARCTOS-FULL-2026-08-31 · Welle 8a] Die beiden AI-Act-Seiten wurden in
+  // Welle 6b (OP-070) übersetzt; die englischen Erwartungen hier sind seither
+  // unerfüllbar und wurden nur deshalb nicht rot, weil das `regression`-Projekt
+  // seit Welle 6c ungemessen blieb. Gemessen am 2026-09-08:
+  //   getByText('Overall Compliance Score') — element(s) not found
+  //   getByText('Incidents Monitor')        — element(s) not found
+  // Die Seiten selbst rendern vollständig (Momentaufnahme des Fehlschlags:
+  // `heading "Vorfall-Überwachung" [level=1]` samt Fristenkarten). Die
+  // Überschriften heißen jetzt `aiAct.annualReport.overallScore` bzw.
+  // `aiAct.monitor.title` aus `apps/web/messages/de.json`. Nur die erwartete
+  // Zeichenkette folgt der Übersetzung — die Zusicherung bleibt dieselbe.
   {
     name: "AI-Act Annual Report (current year)",
     path: "/ai-act/annual-report",
-    expectedText: "Overall Compliance Score",
+    expectedText: "Gesamtbewertung der Konformität",
   },
   {
     name: "AI-Act Incidents Monitor",
     path: "/ai-act/incidents/monitor",
-    expectedText: "Incidents Monitor",
+    expectedText: "Vorfall-Überwachung",
   },
   {
     name: "DPMS Deadline Monitor",

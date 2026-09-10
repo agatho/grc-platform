@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Plus, ArrowLeft, Check, X } from "lucide-react";
+import { Loader2, Plus, ArrowLeft, Check } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -30,36 +31,44 @@ export default function PlanDetailPage() {
 function PlanDetailInner() {
   const t = useTranslations("auditMgmt");
   const params = useParams<{ id: string }>();
-  const router = useRouter();
-  const [plan, setPlan] = useState<AuditPlan | null>(null);
-  const [items, setItems] = useState<AuditPlanItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const fetchPlan = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Plan und Positionen wurden immer
+  // zusammen geladen und verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ plan: AuditPlan | null; items: AuditPlanItem[] }>({
+    queryKey: ["audit", "plans", params.id],
+    queryFn: async () => {
       const [planRes, itemsRes] = await Promise.all([
         fetch(`/api/v1/audit-mgmt/plans/${params.id}`),
         fetch(`/api/v1/audit-mgmt/plans/${params.id}/items?limit=100`),
       ]);
 
+      let plan: AuditPlan | null = null;
+      let items: AuditPlanItem[] = [];
       if (planRes.ok) {
         const json = await planRes.json();
-        setPlan(json.data);
+        plan = json.data;
       }
       if (itemsRes.ok) {
         const json = await itemsRes.json();
-        setItems(json.data ?? []);
+        items = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id]);
+      return { plan, items };
+    },
+  });
+  const plan = pageData?.plan ?? null;
+  const items = pageData?.items ?? [];
 
-  useEffect(() => {
-    void fetchPlan();
-  }, [fetchPlan]);
+  const fetchPlan = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleStatusChange = async (newStatus: string) => {
     const res = await fetch(`/api/v1/audit-mgmt/plans/${params.id}/status`, {

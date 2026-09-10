@@ -14,7 +14,9 @@ import {
   timestamp,
   date,
   jsonb,
+  numeric,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { audit } from "./audit-mgmt";
 import { control, controlTestCampaign } from "./control";
@@ -47,6 +49,14 @@ export const auditSample = pgTable("audit_sample", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  confidenceLevel: numeric("confidence_level", {
+    precision: 5,
+    scale: 2,
+  }).default(sql`95.0`),
+  tolerableError: numeric("tolerable_error", {
+    precision: 5,
+    scale: 2,
+  }).default(sql`5.0`),
 });
 
 export const boardReport = pgTable("board_report", {
@@ -105,4 +115,5 @@ export const exceptionReport = pgTable("exception_report", {
     .defaultNow()
     .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
+  deviation: numeric("deviation", { precision: 10, scale: 2 }),
 });

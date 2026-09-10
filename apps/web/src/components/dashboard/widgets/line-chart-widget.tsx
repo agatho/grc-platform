@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useLocale, useTranslations } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 import {
   LineChart,
@@ -45,6 +46,13 @@ export function LineChartWidget({
   isLoading,
   error,
 }: WidgetProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Leerzustand („Keine Daten
+  // verfuegbar") stand in SIEBEN Kachelbausteinen wortgleich und fest
+  // verdrahtet im Quelltext — und zwar mit „verfuegbar" statt „verfügbar".
+  const t = useTranslations("dashboard.widget");
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Das Gebietsschema stand fest auf
+  // `de-DE`: der englische Leser sah „1.234,5" statt „1,234.5".
+  const locale = useLocale();
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -65,7 +73,7 @@ export function LineChartWidget({
   if (chartData.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Keine Daten verfuegbar
+        {t("dataUnavailable")}
       </div>
     );
   }
@@ -81,7 +89,7 @@ export function LineChartWidget({
         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} />
         <YAxis tick={{ fontSize: 11 }} tickLine={false} />
-        <Tooltip formatter={(value) => Number(value).toLocaleString("de-DE")} />
+        <Tooltip formatter={(value) => Number(value).toLocaleString(locale)} />
         <Legend wrapperStyle={{ fontSize: "11px" }} />
         <Line
           type="monotone"

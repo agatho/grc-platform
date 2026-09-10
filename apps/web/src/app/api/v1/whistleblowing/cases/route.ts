@@ -14,13 +14,17 @@
 
 import { db, wbCase, wbReport, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { wbCaseListQuerySchema } from "@grc/shared";
-import { eq, and, desc, count, isNull } from "drizzle-orm";
+import { isEnumValue } from "../../_lib/enum-filter";
+import { eq, and, desc, count } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { problem, getRequestId } from "@/lib/api-errors";
 import type { SQL } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   // HinSchG isolation — admin deliberately excluded; see file header.
   const ctx = await withAuth("whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
@@ -37,14 +41,30 @@ export async function GET(req: Request) {
   // Build filters
   const conditions: SQL[] = [eq(wbCase.orgId, ctx.orgId)];
 
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Frueher `as any`: ein
+  // unbekannter Filterwert lief bis in die Datenbank und kam als 500er
+  // zurueck (`invalid input value for enum wb_case_status`). Jetzt eine
+  // Aussage ueber die Eingabe.
   const status = searchParams.get("status");
   if (status) {
-    conditions.push(eq(wbCase.status, status as any));
+    if (!isEnumValue(wbCase.status.enumValues, status)) {
+      return Response.json(
+        { error: `Unknown status filter: ${status}` },
+        { status: 422 },
+      );
+    }
+    conditions.push(eq(wbCase.status, status));
   }
 
   const priority = searchParams.get("priority");
   if (priority) {
-    conditions.push(eq(wbCase.priority, priority as any));
+    if (!isEnumValue(wbCase.priority.enumValues, priority)) {
+      return Response.json(
+        { error: `Unknown priority filter: ${priority}` },
+        { status: 422 },
+      );
+    }
+    conditions.push(eq(wbCase.priority, priority));
   }
 
   const where = and(...conditions);
@@ -91,8 +111,7 @@ export async function GET(req: Request) {
   }));
 
   return paginatedResponse(data, total, page, limit);
-}
-
+});
 // #NIGHT-037: case creation runs through the anonymized intake pipeline
 // (POST /whistleblowing/intake/submit) — never the authenticated cases
 // list. Make the 405 explicit and point callers at the right endpoint.

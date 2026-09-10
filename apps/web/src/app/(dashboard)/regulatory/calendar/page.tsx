@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Calendar, Plus, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RegulatoryCalendarEvent } from "@grc/shared";
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -18,24 +19,28 @@ const PRIORITY_COLORS: Record<string, string> = {
 
 export default function RegulatoryCalendarPage() {
   const t = useTranslations("regulatory");
-  const [events, setEvents] = useState<RegulatoryCalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: events = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<RegulatoryCalendarEvent[]>({
+    queryKey: ["regulatory", "calendar", "open"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/regulatory-changes/calendar?limit=100&isCompleted=false",
       );
-      if (res.ok) setEvents((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      return (await res.json()).data as RegulatoryCalendarEvent[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchEvents();
-  }, [fetchEvents]);
+  const fetchEvents = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const markComplete = async (id: string) => {
     await fetch(`/api/v1/regulatory-changes/calendar/${id}`, {

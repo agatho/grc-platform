@@ -25,7 +25,19 @@ export function parseScimFilter(filterStr: string): ScimFilter | null {
 
   if (!match) return null;
 
+  // [OP-065] Drei Fanggruppen aus einem geglückten Treffer. Sie sind
+  // vorhanden — das Muster hat genau drei —, aber statt das dreimal mit `!`
+  // zu behaupten, wird es einmal geprüft: ein Filter, dessen Teile nicht
+  // vollständig sind, ist kein Filter, und `null` ist die Antwort, die diese
+  // Funktion für jede unlesbare Eingabe ohnehin gibt.
   const [, attribute, operator, value] = match;
+  if (
+    attribute === undefined ||
+    operator === undefined ||
+    value === undefined
+  ) {
+    return null;
+  }
 
   const validOps = ["eq", "co", "sw"];
   const op = operator.toLowerCase();

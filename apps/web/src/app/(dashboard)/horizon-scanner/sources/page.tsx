@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,20 @@ import type { HorizonScanSource } from "@grc/shared";
 
 export default function HorizonSourcesPage() {
   const t = useTranslations("horizonScanner");
-  const [rows, setRows] = useState<HorizonScanSource[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/horizon-scanner/sources?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const { data: rows = [], isPending: loading } = useQuery<HorizonScanSource[]>(
+    {
+      queryKey: ["horizon-scanner", "sources"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/horizon-scanner/sources?limit=50");
+        if (!res.ok) return [];
+        return (await res.json()).data as HorizonScanSource[];
+      },
+    },
+  );
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

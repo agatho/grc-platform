@@ -1,19 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  FileText,
-  FolderTree,
-  MessageSquare,
-  CheckCircle2,
-} from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Loader2, FileText } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface WorkingPaper {
   id: string;
@@ -36,30 +32,30 @@ export default function WorkingPapersPage() {
 
 function WorkingPapersInner() {
   const t = useTranslations("auditAdvanced");
-  const [papers, setPapers] = useState<WorkingPaper[]>([]);
-  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const auditId = searchParams.get("auditId");
 
-  const fetchPapers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const auditId = params.get("auditId");
-      if (!auditId) return;
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die `auditId` kam vorher zur
+  // Abrufzeit aus `window.location.search`; jetzt aus `useSearchParams`, im
+  // Schlüssel, und ohne sie läuft die Abfrage gar nicht erst (`enabled`).
+  const { data: papers = [], isPending } = useQuery<WorkingPaper[]>({
+    queryKey: ["audit", "working-papers", auditId],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/audit-mgmt/working-papers?auditId=${auditId}`,
       );
-      if (res.ok) {
-        const json = await res.json();
-        setPapers(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchPapers();
-  }, [fetchPapers]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as WorkingPaper[];
+    },
+    enabled: Boolean(auditId),
+  });
+  // Ohne `auditId` brach der alte Abruf vor dem Request ab und nahm den
+  // Ladezustand zurück; eine abgeschaltete Abfrage bleibt dagegen `pending`,
+  // deshalb gilt sie hier nur mit `auditId` als ladend.
+  const loading = isPending && Boolean(auditId);
 
   const statusColor = (status: string) => {
     switch (status) {
@@ -119,7 +115,7 @@ function WorkingPapersInner() {
                     </div>
                   </div>
                 </div>
-                <Badge variant={statusColor(wp.status) as any}>
+                <Badge variant={statusColor(wp.status) as UnvalidatedJson}>
                   {t(`workingPapers.status.${wp.status}`)}
                 </Badge>
               </CardContent>

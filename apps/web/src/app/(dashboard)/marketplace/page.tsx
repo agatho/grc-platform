@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -51,41 +52,55 @@ export default function MarketplacePage() {
 
 function MarketplaceBrowse() {
   const t = useTranslations("marketplace");
-  const router = useRouter();
-  const [listings, setListings] = useState<MarketplaceListing[]>([]);
-  const [categories, setCategories] = useState<MarketplaceCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). Two queries: the listings depend on search
+  // and category (both in the key; the previous page stays visible while a
+  // new filter loads, as the old `loading && listings.length === 0` guard
+  // did), the categories on nothing. Non-ok responses yield empty lists, as
+  // before; the refresh button follows `isFetching` of both.
+  const {
+    data: listings = [],
+    isPending: loading,
+    isFetching: listingsFetching,
+    refetch: refetchListings,
+  } = useQuery<MarketplaceListing[]>({
+    queryKey: ["marketplace", "listings", { search, selectedCategory }],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       const params = new URLSearchParams({ status: "published", limit: "20" });
       if (search) params.set("search", search);
       if (selectedCategory) params.set("categoryId", selectedCategory);
+      const res = await fetch(`/api/v1/marketplace/listings?${params}`);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MarketplaceListing[];
+    },
+  });
 
-      const [listRes, catRes] = await Promise.all([
-        fetch(`/api/v1/marketplace/listings?${params}`),
-        fetch("/api/v1/marketplace/categories?isActive=true"),
-      ]);
+  const {
+    data: categories = [],
+    isFetching: categoriesFetching,
+    refetch: refetchCategories,
+  } = useQuery<MarketplaceCategory[]>({
+    queryKey: ["marketplace", "categories", { isActive: true }],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/marketplace/categories?isActive=true");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MarketplaceCategory[];
+    },
+  });
 
-      if (listRes.ok) {
-        const json = await listRes.json();
-        setListings(json.data ?? []);
-      }
-      if (catRes.ok) {
-        const json = await catRes.json();
-        setCategories(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, selectedCategory]);
+  const isFetching = listingsFetching || categoriesFetching;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await Promise.all([refetchListings(), refetchCategories()]);
+  }, [refetchListings, refetchCategories]);
 
   return (
     <div className="space-y-6">
@@ -110,9 +125,12 @@ function MarketplaceBrowse() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

@@ -59,7 +59,17 @@ export function getEmbeddingProvider(): EmbeddingProviderInfo | null {
       model: process.env.EMBEDDING_MODEL ?? DEFAULT_EMBEDDING_MODELS[explicit],
     };
   }
-  for (const provider of ["openai", "ollama"] as const) {
+  // [ARCTOS-FULL-2026-08-31 / WP6 · S05-07]
+  // Die Reihenfolge war ["openai", "ollama"]: ein Betreiber, der Ollama
+  // GERADE DESHALB einrichtet, um lokal zu bleiben, und daneben einen
+  // OPENAI_API_KEY für unkritische Aufgaben behält, schickte Titel und
+  // Beschreibung JEDER Kontrolle JEDES Mandanten an OpenAI. Der sichere
+  // Zustand war weder voreingestellt noch dokumentiert
+  // (`grep EMBEDDING .env.example` → kein Treffer).
+  //
+  // Die Reihenfolge ist jetzt umgekehrt: lokal zuerst. `EMBEDDING_PROVIDER`
+  // überschreibt sie weiterhin explizit in beide Richtungen.
+  for (const provider of ["ollama", "openai"] as const) {
     if (isProviderConfigured(provider)) {
       return {
         provider,

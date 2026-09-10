@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -31,7 +32,6 @@ import { ProcessGalleryCard } from "@/components/process/process-gallery-card";
 import { ProcessBulkActions } from "@/components/process/process-bulk-actions";
 import { BpmDashboardKpis } from "@/components/process/bpm-dashboard-kpis";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -40,7 +40,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@grc/ui";
-import type { Process, ProcessStatus } from "@grc/shared";
+import type { ProcessStatus } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,6 +65,40 @@ interface TreeNode {
 
 type ViewMode = "list" | "gallery";
 
+// [OP-245 · immutability] `flattenTree` und `filterTree` waren rekursive
+// `useCallback`-Bindungen, die sich selbst vor ihrer Erklärung aufriefen.
+// Beide brauchen nichts aus dem Bauteil, was sich nicht als Argument
+// übergeben ließe — sie leben jetzt auf Modulebene.
+
+/** Flatten a tree into a pre-order list of nodes. */
+function flattenTree(nodes: TreeNode[]): TreeNode[] {
+  const result: TreeNode[] = [];
+  for (const node of nodes) {
+    result.push(node);
+    if (node.children?.length) {
+      result.push(...flattenTree(node.children));
+    }
+  }
+  return result;
+}
+
+/** Filter a tree preserving hierarchy: a node stays when it or a descendant matches. */
+function filterTree(
+  nodes: TreeNode[],
+  matches: (node: TreeNode) => boolean,
+): TreeNode[] {
+  return nodes
+    .map((node) => {
+      const filteredChildren = filterTree(node.children ?? [], matches);
+      const selfMatches = matches(node);
+      if (selfMatches || filteredChildren.length > 0) {
+        return { ...node, children: filteredChildren };
+      }
+      return null;
+    })
+    .filter(Boolean) as TreeNode[];
+}
+
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -78,58 +115,47 @@ export default function ProcessesPage() {
 function ProcessLandscape() {
   const t = useTranslations("process");
   const tGov = useTranslations("processGovernance");
-  const tActions = useTranslations("actions");
   const tMap = useTranslations("processMap");
-  const router = useRouter();
+  const _router = useRouter();
 
-  const [treeData, setTreeData] = useState<TreeNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [levelFilter, setLevelFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Fetch tree data
-  const fetchTree = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Der Prozessbaum — vorher `fetchTree` im Effekt beim
+  // Einhängen, mit gespiegeltem Lade-, Fehler- und Datenzustand. Jetzt eine
+  // Abfrage über `@tanstack/react-query` (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort landet wie vorher als
+  // Fehlertext in `error`, und im Fehlerfall ist der Baum wie vorher leer;
+  // `fetchTree` bleibt als dünne Hülle für die Sammelaktionen.
+  const {
+    data: loadedTree,
+    isPending: loading,
+    error: treeError,
+    refetch,
+  } = useQuery<TreeNode[]>({
+    queryKey: ["processes", "tree"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/processes/tree");
       if (!res.ok) throw new Error("Failed to load processes");
       const json = await res.json();
-      setTreeData(json.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
-      setTreeData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchTree();
-  }, [fetchTree]);
-
-  // Flatten for filtering
-  const flattenTree = useCallback((nodes: TreeNode[]): TreeNode[] => {
-    const result: TreeNode[] = [];
-    for (const node of nodes) {
-      result.push(node);
-      if (node.children?.length) {
-        result.push(...flattenTree(node.children));
-      }
-    }
-    return result;
-  }, []);
-
-  const allNodes = useMemo(
-    () => flattenTree(treeData),
-    [treeData, flattenTree],
+      return (json.data ?? []) as TreeNode[];
+    },
+  });
+  const treeData = useMemo(
+    () => (treeError ? [] : (loadedTree ?? [])),
+    [treeError, loadedTree],
   );
+  const error = treeError ? treeError.message || "Failed to load" : null;
+
+  const fetchTree = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  const allNodes = useMemo(() => flattenTree(treeData), [treeData]);
 
   // Compute total and published counts
   const totalCount = allNodes.length;
@@ -160,25 +186,9 @@ function ProcessLandscape() {
   );
 
   // Filter tree preserving hierarchy
-  const filterTree = useCallback(
-    (nodes: TreeNode[]): TreeNode[] => {
-      return nodes
-        .map((node) => {
-          const filteredChildren = filterTree(node.children ?? []);
-          const selfMatches = matchesFilters(node);
-          if (selfMatches || filteredChildren.length > 0) {
-            return { ...node, children: filteredChildren };
-          }
-          return null;
-        })
-        .filter(Boolean) as TreeNode[];
-    },
-    [matchesFilters],
-  );
-
   const filteredTree = useMemo(
-    () => filterTree(treeData),
-    [filterTree, treeData],
+    () => filterTree(treeData, matchesFilters),
+    [treeData, matchesFilters],
   );
 
   // Filtered flat nodes for gallery view
@@ -187,25 +197,39 @@ function ProcessLandscape() {
     [allNodes, matchesFilters],
   );
 
-  // Toggle expand
-  const toggleExpand = useCallback((id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  }, []);
+  // Auto-expand root nodes on load.
+  // [Welle 7a · OP-080] Bis Welle 7a las ein Effekt hier `expandedIds`
+  // ausserhalb seiner Abhaengigkeitsliste; danach klappte er die
+  // Wurzelknoten per funktionalem Aktualisierer auf, sobald `treeData` kam.
+  // [OP-245 · Gestalt E] Der Zustand hält jetzt nur noch die Abweichung des
+  // Nutzers vom Standard: solange er nichts umgeschaltet hat, sind alle
+  // Wurzelknoten aufgeklappt (abgeleitet beim Rendern); sobald er umschaltet,
+  // gilt seine Menge — auch nach einem Neuladen, das sie vorher wieder
+  // aufklappte, wenn alles zugeklappt war.
+  const [expandedOverride, setExpandedOverride] = useState<Set<string> | null>(
+    null,
+  );
+  const defaultExpandedIds = useMemo(
+    () => new Set(treeData.map((n) => n.id)),
+    [treeData],
+  );
+  const expandedIds = expandedOverride ?? defaultExpandedIds;
 
-  // Auto-expand root nodes on load
-  useEffect(() => {
-    if (treeData.length > 0 && expandedIds.size === 0) {
-      setExpandedIds(new Set(treeData.map((n) => n.id)));
-    }
-  }, [treeData]);
+  // Toggle expand
+  const toggleExpand = useCallback(
+    (id: string) => {
+      setExpandedOverride((prev) => {
+        const next = new Set(prev ?? defaultExpandedIds);
+        if (next.has(id)) {
+          next.delete(id);
+        } else {
+          next.add(id);
+        }
+        return next;
+      });
+    },
+    [defaultExpandedIds],
+  );
 
   // Bulk selection
   const toggleSelection = useCallback((id: string) => {
@@ -603,6 +627,9 @@ function TreeNodeItem({
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(node.id)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => activateOnKey(e, () => onSelect(node.id))}
       >
         {/* Bulk selection checkbox */}
         <input

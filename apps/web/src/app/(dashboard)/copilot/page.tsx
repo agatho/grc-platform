@@ -1,62 +1,77 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  Bot,
-  Send,
-  ThumbsUp,
-  ThumbsDown,
-  Pin,
-  Archive,
-  Plus,
-} from "lucide-react";
+import { Bot, Send, ThumbsUp, ThumbsDown, Pin, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CopilotConversation, CopilotMessage } from "@grc/shared";
+
+// Stable empty defaults, so the scroll effect below (keyed on `messages`)
+// does not re-run on every render while no conversation is selected.
+const NO_CONVERSATIONS: CopilotConversation[] = [];
+const NO_MESSAGES: CopilotMessage[] = [];
+
+function messagesQueryKey(convId: string | null) {
+  return ["copilot", "conversations", convId, "messages"] as const;
+}
 
 export default function CopilotChatPage() {
   const t = useTranslations("copilot");
-  const [conversations, setConversations] = useState<CopilotConversation[]>([]);
+  const queryClient = useQueryClient();
   const [activeConv, setActiveConv] = useState<string | null>(null);
-  const [messages, setMessages] = useState<CopilotMessage[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchConversations = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Datenzustand (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie vorher
+  // eine leere Liste. Der frühere `_loading`-Zustand wurde nirgends gelesen
+  // und entfällt.
+  const {
+    data: conversations = NO_CONVERSATIONS,
+    refetch: refetchConversations,
+  } = useQuery<CopilotConversation[]>({
+    queryKey: ["copilot", "conversations"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/copilot/conversations?limit=50");
-      if (res.ok) {
-        const json = await res.json();
-        setConversations(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const fetchMessages = useCallback(async (convId: string) => {
-    const res = await fetch(
-      `/api/v1/copilot/conversations/${convId}/messages?limit=100`,
-    );
-    if (res.ok) {
+      if (!res.ok) return [];
       const json = await res.json();
-      setMessages(json.data.reverse());
-    }
-  }, []);
+      return (json.data ?? []) as CopilotConversation[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchConversations();
-  }, [fetchConversations]);
+  // Die Nachrichten hängen an der gewählten Konversation: sie steht im
+  // Schlüssel, und ohne Auswahl fragt die Abfrage nichts ab.
+  const { data: messages = NO_MESSAGES } = useQuery<CopilotMessage[]>({
+    queryKey: messagesQueryKey(activeConv),
+    enabled: activeConv !== null,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/copilot/conversations/${activeConv}/messages?limit=100`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data as CopilotMessage[]).reverse();
+    },
+  });
 
-  useEffect(() => {
-    if (activeConv) void fetchMessages(activeConv);
-  }, [activeConv, fetchMessages]);
+  const fetchConversations = useCallback(async () => {
+    await refetchConversations();
+  }, [refetchConversations]);
+
+  // Invalidiert genau die Konversation, die übergeben wird — so bleibt die
+  // Signatur der Aufrufstellen erhalten.
+  const fetchMessages = useCallback(
+    async (convId: string) => {
+      await queryClient.invalidateQueries({
+        queryKey: messagesQueryKey(convId),
+      });
+    },
+    [queryClient],
+  );
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

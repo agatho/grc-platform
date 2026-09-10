@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, AlertTriangle, Send, XCircle } from "lucide-react";
@@ -36,29 +37,32 @@ function BreachDetailInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<BreachDetailData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "overview" | "assessment" | "measures" | "notifications" | "lessons"
   >("overview");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (die Seite zeigt dann „nicht gefunden").
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<BreachDetailData | null>({
+    queryKey: ["dpms", "breaches", id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/dpms/breaches/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as BreachDetailData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleDpaNotify = async () => {
     setActing(true);

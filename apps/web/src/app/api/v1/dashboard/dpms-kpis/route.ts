@@ -3,8 +3,18 @@
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Jede Spalte dieser Abfragen
+// ist ein `COUNT(...)::int`; der Treiber liefert sie deshalb als Zahl. Das
+// ist die ganze Zeilenform — sie als `Record<string, number>` zu benennen
+// behauptet nicht mehr, als aus der SELECT-Liste ablesbar ist.
+type KpiRow = Record<string, number>;
+
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("dpms", ctx.orgId, req.method);
@@ -29,9 +39,9 @@ export async function GET(req: Request) {
         (SELECT COUNT(*) FROM tia WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL AND next_review_date < now())::int AS tia_overdue,
         (SELECT COUNT(*) FROM processor_agreement WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
            AND review_due_date < now() + interval '60 days')::int AS pa_renewals_due
-    `)) as any[];
+    `)) as unknown as KpiRow[];
     return stats;
   });
 
   return Response.json({ data });
-}
+});

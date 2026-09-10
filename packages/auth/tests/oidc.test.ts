@@ -2,10 +2,15 @@
 import { describe, it, expect } from "vitest";
 import { generatePKCE, verifyPKCE } from "../src/oidc/pkce";
 import {
-  validateIdToken,
+  validateIdTokenClaims,
   decodeJwt,
   extractOidcAttributes,
 } from "../src/oidc/id-token-validator";
+
+// #WP3-S02-24: `validateIdToken` is now async and verifies the JWT signature
+// against the provider JWKS (see oidc-signature.test.ts). The claim rules it
+// applies afterwards live in `validateIdTokenClaims`, which is what these
+// pre-existing tests exercise — unchanged coverage, no signature required.
 
 // ── PKCE ────────────────────────────────────────────────────
 
@@ -75,7 +80,7 @@ describe("OIDCIdTokenValidator", () => {
       exp: Math.floor(Date.now() / 1000) + 3600,
       iat: Math.floor(Date.now() / 1000),
     });
-    const decoded = validateIdToken(token, {
+    const decoded = validateIdTokenClaims(decodeJwt(token), {
       issuer: "https://accounts.example.com",
       audience: "client-id",
     });
@@ -92,7 +97,7 @@ describe("OIDCIdTokenValidator", () => {
       iat: Math.floor(Date.now() / 1000),
     });
     expect(() =>
-      validateIdToken(token, {
+      validateIdTokenClaims(decodeJwt(token), {
         issuer: "https://accounts.example.com",
         audience: "client-id",
       }),
@@ -108,7 +113,7 @@ describe("OIDCIdTokenValidator", () => {
       iat: Math.floor(Date.now() / 1000),
     });
     expect(() =>
-      validateIdToken(token, {
+      validateIdTokenClaims(decodeJwt(token), {
         issuer: "https://accounts.example.com",
         audience: "client-id",
       }),
@@ -124,7 +129,7 @@ describe("OIDCIdTokenValidator", () => {
       iat: Math.floor(Date.now() / 1000) - 3600,
     });
     expect(() =>
-      validateIdToken(token, {
+      validateIdTokenClaims(decodeJwt(token), {
         issuer: "https://accounts.example.com",
         audience: "client-id",
       }),
@@ -141,7 +146,7 @@ describe("OIDCIdTokenValidator", () => {
       nonce: "wrong-nonce",
     });
     expect(() =>
-      validateIdToken(token, {
+      validateIdTokenClaims(decodeJwt(token), {
         issuer: "https://accounts.example.com",
         audience: "client-id",
         nonce: "expected-nonce",
@@ -158,7 +163,7 @@ describe("OIDCIdTokenValidator", () => {
       iat: Math.floor(Date.now() / 1000),
       nonce: "correct-nonce",
     });
-    const claims = validateIdToken(token, {
+    const claims = validateIdTokenClaims(decodeJwt(token), {
       issuer: "https://accounts.example.com",
       audience: "client-id",
       nonce: "correct-nonce",

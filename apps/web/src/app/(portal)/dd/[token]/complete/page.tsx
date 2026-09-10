@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, Download, Loader2 } from "lucide-react";
 
 interface CompletionData {
@@ -16,7 +17,26 @@ interface CompletionData {
   sections: number;
 }
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Die Abschlussseite des
+ * Due-Diligence-Portals stand — wie `dd/expired` — fest auf ENGLISCH, obwohl
+ * der Fragebogen davor zweisprachig ist. Saemtliche Kernsaetze lagen bereits
+ * unter `portal.*` in beiden Katalogen; ergaenzt sind nur die sechs
+ * Feldbeschriftungen der Zusammenfassung.
+ *
+ * Zwei Fallstricke beim Umstellen, beide vermieden:
+ *
+ * 1. `toLocaleString()` ohne Argument nimmt das Gebietsschema des BROWSERS,
+ *    nicht das der Oberflaeche. Ein Lieferant mit englischem Betriebssystem
+ *    und deutscher Oberflaeche bekam ein amerikanisches Datum in einen
+ *    deutschen Satz. Das Gebietsschema wird jetzt ausdruecklich uebergeben.
+ * 2. Zahlen in ICU-Platzhaltern werden als Zeichenkette uebergeben — ein
+ *    blosses `{answered}` mit Zahlenwert liefe durch `Intl.NumberFormat` und
+ *    ergaebe fuer vierstellige Werte Tausendertrennzeichen in einer Zaehlung.
+ */
 export default function DdCompletePage() {
+  const t = useTranslations("portal");
+  const locale = useLocale();
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<CompletionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,35 +83,33 @@ export default function DdCompletePage() {
         <CheckCircle2 size={48} className="text-green-500" />
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-        Questionnaire Submitted
-      </h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{t("complete")}</h1>
 
-      <p className="text-gray-600 mb-8 max-w-md">
-        Your questionnaire has been submitted successfully. Thank you for your
-        time and cooperation.
-      </p>
+      <p className="text-gray-600 mb-8 max-w-md">{t("completeThanks")}</p>
 
       {/* Summary card */}
       {data && (
         <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-6 mb-6 text-left">
           <h3 className="text-sm font-semibold text-gray-900 mb-4">
-            Submission Summary
+            {t("completeSubmissionSummary")}
           </h3>
           <dl className="space-y-3">
-            <SummaryRow label="Questionnaire" value={data.templateName} />
-            <SummaryRow label="Vendor" value={data.vendorName} />
             <SummaryRow
-              label="Submitted"
-              value={new Date(data.submittedAt).toLocaleString()}
+              label={t("fieldQuestionnaire")}
+              value={data.templateName}
+            />
+            <SummaryRow label={t("fieldVendor")} value={data.vendorName} />
+            <SummaryRow
+              label={t("fieldSubmitted")}
+              value={new Date(data.submittedAt).toLocaleString(locale)}
             />
             <SummaryRow
-              label="Questions Answered"
+              label={t("fieldQuestionsAnswered")}
               value={`${data.answeredQuestions} / ${data.totalQuestions}`}
             />
-            <SummaryRow label="Sections" value={String(data.sections)} />
+            <SummaryRow label={t("sections")} value={String(data.sections)} />
             <SummaryRow
-              label="Evidence Files"
+              label={t("fieldEvidenceFiles")}
               value={String(data.evidenceCount)}
             />
           </dl>
@@ -107,23 +125,30 @@ export default function DdCompletePage() {
           window.open(`/api/v1/portal/dd/${token}/pdf`, "_blank");
         }}
       >
-        <Download size={16} />
-        Download PDF Summary
+        <Download size={16} aria-hidden="true" />
+        {t("downloadSummary")}
       </button>
 
       {/* Contact info */}
-      {data?.contactEmail && (
-        <p className="text-sm text-gray-500 max-w-md">
-          You may close this window. For questions, contact{" "}
-          <a
-            href={`mailto:${data.contactEmail}`}
-            className="text-blue-600 hover:underline"
-          >
-            {data.contactEmail}
-          </a>
-          .
-        </p>
-      )}
+      <p className="text-sm text-gray-500 max-w-md">
+        {data?.contactEmail
+          ? // `t.rich` statt `t`, damit die Kontaktadresse ein anklickbarer
+            // `mailto:`-Verweis bleibt. Die urspruengliche Fassung hatte den
+            // Verweis im Markup; ihn beim Umstellen auf reinen Text zu
+            // reduzieren waere eine stille Verschlechterung gewesen.
+            t.rich("completeClose", {
+              email: data.contactEmail,
+              mail: (chunks) => (
+                <a
+                  href={`mailto:${data.contactEmail}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {chunks}
+                </a>
+              ),
+            })
+          : t("completeCloseNoContact")}
+      </p>
     </div>
   );
 }

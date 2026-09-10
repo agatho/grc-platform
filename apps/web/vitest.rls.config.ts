@@ -12,6 +12,9 @@ export default defineConfig({
     globals: true,
     environment: "node",
     include: ["src/__tests__/rls-route-chain/**/*.test.ts"],
+    // [OP-170] Bricht ab, wenn DATABASE_URL/APP_DATABASE_URL fehlen oder
+    // auf verschiedene Datenbanken zeigen — siehe die Datei selbst.
+    setupFiles: ["src/__tests__/rls-route-chain/setup-require-roles.ts"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
     pool: "forks",

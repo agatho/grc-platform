@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -19,16 +20,12 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuditAnalyticsImport, AnalysisType } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 const ANALYSIS_TYPES: {
   value: AnalysisType;
@@ -68,6 +65,7 @@ export default function AuditAnalyticsPage() {
 
 function AnalyticsInner() {
   const t = useTranslations("analytics");
+  const now = useNow();
   const router = useRouter();
   const [imports, setImports] = useState<AuditAnalyticsImport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +126,7 @@ function AnalyticsInner() {
     if (!expiresAt) return null;
     return Math.max(
       0,
-      Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000),
+      Math.ceil((new Date(expiresAt).getTime() - now) / 86400000),
     );
   };
 
@@ -155,6 +153,11 @@ function AnalyticsInner() {
                   selectedImport === imp.id ? "border-primary bg-muted/50" : ""
                 }`}
                 onClick={() => setSelectedImport(imp.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  activateOnKey(e, () => setSelectedImport(imp.id))
+                }
               >
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet className="h-4 w-4 text-muted-foreground" />

@@ -12,9 +12,13 @@
 // Limitation: nur Schluessel-Parity, nicht inhaltlich korrekte Uebersetzung.
 
 import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
+import { format as prettierFormat, resolveConfig } from "prettier";
 import { join, relative } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const ROOT = new URL("..", import.meta.url).pathname.replace(
+  /^\/([A-Za-z]:)/,
+  "$1",
+);
 const DE_DIR = join(ROOT, "apps/web/messages/de");
 const EN_DIR = join(ROOT, "apps/web/messages/en");
 const OUT_DIR = join(ROOT, "docs");
@@ -52,15 +56,22 @@ function isPlaceholder(v) {
 }
 
 async function main() {
-  const deFiles = (await readdir(DE_DIR)).filter((f) => f.endsWith(".json")).sort();
-  const enFiles = (await readdir(EN_DIR)).filter((f) => f.endsWith(".json")).sort();
+  const deFiles = (await readdir(DE_DIR))
+    .filter((f) => f.endsWith(".json"))
+    .sort();
+  const enFiles = (await readdir(EN_DIR))
+    .filter((f) => f.endsWith(".json"))
+    .sort();
   const allFiles = [...new Set([...deFiles, ...enFiles])].sort();
 
   const onlyDeFiles = deFiles.filter((f) => !enFiles.includes(f));
   const onlyEnFiles = enFiles.filter((f) => !deFiles.includes(f));
 
   const perFile = [];
-  let totalMissingEn = 0, totalMissingDe = 0, totalPlaceholderDe = 0, totalPlaceholderEn = 0;
+  let totalMissingEn = 0,
+    totalMissingDe = 0,
+    totalPlaceholderDe = 0,
+    totalPlaceholderEn = 0;
 
   for (const f of allFiles) {
     const de = flatten(await readJson(join(DE_DIR, f)));
@@ -81,7 +92,15 @@ async function main() {
     totalMissingDe += missingDe.length;
     totalPlaceholderDe += placeholderDe.length;
     totalPlaceholderEn += placeholderEn.length;
-    perFile.push({ file: f, deCount: de.size, enCount: en.size, missingEn, missingDe, placeholderDe, placeholderEn });
+    perFile.push({
+      file: f,
+      deCount: de.size,
+      enCount: en.size,
+      missingEn,
+      missingDe,
+      placeholderDe,
+      placeholderEn,
+    });
   }
 
   await mkdir(OUT_DIR, { recursive: true });
@@ -91,12 +110,18 @@ async function main() {
   md.push(``);
   md.push(`_Generated: ${new Date().toISOString()}_`);
   md.push(``);
-  md.push(`Vergleicht \`apps/web/messages/de/*.json\` gegen \`apps/web/messages/en/*.json\`. Nur Schluessel-Parity, nicht Qualitaet der Uebersetzung.`);
+  md.push(
+    `Vergleicht \`apps/web/messages/de/*.json\` gegen \`apps/web/messages/en/*.json\`. Nur Schluessel-Parity, nicht Qualitaet der Uebersetzung.`,
+  );
   md.push(``);
   md.push(`**Summary**:`);
   md.push(`- Namespace-Dateien: DE=${deFiles.length}, EN=${enFiles.length}`);
-  md.push(`- Nur-DE-Dateien: ${onlyDeFiles.length} (${onlyDeFiles.map((f) => "`" + f + "`").join(", ") || "–"})`);
-  md.push(`- Nur-EN-Dateien: ${onlyEnFiles.length} (${onlyEnFiles.map((f) => "`" + f + "`").join(", ") || "–"})`);
+  md.push(
+    `- Nur-DE-Dateien: ${onlyDeFiles.length} (${onlyDeFiles.map((f) => "`" + f + "`").join(", ") || "–"})`,
+  );
+  md.push(
+    `- Nur-EN-Dateien: ${onlyEnFiles.length} (${onlyEnFiles.map((f) => "`" + f + "`").join(", ") || "–"})`,
+  );
   md.push(`- Fehlende EN-Uebersetzungen: ${totalMissingEn}`);
   md.push(`- Fehlende DE-Uebersetzungen: ${totalMissingDe}`);
   md.push(`- Placeholder-Werte DE: ${totalPlaceholderDe}`);
@@ -105,49 +130,100 @@ async function main() {
 
   md.push(`## Per-Datei`);
   md.push(``);
-  md.push(`| Datei | DE-Keys | EN-Keys | EN fehlt | DE fehlt | Placeholder-DE | Placeholder-EN |`);
+  md.push(
+    `| Datei | DE-Keys | EN-Keys | EN fehlt | DE fehlt | Placeholder-DE | Placeholder-EN |`,
+  );
   md.push(`|---|---|---|---|---|---|---|`);
   for (const p of perFile) {
-    const diff = p.missingEn.length + p.missingDe.length + p.placeholderDe.length + p.placeholderEn.length;
+    const diff =
+      p.missingEn.length +
+      p.missingDe.length +
+      p.placeholderDe.length +
+      p.placeholderEn.length;
     const marker = diff === 0 ? "✅" : "⚠";
-    md.push(`| ${marker} \`${p.file}\` | ${p.deCount} | ${p.enCount} | ${p.missingEn.length} | ${p.missingDe.length} | ${p.placeholderDe.length} | ${p.placeholderEn.length} |`);
+    md.push(
+      `| ${marker} \`${p.file}\` | ${p.deCount} | ${p.enCount} | ${p.missingEn.length} | ${p.missingDe.length} | ${p.placeholderDe.length} | ${p.placeholderEn.length} |`,
+    );
   }
   md.push(``);
 
   md.push(`## Details (fehlende Keys je Datei)`);
   md.push(``);
   for (const p of perFile) {
-    if (p.missingEn.length === 0 && p.missingDe.length === 0 && p.placeholderDe.length === 0 && p.placeholderEn.length === 0) continue;
+    if (
+      p.missingEn.length === 0 &&
+      p.missingDe.length === 0 &&
+      p.placeholderDe.length === 0 &&
+      p.placeholderEn.length === 0
+    )
+      continue;
     md.push(`### \`${p.file}\``);
     md.push(``);
     if (p.missingEn.length > 0) {
       md.push(`**EN fehlt** (${p.missingEn.length}):`);
       md.push("```");
       for (const k of p.missingEn.slice(0, 100)) md.push(`- ${k}`);
-      if (p.missingEn.length > 100) md.push(`... ${p.missingEn.length - 100} more`);
+      if (p.missingEn.length > 100)
+        md.push(`... ${p.missingEn.length - 100} more`);
       md.push("```");
     }
     if (p.missingDe.length > 0) {
       md.push(`**DE fehlt** (${p.missingDe.length}):`);
       md.push("```");
       for (const k of p.missingDe.slice(0, 100)) md.push(`- ${k}`);
-      if (p.missingDe.length > 100) md.push(`... ${p.missingDe.length - 100} more`);
+      if (p.missingDe.length > 100)
+        md.push(`... ${p.missingDe.length - 100} more`);
       md.push("```");
     }
     if (p.placeholderDe.length > 0) {
-      md.push(`**Placeholder-DE** (${p.placeholderDe.length}): ${p.placeholderDe.slice(0, 20).map((k) => "`" + k + "`").join(", ")}${p.placeholderDe.length > 20 ? " ..." : ""}`);
+      md.push(
+        `**Placeholder-DE** (${p.placeholderDe.length}): ${p.placeholderDe
+          .slice(0, 20)
+          .map((k) => "`" + k + "`")
+          .join(", ")}${p.placeholderDe.length > 20 ? " ..." : ""}`,
+      );
     }
     if (p.placeholderEn.length > 0) {
-      md.push(`**Placeholder-EN** (${p.placeholderEn.length}): ${p.placeholderEn.slice(0, 20).map((k) => "`" + k + "`").join(", ")}${p.placeholderEn.length > 20 ? " ..." : ""}`);
+      md.push(
+        `**Placeholder-EN** (${p.placeholderEn.length}): ${p.placeholderEn
+          .slice(0, 20)
+          .map((k) => "`" + k + "`")
+          .join(", ")}${p.placeholderEn.length > 20 ? " ..." : ""}`,
+      );
     }
     md.push(``);
   }
 
-  await writeFile(OUT_MD, md.join("\n"));
+  // [ARCTOS-FULL-2026-08-31 · Welle 8c] Derselbe Befund wie in OP-074, nur
+  // an einem anderen Generator: der Report ist eingecheckt und faellt damit
+  // unter den Format-Schritt aus ci.yml (`prettier --check "**/*.md"`).
+  // Geschrieben wurde bisher rohes Markdown — der Generator schreibt
+  // `|---|`, prettier `| --- |`. Wer den Report neu erzeugte, machte damit
+  // das Format-Tor rot, ohne dass irgendetwas darauf hinwies; gemessen am
+  // 2026-09-09 an genau diesem Weg.
+  //
+  // `audit-dead-exports.mjs` und `audit-secrets.mjs` loesen das seit OP-074
+  // so: der Generator formatiert selbst, mit der Konfiguration des
+  // Repositories. Dieser hier zog nicht nach. Jetzt schon — ein Lauf ist
+  // damit in sich abgeschlossen.
+  const cfg = (await resolveConfig(OUT_MD)) ?? {};
+  await writeFile(
+    OUT_MD,
+    await prettierFormat(md.join("\n"), {
+      ...cfg,
+      filepath: OUT_MD,
+      parser: "markdown",
+    }),
+  );
   console.log(`Files: DE=${deFiles.length}, EN=${enFiles.length}`);
   console.log(`Missing EN: ${totalMissingEn}, Missing DE: ${totalMissingDe}`);
-  console.log(`Placeholder DE: ${totalPlaceholderDe}, Placeholder EN: ${totalPlaceholderEn}`);
+  console.log(
+    `Placeholder DE: ${totalPlaceholderDe}, Placeholder EN: ${totalPlaceholderEn}`,
+  );
   console.log(`-> ${OUT_MD}`);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

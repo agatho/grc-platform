@@ -2,8 +2,9 @@
 // Processes queued VaR calculations using Monte Carlo simulation
 
 import { db, riskVarCalculation } from "@grc/db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { claimRow } from "../lib/job-runtime";
 
 interface VarCalculationRunnerResult {
   queued: number;
@@ -31,11 +32,17 @@ export const processVarCalculationRunner = withCronInstrumentation(
 
     for (const calc of pending) {
       try {
-        // Mark as running
-        await db
-          .update(riskVarCalculation)
-          .set({ status: "running" })
-          .where(eq(riskVarCalculation.id, calc.id));
+        // [WP9 · S10-09] Guarded claim: the unconditional `SET
+        // status='running'` let two workers compute — and later persist —
+        // the same VaR calculation twice.
+        const claimed = await claimRow({
+          table: "risk_var_calculation",
+          id: calc.id,
+          expectedStatus: "pending",
+          nextStatus: "running",
+          touchColumns: [],
+        });
+        if (!claimed) continue;
 
         // Get risk data for this org
         const risks = await db.execute(sql`

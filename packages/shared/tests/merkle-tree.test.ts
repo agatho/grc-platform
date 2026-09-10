@@ -7,6 +7,17 @@ import {
   rootOfRawValues,
 } from "../src/lib/merkle-tree";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const h = (s: string) => createHash("sha256").update(s).digest("hex");
 
 describe("merkleRoot", () => {
@@ -52,7 +63,7 @@ describe("merkleProof + verifyMerkleProof", () => {
     for (let i = 0; i < leaves.length; i++) {
       const proof = merkleProof(leaves, i);
       expect(proof).not.toBeNull();
-      expect(verifyMerkleProof(leaves[i], proof!, root)).toBe(true);
+      expect(verifyMerkleProof(at(leaves, i), proof!, root)).toBe(true);
     }
   });
 
@@ -65,14 +76,14 @@ describe("merkleProof + verifyMerkleProof", () => {
   it("rejects a valid proof against a wrong root", () => {
     const proof = merkleProof(leaves, 5)!;
     const wrongRoot = h("not-the-real-root");
-    expect(verifyMerkleProof(leaves[5], proof, wrongRoot)).toBe(false);
+    expect(verifyMerkleProof(at(leaves, 5), proof, wrongRoot)).toBe(false);
   });
 
   it("returns an empty proof for a single-leaf tree", () => {
     const single = [h("only")];
     const proof = merkleProof(single, 0);
     expect(proof).toEqual([]);
-    expect(verifyMerkleProof(single[0], proof!, single[0])).toBe(true);
+    expect(verifyMerkleProof(at(single, 0), proof!, at(single, 0))).toBe(true);
   });
 
   it("returns null for an out-of-range index", () => {

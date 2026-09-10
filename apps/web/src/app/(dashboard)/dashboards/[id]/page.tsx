@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import {
   Pencil,
-  Eye,
   Star,
   StarOff,
   FileDown,
@@ -16,8 +16,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// @ts-expect-error -- react-grid-layout has no bundled types; @types/react-grid-layout may lag behind
-import { Responsive, WidthProvider } from "react-grid-layout";
+import {
+  ResponsiveGridLayout,
+  useContainerWidth,
+  verticalCompactor,
+} from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 
@@ -44,8 +47,25 @@ import type {
   BatchWidgetDataResponse,
 } from "@grc/shared";
 
-const ResponsiveGridLayout = WidthProvider(Responsive);
+type WidgetWithDefinition = CustomDashboardWidgetRecord & {
+  definition: WidgetDefinitionRecord;
+};
 
+type WidgetDataMap = Record<
+  string,
+  { status: string; data?: unknown; error?: string }
+>;
+
+// [OP-245 · Gestalt A] Zwei Befunde: der Abruf des Dashboards schrieb neben
+// Ergebnis und Ladezustand auch den BEARBEITUNGSZUSTAND (`editWidgets`,
+// `editLayout`) synchron im Effekt zurueck, und ein zweiter Effekt holte die
+// Widget-Daten, sobald das Dashboard da und der Bearbeitungsmodus aus war.
+// Beide Abrufe liegen jetzt in `@tanstack/react-query` (Muster aus Welle 7b,
+// `processes/[id]/ropa/page.tsx`): der Serverstand ist die SAAT des Editors,
+// nicht sein Inhalt. Der Editor ist deshalb in ein eigenes Bauteil gewandert,
+// das mit dem geladenen Stand EINGEHAENGT wird — React setzt den Anfangswert
+// beim Einhaengen, ein spiegelnder Effekt entfaellt. Der zweite Abruf haengt
+// ueber `enabled` an derselben Bedingung wie vorher.
 export default function DashboardViewPage() {
   const t = useTranslations("dashboard");
   const router = useRouter();
@@ -53,104 +73,175 @@ export default function DashboardViewPage() {
   const searchParams = useSearchParams();
   const dashboardId = params.id as string;
   const isEditFromUrl = searchParams.get("edit") === "true";
-
-  const [dashboard, setDashboard] = useState<DashboardWithWidgets | null>(null);
-  const [widgetDefinitions, setWidgetDefinitions] = useState<
-    WidgetDefinitionRecord[]
-  >([]);
-  const [widgetData, setWidgetData] = useState<
-    Record<string, { status: string; data?: unknown; error?: string }>
-  >({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [isDataLoading, setIsDataLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(isEditFromUrl);
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Edit mode state
-  const [editLayout, setEditLayout] = useState<Layout[]>([]);
-  const [editWidgets, setEditWidgets] = useState<
-    (CustomDashboardWidgetRecord & { definition: WidgetDefinitionRecord })[]
-  >([]);
-  const [configWidget, setConfigWidget] = useState<{
-    widget: CustomDashboardWidgetRecord & {
-      definition: WidgetDefinitionRecord;
-    };
-    isNew: boolean;
-  } | null>(null);
 
   // ──────────────────────────────────────────────────
   // Fetch dashboard + widget definitions
   // ──────────────────────────────────────────────────
 
-  const fetchDashboard = useCallback(async () => {
-    setIsLoading(true);
-    try {
+  const {
+    data: pageData,
+    isPending: isLoading,
+    refetch: refetchDashboard,
+  } = useQuery<{
+    dashboard: DashboardWithWidgets | null;
+    widgetDefinitions: WidgetDefinitionRecord[];
+  }>({
+    queryKey: ["dashboards", dashboardId],
+    queryFn: async () => {
       const [dashRes, defsRes] = await Promise.all([
         fetch(`/api/v1/dashboards/${dashboardId}`),
         fetch("/api/v1/dashboards/widget-definitions"),
       ]);
 
+      let dashboard: DashboardWithWidgets | null = null;
+      let widgetDefinitions: WidgetDefinitionRecord[] = [];
       if (dashRes.ok) {
         const dashJson = await dashRes.json();
-        setDashboard(dashJson.data);
-
-        const widgets = dashJson.data.widgets ?? [];
-        setEditWidgets(widgets);
-        setEditLayout(
-          widgets.map(
-            (
-              w: CustomDashboardWidgetRecord & {
-                definition: WidgetDefinitionRecord;
-              },
-            ) => {
-              const pos = w.positionJson as unknown as Record<string, number>;
-              return {
-                i: w.id,
-                x: pos.x ?? 0,
-                y: pos.y ?? 0,
-                w: pos.w ?? 4,
-                h: pos.h ?? 3,
-                minW: w.definition.minWidth ?? 2,
-                minH: w.definition.minHeight ?? 2,
-                maxW: w.definition.maxWidth ?? 12,
-                maxH: w.definition.maxHeight ?? 8,
-              };
-            },
-          ),
-        );
+        dashboard = dashJson.data;
       }
-
       if (defsRes.ok) {
         const defsJson = await defsRes.json();
-        setWidgetDefinitions(defsJson.data ?? []);
+        widgetDefinitions = defsJson.data ?? [];
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dashboardId]);
+      return { dashboard, widgetDefinitions };
+    },
+  });
+  const dashboard = pageData?.dashboard ?? null;
+  const widgetDefinitions = pageData?.widgetDefinitions ?? [];
+
+  // Widget-Daten: wie vorher nur, wenn das Dashboard da und der
+  // Bearbeitungsmodus aus ist. `isDataLoading` ist `isFetching`, weil der
+  // alte Wert bei JEDEM Abruf wahr wurde (auch beim erneuten Versuch).
+  const {
+    data: widgetData = {},
+    isFetching: isDataLoading,
+    refetch: refetchWidgetData,
+  } = useQuery<WidgetDataMap>({
+    queryKey: ["dashboards", dashboardId, "data"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/dashboards/${dashboardId}/data`);
+      if (!res.ok) return {};
+      const json: BatchWidgetDataResponse = await res.json();
+      return json.widgetData ?? {};
+    },
+    enabled: dashboard !== null && !isEditMode,
+  });
 
   const fetchWidgetData = useCallback(async () => {
-    setIsDataLoading(true);
-    try {
-      const res = await fetch(`/api/v1/dashboards/${dashboardId}/data`);
-      if (res.ok) {
-        const json: BatchWidgetDataResponse = await res.json();
-        setWidgetData(json.widgetData ?? {});
-      }
-    } finally {
-      setIsDataLoading(false);
-    }
-  }, [dashboardId]);
+    await refetchWidgetData();
+  }, [refetchWidgetData]);
 
-  useEffect(() => {
-    fetchDashboard();
-  }, [fetchDashboard]);
+  // Der Schluessel wird nach Speichern/Verwerfen erhoeht, damit der Editor
+  // mit dem frischen Serverstand neu eingehaengt wird — nicht bei jedem
+  // Hintergrundabruf.
+  const [seedVersion, setSeedVersion] = useState(0);
 
-  useEffect(() => {
-    if (dashboard && !isEditMode) {
-      fetchWidgetData();
-    }
-  }, [dashboard, isEditMode, fetchWidgetData]);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!dashboard) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
+        <p>{t("dashboardNotFound")}</p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.push("/dashboards")}
+        >
+          {t("backToList")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <DashboardView
+      key={seedVersion}
+      dashboardId={dashboardId}
+      dashboard={dashboard}
+      widgetDefinitions={widgetDefinitions}
+      widgetData={widgetData}
+      isDataLoading={isDataLoading}
+      fetchWidgetData={fetchWidgetData}
+      isEditMode={isEditMode}
+      setIsEditMode={setIsEditMode}
+      onReload={async () => {
+        await refetchDashboard();
+        await refetchWidgetData();
+        setSeedVersion((v) => v + 1);
+      }}
+      onRefetchDashboard={async () => {
+        await refetchDashboard();
+      }}
+    />
+  );
+}
+
+function DashboardView({
+  dashboardId,
+  dashboard,
+  widgetDefinitions,
+  widgetData,
+  isDataLoading,
+  fetchWidgetData,
+  isEditMode,
+  setIsEditMode,
+  onReload,
+  onRefetchDashboard,
+}: {
+  dashboardId: string;
+  dashboard: DashboardWithWidgets;
+  widgetDefinitions: WidgetDefinitionRecord[];
+  widgetData: WidgetDataMap;
+  isDataLoading: boolean;
+  fetchWidgetData: () => Promise<void>;
+  isEditMode: boolean;
+  setIsEditMode: (v: boolean) => void;
+  onReload: () => Promise<void>;
+  onRefetchDashboard: () => Promise<void>;
+}) {
+  const t = useTranslations("dashboard");
+  const router = useRouter();
+  // [OP-234] react-grid-layout 2 replaced the `WidthProvider` HOC with this
+  // hook: the grid needs an explicit `width`, measured on the wrapping div.
+  const {
+    width: gridWidth,
+    containerRef: gridContainerRef,
+    mounted: gridMounted,
+  } = useContainerWidth();
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Edit mode state — seeded from the loaded dashboard on mount
+  const [editWidgets, setEditWidgets] = useState<WidgetWithDefinition[]>(
+    () => (dashboard.widgets ?? []) as WidgetWithDefinition[],
+  );
+  const [editLayout, setEditLayout] = useState<Layout[]>(() =>
+    ((dashboard.widgets ?? []) as WidgetWithDefinition[]).map((w) => {
+      const pos = w.positionJson as unknown as Record<string, number>;
+      return {
+        i: w.id,
+        x: pos.x ?? 0,
+        y: pos.y ?? 0,
+        w: pos.w ?? 4,
+        h: pos.h ?? 3,
+        minW: w.definition.minWidth ?? 2,
+        minH: w.definition.minHeight ?? 2,
+        maxW: w.definition.maxWidth ?? 12,
+        maxH: w.definition.maxHeight ?? 8,
+      };
+    }),
+  );
+  const [configWidget, setConfigWidget] = useState<{
+    widget: WidgetWithDefinition;
+    isNew: boolean;
+  } | null>(null);
 
   // ──────────────────────────────────────────────────
   // Actions
@@ -202,7 +293,7 @@ export default function DashboardViewPage() {
 
       setIsEditMode(false);
       router.replace(`/dashboards/${dashboardId}`);
-      fetchDashboard();
+      await onReload();
     } finally {
       setIsSaving(false);
     }
@@ -211,7 +302,7 @@ export default function DashboardViewPage() {
   function handleDiscard() {
     setIsEditMode(false);
     router.replace(`/dashboards/${dashboardId}`);
-    fetchDashboard();
+    void onReload();
   }
 
   async function handleToggleFavorite() {
@@ -219,7 +310,7 @@ export default function DashboardViewPage() {
     await fetch(`/api/v1/dashboards/${dashboardId}/favorite`, {
       method: "PUT",
     });
-    fetchDashboard();
+    void onRefetchDashboard();
   }
 
   async function handleExportPdf() {
@@ -326,29 +417,6 @@ export default function DashboardViewPage() {
   // ──────────────────────────────────────────────────
   // Render
   // ──────────────────────────────────────────────────
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!dashboard) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
-        <p>{t("dashboardNotFound")}</p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => router.push("/dashboards")}
-        >
-          {t("backToList")}
-        </Button>
-      </div>
-    );
-  }
 
   const displayWidgets = isEditMode ? editWidgets : (dashboard.widgets ?? []);
   const displayLayout = isEditMode
@@ -461,51 +529,54 @@ export default function DashboardViewPage() {
             )}
           </div>
         ) : (
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={{ lg: displayLayout }}
-            breakpoints={{ lg: 1200, md: 768, sm: 480 }}
-            cols={{ lg: 12, md: 8, sm: 4 }}
-            rowHeight={80}
-            isDraggable={isEditMode}
-            isResizable={isEditMode}
-            draggableHandle=".drag-handle"
-            onLayoutChange={(layout: Layout[]) => {
-              if (isEditMode) handleLayoutChange(layout);
-            }}
-            compactType="vertical"
-            useCSSTransforms
-          >
-            {displayWidgets.map((widget) => {
-              const wd = widgetData[widget.id];
-              const wConfig = widget.configJson as WidgetConfig;
+          <div ref={gridContainerRef}>
+            {gridMounted && (
+              <ResponsiveGridLayout
+                width={gridWidth}
+                className="layout"
+                layouts={{ lg: displayLayout }}
+                breakpoints={{ lg: 1200, md: 768, sm: 480 }}
+                cols={{ lg: 12, md: 8, sm: 4 }}
+                rowHeight={80}
+                dragConfig={{ enabled: isEditMode, handle: ".drag-handle" }}
+                resizeConfig={{ enabled: isEditMode }}
+                compactor={verticalCompactor}
+                onLayoutChange={(layout) => {
+                  if (isEditMode) handleLayoutChange([...layout]);
+                }}
+              >
+                {displayWidgets.map((widget) => {
+                  const wd = widgetData[widget.id];
+                  const wConfig = widget.configJson as WidgetConfig;
 
-              return (
-                <div key={widget.id}>
-                  <DashboardWidgetFrame
-                    widgetId={widget.id}
-                    definitionKey={widget.definition.key}
-                    widgetType={widget.definition.type}
-                    title={widget.definition.nameDe}
-                    config={wConfig}
-                    data={wd?.data}
-                    isLoading={isDataLoading && !wd}
-                    error={
-                      wd?.status === "rejected"
-                        ? (wd.error ?? "Fehler")
-                        : undefined
-                    }
-                    isEditMode={isEditMode}
-                    onConfigure={() =>
-                      setConfigWidget({ widget, isNew: false })
-                    }
-                    onRemove={() => handleRemoveWidget(widget.id)}
-                    onRetry={fetchWidgetData}
-                  />
-                </div>
-              );
-            })}
-          </ResponsiveGridLayout>
+                  return (
+                    <div key={widget.id}>
+                      <DashboardWidgetFrame
+                        widgetId={widget.id}
+                        definitionKey={widget.definition.key}
+                        widgetType={widget.definition.type}
+                        title={widget.definition.nameDe}
+                        config={wConfig}
+                        data={wd?.data}
+                        isLoading={isDataLoading && !wd}
+                        error={
+                          wd?.status === "rejected"
+                            ? (wd.error ?? "Fehler")
+                            : undefined
+                        }
+                        isEditMode={isEditMode}
+                        onConfigure={() =>
+                          setConfigWidget({ widget, isNew: false })
+                        }
+                        onRemove={() => handleRemoveWidget(widget.id)}
+                        onRetry={fetchWidgetData}
+                      />
+                    </div>
+                  );
+                })}
+              </ResponsiveGridLayout>
+            )}
+          </div>
         )}
       </div>
 

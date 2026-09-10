@@ -21,11 +21,18 @@ import { buildReportDocument, type ResolvedSection } from "./report-document";
 import { renderReportDocumentPdf } from "./renderers/pdfkit-renderer";
 import { renderExcel } from "./renderers/excel-renderer";
 import * as fs from "fs/promises";
+import * as os from "os";
 import * as path from "path";
-import * as crypto from "crypto";
 
+// The generated file name already carries the log row's `gen_random_uuid()`
+// primary key, so the path is not guessable. What was missing were the
+// permissions: the directory and the report inherited the process umask
+// under a hard-coded `/tmp`, i.e. they were world-readable on a shared
+// host. `os.tmpdir()` resolves to `/tmp` on Linux and honours `TMPDIR`,
+// which the production compose file sets — deployed paths do not change,
+// and the code stops being wrong on a Windows dev machine.
 const REPORT_OUTPUT_DIR =
-  process.env.REPORT_OUTPUT_DIR || "/tmp/arctos-reports";
+  process.env.REPORT_OUTPUT_DIR || path.join(os.tmpdir(), "arctos-reports");
 
 export interface GenerationResult {
   filePath: string;
@@ -159,11 +166,14 @@ export class ReportGenerator {
         buffer = await renderReportDocumentPdf(reportDocument);
       }
 
-      // 6. Write to disk
-      await fs.mkdir(REPORT_OUTPUT_DIR, { recursive: true });
+      // 6. Write to disk. `mode` on a recursive mkdir only applies to
+      //    directories this call creates — a directory left over from an
+      //    earlier deployment keeps its old permissions, so the 0600 on
+      //    the file itself is what protects existing installations.
+      await fs.mkdir(REPORT_OUTPUT_DIR, { recursive: true, mode: 0o700 });
       const fileName = `${logId}_${Date.now()}.${format}`;
       const filePath = path.join(REPORT_OUTPUT_DIR, fileName);
-      await fs.writeFile(filePath, buffer);
+      await fs.writeFile(filePath, buffer, { mode: 0o600 });
 
       const generationTimeMs = Date.now() - startTime;
 

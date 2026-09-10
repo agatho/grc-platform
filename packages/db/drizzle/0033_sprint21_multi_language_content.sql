@@ -1,3 +1,13 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Die 10 Anweisungen ALTER COLUMN … TYPE jsonb USING (SELECT …)
+-- sind entfernt (0A000, Subquery in transform expression). Sie stehen
+-- ausserdem im Widerspruch zum Drizzle-Schema, das die betroffenen
+-- Spalten unveraendert als varchar/text fuehrt. Alles Uebrige der Datei
+-- (Enums, Sprachkonfiguration, translation_status samt RLS und
+-- Audit-Trigger, JSONB-Spalten der Katalogtabellen) bleibt erhalten.
 -- Sprint 21: Multi-Language Content Management
 -- Migrations 303–315: ALTER 13 fields across 6 tables from TEXT/VARCHAR to JSONB,
 -- CREATE translation_status table, ALTER user ADD content_language,
@@ -38,136 +48,162 @@ ALTER TABLE "user"
 -- ──────────────────────────────────────────────────────────────
 
 -- risk.title: VARCHAR → JSONB
-ALTER TABLE "risk"
-  ALTER COLUMN "title" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      title
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "risk" ALTER COLUMN "title" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert risk.title
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- risk.description: TEXT → JSONB
-ALTER TABLE "risk"
-  ALTER COLUMN "description" TYPE jsonb
-  USING CASE
-    WHEN description IS NOT NULL THEN
-      jsonb_build_object(
-        COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-        description
-      )
-    ELSE NULL
-  END;--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "risk" ALTER COLUMN "description" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert risk.description
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 309: ALTER control — title and description to JSONB
 -- ──────────────────────────────────────────────────────────────
 
-ALTER TABLE "control"
-  ALTER COLUMN "title" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      title
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "control" ALTER COLUMN "title" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert control.title
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
-ALTER TABLE "control"
-  ALTER COLUMN "description" TYPE jsonb
-  USING CASE
-    WHEN description IS NOT NULL THEN
-      jsonb_build_object(
-        COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-        description
-      )
-    ELSE NULL
-  END;--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "control" ALTER COLUMN "description" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert control.description
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 310: ALTER process — name and description to JSONB
 -- ──────────────────────────────────────────────────────────────
 
-ALTER TABLE "process"
-  ALTER COLUMN "name" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      name
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "process" ALTER COLUMN "name" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert process.name
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
-ALTER TABLE "process"
-  ALTER COLUMN "description" TYPE jsonb
-  USING CASE
-    WHEN description IS NOT NULL THEN
-      jsonb_build_object(
-        COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-        description
-      )
-    ELSE NULL
-  END;--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "process" ALTER COLUMN "description" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert process.description
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 311: ALTER document — title to JSONB
 -- ──────────────────────────────────────────────────────────────
 
-ALTER TABLE "document"
-  ALTER COLUMN "title" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      title
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "document" ALTER COLUMN "title" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert document.title
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 312: ALTER finding — title and description to JSONB
 -- ──────────────────────────────────────────────────────────────
 
-ALTER TABLE "finding"
-  ALTER COLUMN "title" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      title
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "finding" ALTER COLUMN "title" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert finding.title
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
-ALTER TABLE "finding"
-  ALTER COLUMN "description" TYPE jsonb
-  USING CASE
-    WHEN description IS NOT NULL THEN
-      jsonb_build_object(
-        COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-        description
-      )
-    ELSE NULL
-  END;--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "finding" ALTER COLUMN "description" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert finding.description
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 313: ALTER security_incident — title to JSONB
 -- ──────────────────────────────────────────────────────────────
 
-ALTER TABLE "security_incident"
-  ALTER COLUMN "title" TYPE jsonb
-  USING COALESCE(
-    jsonb_build_object(
-      COALESCE((SELECT o.default_language FROM organization o WHERE o.id = org_id), 'de'),
-      title
-    ),
-    '{}'::jsonb
-  );--> statement-breakpoint
+-- [ARCTOS-FULL-2026-08-31 / S09-01] ENTFERNT: ALTER TABLE "security_incident" ALTER COLUMN "title" TYPE jsonb.
+-- Zwei unabhaengige Gruende:
+--   (a) Syntaktisch unzulaessig — PostgreSQL erlaubt in der
+--       USING-Klausel von ALTER COLUMN ... TYPE keine Subquery
+--       (0A000 cannot use subquery in transform expression). Die
+--       Anweisung ist in keiner Umgebung je gelaufen.
+--   (b) Fachlich ueberholt — das Drizzle-Schema deklariert security_incident.title
+--       weiterhin als varchar/text. Die JSONB-Umstellung aus
+--       Sprint 21 wurde im Code nie nachvollzogen; sie nachtraeglich
+--       auszufuehren wuerde jede Lese- und Schreiboperation der
+--       Anwendung auf dieser Spalte brechen und exakt den
+--       Schema-Drift erzeugen, den ADR-014 verhindern soll.--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 314: CREATE translation_status table
 -- ──────────────────────────────────────────────────────────────
 
-CREATE TABLE "translation_status" (
+CREATE TABLE IF NOT EXISTS "translation_status" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "org_id" uuid NOT NULL REFERENCES "organization"("id"),
   "entity_type" varchar(50) NOT NULL,
@@ -188,9 +224,9 @@ CREATE TABLE "translation_status" (
   UNIQUE("org_id", "entity_type", "entity_id", "field", "language")
 );--> statement-breakpoint
 
-CREATE INDEX "ts_entity_idx" ON "translation_status"("entity_type", "entity_id");--> statement-breakpoint
-CREATE INDEX "ts_lang_status_idx" ON "translation_status"("org_id", "language", "status");--> statement-breakpoint
-CREATE INDEX "ts_org_entity_type_idx" ON "translation_status"("org_id", "entity_type");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ts_entity_idx" ON "translation_status"("entity_type", "entity_id");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ts_lang_status_idx" ON "translation_status"("org_id", "language", "status");--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "ts_org_entity_type_idx" ON "translation_status"("org_id", "entity_type");--> statement-breakpoint
 
 -- ──────────────────────────────────────────────────────────────
 -- 315: RLS + Audit triggers

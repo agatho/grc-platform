@@ -1,9 +1,10 @@
 // Sprint 39: Emerging Risk Review Reminder Worker
 // WEEKLY — Check emerging risks where next_review_date is within 14 days
 
-import { db, emergingRisk, notification } from "@grc/db";
-import { and, isNotNull, sql, isNull } from "drizzle-orm";
+import { db, emergingRisk } from "@grc/db";
+import { and, isNotNull, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { insertNotification } from "../lib/notify";
 
 interface ReviewResult {
   processed: number;
@@ -13,7 +14,8 @@ interface ReviewResult {
 export const processEmergingRiskReviews = withCronInstrumentation(
   "emerging-risk-review",
   async (): Promise<ReviewResult> => {
-    const now = new Date();
+    // [N-2 · Welle 6a] `const now = new Date()` war tot — der Vergleich
+    // laeuft in SQL gegen `CURRENT_DATE`. Entfernt.
     let notified = 0;
 
     const upcomingReviews = await db
@@ -35,20 +37,23 @@ export const processEmergingRiskReviews = withCronInstrumentation(
 
     for (const risk of upcomingReviews) {
       if (!risk.responsibleId) continue;
-      await db.insert(notification).values({
-        orgId: risk.orgId,
-        userId: risk.responsibleId,
-        type: "deadline_approaching",
-        title: `Emerging Risk Review Due: ${risk.title}`,
-        message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
-        entityType: "emerging_risk",
-        entityId: risk.id,
-        templateData: {
-          module: "erm",
-          priority: "normal",
-          subtype: "emerging_risk_review",
+      await insertNotification(
+        {
+          orgId: risk.orgId,
+          userId: risk.responsibleId,
+          type: "deadline_approaching",
+          title: `Emerging Risk Review Due: ${risk.title}`,
+          message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
+          entityType: "emerging_risk",
+          entityId: risk.id,
+          templateData: {
+            module: "erm",
+            priority: "normal",
+            subtype: "emerging_risk_review",
+          },
         },
-      });
+        { job: "emerging-risk-review" },
+      );
       notified++;
     }
 

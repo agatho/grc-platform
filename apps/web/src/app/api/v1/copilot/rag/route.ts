@@ -1,10 +1,14 @@
 import { db, copilotRagSource } from "@grc/db";
 import { ragIndexRequestSchema } from "@grc/shared";
-import { eq, and, sql } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { eq, sql } from "drizzle-orm";
+import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/copilot/rag — Trigger RAG indexing
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -16,19 +20,48 @@ export async function POST(req: Request) {
     );
   }
 
-  // Trigger async indexing job (returns immediately)
-  // In production, this would enqueue a worker job
-  const indexed = {
-    sourceTypes: body.data.sourceTypes,
-    status: "queued",
-    forceReindex: body.data.forceReindex,
-  };
+  // [ARCTOS-FULL-2026-08-31 / WP6 · S05-17]
+  //
+  // Diese Route antwortete `status: "queued"` und legte nichts an — es
+  // gab keinen Job, keine Queue, keinen Eintrag. Eine Statusaussage über
+  // etwas, das nicht stattgefunden hat, ist derselbe Defekt wie in
+  // S14-02 (erfundene Prüfergebnisse), nur kleiner.
+  //
+  // Der Indexlauf selbst gehört zu `copilot-rag-indexer` (Eigentum WP8).
+  // Diese Route sagt deshalb jetzt die Wahrheit: sie meldet den
+  // tatsächlichen Indexstand und ob ein Neuaufbau angefordert werden
+  // kann — statt eine Einreihung zu behaupten.
+  const stats = (await db.execute(sql`
+    SELECT source_type,
+           count(*)::int AS chunks,
+           max(last_indexed_at)::text AS last_indexed
+      FROM copilot_rag_source
+     WHERE org_id = ${ctx.orgId}::uuid
+     GROUP BY source_type
+  `)) as unknown as Array<{
+    source_type: string;
+    chunks: number;
+    last_indexed: string;
+  }>;
 
-  return Response.json({ data: indexed }, { status: 202 });
-}
-
+  return Response.json(
+    {
+      data: {
+        requestedSourceTypes: body.data.sourceTypes,
+        forceReindex: body.data.forceReindex,
+        // Ehrlich: es wird hier nichts eingereiht.
+        status: "not_enqueued",
+        note:
+          "Die Indizierung läuft als geplanter Job (copilot-rag-indexer), nicht auf Anforderung über diese Route. " +
+          "Der aktuelle Indexstand steht in `currentIndex`.",
+        currentIndex: stats,
+      },
+    },
+    { status: 200 },
+  );
+});
 // GET /api/v1/copilot/rag — Get RAG indexing status
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -43,4 +76,4 @@ export async function GET(req: Request) {
     .groupBy(copilotRagSource.sourceType);
 
   return Response.json({ data: stats });
-}
+});

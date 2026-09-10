@@ -36,6 +36,7 @@ import {
   pgEnum,
   index,
   unique,
+  customType,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { document, documentVersion } from "./document";
@@ -46,7 +47,11 @@ import { document, documentVersion } from "./document";
 
 export const documentSignatureRequestStatusEnum = pgEnum(
   "document_signature_request_status",
-  ["pending", "completed", "declined", "cancelled"],
+  // "invalidated" (migration 0420, #S06-23): the frozen file changed after
+  // the request was created, so no further signature can ever be given.
+  // The request used to stay "pending" forever — the reminder cron kept
+  // chasing a ceremony that was technically dead.
+  ["pending", "completed", "declined", "cancelled", "invalidated"],
 );
 
 export const documentSignatureStatusEnum = pgEnum("document_signature_status", [
@@ -95,6 +100,21 @@ export const documentSignatureRequest = pgTable(
     // One-time marker: overdue escalation (> 3 days past dueDate) to the
     // request creator + document owner was sent. Deliberately no auto-cancel.
     escalatedAt: timestamp("escalated_at", { withTimezone: true }),
+    // ── Chain completeness (migration 0420, #S06-15) ────────────────
+    // A forward-only chain verification cannot detect that something was
+    // cut off the END — every prefix of a valid chain is a valid chain.
+    // These three columns give verify() the expected shape.
+    /** Number of signer slots created with the request. */
+    signatureCount: integer("signature_count"),
+    /** Number of decided (signed/declined) chain links. */
+    chainLength: integer("chain_length").notNull().default(0),
+    /** chain_hash of the last appended link — the expected chain head. */
+    finalChainHash: varchar("final_chain_hash", { length: 64 }),
+    /** #S06-13: the requester is among the signers (self-attestation). */
+    creatorIsSigner: boolean("creator_is_signer").notNull().default(false),
+    // #S06-23: explicit end state when the frozen file changed.
+    invalidatedAt: timestamp("invalidated_at", { withTimezone: true }),
+    invalidatedReason: text("invalidated_reason"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -142,6 +162,24 @@ export const documentSignature = pgTable(
     chainHash: varchar("chain_hash", { length: 64 }),
     ipAddress: varchar("ip_address", { length: 64 }),
     userAgent: text("user_agent"),
+    /** #S06-03: which content_hash formula this row was written with.
+     *  1 = the original six metadata fields, 2 = plus ipAddress,
+     *  userAgent, declineReason and signOrder. Existing rows keep
+     *  verifying under their own version (migration 0420). */
+    hashVersion: integer("hash_version").notNull().default(1),
+    /** #S06-03: true only when ipAddress came from a position in
+     *  X-Forwarded-For that a client cannot set (TRUSTED_PROXY_HOPS). */
+    ipTrusted: boolean("ip_trusted"),
+    // ── RFC 3161 timestamp (migration 0420, #S06-05) ────────────────
+    /** granted | unavailable | disabled | error */
+    tsaStatus: varchar("tsa_status", { length: 24 }),
+    tsaGenTime: timestamp("tsa_gen_time", { withTimezone: true }),
+    tsaSerial: varchar("tsa_serial", { length: 128 }),
+    tsaPolicyOid: varchar("tsa_policy_oid", { length: 64 }),
+    /** DER-encoded TimeStampResp over this link's chain_hash. */
+    tsaProof: customType<{ data: Buffer; driverData: Buffer }>({
+      dataType: () => "bytea",
+    })("tsa_proof"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

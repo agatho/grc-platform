@@ -13,6 +13,7 @@ import {
   integer,
   date,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization } from "./platform";
@@ -84,6 +85,15 @@ export const asset = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    exposure: varchar("exposure", { length: 30 }),
+    isCrownJewel: boolean("is_crown_jewel")
+      .notNull()
+      .default(sql`false`),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("asset_parent_idx").on(table.parentAssetId),

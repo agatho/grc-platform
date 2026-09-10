@@ -4,7 +4,7 @@ import { hash } from "bcryptjs";
 // The REAL login-path function (packages/auth). @grc/auth depends on @grc/db,
 // so this direction is non-circular; vitest resolves the workspace symlink.
 import { loadRoles } from "@grc/auth/providers";
-import { createTestDb } from "../helpers";
+import { createTestDb, requireRow, requireAt } from "../helpers";
 import {
   db,
   organization,
@@ -65,37 +65,61 @@ describe("#SEC-AUTH-BOOTSTRAP session refresh under grc_app (real loadRoles + wi
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
       GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+      -- [ARCTOS-FULL-2026-08-31 / WP2 · S01-04, S01-08] Der pauschale GRANT
+      -- oben erfasst auch die Auth.js-Token-Tabellen (deny-all seit Migration
+      -- 0392) und die Materialized Views (kein security_invoker moeglich,
+      -- Migration 0393). Ohne diesen REVOKE hebt er genau die Kontrollen
+      -- wieder auf, die tenant-isolation-systemtest.test.ts prueft — ein
+      -- spaeter laufender Test faende sie dann geoeffnet vor.
+      REVOKE ALL ON public.session, public.account, public.verification_token
+        FROM grc_app;
+      DO $revoke_mv$ DECLARE r record; BEGIN
+        FOR r IN SELECT c.relname FROM pg_class c
+                   JOIN pg_namespace n ON n.oid = c.relnamespace
+                  WHERE n.nspname = 'public' AND c.relkind = 'm' LOOP
+          EXECUTE format('REVOKE ALL ON public.%I FROM grc_app', r.relname);
+        END LOOP;
+      END $revoke_mv$;
     `);
 
-    const [org] = await adminDb.db
-      .insert(organization)
-      .values({
-        name: `Session Refresh Org ${suffix}`,
-        type: "subsidiary",
-        country: "DEU",
-      })
-      .returning({ id: organization.id });
+    const org = requireRow(
+      await adminDb.db
+        .insert(organization)
+        .values({
+          name: `Session Refresh Org ${suffix}`,
+          type: "subsidiary",
+          country: "DEU",
+        })
+        .returning({ id: organization.id }),
+      "org",
+    );
     orgId = org.id;
 
     const passwordHash = await hash("session-refresh-secret", 10);
-    const [u] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `session-refresh-u-${suffix}@test.dev`,
-        name: "Session Refresh User",
-        passwordHash,
-      })
-      .returning({ id: user.id });
+    const u = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `session-refresh-u-${suffix}@test.dev`,
+          name: "Session Refresh User",
+          passwordHash,
+        })
+        .returning({ id: user.id }),
+      "u",
+    );
     userId = u.id;
 
-    const [uOther] = await adminDb.db
-      .insert(user)
-      .values({
-        email: `session-refresh-other-${suffix}@test.dev`,
-        name: "Session Refresh Other",
-        passwordHash: "x",
-      })
-      .returning({ id: user.id });
+    const uOther = requireRow(
+      await adminDb.db
+        .insert(user)
+        .values({
+          email: `session-refresh-other-${suffix}@test.dev`,
+          name: "Session Refresh Other",
+          passwordHash: "x",
+        })
+        .returning({ id: user.id }),
+      "uOther",
+    );
     otherUserId = uOther.id;
 
     await adminDb.db
@@ -152,15 +176,15 @@ describe("#SEC-AUTH-BOOTSTRAP session refresh under grc_app (real loadRoles + wi
         ),
     );
     expect(rows.length).toBe(1);
-    expect(rows[0].orgId).toBe(orgId);
-    expect(rows[0].role).toBe("risk_manager");
+    expect(requireAt(rows, 0, "rows").orgId).toBe(orgId);
+    expect(requireAt(rows, 0, "rows").role).toBe("risk_manager");
   });
 
   it("LOGIN PATH: real loadRoles(userId) returns non-empty roles under grc_app", async () => {
     const roles = await loadRoles(userId);
     expect(roles.length).toBe(1);
-    expect(roles[0].orgId).toBe(orgId);
-    expect(roles[0].role).toBe("risk_manager");
+    expect(requireAt(roles, 0, "roles").orgId).toBe(orgId);
+    expect(requireAt(roles, 0, "roles").role).toBe("risk_manager");
   });
 
   it("self-read is user-scoped: another user's context never exposes U's rows", async () => {

@@ -1,29 +1,27 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Brain, Eye, FileCheck, Scale, FileWarning } from "lucide-react";
+import { Brain, Eye, FileWarning } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { AiActDashboard } from "@grc/shared";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 export default function AiActDashboardPage() {
   const t = useTranslations("aiAct");
-  const [data, setData] = useState<AiActDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt wie
+  // vorher den Ladekreis stehen (`data` bleibt null).
+  const { data = null, isPending: loading } = useQuery<AiActDashboard | null>({
+    queryKey: ["ai-act", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      return (await res.json()).data as AiActDashboard;
+    },
+  });
   if (loading || !data)
     return (
       <div className="flex items-center justify-center h-64">

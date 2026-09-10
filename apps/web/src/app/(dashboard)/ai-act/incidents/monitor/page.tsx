@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -22,8 +23,24 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Diese Seite war zur Haelfte
+ * englisch und zur Haelfte deutsch — in DERSELBEN Zeile: "Art. 73
+ * Frist-Ueberwachung fuer alle AI-Incidents" neben "CRITICAL OVERDUE" und
+ * "✓ Authority notified at". Fuer beide Sprachgruppen war sie falsch.
+ *
+ * `ESCALATION_META` und `formatHours` stehen ausserhalb der Komponente und
+ * koennen keinen Hook lesen. `formatHours` nimmt die Uebersetzungsfunktion
+ * jetzt als Parameter — dasselbe Vorgehen wie bei den drei Hilfsfunktionen
+ * aus Welle 5a, Schnitt 6. Die Eskalationsstufe wird ueber ein Template
+ * aufgeloest (`t(`monitor.level.${…}`)`) und nicht ueber einen
+ * `labelKey`-Eintrag in der Tabelle: der Detektor in
+ * `scripts/audit-i18n-usage.mjs` kennt die Template-Form und wuerde die vier
+ * Stufen sonst als „nie erreicht" zaehlen.
+ */
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
 interface OverdueInfo {
@@ -61,56 +78,64 @@ interface MonitorResponse {
 
 const ESCALATION_META: Record<
   EscalationLevel,
-  { label: string; className: string; order: number; icon: typeof Clock }
+  { className: string; order: number; icon: typeof Clock }
 > = {
   critical_overdue: {
-    label: "CRITICAL OVERDUE",
     className: "bg-red-200 text-red-900 border-red-500",
     order: 0,
     icon: Siren,
   },
   overdue: {
-    label: "OVERDUE",
     className: "bg-red-100 text-red-800 border-red-300",
     order: 1,
     icon: AlertTriangle,
   },
   approaching: {
-    label: "APPROACHING",
     className: "bg-amber-100 text-amber-800 border-amber-300",
     order: 2,
     icon: Clock,
   },
   none: {
-    label: "OK",
     className: "bg-emerald-100 text-emerald-800 border-emerald-300",
     order: 3,
     icon: CheckCircle2,
   },
 };
 
-function formatHours(h: number | null): string {
+function formatHours(
+  h: number | null,
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   if (h === null) return "—";
-  if (h < 24) return `${h}h`;
+  if (h < 24) return t("monitor.hoursShort", { hours: h });
   const days = Math.floor(h / 24);
   const rem = h % 24;
-  return rem === 0 ? `${days}d` : `${days}d ${rem}h`;
+  return rem === 0
+    ? t("monitor.daysShort", { days })
+    : t("monitor.daysHoursShort", { days, hours: rem });
 }
 
 export default function IncidentsMonitorPage() {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { formatDateTime } = useDateFormat();
-  const [rows, setRows] = useState<IncidentWithOverdue[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Die Sortierung nach
+  // Eskalationsstufe wandert mit in die Abfragefunktion.
+  const {
+    data: rows = [],
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<IncidentWithOverdue[]>({
+    queryKey: ["ai-act", "incidents-monitor"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/incidents-monitor");
-      if (!res.ok) throw new Error(`API ${res.status}`);
+      if (!res.ok)
+        throw new Error(tCommon("common.httpError", { status: res.status }));
       const json = (await res.json()) as { data: MonitorResponse };
-      const sorted = [...json.data.incidents].sort((a, b) => {
+      return [...json.data.incidents].sort((a, b) => {
         const aOrder = ESCALATION_META[a.overdue.escalationLevel].order;
         const bOrder = ESCALATION_META[b.overdue.escalationLevel].order;
         if (aOrder !== bOrder) return aOrder - bOrder;
@@ -118,17 +143,17 @@ export default function IncidentsMonitorPage() {
           new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime()
         );
       });
-      setRows(sorted);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : tCommon("common.error")
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const bucket = {
     critical: rows.filter(
@@ -152,7 +177,7 @@ export default function IncidentsMonitorPage() {
   if (error) {
     return (
       <ErrorRetry
-        title="Monitor konnte nicht geladen werden"
+        title={t("monitor.loadError")}
         message={error}
         onRetry={fetchData}
       />
@@ -196,14 +221,22 @@ export default function IncidentsMonitorPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{r.title}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                  <span>Erkannt: {formatDateTime(r.detectedAt)}</span>
-                  <span>Frist: {formatDateTime(r.deadlineAt)}</span>
+                  <span>
+                    {t("monitor.detectedAt", {
+                      value: formatDateTime(r.detectedAt),
+                    })}
+                  </span>
+                  <span>
+                    {t("monitor.deadlineAt", {
+                      value: formatDateTime(r.deadlineAt),
+                    })}
+                  </span>
                   {r.isSerious && (
                     <Badge
                       variant="outline"
                       className="bg-red-50 text-red-700 border-red-200 text-xs py-0"
                     >
-                      serious
+                      {t("monitor.serious")}
                     </Badge>
                   )}
                   {r.frameworks?.map((fw) => (
@@ -219,24 +252,31 @@ export default function IncidentsMonitorPage() {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <Badge variant="outline" className={meta.className}>
-                  {meta.label}
+                  {t(`monitor.level.${ov.escalationLevel}`)}
                 </Badge>
               </div>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
               {ov.isNotified ? (
                 <span className="text-emerald-700">
-                  ✓ Authority notified at{" "}
-                  {r.authorityNotifiedAt
-                    ? formatDateTime(r.authorityNotifiedAt)
-                    : "—"}
+                  {t("monitor.authorityNotified", {
+                    value: r.authorityNotifiedAt
+                      ? formatDateTime(r.authorityNotifiedAt)
+                      : "—",
+                  })}
                 </span>
               ) : ov.isOverdue ? (
                 <span className="text-red-700 font-medium">
-                  {formatHours(ov.hoursOverdue)} überfällig
+                  {t("monitor.overdueBy", {
+                    value: formatHours(ov.hoursOverdue, t),
+                  })}
                 </span>
               ) : (
-                <span>{formatHours(ov.hoursUntilDeadline)} bis zur Frist</span>
+                <span>
+                  {t("monitor.remainingUntilDeadline", {
+                    value: formatHours(ov.hoursUntilDeadline, t),
+                  })}
+                </span>
               )}
             </div>
           </div>
@@ -255,20 +295,19 @@ export default function IncidentsMonitorPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurück zur Incidents-Liste
+            {t("monitor.backToIncidents")}
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">
-            Incidents Monitor
+            {t("monitor.title")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Art. 73 Frist-Überwachung für alle AI-Incidents. Escalation-Level
-            basiert auf time-to-deadline (kritisch wenn &gt; 48h überfällig).
+            {t("monitor.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={fetchData} variant="outline" size="sm">
             <RefreshCcw className="h-4 w-4 mr-2" />
-            Aktualisieren
+            {tCommon("actions.refresh")}
           </Button>
           <Button
             size="sm"
@@ -276,7 +315,7 @@ export default function IncidentsMonitorPage() {
               window.open("/api/v1/ai-act/incidents-monitor/pdf", "_blank")
             }
           >
-            PDF
+            {t("monitor.pdf")}
           </Button>
         </div>
       </div>
@@ -293,13 +332,13 @@ export default function IncidentsMonitorPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Siren className="h-3.5 w-3.5" />
-              Critical Overdue
+              {t("monitor.kpi.criticalOverdue")}
             </p>
             <p className="text-3xl font-bold text-red-700">
               {bucket.critical.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              &gt; 48h überfällig
+              {t("monitor.kpi.criticalOverdueHint")}
             </p>
           </CardContent>
         </Card>
@@ -307,13 +346,13 @@ export default function IncidentsMonitorPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <AlertTriangle className="h-3.5 w-3.5" />
-              Overdue
+              {t("monitor.kpi.overdue")}
             </p>
             <p className="text-3xl font-bold text-red-600">
               {bucket.overdue.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              0-48h überfällig
+              {t("monitor.kpi.overdueHint")}
             </p>
           </CardContent>
         </Card>
@@ -323,13 +362,13 @@ export default function IncidentsMonitorPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              Approaching
+              {t("monitor.kpi.approaching")}
             </p>
             <p className="text-3xl font-bold text-amber-600">
               {bucket.approaching.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              &lt; 24h bis Frist
+              {t("monitor.kpi.approachingHint")}
             </p>
           </CardContent>
         </Card>
@@ -337,13 +376,13 @@ export default function IncidentsMonitorPage() {
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              OK
+              {t("monitor.kpi.ok")}
             </p>
             <p className="text-3xl font-bold text-emerald-600">
               {bucket.ok.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              notified oder &gt; 24h verbleibend
+              {t("monitor.kpi.okHint")}
             </p>
           </CardContent>
         </Card>
@@ -356,12 +395,11 @@ export default function IncidentsMonitorPage() {
             <div className="flex items-center gap-2">
               <Siren className="h-5 w-5 text-red-700" />
               <CardTitle className="text-red-800">
-                Critical Overdue -- Sofortmeldung!
+                {t("monitor.criticalSectionTitle")}
               </CardTitle>
             </div>
             <CardDescription>
-              Art. 73 Frist um mehr als 48h ueberschritten. Regulatorisches
-              Risiko -- Board sofort informieren.
+              {t("monitor.criticalSectionDescription")}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -376,7 +414,7 @@ export default function IncidentsMonitorPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-600" />
-              Overdue (&lt; 48h)
+              {t("monitor.overdueSectionTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -391,7 +429,7 @@ export default function IncidentsMonitorPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="h-4 w-4 text-amber-600" />
-              Approaching (&lt; 24h)
+              {t("monitor.approachingSectionTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -406,7 +444,7 @@ export default function IncidentsMonitorPage() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2 text-muted-foreground">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              OK ({bucket.ok.length})
+              {t("monitor.okSectionTitle", { count: bucket.ok.length })}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -419,7 +457,7 @@ export default function IncidentsMonitorPage() {
         <Card>
           <CardContent className="p-12 text-center text-muted-foreground">
             <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            Keine AI-Incidents erfasst.
+            {t("monitor.empty")}
           </CardContent>
         </Card>
       )}

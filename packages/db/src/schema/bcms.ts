@@ -121,6 +121,10 @@ export const biaAssessment = pgTable(
       .notNull()
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [index("bia_org_idx").on(table.orgId)],
 );
@@ -256,6 +260,7 @@ export const essentialProcess = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    emergencyOfficerId: uuid("emergency_officer_id"),
   },
   (table) => [
     uniqueIndex("ep_unique_process").on(table.orgId, table.processId),
@@ -452,6 +457,13 @@ export const crisisScenario = pgTable("crisis_scenario", {
     .notNull()
     .defaultNow(),
   createdBy: uuid("created_by").references(() => user.id),
+  ermRiskId: uuid("erm_risk_id"),
+  ermSyncedAt: timestamp("erm_synced_at", { withTimezone: true }),
+  likelihood: integer("likelihood"),
+  riskScore: integer("risk_score"),
+  treatmentStrategy: varchar("treatment_strategy", { length: 20 }).default(
+    sql`'mitigate'::character varying`,
+  ),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -544,6 +556,12 @@ export const bcExercise = pgTable("bc_exercise", {
     .notNull()
     .defaultNow(),
   createdBy: uuid("created_by").references(() => user.id),
+  customScenarioDescription: text("custom_scenario_description"),
+  facilitatorId: uuid("facilitator_id"),
+  overallScore: integer("overall_score"),
+  scenarioId: uuid("scenario_id"),
+  scopeBcpIds: jsonb("scope_bcp_ids").default(sql`'[]'::jsonb`),
+  scopeTeamIds: jsonb("scope_team_ids").default(sql`'[]'::jsonb`),
 });
 
 // ──────────────────────────────────────────────────────────────

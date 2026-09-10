@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { FileDown } from "lucide-react";
 
@@ -8,6 +8,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ArchHealthScore } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export default function ArchitectureHealthPage() {
   return (
@@ -19,27 +20,33 @@ export default function ArchitectureHealthPage() {
 
 function HealthInner() {
   const t = useTranslations("eam");
-  const [score, setScore] = useState<ArchHealthScore | null>(null);
-  const [trend, setTrend] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Anfragen liefen immer
+  // zusammen und werden zusammen gelesen, daher eine Abfrage mit einem
+  // Ergebnisobjekt. Eine nicht-ok-Antwort liefert wie vorher den
+  // Ausgangswert (null bzw. leere Liste).
+  const { data, isPending: loading } = useQuery<{
+    score: ArchHealthScore | null;
+    trend: UnvalidatedJson[];
+  }>({
+    queryKey: ["eam", "health-score"],
+    queryFn: async () => {
       const [scoreRes, trendRes] = await Promise.all([
         fetch("/api/v1/eam/health-score"),
         fetch("/api/v1/eam/health-score/trend"),
       ]);
-      if (scoreRes.ok) setScore((await scoreRes.json()).data);
-      if (trendRes.ok) setTrend((await trendRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const score: ArchHealthScore | null = scoreRes.ok
+        ? ((await scoreRes.json()).data as ArchHealthScore)
+        : null;
+      const trend: UnvalidatedJson[] = trendRes.ok
+        ? (((await trendRes.json()).data ?? []) as UnvalidatedJson[])
+        : [];
+      return { score, trend };
+    },
+  });
+  const score = data?.score ?? null;
+  const trend = data?.trend ?? [];
 
   if (loading || !score) {
     return (
@@ -95,7 +102,7 @@ function HealthInner() {
             <CardContent className="p-4 flex items-center gap-4">
               <div className="flex-1">
                 <p className="text-sm font-medium">
-                  {t(`health.${f.key}` as any)}
+                  {t(`health.${f.key}` as Parameters<typeof t>[0])}
                 </p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                   <div
@@ -121,7 +128,7 @@ function HealthInner() {
           </CardHeader>
           <CardContent>
             <div className="flex items-end gap-2 h-32">
-              {trend.map((s: any, i: number) => (
+              {trend.map((s: UnvalidatedJson, i: number) => (
                 <div
                   key={i}
                   className="flex-1 bg-primary/80 rounded-t"

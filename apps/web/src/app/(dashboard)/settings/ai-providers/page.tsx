@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Auch diese Seite war ueber eine
+ * seitenlokale `const t = (de, en) => …` zweisprachig, an der Infrastruktur
+ * vorbei. Umgestellt auf `settings.aiProviders.*` in beiden Katalogen.
+ *
+ * BEZIFFERT, NICHT BEHOBEN: `p.notes` und `v.hint` kommen als fertiger
+ * englischer Text AUS DER SCHNITTSTELLE (`app/api/v1/ai/providers`) und
+ * werden hier unveraendert angezeigt — auch im deutschen Gebietsschema.
+ * `app/api/**` liegt ausserhalb der Dateihoheit dieser Welle.
+ */
 import {
   Sparkles,
   Check,
@@ -31,27 +42,14 @@ interface AiProvidersResponse {
   providers: ProviderInfo[];
 }
 
-const TYPE_LABEL: Record<string, { de: string; en: string; classes: string }> =
-  {
-    cloud: {
-      de: "Cloud",
-      en: "Cloud",
-      classes: "bg-blue-50 text-blue-700 border-blue-200",
-    },
-    local: {
-      de: "Lokal",
-      en: "Local",
-      classes: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    },
-    subscription: {
-      de: "Abo",
-      en: "Subscription",
-      classes: "bg-purple-50 text-purple-700 border-purple-200",
-    },
-  };
+const TYPE_CLASSES: Record<string, string> = {
+  cloud: "bg-blue-50 text-blue-700 border-blue-200",
+  local: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  subscription: "bg-purple-50 text-purple-700 border-purple-200",
+};
 
 export default function AiProvidersSettingsPage() {
-  const locale = useLocale();
+  const t = useTranslations("common");
   const [data, setData] = useState<AiProvidersResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,12 +61,17 @@ export default function AiProvidersSettingsPage() {
         setLoading(true);
         const res = await fetch("/api/v1/ai/providers");
         if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
+          throw new Error(t("common.httpError", { status: res.status }));
         }
         const json = (await res.json()) as AiProvidersResponse;
         if (!cancelled) setData(json);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Load error");
+        if (!cancelled)
+          setError(
+            e instanceof Error
+              ? e.message
+              : t("settings.aiProviders.loadError"),
+          );
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -77,9 +80,7 @@ export default function AiProvidersSettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  const t = (de: string, en: string) => (locale === "de" ? de : en);
+  }, [t]);
 
   return (
     <div className="space-y-6">
@@ -90,13 +91,10 @@ export default function AiProvidersSettingsPage() {
         </div>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">
-            {t("KI-Anbieter", "AI providers")}
+            {t("settings.aiProviders.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            {t(
-              "Konfiguration der verfügbaren Large-Language-Model-Anbieter. Schlüssel und Endpunkte werden aus Umgebungsvariablen gelesen — das garantiert, dass Secrets nicht in der Datenbank oder im Browser landen.",
-              "Configuration for available large-language-model providers. Keys and endpoints are read from environment variables so secrets never land in the database or the browser.",
-            )}
+            {t("settings.aiProviders.description")}
           </p>
         </div>
       </div>
@@ -110,16 +108,13 @@ export default function AiProvidersSettingsPage() {
             </div>
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                {t("Standard-Provider", "Default provider")}:{" "}
+                {t("settings.aiProviders.defaultProvider")}:{" "}
                 <code className="rounded bg-gray-100 px-2 py-0.5 font-mono text-xs">
                   {data.defaultProvider}
                 </code>
               </div>
               <div className="text-xs text-gray-500">
-                {t(
-                  "Provider, der standardmäßig ausgewählt wird, wenn kein expliziter Provider angefordert wurde.",
-                  "Provider selected by default when no explicit provider is requested.",
-                )}
+                {t("settings.aiProviders.defaultProviderHint")}
               </div>
             </div>
           </div>
@@ -135,7 +130,7 @@ export default function AiProvidersSettingsPage() {
             </div>
             <div>
               <div className="text-sm font-semibold text-gray-900">
-                {t("Privacy-Routing", "Privacy routing")}
+                {t("settings.aiProviders.privacyRouting")}
                 {": "}
                 <span
                   className={
@@ -145,15 +140,12 @@ export default function AiProvidersSettingsPage() {
                   }
                 >
                   {data.privacyRoutingEnabled
-                    ? t("aktiv", "enabled")
-                    : t("inaktiv", "disabled")}
+                    ? t("settings.aiProviders.enabled")
+                    : t("settings.aiProviders.disabled")}
                 </span>
               </div>
               <div className="text-xs text-gray-500">
-                {t(
-                  "Bei personenbezogenen Daten (containsPersonalData=true) wird automatisch auf Ollama oder LM Studio geroutet.",
-                  "When containsPersonalData=true, requests are auto-routed to Ollama or LM Studio.",
-                )}
+                {t("settings.aiProviders.privacyRoutingHint")}
               </div>
             </div>
           </div>
@@ -178,7 +170,7 @@ export default function AiProvidersSettingsPage() {
       {!loading && data && (
         <div className="grid gap-4 lg:grid-cols-2">
           {data.providers.map((p) => {
-            const typeInfo = TYPE_LABEL[p.type];
+            const typeClasses = TYPE_CLASSES[p.type];
             const Icon =
               p.type === "local"
                 ? HardDrive
@@ -210,18 +202,18 @@ export default function AiProvidersSettingsPage() {
                         </h3>
                         {p.key === data.defaultProvider && (
                           <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-medium text-indigo-700">
-                            {t("Standard", "Default")}
+                            {t("settings.aiProviders.default")}
                           </span>
                         )}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <span
-                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${typeInfo.classes}`}
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${typeClasses}`}
                         >
-                          {locale === "de" ? typeInfo.de : typeInfo.en}
+                          {t(`settings.aiProviders.type.${p.type}`)}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {t("Modell", "Model")}:{" "}
+                          {t("settings.aiProviders.model")}:{" "}
                           <code className="font-mono">{p.defaultModel}</code>
                         </span>
                       </div>
@@ -238,12 +230,12 @@ export default function AiProvidersSettingsPage() {
                     {p.configured ? (
                       <>
                         <Check size={12} />
-                        {t("Konfiguriert", "Configured")}
+                        {t("settings.aiProviders.configured")}
                       </>
                     ) : (
                       <>
                         <XIcon size={12} />
-                        {t("Nicht konfiguriert", "Not configured")}
+                        {t("settings.aiProviders.notConfigured")}
                       </>
                     )}
                   </span>
@@ -256,7 +248,7 @@ export default function AiProvidersSettingsPage() {
                 {/* Env vars */}
                 <div className="space-y-1.5 rounded-lg bg-gray-50 p-3">
                   <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">
-                    {t("Umgebungsvariablen", "Environment variables")}
+                    {t("settings.aiProviders.envVars")}
                   </div>
                   {p.envVars.map((v) => (
                     <div
@@ -306,17 +298,9 @@ export default function AiProvidersSettingsPage() {
           <Info size={14} className="mt-0.5 shrink-0" />
           <div>
             <div className="font-semibold">
-              {t(
-                "Schlüssel und Endpunkte ändern",
-                "Updating keys and endpoints",
-              )}
+              {t("settings.aiProviders.footerTitle")}
             </div>
-            <p className="mt-1">
-              {t(
-                "Tragen Sie die Werte in der .env-Datei des Deployments ein und starten Sie den Node-Prozess neu. Die UI hier zeigt ausschließlich den Konfigurationsstatus — es werden keine Schlüssel angezeigt oder bearbeitet. Das schützt gegen versehentliche Exposition via Browser-Cache, Screenshots oder Support-Sessions.",
-                "Set the values in the deployment's .env file and restart the Node process. This page only shows the configuration status — no keys are ever displayed or editable. That protects against accidental exposure via browser cache, screenshots, or support sessions.",
-              )}
-            </p>
+            <p className="mt-1">{t("settings.aiProviders.footerBody")}</p>
           </div>
         </div>
       </div>

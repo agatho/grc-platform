@@ -13,6 +13,17 @@ import {
   type StepCandidate,
 } from "../src/state-machines/programme-step";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("PROGRAMME_STEP_STATUSES", () => {
   it("contains all 7 documented values", () => {
     expect(PROGRAMME_STEP_STATUSES).toEqual([
@@ -243,8 +254,8 @@ describe("computeNextBestActions", () => {
         baseStep({ id: "2", code: "S2", status: "in_progress", dueDate: null }),
       ],
     });
-    expect(r[0].reason).toBe("overdue");
-    expect(r[0].priority).toBeGreaterThan(100);
+    expect(at(r, 0).reason).toBe("overdue");
+    expect(at(r, 0).priority).toBeGreaterThan(100);
   });
 
   it("flags blocked steps as blocker_resolution", () => {
@@ -252,7 +263,7 @@ describe("computeNextBestActions", () => {
       today: "2026-04-30",
       steps: [baseStep({ id: "1", code: "S1", status: "blocked" })],
     });
-    expect(r[0].reason).toBe("blocker_resolution");
+    expect(at(r, 0).reason).toBe("blocker_resolution");
   });
 
   it("flags unassigned in_progress steps", () => {
@@ -267,7 +278,7 @@ describe("computeNextBestActions", () => {
         }),
       ],
     });
-    expect(r[0].reason).toBe("unassigned");
+    expect(at(r, 0).reason).toBe("unassigned");
   });
 
   it("flags due_soon for steps within 7 days", () => {
@@ -282,8 +293,8 @@ describe("computeNextBestActions", () => {
         }),
       ],
     });
-    expect(r[0].reason).toBe("due_soon");
-    expect(r[0].dueInDays).toBe(5);
+    expect(at(r, 0).reason).toBe("due_soon");
+    expect(at(r, 0).dueInDays).toBe(5);
   });
 
   it("recommends next pending step in sequence when prereqs met", () => {

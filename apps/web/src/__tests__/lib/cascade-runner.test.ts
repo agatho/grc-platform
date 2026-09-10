@@ -77,7 +77,7 @@ function makeTx() {
 
 // Drives what `.select()...` chains resolve to next. Set this before
 // each lifecycle step to control what the cascade sees from the DB.
-let currentSelectResult: unknown[] = [];
+const currentSelectResult: unknown[] = [];
 type TxStub = {
   _reset: () => void;
   _calls: Array<{ op: string; table: string; payload?: unknown }>;

@@ -1,14 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import {
-  FileText,
-  Download,
-  Loader2,
-  CheckCircle2,
-  Shield,
-} from "lucide-react";
+import { Download, Loader2, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,26 +28,21 @@ interface TemplatePack {
 
 export default function TemplateLibraryPage() {
   const t = useTranslations("onboarding");
-  const [packs, setPacks] = useState<TemplatePack[]>([]);
-  const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: packs = [], isPending: loading } = useQuery<TemplatePack[]>({
+    queryKey: ["onboarding", "template-packs"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/template-packs");
-      if (res.ok) {
-        const data = await res.json();
-        setPacks(data.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data ?? []) as TemplatePack[];
+    },
+  });
 
   const applyPack = async (packId: string) => {
     setApplying(packId);

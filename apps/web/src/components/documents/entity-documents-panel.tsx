@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   FileText,
-  Upload,
   Trash2,
   Download,
   Loader2,
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface LinkedDocument {
   link_id: string;
@@ -46,7 +47,9 @@ const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
   in_review: "bg-yellow-100 text-yellow-700",
   approved: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — als einziges Paar der
+  // -100/-700-Familie unter 4,5.
+  published: "bg-green-100 text-green-800",
   archived: "bg-gray-100 text-gray-500",
 };
 
@@ -62,50 +65,56 @@ export function EntityDocumentsPanel({
   entityId,
 }: EntityDocumentsPanelProps) {
   const t = useTranslations("documents");
-  const [docs, setDocs] = useState<LinkedDocument[]>([]);
-  const [loading, setLoading] = useState(true);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-  const [availableDocs, setAvailableDocs] = useState<
-    Array<{ id: string; title: string; category: string; status: string }>
-  >([]);
   const [searchDoc, setSearchDoc] = useState("");
-  const [loadingAvailable, setLoadingAvailable] = useState(false);
+
+  // [Welle 7b · OP-080, Gestalt A] Beide Abrufe dieser Tafel lagen in Effekten,
+  // die Ergebnis und Ladezustand synchron zurueckschrieben
+  // (`react-hooks/set-state-in-effect`, zwei Fundstellen). Sie sind der
+  // Lehrbuchfall der Gestalt A und wandern nach `@tanstack/react-query`.
+  //
+  // Der zweite Abruf — die auswaehlbaren Dokumente — wird nur gebraucht, solange
+  // der Verknuepfungsdialog offen ist. `enabled` sagt genau das; vorher tat es
+  // ein `if (linkDialogOpen)` im Effektrumpf, was dieselbe Bedingung war, aber
+  // das Ergebnis des letzten Aufrufs im Zustand stehen liess.
+  const {
+    data: docs = [],
+    isPending: loading,
+    refetch: refetchLinkedDocs,
+  } = useQuery<LinkedDocument[]>({
+    queryKey: ["entity-documents", entityType, entityId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/entity-documents?entityType=${entityType}&entityId=${entityId}`,
+      );
+      if (!res.ok) return [];
+      return ((await res.json()).data ?? []) as LinkedDocument[];
+    },
+  });
 
   const fetchLinkedDocs = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(
-      `/api/v1/entity-documents?entityType=${entityType}&entityId=${entityId}`,
-    );
-    if (res.ok) setDocs((await res.json()).data ?? []);
-    setLoading(false);
-  }, [entityType, entityId]);
+    await refetchLinkedDocs();
+  }, [refetchLinkedDocs]);
 
-  useEffect(() => {
-    fetchLinkedDocs();
-  }, [fetchLinkedDocs]);
-
-  const loadAvailableDocs = useCallback(async () => {
-    setLoadingAvailable(true);
-    const params = new URLSearchParams({ limit: "50" });
-    if (searchDoc) params.set("search", searchDoc);
-    const res = await fetch(`/api/v1/documents?${params}`);
-    if (res.ok) {
+  const { data: availableDocs = [], isFetching: loadingAvailable } = useQuery<
+    Array<{ id: string; title: string; category: string; status: string }>
+  >({
+    queryKey: ["documents", "available", searchDoc],
+    enabled: linkDialogOpen,
+    queryFn: async () => {
+      const params = new URLSearchParams({ limit: "50" });
+      if (searchDoc) params.set("search", searchDoc);
+      const res = await fetch(`/api/v1/documents?${params}`);
+      if (!res.ok) return [];
       const json = await res.json();
-      setAvailableDocs(
-        (json.data ?? []).map((d: any) => ({
-          id: d.id,
-          title: d.title,
-          category: d.category,
-          status: d.status,
-        })),
-      );
-    }
-    setLoadingAvailable(false);
-  }, [searchDoc]);
-
-  useEffect(() => {
-    if (linkDialogOpen) loadAvailableDocs();
-  }, [linkDialogOpen, searchDoc, loadAvailableDocs]);
+      return ((json.data ?? []) as UnvalidatedJson[]).map((d) => ({
+        id: d.id as string,
+        title: d.title as string,
+        category: d.category as string,
+        status: d.status as string,
+      }));
+    },
+  });
 
   const linkDocument = async (documentId: string) => {
     await fetch("/api/v1/entity-documents", {

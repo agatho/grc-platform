@@ -1,4 +1,4 @@
-import { db } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   withAuth,
@@ -8,8 +8,18 @@ import {
 } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { createAiProviderQmsSchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+/**
+ * `COUNT(*)` ist in Postgres `bigint`; der Treiber liefert es als
+ * Zeichenkette. [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+ */
+type CountRow = { count: string | number };
+
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -40,9 +50,9 @@ export async function GET(req: Request) {
       tx.execute(countQuery),
     ]);
     // postgres-js tx.execute returns the row array directly; normalise either shape.
-    const rows = Array.isArray(r) ? r : (r?.rows ?? []);
-    const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
-    const count = Number((countArr[0] as any)?.count ?? 0);
+    const rows = toRows(r);
+    const countArr = toRows(c) as unknown as CountRow[];
+    const count = Number(countArr[0]?.count ?? 0);
     return { rows, count };
   });
   return Response.json({
@@ -53,9 +63,8 @@ export async function GET(req: Request) {
       total: result.count,
     },
   });
-}
-
-export async function POST(req: Request) {
+});
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
@@ -90,7 +99,7 @@ export async function POST(req: Request) {
       VALUES (${ctx.orgId}, ${ai_system_id}, ${risk_management_procedure ?? false}, ${data_governance_procedure ?? false}, ${technical_documentation_procedure ?? false}, ${record_keeping_procedure ?? false}, ${transparency_procedure ?? false}, ${human_oversight_procedure ?? false}, ${accuracy_procedure ?? false}, ${cybersecurity_procedure ?? false}, ${conformity_procedure ?? false}, ${post_market_procedure ?? false}, ${overall_maturity ?? 0}, ${next_audit_date ?? null}, ${ctx.userId}, ${ctx.userId})
       RETURNING *
     `);
-    return res.rows[0];
+    return firstRow(res);
   });
   return Response.json({ data: result }, { status: 201 });
-}
+});

@@ -11,7 +11,9 @@
 # Standard (ohne --with-demo): "Private" Mandant
 #   - Platform-Baseline (Module + Work-Item-Types) wird geseedet
 #   - KEINE Demo-Organisationen und KEINE Demo-User
-#   - Nach Setup: admin@arctos.dev (Platform-Admin) kann sich einloggen und
+#   - Nach Setup: der Erstadministrator wird mit `db:create-admin` angelegt
+#     (#S13-09e; frueher stand hier ein Demo-Konto mit bekanntem Passwort);
+#     er kann sich einloggen und
 #     per UI-Wizard die erste Organisation anlegen. Im neuen Mandant muss der
 #     erste User manuell via SQL oder UI-Invite angelegt werden.
 #
@@ -264,7 +266,11 @@ echo "  Mandant '$TENANT' erstellt!"
 echo "============================================="
 echo ""
 echo "  URL:       https://$SUBDOMAIN"
-echo "  Login:     admin@arctos.dev / admin123"
+# [WP10 · S13-09e] Vorher: "Login: admin@arctos.dev / admin123". Dieses
+# Konto entsteht nur aus dem Demo-Seed und existiert in einem produktiven
+# Mandanten nicht.
+echo "  Erstadmin: cd $TENANT_DIR && docker compose exec -T worker \\"
+echo "               sh -c 'cd /app && tsx packages/db/src/create-admin.ts --email <adresse>'"
 echo "  Datenbank: $DB_NAME (isoliert)"
 echo "  Port:      $NEXT_PORT (intern)"
 echo "  Config:    $TENANT_DIR/env"

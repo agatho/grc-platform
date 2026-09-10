@@ -14,6 +14,10 @@ import { requireModule } from "@grc/auth";
 import { createManagementReviewItemSchema } from "@grc/shared";
 import { eq, and, asc, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type ReviewRow = { id: string; status: string };
 
@@ -41,7 +45,7 @@ function reviewReadOnlyResponse(status: string): Response {
 }
 
 // GET /api/v1/isms/reviews/[id]/items
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -89,10 +93,9 @@ export async function GET(
     );
 
   return Response.json({ data: items });
-}
-
+});
 // POST /api/v1/isms/reviews/[id]/items
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -182,4 +185,4 @@ export async function POST(
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

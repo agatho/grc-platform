@@ -1,11 +1,15 @@
 import { db, developerApp } from "@grc/db";
 import { createDeveloperAppSchema } from "@grc/shared";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { randomBytes, createHash } from "crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/developer-apps
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -53,10 +57,9 @@ export async function POST(req: Request) {
     },
     { status: 201 },
   );
-}
-
+});
 // GET /api/v1/developer-apps
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -86,4 +89,4 @@ export async function GET(req: Request) {
     .where(eq(developerApp.orgId, ctx.orgId));
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
-}
+});

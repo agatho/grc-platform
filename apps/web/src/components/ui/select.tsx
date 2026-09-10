@@ -5,6 +5,10 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@grc/ui";
+import {
+  useAccessibleNameFallback,
+  useFieldTriggerProps,
+} from "@/components/ui/field";
 
 const Select = SelectPrimitive.Root;
 
@@ -12,24 +16,53 @@ const SelectGroup = SelectPrimitive.Group;
 
 const SelectValue = SelectPrimitive.Value;
 
+/**
+ * [WP12 · S14-09 / S14-12] 305 of 315 selects had no accessible name and axe
+ * reported `button-name` (critical) on the trigger. Radix renders a
+ * `<button role="combobox">`, which `<label for>` cannot name at all, so:
+ *
+ *  - inside a `<Field>` the trigger references the `<Label>` through
+ *    `aria-labelledby` (`useFieldTriggerProps`);
+ *  - outside one, a fallback name is applied only when the mounted button ends
+ *    up with no accessible name whatsoever.
+ *
+ * The fallback deliberately does not fall back to the trigger's own text: that
+ * text is the *selected value* and changes as the user picks. A name has to
+ * identify the control, not its current state (WCAG 4.1.2).
+ */
 const SelectTrigger = React.forwardRef<
   React.ComponentRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
->(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-white transition-all duration-150 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 dark:border-slate-800 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-blue-400/20 dark:focus:border-blue-400",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-    <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 opacity-50" />
-    </SelectPrimitive.Icon>
-  </SelectPrimitive.Trigger>
-));
+>(({ className, children, ...props }, ref) => {
+  const triggerProps = useFieldTriggerProps(props.id);
+  const ariaLabel = props["aria-label"];
+  const name = props.name;
+  const composedRef = useAccessibleNameFallback<HTMLButtonElement>(ref, () => {
+    if (ariaLabel?.trim()) return ariaLabel;
+    if (name?.trim())
+      return name
+        .replace(/[_-]+/g, " ")
+        .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+        .trim();
+    return undefined;
+  });
+  return (
+    <SelectPrimitive.Trigger
+      className={cn(
+        "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-lg border border-slate-200 bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-white transition-all duration-150 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 dark:border-slate-800 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus:ring-blue-400/20 dark:focus:border-blue-400",
+        className,
+      )}
+      {...props}
+      {...triggerProps}
+      ref={composedRef}
+    >
+      {children}
+      <SelectPrimitive.Icon asChild>
+        <ChevronDown className="h-4 w-4 opacity-50" />
+      </SelectPrimitive.Icon>
+    </SelectPrimitive.Trigger>
+  );
+});
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
 
 const SelectScrollUpButton = React.forwardRef<

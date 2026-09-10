@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { AlertTriangle, Check, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RiskAnomalyDetection } from "@grc/shared";
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -25,22 +26,25 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function AnomaliesPage() {
   const t = useTranslations("predictiveRisk");
-  const [anomalies, setAnomalies] = useState<RiskAnomalyDetection[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: anomalies = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<RiskAnomalyDetection[]>({
+    queryKey: ["predictive-risk", "anomalies"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/predictive-risk/anomalies?limit=50");
+      if (!res.ok) return [];
+      return (await res.json()).data as RiskAnomalyDetection[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/predictive-risk/anomalies?limit=50");
-      if (res.ok) setAnomalies((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const updateStatus = async (id: string, status: string) => {
     await fetch(`/api/v1/predictive-risk/anomalies/${id}`, {

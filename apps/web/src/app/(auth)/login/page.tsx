@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Shield, ShieldCheck, Lock, BarChart3 } from "lucide-react";
 import { motion } from "motion/react";
+import { safeRedirectPath } from "@grc/ui";
 
 interface SsoInfo {
   provider: "saml" | "oidc";
@@ -17,13 +18,28 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useTranslations("identity");
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S12-07] Open redirect.
+  //
+  // The raw query parameter went straight into `router.push()`. Auth.js has a
+  // `redirect` callback with an origin check, but it is bypassed here because
+  // `signIn(..., { redirect: false })` is used and the navigation is manual —
+  // the framework's built-in protection was switched off.
+  //
+  // `safeRedirectPath` collapses anything that is not a same-origin absolute
+  // path to `/dashboard`, which also covers the `//attacker.tld` and
+  // `/\attacker.tld` forms a naive `startsWith("/")` check lets through.
+  // Applied once here so the credential, SAML, OIDC and legacy-Entra paths
+  // below all inherit it.
+  const callbackUrl = safeRedirectPath(
+    searchParams.get("callbackUrl"),
+    "/dashboard",
+  );
   const orgId = searchParams.get("orgId");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [ssoInfo, setSsoInfo] = useState<SsoInfo | null>(null);
   const [ssoLoading, setSsoLoading] = useState(false);
-  const [checkingSso, setCheckingSso] = useState(true);
+  const [_checkingSso, setCheckingSso] = useState(true);
 
   // Check if org has SSO configured
   useEffect(() => {
@@ -386,7 +402,11 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="relative"
         >
-          <p className="text-xs text-blue-300/40">{t("loginFooter")}</p>
+          {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-11] Was a mid-tone blue at
+              40 % opacity on the navy marketing panel — well under 4.5:1.
+              Aligned with the neighbouring captions, which sit at the light
+              end of the ramp where this panel expects its foreground. */}
+          <p className="text-xs text-blue-100/80">{t("loginFooter")}</p>
         </motion.div>
       </div>
 

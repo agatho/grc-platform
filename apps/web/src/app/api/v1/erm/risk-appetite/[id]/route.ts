@@ -1,11 +1,15 @@
-import { db, riskAppetiteThreshold } from "@grc/db";
+import { riskAppetiteThreshold } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { updateRiskAppetiteThresholdSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/erm/risk-appetite/:id — Update threshold
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -58,10 +62,9 @@ export async function PUT(
   }
 
   return Response.json({ data: result });
-}
-
+});
 // DELETE /api/v1/erm/risk-appetite/:id — Soft delete
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -95,4 +98,4 @@ export async function DELETE(
   }
 
   return Response.json({ success: true });
-}
+});

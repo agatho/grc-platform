@@ -20,6 +20,7 @@
 // entity-appropriate parameter names and produce the canonical payload.
 
 import { createHash } from "node:crypto";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export function sha256(input: string): string {
   return createHash("sha256").update(input).digest("hex");
@@ -114,7 +115,7 @@ export function computePayloadHash(payload: SignOffPayload): string {
   // Stable key order for determinism
   const ordered: Record<string, unknown> = {};
   for (const k of Object.keys(payload).sort()) {
-    ordered[k] = (payload as any)[k];
+    ordered[k] = (payload as UnvalidatedJson)[k];
   }
   return sha256(JSON.stringify(ordered));
 }

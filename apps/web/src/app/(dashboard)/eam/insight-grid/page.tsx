@@ -3,11 +3,11 @@
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function EamVisualizationPage() {
   const t = useTranslations("eamDashboards");
-  const [data, setData] = useState<Record<string, unknown> | null>(null);
+  const [_data, _setData] = useState<Record<string, unknown> | null>(null);
 
   return (
     <ModuleGate moduleKey="eam">

@@ -9,6 +9,27 @@ import {
   type MaterialityTopicInput,
 } from "../src/esg-calculations";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+
+// [OP-065] Pflichteintrag aus einer Map holen; fehlt er, ist der Test falsch
+// aufgesetzt und sagt das mit Namen statt mit einem `undefined`-Zugriff.
+function req<K, V>(m: ReadonlyMap<K, V>, key: K): V {
+  const v = m.get(key);
+  if (v === undefined)
+    throw new Error(`erwarteter Eintrag ${String(key)} fehlt`);
+  return v;
+}
+
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 const topic = (
   id: string,
   impact: number,
@@ -33,11 +54,11 @@ describe("computeMaterialityMatrix", () => {
       topic("LH", 3, 7),
       topic("LL", 3, 3),
     ]);
-    const byId = Object.fromEntries(r.map((t) => [t.id, t]));
-    expect(byId.HH.quadrant).toBe("high_impact_high_financial");
-    expect(byId.HL.quadrant).toBe("high_impact_low_financial");
-    expect(byId.LH.quadrant).toBe("low_impact_high_financial");
-    expect(byId.LL.quadrant).toBe("low_impact_low_financial");
+    const byId = new Map(r.map((t) => [t.id, t]));
+    expect(req(byId, "HH").quadrant).toBe("high_impact_high_financial");
+    expect(req(byId, "HL").quadrant).toBe("high_impact_low_financial");
+    expect(req(byId, "LH").quadrant).toBe("low_impact_high_financial");
+    expect(req(byId, "LL").quadrant).toBe("low_impact_low_financial");
   });
 
   it("threshold is exactly 5.0 (inclusive)", () => {
@@ -45,9 +66,9 @@ describe("computeMaterialityMatrix", () => {
       topic("exact-5", 5, 5),
       topic("just-below", 4.9, 4.9),
     ]);
-    const byId = Object.fromEntries(r.map((t) => [t.id, t]));
-    expect(byId["exact-5"].quadrant).toBe("high_impact_high_financial");
-    expect(byId["just-below"].quadrant).toBe("low_impact_low_financial");
+    const byId = new Map(r.map((t) => [t.id, t]));
+    expect(req(byId, "exact-5").quadrant).toBe("high_impact_high_financial");
+    expect(req(byId, "just-below").quadrant).toBe("low_impact_low_financial");
   });
 
   it("isMaterial=true if either dimension >= 5", () => {
@@ -56,10 +77,10 @@ describe("computeMaterialityMatrix", () => {
       topic("only-financial", 0, 5),
       topic("none", 0, 0),
     ]);
-    const byId = Object.fromEntries(r.map((t) => [t.id, t]));
-    expect(byId["only-impact"].isMaterial).toBe(true);
-    expect(byId["only-financial"].isMaterial).toBe(true);
-    expect(byId.none.isMaterial).toBe(false);
+    const byId = new Map(r.map((t) => [t.id, t]));
+    expect(req(byId, "only-impact").isMaterial).toBe(true);
+    expect(req(byId, "only-financial").isMaterial).toBe(true);
+    expect(req(byId, "none").isMaterial).toBe(false);
   });
 
   it("sorts by combined score descending", () => {
@@ -79,7 +100,7 @@ describe("computeMaterialityMatrix", () => {
       impactScore: 6,
       financialScore: 6,
     };
-    const r = computeMaterialityMatrix([input])[0];
+    const r = at(computeMaterialityMatrix([input]), 0);
     expect(r.id).toBe(input.id);
     expect(r.topicName).toBe(input.topicName);
     expect(r.esrsStandard).toBe(input.esrsStandard);

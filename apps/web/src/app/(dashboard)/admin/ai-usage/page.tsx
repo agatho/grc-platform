@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Bot, Coins, Zap, Database } from "lucide-react";
 
@@ -60,26 +61,29 @@ const TEMPLATE_LABELS: Record<string, string> = {
 export default function AiUsagePage() {
   const t = useTranslations("intelligence");
 
-  const [data, setData] = useState<UsageData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`; ein Netzfehler landet im Fehlerzustand der Abfrage und
+  // zeigt ueber den `null`-Vorgabewert dieselbe Leeransicht.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<UsageData | null>({
+    queryKey: ["ai", "usage"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/ai/usage");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as UsageData | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/ai/usage");
-      if (!res.ok) throw new Error("Failed to load");
-      const json = await res.json();
-      setData(json.data ?? null);
-    } catch {
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -97,10 +101,10 @@ export default function AiUsagePage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw
-            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
           />
           {t("aiUsage.refresh")}
         </Button>

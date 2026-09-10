@@ -144,40 +144,18 @@ export const templatePackItem = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
-// 59.5 ImportJob — Bulk import job tracking
+// 59.5 ImportJob — entfernt (S09-08)
 // ──────────────────────────────────────────────────────────────
-
-export const onboardingImportJob = pgTable(
-  "import_job",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .notNull()
-      .references(() => organization.id),
-    source: varchar("source", { length: 50 }).notNull(),
-    sourceFile: varchar("source_file", { length: 500 }),
-    templatePackId: uuid("template_pack_id").references(() => templatePack.id),
-    status: varchar("status", { length: 20 }).notNull().default("pending"),
-    totalItems: integer("total_items").notNull().default(0),
-    processedItems: integer("processed_items").notNull().default(0),
-    failedItems: integer("failed_items").notNull().default(0),
-    errorLog: jsonb("error_log").default("[]"),
-    mapping: jsonb("mapping").default("{}"),
-    startedAt: timestamp("started_at", { withTimezone: true }),
-    completedAt: timestamp("completed_at", { withTimezone: true }),
-    createdBy: uuid("created_by")
-      .notNull()
-      .references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => [
-    index("import_job_org_idx").on(table.orgId),
-    index("import_job_status_idx").on(table.orgId, table.status),
-    index("import_job_created_idx").on(table.createdAt),
-  ],
-);
+// [ARCTOS-FULL-2026-08-31 / WP1 · S09-08] Die zweite pgTable-Definition für
+// die SQL-Tabelle `import_job` ist hier entfernt. `onboardingImportJob` und
+// `importJob` (in ./import-export.ts) deklarierten dieselbe Tabelle mit
+// DISJUNKTEN Spaltenmengen und kollidierenden Indexnamen. Die Datenbank trägt
+// die Gestalt von `importJob`:
+//   id, org_id, entity_type, file_name, file_size, mime_type, status,
+//   total_rows, valid_rows, error_rows, imported_rows, column_mapping,
+//   validation_errors, log_json, raw_headers, raw_preview_rows, source,
+//   template_pack_id, total_items, processed_items, failed_items, error_log, …
+// Ein Import der hier entfernten Definition hätte zur Laufzeit
+// `column … does not exist` erzeugt; der Schema-Drift-Endpunkt zählte beide
+// als „vorhanden". Wird die zweite Gestalt fachlich gebraucht, gehört sie in
+// eine eigene Tabelle mit eigenem Namen und eigener Migration.

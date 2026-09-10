@@ -1,20 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import {
-  ArrowLeft,
-  Shield,
-  Loader2,
-  RefreshCcw,
-  ExternalLink,
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  Plus,
-} from "lucide-react";
+import { ArrowLeft, Shield, Loader2, RefreshCcw, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -32,7 +23,7 @@ interface ThreatDetail {
   createdAt: string;
 }
 
-interface AffectedAsset {
+interface _AffectedAsset {
   assetId: string;
   assetName: string;
   tier: string;
@@ -47,25 +38,27 @@ export default function ThreatDetailPage() {
   const params = useParams();
   const threatId = params.threatId as string;
 
-  const [threat, setThreat] = useState<ThreatDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` („nicht gefunden").
+  const {
+    data: threat = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<ThreatDetail | null>({
+    queryKey: ["isms", "threats", threatId],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/isms/threats/${threatId}`);
+      if (!res.ok) return null;
+      const { data } = await res.json();
+      return (data ?? null) as ThreatDetail | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/isms/threats/${threatId}`);
-      if (res.ok) {
-        const { data } = await res.json();
-        setThreat(data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [threatId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (

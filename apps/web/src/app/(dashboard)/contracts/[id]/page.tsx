@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -13,13 +14,12 @@ import {
   FolderOpen,
   RefreshCcw,
 } from "lucide-react";
-import Link from "next/link";
-import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -39,6 +39,17 @@ const OBL_STATUS_COLORS: Record<string, string> = {
   overdue: "bg-red-100 text-red-900",
 };
 
+interface ContractDetailBundle {
+  contract: Record<string, unknown> | null;
+  obligations: Array<Record<string, unknown>>;
+  slas: Array<Record<string, unknown>>;
+  amendments: Array<Record<string, unknown>>;
+}
+
+// Stable empty list so the SLA-measurements effect below does not re-run on
+// every render while the bundle is still pending.
+const NO_ROWS: Array<Record<string, unknown>> = [];
+
 export default function ContractDetailPage() {
   return (
     <ModuleGate moduleKey="contract">
@@ -49,25 +60,25 @@ export default function ContractDetailPage() {
 
 function ContractDetailInner() {
   const t = useTranslations("contracts");
+  const { formatCurrency: money } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
 
-  const [contract, setContract] = useState<Record<string, unknown> | null>(
-    null,
-  );
-  const [obligations, setObligations] = useState<
-    Array<Record<string, unknown>>
-  >([]);
-  const [slas, setSlas] = useState<Array<Record<string, unknown>>>([]);
-  const [amendments, setAmendments] = useState<Array<Record<string, unknown>>>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Abrufe liefen immer
+  // zusammen — daher eine Abfrage mit einem Objekt. Ein Netzfehler wird nicht
+  // mehr verschluckt, sondern landet im Fehlerzustand der Abfrage; die Seite
+  // zeigt dann wie vorher „nicht gefunden".
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<ContractDetailBundle>({
+    queryKey: ["contracts", id, "detail"],
+    queryFn: async () => {
       const [cRes, oblRes, slaRes, amRes] = await Promise.all([
         fetch(`/api/v1/contracts/${id}`),
         fetch(`/api/v1/contracts/${id}/obligations`),
@@ -75,20 +86,27 @@ function ContractDetailInner() {
         fetch(`/api/v1/contracts/${id}/amendments`),
       ]);
 
-      if (cRes.ok) setContract((await cRes.json()).data);
-      if (oblRes.ok) setObligations((await oblRes.json()).data ?? []);
-      if (slaRes.ok) setSlas((await slaRes.json()).data ?? []);
-      if (amRes.ok) setAmendments((await amRes.json()).data ?? []);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      const result: ContractDetailBundle = {
+        contract: null,
+        obligations: [],
+        slas: [],
+        amendments: [],
+      };
+      if (cRes.ok) result.contract = (await cRes.json()).data ?? null;
+      if (oblRes.ok) result.obligations = (await oblRes.json()).data ?? [];
+      if (slaRes.ok) result.slas = (await slaRes.json()).data ?? [];
+      if (amRes.ok) result.amendments = (await amRes.json()).data ?? [];
+      return result;
+    },
+  });
+  const contract = bundle?.contract ?? null;
+  const obligations = bundle?.obligations ?? NO_ROWS;
+  const slas = bundle?.slas ?? NO_ROWS;
+  const amendments = bundle?.amendments ?? NO_ROWS;
 
-  useEffect(() => {
-    void fetchAll();
-  }, [fetchAll]);
+  const fetchAll = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Fetch measurements for all SLAs
   const [slaMeasurements, setSlaMeasurements] = useState<
@@ -139,10 +157,7 @@ function ContractDetailInner() {
     if (!val) return "\u2014";
     const num = parseFloat(val);
     if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: String(c.currency || "EUR"),
-    }).format(num);
+    return money(num, String(c.currency || "EUR"));
   };
 
   return (

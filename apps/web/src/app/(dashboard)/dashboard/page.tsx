@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -27,8 +28,6 @@ import {
   Loader2,
   ArrowRight,
   AlertTriangle,
-  User,
-  Activity,
   Info,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
@@ -39,6 +38,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useModuleConfig } from "@/hooks/use-module-config";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -183,7 +185,7 @@ function DashboardHeatMap({
 }) {
   const router = useRouter();
   const cellSize = 40;
-  const gap = 3;
+  const _gap = 3;
   const labelW = 16;
 
   function cellColor(l: number, i: number): string {
@@ -220,6 +222,17 @@ function DashboardHeatMap({
                 onClick={
                   count > 0
                     ? () => router.push(`/risks?likelihood=${l}&impact=${i}`)
+                    : undefined
+                }
+                // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] The cell already
+                // declared role="button"/tabIndex but had no keyboard
+                // activation, so it could be focused and then not used.
+                onKeyDown={
+                  count > 0
+                    ? (e) =>
+                        activateOnKey(e, () =>
+                          router.push(`/risks?likelihood=${l}&impact=${i}`),
+                        )
                     : undefined
                 }
                 className={`rounded-sm flex items-center justify-center text-[9px] font-bold ${cellColor(l, i)} ${count > 0 ? "text-white cursor-pointer hover:ring-2 hover:ring-white/60 hover:scale-105 transition-transform" : "text-transparent"}`}
@@ -260,6 +273,10 @@ const STATUS_COLORS: Record<string, string> = {
   closed: "#9ca3af",
 };
 
+const DASHBOARD_AUDIT_KEY = ["audit-log", "dashboard"] as const;
+const DASHBOARD_NOTIFICATIONS_KEY = ["notifications", "dashboard"] as const;
+const DASHBOARD_TASKS_KEY = ["tasks", "dashboard", "my"] as const;
+
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const rt = useTranslations("risk.dashboard");
@@ -268,150 +285,95 @@ export default function DashboardPage() {
   const { data: session } = useSession();
   const { isEnabled: ermEnabled } = useModuleConfig("erm");
 
-  // State for real data widgets
-  const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(true);
-  const [auditError, setAuditError] = useState(false);
+  // [Welle 7b · OP-080, Gestalt A] Vier Fundstellen von
+  // `react-hooks/set-state-in-effect` standen hier — vier Abrufe beim
+  // Einhaengen, jeder mit drei gespiegelten Zustandsfeldern (Daten, Laden,
+  // Fehler) und einem eigenhaendigen `cancelled`-Wachtposten gegen das
+  // Schreiben nach dem Aushaengen. Genau diese Gestalt meint die alte
+  // Registerbegruendung, und fuer sie ist `@tanstack/react-query` die
+  // Aufloesung: Ladezustand, Fehlerzustand und Abbruch kommen aus der
+  // Bibliothek, die dieser Arbeitsbereich ohnehin schon fuehrt.
+  const queryClient = useQueryClient();
 
-  const [notifications, setNotifications] = useState<NotificationEntry[]>([]);
-  const [notifLoading, setNotifLoading] = useState(true);
-  const [notifError, setNotifError] = useState(false);
+  const {
+    data: auditEntries = [],
+    isPending: auditLoading,
+    isError: auditError,
+  } = useQuery<AuditLogEntry[]>({
+    queryKey: DASHBOARD_AUDIT_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/audit-log?limit=10");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<AuditLogEntry>).data;
+    },
+  });
 
-  const [myTasks, setMyTasks] = useState<DashboardTask[]>([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
-  const [tasksError, setTasksError] = useState(false);
+  const {
+    data: notifications = [],
+    isPending: notifLoading,
+    isError: notifError,
+  } = useQuery<NotificationEntry[]>({
+    queryKey: DASHBOARD_NOTIFICATIONS_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/notifications?limit=5");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<NotificationEntry>).data;
+    },
+  });
 
-  // Risk dashboard summary
-  const [riskSummary, setRiskSummary] = useState<RiskDashboardSummary | null>(
-    null,
-  );
-  const [riskSummaryLoading, setRiskSummaryLoading] = useState(true);
+  const {
+    data: myTasks = [],
+    isPending: tasksLoading,
+    isError: tasksError,
+  } = useQuery<DashboardTask[]>({
+    queryKey: DASHBOARD_TASKS_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/tasks?view=my&limit=5");
+      if (!r.ok) throw new Error("Failed");
+      return ((await r.json()) as PaginatedResponse<DashboardTask>).data;
+    },
+  });
 
-  // Fetch recent audit log entries
-  useEffect(() => {
-    let cancelled = false;
-    setAuditLoading(true);
-    fetch("/api/v1/audit-log?limit=10")
-      .then((r) => {
+  // Nur abfragen, wenn das ERM-Modul an ist. Vorher tat das ein `if
+  // (!ermEnabled) { setRiskSummaryLoading(false); return; }` im Effektrumpf —
+  // eine der vier Fundstellen. `enabled` sagt dasselbe, ohne einen Zustand zu
+  // setzen; `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht
+  // `ermEnabled` auch in der Ableitung des Ladezustands.
+  const { data: riskSummary = null, isPending: riskSummaryPending } =
+    useQuery<RiskDashboardSummary | null>({
+      queryKey: ["risks", "dashboard-summary"],
+      enabled: ermEnabled,
+      queryFn: async () => {
+        const r = await fetch("/api/v1/risks/dashboard-summary");
         if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<AuditLogEntry>>;
-      })
-      .then((res) => {
-        if (!cancelled) {
-          setAuditEntries(res.data);
-          setAuditError(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setAuditEntries([]);
-          setAuditError(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setAuditLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch notifications
-  const fetchNotifications = useCallback(() => {
-    setNotifLoading(true);
-    fetch("/api/v1/notifications?limit=5")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<NotificationEntry>>;
-      })
-      .then((res) => {
-        setNotifications(res.data);
-        setNotifError(false);
-      })
-      .catch(() => {
-        setNotifications([]);
-        setNotifError(true);
-      })
-      .finally(() => {
-        setNotifLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
-
-  // Fetch my tasks (next 5 due)
-  useEffect(() => {
-    let cancelled = false;
-    setTasksLoading(true);
-    fetch("/api/v1/tasks?view=my&limit=5")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<PaginatedResponse<DashboardTask>>;
-      })
-      .then((res) => {
-        if (!cancelled) {
-          setMyTasks(res.data);
-          setTasksError(false);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMyTasks([]);
-          setTasksError(true);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setTasksLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch risk dashboard summary (only when ERM module is enabled)
-  useEffect(() => {
-    if (!ermEnabled) {
-      setRiskSummaryLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setRiskSummaryLoading(true);
-    fetch("/api/v1/risks/dashboard-summary")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json() as Promise<{ data: RiskDashboardSummary }>;
-      })
-      .then((res) => {
-        if (!cancelled) setRiskSummary(res.data);
-      })
-      .catch(() => {
-        if (!cancelled) setRiskSummary(null);
-      })
-      .finally(() => {
-        if (!cancelled) setRiskSummaryLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [ermEnabled]);
+        return ((await r.json()) as { data: RiskDashboardSummary }).data;
+      },
+    });
+  const riskSummaryLoading = ermEnabled && riskSummaryPending;
 
   // Mark notification as read
-  async function markAsRead(id: string) {
-    try {
-      const res = await fetch(`/api/v1/notifications/${id}/read`, {
-        method: "PUT",
-      });
-      if (res.ok) {
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-        );
+  const markAsRead = useCallback(
+    async (id: string) => {
+      try {
+        const res = await fetch(`/api/v1/notifications/${id}/read`, {
+          method: "PUT",
+        });
+        if (res.ok) {
+          // Der Zwischenspeicher der Abfrage IST jetzt der Ort, an dem die
+          // Meldungen stehen; er wird direkt fortgeschrieben statt eines
+          // zweiten, gespiegelten Zustandsfelds.
+          queryClient.setQueryData<NotificationEntry[]>(
+            DASHBOARD_NOTIFICATIONS_KEY,
+            (prev) =>
+              prev?.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+          );
+        }
+      } catch {
+        // Silently fail — the user can retry
       }
-    } catch {
-      // Silently fail — the user can retry
-    }
-  }
+    },
+    [queryClient],
+  );
 
   const userName = session?.user?.name ?? "";
   const { layout } = useLayout();
@@ -668,54 +630,60 @@ export default function DashboardPage() {
               </div>
             ) : (
               <ul className="space-y-1">
+                {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] The <li> carried
+                    role="button", which strips the list semantics the <ul>
+                    exists for — a screen reader stops announcing "list, 5
+                    items". The row keeps its <li>, and the action moved into a
+                    real <button> inside it. Space also activates it now;
+                    before, only Enter did. */}
                 {notifications.map((notif) => (
                   <li
                     key={notif.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => !notif.isRead && markAsRead(notif.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !notif.isRead)
-                        markAsRead(notif.id);
-                    }}
-                    className={`flex items-start gap-3 rounded-md px-2 py-2.5 transition-colors cursor-pointer ${
+                    className={`rounded-md transition-colors ${
                       notif.isRead
                         ? "opacity-60 hover:bg-gray-50"
                         : "bg-amber-50/50 hover:bg-amber-50"
                     }`}
                   >
-                    <div className="mt-0.5">
-                      {notif.isRead ? (
-                        <CheckCircle2
-                          size={16}
-                          className="text-gray-400 dark:text-gray-500"
-                        />
-                      ) : (
-                        <div className="h-2 w-2 mt-1.5 rounded-full bg-amber-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 leading-snug truncate">
-                        {notif.title}
-                      </p>
-                      {notif.message && (
-                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-                          {notif.message}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1">
-                        <Clock
-                          size={11}
-                          className="inline-block mr-1 -mt-0.5"
-                        />
-                        {timeAgo(notif.createdAt, t)}
-                        {!notif.isRead && (
-                          <span className="ml-2 text-amber-600 font-medium">
-                            {t("notifications.markRead")}
-                          </span>
+                    <button
+                      type="button"
+                      disabled={notif.isRead}
+                      onClick={() => !notif.isRead && markAsRead(notif.id)}
+                      className="flex w-full items-start gap-3 px-2 py-2.5 text-left cursor-pointer disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-md"
+                    >
+                      <div className="mt-0.5">
+                        {notif.isRead ? (
+                          <CheckCircle2
+                            size={16}
+                            className="text-gray-400 dark:text-gray-500"
+                          />
+                        ) : (
+                          <div className="h-2 w-2 mt-1.5 rounded-full bg-amber-500" />
                         )}
-                      </p>
-                    </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 leading-snug truncate">
+                          {notif.title}
+                        </p>
+                        {notif.message && (
+                          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                            {notif.message}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-400 mt-1">
+                          <Clock
+                            size={11}
+                            className="inline-block mr-1 -mt-0.5"
+                          />
+                          {timeAgo(notif.createdAt, t)}
+                          {!notif.isRead && (
+                            <span className="ml-2 text-amber-600 font-medium">
+                              {t("notifications.markRead")}
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </button>
                   </li>
                 ))}
               </ul>

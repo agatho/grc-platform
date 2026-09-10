@@ -14,7 +14,7 @@ import {
   uniqueIndex,
   numeric,
 } from "drizzle-orm/pg-core";
-import { organization, user } from "./platform";
+import { organization } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
 // 61.1 SubscriptionPlan — Available subscription tiers

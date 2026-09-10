@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -100,29 +101,35 @@ function formatHours(h: number | null): string {
 
 export default function DpmsDeadlineMonitorPage() {
   const { formatDateTime } = useDateFormat();
-  const [data, setData] = useState<MonitorResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [kindFilter, setKindFilter] = useState<"all" | "dsr" | "breach">("all");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft wie
+  // vorher; der Fehlertext kommt aus dem Fehlerzustand der Abfrage.
+  const {
+    data = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<MonitorResponse | null>({
+    queryKey: ["dpms", "deadline-monitor"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/dpms/deadline-monitor");
       if (!res.ok) throw new Error(`API ${res.status}`);
       const json = (await res.json()) as { data: MonitorResponse };
-      setData(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return json.data;
+    },
+  });
+  const error: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Fehler"
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (

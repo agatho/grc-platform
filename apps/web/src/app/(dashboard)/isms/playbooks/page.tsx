@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -73,27 +74,30 @@ export default function PlaybooksPage() {
 function PlaybooksInner() {
   const t = useTranslations("isms.playbook");
   const router = useRouter();
-  const [playbooks, setPlaybooks] = useState<PlaybookTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("__all__");
 
-  const fetchPlaybooks = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: playbooks = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<PlaybookTemplate[]>({
+    queryKey: ["playbooks", "list"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/playbooks?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setPlaybooks(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as PlaybookTemplate[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchPlaybooks();
-  }, [fetchPlaybooks]);
+  const fetchPlaybooks = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = playbooks;
@@ -133,9 +137,12 @@ function PlaybooksInner() {
             variant="outline"
             size="sm"
             onClick={fetchPlaybooks}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/isms/playbooks/new")}>
             <Plus size={16} /> {t("create")}

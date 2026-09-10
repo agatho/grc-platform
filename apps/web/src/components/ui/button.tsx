@@ -13,8 +13,17 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-gradient-to-b from-gray-800 to-gray-900 text-slate-50 shadow-sm hover:from-gray-700 hover:to-gray-800 hover:shadow-md dark:from-gray-100 dark:to-gray-50 dark:text-slate-900 dark:hover:from-gray-200 dark:hover:to-gray-100",
+        // [ARCTOS-FULL-2026-08-31 · OP-049] Der Verlauf begann auf
+        // `red-500`; slate-50 darauf sind 3,66:1. Eine Stufe tiefer
+        // (red-600 → red-700) sind es 4,56:1 bzw. 6,15:1.
+        //
+        // Der Hover-Zustand geht hier als EINZIGE Variante nach dunkler
+        // statt nach heller. Das ist kein Versehen: aufhellen hiesse
+        // zurück auf red-500/red-400, und damit wäre der Knopf im
+        // Hover-Zustand wieder unter der Schwelle — ausgerechnet der
+        // Knopf, der Dinge löscht.
         destructive:
-          "bg-gradient-to-b from-red-500 to-red-600 text-slate-50 shadow-sm hover:from-red-400 hover:to-red-500 hover:shadow-md dark:from-red-800 dark:to-red-900 dark:text-slate-50 dark:hover:from-red-700 dark:hover:to-red-800",
+          "bg-gradient-to-b from-red-600 to-red-700 text-slate-50 shadow-sm hover:from-red-700 hover:to-red-800 hover:shadow-md dark:from-red-800 dark:to-red-900 dark:text-slate-50 dark:hover:from-red-700 dark:hover:to-red-800",
         outline:
           "border border-gray-200 bg-white shadow-sm hover:shadow-md hover:bg-gray-50 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:hover:bg-slate-800 dark:hover:text-slate-50",
         secondary:

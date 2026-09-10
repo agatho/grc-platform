@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
@@ -43,29 +44,32 @@ function RopaDetailInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<RopaDetailData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<
     "overview" | "categories" | "subjects" | "recipients"
   >("overview");
   const [reviewing, setReviewing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (die Seite zeigt dann „nicht gefunden").
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<RopaDetailData | null>({
+    queryKey: ["dpms", "ropa", id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/dpms/ropa/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RopaDetailData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleReview = async () => {
     setReviewing(true);

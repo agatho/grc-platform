@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
@@ -27,36 +28,39 @@ export default function MaturityPage() {
 
 function MaturityInner() {
   const t = useTranslations("ismsAssessment");
-  const [gaps, setGaps] = useState<MaturityGapRow[]>([]);
-  const [stats, setStats] = useState<GapStats | null>(null);
-  const [radarData, setRadarData] = useState<RadarDataPoint[]>([]);
   const [activeTab, setActiveTab] = useState<"gap" | "radar">("gap");
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Lückenanalyse und Radar wurden
+  // immer gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt.
+  const { data, isPending: loading } = useQuery<{
+    gaps: MaturityGapRow[];
+    stats: GapStats | null;
+    radarData: RadarDataPoint[];
+  }>({
+    queryKey: ["isms", "maturity", "gap-and-radar"],
+    queryFn: async () => {
       const [gapRes, radarRes] = await Promise.all([
         fetch("/api/v1/isms/maturity/gap-analysis"),
         fetch("/api/v1/isms/maturity/radar"),
       ]);
+      let gaps: MaturityGapRow[] = [];
+      let stats: GapStats | null = null;
       if (gapRes.ok) {
         const j = await gapRes.json();
-        setGaps(j.data ?? []);
-        setStats(j.stats ?? null);
+        gaps = j.data ?? [];
+        stats = j.stats ?? null;
       }
-      if (radarRes.ok) {
-        const j = await radarRes.json();
-        setRadarData(j.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const radarData: RadarDataPoint[] = radarRes.ok
+        ? ((await radarRes.json()).data ?? [])
+        : [];
+      return { gaps, stats, radarData };
+    },
+  });
+  const gaps = data?.gaps ?? [];
+  const stats = data?.stats ?? null;
+  const radarData = data?.radarData ?? [];
 
   if (loading) {
     return (

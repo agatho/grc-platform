@@ -140,4 +140,52 @@ describe("docxXmlToText", () => {
     // tabs are normalized to single spaces by the whitespace collapse
     expect(text).toBe("A B < C ä");
   });
+
+  // CodeQL js/incomplete-multi-character-sanitization: the tag strip now runs
+  // to a fixpoint (capped at 8 passes) instead of once, so leftovers of an
+  // overlapping shape such as `<<a>b>` cannot hand a tag back to the caller.
+  it("leaves no tag markup for nested/overlapping angle brackets", () => {
+    for (const xml of [
+      "<w:t><<a>b>Text</w:t>",
+      "<<div>span>Inhalt",
+      "<<<x>y>z>Kapitel",
+      "<w:t><scr<script>ipt>alert(1)</w:t>",
+    ]) {
+      expect(docxXmlToText(xml)).not.toMatch(/<[^>]*>/);
+    }
+    // The readable text survives the strip.
+    expect(docxXmlToText("<w:t><<a>b>Text</w:t>")).toBe("b>Text");
+    expect(docxXmlToText("<<div>span>Inhalt")).toBe("span>Inhalt");
+  });
+
+  // Denial of service on an uploaded DOCX. `word/document.xml` is not
+  // length-capped before it reaches the strip (MAX_EXTRACT_CHARS applies to
+  // the result), so the old `.replace(/<[^>]+>/g, "")` — which backtracks to
+  // the end of the string at every `<` — burned quadratic time on attacker-
+  // supplied bytes. Measured on the old code: 80k → 2.9s, 120k → 7.9s,
+  // 200k → 26.6s. The linear scan does 120k in under a millisecond.
+  //
+  // 120k is chosen off that curve: comfortably fatal for the old code, and
+  // still inside vitest's 15s file timeout so this fails as a legible
+  // assertion rather than a timeout.
+  it("strips a 120k-character bracket run in linear time", () => {
+    const started = Date.now();
+    const out = docxXmlToText("<".repeat(120_000) + "Ende");
+    const elapsed = Date.now() - started;
+    expect(elapsed).toBeLessThan(1000);
+    // Deliberately NOT `expect(out).not.toMatch(/<[^>]*>/)`: that assertion is
+    // the very regex under repair, and running it over a 120k-character result
+    // costs ~8s of backtracking inside the test itself. Character checks are
+    // linear. With no `>` in the input there is no tag to strip, so the run
+    // survives intact — which is precisely the old code's worst case.
+    expect(out.includes(">")).toBe(false);
+    expect(out.endsWith("Ende")).toBe(true);
+    expect(out.length).toBe(120_004);
+  });
+
+  it("keeps `<>` — [^>]+ requires a character, so it is not a tag", () => {
+    // The one semantic difference between this strip and the `[^>]*` one in
+    // the tags route. Losing it here would silently eat document text.
+    expect(docxXmlToText("<w:t>a<>b</w:t>")).toBe("a<>b");
+  });
 });

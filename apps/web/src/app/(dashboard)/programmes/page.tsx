@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
@@ -24,27 +25,40 @@ interface JourneyRow {
   targetCompletionDate: string | null;
 }
 
+const JOURNEYS_KEY = ["programmes", "journeys"] as const;
+
 export default function ProgrammesListPage() {
   const t = useTranslations("programme");
-  const [journeys, setJourneys] = useState<JourneyRow[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  async function load() {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Daten- und Fehlerzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft wie
+  // vorher; der Fehlertext kommt aus dem Fehlerzustand der Abfrage. Der
+  // Loeschfehler bleibt lokaler Zustand und teilt sich wie vorher die
+  // Anzeige mit dem Ladefehler.
+  const {
+    data: journeys = null,
+    error: queryError,
+    refetch,
+  } = useQuery<JourneyRow[] | null>({
+    queryKey: JOURNEYS_KEY,
+    queryFn: async () => {
       const r = await fetch("/api/v1/programmes/journeys");
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const json = await r.json();
-      setJourneys(json.data ?? []);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
+      return (json.data ?? []) as JourneyRow[];
+    },
+  });
+  const error: string | null =
+    deleteError ??
+    (queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : String(queryError)
+      : null);
 
   async function handleDelete(j: JourneyRow) {
     const ok = window.confirm(t("list.confirmDelete", { name: j.name }));
@@ -58,11 +72,15 @@ export default function ProgrammesListPage() {
         const json = await r.json().catch(() => ({}));
         throw new Error(json.error ?? json.reason ?? `HTTP ${r.status}`);
       }
-      // Optimistic UI: remove from local state immediately, then re-fetch.
-      setJourneys((prev) => (prev ?? []).filter((x) => x.id !== j.id));
-      await load();
+      // Optimistic UI: remove from the query cache immediately, then re-fetch.
+      // Der Zwischenspeicher der Abfrage IST jetzt der Ort, an dem die Liste
+      // steht; er wird direkt fortgeschrieben statt eines gespiegelten Felds.
+      queryClient.setQueryData<JourneyRow[] | null>(JOURNEYS_KEY, (prev) =>
+        (prev ?? []).filter((x) => x.id !== j.id),
+      );
+      await refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setDeleteError(err instanceof Error ? err.message : String(err));
     } finally {
       setDeletingId(null);
     }
@@ -147,7 +165,7 @@ export default function ProgrammesListPage() {
                   </CardHeader>
                   <CardContent>
                     {j.description && (
-                      <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-300">
+                      <p className="mb-3 line-clamp-2 text-sm text-slate-600 dark:text-slate-500">
                         {j.description}
                       </p>
                     )}

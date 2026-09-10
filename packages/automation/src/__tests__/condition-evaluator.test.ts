@@ -5,6 +5,17 @@ import {
   getNestedValue,
 } from "../condition-evaluator";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("getNestedValue", () => {
   it("gets top-level value", () => {
     expect(getNestedValue({ score: 42 }, "score")).toBe(42);
@@ -278,9 +289,9 @@ describe("evaluateConditionsWithTrace", () => {
     );
     expect(trace.matched).toBe(true);
     expect(trace.children).toHaveLength(1);
-    expect(trace.children![0].matched).toBe(true);
-    expect(trace.children![0].field).toBe("score");
-    expect(trace.children![0].actualValue).toBe(15);
+    expect(at(trace.children ?? [], 0).matched).toBe(true);
+    expect(at(trace.children ?? [], 0).field).toBe("score");
+    expect(at(trace.children ?? [], 0).actualValue).toBe(15);
   });
 
   it("returns trace for nested group", () => {
@@ -302,7 +313,7 @@ describe("evaluateConditionsWithTrace", () => {
     );
     expect(trace.matched).toBe(true);
     expect(trace.children).toHaveLength(2);
-    expect(trace.children![1].operator).toBe("OR");
-    expect(trace.children![1].matched).toBe(true);
+    expect(at(trace.children ?? [], 1).operator).toBe("OR");
+    expect(at(trace.children ?? [], 1).matched).toBe(true);
   });
 });

@@ -148,3 +148,59 @@ describe("cacheInvalidateSchema", () => {
     ).toBe(false);
   });
 });
+
+// ── [N-2 · Welle 6a] Zwei Schemata standen in der Importliste dieser Suite
+// und wurden von keiner einzigen Zusicherung angefasst. Ein Import ist keine
+// Abdeckung; die Suite behauptete sie trotzdem. Statt die Importe zu
+// entfernen, stehen die Pruefungen jetzt hier — und `cciSnapshotSchema` hat
+// dabei gleich seinen eigentlichen Befund offengelegt (siehe unten).
+describe("cciDepartmentsQuerySchema", () => {
+  it("nimmt eine gueltige Periode an", () => {
+    const r = cciDepartmentsQuerySchema.safeParse({ period: "2026-01" });
+    expect(r.success).toBe(true);
+  });
+
+  it("weist eine Periode ab, die dem Format nicht entspricht", () => {
+    const r = cciDepartmentsQuerySchema.safeParse({ period: "2026-Q1" });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("cciSnapshotSchema", () => {
+  // Der Kommentar am Schema sagt „for API response validation". Gemessen am
+  // 2026-09-07 hat es ausserhalb dieser Suite KEINEN Aufrufer:
+  //   grep -rn cciSnapshotSchema --include=*.ts apps packages
+  //   -> schemas/compliance-culture.ts:75 (Deklaration), diese Datei
+  // Es validiert also keine Antwort. Bis das jemand verdrahtet, haelt
+  // wenigstens diese Suite fest, WAS es zusichern wuerde.
+  const gueltig = {
+    id: "11111111-1111-1111-1111-111111111111",
+    orgId: "22222222-2222-2222-2222-222222222222",
+    period: "2026-01",
+    overallScore: 72,
+    factorScores: { task_compliance: 80 },
+    factorWeights: { task_compliance: 0.2 },
+    rawMetrics: { task_compliance: { total: 10, successful: 8 } },
+    trend: "up",
+    createdAt: "2026-09-07T00:00:00.000Z",
+  };
+
+  it("nimmt eine vollstaendige Momentaufnahme an", () => {
+    expect(cciSnapshotSchema.safeParse(gueltig).success).toBe(true);
+  });
+
+  it("weist einen Gesamtwert ausserhalb von 0..100 ab", () => {
+    expect(
+      cciSnapshotSchema.safeParse({ ...gueltig, overallScore: 101 }).success,
+    ).toBe(false);
+  });
+
+  it("weist ein Gewicht ausserhalb von 0..1 ab", () => {
+    expect(
+      cciSnapshotSchema.safeParse({
+        ...gueltig,
+        factorWeights: { task_compliance: 1.5 },
+      }).success,
+    ).toBe(false);
+  });
+});

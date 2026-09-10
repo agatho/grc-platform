@@ -61,7 +61,7 @@ function ConditionRuleRow({
 }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3">
-      <GripVertical size={14} className="text-gray-300 shrink-0" />
+      <GripVertical size={14} className="text-gray-500 shrink-0" />
       <select
         value={rule.field}
         onChange={(e) => onUpdate({ ...rule, field: e.target.value })}

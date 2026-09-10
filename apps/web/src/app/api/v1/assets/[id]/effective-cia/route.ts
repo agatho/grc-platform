@@ -1,6 +1,10 @@
 import { db, asset } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface EffectiveCia {
   confidentiality: number | null;
@@ -16,7 +20,7 @@ interface EffectiveCia {
 const MAX_PARENT_DEPTH = 3;
 
 // GET /api/v1/assets/:id/effective-cia — CIA values with parent chain inheritance
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -132,8 +136,7 @@ export async function GET(
     inherited: false,
   };
   return Response.json({ data: result });
-}
-
+});
 /** Check if an asset has at least one core CIA value set (C, I, or A). */
 function hasCiaValues(row: {
   defaultConfidentiality: number | null;

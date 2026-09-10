@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -43,13 +45,12 @@ const COST_CATEGORIES: CostCategory[] = [
 const COST_TYPES: CostType[] = ["planned", "actual", "forecast"];
 
 export default function CostListPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
-  const [costs, setCosts] = useState<(GrcCostEntry & { grcArea?: GrcArea })[]>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -58,28 +59,45 @@ export default function CostListPage() {
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [filterType, setFilterType] = useState<string>("");
 
-  const fetchCosts = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); Seite und Filter stehen im
+  // Schluessel, Zeilen und Gesamtzahl kommen aus derselben Antwort. Eine
+  // nicht-ok-Antwort liefert wie vorher die Ausgangswerte (leere Liste, 0).
+  const {
+    data: costPage,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    costs: (GrcCostEntry & { grcArea?: GrcArea })[];
+    total: number;
+  }>({
+    queryKey: ["budget", "costs", page, filterArea, filterCategory, filterType],
+    // Beim Blaettern und Filtern bleiben die bisherigen Zeilen stehen, bis
+    // die neuen da sind — so verhielt sich die Seite auch vorher.
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: "20" });
       if (filterArea) params.set("area", filterArea);
       if (filterCategory) params.set("category", filterCategory);
       if (filterType) params.set("type", filterType);
 
       const res = await fetch(`/api/v1/budget/costs?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setCosts(json.data ?? []);
-        setTotal(json.pagination?.total ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, filterArea, filterCategory, filterType]);
+      if (!res.ok) return { costs: [], total: 0 };
+      const json = await res.json();
+      return {
+        costs: (json.data ?? []) as (GrcCostEntry & { grcArea?: GrcArea })[],
+        total: (json.pagination?.total ?? 0) as number,
+      };
+    },
+  });
+  const costs = costPage?.costs ?? [];
+  const total = costPage?.total ?? 0;
 
-  useEffect(() => {
-    void fetchCosts();
-  }, [fetchCosts]);
+  const fetchCosts = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const totalPages = Math.ceil(total / 20);
 
@@ -122,9 +140,12 @@ export default function CostListPage() {
             variant="outline"
             size="sm"
             onClick={fetchCosts}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>
@@ -260,7 +281,7 @@ export default function CostListPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {Number(cost.amount).toLocaleString("de-DE", {
+                        {Number(cost.amount).toLocaleString(numberLocale, {
                           minimumFractionDigits: 2,
                         })}{" "}
                         {cost.currency}

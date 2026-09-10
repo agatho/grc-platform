@@ -145,9 +145,32 @@ beforeEach(() => {
 describe("W24-B1: GET /api/v1/audit-log/integrity", () => {
   it("allows admin, auditor, ciso, compliance_officer", async () => {
     withAuthMock.mockResolvedValue(authedCtx("ciso"));
-    mockDb.execute
-      .mockResolvedValueOnce([]) // chain rows
-      .mockResolvedValueOnce([{ legacy_count: 0 }]);
+    // [ARCTOS-FULL-2026-08-31 / WP4 · S03-04] The handler no longer
+    // carries its own copy of the verification SQL; it calls
+    // audit_chain_verify() and gets one JSON report back. Four copies of
+    // that check existed and drifted — the anchor gate's copy had no v3
+    // branch and reported "0 broken" for every input.
+    mockDb.execute.mockResolvedValueOnce([
+      {
+        report: {
+          scope: "org:org-1",
+          total: 0,
+          ok: 0,
+          rowMismatches: 0,
+          chainMismatches: 0,
+          commitmentMismatches: 0,
+          unverifiableVersion: 0,
+          redactedLegacy: 0,
+          redactionUnproven: 0,
+          unchainedRows: 0,
+          unchainedNewest: null,
+          versionDistribution: { v0: 0, v1: 0, v2: 0, v3: 0, v4: 0 },
+          anchorIssues: [],
+          refusedWrites24h: 0,
+          healthy: true,
+        },
+      },
+    ]);
     const { GET } = await import("../../app/api/v1/audit-log/integrity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity"),

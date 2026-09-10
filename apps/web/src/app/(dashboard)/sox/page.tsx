@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -54,25 +55,19 @@ export default function SoxCompliancePage() {
 }
 
 function SoxComplianceInner() {
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<SoxScopingData | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`.
+  const { data = null, isPending: loading } = useQuery<SoxScopingData | null>({
+    queryKey: ["sox", "scoping"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/sox/scoping");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data ?? null);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as SoxScopingData | null;
+    },
+  });
 
   if (loading) {
     return (

@@ -2,16 +2,15 @@ import { db, cloudTestExecution, cloudTestSuite } from "@grc/db";
 import { triggerCloudTestSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/cloud-connectors/executions — Trigger cloud test suite execution
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "control_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -38,46 +37,40 @@ export async function POST(req: Request) {
   if (!suite)
     return Response.json({ error: "Suite not found" }, { status: 404 });
 
-  const created = await withAuditContext(ctx, async (tx) => {
-    const [row] = await tx
-      .insert(cloudTestExecution)
-      .values({
-        orgId: ctx.orgId,
-        suiteId: suite.id,
-        connectorId: suite.connectorId,
-        provider: suite.provider,
-        status: "completed",
-        totalTests: suite.totalTests,
-        passCount: suite.totalTests,
-        failCount: 0,
-        errorCount: 0,
-        skipCount: 0,
-        passRate: "100.00",
-        durationMs: Math.floor(Math.random() * 5000) + 1000,
-        results: [],
-        triggeredBy: body.data.triggeredBy,
-        completedAt: new Date(),
-      })
-      .returning();
-
-    await tx
-      .update(cloudTestSuite)
-      .set({
-        lastRunAt: new Date(),
-        lastPassRate: "100.00",
-        passingTests: suite.totalTests,
-        updatedAt: new Date(),
-      })
-      .where(eq(cloudTestSuite.id, suite.id));
-
-    return row;
-  });
-
-  return Response.json({ data: created }, { status: 201 });
-}
-
+  // ── [ARCTOS-FULL-2026-08-31 / WP9 · S14-02] ──────────────────────────
+  //
+  // What stood here wrote a COMPLETE, PASSED test execution without
+  // contacting any cloud provider: `status: "completed"`,
+  // `passCount = suite.totalTests`, `failCount: 0`, `passRate: "100.00"`
+  // and a duration from `Math.random()`. It then set
+  // `cloudTestSuite.lastPassRate = "100.00"`. Because the write went
+  // through `withAuditContext`, the fabricated row carried an audit-trail
+  // entry and a timestamp and was indistinguishable from a real result.
+  //
+  // In a product whose purpose is evidence that is the worst available
+  // failure mode: an auditor reading `cloud_test_execution` sees an
+  // unbroken history of passing control tests that never ran, and nothing
+  // in the data says otherwise — `results: []` is empty, not marked.
+  //
+  // The rule applied here and in the other four paths of this finding: no
+  // result is better than an invented one. Until a provider client exists,
+  // this endpoint refuses, persists nothing, and the absence of a row is
+  // the honest state "not tested".
+  return Response.json(
+    {
+      error: "Not implemented",
+      detail:
+        "Cloud test suites cannot be executed in this build: no provider " +
+        "client is wired up. Refusing to record an unmeasured result — an " +
+        "absent execution is auditable, a fabricated 'pass' is not.",
+      suiteId: suite.id,
+      provider: suite.provider,
+    },
+    { status: 501 },
+  );
+});
 // GET /api/v1/cloud-connectors/executions
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -111,4 +104,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

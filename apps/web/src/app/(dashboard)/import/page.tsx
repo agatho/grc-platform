@@ -9,7 +9,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   Download,
   FileSpreadsheet,
   Loader2,
@@ -32,6 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -167,7 +169,7 @@ export default function ImportWizardPage() {
       toast.success(
         `${data.totalRows} rows detected, ${Object.values(data.autoMapping).filter(Boolean).length} columns auto-mapped`,
       );
-    } catch (err) {
+    } catch (_err) {
       toast.error("Upload failed");
     } finally {
       setUploading(false);
@@ -183,6 +185,47 @@ export default function ImportWizardPage() {
     [],
   );
 
+  // ─── Step 3: Validate ─────────────────────────────────────
+  // Steht der Reihenfolge nach vor Schritt 2, weil `handleConfirmMapping`
+  // diese Funktion aufruft — siehe die Anmerkung dort.
+
+  const handleValidate = useCallback(async () => {
+    if (!uploadResult) return;
+
+    setValidating(true);
+    try {
+      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mapping, dryRun: true }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || "Validation failed");
+        return;
+      }
+
+      const data: ValidationResponse = await res.json();
+      setValidationResult(data);
+    } catch (_err) {
+      toast.error("Validation failed");
+    } finally {
+      setValidating(false);
+    }
+  }, [uploadResult, mapping]);
+
+  // ─── Step 2 (Fortsetzung): Zuordnung bestaetigen ───────────
+  //
+  // [Welle 7a · OP-080] `handleValidate` stand bis Welle 7a UNTER
+  // `handleConfirmMapping`, das es aufruft, und fehlte dort in den
+  // Abhaengigkeiten. Der Aufruf griff damit auf eine Bindung zu, die zum
+  // Zeitpunkt der Erzeugung des Rueckrufs noch nicht belegt war, und die
+  // Abhaengigkeitsliste sagte nichts darueber. Dass daraus heute kein
+  // veralteter Aufruf folgt, ist ein Zufall der Listen — die von
+  // `handleConfirmMapping` ist eine Obermenge der von `handleValidate` —
+  // und keine Eigenschaft, auf die sich der naechste Bearbeiter verlassen
+  // koennte. Reihenfolge und Liste sagen jetzt dasselbe wie der Code.
   const handleConfirmMapping = useCallback(async () => {
     if (!uploadResult) return;
 
@@ -207,38 +250,10 @@ export default function ImportWizardPage() {
 
       setStep(3);
       handleValidate();
-    } catch (err) {
+    } catch (_err) {
       toast.error("Failed to confirm mapping");
     }
-  }, [uploadResult, mapping, saveMappingName]);
-
-  // ─── Step 3: Validate ─────────────────────────────────────
-
-  const handleValidate = useCallback(async () => {
-    if (!uploadResult) return;
-
-    setValidating(true);
-    try {
-      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mapping, dryRun: true }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.error || "Validation failed");
-        return;
-      }
-
-      const data: ValidationResponse = await res.json();
-      setValidationResult(data);
-    } catch (err) {
-      toast.error("Validation failed");
-    } finally {
-      setValidating(false);
-    }
-  }, [uploadResult, mapping]);
+  }, [uploadResult, mapping, saveMappingName, handleValidate]);
 
   // ─── Step 4: Execute ──────────────────────────────────────
 
@@ -269,7 +284,7 @@ export default function ImportWizardPage() {
       } else {
         toast.error("Import failed — transaction rolled back");
       }
-    } catch (err) {
+    } catch (_err) {
       toast.error("Import failed");
     } finally {
       setExecuting(false);
@@ -368,6 +383,13 @@ export default function ImportWizardPage() {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => document.getElementById("file-input")?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () =>
+                  document.getElementById("file-input")?.click(),
+                )
+              }
             >
               <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium">

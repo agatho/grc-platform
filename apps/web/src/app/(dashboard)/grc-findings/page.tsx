@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useState, useMemo, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -135,32 +136,43 @@ function SeverityPill({ severity }: { severity: Severity }) {
 }
 
 export default function GrcFindingsPage() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const { formatDate } = useDateFormat();
-  const [data, setData] = useState<CrossFindingResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filterModule, setFilterModule] = useState<Module | "all">("all");
   const [filterSeverity, setFilterSeverity] = useState<Severity | "all">("all");
   const [showOnlyOverdue, setShowOnlyOverdue] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft wie
+  // vorher; der Fehlertext kommt aus dem Fehlerzustand der Abfrage.
+  const {
+    data = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<CrossFindingResponse | null>({
+    queryKey: ["cross", "findings", 100],
+    queryFn: async () => {
       const res = await fetch("/api/v1/cross/findings?top=100");
       if (!res.ok) throw new Error(`API returned ${res.status}`);
       const json = await res.json();
-      setData(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler beim Laden");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? null) as CrossFindingResponse | null;
+    },
+  });
+  const error: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Fehler beim Laden"
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -324,12 +336,17 @@ export default function GrcFindingsPage() {
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Modul:</label>
+            <label
+              htmlFor={`${a11yId}-modul`}
+              className="text-xs text-muted-foreground"
+            >
+              Modul:
+            </label>
             <Select
               value={filterModule}
               onValueChange={(v) => setFilterModule(v as Module | "all")}
             >
-              <SelectTrigger className="w-40 h-8">
+              <SelectTrigger id={`${a11yId}-modul`} className="w-40 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -343,12 +360,17 @@ export default function GrcFindingsPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted-foreground">Schwere:</label>
+            <label
+              htmlFor={`${a11yId}-schwere`}
+              className="text-xs text-muted-foreground"
+            >
+              Schwere:
+            </label>
             <Select
               value={filterSeverity}
               onValueChange={(v) => setFilterSeverity(v as Severity | "all")}
             >
-              <SelectTrigger className="w-40 h-8">
+              <SelectTrigger id={`${a11yId}-schwere`} className="w-40 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

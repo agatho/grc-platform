@@ -45,18 +45,6 @@ const testResultValues = [
   "partially_effective",
   "not_tested",
 ] as const;
-const testStatusValues = [
-  "planned",
-  "in_progress",
-  "completed",
-  "cancelled",
-] as const;
-const campaignStatusValues = [
-  "draft",
-  "active",
-  "completed",
-  "cancelled",
-] as const;
 // ISO 19011 § 3.4 — ISO-konforme Werte plus Legacy-Synonyme (Arctos pre-0293).
 export const findingSeverityValues = [
   "positive",

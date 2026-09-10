@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
   BarChart3,
-  CheckCircle,
-  Download,
   FileText,
   Loader2,
   RefreshCcw,
-  Send,
-  Users,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,25 +28,27 @@ import type { ComplianceDashboard } from "@grc/shared";
 
 export default function PolicyComplianceDashboardPage() {
   const t = useTranslations("policies");
-  const [data, setData] = useState<ComplianceDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (die Seite zeigt dann „keine Daten").
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<ComplianceDashboard | null>({
+    queryKey: ["policies", "compliance-dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/policies/compliance-dashboard");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as ComplianceDashboard | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/policies/compliance-dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (

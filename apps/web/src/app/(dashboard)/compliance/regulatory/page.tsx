@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -12,13 +13,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -86,17 +81,23 @@ export default function RegulatoryFeedPage() {
   const t = useTranslations("intelligence");
   const { formatDate } = useDateFormat();
 
-  const [items, setItems] = useState<RegulatoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [source, setSource] = useState("all");
   const [minRelevance, setMinRelevance] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Seite und Mindestrelevanz sind
+  // Teil des Schlüssels; Treffer und Seitenzahl kommen aus derselben Antwort.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ items: RegulatoryItem[]; totalPages: number }>({
+    queryKey: ["regulatory", "relevant", page, minRelevance],
+    queryFn: async () => {
       const params = new URLSearchParams({
         page: String(page),
         limit: "20",
@@ -104,20 +105,20 @@ export default function RegulatoryFeedPage() {
       if (minRelevance > 0) params.set("minRelevance", String(minRelevance));
 
       const res = await fetch(`/api/v1/regulatory/relevant?${params}`);
-      if (!res.ok) throw new Error("Failed to load");
+      if (!res.ok) return { items: [], totalPages: 1 };
       const json = await res.json();
-      setItems(json.data ?? []);
-      setTotalPages(json.pagination?.totalPages ?? 1);
-    } catch {
-      setItems([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, minRelevance]);
+      return {
+        items: (json.data ?? []) as RegulatoryItem[],
+        totalPages: (json.pagination?.totalPages ?? 1) as number,
+      };
+    },
+  });
+  const items = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filteredItems =
     source === "all" ? items : items.filter((i) => i.source === source);
@@ -139,10 +140,10 @@ export default function RegulatoryFeedPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             {t("regulatory.refresh")}
           </Button>

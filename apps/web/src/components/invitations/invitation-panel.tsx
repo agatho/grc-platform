@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,8 +81,6 @@ function StatusBadge({
 export function InvitationPanel() {
   const t = useTranslations();
   const { formatDateTime } = useDateFormat();
-  const [invitations, setInvitations] = useState<InvitationRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
@@ -92,27 +91,37 @@ export function InvitationPanel() {
   const [role, setRole] = useState<UserRole>("viewer");
   const [lineOfDefense, setLineOfDefense] = useState<string>("");
 
-  const fetchInvitations = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (statusFilter !== "all") {
-        params.set("status", statusFilter);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Statusfilter steht im
+  // Schlüssel. Der Fehlerpfad bleibt wie vorher ein Toast; die Liste ist
+  // danach leer statt (wie vorher) auf dem letzten Stand.
+  const {
+    data: invitations = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<InvitationRow[]>({
+    queryKey: ["invitations", statusFilter],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams({ limit: "50" });
+        if (statusFilter !== "all") {
+          params.set("status", statusFilter);
+        }
+        const res = await fetch(`/api/v1/invitations?${params}`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const json = await res.json();
+        return json.data as InvitationRow[];
+      } catch {
+        toast.error(t("common.error"));
+        return [];
       }
-      const res = await fetch(`/api/v1/invitations?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch");
-      const json = await res.json();
-      setInvitations(json.data);
-    } catch {
-      toast.error(t("common.error"));
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, t]);
+    },
+  });
 
-  useEffect(() => {
-    fetchInvitations();
-  }, [fetchInvitations]);
+  const fetchInvitations = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleInvite = async () => {
     setSubmitting(true);

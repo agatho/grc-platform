@@ -83,9 +83,19 @@ test("W22-C1-07: Contract-Create UI form — required + happy path + name-alias 
 
   // Step 5: persistence
   await page.goto(`/contracts/${contractId}`);
-  await page
-    .waitForLoadState("networkidle", { timeout: 15_000 })
-    .catch(() => {});
-  const pageText = await page.locator("body").innerText();
-  expect(pageText).toContain(title);
+  // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+  //   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(…)
+  //   const pageText = await page.locator("body").innerText();
+  //   expect(pageText).toContain(<Titel>);
+  // `waitForLoadState("networkidle")` kehrt sofort zurück, wenn im Moment des
+  // Aufrufs zufällig kein Abruf läuft — direkt nach `goto()` ist das der
+  // Regelfall, weil die Seite ihre Daten erst nach der Hydrierung holt.
+  // Danach liest `innerText()` **einmal**, und `expect(zeichenkette)`
+  // wiederholt nichts. Gemessen: die Seite lieferte die Hülle vor dem ersten
+  // Abruf ("A / U / Organisation / U / © 2026 ARCTOS"). Dieselbe Bauart wie
+  // der Testdefekt in `navigation.spec.ts` (Welle 6c §8.2). Die Erwartung ist
+  // unverändert; nur das Lesen wiederholt jetzt.
+  await expect(page.locator("body")).toContainText(title, {
+    timeout: 60_000,
+  });
 });

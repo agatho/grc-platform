@@ -2,7 +2,6 @@
 
 import { useTranslations } from "next-intl";
 import {
-  Plus,
   Trash2,
   GripVertical,
   ListTodo,
@@ -61,7 +60,7 @@ function ActionCard({
     <div className="rounded-lg border border-gray-200 bg-white p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <GripVertical size={14} className="text-gray-300" />
+          <GripVertical size={14} className="text-gray-500" />
           <Icon size={16} className={actionDef?.color ?? "text-gray-600"} />
           <Badge variant="outline" className="text-[10px]">
             {t(`actionTypes.${action.type}`)}

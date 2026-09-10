@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -37,10 +39,13 @@ interface RoiDashboardData {
 type Perspective = "cfo" | "ciso";
 
 export default function RoiDashboardPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
-  const [data, setData] = useState<RoiDashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [perspective, setPerspective] = useState<Perspective>("cfo");
   const [cutPercent, setCutPercent] = useState(0);
   const [scenario, setScenario] = useState<BudgetCutScenarioResult | null>(
@@ -48,22 +53,29 @@ export default function RoiDashboardPage() {
   );
   const [scenarioLoading, setScenarioLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`. Der entprellte Szenario-Abruf darunter bleibt ein Effekt:
+  // er setzt seinen Zustand erst im Timer, nicht synchron im Effekt.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<RoiDashboardData | null>({
+    queryKey: ["budget", "roi"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/budget/roi");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RoiDashboardData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const fetchScenario = useCallback(async (pct: number) => {
     if (pct === 0) {
@@ -127,9 +139,9 @@ export default function RoiDashboardPage() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
@@ -187,11 +199,11 @@ export default function RoiDashboardPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-2 text-right text-gray-700">
-                        {item.investmentCost.toLocaleString("de-DE")}{" "}
+                        {item.investmentCost.toLocaleString(numberLocale)}{" "}
                         {t("currency")}
                       </td>
                       <td className="px-4 py-2 text-right text-green-600 font-medium">
-                        {item.riskReductionValue.toLocaleString("de-DE")}{" "}
+                        {item.riskReductionValue.toLocaleString(numberLocale)}{" "}
                         {t("currency")}
                       </td>
                       <td className="px-4 py-2 text-right">
@@ -230,10 +242,10 @@ export default function RoiDashboardPage() {
                   </span>
                   <div className="flex gap-3 text-xs">
                     <span className="text-gray-500">
-                      {item.invested.toLocaleString("de-DE")}
+                      {item.invested.toLocaleString(numberLocale)}
                     </span>
                     <span className="text-green-600 font-medium">
-                      {item.mitigated.toLocaleString("de-DE")}
+                      {item.mitigated.toLocaleString(numberLocale)}
                     </span>
                   </div>
                 </div>
@@ -259,7 +271,7 @@ export default function RoiDashboardPage() {
                 </span>
                 <span className="text-sm font-bold text-red-600">
                   {(d?.penaltyAvoidance?.potentialFines ?? 0).toLocaleString(
-                    "de-DE",
+                    numberLocale,
                   )}{" "}
                   {t("currency")}
                 </span>
@@ -270,7 +282,7 @@ export default function RoiDashboardPage() {
                 </span>
                 <span className="text-sm font-bold text-green-600">
                   {(d?.penaltyAvoidance?.complianceCosts ?? 0).toLocaleString(
-                    "de-DE",
+                    numberLocale,
                   )}{" "}
                   {t("currency")}
                 </span>
@@ -295,7 +307,9 @@ export default function RoiDashboardPage() {
                   {t("roi.avgIncidentCost")}
                 </span>
                 <span className="text-sm font-medium text-gray-700">
-                  {(d?.incidentAvoidance?.avgCost ?? 0).toLocaleString("de-DE")}{" "}
+                  {(d?.incidentAvoidance?.avgCost ?? 0).toLocaleString(
+                    numberLocale,
+                  )}{" "}
                   {t("currency")}
                 </span>
               </div>
@@ -312,7 +326,9 @@ export default function RoiDashboardPage() {
                   {t("roi.avoided")}
                 </span>
                 <span className="text-sm font-bold text-blue-700">
-                  {(d?.incidentAvoidance?.avoided ?? 0).toLocaleString("de-DE")}{" "}
+                  {(d?.incidentAvoidance?.avoided ?? 0).toLocaleString(
+                    numberLocale,
+                  )}{" "}
                   {t("currency")}
                 </span>
               </div>
@@ -332,7 +348,7 @@ export default function RoiDashboardPage() {
             </h2>
           </div>
           <p className="text-3xl font-bold text-red-700">
-            {(d?.totalRoni ?? 0).toLocaleString("de-DE")} {t("currency")}
+            {(d?.totalRoni ?? 0).toLocaleString(numberLocale)} {t("currency")}
           </p>
         </div>
 
@@ -406,17 +422,17 @@ export default function RoiDashboardPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right text-gray-700">
-                        {item.inherentAle.toLocaleString("de-DE")}{" "}
+                        {item.inherentAle.toLocaleString(numberLocale)}{" "}
                         {t("currency")}
                       </td>
                       {perspective === "cfo" ? (
                         <td className="px-4 py-3 text-right font-medium text-red-600">
-                          -{item.roniCfo.toLocaleString("de-DE")}{" "}
+                          -{item.roniCfo.toLocaleString(numberLocale)}{" "}
                           {t("currency")}
                         </td>
                       ) : (
                         <td className="px-4 py-3 text-right font-medium text-orange-600">
-                          {item.roniCiso.toLocaleString("de-DE")}{" "}
+                          {item.roniCiso.toLocaleString(numberLocale)}{" "}
                           {t("currency")}
                         </td>
                       )}
@@ -463,7 +479,7 @@ export default function RoiDashboardPage() {
                       }}
                     >
                       {item.investmentCost > 0
-                        ? item.investmentCost.toLocaleString("de-DE")
+                        ? item.investmentCost.toLocaleString(numberLocale)
                         : ""}
                     </div>
                     <div
@@ -478,7 +494,7 @@ export default function RoiDashboardPage() {
                         ? (perspective === "cfo"
                             ? item.roniCfo
                             : item.roniCiso
-                          ).toLocaleString("de-DE")
+                          ).toLocaleString(numberLocale)
                         : ""}
                     </div>
                   </div>
@@ -535,7 +551,7 @@ export default function RoiDashboardPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <ScenarioCard
                 label={t("roi.cutAmount")}
-                value={`${scenario.cutAmount.toLocaleString("de-DE")} ${t("currency")}`}
+                value={`${scenario.cutAmount.toLocaleString(numberLocale)} ${t("currency")}`}
                 color="text-orange-700"
               />
               <ScenarioCard
@@ -545,12 +561,12 @@ export default function RoiDashboardPage() {
               />
               <ScenarioCard
                 label={t("roi.newRoni")}
-                value={`${scenario.newRoni.toLocaleString("de-DE")} ${t("currency")}`}
+                value={`${scenario.newRoni.toLocaleString(numberLocale)} ${t("currency")}`}
                 color="text-red-700"
               />
               <ScenarioCard
                 label={t("roi.deltaRoni")}
-                value={`+${scenario.deltaRoni.toLocaleString("de-DE")} ${t("currency")}`}
+                value={`+${scenario.deltaRoni.toLocaleString(numberLocale)} ${t("currency")}`}
                 color="text-red-700"
               />
             </div>

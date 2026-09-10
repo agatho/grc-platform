@@ -19,7 +19,17 @@
 # a small global install — so no package.json / package-lock.json change
 # is required. Expect the image to shrink by multiple GB.
 
-ARG NODE_IMAGE=node:22.20-alpine
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-21] Digest-Pinning.
+# Der Tag `node:22.20-alpine` ist innerhalb der Patch-Linie beweglich: zwei
+# Builds desselben Commits ergaben unterschiedliche Images. Fuer ein Produkt
+# mit Auditierbarkeitsanspruch heisst das, dass sich von einem laufenden
+# Container nicht auf einen reproduzierbaren Bauzustand zurueckschliessen
+# laesst. Der Digest unten ist bit-identisch-oder-Fehlschlag; der Tag bleibt
+# als Kommentar stehen, damit ein Bump lesbar ist. Dependabot bumpt
+# `docker`-Ecosystem-Digests automatisch (.github/dependabot.yml).
+# Ermittelt am 2026-09-01 mit:
+#   docker buildx imagetools inspect node:22.20-alpine --format '{{.Manifest.Digest}}'
+ARG NODE_IMAGE=node:22.20-alpine@sha256:dbcedd8aeab47fbc0f4dd4bffa55b7c3c729a707875968d467aaaea42d6225af
 ARG TSX_VERSION=4.23.1
 
 # ── deps: production dependencies only ──────────────────────────────────────
@@ -70,14 +80,54 @@ RUN addgroup --system --gid 1001 arctos && \
 # @anthropic-ai/sdk for example lives only in packages/ai/node_modules/).
 COPY --from=deps /app ./
 
-# Overlay the source. .dockerignore excludes node_modules, so the
-# tree above survives this copy.
-COPY . .
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-11]
+# Vorher stand hier `COPY . .` — der komplette Quellbaum landete im
+# Runtime-Image: 412 getrackte Testdateien, `deploy/` mit
+# setup-hetzner.sh / harden-server.sh / create-tenant.sh / db-backup.sh /
+# offsite-sync.sh / Caddyfile / provision-grc-app.sh, beide Compose-Dateien
+# und 81 SQL-Skripte. Wer ueber eine andere Schwachstelle Dateizugriff im
+# Container erlangte, fand dort die vollstaendige Betriebstopologie der
+# Zielumgebung. Das Web-Image machte es bereits richtig (selektives COPY aus
+# der Builder-Stage).
+#
+# Kopiert wird jetzt gezielt, was der Worker zur Laufzeit braucht:
+# Manifeste (Workspace-Aufloesung), Worker-Quellen, Package-Quellen und die
+# Migrations-/Seed-SQL, die einige Jobs lesen. `.dockerignore` schliesst
+# Tests, deploy/, Compose und Doku zusaetzlich aus — beide Massnahmen
+# zusammen, damit ein spaeteres `COPY . .` nicht wieder alles hereinholt.
+COPY package.json package-lock.json turbo.json tsconfig.base.json ./
+COPY apps/worker/package.json apps/worker/tsconfig.json apps/worker/
+COPY apps/worker/src apps/worker/src
+COPY packages packages
+COPY scripts/prestart.sh /app/prestart.sh
+COPY scripts/assert-runtime-config.mjs /app/scripts/assert-runtime-config.mjs
+# [WP10 · S13-11/S13-12] Der Metrik- und Alarmdienst laeuft aus DIESEM Image
+# (Compose-Service `ops-metrics`, eigener entrypoint). Er nutzt den
+# `postgres`-Client aus dem Produktionsbaum — deshalb braucht das Image
+# kein zusaetzliches postgresql-client-Paket (#S08-11).
+COPY scripts/ops-metrics.mjs /app/scripts/ops-metrics.mjs
+
+# [WP10 · S08-16 / S08-12] Namensnennung und Stueckliste im Image.
+COPY NOTICE THIRD-PARTY-LICENSES.md ./
+COPY SBOM/arctos-sbom-prod.cdx.json SBOM/arctos-sbom-prod.cdx.json
+
+RUN chmod +x /app/prestart.sh
 
 USER arctos
 
 EXPOSE 3001
 
+# [WP10 · S13-13] Der Worker-Healthcheck aus WP9 (S10-21) wird hier im
+# Image verankert, damit er auch ausserhalb der Produktions-Compose gilt
+# (deploy/docker-compose.yml, k8s, `docker run`).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3001)+'/health')\
+    .then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
+# [WP10 · S13-10] Pflichtkonfiguration vor dem Start pruefen. Ohne
+# GRC_WORKER_PASSWORD, AUDIT_SEAL_KEY oder PII_PSEUDONYM_KEY startet der
+# Worker in NODE_ENV=production nicht mehr.
 # Use the global tsx (on PATH) rather than `npx tsx` — npx would try to
 # resolve/-install tsx from the (now dev-pruned) local tree.
+ENTRYPOINT ["/app/prestart.sh", "worker"]
 CMD ["tsx", "apps/worker/src/index.ts"]

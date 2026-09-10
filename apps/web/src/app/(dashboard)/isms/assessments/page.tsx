@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -31,27 +32,29 @@ export default function AssessmentListPage() {
 
 function AssessmentListInner() {
   const t = useTranslations("ismsAssessment");
-  const router = useRouter();
-  const [assessments, setAssessments] = useState<AssessmentRun[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
 
-  const fetchAssessments = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: assessments = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<AssessmentRun[]>({
+    queryKey: ["isms", "assessments"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/assessments?limit=50");
-      if (res.ok) {
-        const json = await res.json();
-        setAssessments(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AssessmentRun[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchAssessments();
-  }, [fetchAssessments]);
+  const fetchAssessments = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: {
     name: string;

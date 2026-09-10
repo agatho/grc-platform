@@ -242,9 +242,13 @@ function renderSVGBarChart(data: ChartData): string {
     (chartWidth - barWidth * dataset.data.length) / (dataset.data.length + 1);
 
   let bars = "";
-  for (let i = 0; i < dataset.data.length; i++) {
+  // [OP-065] Über die Werte statt über den Index: `dataset.data[i]` war
+  // `number | undefined`, und `undefined / maxVal` ist `NaN` — ein Balken mit
+  // `height="NaN"` im SVG, den kein Betrachter zeichnet und keine Meldung
+  // erklärt.
+  for (const [i, value] of dataset.data.entries()) {
     const x = padding + gap + i * (barWidth + gap);
-    const barHeight = (dataset.data[i] / maxVal) * chartHeight;
+    const barHeight = (value / maxVal) * chartHeight;
     const y = padding + chartHeight - barHeight;
     bars += `<rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="#3b82f6" rx="2" />`;
     bars += `<text x="${x + barWidth / 2}" y="${padding + chartHeight + 14}" text-anchor="middle" font-size="7" fill="#666">${escapeHtml(data.labels[i] || "")}</text>`;

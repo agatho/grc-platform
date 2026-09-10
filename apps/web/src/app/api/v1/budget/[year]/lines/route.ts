@@ -1,4 +1,10 @@
-import { db, grcBudget, grcBudgetLine } from "@grc/db";
+import {
+  db,
+  grcBudget,
+  grcBudgetLine,
+  grcAreaEnum,
+  costCategoryEnum,
+} from "@grc/db";
 import {
   createBudgetLineSchema,
   bulkCreateBudgetLinesSchema,
@@ -10,6 +16,10 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function parseYear(year: string): number | null {
   const y = Number(year);
@@ -26,7 +36,7 @@ async function getBudget(orgId: string, year: number) {
 }
 
 // POST /api/v1/budget/:year/lines — Add budget line(s)
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ year: string }> },
 ) {
@@ -75,8 +85,12 @@ export async function POST(
       (line) => ({
         orgId: ctx.orgId,
         budgetId: budget.id,
-        grcArea: line.grcArea as string,
-        costCategory: line.costCategory as string,
+        // [ARCTOS-FULL-2026-08-31 / Restarbeiten] `as string` passte auf keine
+        // der beiden pgEnum-Spalten; die Werte sind durch das Zod-Schema
+        // bereits auf genau diese Mengen eingeschraenkt.
+        grcArea: line.grcArea as (typeof grcAreaEnum.enumValues)[number],
+        costCategory:
+          line.costCategory as (typeof costCategoryEnum.enumValues)[number],
         plannedAmount: String(line.plannedAmount),
         q1Amount: line.q1Amount != null ? String(line.q1Amount) : undefined,
         q2Amount: line.q2Amount != null ? String(line.q2Amount) : undefined,
@@ -91,10 +105,9 @@ export async function POST(
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/budget/:year/lines — List budget lines
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ year: string }> },
 ) {
@@ -127,4 +140,4 @@ export async function GET(
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -138,23 +139,14 @@ function dueDateClass(dueDate: string | null): string {
 
 export default function TaskDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const taskId = params.id as string;
   const t = useTranslations("tasks");
   const { data: session } = useSession();
   const { formatDate, formatDateTime } = useDateFormat();
 
-  const [task, setTask] = useState<TaskDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const [comments, setComments] = useState<TaskComment[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(true);
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
-
-  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
-  const [auditLoading, setAuditLoading] = useState(true);
 
   const [transitionLoading, setTransitionLoading] = useState<string | null>(
     null,
@@ -163,59 +155,68 @@ export default function TaskDetailPage() {
 
   const isAdmin = (session?.user?.roles ?? []).some((r) => r.role === "admin");
 
+  // [OP-245 · Gestalt A] Three fetches on mount via `@tanstack/react-query`
+  // instead of one effect plus mirrored loading/error/data state per request
+  // (pattern from wave 7b, `dashboard/page.tsx`: one query per request, each
+  // with its own key). The task keeps its error flag (`isError`); comments
+  // and audit log fall back to an empty list on a non-ok response, as before.
+
   // Fetch task
-  const fetchTask = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  const {
+    data: task = null,
+    isPending: loading,
+    isError: error,
+    refetch: refetchTask,
+  } = useQuery<TaskDetail | null>({
+    queryKey: ["tasks", taskId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/tasks/${taskId}`);
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      setTask(json.data ?? json);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [taskId]);
+      return (json.data ?? json) as TaskDetail;
+    },
+  });
+  const fetchTask = useCallback(async () => {
+    await refetchTask();
+  }, [refetchTask]);
 
   // Fetch comments
-  const fetchComments = useCallback(async () => {
-    setCommentsLoading(true);
-    try {
+  const {
+    data: comments = [],
+    isPending: commentsLoading,
+    refetch: refetchComments,
+  } = useQuery<TaskComment[]>({
+    queryKey: ["tasks", taskId, "comments"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/tasks/${taskId}/comments`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
-      setComments(json.data ?? []);
-    } catch {
-      setComments([]);
-    } finally {
-      setCommentsLoading(false);
-    }
-  }, [taskId]);
+      return (json.data ?? []) as TaskComment[];
+    },
+  });
+  const fetchComments = useCallback(async () => {
+    await refetchComments();
+  }, [refetchComments]);
 
   // Fetch audit log for this task
-  const fetchAuditLog = useCallback(async () => {
-    setAuditLoading(true);
-    try {
+  const {
+    data: auditLog = [],
+    isPending: auditLoading,
+    refetch: refetchAuditLog,
+  } = useQuery<AuditEntry[]>({
+    queryKey: ["audit-log", { entityType: "task", entityId: taskId }],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/audit-log?entityType=task&entityId=${taskId}&limit=50`,
       );
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = await res.json();
-      setAuditLog(json.data ?? []);
-    } catch {
-      setAuditLog([]);
-    } finally {
-      setAuditLoading(false);
-    }
-  }, [taskId]);
-
-  useEffect(() => {
-    void fetchTask();
-    void fetchComments();
-    void fetchAuditLog();
-  }, [fetchTask, fetchComments, fetchAuditLog]);
+      return (json.data ?? []) as AuditEntry[];
+    },
+  });
+  const fetchAuditLog = useCallback(async () => {
+    await refetchAuditLog();
+  }, [refetchAuditLog]);
 
   // Status transition
   const handleStatusTransition = async (newStatus: string) => {

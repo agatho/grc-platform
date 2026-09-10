@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -56,35 +57,39 @@ function AuditPrepInner() {
   const params = useParams();
   const frameworkId = params.id as string;
 
-  const [readiness, setReadiness] = useState<ReadinessData | null>(null);
-  const [gaps, setGaps] = useState<GapItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ readiness: ReadinessData | null; gaps: GapItem[] }>({
+    queryKey: ["isms", "certification", "audit-prep"],
+    queryFn: async () => {
       const [readinessRes, gapRes] = await Promise.all([
         fetch("/api/v1/isms/certification/readiness"),
         fetch("/api/v1/isms/certification/gaps?limit=100"),
       ]);
+      const readiness: ReadinessData | null = readinessRes.ok
+        ? ((await readinessRes.json()).data ?? null)
+        : null;
+      const gaps: GapItem[] = gapRes.ok
+        ? ((await gapRes.json()).data ?? [])
+        : [];
+      return { readiness, gaps };
+    },
+  });
+  const readiness = data?.readiness ?? null;
+  const gaps = data?.gaps ?? [];
 
-      if (readinessRes.ok) {
-        const json = await readinessRes.json();
-        setReadiness(json.data);
-      }
-      if (gapRes.ok) {
-        const json = await gapRes.json();
-        setGaps(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleExport = useCallback(async () => {
     setExporting(true);
@@ -199,9 +204,12 @@ function AuditPrepInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

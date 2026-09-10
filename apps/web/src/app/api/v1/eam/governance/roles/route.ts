@@ -3,9 +3,13 @@ import { requireModule } from "@grc/auth";
 import { governanceRoleAssignmentSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/eam/governance/roles — Assign examiner/responsible roles
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -42,4 +46,4 @@ export async function PUT(req: Request) {
   if (!updated.length)
     return Response.json({ error: "Element not found" }, { status: 404 });
   return Response.json({ data: updated[0] });
-}
+});

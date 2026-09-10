@@ -14,6 +14,17 @@ import {
   DEFAULT_LOSS_COMPONENTS,
 } from "../src/utils/fair-monte-carlo";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 // ──────────────────────────────────────────────────────────────
 // PERT Distribution Tests
 // ──────────────────────────────────────────────────────────────
@@ -169,9 +180,9 @@ describe("Monte Carlo Simulation", () => {
       lmMostLikely: 200000,
       lmMax: 1000000,
     });
-    expect(result.lossExceedance[0].probability).toBeGreaterThan(0.8);
+    expect(at(result.lossExceedance, 0).probability).toBeGreaterThan(0.8);
     expect(
-      result.lossExceedance[result.lossExceedance.length - 1].probability,
+      at(result.lossExceedance, result.lossExceedance.length - 1).probability,
     ).toBeLessThan(0.2);
   });
 
@@ -311,8 +322,8 @@ describe("buildExceedanceCurve", () => {
     ).sort((a, b) => a - b);
     const curve = buildExceedanceCurve(values, 20);
     for (let i = 1; i < curve.length; i++) {
-      expect(curve[i].probability).toBeLessThanOrEqual(
-        curve[i - 1].probability + 0.001,
+      expect(at(curve, i).probability).toBeLessThanOrEqual(
+        at(curve, i - 1).probability + 0.001,
       );
     }
   });

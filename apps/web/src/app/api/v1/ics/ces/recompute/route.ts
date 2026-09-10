@@ -1,13 +1,11 @@
-import {
-  db,
-  controlEffectivenessScore,
-  control,
-  controlTest,
-  finding,
-} from "@grc/db";
+import { db, controlEffectivenessScore, control, finding } from "@grc/db";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { cesRecomputeSchema, computeCES, computeTrend } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/ics/ces/recompute — Force recompute all or selected CES scores
 //
@@ -37,7 +35,7 @@ import { cesRecomputeSchema, computeCES, computeTrend } from "@grc/shared";
 //   - skip-if-no-tests path implicit (a control with no testResults
 //     and no openFindings still upserts a record; same as before)
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -237,4 +235,4 @@ export async function POST(req: Request) {
     computed: controls.length,
     total: controls.length,
   });
-}
+});

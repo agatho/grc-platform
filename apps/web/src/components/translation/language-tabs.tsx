@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Sparkles, Copy, Check, AlertTriangle, Languages } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,9 @@ function getStatusBadge(status?: string): React.ReactNode {
   switch (status) {
     case "verified":
       return (
-        <Badge className="bg-green-100 text-green-700 border-green-200 ml-1 text-[10px] px-1 py-0">
+        <Badge // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+          className="bg-green-100 text-green-800 border-green-200 ml-1 text-[10px] px-1 py-0"
+        >
           <Check className="h-2.5 w-2.5" />
         </Badge>
       );
@@ -97,13 +99,23 @@ export function LanguageTabs({
 }: LanguageTabsProps) {
   const t = useTranslations("translations");
 
-  // Normalize value to object
-  const normalizedValue: Record<string, string> =
-    typeof value === "string"
-      ? { [defaultLanguage]: value }
-      : value && typeof value === "object"
-        ? { ...value }
-        : {};
+  // Normalize value to object.
+  // [Welle 7a · OP-080] Dieser Wert wurde bei JEDEM Rendern neu gebaut — ein
+  // neues Objekt, also eine neue Identitaet — und steht in den
+  // Abhaengigkeiten von drei `useCallback`. Damit war die Merkung dieser drei
+  // Rueckrufe wirkungslos: sie entstanden ohnehin bei jedem Rendern neu, und
+  // jede Kindkomponente, die einen davon als Eigenschaft bekommt, rendert
+  // mit. `useMemo` an der Quelle stellt die Merkung her, statt sie zu
+  // behaupten.
+  const normalizedValue: Record<string, string> = useMemo(
+    () =>
+      typeof value === "string"
+        ? { [defaultLanguage]: value }
+        : value && typeof value === "object"
+          ? { ...value }
+          : {},
+    [value, defaultLanguage],
+  );
 
   const [activeTab, setActiveTab] = useState(defaultLanguage);
   const [translating, setTranslating] = useState(false);

@@ -2,9 +2,13 @@ import { db, agentRegistration } from "@grc/db";
 import { updateAgentSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/agents/:id
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -24,10 +28,9 @@ export async function GET(
   }
 
   return Response.json({ data: agent });
-}
-
+});
 // PUT /api/v1/agents/:id — Update config / activate / deactivate
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -74,4 +77,4 @@ export async function PUT(
   }
 
   return Response.json({ data: result });
-}
+});

@@ -60,3 +60,42 @@ export async function clearRlsContext(client: postgres.Sql) {
 }
 
 export { schema };
+
+/**
+ * [ARCTOS-FULL-2026-08-31 / Welle 4b, Strang 6 · OP-065]
+ * Genau eine Zeile aus einem Abfrageergebnis entnehmen.
+ *
+ * Warum es diesen Helfer gibt: `noUncheckedIndexedAccess` macht aus
+ * `const [org] = await sql\`… RETURNING id\`` ein `org: Row | undefined`, und
+ * das ist in diesen Suiten kein Formalismus. Die Fixtures dieser Tests legen
+ * Organisationen, Benutzer und Datensätze an und tragen deren Kennungen durch
+ * den ganzen Lauf. Bleibt eine Zeile aus — weil eine Migration fehlt, eine
+ * Bedingung nicht greift oder eine RLS-Policy den INSERT still verwirft —,
+ * dann läuft der Test bisher WEITER und scheitert irgendwo später an einem
+ * `Cannot read properties of undefined`, oder, schlimmer, er stellt eine
+ * Behauptung über `undefined` auf und ist grün.
+ *
+ * `requireRow` macht daraus einen Fehlschlag mit Namen, an der Stelle, an der
+ * er entsteht. Ein `!` hätte genau das Gegenteil bewirkt.
+ */
+export function requireRow<T>(rows: readonly T[], what: string): T {
+  const row = rows[0];
+  if (row === undefined) {
+    throw new Error(`${what}: Abfrage lieferte keine Zeile`);
+  }
+  return row;
+}
+
+/**
+ * [OP-065] Wie {@link requireRow}, aber für einen beliebigen Index — für
+ * Zusicherungen der Form `rows[2].status`.
+ */
+export function requireAt<T>(rows: readonly T[], i: number, what: string): T {
+  const row = rows[i];
+  if (row === undefined) {
+    throw new Error(
+      `${what}: Element ${i} fehlt (nur ${rows.length} Zeilen vorhanden)`,
+    );
+  }
+  return row;
+}

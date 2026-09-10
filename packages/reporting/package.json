@@ -1,15 +1,19 @@
 {
   "name": "@grc/reporting",
   "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-PolyForm-Shield-1.0.0",
   "main": "src/index.ts",
   "scripts": {
-    "test": "vitest run --passWithNoTests"
+    "lint": "eslint . --no-error-on-unmatched-pattern",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
     "@grc/db": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "exceljs": "^4.4.0",
-    "pdfkit": "^0.19.1"
+    "pdfkit": "^0.20.2"
   },
   "devDependencies": {
     "@types/pdfkit": "^0.17.6",

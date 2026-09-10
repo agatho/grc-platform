@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
-import { sharedCoverageConfig } from "../../vitest.coverage.shared";
+import { coverageFor } from "../../vitest.coverage.shared";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -16,10 +16,9 @@ export default defineConfig({
     isolate: true,
     pool: "forks",
     testTimeout: 30000,
-    coverage: {
-      ...sharedCoverageConfig,
+    coverage: coverageFor("apps/worker", {
       include: ["src/**/*.ts"],
-    },
+    }),
   },
   resolve: {
     alias: {

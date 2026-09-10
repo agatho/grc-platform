@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,14 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { useDateFormat } from "@/lib/format-date";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Auch hier galt die Datei der
+ * Ratsche als uebersetzt — `const _t = useTranslations("aiAct")`, nie
+ * benutzt — und stand auf fest verdrahtetem Deutsch mit abgeschnittenen
+ * Umlauten („Qualitatsmanagementsystem", „Konformitatsbewertung",
+ * „Nachstes Audit", „erfullt").
+ */
+
 interface ProviderQms {
   id: string;
   ai_system_id: string;
@@ -44,26 +53,17 @@ interface ProviderQms {
   created_at: string;
 }
 
-const QMS_PROCEDURES: { key: string; label: string }[] = [
-  {
-    key: "risk_management_procedure",
-    label: "Risikomanagementsystem (Art. 9)",
-  },
-  { key: "data_governance_procedure", label: "Daten-Governance (Art. 10)" },
-  {
-    key: "technical_documentation_procedure",
-    label: "Technische Dokumentation (Art. 11)",
-  },
-  {
-    key: "record_keeping_procedure",
-    label: "Aufzeichnungspflichten (Art. 12)",
-  },
-  { key: "transparency_procedure", label: "Transparenzpflichten (Art. 13)" },
-  { key: "human_oversight_procedure", label: "Menschliche Aufsicht (Art. 14)" },
-  { key: "accuracy_procedure", label: "Genauigkeit & Robustheit (Art. 15)" },
-  { key: "cybersecurity_procedure", label: "Cybersicherheit (Art. 15)" },
-  { key: "conformity_procedure", label: "Konformitatsbewertung (Art. 43)" },
-  { key: "post_market_procedure", label: "Post-Market-Monitoring (Art. 72)" },
+const QMS_PROCEDURES: { key: string }[] = [
+  { key: "risk_management_procedure" },
+  { key: "data_governance_procedure" },
+  { key: "technical_documentation_procedure" },
+  { key: "record_keeping_procedure" },
+  { key: "transparency_procedure" },
+  { key: "human_oversight_procedure" },
+  { key: "accuracy_procedure" },
+  { key: "cybersecurity_procedure" },
+  { key: "conformity_procedure" },
+  { key: "post_market_procedure" },
 ];
 
 const MATURITY_COLORS: Record<number, string> = {
@@ -77,9 +77,8 @@ const MATURITY_COLORS: Record<number, string> = {
 
 function QmsPageInner() {
   const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<ProviderQms[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<Record<string, boolean | string | number>>({
     ai_system_id: "",
@@ -97,18 +96,25 @@ function QmsPageInner() {
     next_audit_date: "",
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ProviderQms[]>({
+    queryKey: ["ai-act", "qms"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/qms?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as ProviderQms[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = { ...form, next_audit_date: form.next_audit_date || null };
@@ -140,25 +146,23 @@ function QmsPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
-            Anbieter-Qualitatsmanagementsystem
-          </h1>
-          <p className="text-muted-foreground">Art. 16-17 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("qms.title")}</h1>
+          <p className="text-muted-foreground">{t("qms.description")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              QMS erfassen
+              {t("qms.create")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>QMS-Checkliste</DialogTitle>
+              <DialogTitle>{t("qms.checklist")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>KI-System ID</Label>
+                <Label>{t("qms.systemId")}</Label>
                 <Input
                   value={form.ai_system_id as string}
                   onChange={(e) =>
@@ -172,11 +176,13 @@ function QmsPageInner() {
                     checked={form[p.key] as boolean}
                     onCheckedChange={(v) => setForm({ ...form, [p.key]: v })}
                   />
-                  <Label className="text-sm">{p.label}</Label>
+                  <Label className="text-sm">
+                    {t(`qms.procedure.${p.key}`)}
+                  </Label>
                 </div>
               ))}
               <div>
-                <Label>Reifegrad (0-5)</Label>
+                <Label>{t("qms.maturityLabel")}</Label>
                 <Select
                   value={String(form.overall_maturity)}
                   onValueChange={(v) =>
@@ -196,7 +202,7 @@ function QmsPageInner() {
                 </Select>
               </div>
               <div>
-                <Label>Nachstes Audit</Label>
+                <Label>{t("qms.nextAudit")}</Label>
                 <Input
                   type="date"
                   value={form.next_audit_date as string}
@@ -210,7 +216,7 @@ function QmsPageInner() {
                 onClick={handleSubmit}
                 disabled={!form.ai_system_id}
               >
-                Speichern
+                {tCommon("actions.save")}
               </Button>
             </div>
           </DialogContent>
@@ -221,16 +227,23 @@ function QmsPageInner() {
           <Card key={qms.id}>
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <p className="font-medium">System: {qms.ai_system_id}</p>
+                <p className="font-medium">
+                  {t("qms.systemLine", { id: qms.ai_system_id })}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  {countChecked(qms)}/10 Verfahren erfullt
+                  {t("qms.proceduresMet", {
+                    done: countChecked(qms),
+                    total: QMS_PROCEDURES.length,
+                  })}
                   {qms.next_audit_date &&
-                    ` | Nachstes Audit: ${formatDate(qms.next_audit_date)}`}
+                    t("qms.nextAuditSuffix", {
+                      value: formatDate(qms.next_audit_date),
+                    })}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Badge className={MATURITY_COLORS[qms.overall_maturity] ?? ""}>
-                  Reifegrad {qms.overall_maturity}
+                  {t("qms.maturity", { level: qms.overall_maturity })}
                 </Badge>
                 {countChecked(qms) === 10 ? (
                   <CheckCircle className="h-5 w-5 text-green-600" />
@@ -243,7 +256,7 @@ function QmsPageInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Noch keine QMS-Bewertungen
+            {t("qms.empty")}
           </p>
         )}
       </div>

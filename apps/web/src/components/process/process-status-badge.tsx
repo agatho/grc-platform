@@ -8,7 +8,8 @@ const STATUS_STYLES: Record<ProcessStatus, string> = {
   draft: "bg-gray-100 text-gray-700",
   in_review: "bg-yellow-100 text-yellow-800",
   approved: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — siehe upcoming-widget.tsx.
+  published: "bg-green-100 text-green-800",
   archived: "bg-red-100 text-red-700",
 };
 

@@ -16,6 +16,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { COVERAGE_FLOORS } from "../vitest.coverage.shared";
 
 interface CoverageMetric {
   total: number;
@@ -36,22 +37,30 @@ interface CoverageSummary {
 interface PackageReport {
   name: string;
   path: string;
+  minLines: number;
+  minBranches: number;
   lines: CoverageMetric;
   statements: CoverageMetric;
   functions: CoverageMetric;
   branches: CoverageMetric;
 }
 
-const PACKAGES = [
-  "packages/auth",
-  "packages/automation",
-  "packages/db",
-  "packages/email",
-  "packages/graph",
-  "packages/shared",
-  "apps/web",
-  "apps/worker",
-];
+// [ARCTOS-FULL-2026-08-31 / WP11 · S11-16, S11-14]
+//
+// The list used to hold 8 entries and silently omitted `packages/events`,
+// `packages/reporting`, `packages/ai` and `packages/ui` — four packages with
+// tests whose numbers therefore never reached the aggregate. `packages/db`
+// was listed but had no coverage block in its vitest config and so never
+// wrote a summary; a missing summary was only a `console.warn`.
+//
+// Now: the package list and the floors both come from `COVERAGE_FLOORS` in
+// `vitest.coverage.shared.ts` — one source of truth shared with the per-package
+// vitest configs, so the two can no longer disagree. A missing summary is a
+// hard error: the aggregate silently shrinking to the two best-covered
+// packages is exactly how docs/STATUS.md came to claim 78.4 % while the real
+// figure was 20.4 % (S11-01).
+
+const PACKAGES: string[] = Object.keys(COVERAGE_FLOORS);
 
 const ROOT = resolve(__dirname, "..");
 
@@ -66,6 +75,8 @@ function loadPackage(p: string): PackageReport | null {
     return {
       name: p,
       path: summaryPath,
+      minLines: COVERAGE_FLOORS[p]!.lines,
+      minBranches: COVERAGE_FLOORS[p]!.branches,
       lines: json.total.lines,
       statements: json.total.statements,
       functions: json.total.functions,
@@ -160,6 +171,39 @@ function buildMarkdown(agg: ReturnType<typeof aggregate>): string {
   return lines.join("\n");
 }
 
+function buildThresholdReport(reports: PackageReport[]): {
+  lines: string[];
+  violations: string[];
+} {
+  const out: string[] = [];
+  const violations: string[] = [];
+  out.push("## Threshold check (per package floor)\n");
+  out.push("| Package | Lines | Floor | Branches | Floor | Verdict |");
+  out.push("|---|---|---|---|---|---|");
+  for (const r of reports) {
+    const okLines = r.lines.pct >= r.minLines;
+    const okBranches = r.branches.pct >= r.minBranches;
+    const ok = okLines && okBranches;
+    out.push(
+      `| ${r.name} | ${r.lines.pct.toFixed(1)} % | ${r.minLines} % | ` +
+        `${r.branches.pct.toFixed(1)} % | ${r.minBranches} % | ` +
+        `${ok ? "PASS" : "**FAIL**"} |`,
+    );
+    if (!okLines) {
+      violations.push(
+        `${r.name}: lines ${r.lines.pct.toFixed(1)} % < floor ${r.minLines} %`,
+      );
+    }
+    if (!okBranches) {
+      violations.push(
+        `${r.name}: branches ${r.branches.pct.toFixed(1)} % < floor ${r.minBranches} %`,
+      );
+    }
+  }
+  out.push("");
+  return { lines: out, violations };
+}
+
 function main() {
   const reports: PackageReport[] = [];
   const missing: string[] = [];
@@ -180,29 +224,55 @@ function main() {
     process.exit(1);
   }
 
-  if (missing.length > 0) {
-    console.warn(
-      "Skipped packages without coverage data:\n  " + missing.join("\n  "),
-    );
-  }
-
   const agg = aggregate(reports);
+  const thresholds = buildThresholdReport(reports);
 
   const outDir = resolve(ROOT, "coverage");
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
   writeFileSync(
     resolve(outDir, "aggregated-summary.json"),
-    JSON.stringify({ ...agg, missingPackages: missing }, null, 2),
+    JSON.stringify(
+      {
+        ...agg,
+        missingPackages: missing,
+        thresholdViolations: thresholds.violations,
+      },
+      null,
+      2,
+    ),
   );
 
-  const md = buildMarkdown(agg);
+  const md = buildMarkdown(agg) + thresholds.lines.join("\n") + "\n";
   writeFileSync(resolve(outDir, "aggregated-summary.md"), md);
 
   console.log(md);
   console.log(
     `\nWrote: coverage/aggregated-summary.json + coverage/aggregated-summary.md`,
   );
+
+  // [WP11 · S11-16] A package without a summary used to be a warning. It is
+  // now a failure: the aggregate silently shrinking to the two best-covered
+  // packages is precisely how docs/STATUS.md came to claim 78.4 % while the
+  // real figure was 20.4 % (S11-01).
+  let failed = false;
+  if (missing.length > 0) {
+    console.error(
+      "\nERROR: no coverage-summary.json for:\n  " +
+        missing.join("\n  ") +
+        "\n  Every workspace listed in PACKAGES must run `test:coverage`.",
+    );
+    failed = true;
+  }
+  if (thresholds.violations.length > 0) {
+    console.error(
+      "\nERROR: coverage below the agreed floor:\n  " +
+        thresholds.violations.join("\n  "),
+    );
+    failed = true;
+  }
+
+  if (failed) process.exit(1);
 }
 
 main();

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useNow, useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -61,6 +61,11 @@ export default function TimelinePage({
 }) {
   const { id } = use(params);
   const t = useTranslations("programme");
+  // [Welle 7a · OP-080] Ganz oben, weil unten fruehe Ruecksprunge stehen —
+  // ein Hook hinter einem Ruecksprung waere ein Verstoss gegen die
+  // Hook-Reihenfolge. Warum ueberhaupt `useNow()`: siehe die Anmerkung an der
+  // Verwendungsstelle.
+  const nowMs = useNow().getTime();
   const [data, setData] = useState<TimelineData | null>(null);
 
   useEffect(() => {
@@ -95,8 +100,14 @@ export default function TimelinePage({
     dateToMs(p.actualEnd),
   ]);
   const validDates = allDates.filter((d): d is number => d !== null);
-  const minMs = validDates.length > 0 ? Math.min(...validDates) : Date.now();
-  const maxMs = validDates.length > 0 ? Math.max(...validDates) : Date.now();
+  // [Welle 7a · OP-080] `Date.now()` im Renderpfad ist unrein: derselbe
+  // Rendervorgang kann bei zwei Aufrufen zwei Werte sehen, und Server- und
+  // Browserdurchlauf sehen ohnehin verschiedene — das ist die Klasse, aus der
+  // Abweichungen beim Anhydrieren entstehen. `useNow()` aus next-intl liefert
+  // EINEN Zeitpunkt je Einhaengung, aus demselben Anbieter, den die Seite
+  // fuer Sprache und Zeitzone ohnehin schon benutzt.
+  const minMs = validDates.length > 0 ? Math.min(...validDates) : nowMs;
+  const maxMs = validDates.length > 0 ? Math.max(...validDates) : nowMs;
   const span = Math.max(1, maxMs - minMs);
 
   return (

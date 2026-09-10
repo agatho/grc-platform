@@ -11,7 +11,8 @@
     "pending": "Ausstehend",
     "completed": "Abgeschlossen",
     "declined": "Abgelehnt",
-    "cancelled": "Storniert"
+    "cancelled": "Storniert",
+    "invalidated": "Ungültig — Datei nach Anforderung geändert"
   },
   "requestDialog": {
     "trigger": "Signatur anfordern",
@@ -37,7 +38,7 @@
   },
   "signArea": {
     "title": "Ihre Signatur wird angefordert",
-    "legalNotice": "Mit dem Klick auf „Signieren“ geben Sie eine elektronische Signatur i.S.d. Art. 25 eIDAS (einfache elektronische Signatur) ab. Zeitpunkt, IP-Adresse und ein kryptografischer Hash des Dokuments werden revisionssicher protokolliert."
+    "legalNotice": "Mit dem Klick auf „Signieren“ geben Sie eine einfache elektronische Signatur i.S.d. Art. 3 Nr. 10 eIDAS ab; ihre Rechtswirkung richtet sich nach Art. 25 Abs. 1 eIDAS. Es ist keine qualifizierte Signatur (QES). Zeitpunkt, IP-Adresse, Browserkennung und ein kryptografischer Hash der Datei werden erfasst, in die Hash-Kette der Signatur einbezogen und im verketteten Audit-Trail protokolliert. Wo eine externe Zeitstempelstelle erreichbar ist, wird der Zeitpunkt zusätzlich nach RFC 3161 bestätigt; andernfalls stammt er aus der Serveruhr — das Zertifikat weist das aus."
   },
   "signConfirm": {
     "title": "Dokument elektronisch signieren?",
@@ -60,12 +61,17 @@
     "certificate": "Zertifikat (PDF)"
   },
   "verify": {
-    "valid": "Signatur gültig — Hash-Kette und Datei-Integrität verifiziert",
+    "valid": "Signatur gültig — Hash-Kette vollständig, Datei neu gehasht und unverändert",
     "invalid": "Verifikation fehlgeschlagen",
     "chainValid": "Hash-Kette intakt",
     "chainBroken": "Hash-Kette gebrochen ab Glied {index}",
-    "fileUnchanged": "Datei unverändert",
-    "fileChanged": "Datei wurde nach der Anforderung verändert"
+    "fileUnchanged": "Datei unverändert (Bytes im Objektspeicher neu gehasht)",
+    "fileChanged": "Datei wurde nach der Anforderung verändert",
+    "fileUnverifiable": "Datei nicht prüfbar — das Objekt konnte nicht gelesen werden",
+    "chainIncomplete": "Kette unvollständig — es fehlen Glieder am Ende der Zeremonie",
+    "timestampMissing": "Kein externer Zeitstempel — der Zeitpunkt stammt aus der Serveruhr",
+    "ipSelfReported": "IP-Adresse ist eine Selbstauskunft des Clients",
+    "creatorIsSigner": "Anforderer und Unterzeichner sind dieselbe Person"
   },
   "toasts": {
     "requestCreated": "Signaturanforderung erstellt",

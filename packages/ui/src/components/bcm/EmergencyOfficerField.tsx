@@ -1,7 +1,5 @@
 "use client";
 
-import React from "react";
-
 interface User {
   id: string;
   name: string;

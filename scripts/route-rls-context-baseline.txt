@@ -1,115 +1,14 @@
-v1/access-log/route.ts
-v1/admin/performance/slow-queries/route.ts
-v1/admin/scim/logs/route.ts
-v1/admin/scim/stats/route.ts
-v1/ai-act/dashboard/route.ts
-v1/ai/control-suggestions/route.ts
-v1/ai/draft-policy/route.ts
-v1/ai/explain-gap/route.ts
-v1/ai/rcm-gap-analysis/route.ts
-v1/ai/root-cause-patterns/route.ts
-v1/ai/suggest-controls/route.ts
-v1/ai/test-plan/route.ts
-v1/api-keys/[id]/route.ts
-v1/api-keys/route.ts
-v1/api-keys/scopes/route.ts
-v1/assets/[id]/work-items/route.ts
-v1/audit-log/anchor/route.ts
-v1/audit-log/archive/route.ts
-v1/audit-mgmt/auditors/route.ts
-v1/audit-mgmt/dashboard/route.ts
-v1/automation/rules/[id]/route.ts
-v1/bi-reports/queries/execute/route.ts
-v1/budgets/route.ts
-v1/catalog-references/route.ts
-v1/catalogs/active-entries/route.ts
-v1/catalogs/controls/[catalogId]/entries/route.ts
-v1/catalogs/controls/route.ts
-v1/catalogs/mappings/route.ts
-v1/catalogs/risks/[catalogId]/entries/route.ts
-v1/catalogs/risks/route.ts
-v1/connectors/[id]/artifacts/route.ts
-v1/connectors/[id]/test-results/route.ts
-v1/connectors/test-definitions/route.ts
-v1/contracts/dashboard/route.ts
-v1/dashboards/[id]/data/route.ts
-v1/dashboards/[id]/export-pdf/route.ts
-v1/dd-sessions/[id]/results/route.ts
-v1/documents/[id]/send-reminder/route.ts
-v1/dpms/country-risk-profiles/route.ts
-v1/dpms/deadline-monitor/pdf/route.ts
-v1/dpms/dpia/[id]/ai/draft-measures/route.ts
-v1/dpms/dpia/[id]/export-pdf/route.ts
-v1/eam/ai/generate-suggestions/route.ts
-v1/eam/cloud/catalog/route.ts
-v1/eam/context-diagram/route.ts
-v1/eam/dashboards/business-alignment/route.ts
-v1/eam/dashboards/cost-management/route.ts
-v1/eam/dashboards/cost-management/treemap-apps/route.ts
-v1/eam/dashboards/cost-management/treemap-infra/route.ts
-v1/eam/dashboards/cost-management/trend/route.ts
-v1/eam/dashboards/portfolio-optimization/health/route.ts
-v1/eam/dashboards/portfolio-optimization/route.ts
-v1/eam/dashboards/portfolio-optimization/six-r-overview/route.ts
-v1/eam/dashboards/risk-management/per-app/route.ts
-v1/eam/dashboards/risk-management/route.ts
-v1/eam/dashboards/technical-alignment/route.ts
-v1/eam/dashboards/vulnerability-monitor/overlay/route.ts
-v1/eam/dashboards/vulnerability-monitor/route.ts
-v1/eam/dependency-chain/[id]/route.ts
-v1/eam/governance/bulk/route.ts
-v1/eam/governance/publish/route.ts
-v1/eam/spof/route.ts
-v1/entity-documents/route.ts
-v1/erm/fair/aggregate/route.ts
-v1/erm/fair/compare/route.ts
-v1/erm/kpi-cards/route.ts
-v1/erm/management-summary/route.ts
-v1/erm/my-todos/route.ts
-v1/esg/materiality/[year]/iro/route.ts
-v1/esg/report/[year]/completeness/route.ts
-v1/export/bulk/route.ts
-v1/grc/my-todos/route.ts
-v1/health/schema-drift/route.ts
-v1/ics/ccm/evidence/route.ts
-v1/ics/ces/recompute/route.ts
-v1/ics/control-library/route.ts
-v1/isms/assessments/[id]/completion/route.ts
-v1/isms/assets/[id]/audit-summary/route.ts
-v1/isms/assets/[id]/recommended-risks/route.ts
-v1/maturity/benchmarks/pool/route.ts
-v1/mobile/scan/route.ts
-v1/notifications/route.ts
-v1/onboarding/route.ts
-v1/organizations/dpos/route.ts
-v1/organizations/tree/route.ts
-v1/playground/execute/route.ts
-v1/plugins/[id]/route.ts
-v1/plugins/route.ts
-v1/policies/distributions/[id]/compliance/route.ts
-v1/policies/distributions/[id]/export-pdf/route.ts
-v1/policies/my-pending/[distId]/route.ts
-v1/policies/my-pending/route.ts
-v1/processes/[id]/ai/suggest-controls/route.ts
-v1/processes/[id]/ai/suggest-risks/route.ts
-v1/processes/[id]/findings/route.ts
-v1/processes/map/route.ts
-v1/processes/metro-layout/route.ts
-v1/rcsa/campaigns/[id]/assignments/route.ts
-v1/rcsa/my-assignments/route.ts
-v1/references/[entityType]/[entityId]/impact/route.ts
-v1/risks/dashboard-summary/route.ts
-v1/risks/export/route.ts
-v1/roi/overview/route.ts
-v1/role-dashboards/data/auditor/route.ts
-v1/role-dashboards/data/board/route.ts
-v1/role-dashboards/data/cfo/route.ts
-v1/role-dashboards/data/ciso/route.ts
-v1/roni/vs-roi/route.ts
-v1/translations/export/route.ts
-v1/translations/heatmap/route.ts
-v1/translations/progress/route.ts
-v1/translations/queue/route.ts
-v1/vendors/dashboard/route.ts
-v1/whistleblowing/cases/[id]/route.ts
-v1/whistleblowing/statistics/route.ts
+# Ratschenliste zu scripts/check-route-rls-context.mjs (#SEC-F01b-RUN).
+# Jede Zeile ist eine Route, die authentifiziert bare `db.*`-Reads OHNE
+# Request-Kontext-Rahmen macht. Die Liste darf nur schrumpfen.
+#
+# [ARCTOS-FULL-2026-08-31 · OP-084] Stand dieser Welle: LEER.
+# Die 115 Eintraege der Vorgaengerfassung sind alle gewickelt (E2E-Triage vom
+# 2026-09-02, Kommentarzeile "withErrorHandler opens the requestDbStorage.run()
+# frame" in jeder der 115 Dateien) — nachgezaehlt, nicht angenommen. Die Liste
+# wurde damals nicht nachgezogen, weshalb dieses Tor seither in JEDEM CI-Lauf
+# rot war: der Waechter meldet auch das Gegenteil eines Befunds, naemlich
+# "Baseline-Eintrag verletzt nicht mehr — Ratsche nachziehen".
+#
+# Eine leere Datei ist hier das Ziel und kein Verlust: der Waechter faellt
+# jetzt bei der ERSTEN neuen ungewickelten Route um, nicht erst bei der 116.

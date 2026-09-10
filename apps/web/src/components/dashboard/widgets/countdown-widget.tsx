@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useTranslations } from "next-intl";
 import type { WidgetProps } from "../widget-registry";
 import { Clock, AlertTriangle } from "lucide-react";
 
@@ -46,6 +47,10 @@ export function CountdownWidget({
   isLoading,
   error,
 }: WidgetProps) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Fristenkachel des Startbildschirms:
+  // „Heute" und „ueberfaellig" standen fest im Quelltext.
+  const t = useTranslations("dashboard.widget");
+
   if (isLoading) {
     return (
       <div className="flex h-full flex-col gap-2 p-2">
@@ -71,7 +76,7 @@ export function CountdownWidget({
   if (displayItems.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Keine anstehenden Termine
+        {t("noUpcomingDeadlines")}
       </div>
     );
   }
@@ -112,10 +117,10 @@ export function CountdownWidget({
               }`}
             >
               {isOverdue
-                ? `${Math.abs(days)}d ueberfaellig`
+                ? t("overdueDays", { days: String(Math.abs(days)) })
                 : days === 0
-                  ? "Heute"
-                  : `${days}d`}
+                  ? t("today")
+                  : t("inDays", { days: String(days) })}
             </span>
           </div>
         );

@@ -1,15 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import {
-  FileSearch,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { FileSearch, Plus, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,25 +28,26 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 export default function EvidenceReviewPage() {
   const t = useTranslations("evidenceReview");
-  const [data, setData] = useState<EvidenceReviewDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<EvidenceReviewDashboard | null>({
+    queryKey: ["evidence-review", "dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/evidence-review/dashboard");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as EvidenceReviewDashboard | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/evidence-review/dashboard");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const createJob = async () => {
     const res = await fetch("/api/v1/evidence-review/jobs", {

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -14,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import type { GrcTimeEntry, GrcArea } from "@grc/shared";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
@@ -50,10 +51,12 @@ interface DeptAnalysisRow {
 }
 
 export default function TimeTrackingPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("budget");
   const router = useRouter();
-  const [entries, setEntries] = useState<GrcTimeEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<"calendar" | "list">("list");
   const [showCreate, setShowCreate] = useState(false);
 
@@ -64,32 +67,43 @@ export default function TimeTrackingPage() {
   const [newDescription, setNewDescription] = useState("");
   const [creating, setCreating] = useState(false);
 
-  // Department analysis
-  const [deptAnalysis, setDeptAnalysis] = useState<DeptAnalysisRow[]>([]);
-
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Zeiteintraege und
+  // Abteilungsanalyse liefen immer zusammen und werden zusammen gelesen,
+  // daher eine Abfrage mit einem Ergebnisobjekt. Eine nicht-ok-Antwort
+  // liefert wie vorher eine leere Liste.
+  const {
+    data: timeData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ entries: GrcTimeEntry[]; deptAnalysis: DeptAnalysisRow[] }>({
+    queryKey: ["budget", "time"],
+    queryFn: async () => {
       const [eRes, dRes] = await Promise.all([
         fetch("/api/v1/budget/time"),
         fetch("/api/v1/budget/time/department-analysis"),
       ]);
+      let entries: GrcTimeEntry[] = [];
+      let deptAnalysis: DeptAnalysisRow[] = [];
       if (eRes.ok) {
         const json = await eRes.json();
-        setEntries(json.data ?? []);
+        entries = (json.data ?? []) as GrcTimeEntry[];
       }
       if (dRes.ok) {
         const json = await dRes.json();
-        setDeptAnalysis(json.data ?? []);
+        deptAnalysis = (json.data ?? []) as DeptAnalysisRow[];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { entries, deptAnalysis };
+    },
+  });
+  const entries = timeData?.entries ?? [];
+  const deptAnalysis = timeData?.deptAnalysis ?? [];
 
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+  const fetchEntries = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -175,9 +189,12 @@ export default function TimeTrackingPage() {
             variant="outline"
             size="sm"
             onClick={fetchEntries}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
             <Plus size={14} className="mr-1" />
@@ -462,7 +479,7 @@ export default function TimeTrackingPage() {
                       {row.totalHours.toFixed(1)}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
-                      {row.calculatedCost.toLocaleString("de-DE", {
+                      {row.calculatedCost.toLocaleString(numberLocale, {
                         minimumFractionDigits: 2,
                       })}
                     </td>

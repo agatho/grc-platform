@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 export default function ProfilePage() {
   const { data: session, update } = useSession();
@@ -11,7 +12,7 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [name, setName] = useState(session?.user?.name ?? "");
   const [language, setLanguage] = useState(
-    (session?.user as any)?.language ?? "de",
+    (session?.user as UnvalidatedJson)?.language ?? "de",
   );
 
   async function handleSubmit(e: React.FormEvent) {

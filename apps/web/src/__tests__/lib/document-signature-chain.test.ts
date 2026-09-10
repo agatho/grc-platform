@@ -9,6 +9,7 @@ import {
   verifySignatureChain,
   type SignatureChainRow,
   type SignaturePayload,
+  type SignaturePayloadV2,
 } from "../../lib/documents/signature-chain";
 
 function payload(overrides: Partial<SignaturePayload> = {}): SignaturePayload {
@@ -131,5 +132,154 @@ describe("signature-chain", () => {
     const result = verifySignatureChain(reordered);
     expect(result.ok).toBe(false);
     expect(result.brokenAt).toBe(0);
+  });
+});
+
+// ── #S06-03 — hash version 2 binds the evidence fields ───────────────
+describe("signature-chain hash versions (S06-03)", () => {
+  const v2 = (
+    overrides: Partial<SignaturePayloadV2> = {},
+  ): SignaturePayloadV2 => ({
+    ...payload(),
+    ipAddress: "198.51.100.7",
+    userAgent: "Mozilla/5.0",
+    declineReason: null,
+    signOrder: 1,
+    ...overrides,
+  });
+
+  it("v1 ignores the evidence fields — that WAS the finding", () => {
+    // Under the old formula the IP could be swapped freely without the
+    // content hash moving; the certificate then printed the new address
+    // next to "Hash-Kette: GÜLTIG".
+    const a = computeContentHash(v2(), 1);
+    const b = computeContentHash(v2({ ipAddress: "203.0.113.9" }), 1);
+    expect(a).toBe(b);
+  });
+
+  it("v2 covers ipAddress, userAgent, declineReason and signOrder", () => {
+    const base = computeContentHash(v2(), 2);
+    expect(computeContentHash(v2({ ipAddress: "203.0.113.9" }), 2)).not.toBe(
+      base,
+    );
+    expect(computeContentHash(v2({ userAgent: "curl/8" }), 2)).not.toBe(base);
+    expect(computeContentHash(v2({ declineReason: "forged" }), 2)).not.toBe(
+      base,
+    );
+    expect(computeContentHash(v2({ signOrder: 2 }), 2)).not.toBe(base);
+  });
+
+  it("v1 and v2 produce different hashes for the same payload", () => {
+    expect(computeContentHash(v2(), 1)).not.toBe(computeContentHash(v2(), 2));
+  });
+
+  it("a v1 row still verifies after v2 became the default", () => {
+    // The freeze rule: adding a field means a new version, never a
+    // redefinition — historical rows must keep verifying.
+    const p = v2();
+    const link = buildSignatureLink(null, p, 1);
+    const result = verifySignatureChain([{ ...link, payload: p }]);
+    expect(result.ok).toBe(true);
+    expect(result.links[0].contentHashValid).toBe(true);
+  });
+
+  it("tampering with the IP of a v2 row breaks its content hash", () => {
+    const p = v2();
+    const link = buildSignatureLink(null, p, 2);
+    const tampered: SignatureChainRow = {
+      ...link,
+      payload: { ...p, ipAddress: "203.0.113.9" },
+    };
+    const result = verifySignatureChain([tampered]);
+    expect(result.ok).toBe(false);
+    expect(result.links[0].contentHashValid).toBe(false);
+  });
+});
+
+// ── #S06-15 — truncation at the END of the chain ─────────────────────
+describe("signature-chain completeness (S06-15)", () => {
+  /** The recorded shape of an intact ceremony, as document_signature_
+   *  request carries it after migration 0420. */
+  function expectationFor(rows: SignatureChainRow[], slots = rows.length) {
+    return {
+      expectedLength: rows.length,
+      expectedFinalChainHash: rows[rows.length - 1].chainHash,
+      expectedSlotCount: slots,
+      actualSlotCount: slots,
+    };
+  }
+
+  it("an intact chain verifies against its recorded shape", () => {
+    const rows = buildChain(3);
+    const result = verifySignatureChain(rows, expectationFor(rows));
+    expect(result.ok).toBe(true);
+    expect(result.defects).toEqual([]);
+  });
+
+  it("WITHOUT the recorded shape, a truncated tail looks perfectly valid", () => {
+    // This is the finding: every prefix of a valid chain is itself a
+    // valid chain, so deleting the LAST link — for instance the
+    // `declined` link that made the ceremony fail — left verify()
+    // reporting chainValid: true and the certificate printing
+    // "Hash-Kette: GÜLTIG" for an incomplete ceremony.
+    const rows = buildChain(3);
+    const truncated = [rows[0], rows[1]];
+    const naive = verifySignatureChain(truncated);
+    expect(naive.ok).toBe(true);
+    expect(naive.brokenAt).toBeNull();
+  });
+
+  it("detects a deleted LAST link against the recorded shape", () => {
+    const rows = buildChain(3);
+    const expectation = expectationFor(rows);
+    const truncated = [rows[0], rows[1]];
+
+    const result = verifySignatureChain(truncated, {
+      ...expectation,
+      // the slot row disappears together with the link
+      actualSlotCount: 2,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.defects).toContain("truncated_tail");
+    expect(result.defects).toContain("final_hash_mismatch");
+    expect(result.defects).toContain("slot_count_mismatch");
+    expect(result.brokenAt).toBe(2);
+  });
+
+  it("detects a deleted middle link with or without the recorded shape", () => {
+    const rows = buildChain(3);
+    const truncated = [rows[0], rows[2]];
+    expect(verifySignatureChain(truncated).ok).toBe(false);
+    const withShape = verifySignatureChain(truncated, {
+      ...expectationFor(rows),
+      actualSlotCount: 2,
+    });
+    expect(withShape.ok).toBe(false);
+    expect(withShape.defects).toContain("link_broken");
+  });
+
+  it("detects an appended link that the request never recorded", () => {
+    const rows = buildChain(3);
+    const expectation = expectationFor(rows, 3);
+    const extra = buildChain(4);
+    const result = verifySignatureChain(extra, {
+      ...expectation,
+      actualSlotCount: 4,
+    });
+    expect(result.ok).toBe(false);
+    expect(result.defects).toContain("extra_links");
+  });
+
+  it("degrades to the old behaviour when the shape was never recorded", () => {
+    // Rows written before migration 0420 have nothing to compare
+    // against — they must not fail, they are simply less provable.
+    const rows = buildChain(2);
+    const result = verifySignatureChain(rows, {
+      expectedLength: null,
+      expectedFinalChainHash: null,
+      expectedSlotCount: null,
+      actualSlotCount: 2,
+    });
+    expect(result.ok).toBe(true);
   });
 });

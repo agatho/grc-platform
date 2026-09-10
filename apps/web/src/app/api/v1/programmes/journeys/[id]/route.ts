@@ -13,6 +13,14 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, asc, isNull } from "drizzle-orm";
 import { updateJourneySchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] `withErrorHandler` is what opens the
+// `requestDbStorage.run(...)` frame that `withAuth` -> establishRequestScopedContext
+// mutates with the org-pinned connection (apps/web/src/lib/api-wrapper.ts:113).
+// Without it that helper falls back to `requestDbStorage.enterWith(...)`, which
+// Next drops across the `await` in withAuth (api.ts:184-196), the handler's
+// queries run on the context-less base pool, and RLS filters every row — the
+// route answers 200 with an EMPTY list instead of the tenant's data.
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 async function loadJourney(id: string, orgId: string) {
   const [row] = await db
@@ -29,7 +37,7 @@ async function loadJourney(id: string, orgId: string) {
   return row ?? null;
 }
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -60,9 +68,8 @@ export async function GET(
   return Response.json({
     data: { journey, phases, steps },
   });
-}
-
-export async function PATCH(
+});
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -114,9 +121,8 @@ export async function PATCH(
   });
 
   return Response.json({ data: updated });
-}
-
-export async function DELETE(
+});
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -151,4 +157,4 @@ export async function DELETE(
   });
 
   return Response.json({ data: { id, deleted: true } });
-}
+});

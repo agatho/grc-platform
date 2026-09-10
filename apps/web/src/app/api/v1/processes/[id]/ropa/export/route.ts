@@ -6,8 +6,12 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
 import { rowsToCsv, rowsToHtml, type RopaRow } from "@/lib/ropa-export";
 import { renderHtmlToPdfResponse } from "@/lib/pdf";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -97,4 +101,4 @@ export async function GET(
     rowsToHtml(rows, orgName),
     `ropa-process-${id.slice(0, 8)}`,
   );
-}
+});

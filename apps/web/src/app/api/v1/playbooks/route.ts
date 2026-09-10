@@ -3,20 +3,11 @@ import {
   playbookTemplate,
   playbookPhase,
   playbookTaskTemplate,
-  playbookActivation,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  createPlaybookTemplateSchema,
-  playbookListQuerySchema,
-} from "@grc/shared";
+import { createPlaybookTemplateSchema } from "@grc/shared";
 import { eq, and, ilike, inArray, sql, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/playbooks — List playbook templates
@@ -113,7 +104,7 @@ export const GET = withErrorHandler(async (req: Request) => {
 });
 
 // POST /api/v1/playbooks — Create playbook template with phases + tasks
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -180,4 +171,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

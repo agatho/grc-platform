@@ -9,6 +9,10 @@ import { updateRiskTreatmentSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // PUT /api/v1/risks/:id/treatments/:treatmentId — Update treatment
 //
@@ -17,7 +21,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // (allowed there), now I can't progress its status". Widened to the
 // 1st-line operational roles (process_owner, control_owner) that
 // already have POST. Same widening applies to DELETE below.
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; treatmentId: string }> },
 ) {
@@ -163,10 +167,9 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // DELETE /api/v1/risks/:id/treatments/:treatmentId — Soft delete
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string; treatmentId: string }> },
 ) {
@@ -228,4 +231,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id: treatmentId, deleted: true } });
-}
+});

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -30,6 +31,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  formatCurrency as formatMoney,
+  useDateFormat,
+} from "@/lib/format-date";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -147,26 +152,30 @@ export default function TaxonomyPage() {
 
 function TaxonomyInner() {
   const t = useTranslations("esg");
-  const [activities, setActivities] = useState<TaxonomyActivity[]>([]);
-  const [summary, setSummary] = useState<TaxonomySummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { formatNumber, locale } = useDateFormat();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). `fetchTaxonomyData` liefert
+  // bereits Aktivitäten und Zusammenfassung als ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery({
+    queryKey: ["esg", "taxonomy"],
+    queryFn: fetchTaxonomyData,
+  });
+  const activities = pageData?.activities ?? [];
+  const summary = pageData?.summary ?? null;
 
   const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await fetchTaxonomyData();
-      setActivities(result.activities);
-      setSummary(result.summary);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -180,9 +189,14 @@ function TaxonomyInner() {
         Number(formData.get("reportingYear")) || new Date().getFullYear(),
     });
     setSaving(false);
+    // [ARCTOS-FULL-2026-08-31 · Welle 8b] `if (ok)` ohne `else`: eine
+    // abgelehnte Anlage blieb ohne jede Rueckmeldung stehen.
     if (ok) {
       setDialogOpen(false);
+      setCreateError(null);
       void loadData();
+    } else {
+      setCreateError(t("taxonomy.createFailed"));
     }
   };
 
@@ -200,54 +214,64 @@ function TaxonomyInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            EU-Taxonomie-Alignment
+            {t("taxonomy.title")}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Bewertung der Taxonomie-Konformit&auml;t wirtschaftlicher
-            Aktivit&auml;ten gem&auml;&szlig; EU-Taxonomie-Verordnung
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{t("taxonomy.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={loadData}
-            disabled={loading}
+            disabled={isFetching}
+            aria-label={t("taxonomy.refresh")}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm">
                 <Plus size={14} className="mr-1" />
-                Aktivit&auml;t hinzuf&uuml;gen
+                {t("taxonomy.addActivity")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Neue Taxonomie-Aktivit&auml;t</DialogTitle>
+                <DialogTitle>{t("taxonomy.dialogTitle")}</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
+                {createError && (
+                  <p className="text-sm text-red-600" role="alert">
+                    {createError}
+                  </p>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="activityName">Aktivit&auml;tsname</Label>
+                  <Label htmlFor="activityName">
+                    {t("taxonomy.activityName")}
+                  </Label>
                   <Input
                     id="activityName"
                     name="activityName"
                     required
-                    placeholder="z.B. Stromerzeugung aus Windkraft"
+                    placeholder={t("taxonomy.activityNamePlaceholder")}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="naceCode">NACE-Code</Label>
+                    <Label htmlFor="naceCode">{t("taxonomy.naceCode")}</Label>
                     <Input
                       id="naceCode"
                       name="naceCode"
-                      placeholder="z.B. D35.1.1"
+                      placeholder={t("taxonomy.naceCodePlaceholder")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="reportingYear">Berichtsjahr</Label>
+                    <Label htmlFor="reportingYear">
+                      {t("taxonomy.reportingYear")}
+                    </Label>
                     <Input
                       id="reportingYear"
                       name="reportingYear"
@@ -259,28 +283,19 @@ function TaxonomyInner() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="objectiveId">Umweltziel</Label>
+                  <Label htmlFor="objectiveId">
+                    {t("taxonomy.colObjective")}
+                  </Label>
                   <Select name="objectiveId" defaultValue="climate_mitigation">
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="climate_mitigation">
-                        Klimaschutz
-                      </SelectItem>
-                      <SelectItem value="climate_adaptation">
-                        Klimaanpassung
-                      </SelectItem>
-                      <SelectItem value="water">Wasser</SelectItem>
-                      <SelectItem value="circular_economy">
-                        Kreislaufwirtschaft
-                      </SelectItem>
-                      <SelectItem value="pollution">
-                        Umweltverschmutzung
-                      </SelectItem>
-                      <SelectItem value="biodiversity">
-                        Biodiversit&auml;t
-                      </SelectItem>
+                      {OBJECTIVE_KEYS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {t(`taxonomy.objective.${key}`)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -290,13 +305,13 @@ function TaxonomyInner() {
                     variant="outline"
                     onClick={() => setDialogOpen(false)}
                   >
-                    Abbrechen
+                    {t("taxonomy.cancel")}
                   </Button>
                   <Button type="submit" disabled={saving}>
                     {saving && (
                       <Loader2 size={14} className="mr-1 animate-spin" />
                     )}
-                    Erstellen
+                    {t("taxonomy.create")}
                   </Button>
                 </div>
               </form>
@@ -308,31 +323,34 @@ function TaxonomyInner() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <KpiCard
-          label="Taxonomie-f&auml;hig"
+          label={t("taxonomy.kpiEligible")}
           value={String(summary?.eligibleCount ?? 0)}
           icon={<Leaf size={16} className="text-green-600" />}
         />
         <KpiCard
-          label="Taxonomie-konform"
+          label={t("taxonomy.kpiAligned")}
           value={String(summary?.alignedCount ?? 0)}
           icon={<CheckCircle2 size={16} className="text-blue-600" />}
         />
         <KpiCard
-          label="Alignment-Quote"
-          value={`${(summary?.alignmentRate ?? 0).toFixed(1)} %`}
+          label={t("taxonomy.kpiRate")}
+          value={`${formatNumber(summary?.alignmentRate ?? 0, {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          })} %`}
           icon={<Leaf size={16} className="text-emerald-600" />}
         />
         <KpiCard
-          label="Umsatz (aligned)"
-          value={formatEuro(summary?.totalTurnoverAligned ?? 0)}
+          label={t("taxonomy.kpiTurnover")}
+          value={formatEuro(locale, summary?.totalTurnoverAligned ?? 0)}
         />
         <KpiCard
-          label="CapEx (aligned)"
-          value={formatEuro(summary?.totalCapexAligned ?? 0)}
+          label={t("taxonomy.kpiCapex")}
+          value={formatEuro(locale, summary?.totalCapexAligned ?? 0)}
         />
         <KpiCard
-          label="OpEx (aligned)"
-          value={formatEuro(summary?.totalOpexAligned ?? 0)}
+          label={t("taxonomy.kpiOpex")}
+          value={formatEuro(locale, summary?.totalOpexAligned ?? 0)}
         />
       </div>
 
@@ -343,34 +361,34 @@ function TaxonomyInner() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
-                  Aktivit&auml;t
+                  {t("taxonomy.colActivity")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
-                  NACE
+                  {t("taxonomy.colNace")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
-                  Umweltziel
+                  {t("taxonomy.colObjective")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
-                  F&auml;hig
+                  {t("taxonomy.colEligible")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
-                  Konform
+                  {t("taxonomy.colAligned")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
-                  SC
+                  {t("taxonomy.colSc")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
-                  DNSH
+                  {t("taxonomy.colDnsh")}
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
-                  MS
+                  {t("taxonomy.colMs")}
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
-                  Umsatz
+                  {t("taxonomy.colTurnover")}
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
-                  Status
+                  {t("taxonomy.colStatus")}
                 </th>
               </tr>
             </thead>
@@ -402,7 +420,7 @@ function TaxonomyInner() {
                     <BoolIcon value={a.minimumSafeguards} />
                   </td>
                   <td className="px-4 py-3 text-right text-gray-700">
-                    {formatEuro(a.turnoverAligned)}
+                    {formatEuro(locale, a.turnoverAligned)}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={a.status} />
@@ -416,14 +434,9 @@ function TaxonomyInner() {
                     className="px-4 py-12 text-center text-gray-400"
                   >
                     <div className="flex flex-col items-center gap-2">
-                      <Leaf size={32} className="text-gray-300" />
-                      <span>
-                        Noch keine Taxonomie-Aktivit&auml;ten erfasst.
-                      </span>
-                      <span className="text-xs">
-                        Klicken Sie auf &quot;Aktivit&auml;t
-                        hinzuf&uuml;gen&quot;, um zu beginnen.
-                      </span>
+                      <Leaf size={32} className="text-gray-500" />
+                      <span>{t("taxonomy.empty")}</span>
+                      <span className="text-xs">{t("taxonomy.emptyHint")}</span>
                     </div>
                   </td>
                 </tr>
@@ -439,6 +452,16 @@ function TaxonomyInner() {
 /* ------------------------------------------------------------------ */
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
+
+const OBJECTIVE_KEYS = [
+  "climate_mitigation",
+  "climate_adaptation",
+  "water",
+  "circular_economy",
+  "pollution",
+  "biodiversity",
+];
+const STATUS_KEYS = ["draft", "in_review", "approved", "rejected"];
 
 function KpiCard({
   label,
@@ -461,10 +484,21 @@ function KpiCard({
 }
 
 function BoolIcon({ value }: { value: boolean }) {
+  const t = useTranslations("esg");
+  // Ein blosses Symbol hat keinen zugaenglichen Namen: ein Screenreader las
+  // die Zeile ohne die Spalten, um die es geht (dieselbe Klasse wie C-13).
   return value ? (
-    <CheckCircle2 size={16} className="inline text-green-600" />
+    <CheckCircle2
+      size={16}
+      className="inline text-green-600"
+      aria-label={t("taxonomy.yes")}
+    />
   ) : (
-    <XCircle size={16} className="inline text-gray-300" />
+    <XCircle
+      size={16}
+      className="inline text-gray-500"
+      aria-label={t("taxonomy.no")}
+    />
   );
 }
 
@@ -478,21 +512,16 @@ function ObjectiveBadge({ objective }: { objective: string }) {
     biodiversity: "bg-green-100 text-green-900",
   };
 
-  const labels: Record<string, string> = {
-    climate_mitigation: "Klimaschutz",
-    climate_adaptation: "Klimaanpassung",
-    water: "Wasser",
-    circular_economy: "Kreislaufwirtschaft",
-    pollution: "Umweltverschmutzung",
-    biodiversity: "Biodiversit\u00e4t",
-  };
+  const t = useTranslations("esg");
 
   return (
     <Badge
       variant="outline"
       className={`${colors[objective] ?? ""} text-[10px]`}
     >
-      {labels[objective] ?? objective}
+      {OBJECTIVE_KEYS.includes(objective)
+        ? t(`taxonomy.objective.${objective}`)
+        : objective}
     </Badge>
   );
 }
@@ -505,16 +534,11 @@ function StatusBadge({ status }: { status: string }) {
     rejected: "bg-red-100 text-red-800",
   };
 
-  const labels: Record<string, string> = {
-    draft: "Entwurf",
-    in_review: "In Pr\u00fcfung",
-    approved: "Genehmigt",
-    rejected: "Abgelehnt",
-  };
+  const t = useTranslations("esg");
 
   return (
     <Badge variant="outline" className={`${colors[status] ?? ""} text-[10px]`}>
-      {labels[status] ?? status}
+      {STATUS_KEYS.includes(status) ? t(`taxonomy.status.${status}`) : status}
     </Badge>
   );
 }
@@ -523,11 +547,13 @@ function StatusBadge({ status }: { status: string }) {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-function formatEuro(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt als Parameter.
+ */
+function formatEuro(locale: string, value: number): string {
+  return formatMoney(locale, value, "EUR", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value);
+  });
 }

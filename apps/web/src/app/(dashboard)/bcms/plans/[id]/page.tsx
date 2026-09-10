@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, Trash2 } from "lucide-react";
@@ -43,13 +44,9 @@ function BcpDetailInner() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [plan, setPlan] = useState<Bcp | null>(null);
-  const [procedures, setProcedures] = useState<BcpProcedure[]>([]);
-  const [resources, setResources] = useState<BcpResource[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "procedures" | "resources" | "activation"
   >("overview");
-  const [loading, setLoading] = useState(true);
 
   // Procedure form
   const [showAddStep, setShowAddStep] = useState(false);
@@ -64,34 +61,51 @@ function BcpDetailInner() {
   const [resType, setResType] = useState("people");
   const [addingResource, setAddingResource] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Plan, Schritte und Ressourcen
+  // wurden immer zusammen geladen — daher eine Abfrage mit einem Objekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    plan: Bcp | null;
+    procedures: BcpProcedure[];
+    resources: BcpResource[];
+  }>({
+    queryKey: ["bcms", "plans", id],
+    queryFn: async () => {
       const [pRes, procRes, rRes] = await Promise.all([
         fetch(`/api/v1/bcms/plans/${id}`),
         fetch(`/api/v1/bcms/plans/${id}/procedures?limit=100`),
         fetch(`/api/v1/bcms/plans/${id}/resources?limit=100`),
       ]);
+      let plan: Bcp | null = null;
+      let procedures: BcpProcedure[] = [];
+      let resources: BcpResource[] = [];
       if (pRes.ok) {
         const j = await pRes.json();
-        setPlan(j.data);
+        plan = j.data ?? null;
       }
       if (procRes.ok) {
         const j = await procRes.json();
-        setProcedures(j.data ?? []);
+        procedures = j.data ?? [];
       }
       if (rRes.ok) {
         const j = await rRes.json();
-        setResources(j.data ?? []);
+        resources = j.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { plan, procedures, resources };
+    },
+  });
+  const plan = data?.plan ?? null;
+  const procedures = data?.procedures ?? [];
+  const resources = data?.resources ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleAddStep = async () => {
     if (!stepTitle.trim()) return;

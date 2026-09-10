@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Index risk_category_level_idx auf die reale Spalte risk.risk_score_inherent umgestellt (42703).
 -- Sprint 49: EAM Visualizations — Insight Grid, Context Diagram, Roadmap, Risk/Alignment Dashboards
 -- Migration 746-760: Indices only, no new tables (pure visualization sprint)
 
@@ -26,7 +31,9 @@ CREATE INDEX IF NOT EXISTS "er_target_type_idx" ON "entity_reference" ("target_i
 -- Risk per application indices
 -- ──────────────────────────────────────────────────────────────
 
-CREATE INDEX IF NOT EXISTS "risk_category_level_idx" ON "risk" ("org_id", "risk_category", "inherent_risk_level");
+-- [ARCTOS-FULL-2026-08-31 / S09-01] `risk` hat kein `inherent_risk_level`;
+-- der berechnete Score heisst risk_score_inherent (42703).
+CREATE INDEX IF NOT EXISTS "risk_category_level_idx" ON "risk" ("org_id", "risk_category", "risk_score_inherent");
 
 -- ──────────────────────────────────────────────────────────────
 -- Technology alignment indices

@@ -164,6 +164,11 @@ export const ddSession = pgTable(
       .references(() => questionnaireTemplate.id),
     templateVersion: integer("template_version").notNull(),
     accessToken: varchar("access_token", { length: 128 }).notNull().unique(),
+    // #WP3-S02-20 (Migration 0411): the portal token was stored in PLAINTEXT
+    // and compared directly (unlike SCIM, which hashes). A read leak handed out
+    // every active supplier session. The app now writes and matches the
+    // SHA-256 hash; the plaintext column stays for one rotation window.
+    accessTokenHash: varchar("access_token_hash", { length: 64 }),
     tokenExpiresAt: timestamp("token_expires_at", {
       withTimezone: true,
     }).notNull(),

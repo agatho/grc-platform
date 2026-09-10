@@ -8,18 +8,26 @@
  * large fixtures, the budget will be exercised more rigorously.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("BPM — RACM endpoint perf", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("racm aggregates within budget", async ({ request }) => {
     const list = await request.get("/api/v1/processes?limit=5");
     expect(list.ok()).toBeTruthy();
     const items = (await list.json()).data ?? [];
-    if (items.length === 0) {
-      test.skip();
-      return;
-    }
+    // [ARCTOS-FULL-2026-08-31 / WP11 · S11-02, S11-08] Was a bare
+    // `test.skip(); return;` with no reason: on an org without processes the
+    // perf probe reported "skipped" and the E2E gate stayed green — the same
+    // silent-skip pattern as the 526 in the API smoke. The demo seed creates
+    // processes (`packages/db/src/seeds`), so an empty list is a broken
+    // fixture, not a reason to pass.
+    expect(
+      items.length,
+      "no processes in this org — the RACM perf probe cannot measure anything. " +
+        "Run the demo seed (npm run db:seed:demo) before the E2E suite.",
+    ).toBeGreaterThan(0);
 
     const samples: number[] = [];
     for (const item of items.slice(0, 5)) {

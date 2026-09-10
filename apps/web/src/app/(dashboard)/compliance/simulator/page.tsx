@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -8,7 +9,6 @@ import {
   Play,
   History,
   TrendingDown,
-  TrendingUp,
   AlertTriangle,
 } from "lucide-react";
 
@@ -43,6 +43,9 @@ export default function SimulatorPage() {
 }
 
 function SimulatorInner() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Betraege standen fest im deutschen
+  // Zahlenformat, obwohl die Seite uebersetzt ist.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("simulator");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -178,7 +181,7 @@ function SimulatorInner() {
                   {result.estimatedTotalCost && (
                     <Badge variant="secondary">
                       {Number(result.estimatedTotalCost).toLocaleString(
-                        "de-DE",
+                        numberLocale,
                       )}{" "}
                       EUR
                     </Badge>

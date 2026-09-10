@@ -57,7 +57,6 @@
   "statusGenerating": "Wird generiert",
   "statusCompleted": "Fertig",
   "statusFailed": "Fehlgeschlagen",
-
   "schedulesTitle": "Geplante Berichte",
   "schedulesSubtitle": "Automatische Berichterstellung und E-Mail-Verteilung",
   "createSchedule": "Neuen Plan erstellen",
@@ -84,7 +83,6 @@
   "recipientEmails": "E-Mail-Empfänger",
   "recipientEmailsPlaceholder": "email1@example.de, email2@example.de",
   "recipientEmailsHint": "Kommagetrennte E-Mail-Adressen",
-
   "builderTitle": "Vorlagen-Editor",
   "builderSubtitle": "Erstellen Sie eine benutzerdefinierte Berichtsvorlage",
   "preview": "Vorschau",
@@ -112,7 +110,6 @@
   "textPlaceholder": "Freitext eingeben (Variablen: {{report.date}}, {{period.label}} usw.)",
   "variables": "Variablen",
   "variablesHint": "Klicken zum Kopieren. Verwendbar in Titel- und Textabschnitten.",
-
   "threatTitle": "Bedrohungslandschaft",
   "threatSubtitle": "Aggregierte Bedrohungsanalyse für CISOs",
   "kpiActiveThreats": "Aktive Bedrohungen",
@@ -137,7 +134,6 @@
   "noFeedData": "Keine Feed-Einträge vorhanden.",
   "coverageTitle": "Kontrollabdeckung",
   "noCoverageData": "Keine Abdeckungsdaten verfügbar.",
-
   "threatNotFound": "Bedrohung nicht gefunden.",
   "backToLandscape": "Zurück zur Bedrohungslandschaft",
   "threatDetails": "Bedrohungsdetails",
@@ -147,5 +143,6 @@
   "firstDetected": "Erstmals erkannt",
   "timeline": "Zeitverlauf",
   "threatCreated": "Bedrohung erstellt",
-  "planMeasure": "Maßnahme planen"
+  "planMeasure": "Maßnahme planen",
+  "copyVariable": "Variable {variable} kopieren"
 }

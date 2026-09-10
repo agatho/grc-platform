@@ -9,6 +9,7 @@ import {
 } from "@grc/db";
 import { eq, and, sql, isNull, lte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface Nis2DeadlineResult {
   orgsProcessed: number;
@@ -84,13 +85,27 @@ export const processNis2DeadlineMonitor = withCronInstrumentation(
           // Per-incident details are visible via the dashboard; we don't
           // emit per-incident log lines from the cron.
           void overdueRows;
-        } catch {
-          // Wrapper logs structured error; bump the per-org counter.
+        } catch (err) {
+          // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+          reportJobError(
+            {
+              job: "nis2-deadline-monitor",
+              scope: "emit per-incident log lines from the cron.",
+            },
+            err,
+          );
           errors++;
         }
       }
-    } catch {
-      // Wrapper logs structured error; bump the fatal counter.
+    } catch (err) {
+      // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+      reportJobError(
+        {
+          job: "nis2-deadline-monitor",
+          scope: "Wrapper logs structured error bump the per-o",
+        },
+        err,
+      );
       errors++;
     }
 

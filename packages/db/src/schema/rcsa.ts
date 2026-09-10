@@ -16,8 +16,6 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { organization, user } from "./platform";
-import { risk } from "./risk";
-import { control } from "./control";
 
 // ──────────────────────────────────────────────────────────────
 // 14.1 RCSA Campaign — Campaign definition (scope, period, frequency)

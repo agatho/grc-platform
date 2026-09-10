@@ -11,14 +11,45 @@
   width: 100%;
 }
 
-/* Hide the bpmn.io powered-by badge */
+/*
+ * #S08-02 (WP10, Audit 2026-08-31) — LIZENZBEDINGUNG, NICHT ENTFERNEN.
+ *
+ * Die bpmn-js-Lizenz (node_modules/bpmn-js/LICENSE, Camunda Services GmbH)
+ * erteilt die Nutzungsrechte ausdrücklich "subject to the following
+ * conditions":
+ *
+ *   "The source code responsible for displaying the bpmn.io project
+ *    watermark that links back to https://bpmn.io as part of rendered
+ *    diagrams MUST NOT be removed or changed. When this software is being
+ *    used in a website or application, the watermark must stay fully
+ *    visible and not visually overlapped by other elements."
+ *
+ * Bis 2026-08-31 stand hier `.bjs-powered-by { display: none !important; }`.
+ * Damit entfiel die Bedingung und mit ihr die Rechtekette — ARCTOS nutzte
+ * und verteilte (ghcr.io-Images, On-Prem via deploy/) eine unlizenzierte
+ * Fremdkomponente. Die Regel ist entfernt; das Wasserzeichen ist wieder
+ * sichtbar.
+ *
+ * Der einzige zulässige Alternativweg ist eine kommerzielle bpmn.io-Lizenz,
+ * die von der Wasserzeichenpflicht befreit. Das ist eine
+ * Geschäftsentscheidung — siehe "Offene Punkte für den Betreiber" in
+ * /work/audit/remediation/WP10.md. Ohne einen dokumentierten Lizenzvertrag
+ * darf diese Regel nicht wieder eingeführt werden; das CI-Lizenzgate
+ * (scripts/check-bpmn-watermark.mjs) prüft das.
+ *
+ * Die Positionierung unten stellt nur sicher, dass das Badge nicht von der
+ * Minimap überdeckt wird — "not visually overlapped by other elements" ist
+ * ebenfalls Teil der Bedingung.
+ */
 .bjs-powered-by {
-  display: none !important;
+  z-index: 2;
 }
 
-/* Minimap positioning */
+/* Minimap positioning — oberhalb des bpmn.io-Wasserzeichens (unten links),
+ * damit sich beide nicht überlappen (Lizenzbedingung, siehe oben). */
 .djs-minimap {
   position: absolute;
   bottom: 16px;
   right: 16px;
+  z-index: 1;
 }

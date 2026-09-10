@@ -22,7 +22,7 @@ function parseScoreData(data: unknown): ScoreData {
 
 export function ComplianceScoreWidget({
   data,
-  config,
+  config: _config,
   isLoading,
   error,
 }: WidgetProps) {

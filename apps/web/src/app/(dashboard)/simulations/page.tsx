@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -39,24 +40,29 @@ export default function SimulationsPage() {
 
 function SimulationsDashboard() {
   const t = useTranslations("simulations");
-  const router = useRouter();
+  const _router = useRouter();
   const { formatDate } = useDateFormat();
-  const [scenarios, setScenarios] = useState<Scenario[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher eine leere Liste.
+  const {
+    data: scenarios = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Scenario[]>({
+    queryKey: ["simulations", "scenarios", 20],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/simulations/scenarios?limit=20");
+      if (!res.ok) return [];
+      return ((await res.json()).data ?? []) as Scenario[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/simulations/scenarios?limit=20");
-      if (res.ok) setScenarios((await res.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const typeIcons: Record<string, React.ReactNode> = {
     what_if: <Layers size={14} className="text-blue-500" />,
@@ -93,9 +99,12 @@ function SimulationsDashboard() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>

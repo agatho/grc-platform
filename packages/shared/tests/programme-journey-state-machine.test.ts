@@ -11,6 +11,17 @@ import {
   computeJourneyProgress,
 } from "../src/state-machines/programme-journey";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("PROGRAMME_JOURNEY_STATUSES", () => {
   it("contains the documented values", () => {
     expect(PROGRAMME_JOURNEY_STATUSES).toEqual([
@@ -111,7 +122,7 @@ describe("evaluateJourneyHealth", () => {
     });
     expect(r.derivedStatus).toBe("completed");
     expect(r.healthScore).toBe(100);
-    expect(r.signals[0].code).toBe("all_completed");
+    expect(at(r.signals, 0).code).toBe("all_completed");
   });
 
   it("returns blocked when ≥ 20 % overdue", () => {

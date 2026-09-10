@@ -2,6 +2,10 @@
 // Run: npx shadcn-ui@latest add button table dialog card badge input
 export { cn } from "./utils";
 
+// [ARCTOS-FULL-2026-08-31 / WP12 · S12-06, S12-07, S12-12] URL guards for the
+// rendering layer — see ./url-safety.ts.
+export { safeExternalHref, safeRedirectPath } from "./url-safety";
+
 // Sprint 54: ERM UX & Evaluation components
 export { EvaluationProgressBar } from "./components/erm/EvaluationProgressBar";
 export { TripleTypeToggle } from "./components/erm/TripleTypeToggle";

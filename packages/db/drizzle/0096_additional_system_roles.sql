@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Der Rollen-Zuweisungs-INSERT prueft jetzt die Existenz der Demo-Org c2446a5c; Enum-Zweiphasigkeit ist durch den Runner-Fix (S09-05) abgedeckt (S09-07).
 -- Migration 0096: Additional System Roles for real-world coverage
 -- Adds 8 industry-standard roles that were missing from the initial 11
 
@@ -154,6 +159,10 @@ CROSS JOIN (VALUES
   ('security@arctos.dev',   'security_analyst',    'first')
 ) AS r(email, role, lod)
 WHERE u.email = r.email
+  -- [ARCTOS-FULL-2026-08-31 / S09-07] Die Ziel-Org ist Demo-/Seed-Datenbestand
+  -- und wird von keiner Migration erzeugt. Ohne diesen Guard bricht die Datei
+  -- mit 23503 ab und die Rollen-/Rechtematrix oben geht mit verloren.
+  AND EXISTS (SELECT 1 FROM organization o WHERE o.id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41')
 ON CONFLICT DO NOTHING;
 
 -- Also assign custom roles

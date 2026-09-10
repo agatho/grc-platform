@@ -67,15 +67,42 @@ const TYPE_FALLBACK_RENDERERS: Record<
   special: ComplianceScoreWidget,
 };
 
-export function getWidgetRenderer(
-  definitionKey: string,
-  widgetType?: string,
-): React.ComponentType<WidgetProps> {
-  return (
+/**
+ * Die Kachel selbst — als Komponente auf Modulebene, nicht als Nachschlag an
+ * der Aufrufstelle.
+ *
+ * [Welle 7a · OP-080] `dashboard-widget-frame.tsx` schrieb
+ * `const WidgetRenderer = getWidgetRenderer(...)` in seinen Rumpf und setzte
+ * das Ergebnis als JSX-Typ ein. `react-hooks/static-components` sieht dabei
+ * nur, dass der Typ des Elements aus einem AUFRUF stammt: über die
+ * Funktionsgrenze kann die Regel nicht nachsehen, ob dabei immer dieselbe
+ * Komponente herauskommt. Ein Typ, der sich an derselben Stelle ändert, hängt
+ * den Teilbaum aus und wieder ein — der Zustand der Kachel wäre weg.
+ *
+ * Nachgemessen: über den Nachschlag IM Rumpf einer Modulkomponente kann die
+ * Regel sehen (`M1[k] ?? … ?? A` meldet nichts, `f(k)` meldet). Hier steht
+ * derselbe Ausdruck, den vorher `getWidgetRenderer` gekapselt hat, nur an
+ * der Stelle, an der er nachprüfbar ist.
+ *
+ * `getWidgetRenderer` ist damit ERSATZLOS entfallen: Nach der Umstellung
+ * hatte es keinen Aufrufer mehr ausser einem Sammelexport, den niemand
+ * importiert — das Dead-Exports-Tor hat genau das gemeldet. Es fordert
+ * wörtlich ‚Entfernen, nicht in die Ratsche aufnehmen‘; die Ratsche
+ * steht deshalb unverändert.
+ */
+export function WidgetRenderer({
+  definitionKey,
+  widgetType,
+  ...props
+}: WidgetProps & {
+  definitionKey: string;
+  widgetType?: string;
+}) {
+  const Renderer =
     WIDGET_RENDERERS[definitionKey] ??
     (widgetType ? TYPE_FALLBACK_RENDERERS[widgetType] : undefined) ??
-    KPICardWidget
-  );
+    KPICardWidget;
+  return <Renderer {...props} />;
 }
 
 // ──────────────────────────────────────────────────────────────

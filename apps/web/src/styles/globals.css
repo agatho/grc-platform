@@ -12,20 +12,48 @@
 
 @theme {
   /* Override Tailwind's gray with warm stone-tinted neutrals */
-  --color-gray-50:  oklch(0.985 0.002 75);
+  --color-gray-50: oklch(0.985 0.002 75);
   --color-gray-100: oklch(0.968 0.003 75);
-  --color-gray-200: oklch(0.930 0.005 75);
-  --color-gray-300: oklch(0.870 0.007 75);
-  --color-gray-400: oklch(0.710 0.010 75);
-  --color-gray-500: oklch(0.556 0.012 75);
+  --color-gray-200: oklch(0.93 0.005 75);
+  --color-gray-300: oklch(0.87 0.007 75);
+  /* [ARCTOS-FULL-2026-08-31 / WP12 · S14-11] WCAG 1.4.3 / EN 301 549 §9.1.4.3.
+     Was oklch(0.710 0.010 75) = 2.58:1 on --color-surface (#ffffff) and used
+     1.177x as `text-gray-400` for secondary text, timestamps and help text —
+     all body-size, so the 4.5:1 threshold applies. Darkened to 4.56:1 while
+     staying lighter than gray-500 (4.74:1) so the visual hierarchy holds.
+     The 16 `bg-gray-400` / 5 `border-gray-400` uses shift with it; contrast
+     of a fill or a hairline is not a WCAG 1.4.3 subject and the darker value
+     is the safer default there too. Verified by
+     apps/web/src/__tests__/a11y/theme-contrast.test.ts.
+
+     [E2E-TRIAGE-2026-09-02] That remediation measured against
+     `--color-surface`, which is `#ffffff` — but no dashboard page is painted
+     on `#ffffff`. The application chrome paints on `bg-gray-50` = `#fbfaf9`,
+     and the same tokens land LOWER there:
+         gray-400  4.563:1 on #ffffff  ->  4.370:1 on #fbfaf9  (fails AA)
+         gray-500  4.738:1 on #ffffff  ->  4.537:1 on #fbfaf9  (0.037 margin)
+     axe measured exactly that on /dashboard: "insufficient color contrast of
+     4.38 (foreground color: #7a756e, background color: #fbfaf9, 14px)" —
+     `#7a756e` IS oklch(0.565 0.012 75). The finding was closed against a
+     background the product does not use.
+
+     Both tokens are darkened until they clear 4.5:1 on the DARKEST default
+     surface rather than the lightest, with margin instead of a rounding error:
+         gray-400  L 0.565 -> 0.548   4.692:1 on #fbfaf9, 4.899:1 on #ffffff
+         gray-500  L 0.556 -> 0.540   4.853:1 on #fbfaf9, 5.067:1 on #ffffff
+     gray-400 stays lighter than gray-500 and gray-500 lighter than gray-600,
+     so the visual hierarchy is unchanged. theme-contrast.test.ts now measures
+     both surfaces, so a future token edit cannot reopen this silently. */
+  --color-gray-400: oklch(0.548 0.012 75);
+  --color-gray-500: oklch(0.54 0.012 75);
   --color-gray-600: oklch(0.446 0.012 75);
-  --color-gray-700: oklch(0.373 0.010 75);
+  --color-gray-700: oklch(0.373 0.01 75);
   --color-gray-800: oklch(0.268 0.008 75);
   --color-gray-900: oklch(0.205 0.006 75);
   --color-gray-950: oklch(0.145 0.005 75);
 
   /* Alias slate to gray so shadcn components match page colors */
-  --color-slate-50:  var(--color-gray-50);
+  --color-slate-50: var(--color-gray-50);
   --color-slate-100: var(--color-gray-100);
   --color-slate-200: var(--color-gray-200);
   --color-slate-300: var(--color-gray-300);
@@ -38,55 +66,62 @@
   --color-slate-950: var(--color-gray-950);
 
   /* Override blue with deep midnight navy */
-  --color-blue-50:  oklch(0.970 0.018 250);
-  --color-blue-100: oklch(0.940 0.035 250);
+  --color-blue-50: oklch(0.97 0.018 250);
+  --color-blue-100: oklch(0.94 0.035 250);
   --color-blue-200: oklch(0.885 0.062 250);
-  --color-blue-300: oklch(0.800 0.100 250);
-  --color-blue-400: oklch(0.680 0.150 252);
-  --color-blue-500: oklch(0.560 0.185 255);
+  --color-blue-300: oklch(0.8 0.1 250);
+  --color-blue-400: oklch(0.68 0.15 252);
+  --color-blue-500: oklch(0.56 0.185 255);
   --color-blue-600: oklch(0.468 0.185 258);
-  --color-blue-700: oklch(0.392 0.160 258);
-  --color-blue-800: oklch(0.320 0.120 258);
-  --color-blue-900: oklch(0.260 0.080 258);
-  --color-blue-950: oklch(0.185 0.050 260);
+  --color-blue-700: oklch(0.392 0.16 258);
+  --color-blue-800: oklch(0.32 0.12 258);
+  --color-blue-900: oklch(0.26 0.08 258);
+  --color-blue-950: oklch(0.185 0.05 260);
 
   /* Custom shadows with warm tint */
   --shadow-sm: 0 1px 2px oklch(0.2 0.01 75 / 0.06);
-  --shadow: 0 1px 3px oklch(0.2 0.01 75 / 0.08), 0 1px 2px oklch(0.2 0.01 75 / 0.04);
-  --shadow-md: 0 4px 6px oklch(0.2 0.01 75 / 0.07), 0 2px 4px oklch(0.2 0.01 75 / 0.04);
-  --shadow-lg: 0 10px 15px oklch(0.2 0.01 75 / 0.08), 0 4px 6px oklch(0.2 0.01 75 / 0.04);
-  --shadow-xl: 0 20px 25px oklch(0.2 0.01 75 / 0.10), 0 8px 10px oklch(0.2 0.01 75 / 0.04);
+  --shadow:
+    0 1px 3px oklch(0.2 0.01 75 / 0.08), 0 1px 2px oklch(0.2 0.01 75 / 0.04);
+  --shadow-md:
+    0 4px 6px oklch(0.2 0.01 75 / 0.07), 0 2px 4px oklch(0.2 0.01 75 / 0.04);
+  --shadow-lg:
+    0 10px 15px oklch(0.2 0.01 75 / 0.08), 0 4px 6px oklch(0.2 0.01 75 / 0.04);
+  --shadow-xl:
+    0 20px 25px oklch(0.2 0.01 75 / 0.1), 0 8px 10px oklch(0.2 0.01 75 / 0.04);
 
   /* Font families (variables set by next/font in layout.tsx) */
-  --font-sans: var(--font-geist-sans, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-sans:
+    var(--font-geist-sans, ui-sans-serif), system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, monospace;
 }
 
 /* ── Obsidian (Dark) Theme ── */
 .dark {
-  --color-gray-50:  oklch(0.178 0.006 260);
+  --color-gray-50: oklch(0.178 0.006 260);
   --color-gray-100: oklch(0.205 0.007 260);
-  --color-gray-200: oklch(0.250 0.009 260);
-  --color-gray-300: oklch(0.340 0.011 260);
-  --color-gray-400: oklch(0.500 0.012 260);
-  --color-gray-500: oklch(0.620 0.010 260);
-  --color-gray-600: oklch(0.720 0.008 260);
-  --color-gray-700: oklch(0.810 0.006 260);
-  --color-gray-800: oklch(0.900 0.004 260);
+  --color-gray-200: oklch(0.25 0.009 260);
+  --color-gray-300: oklch(0.34 0.011 260);
+  /* [WP12 · S14-11] 3.15:1 on the dark surface — same defect as the light
+     theme. 4.78:1 now, still below gray-500 (5.18:1). */
+  --color-gray-400: oklch(0.6 0.012 260);
+  --color-gray-500: oklch(0.62 0.01 260);
+  --color-gray-600: oklch(0.72 0.008 260);
+  --color-gray-700: oklch(0.81 0.006 260);
+  --color-gray-800: oklch(0.9 0.004 260);
   --color-gray-900: oklch(0.945 0.002 260);
   --color-gray-950: oklch(0.975 0.001 260);
 
-  --color-blue-50:  oklch(0.210 0.040 250);
-  --color-blue-100: oklch(0.250 0.060 250);
-  --color-blue-200: oklch(0.320 0.090 250);
-  --color-blue-300: oklch(0.420 0.130 250);
-  --color-blue-400: oklch(0.540 0.170 250);
-  --color-blue-500: oklch(0.640 0.195 248);
-  --color-blue-600: oklch(0.700 0.185 246);
-  --color-blue-700: oklch(0.760 0.160 244);
-  --color-blue-800: oklch(0.830 0.120 244);
-  --color-blue-900: oklch(0.900 0.060 244);
-  --color-blue-950: oklch(0.950 0.030 244);
+  --color-blue-50: oklch(0.21 0.04 250);
+  --color-blue-100: oklch(0.25 0.06 250);
+  --color-blue-200: oklch(0.32 0.09 250);
+  --color-blue-300: oklch(0.42 0.13 250);
+  --color-blue-400: oklch(0.54 0.17 250);
+  --color-blue-500: oklch(0.64 0.195 248);
+  --color-blue-600: oklch(0.7 0.185 246);
+  --color-blue-700: oklch(0.76 0.16 244);
+  --color-blue-800: oklch(0.83 0.12 244);
+  --color-blue-900: oklch(0.9 0.06 244);
+  --color-blue-950: oklch(0.95 0.03 244);
 
   --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
   --shadow: 0 1px 3px oklch(0 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.2);
@@ -96,20 +131,20 @@
 
 /* ── Polar (High Contrast) Theme ── */
 .high-contrast {
-  --color-gray-50:  oklch(1.0 0 0);
+  --color-gray-50: oklch(1 0 0);
   --color-gray-100: oklch(0.965 0 0);
-  --color-gray-200: oklch(0.800 0 0);
-  --color-gray-300: oklch(0.650 0 0);
-  --color-gray-400: oklch(0.500 0 0);
-  --color-gray-500: oklch(0.380 0 0);
-  --color-gray-600: oklch(0.280 0 0);
-  --color-gray-700: oklch(0.180 0 0);
-  --color-gray-800: oklch(0.100 0 0);
-  --color-gray-900: oklch(0.050 0 0);
-  --color-gray-950: oklch(0.0 0 0);
+  --color-gray-200: oklch(0.8 0 0);
+  --color-gray-300: oklch(0.65 0 0);
+  --color-gray-400: oklch(0.5 0 0);
+  --color-gray-500: oklch(0.38 0 0);
+  --color-gray-600: oklch(0.28 0 0);
+  --color-gray-700: oklch(0.18 0 0);
+  --color-gray-800: oklch(0.1 0 0);
+  --color-gray-900: oklch(0.05 0 0);
+  --color-gray-950: oklch(0 0 0);
 
-  --color-blue-600: oklch(0.400 0.220 260);
-  --color-blue-700: oklch(0.350 0.220 260);
+  --color-blue-600: oklch(0.4 0.22 260);
+  --color-blue-700: oklch(0.35 0.22 260);
 }
 
 /* ── Surface overrides for bg-white ── */
@@ -138,13 +173,18 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-heading, var(--font-sans));
     letter-spacing: -0.02em;
   }
 
   /* Tabular numbers in data contexts */
-  td, th, .tabular-nums {
+  td,
+  th,
+  .tabular-nums {
     font-feature-settings: "tnum";
     font-variant-numeric: tabular-nums;
   }
@@ -153,7 +193,9 @@
 /* ── Utility classes ── */
 @layer utilities {
   .hover-lift {
-    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+    transition:
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .hover-lift:hover {
     transform: translateY(-1px);

@@ -1,11 +1,16 @@
 import { graphWhatIfBodySchema } from "@grc/shared";
 import { withAuth } from "@/lib/api";
 import { runWhatIf } from "@grc/graph";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/graph/what-if
 // Run what-if scenario simulation. READ-ONLY: no actual mutations.
 // Access: admin, risk_manager
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -39,10 +44,10 @@ export async function POST(req: Request) {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (err) {
-    console.error("[graph/what-if] Error:", err);
+    log.error("[graph/what-if] request failed", { err });
     return Response.json(
       { error: "Failed to run what-if simulation" },
       { status: 500 },
     );
   }
-}
+});

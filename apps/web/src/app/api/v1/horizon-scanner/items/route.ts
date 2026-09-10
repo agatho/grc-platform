@@ -2,8 +2,12 @@ import { db, horizonScanItem } from "@grc/db";
 import { horizonItemQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "dpo",
@@ -41,6 +45,16 @@ export async function GET(req: Request) {
   if (jurisdiction)
     conditions.push(eq(horizonScanItem.jurisdiction, jurisdiction));
   if (since) conditions.push(gte(horizonScanItem.publishedAt, new Date(since)));
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-176] `framework` war entnommen
+  // und wurde in keine Bedingung uebersetzt: wer nach einem Rahmenwerk
+  // filterte, bekam die ungefilterte Liste — inklusive `total`, das den
+  // Filter ebenfalls nicht kannte. `affected_frameworks` ist `text[]`, die
+  // Bedingung ist deshalb eine Enthaltensein-Pruefung (dieselbe Form wie in
+  // `assets/route.ts` fuer `visible_in_modules`).
+  if (framework)
+    conditions.push(
+      sql`${horizonScanItem.affectedFrameworks} @> ARRAY[${framework}]::text[]`,
+    );
 
   const [rows, countResult] = await Promise.all([
     db
@@ -59,4 +73,4 @@ export async function GET(req: Request) {
     data: rows,
     pagination: { page, limit, total: Number(countResult[0]?.count ?? 0) },
   });
-}
+});

@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Plus,
-  Loader2,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Radar,
-} from "lucide-react";
+import { Plus, Loader2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";

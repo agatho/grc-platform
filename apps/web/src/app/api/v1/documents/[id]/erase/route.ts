@@ -1,16 +1,21 @@
-import { db, document, documentFile, workItem, auditLog } from "@grc/db";
+import { db, document, documentFile, workItem } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { eraseDocumentSchema } from "@grc/shared";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { getFileStorage } from "@grc/shared/lib/file-storage";
+import { getFileStorage, orgScopedStorage } from "@grc/shared/lib/file-storage";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // DELETE /api/v1/documents/:id/erase — GDPR Art. 17 hard erasure (D3).
 // Admin only, mandatory justification. Removes the document, ALL
 // versions, approval steps, acknowledgments, file rows (FK cascade)
 // and the physical files. Refused while a legal hold is active.
 // The audit-log entry (incl. reason) is written BEFORE deletion.
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -69,7 +74,13 @@ export async function DELETE(
     async (tx) => {
       // Audit-log entry BEFORE the hard delete so the erasure and its
       // justification are traceable even though the rows disappear.
-      await tx.insert(auditLog).values({
+      // [WP4 · S03-05 — audit call only; this route belongs to WP7/WP8]
+      // The GDPR Art. 17 erasure event is one of the most
+      // forensically valuable entries the system writes, and it used to
+      // be written outside the hash chain and outside every anchor.
+      // Migration 0401 assigns the chain in a BEFORE INSERT trigger on
+      // audit_log, so this entry is now chained like any other.
+      await writeAuditEntry(tx, {
         orgId: ctx.orgId,
         userId: ctx.userId,
         userEmail: ctx.session.user.email,
@@ -88,6 +99,15 @@ export async function DELETE(
           erasedFiles: [...filePaths],
         },
       });
+
+      // #S06-16: migration 0421 makes document_signature append-only —
+      // a decided chain link cannot be deleted. The Art. 17 erasure is
+      // the one legitimate exception, and it announces itself instead
+      // of the guard having to guess: the trigger releases the DELETE
+      // only inside this marked transaction.
+      await tx.execute(
+        sql`SELECT set_config('app.dms_signature_purge', 'all', true)`,
+      );
 
       // Hard delete: versions, acknowledgments, entity links, approval
       // steps and file rows are removed via ON DELETE CASCADE.
@@ -114,7 +134,9 @@ export async function DELETE(
   // failed delete must not roll back the erasure (orphaned files are
   // preferable to a half-erased record). Storage-agnostic: local FS
   // or S3, depending on STORAGE_BACKEND.
-  const storage = getFileStorage();
+  // #S06-10: every key this handler touches must live under this
+  // org's prefix — enforced, not assumed.
+  const storage = orgScopedStorage(getFileStorage(), ctx.orgId);
   for (const relPath of filePaths) {
     try {
       await storage.delete(relPath);
@@ -124,4 +146,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id, erased: true } });
-}
+});

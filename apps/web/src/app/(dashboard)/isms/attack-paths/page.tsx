@@ -37,7 +37,7 @@ function AttackPathsInner() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [paths, setPaths] = useState<AttackPathResult[]>([]);
-  const [batchId, setBatchId] = useState<string | null>(null);
+  const [_batchId, setBatchId] = useState<string | null>(null);
   const [selectedPath, setSelectedPath] = useState<AttackPathResult | null>(
     null,
   );

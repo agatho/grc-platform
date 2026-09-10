@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -69,40 +70,51 @@ export default function EsgPage() {
 function EsgDashboardInner() {
   const t = useTranslations("esg");
   const router = useRouter();
-  const [data, setData] = useState<EsgDashboardData | null>(null);
-  const [esgErmStats, setEsgErmStats] = useState<{
-    totalMaterialRisks: number;
-    syncedToErm: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Dashboard und ERM-Statistik
+  // wurden immer zusammen geladen und verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    data: EsgDashboardData | null;
+    esgErmStats: { totalMaterialRisks: number; syncedToErm: number } | null;
+  }>({
+    queryKey: ["esg", "dashboard"],
+    queryFn: async () => {
+      let data: EsgDashboardData | null = null;
       const res = await fetch("/api/v1/esg/dashboard");
       if (res.ok) {
         const json = await res.json();
-        setData(json.data);
+        data = json.data;
       }
 
       // Fetch ESG ERM sync stats
+      let esgErmStats: {
+        totalMaterialRisks: number;
+        syncedToErm: number;
+      } | null = null;
       try {
         const ermRes = await fetch("/api/v1/esg/erm-stats");
         if (ermRes.ok) {
           const ermJson = await ermRes.json();
-          setEsgErmStats(ermJson.data);
+          esgErmStats = ermJson.data;
         }
       } catch {
         // non-critical
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { data, esgErmStats };
+    },
+  });
+  const data = pageData?.data ?? null;
+  const esgErmStats = pageData?.esgErmStats ?? null;
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -133,9 +145,9 @@ function EsgDashboardInner() {
           variant="outline"
           size="sm"
           onClick={fetchDashboard}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

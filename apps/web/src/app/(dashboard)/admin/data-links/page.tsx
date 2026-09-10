@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -15,7 +16,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch, hier
+ * zusaetzlich mit HTML-Entitaeten geschrieben (`Verkn&uuml;pfung`) — eine
+ * Schreibweise, die keine Uebersetzungsschleife und kein Werkzeug findet.
+ */
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,22 +58,10 @@ const statusColors: Record<string, string> = {
   error: "bg-red-100 text-red-800",
 };
 
-const statusLabels: Record<string, string> = {
-  active: "Aktiv",
-  inactive: "Inaktiv",
-  error: "Fehler",
-};
-
 const linkTypeColors: Record<string, string> = {
   reference: "bg-blue-100 text-blue-800",
   aggregate: "bg-purple-100 text-purple-800",
   mirror: "bg-indigo-100 text-indigo-800",
-};
-
-const linkTypeLabels: Record<string, string> = {
-  reference: "Referenz",
-  aggregate: "Aggregation",
-  mirror: "Spiegelung",
 };
 
 // ---------------------------------------------------------------------------
@@ -73,30 +69,38 @@ const linkTypeLabels: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function DataLinksPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
-  const [stats, setStats] = useState<DataLinkStats | null>(null);
-  const [links, setLinks] = useState<DataLink[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher leere Liste und keine Kennzahlen; ein Netzfehler wird nicht
+  // mehr verschluckt, sondern landet im Fehlerzustand der Abfrage (die Seite
+  // zeigt dann ueber die Vorgabewerte dieselbe Leeransicht).
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ links: DataLink[]; stats: DataLinkStats | null }>({
+    queryKey: ["data-links", "list"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/data-links");
+      if (!res.ok) return { links: [], stats: null };
+      const json = await res.json();
+      return {
+        links: (json.data ?? []) as DataLink[],
+        stats: (json.stats ?? null) as DataLinkStats | null,
+      };
+    },
+  });
+  const links = data?.links ?? [];
+  const stats = data?.stats ?? null;
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/data-links");
-      if (res.ok) {
-        const json = await res.json();
-        setLinks(json.data ?? []);
-        setStats(json.stats ?? null);
-      }
-    } catch {
-      // silently handle
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -112,11 +116,10 @@ export default function DataLinksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Live-Datenverkn&uuml;pfungen
+            {t("dataLinks.title")}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Automatische Aktualisierung verkn&uuml;pfter Datenpunkte &uuml;ber
-            Module hinweg
+            {t("dataLinks.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -124,16 +127,16 @@ export default function DataLinksPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
-            Aktualisieren
+            {tCommon("actions.refresh")}
           </Button>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Verkn&uuml;pfung erstellen
+            {t("dataLinks.create")}
           </Button>
         </div>
       </div>
@@ -146,7 +149,9 @@ export default function DataLinksPage() {
               <Link2 className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-2xl font-bold">{stats?.activeLinks ?? 0}</p>
-                <p className="text-xs text-gray-500">Aktive Links</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataLinks.kpi.activeLinks")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -159,7 +164,9 @@ export default function DataLinksPage() {
                 <p className="text-2xl font-bold">
                   {stats?.bidirectional ?? 0}
                 </p>
-                <p className="text-xs text-gray-500">Bidirektional</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataLinks.bidirectional")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -172,7 +179,9 @@ export default function DataLinksPage() {
                 <p className="text-2xl font-bold">
                   {stats?.modulesLinked ?? 0}
                 </p>
-                <p className="text-xs text-gray-500">Module verkn&uuml;pft</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataLinks.kpi.modulesLinked")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -185,7 +194,9 @@ export default function DataLinksPage() {
                 <p className="text-2xl font-bold">
                   {stats?.lastSync ? formatDate(stats.lastSync) : "\u2014"}
                 </p>
-                <p className="text-xs text-gray-500">Letzte Synchronisation</p>
+                <p className="text-xs text-gray-500">
+                  {t("dataLinks.kpi.lastSync")}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -196,7 +207,7 @@ export default function DataLinksPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Datenverkn&uuml;pfungen ({links.length})
+            {t("dataLinks.tableTitle", { count: links.length })}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -204,12 +215,9 @@ export default function DataLinksPage() {
             <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-400">
               <Unlink className="mb-3 h-10 w-10" />
               <p className="font-medium text-gray-500">
-                Keine Verkn&uuml;pfungen vorhanden
+                {t("dataLinks.empty")}
               </p>
-              <p className="mt-1 text-gray-400">
-                Erstellen Sie automatische Datenverkn&uuml;pfungen zwischen
-                Modulen.
-              </p>
+              <p className="mt-1 text-gray-400">{t("dataLinks.emptyHint")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -217,22 +225,22 @@ export default function DataLinksPage() {
                 <thead>
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Quelle
+                      {t("dataLinks.column.source")}
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
                       &nbsp;
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Ziel
+                      {t("dataLinks.column.target")}
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
-                      Typ
+                      {t("dataLinks.column.type")}
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
-                      Richtung
+                      {t("dataLinks.column.direction")}
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-medium uppercase text-gray-500">
-                      Status
+                      {t("reminders.column.status")}
                     </th>
                   </tr>
                 </thead>
@@ -262,18 +270,18 @@ export default function DataLinksPage() {
                         <Badge
                           className={`text-xs ${linkTypeColors[link.linkType] ?? ""}`}
                         >
-                          {linkTypeLabels[link.linkType] ?? link.linkType}
+                          {t(`dataLinks.linkType.${link.linkType}`)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-center">
                         {link.bidirectional ? (
                           <Badge className="bg-indigo-100 text-indigo-800 text-xs">
                             <ArrowRightLeft className="mr-1 h-3 w-3" />
-                            Bidirektional
+                            {t("dataLinks.bidirectional")}
                           </Badge>
                         ) : (
                           <span className="text-xs text-gray-400">
-                            Unidirektional
+                            {t("dataLinks.unidirectional")}
                           </span>
                         )}
                       </td>
@@ -284,7 +292,7 @@ export default function DataLinksPage() {
                             "bg-gray-100 text-gray-800"
                           }
                         >
-                          {statusLabels[link.status] ?? link.status}
+                          {t(`dataLinks.status.${link.status}`)}
                         </Badge>
                       </td>
                     </tr>

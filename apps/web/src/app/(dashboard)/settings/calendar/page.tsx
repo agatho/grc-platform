@@ -38,7 +38,7 @@ export default function CalendarSettingsPage() {
   const { formatDate } = useDateFormat();
   const [loading, setLoading] = useState(false);
   const [icalUrl, setIcalUrl] = useState<string | null>(null);
-  const [icalToken, setIcalToken] = useState<string | null>(null);
+  const [_icalToken, setIcalToken] = useState<string | null>(null);
   const [tokenCreatedAt, setTokenCreatedAt] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [justGenerated, setJustGenerated] = useState(false);

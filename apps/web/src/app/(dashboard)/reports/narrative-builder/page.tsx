@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
   RefreshCcw,
-  FileText,
   Languages,
   Hash,
   BookOpen,
@@ -79,27 +79,29 @@ const categoryLabels: Record<string, string> = {
 
 export default function NarrativeBuilderPage() {
   const { formatDate } = useDateFormat();
-  const [templates, setTemplates] = useState<NarrativeTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data: templates = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<NarrativeTemplate[]>({
+    queryKey: ["reports", "narrative-templates"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/reports/narrative-templates");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as NarrativeTemplate[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/reports/narrative-templates");
-      if (res.ok) {
-        const json = await res.json();
-        setTemplates(json.data ?? []);
-      }
-    } catch {
-      // silently handle
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -127,10 +129,10 @@ export default function NarrativeBuilderPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             Aktualisieren
           </Button>

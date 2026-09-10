@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -54,65 +56,125 @@ interface MatrixCell {
   lineId?: string;
 }
 
+interface BudgetYearData {
+  budget: GrcBudget | null;
+  lines: GrcBudgetLine[];
+}
+
+// Build matrix from lines
+function buildMatrix(lines: GrcBudgetLine[]): MatrixCell[] {
+  const cells: MatrixCell[] = [];
+  for (const area of GRC_AREAS) {
+    for (const cat of COST_CATEGORIES) {
+      const line = lines.find(
+        (l) => l.grcArea === area && l.costCategory === cat,
+      );
+      cells.push({
+        area,
+        category: cat,
+        plannedAmount: line?.plannedAmount ?? "0",
+        q1Amount: line?.q1Amount ?? "0",
+        q2Amount: line?.q2Amount ?? "0",
+        q3Amount: line?.q3Amount ?? "0",
+        q4Amount: line?.q4Amount ?? "0",
+        lineId: line?.id,
+      });
+    }
+  }
+  return cells;
+}
+
 export default function BudgetYearPage() {
-  const t = useTranslations("budget");
   const params = useParams();
-  const router = useRouter();
   const year = params.year as string;
 
-  const [budget, setBudget] = useState<GrcBudget | null>(null);
-  const [lines, setLines] = useState<GrcBudgetLine[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [quarterly, setQuarterly] = useState(false);
-  const [matrix, setMatrix] = useState<MatrixCell[]>([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`). Wie vorher lässt eine
+  // nicht-ok-Antwort Budget bzw. Zeilen leer.
+  const { data, isPending, isFetching, refetch } = useQuery<BudgetYearData>({
+    queryKey: ["budget", year],
+    queryFn: async () => {
       const [bRes, lRes] = await Promise.all([
         fetch(`/api/v1/budget/${year}`),
         fetch(`/api/v1/budget/${year}/lines`),
       ]);
-      if (bRes.ok) {
-        const json = await bRes.json();
-        setBudget(json.data);
-      }
-      if (lRes.ok) {
-        const json = await lRes.json();
-        setLines(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [year]);
+      const budget = bRes.ok
+        ? (((await bRes.json()).data ?? null) as GrcBudget | null)
+        : null;
+      const lines = lRes.ok
+        ? (((await lRes.json()).data ?? []) as GrcBudgetLine[])
+        : [];
+      return { budget, lines };
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  // [OP-245 · Gestalt E] Die Matrix ist ein Formular, dessen Saat der Server
+  // setzt: aus den Zeilen gebaut, danach vom Nutzer bearbeitet. Sie lebt
+  // deshalb in einem eigenen Bauteil, das mit dem geladenen Stand EINGEHÄNGT
+  // wird (Muster aus Welle 7b, `processes/[id]/ropa`). Der Schlüssel wird
+  // nur nach einem ausdrücklichen Neuladen erhöht — Speichern, Statuswechsel,
+  // Aktualisieren-Knopf —, nicht bei jedem Hintergrundabruf; sonst risse ein
+  // Abruf dem Nutzer die Eingaben unter den Händen weg.
+  const [seedVersion, setSeedVersion] = useState(0);
+  // Die Quartalsansicht bleibt über ein Neuladen hinweg erhalten, darum
+  // liegt sie hier und nicht im Bauteil, das neu eingehängt wird.
+  const [quarterly, setQuarterly] = useState(false);
 
-  // Build matrix from lines
-  useEffect(() => {
-    const cells: MatrixCell[] = [];
-    for (const area of GRC_AREAS) {
-      for (const cat of COST_CATEGORIES) {
-        const line = lines.find(
-          (l) => l.grcArea === area && l.costCategory === cat,
-        );
-        cells.push({
-          area,
-          category: cat,
-          plannedAmount: line?.plannedAmount ?? "0",
-          q1Amount: line?.q1Amount ?? "0",
-          q2Amount: line?.q2Amount ?? "0",
-          q3Amount: line?.q3Amount ?? "0",
-          q4Amount: line?.q4Amount ?? "0",
-          lineId: line?.id,
-        });
-      }
-    }
-    setMatrix(cells);
-  }, [lines]);
+  const reload = useCallback(async () => {
+    await refetch();
+    setSeedVersion((v) => v + 1);
+  }, [refetch]);
+
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <BudgetMatrixEditor
+      key={seedVersion}
+      year={year}
+      budget={data?.budget ?? null}
+      lines={data?.lines ?? []}
+      isFetching={isFetching}
+      quarterly={quarterly}
+      onToggleQuarterly={() => setQuarterly((q) => !q)}
+      onReload={reload}
+    />
+  );
+}
+
+function BudgetMatrixEditor({
+  year,
+  budget,
+  lines,
+  isFetching,
+  quarterly,
+  onToggleQuarterly,
+  onReload,
+}: {
+  year: string;
+  budget: GrcBudget | null;
+  lines: GrcBudgetLine[];
+  isFetching: boolean;
+  quarterly: boolean;
+  onToggleQuarterly: () => void;
+  onReload: () => Promise<void>;
+}) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
+  const t = useTranslations("budget");
+  const router = useRouter();
+
+  const [saving, setSaving] = useState(false);
+  // Saat beim Einhängen — danach gehört die Matrix dem Nutzer.
+  const [matrix, setMatrix] = useState<MatrixCell[]>(() => buildMatrix(lines));
 
   const updateCell = (
     area: GrcArea,
@@ -147,7 +209,7 @@ export default function BudgetYearPage() {
           })),
         }),
       });
-      await fetchData();
+      await onReload();
     } finally {
       setSaving(false);
     }
@@ -156,7 +218,7 @@ export default function BudgetYearPage() {
   const handleStatusChange = async (action: "submit" | "approve") => {
     try {
       await fetch(`/api/v1/budget/${year}/${action}`, { method: "POST" });
-      await fetchData();
+      await onReload();
     } catch {
       // error handling
     }
@@ -178,14 +240,6 @@ export default function BudgetYearPage() {
   );
 
   const isDraft = budget?.status === "draft";
-
-  if (loading && !budget) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -211,16 +265,15 @@ export default function BudgetYearPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={fetchData}
-            disabled={loading}
+            onClick={onReload}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setQuarterly(!quarterly)}
-          >
+          <Button variant="outline" size="sm" onClick={onToggleQuarterly}>
             {quarterly ? (
               <ToggleRight size={14} className="mr-1" />
             ) : (
@@ -299,13 +352,13 @@ export default function BudgetYearPage() {
                 </td>
                 {COST_CATEGORIES.map((cat) => (
                   <td key={cat} className="px-4 py-3 text-right text-gray-700">
-                    {getCategoryTotal(cat).toLocaleString("de-DE", {
+                    {getCategoryTotal(cat).toLocaleString(numberLocale, {
                       minimumFractionDigits: 2,
                     })}
                   </td>
                 ))}
                 <td className="px-4 py-3 text-right text-gray-900 bg-gray-200">
-                  {grandTotal.toLocaleString("de-DE", {
+                  {grandTotal.toLocaleString(numberLocale, {
                     minimumFractionDigits: 2,
                   })}
                 </td>
@@ -386,7 +439,7 @@ export default function BudgetYearPage() {
                               />
                             ) : (
                               <span className="text-gray-700">
-                                {Number(cell[q]).toLocaleString("de-DE", {
+                                {Number(cell[q]).toLocaleString(numberLocale, {
                                   minimumFractionDigits: 2,
                                 })}
                               </span>
@@ -394,9 +447,12 @@ export default function BudgetYearPage() {
                           </td>
                         ))}
                         <td className="px-4 py-2 text-right font-medium text-gray-900 bg-gray-50">
-                          {Number(cell.plannedAmount).toLocaleString("de-DE", {
-                            minimumFractionDigits: 2,
-                          })}
+                          {Number(cell.plannedAmount).toLocaleString(
+                            numberLocale,
+                            {
+                              minimumFractionDigits: 2,
+                            },
+                          )}
                         </td>
                       </tr>
                     );
@@ -433,6 +489,9 @@ function MatrixRow({
   areaTotal: number;
   t: (key: string) => string;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   return (
     <tr className="hover:bg-gray-50">
       <td className="px-4 py-3 font-medium text-gray-900 sticky left-0 bg-white z-10">
@@ -455,7 +514,7 @@ function MatrixRow({
               />
             ) : (
               <span className="text-gray-700">
-                {Number(val).toLocaleString("de-DE", {
+                {Number(val).toLocaleString(numberLocale, {
                   minimumFractionDigits: 2,
                 })}
               </span>
@@ -464,7 +523,7 @@ function MatrixRow({
         );
       })}
       <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
-        {areaTotal.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+        {areaTotal.toLocaleString(numberLocale, { minimumFractionDigits: 2 })}
       </td>
     </tr>
   );

@@ -1,10 +1,14 @@
 import { db, connectorHealthCheck, evidenceConnector } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc, isNull } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/connectors/:id/health — Get health check history
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -29,10 +33,9 @@ export async function GET(
     .limit(50);
 
   return Response.json({ data: items });
-}
-
+});
 // POST /api/v1/connectors/:id/health — Trigger health check
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -59,34 +62,28 @@ export async function POST(
     return Response.json({ error: "Connector not found" }, { status: 404 });
   }
 
-  // Simulate health check (real implementation would ping the connector)
-  const startMs = Date.now();
-  const healthStatus = connector.status === "active" ? "healthy" : "unhealthy";
-  const responseTimeMs = Date.now() - startMs;
-
-  const created = await withAuditContext(ctx, async (tx) => {
-    const [check] = await tx
-      .insert(connectorHealthCheck)
-      .values({
-        orgId: ctx.orgId,
-        connectorId: id,
-        status: healthStatus,
-        responseTimeMs,
-        checkType: "connectivity",
-        details: {
-          connectorType: connector.connectorType,
-          providerKey: connector.providerKey,
-        },
-      })
-      .returning();
-
-    await tx
-      .update(evidenceConnector)
-      .set({ lastHealthCheck: new Date(), healthStatus, updatedAt: new Date() })
-      .where(eq(evidenceConnector.id, id));
-
-    return check;
-  });
-
-  return Response.json({ data: created }, { status: 201 });
-}
+  // ── [ARCTOS-FULL-2026-08-31 / WP9 · S14-02] ──────────────────────────
+  //
+  // `const healthStatus = connector.status === "active" ? "healthy" :
+  // "unhealthy"` derived connectivity from a row in our own database — a
+  // connector whose credentials expired last month is "active", therefore
+  // "healthy", with a `responseTimeMs` measured across two adjacent
+  // `Date.now()` calls (always 0). The row landed in
+  // `connector_health_check`, which is what the connector dashboard and any
+  // evidence-freshness argument rely on.
+  //
+  // Nothing is written until something is actually measured.
+  return Response.json(
+    {
+      error: "Not implemented",
+      detail:
+        "Connector health cannot be measured in this build: no provider " +
+        "client is wired up, and the configured status in our own database " +
+        "is not evidence of connectivity. Refusing to record an unmeasured " +
+        "health check.",
+      connectorId: id,
+      configuredStatus: connector.status,
+    },
+    { status: 501 },
+  );
+});

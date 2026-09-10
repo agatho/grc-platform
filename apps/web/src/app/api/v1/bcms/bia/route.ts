@@ -18,7 +18,7 @@ import type { SQL } from "drizzle-orm";
 // continuity planning). Locking them out of POST forced them to
 // delegate to risk_manager for every routine assessment, which
 // defeats the whole reason the role exists.
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "bcm_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/bcms/bia — List BIA assessments
 export const GET = withErrorHandler(async function GET(req: Request) {

@@ -4,7 +4,7 @@
 // page (Stammdaten). Persists via PUT /api/v1/processes/:id. Null means
 // the process inherits its parent's band on the process map.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
@@ -32,16 +32,24 @@ export function ProcessMapCategorySelect({
   onChanged?: (newValue: ProcessMapCategory | null) => void;
 }) {
   const t = useTranslations("processMap");
-  const [current, setCurrent] = useState<string>(value ?? NONE_VALUE);
+  // [OP-245 · Gestalt E] `current` spiegelte das Prop `value` in einen
+  // Zustand und zog ihn per Effekt nach. Jetzt gilt das Prop, solange keine
+  // eigene Wahl vorliegt; die eigene Wahl merkt sich den Prop-Stand, unter
+  // dem sie getroffen wurde, und verfaellt, sobald der Aufrufer einen neuen
+  // Wert liefert — dasselbe Verhalten, ohne Effekt und ohne Spiegelzustand.
+  const [override, setOverride] = useState<{
+    base: ProcessMapCategory | null;
+    value: string;
+  } | null>(null);
   const [pending, setPending] = useState(false);
-
-  useEffect(() => {
-    setCurrent(value ?? NONE_VALUE);
-  }, [value]);
+  const current =
+    override && override.base === value
+      ? override.value
+      : (value ?? NONE_VALUE);
 
   const change = async (v: string) => {
-    const prev = current;
-    setCurrent(v);
+    const prev = override;
+    setOverride({ base: value, value: v });
     setPending(true);
     try {
       const mapCategory = v === NONE_VALUE ? null : (v as ProcessMapCategory);
@@ -55,7 +63,7 @@ export function ProcessMapCategorySelect({
       onChanged?.(mapCategory);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("category.saveError"));
-      setCurrent(prev);
+      setOverride(prev);
     } finally {
       setPending(false);
     }

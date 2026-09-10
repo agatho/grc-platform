@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -12,7 +13,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 
 import type { Asset, WorkItem } from "@grc/shared";
 import { Badge } from "@/components/ui/badge";
@@ -392,7 +393,7 @@ function WorkItemsTab({
 
 export default function AssetDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const assetId = params.id as string;
 
   const t = useTranslations("assets");
@@ -401,34 +402,45 @@ export default function AssetDetailPage() {
   const tCommon = useTranslations("common");
   const { openTab } = useTabNavigation();
 
-  const [asset, setAsset] = useState<AssetDetail | null>(null);
-  const [inherited, setInherited] = useState<InheritedCia | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchAsset = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); die Kennung steht im Schluessel.
+  // Eine nicht-ok-Antwort liefert wie vorher `null` (die „nicht
+  // gefunden"-Ansicht); ein Netzfehler landet im Fehlerzustand der Abfrage
+  // und zeigt dieselbe Ansicht.
+  const queryClient = useQueryClient();
+  const assetQueryKey = ["assets", assetId] as const;
+  const {
+    data: assetData,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    asset: AssetDetail | null;
+    inherited: InheritedCia | null;
+  }>({
+    queryKey: assetQueryKey,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/assets/${assetId}`);
-      if (!res.ok) throw new Error("Not found");
+      if (!res.ok) return { asset: null, inherited: null };
       const json = (await res.json()) as {
         data: AssetDetail;
         inherited?: InheritedCia;
       };
-      setAsset(json.data);
-      if (json.inherited) {
-        setInherited(json.inherited);
-      }
-    } catch {
-      setAsset(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [assetId]);
+      return { asset: json.data, inherited: json.inherited ?? null };
+    },
+  });
+  const asset = assetData?.asset ?? null;
+  const inherited = assetData?.inherited ?? null;
 
-  useEffect(() => {
-    void fetchAsset();
-  }, [fetchAsset]);
+  const fetchAsset = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-  // Register tab when asset loads
+  // Register tab when asset loads.
+  // [Welle 7a · OP-080] `assetId` fehlte, obwohl Kennung UND Ziel des
+  // Reiters daraus gebaut werden: bei einem Wechsel zwischen zwei Objekten,
+  // ohne dass `asset` sich in der Zwischenzeit auf `null` setzt, wurde der
+  // Reiter unter der ALTEN Kennung mit dem NEUEN Namen angemeldet.
   useEffect(() => {
     if (asset) {
       openTab({
@@ -443,7 +455,7 @@ export default function AssetDetailPage() {
               : "Database",
       });
     }
-  }, [asset]);
+  }, [asset, assetId, openTab]);
 
   const handleCiaUpdate = async (field: string, value: number | null) => {
     if (!asset) return;
@@ -455,7 +467,16 @@ export default function AssetDetailPage() {
       });
       if (!res.ok) throw new Error("Failed");
       const json = (await res.json()) as { data: AssetDetail };
-      setAsset(json.data);
+      // [OP-245] Vorher `setAsset(json.data)`: die Antwort des PATCH wird
+      // weiterhin sofort uebernommen, jetzt in den Abfrage-Cache unter
+      // demselben Schluessel — kein zweiter Abruf fuer den Schieberegler.
+      queryClient.setQueryData<{
+        asset: AssetDetail | null;
+        inherited: InheritedCia | null;
+      }>(assetQueryKey, (prev) => ({
+        asset: json.data,
+        inherited: prev?.inherited ?? null,
+      }));
     } catch {
       // revert by refetching
       void fetchAsset();

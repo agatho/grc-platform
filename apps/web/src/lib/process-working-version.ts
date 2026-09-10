@@ -5,13 +5,18 @@
 // process' released artifacts stay untouched. On re-approval the working
 // copy is promoted to the next released version and becomes current.
 
-import { eq, and, isNull, desc, sql } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-19] drizzle transaction type; replaced
+// the `any` that stood on every `tx` parameter here.
+import type { DbTransaction, DbReader } from "@/lib/db-types";
 import { process, processVersion, processStep } from "@grc/db";
 import { parseBpmnXml } from "@grc/shared";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 
+import { log } from "@/lib/logger";
 interface PromoteArgs {
-  tx: any; // drizzle transaction (same convention as withAuditContext)
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction; // drizzle transaction (same convention as withAuditContext)
   processId: string;
   orgId: string;
   userId: string;
@@ -24,7 +29,11 @@ export interface PromotedVersion {
 
 /** Return the working version of a process, if one exists. */
 export async function findWorkingVersion(
-  tx: any,
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  // [Restarbeiten] `DbReader`, weil diese reine Lesefunktion sowohl mit dem
+  // Transaktionsobjekt als auch mit dem request-skopierten `db`-Proxy
+  // aufgerufen wird (approval-steps/route.ts, versions/route.ts).
+  tx: DbReader,
   processId: string,
 ): Promise<{
   id: string;
@@ -196,12 +205,12 @@ export async function promoteWorkingVersion({
           stepIdByBpmnElement,
         });
       } catch (e) {
-        console.error("arctos rehydrate failed on promote", e);
+        log.error("arctos rehydrate failed on promote", { err: e });
       }
     } catch (e) {
       // Step sync is best-effort on promotion; the version itself is
       // already released at this point.
-      console.error("step sync failed on promote", e);
+      log.error("step sync failed on promote", { err: e });
     }
   }
 
@@ -221,7 +230,8 @@ export async function upsertWorkingVersion({
   changeSummary,
   diffSummaryJson,
 }: {
-  tx: any;
+  // [WP12 · S14-19] was `tx: any` — see lib/db-types.ts
+  tx: DbTransaction;
   processId: string;
   orgId: string;
   userId: string;

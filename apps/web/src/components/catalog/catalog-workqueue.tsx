@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -11,7 +12,6 @@ import {
   Plus,
   CheckCircle2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface CatalogEntry {
@@ -47,40 +47,41 @@ export function CatalogWorkqueue({
   createParam = "catalogEntryId",
 }: Props) {
   const t = useTranslations("catalogs");
-  const [entries, setEntries] = useState<CatalogEntry[]>([]);
-  const [catalogs, setCatalogs] = useState<CatalogInfo[]>([]);
-  const [totalEntries, setTotalEntries] = useState(0);
-  const [unassignedCount, setUnassignedCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [selectedCatalog, setSelectedCatalog] = useState<string>("");
 
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({
-      catalogType,
-      unassignedOnly: "true",
-      limit: "50",
-    });
-    if (selectedCatalog) params.set("catalogId", selectedCatalog);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Katalogtyp und Filter stehen im
+  // Schlüssel; eine nicht-ok-Antwort liefert wie vorher leere Werte. Das nie
+  // gelesene `_totalEntries` entfiel.
+  const { data: bundle, isPending: loading } = useQuery<{
+    entries: CatalogEntry[];
+    catalogs: CatalogInfo[];
+    unassignedCount: number;
+  }>({
+    queryKey: ["catalogs", "active-entries", catalogType, selectedCatalog],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        catalogType,
+        unassignedOnly: "true",
+        limit: "50",
+      });
+      if (selectedCatalog) params.set("catalogId", selectedCatalog);
 
-    try {
       const res = await fetch(`/api/v1/catalogs/active-entries?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setEntries(json.data ?? []);
-        setCatalogs(json.catalogs ?? []);
-        setTotalEntries(json.totalEntries ?? 0);
-        setUnassignedCount(json.unassignedCount ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [catalogType, selectedCatalog]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
+      if (!res.ok) return { entries: [], catalogs: [], unassignedCount: 0 };
+      const json = await res.json();
+      return {
+        entries: (json.data ?? []) as CatalogEntry[],
+        catalogs: (json.catalogs ?? []) as CatalogInfo[],
+        unassignedCount: (json.unassignedCount ?? 0) as number,
+      };
+    },
+  });
+  const entries = bundle?.entries ?? [];
+  const catalogs = bundle?.catalogs ?? [];
+  const unassignedCount = bundle?.unassignedCount ?? 0;
 
   // Don't show if no active catalogs or all entries processed
   if (!loading && catalogs.length === 0) return null;
@@ -97,7 +98,10 @@ export function CatalogWorkqueue({
     );
   }
 
-  const entityLabel = catalogType === "risk" ? "Risiko" : "Kontrolle";
+  const createLabel =
+    catalogType === "risk"
+      ? t("workqueue.createRisk")
+      : t("workqueue.createControl");
 
   return (
     <div className="rounded-lg border border-blue-200 bg-blue-50/50">
@@ -111,22 +115,21 @@ export function CatalogWorkqueue({
           <div>
             <p className="text-sm font-medium text-blue-900">
               {loading ? (
-                "Kataloge werden geladen..."
+                t("workqueue.loading")
               ) : (
                 <>
-                  {catalogs.length} aktive{" "}
                   {catalogType === "risk"
-                    ? "Risikokataloge"
-                    : "Kontrollkataloge"}
+                    ? t("workqueue.summaryRisk", { count: catalogs.length })
+                    : t("workqueue.summaryControl", { count: catalogs.length })}
                   {" · "}
                   <span className="font-bold">
-                    {unassignedCount} offene Einträge
+                    {t("workqueue.openEntries", { count: unassignedCount })}
                   </span>
                 </>
               )}
             </p>
             <p className="text-xs text-blue-700 mt-0.5">
-              Aus aktivierten Katalogen — klicken zum Anzeigen
+              {t("workqueue.hint")}
             </p>
           </div>
         </div>
@@ -148,7 +151,7 @@ export function CatalogWorkqueue({
                 onChange={(e) => setSelectedCatalog(e.target.value)}
                 className="rounded-md border border-blue-200 bg-white px-3 py-1.5 text-sm"
               >
-                <option value="">Alle Kataloge</option>
+                <option value="">{t("workqueue.allCatalogs")}</option>
                 {catalogs.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -161,11 +164,11 @@ export function CatalogWorkqueue({
           {/* Entry list */}
           {loading ? (
             <div className="flex items-center justify-center py-6">
-              <Loader2 size={20} className="animate-spin text-blue-400" />
+              <Loader2 size={20} className="animate-spin text-blue-600" />
             </div>
           ) : entries.length === 0 ? (
             <p className="text-sm text-blue-700 py-4 text-center">
-              Keine offenen Einträge in diesem Katalog.
+              {t("workqueue.empty")}
             </p>
           ) : (
             <div className="space-y-1.5 max-h-80 overflow-y-auto">
@@ -198,7 +201,7 @@ export function CatalogWorkqueue({
                       className="shrink-0 whitespace-nowrap"
                     >
                       <Plus size={14} className="mr-1" />
-                      {entityLabel} erstellen
+                      {createLabel}
                     </Button>
                   </Link>
                 </div>
@@ -208,7 +211,10 @@ export function CatalogWorkqueue({
 
           {entries.length > 0 && (
             <p className="text-xs text-blue-600 mt-2 text-center">
-              {entries.length} von {unassignedCount} offenen Einträgen angezeigt
+              {t("workqueue.shown", {
+                shown: entries.length,
+                total: unassignedCount,
+              })}
             </p>
           )}
         </div>

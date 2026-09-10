@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Demo-Seed-Filter von der nicht existierenden Spalte o.slug auf o.name umgestellt (42703); der Block ist durch die CROSS JOINs bereits ein No-Op, wenn die Seed-Daten fehlen.
 -- Migration 0092: TCFD Climate Risk Scenarios
 -- Physical + Transition risks with temperature pathways (1.5°C / 2°C / 3°C / 4°C)
 -- Aligned to TCFD recommendations and ESRS E1
@@ -109,5 +114,8 @@ CROSS JOIN (VALUES
   ('Regulatorische Verschärfung CBAM', 'Transition: Carbon Border Adjustment Mechanism erhöht Importkosten', 'transition', 'policy', '1.5', 'short', 5, 3, 2000000, 10000000, 'strategy', 'E1-9', 'identified')
 ) AS s(name, description, scenario_type, risk_category, temperature_pathway, time_horizon, likelihood_score, impact_score, financial_impact_min, financial_impact_max, tcfd_category, esrs_disclosure, status)
 CROSS JOIN "user" u
-WHERE o.slug = 'meridian-holdings' AND u.email = 'admin@arctos.dev'
+-- [ARCTOS-FULL-2026-08-31 / S09-01] `organization` hat keine Spalte `slug`
+-- (42703); der Demo-Bezug laeuft ueber name/org_code. Der Block ist ein
+-- reiner Demo-Seed und wird zum No-Op, wenn Org oder Nutzer fehlen.
+WHERE o.name = 'Meridian Holdings GmbH' AND u.email = 'admin@arctos.dev'
 ON CONFLICT DO NOTHING;

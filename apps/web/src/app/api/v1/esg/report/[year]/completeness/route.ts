@@ -3,16 +3,18 @@ import {
   esgMaterialityAssessment,
   esgMaterialityTopic,
   esrsDatapointDefinition,
-  esrsMetric,
-  esgMeasurement,
   esgAnnualReport,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, gte, lte, count, sql } from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/esg/report/[year]/completeness — ESRS completeness check
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ year: string }> },
 ) {
@@ -85,7 +87,10 @@ export async function GET(
       WHERE dp.is_mandatory = true
         AND dp.esrs_standard = ANY(${materialTopics})
     `);
-    coveredDatapoints = Number((coveredResult as any)[0]?.covered ?? 0);
+    coveredDatapoints = Number(
+      (coveredResult as unknown as Array<{ covered: string | number }>)[0]
+        ?.covered ?? 0,
+    );
   }
 
   const completenessPercent =
@@ -123,4 +128,4 @@ export async function GET(
       report: existingReport ?? null,
     },
   });
-}
+});

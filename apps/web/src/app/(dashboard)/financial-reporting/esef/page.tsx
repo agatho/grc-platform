@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -27,25 +28,28 @@ interface EsefFiling {
 }
 
 export default function EsefPage() {
-  const [filings, setFilings] = useState<EsefFiling[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Aktualisieren-Schaltfläche
+  // hängt an `isFetching`.
+  const {
+    data: filings = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<EsefFiling[]>({
+    queryKey: ["financial-reporting", "esef-filings"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/financial-reporting/esef-filings");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as EsefFiling[];
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/financial-reporting/esef-filings");
-      if (res.ok) {
-        const json = await res.json();
-        setFilings(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const validationIndicator = (
     status: EsefFiling["validationStatus"],
@@ -120,9 +124,12 @@ export default function EsefPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" />

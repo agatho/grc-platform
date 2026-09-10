@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   RefreshCw,
@@ -22,7 +23,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTranslations } from "next-intl";
 import { useDateFormat } from "@/lib/format-date";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch.
+ * `StatusBadge` und `formatDuration` stehen ausserhalb der Komponente;
+ * `StatusBadge` ist selbst eine Komponente und darf den Hook lesen,
+ * `formatDuration` nimmt die Uebersetzungsfunktion als Parameter.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie `formatDuration` braucht. */
+type Translate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -43,19 +58,24 @@ interface SyncLogEntry {
 
 // ── Helpers ───────────────────────────────────────────────────
 
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
+function formatDuration(ms: number, t: Translate): string {
+  if (ms < 1000) return t("syncLog.duration.ms", { value: ms });
   const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) return t("syncLog.duration.s", { value: seconds });
   const minutes = Math.floor(seconds / 60);
   const remainingSec = seconds % 60;
-  if (minutes < 60) return `${minutes}m ${remainingSec}s`;
+  if (minutes < 60)
+    return t("syncLog.duration.ms_s", {
+      minutes,
+      seconds: remainingSec,
+    });
   const hours = Math.floor(minutes / 60);
   const remainingMin = minutes % 60;
-  return `${hours}h ${remainingMin}m`;
+  return t("syncLog.duration.h_m", { hours, minutes: remainingMin });
 }
 
 function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
+  const t = useTranslations("admin");
   switch (status) {
     case "success":
       return (
@@ -64,7 +84,7 @@ function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
           className="border-green-200 bg-green-50 text-green-700"
         >
           <CheckCircle2 className="mr-1 h-3 w-3" />
-          Erfolgreich
+          {t("syncLog.status.success")}
         </Badge>
       );
     case "failed":
@@ -74,7 +94,7 @@ function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
           className="border-red-200 bg-red-50 text-red-700"
         >
           <XCircle className="mr-1 h-3 w-3" />
-          Fehlgeschlagen
+          {t("syncLog.status.failed")}
         </Badge>
       );
     case "running":
@@ -84,7 +104,7 @@ function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
           className="border-blue-200 bg-blue-50 text-blue-700"
         >
           <Play className="mr-1 h-3 w-3" />
-          Aktiv
+          {t("syncLog.status.running")}
         </Badge>
       );
     default:
@@ -95,6 +115,8 @@ function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
 // ── Component ─────────────────────────────────────────────────
 
 export default function SyncLogPage() {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const { formatDateTime, formatNumber } = useDateFormat();
   const formatDate = (d: string | null) =>
     formatDateTime(d, {
@@ -105,18 +127,24 @@ export default function SyncLogPage() {
       minute: "2-digit",
       second: "2-digit",
     });
-  const [logs, setLogs] = useState<SyncLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
   // Filters
   const [filterConnector, setFilterConnector] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Beide Filter gehen in die
+  // Anfrage und stehen deshalb im Schluessel. Der Antwortkoerper wird wie
+  // vorher ohne `ok`-Pruefung gelesen; ein Netzfehler landet wie vorher als
+  // Fehlertext auf der Seite.
+  const {
+    data: logs = [],
+    isPending: loading,
+    isError,
+    refetch,
+  } = useQuery<SyncLogEntry[]>({
+    queryKey: ["connectors", "sync-log", filterConnector, filterStatus],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filterConnector !== "all")
         params.set("connectorInstanceId", filterConnector);
@@ -124,17 +152,14 @@ export default function SyncLogPage() {
       const url = `/api/v1/connectors/sync-log${params.toString() ? `?${params.toString()}` : ""}`;
       const res = await fetch(url);
       const json = await res.json().catch(() => ({ data: [] }));
-      setLogs(json.data ?? []);
-    } catch {
-      setError("Synchronisations-Protokoll konnte nicht geladen werden.");
-    } finally {
-      setLoading(false);
-    }
-  }, [filterConnector, filterStatus]);
+      return (json.data ?? []) as SyncLogEntry[];
+    },
+  });
+  const error = isError ? t("syncLog.loadError") : "";
 
-  useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+  const fetchLogs = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Unique connector names for filter dropdown
   const connectorOptions = Array.from(
@@ -154,15 +179,15 @@ export default function SyncLogPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold">
             <ArrowDownUp className="h-6 w-6" />
-            Synchronisations-Protokoll
+            {t("syncLog.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Verlauf aller Konnektor-Synchronisationen
+            {t("syncLog.description")}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchLogs}>
           <RefreshCw className="mr-1.5 h-4 w-4" />
-          Aktualisieren
+          {tCommon("actions.refresh")}
         </Button>
       </div>
 
@@ -179,14 +204,18 @@ export default function SyncLogPage() {
           <CardContent className="py-4 text-center">
             <Clock className="mx-auto h-5 w-5 text-gray-400" />
             <p className="mt-1 text-lg font-semibold">{totalRuns}</p>
-            <p className="text-xs text-muted-foreground">Gesamt</p>
+            <p className="text-xs text-muted-foreground">
+              {t("syncLog.kpi.total")}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <CheckCircle2 className="mx-auto h-5 w-5 text-green-500" />
             <p className="mt-1 text-lg font-semibold">{successRuns}</p>
-            <p className="text-xs text-muted-foreground">Erfolgreich</p>
+            <p className="text-xs text-muted-foreground">
+              {t("syncLog.status.success")}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -199,7 +228,9 @@ export default function SyncLogPage() {
             >
               {failedRuns}
             </p>
-            <p className="text-xs text-muted-foreground">Fehlgeschlagen</p>
+            <p className="text-xs text-muted-foreground">
+              {t("syncLog.status.failed")}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -208,7 +239,9 @@ export default function SyncLogPage() {
               className={`mx-auto h-5 w-5 ${runningRuns > 0 ? "text-blue-500" : "text-gray-400"}`}
             />
             <p className="mt-1 text-lg font-semibold">{runningRuns}</p>
-            <p className="text-xs text-muted-foreground">Aktiv</p>
+            <p className="text-xs text-muted-foreground">
+              {t("syncLog.status.running")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -218,13 +251,17 @@ export default function SyncLogPage() {
         <CardContent className="flex items-center gap-4 py-3">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Konnektor:</span>
+            <span className="text-sm font-medium">
+              {t("syncLog.filterConnector")}
+            </span>
             <Select value={filterConnector} onValueChange={setFilterConnector}>
               <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Alle Konnektoren" />
+                <SelectValue placeholder={t("syncLog.allConnectors")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle Konnektoren</SelectItem>
+                <SelectItem value="all">
+                  {t("syncLog.allConnectors")}
+                </SelectItem>
                 {connectorOptions.map(([id, name]) => (
                   <SelectItem key={id} value={id}>
                     {name}
@@ -234,16 +271,26 @@ export default function SyncLogPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Status:</span>
+            <span className="text-sm font-medium">
+              {t("syncLog.filterStatus")}
+            </span>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Alle Status" />
+                <SelectValue placeholder={t("approvalRequests.allStatuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Alle Status</SelectItem>
-                <SelectItem value="success">Erfolgreich</SelectItem>
-                <SelectItem value="failed">Fehlgeschlagen</SelectItem>
-                <SelectItem value="running">Aktiv</SelectItem>
+                <SelectItem value="all">
+                  {t("approvalRequests.allStatuses")}
+                </SelectItem>
+                <SelectItem value="success">
+                  {t("syncLog.status.success")}
+                </SelectItem>
+                <SelectItem value="failed">
+                  {t("syncLog.status.failed")}
+                </SelectItem>
+                <SelectItem value="running">
+                  {t("syncLog.status.running")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -259,17 +306,15 @@ export default function SyncLogPage() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Cable className="mx-auto mb-3 h-10 w-10 opacity-50" />
-            <p className="font-medium">Keine Synchronisationen gefunden</p>
-            <p className="mt-1 text-sm">
-              Sobald Konnektoren synchronisieren, erscheinen die Einträge hier.
-            </p>
+            <p className="font-medium">{t("syncLog.empty")}</p>
+            <p className="mt-1 text-sm">{t("syncLog.emptyHint")}</p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">
-              Synchronisations-Verlauf
+              {t("syncLog.tableTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -277,18 +322,30 @@ export default function SyncLogPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-3 pr-4 font-medium">Konnektor</th>
-                    <th className="pb-3 pr-4 font-medium">Typ</th>
-                    <th className="pb-3 pr-4 font-medium">Status</th>
-                    <th className="pb-3 pr-4 font-medium text-right">
-                      Gezogen
+                    <th className="pb-3 pr-4 font-medium">
+                      {t("syncLog.column.connector")}
+                    </th>
+                    <th className="pb-3 pr-4 font-medium">
+                      {t("dataLinks.column.type")}
+                    </th>
+                    <th className="pb-3 pr-4 font-medium">
+                      {t("reminders.column.status")}
                     </th>
                     <th className="pb-3 pr-4 font-medium text-right">
-                      Geschrieben
+                      {t("syncLog.column.pulled")}
                     </th>
-                    <th className="pb-3 pr-4 font-medium text-right">Fehler</th>
-                    <th className="pb-3 pr-4 font-medium text-right">Dauer</th>
-                    <th className="pb-3 font-medium">Zeitpunkt</th>
+                    <th className="pb-3 pr-4 font-medium text-right">
+                      {t("syncLog.column.written")}
+                    </th>
+                    <th className="pb-3 pr-4 font-medium text-right">
+                      {t("syncLog.column.errors")}
+                    </th>
+                    <th className="pb-3 pr-4 font-medium text-right">
+                      {t("syncLog.column.duration")}
+                    </th>
+                    <th className="pb-3 font-medium">
+                      {t("syncLog.column.timestamp")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -324,7 +381,7 @@ export default function SyncLogPage() {
                         {log.status === "running" ? (
                           <Loader2 className="inline h-3 w-3 animate-spin" />
                         ) : (
-                          formatDuration(log.durationMs)
+                          formatDuration(log.durationMs, t)
                         )}
                       </td>
                       <td className="py-3 whitespace-nowrap">

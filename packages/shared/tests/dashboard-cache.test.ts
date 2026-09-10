@@ -21,7 +21,12 @@ function createMockAdapter(): CacheAdapter & {
       }
     },
     async keys(pattern: string): Promise<string[]> {
-      const prefix = pattern.replace("*", "");
+      // [OP-257] `replace("*", "")` entfernt nur den ERSTEN Stern und laesst
+      // jeden weiteren im Praefix stehen — `"a*b*"` wurde zu `"ab*"`, und
+      // danach passte kein Schluessel mehr. Redis-Glob heisst hier: alles vor
+      // dem ersten Stern ist das Praefix.
+      const star = pattern.indexOf("*");
+      const prefix = star === -1 ? pattern : pattern.slice(0, star);
       return Array.from(store.keys()).filter((k) => k.startsWith(prefix));
     },
     async info(): Promise<string> {

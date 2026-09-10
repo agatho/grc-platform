@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, Plus, RefreshCcw, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import type { Threat } from "@grc/shared";
 
-const THREAT_CATEGORIES = [
+const _THREAT_CATEGORIES = [
   "natural_disaster",
   "malware",
   "social_engineering",
@@ -47,30 +48,37 @@ export default function ThreatsPage() {
   );
 }
 
+const THREATS_QUERY_KEY = ["isms", "threats"] as const;
+
 function ThreatsInner() {
   const t = useTranslations("isms");
-  const [threats, setThreats] = useState<Threat[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("__all__");
   const [showCreate, setShowCreate] = useState(false);
 
-  const fetchThreats = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Das lokale Entfernen nach dem
+  // Löschen läuft unten über `setQueryData` unter demselben Schlüssel.
+  const {
+    data: threats = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Threat[]>({
+    queryKey: THREATS_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/threats?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setThreats(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Threat[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchThreats();
-  }, [fetchThreats]);
+  const fetchThreats = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -103,10 +111,12 @@ function ThreatsInner() {
       });
       if (res.ok) {
         toast.success(t("deleted"));
-        setThreats((prev) => prev.filter((th) => th.id !== id));
+        queryClient.setQueryData<Threat[]>(THREATS_QUERY_KEY, (prev) =>
+          (prev ?? []).filter((th) => th.id !== id),
+        );
       }
     },
-    [t],
+    [t, queryClient],
   );
 
   if (loading && threats.length === 0) {
@@ -131,9 +141,12 @@ function ThreatsInner() {
             variant="outline"
             size="sm"
             onClick={fetchThreats}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>

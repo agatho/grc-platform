@@ -11,16 +11,13 @@ import {
   Recycle,
   Factory,
   Zap,
-  Package,
-  ArrowUpDown,
   Fuel,
   Globe,
   DollarSign,
   ArrowLeft,
-  BarChart3,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const SCOPE3_CATEGORIES = [

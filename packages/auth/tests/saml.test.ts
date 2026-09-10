@@ -240,4 +240,156 @@ describe("SAMLResponseValidator", () => {
     const noSig = `<samlp:Response><saml:Assertion/></samlp:Response>`;
     expect(validateSAMLSignature(noSig, "cert")).toBe(false);
   });
+
+  it("extracts attributes when start tags carry extra XML attributes", () => {
+    // Capture-semantics guard for the `[^>]*` → `[^<>]*` narrowing: every
+    // narrowed region here is non-empty and namespaced, so a narrowing that
+    // changed what the groups capture would show up as a wrong value rather
+    // than as a silent pass on an attribute-free tag.
+    const assertion = `
+      <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+        <saml:Subject>
+          <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" SPNameQualifier="https://sp.example.de">nameid@example.de</saml:NameID>
+        </saml:Subject>
+        <saml:Attribute Name="mail" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic" FriendlyName="E-Mail">
+          <saml:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">attr@example.de</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="givenName" FriendlyName="Vorname">
+          <saml:AttributeValue xsi:type="xs:string">Erika</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="sn" FriendlyName="Nachname">
+          <saml:AttributeValue xsi:type="xs:string">Musterfrau</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="memberOf" FriendlyName="Gruppen">
+          <saml:AttributeValue xsi:type="xs:string">GRC-Admins</saml:AttributeValue>
+          <saml:AttributeValue xsi:type="xs:string">Risk-Team</saml:AttributeValue>
+        </saml:Attribute>
+      </saml:Assertion>
+    `;
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+    const attrs = extractSAMLAttributes(assertion, mapping);
+    expect(attrs.email).toBe("attr@example.de");
+    expect(attrs.firstName).toBe("Erika");
+    expect(attrs.lastName).toBe("Musterfrau");
+    expect(attrs.groups).toEqual(["GRC-Admins", "Risk-Team"]);
+
+    // …and the NameID from the same attribute-rich start tag is still the
+    // email fallback when the mapped attribute is absent.
+    const fallback = extractSAMLAttributes(assertion, {
+      ...mapping,
+      email: "absent",
+    });
+    expect(fallback.email).toBe("nameid@example.de");
+  });
+
+  it("extracts attributes in linear time (js/polynomial-redos)", () => {
+    // Counter-proof for both costs that used to sit in
+    // `extractSAMLAttributes`. Two distinct input shapes, because they hit
+    // two different pairs:
+    //
+    //  1. ATTRIBUTE-REGION shape — many `<Attribute ` fragments with no `>`.
+    //     `[^>]` also matches `<`, so every fragment was a viable start
+    //     position whose region ran to the end of the string. ~1.0 s / 3.4 s
+    //     / 2.2 s before the `[^<>]` narrowing.
+    //  2. UNCLOSED-OPENER shape — many complete openers with no closing tag.
+    //     This is the pair CodeQL reports, and the `[^<>]` narrowing does
+    //     NOT address it: the lazy `([\s\S]*?)` runs to the end of the string
+    //     for every opener that never closes. ~1.8 s / 2.1 s / 1.2 s before
+    //     the segmentation in `segmentsBeforeClosingTag()`.
+    //
+    // Shape 1 alone passed against the narrowed-but-unsegmented code while
+    // the alert stayed open, which is why both are pinned here.
+    //
+    // This is hardening, not a reachable DoS: `extractSAMLAttributes` only
+    // ever runs on an assertion that `verifySamlResponse()` has already
+    // validated with real XML-DSig, so producing such an input means a
+    // malicious or compromised IdP attacking its own tenant.
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+    const N = 20_000;
+    const cases: Array<[string, string]> = [
+      // ── shape 1: attribute region ──
+      ["attrRegex / attribute region", "<Attribute ".repeat(N)],
+      // valueRegex only ever runs on `match[2]`, so its fragments have to
+      // sit inside an Attribute block that does match.
+      [
+        "valueRegex / attribute region",
+        `<Attribute Name="mail">${"<AttributeValue ".repeat(N)}</Attribute>`,
+      ],
+      ["NameID / attribute region", "<NameID ".repeat(N)],
+      // ── shape 2: complete openers, no closing tag ──
+      ["attrRegex / unclosed openers", '<saml:Attribute Name="a">'.repeat(N)],
+      [
+        "valueRegex / unclosed openers",
+        `<saml:Attribute Name="mail">${"<saml:AttributeValue>".repeat(N)}</saml:Attribute>`,
+      ],
+      ["NameID / unclosed openers", "<saml:NameID>".repeat(N)],
+    ];
+    for (const [label, evil] of cases) {
+      const started = performance.now();
+      // No mapped attribute and no NameID resolve, so the function refuses —
+      // the point is that it refuses fast instead of scanning to the end.
+      expect(() => extractSAMLAttributes(evil, mapping)).toThrow(
+        /No email attribute found/,
+      );
+      const elapsedMs = performance.now() - started;
+      expect(elapsedMs, `${label} took ${elapsedMs.toFixed(0)}ms`).toBeLessThan(
+        300,
+      );
+    }
+  });
+
+  it("pairs openers and closers the same way after segmentation", () => {
+    // The segmentation inverts the search (closer first, then opener inside
+    // the segment). These are the inputs where an inverted search could
+    // plausibly pick a different pair than the old lazy-body regex did.
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+
+    // A stray closing tag before the real attribute must not swallow it.
+    const strayCloser = `</saml:Attribute><saml:Attribute Name="mail"><saml:AttributeValue>after@stray.de</saml:AttributeValue></saml:Attribute>`;
+    expect(extractSAMLAttributes(strayCloser, mapping).email).toBe(
+      "after@stray.de",
+    );
+
+    // Two attributes in sequence keep their own value blocks.
+    const sequence =
+      `<saml:Attribute Name="mail"><saml:AttributeValue>a@b.de</saml:AttributeValue></saml:Attribute>` +
+      `<saml:Attribute Name="memberOf"><saml:AttributeValue>G1</saml:AttributeValue><saml:AttributeValue>G2</saml:AttributeValue></saml:Attribute>`;
+    const seq = extractSAMLAttributes(sequence, mapping);
+    expect(seq.email).toBe("a@b.de");
+    expect(seq.groups).toEqual(["G1", "G2"]);
+
+    // An attribute with an empty body yields no values, and the NameID
+    // fallback still applies.
+    const empty = `<saml:NameID>fallback@example.de</saml:NameID><saml:Attribute Name="mail"></saml:Attribute>`;
+    expect(extractSAMLAttributes(empty, mapping).email).toBe(
+      "fallback@example.de",
+    );
+
+    // The leftmost NameID pair wins, exactly as `.match()` did.
+    const twoNameIds = `<saml:NameID>first@example.de</saml:NameID><saml:NameID>second@example.de</saml:NameID>`;
+    expect(extractSAMLAttributes(twoNameIds, mapping).email).toBe(
+      "first@example.de",
+    );
+
+    // An orphaned AttributeValue outside any Attribute is ignored.
+    const orphan = `<saml:NameID>n@example.de</saml:NameID><saml:AttributeValue>orphan</saml:AttributeValue>`;
+    const orphanAttrs = extractSAMLAttributes(orphan, mapping);
+    expect(orphanAttrs.email).toBe("n@example.de");
+    expect(orphanAttrs.groups).toBeUndefined();
+  });
 });

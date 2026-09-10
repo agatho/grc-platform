@@ -56,40 +56,206 @@ function ipv4ToBigInt(ip: string): bigint {
   return acc;
 }
 
+// #S04-02/S04-03 (ARCTOS-FULL-2026-08-31): the original guard only ever
+// looked at hostnames matching /^\d{1,3}(\.\d{1,3}){3}$/ — i.e. plain
+// dotted-quad. `inet_aton`-style spellings that every libc (and therefore
+// Node's `getaddrinfo`, curl and the browser) accepts slipped straight
+// through the literal check:
+//
+//   2130706433      decimal            → 127.0.0.1
+//   0x7f000001      hex                → 127.0.0.1
+//   0177.0.0.1      octal octet        → 127.0.0.1
+//   127.1           2-part short form  → 127.0.0.1
+//   0               "this host"        → 0.0.0.0
+//   2852039166      decimal            → 169.254.169.254 (IMDS)
+//
+// `normalizeNumericIPv4` reproduces the inet_aton grammar (1–4 parts, each
+// decimal / 0-prefixed octal / 0x-prefixed hex, the last part absorbing the
+// remaining bytes) and returns the canonical dotted quad, so the range check
+// below sees the address the OS resolver will actually dial.
+export function normalizeNumericIPv4(host: string): string | null {
+  const h = host.trim();
+  if (h.length === 0) return null;
+  // A trailing dot ("127.0.0.1.") is accepted by some resolvers; normalize
+  // it away rather than treating it as an empty 5th part.
+  const cleaned = h.endsWith(".") ? h.slice(0, -1) : h;
+  const parts = cleaned.split(".");
+  if (parts.length < 1 || parts.length > 4) return null;
+
+  const nums: bigint[] = [];
+  for (const part of parts) {
+    if (part.length === 0) return null;
+    if (/^0[xX][0-9a-fA-F]+$/.test(part)) {
+      nums.push(BigInt(part.toLowerCase()));
+    } else if (/^0[0-7]+$/.test(part)) {
+      nums.push(BigInt(parseInt(part, 8)));
+    } else if (/^[0-9]+$/.test(part)) {
+      nums.push(BigInt(part));
+    } else {
+      return null;
+    }
+  }
+
+  // All but the last part must be a single octet; the last part absorbs the
+  // remaining 32 - 8*(n-1) bits.
+  //
+  // [OP-065] Die drei Schleifen liefen über `nums[i]`, und unter
+  // `noUncheckedIndexedAccess` ist das `bigint | undefined`. Die Invariante
+  // stimmt — `parts.length` ist oben auf 1..4 geprüft und die Schleife
+  // darüber legt je Teil GENAU einen Eintrag ab oder verlässt die Funktion,
+  // also gilt `nums.length === parts.length` — aber sie stand nur im Kopf des
+  // Lesers. `nums.entries()` liefert den Wert statt des Index, damit ist die
+  // Invariante nicht mehr nötig; zugleich fallen drei Durchläufe auf einen
+  // zusammen. Die Prüfreihenfolge (erst alle Kopf-Oktette, dann der Rest)
+  // ändert sich dabei, das Ergebnis nicht: beide Zweige geben `null` zurück.
+  const lastIndex = nums.length - 1;
+  const lastMaxExclusive = 1n << BigInt(32 - 8 * lastIndex);
+
+  let acc = 0n;
+  for (const [i, n] of nums.entries()) {
+    if (i < lastIndex) {
+      if (n > 255n) return null;
+      acc |= n << BigInt(32 - 8 * (i + 1));
+    } else {
+      if (n >= lastMaxExclusive) return null;
+      acc |= n;
+    }
+  }
+
+  return [
+    (acc >> 24n) & 0xffn,
+    (acc >> 16n) & 0xffn,
+    (acc >> 8n) & 0xffn,
+    acc & 0xffn,
+  ].join(".");
+}
+
 function isPrivateIPv4(ip: string): boolean {
-  const n = ipv4ToBigInt(ip);
+  // Accept every inet_aton spelling, not just dotted-quad.
+  const canonical = normalizeNumericIPv4(ip) ?? ip;
+  const n = ipv4ToBigInt(canonical);
   if (n < 0n) return false;
   return PRIVATE_IPV4_RANGES.some(([lo, hi]) => n >= lo && n <= hi);
 }
 
-function isPrivateIPv6Literal(host: string): boolean {
-  // Strip optional brackets, lower-case for comparison.
-  const h = host.replace(/^\[|\]$/g, "").toLowerCase();
-  if (h === "::1") return true; // loopback
-  if (h === "::") return true;
-  if (h.startsWith("fc") || h.startsWith("fd")) return true; // unique local
-  if (h.startsWith("fe80:")) return true; // link-local
-  if (h.startsWith("ff")) return true; // multicast
-  // IPv4-mapped (::ffff:127.0.0.1)
-  const v4mapped = h.match(/^(?:0:){5}ffff:([0-9a-f.:]+)$/);
-  if (v4mapped) {
-    return isPrivateIPv4(v4mapped[1]) || isPrivateIPv4(dotted(v4mapped[1]));
+/**
+ * Expand an IPv6 literal into its eight 16-bit groups.
+ *
+ * #S04-02: the original check was prefix matching on the *written* form, so
+ * only the shortest spelling of each address was caught. The fully written
+ * loopback `0:0:0:0:0:0:0:1`, the zero-padded `::0001` and
+ * `[0:0:0:0:0:ffff:a9fe:a9fe]` (IMDS) all read as "public". Expanding first
+ * makes the comparison spelling-independent.
+ */
+function expandIPv6(raw: string): number[] | null {
+  let h = raw.replace(/^\[|\]$/g, "").toLowerCase();
+  // Drop a zone index ("fe80::1%eth0").
+  const zone = h.indexOf("%");
+  if (zone >= 0) h = h.slice(0, zone);
+  if (h.length === 0 || !h.includes(":")) return null;
+
+  // Trailing embedded IPv4 ("::ffff:127.0.0.1") → two hex groups.
+  // [OP-065] Die Gruppe 1 umspannte hier die GANZE Übereinstimmung; sie
+  // entfällt, denn `RegExpMatchArray[0]` ist typisiert `string`, `[1]` dagegen
+  // `string | undefined`. Und die vier Oktette werden zusammengefaltet statt
+  // einzeln indiziert: `reduce` über ein `number[]` kennt kein `undefined`,
+  // und `((a<<8|b)<<8|c)<<8|d` ist derselbe 32-Bit-Wert, den die beiden
+  // Ausdrücke vorher stückweise gebildet haben. Die Längenprüfung ist neu
+  // und nicht bloss Zierde: `split(".")` auf drei Punkten liefert vier Teile,
+  // aber ohne die Prüfung wäre das eine Annahme, und eine falsche hätte hier
+  // still eine falsche Adresse erzeugt statt abzulehnen.
+  const v4tail = h.match(/\d{1,3}(?:\.\d{1,3}){3}$/);
+  if (v4tail) {
+    const v4 = v4tail[0];
+    const quad = v4.split(".").map(Number);
+    if (quad.length !== 4) return null;
+    if (quad.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+    const packed = quad.reduce((a, n) => (a << 8) | n, 0);
+    const hi = ((packed >>> 16) & 0xffff).toString(16);
+    const lo = (packed & 0xffff).toString(16);
+    h = h.slice(0, h.length - v4.length) + `${hi}:${lo}`;
   }
-  return false;
+
+  const halves = h.split("::");
+  if (halves.length > 2) return null;
+
+  const toGroups = (s: string): number[] | null => {
+    if (s.length === 0) return [];
+    const out: number[] = [];
+    for (const g of s.split(":")) {
+      if (!/^[0-9a-f]{1,4}$/.test(g)) return null;
+      out.push(parseInt(g, 16));
+    }
+    return out;
+  };
+
+  if (halves.length === 1) {
+    const groups = toGroups(h);
+    return groups && groups.length === 8 ? groups : null;
+  }
+
+  // [OP-065] `halves` hat hier genau zwei Elemente (`> 2` ist oben
+  // ausgeschlossen, `=== 1` im Zweig darüber behandelt). Die Vorgabe `""`
+  // kodiert genau das, was ein fehlender Halbteil im IPv6-Sinn bedeutet —
+  // `toGroups("")` gibt `[]`, und eine leere Seite von `::` ist der
+  // Normalfall (`::1`, `fe80::`). Ein `!` hätte hier nur die Prüfung
+  // abgeschaltet.
+  const [headPart = "", tailPart = ""] = halves;
+  const head = toGroups(headPart);
+  const tail = toGroups(tailPart);
+  if (!head || !tail) return null;
+  const fill = 8 - head.length - tail.length;
+  if (fill < 0) return null;
+  return [...head, ...(Array(fill).fill(0) as number[]), ...tail];
 }
 
-function dotted(s: string): string {
-  // ::ffff:7f00:0001 → 127.0.0.1 (rough conversion for the v4-mapped case)
-  if (!s.includes(":")) return s;
-  const parts = s.split(":");
-  const last = parts[parts.length - 1];
-  if (/^[0-9a-f]{1,4}$/.test(last) && parts.length >= 2) {
-    const hi = parseInt(parts[parts.length - 2], 16);
-    const lo = parseInt(last, 16);
-    if (Number.isNaN(hi) || Number.isNaN(lo)) return s;
-    return `${(hi >> 8) & 0xff}.${hi & 0xff}.${(lo >> 8) & 0xff}.${lo & 0xff}`;
+function isPrivateIPv6Literal(host: string): boolean {
+  const groups = expandIPv6(host);
+  if (!groups) {
+    // Not a parseable IPv6 literal — fall back to the original conservative
+    // prefix check so this never *loosens* the previous behaviour.
+    const h = host.replace(/^\[|\]$/g, "").toLowerCase();
+    return (
+      h === "::1" ||
+      h === "::" ||
+      h.startsWith("fc") ||
+      h.startsWith("fd") ||
+      h.startsWith("fe80:") ||
+      h.startsWith("ff")
+    );
   }
-  return s;
+
+  // [OP-065] `expandIPv6` liefert per Konstruktion genau acht Gruppen: der
+  // einteilige Zweig prüft `length === 8`, der `::`-Zweig füllt auf acht auf.
+  // Die Vorgabe 0 kodiert diese Invariante — und sie zeigt in die sichere
+  // Richtung: eine fehlende Gruppe als 0 zu lesen macht eine Adresse eher
+  // privat (`::/128`, `::ffff:0:0/96`) und nie eher öffentlich. Genau
+  // umgekehrt wäre ein `!` gewesen: es hätte bei einer verkürzten Liste
+  // `NaN`-Vergleiche erzeugt, die alle `false` ergeben — also „öffentlich",
+  // die falsche Antwort für einen SSRF-Schutz.
+  const [first = 0, g1 = 0, , , , g5 = 0, g6 = 0, g7 = 0] = groups;
+
+  // Unspecified :: and loopback ::1
+  if (groups.every((g, i) => (i === 7 ? g <= 1 : g === 0))) return true;
+  if ((first & 0xfe00) === 0xfc00) return true; // unique local fc00::/7
+  if ((first & 0xffc0) === 0xfe80) return true; // link-local fe80::/10
+  if ((first & 0xffc0) === 0xfec0) return true; // site-local fec0::/10
+  if ((first & 0xff00) === 0xff00) return true; // multicast ff00::/8
+
+  const embeddedV4 = () =>
+    [(g6 >> 8) & 0xff, g6 & 0xff, (g7 >> 8) & 0xff, g7 & 0xff].join(".");
+
+  // IPv4-mapped ::ffff:0:0/96 and IPv4-compatible ::a.b.c.d
+  const headIsZero = groups.slice(0, 5).every((g) => g === 0);
+  if (headIsZero && (g5 === 0xffff || g5 === 0)) {
+    if (isPrivateIPv4(embeddedV4())) return true;
+  }
+  // NAT64 well-known prefix 64:ff9b::/96 wrapping a private v4.
+  if (first === 0x64 && g1 === 0xff9b) {
+    if (isPrivateIPv4(embeddedV4())) return true;
+  }
+
+  return false;
 }
 
 const FORBIDDEN_HOSTNAMES = new Set([
@@ -106,11 +272,32 @@ const FORBIDDEN_HOSTNAMES = new Set([
 export type WebhookUrlCheckResult =
   { ok: true; url: URL } | { ok: false; reason: string };
 
+export interface OutboundUrlCheckOptions {
+  /**
+   * When true, plain http:// is refused regardless of
+   * WEBHOOK_ALLOW_HTTP. Used by SSO/SAML/OIDC and threat-feed callers,
+   * where a cleartext fetch is a finding in its own right.
+   */
+  requireHttps?: boolean;
+  /** Label used in the refusal message (defaults to "outbound requests"). */
+  purpose?: string;
+}
+
 /**
- * Sync, hostname-literal check for SSRF safety. Use at registration time
- * (Zod refine) AND right before the HTTP call in the worker.
+ * Sync, hostname-literal check for SSRF safety. Shared by every outbound
+ * fetch in the product — webhooks, SAML metadata, OIDC discovery, threat
+ * feeds, interface health checks.
+ *
+ * Use at registration time (Zod refine) AND right before the HTTP call.
+ * For the DNS-rebinding-resistant version, follow this with
+ * `checkResolvedHostIsPublic` (or use `safeFetch`, which does both plus
+ * per-redirect-hop re-validation).
  */
-export function checkWebhookUrl(rawUrl: string): WebhookUrlCheckResult {
+export function checkOutboundUrl(
+  rawUrl: string,
+  options: OutboundUrlCheckOptions = {},
+): WebhookUrlCheckResult {
+  const purpose = options.purpose ?? "outbound requests";
   let parsed: URL;
   try {
     parsed = new URL(rawUrl);
@@ -126,8 +313,29 @@ export function checkWebhookUrl(rawUrl: string): WebhookUrlCheckResult {
   }
 
   // Allow http in dev only — flag via env. Default: https-only.
-  if (parsed.protocol === "http:" && process.env.WEBHOOK_ALLOW_HTTP !== "1") {
-    return { ok: false, reason: "Plain http:// is not allowed for webhooks." };
+  // `requireHttps` overrides the escape hatch entirely.
+  if (parsed.protocol === "http:") {
+    if (options.requireHttps) {
+      return {
+        ok: false,
+        reason: `Plain http:// is not allowed for ${purpose}.`,
+      };
+    }
+    if (process.env.WEBHOOK_ALLOW_HTTP !== "1") {
+      return {
+        ok: false,
+        reason: `Plain http:// is not allowed for ${purpose}.`,
+      };
+    }
+  }
+
+  // Embedded credentials ("https://user:pass@internal/") are never
+  // legitimate here and are a classic parser-confusion vector.
+  if (parsed.username || parsed.password) {
+    return {
+      ok: false,
+      reason: "URLs with embedded credentials are not allowed.",
+    };
   }
 
   const host = parsed.hostname.toLowerCase();
@@ -137,32 +345,44 @@ export function checkWebhookUrl(rawUrl: string): WebhookUrlCheckResult {
     return { ok: false, reason: `Hostname '${host}' is not allowed.` };
   }
 
-  if (host.endsWith(".local") || host.endsWith(".internal")) {
+  if (
+    host.endsWith(".local") ||
+    host.endsWith(".internal") ||
+    host.endsWith(".localhost")
+  ) {
     return {
       ok: false,
-      reason: `Hostnames ending in .local/.internal are not allowed (got '${host}').`,
+      reason: `Hostnames ending in .local/.internal/.localhost are not allowed (got '${host}').`,
     };
   }
 
-  // Literal IPv4
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    if (isPrivateIPv4(host)) {
-      return {
-        ok: false,
-        reason: `IP ${host} is in a private/reserved range and not allowed for webhooks.`,
-      };
-    }
+  // Literal IPv4 in ANY inet_aton spelling (dotted quad, decimal, octal,
+  // hex, short form). #S04-02: the old check matched dotted-quad only.
+  const numeric = normalizeNumericIPv4(host);
+  if (numeric !== null && isPrivateIPv4(numeric)) {
+    return {
+      ok: false,
+      reason: `IP ${host} (${numeric}) is in a private/reserved range and not allowed for ${purpose}.`,
+    };
   }
 
   // Literal IPv6 (URL hostname is unbracketed; original URL has brackets)
   if (host.includes(":") && isPrivateIPv6Literal(host)) {
     return {
       ok: false,
-      reason: `IPv6 ${host} is in a private/reserved range and not allowed for webhooks.`,
+      reason: `IPv6 ${host} is in a private/reserved range and not allowed for ${purpose}.`,
     };
   }
 
   return { ok: true, url: parsed };
+}
+
+/**
+ * Webhook-flavoured wrapper. Kept as the historic public name so the
+ * existing webhook call sites and their tests are untouched.
+ */
+export function checkWebhookUrl(rawUrl: string): WebhookUrlCheckResult {
+  return checkOutboundUrl(rawUrl, { purpose: "webhooks" });
 }
 
 /**

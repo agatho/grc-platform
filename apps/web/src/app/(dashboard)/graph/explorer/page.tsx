@@ -1,20 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import {
   Network,
   Search,
   Loader2,
   RefreshCcw,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
   Filter,
   Target,
-  AlertTriangle,
   ExternalLink,
   ChevronRight,
   X,
@@ -26,12 +24,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -53,6 +45,9 @@ import {
   GRAPH_ENTITY_TYPES,
   GRAPH_RELATIONSHIP_TYPES,
 } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ─── D3 Graph Canvas Component ─────────────────────────────
 
@@ -82,13 +77,13 @@ function GraphCanvas({
   svgRef,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const simulationRef = useRef<unknown>(null);
+  const _simulationRef = useRef<unknown>(null);
   const [positions, setPositions] = useState<
     Map<string, { x: number; y: number }>
   >(new Map());
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [dragging, setDragging] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [_dragStart, _setDragStart] = useState({ x: 0, y: 0 });
   const [panning, setPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const t = useTranslations("graph");
@@ -127,7 +122,7 @@ function GraphCanvas({
     });
 
     // Build adjacency for edge force
-    const edgeSet = new Set(edges.map((e) => `${e.sourceId}:${e.targetId}`));
+    const _edgeSet = new Set(edges.map((e) => `${e.sourceId}:${e.targetId}`));
 
     // Run simulation iterations
     let iteration = 0;
@@ -469,7 +464,7 @@ function ImpactPanel({
 
   if (!impactData) return null;
 
-  const getSeverityLabel = (score: number): string => {
+  const _getSeverityLabel = (score: number): string => {
     if (score >= 70) return t("impact.severity.critical");
     if (score >= 50) return t("impact.severity.high");
     if (score >= 30) return t("impact.severity.medium");
@@ -621,6 +616,32 @@ function ImpactPanel({
 
 // ─── Main Explorer Page ────────────────────────────────────
 
+const DEFAULT_DEPTH = 3;
+
+/**
+ * [OP-245 · Gestalt A] Ein Teilgraph-Abruf samt der Filter, mit denen er
+ * angefordert wurde. Die Filter in der Seitenleiste wirken erst auf Knopfdruck
+ * („Filter anwenden") oder beim nächsten Sprung zu einem Knoten — deshalb
+ * stehen hier die *angewandten* Werte, nicht der Entwurf aus der Seitenleiste.
+ */
+interface GraphRequest {
+  entityId: string;
+  entityType: string;
+  depth: number;
+  entityTypes: string[];
+  relationshipTypes: string[];
+}
+
+function sameGraphRequest(a: GraphRequest, b: GraphRequest): boolean {
+  return (
+    a.entityId === b.entityId &&
+    a.entityType === b.entityType &&
+    a.depth === b.depth &&
+    a.entityTypes.join(",") === b.entityTypes.join(",") &&
+    a.relationshipTypes.join(",") === b.relationshipTypes.join(",")
+  );
+}
+
 export default function GraphExplorerPage() {
   const t = useTranslations("graph");
   const router = useRouter();
@@ -628,11 +649,7 @@ export default function GraphExplorerPage() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // State
-  const [graphData, setGraphData] = useState<SubgraphResponse | null>(null);
-  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<EntitySearchResult[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
   const [blastRadiusNode, setBlastRadiusNode] = useState<string | null>(null);
   const [impactData, setImpactData] = useState<ImpactAnalysisResponse | null>(
@@ -641,7 +658,7 @@ export default function GraphExplorerPage() {
   const [impactLoading, setImpactLoading] = useState(false);
   const [showImpactPanel, setShowImpactPanel] = useState(false);
   const [layout, setLayout] = useState<GraphLayout>("force");
-  const [depth, setDepth] = useState(3);
+  const [depth, setDepth] = useState(DEFAULT_DEPTH);
   const [showFilter, setShowFilter] = useState(true);
   const [contextMenu, setContextMenu] = useState<{
     node: GraphNodeData;
@@ -661,71 +678,129 @@ export default function GraphExplorerPage() {
   const startEntityId = searchParams.get("entityId");
   const startEntityType = searchParams.get("entityType");
 
-  // Fetch subgraph
-  const fetchGraph = useCallback(
-    async (entityId: string, entityType: string) => {
-      setLoading(true);
+  // [OP-245 · Gestalt A] Der Teilgraph kam aus `fetchGraph`, das beim
+  // Einhängen im Effekt (für die Entität aus der URL) und aus Doppelklick,
+  // Suche, Kontextmenü und „Filter anwenden" gerufen wurde und Lade- wie
+  // Datenzustand synchron zurückschrieb. Jetzt ist der *angeforderte*
+  // Teilgraph (Entität plus angewandte Filter) der Zustand, und eine Abfrage
+  // über `@tanstack/react-query` hängt daran; die Entität aus der URL ist nur
+  // der Rückfall, solange nichts ausdrücklich angefordert wurde. Die Filter
+  // der Seitenleiste wirken dadurch wie vorher erst auf Knopfdruck.
+  const [explicitRequest, setExplicitRequest] = useState<GraphRequest | null>(
+    null,
+  );
+  const urlRequest = useMemo<GraphRequest | null>(
+    () =>
+      startEntityId && startEntityType
+        ? {
+            entityId: startEntityId,
+            entityType: startEntityType,
+            depth: DEFAULT_DEPTH,
+            entityTypes: [...GRAPH_ENTITY_TYPES].sort(),
+            relationshipTypes: [...GRAPH_RELATIONSHIP_TYPES].sort(),
+          }
+        : null,
+    [startEntityId, startEntityType],
+  );
+  const request = explicitRequest ?? urlRequest;
+
+  // Ein Fehler wird wie vorher auf der Konsole vermerkt; anders als vorher
+  // bleibt danach nicht der vorige Graph stehen, sondern die Abfrage ist im
+  // Fehlerzustand und die Fläche zeigt den Leerzustand.
+  const {
+    data: graphData = null,
+    isPending: graphPending,
+    error: graphError,
+    refetch: refetchGraph,
+  } = useQuery<SubgraphResponse | null>({
+    queryKey: ["graph", "subgraph", request],
+    enabled: request !== null,
+    queryFn: async () => {
+      if (!request) return null;
+      const params = new URLSearchParams({
+        entityId: request.entityId,
+        entityType: request.entityType,
+        depth: request.depth.toString(),
+      });
+      if (request.entityTypes.length < GRAPH_ENTITY_TYPES.length) {
+        params.set("entityTypes", request.entityTypes.join(","));
+      }
+      if (request.relationshipTypes.length < GRAPH_RELATIONSHIP_TYPES.length) {
+        params.set("relationshipTypes", request.relationshipTypes.join(","));
+      }
       try {
-        const params = new URLSearchParams({
-          entityId,
-          entityType,
-          depth: depth.toString(),
-        });
-
-        if (selectedEntityTypes.size < GRAPH_ENTITY_TYPES.length) {
-          params.set("entityTypes", Array.from(selectedEntityTypes).join(","));
-        }
-        if (selectedRelationships.size < GRAPH_RELATIONSHIP_TYPES.length) {
-          params.set(
-            "relationshipTypes",
-            Array.from(selectedRelationships).join(","),
-          );
-        }
-
         const res = await fetch(`/api/v1/graph/subgraph?${params}`);
         if (!res.ok) throw new Error("Failed to fetch graph");
-        const data = await res.json();
-        setGraphData(data);
+        return (await res.json()) as SubgraphResponse;
       } catch (err) {
         console.error("Failed to fetch graph:", err);
-      } finally {
-        setLoading(false);
+        throw err;
       }
     },
-    [depth, selectedEntityTypes, selectedRelationships],
+  });
+  // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht die
+  // Anforderung auch in der Ableitung des Ladezustands.
+  const loading = request !== null && graphPending;
+
+  // [OP-249] Der Fehler stand bisher nur auf der Konsole: die Fläche zeigte
+  // den Leerzustand („keine Entitäten gefunden"), also genau das Bild eines
+  // leeren Graphen — der Abruf war aber fehlgeschlagen. Jetzt sagt es eine
+  // Meldung, und der Leerzustand unten nennt den Grund. Der Merker sorgt
+  // dafür, dass je Fehlschlag genau einmal gemeldet wird.
+  const reportedGraphError = useRef<unknown>(null);
+  useEffect(() => {
+    if (graphError && reportedGraphError.current !== graphError) {
+      reportedGraphError.current = graphError;
+      toast.error(t("explorer.loadError"));
+    }
+  }, [graphError, t]);
+
+  // Fetch subgraph — the name and signature stay for the callers; the
+  // request captures the sidebar filters as they are at this moment.
+  const fetchGraph = useCallback(
+    (entityId: string, entityType: string) => {
+      const next: GraphRequest = {
+        entityId,
+        entityType,
+        depth,
+        entityTypes: Array.from(selectedEntityTypes).sort(),
+        relationshipTypes: Array.from(selectedRelationships).sort(),
+      };
+      setExplicitRequest(next);
+      // Dieselbe Anforderung wie bisher (z. B. „Aktualisieren"): der Schlüssel
+      // ändert sich nicht, also ausdrücklich neu abrufen.
+      if (request && sameGraphRequest(request, next)) void refetchGraph();
+    },
+    [depth, selectedEntityTypes, selectedRelationships, request, refetchGraph],
   );
 
-  // Load initial graph from URL params
+  // [OP-245 · Gestalt A/E] Die Entitätssuche leerte ihre Treffer synchron im
+  // Effekt (`setSearchResults([])` unter zwei Zeichen) und rief sonst nach
+  // 300 ms ab. Der Effekt entprellt jetzt nur noch den Suchtext; der Abruf
+  // ist eine Abfrage mit dem entprellten Text im Schlüssel, und die Sichtbarkeit
+  // der Treffer folgt dem *aktuellen* Text, damit unter zwei Zeichen sofort
+  // nichts mehr angezeigt wird. `keepPreviousData` lässt wie vorher die alten
+  // Treffer stehen, bis die neuen da sind.
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   useEffect(() => {
-    if (startEntityId && startEntityType) {
-      fetchGraph(startEntityId, startEntityType);
-    }
-  }, [startEntityId, startEntityType, fetchGraph]);
-
-  // Search entities
-  useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const res = await fetch(
-          `/api/v1/graph/search?q=${encodeURIComponent(searchQuery)}&limit=10`,
-        );
-        if (res.ok) {
-          const { data } = await res.json();
-          setSearchResults(data);
-        }
-      } catch {
-        // ignore
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 300);
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  const { data: searchData = [] } = useQuery<EntitySearchResult[]>({
+    queryKey: ["graph", "search", debouncedSearchQuery],
+    enabled: debouncedSearchQuery.length >= 2,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/graph/search?q=${encodeURIComponent(debouncedSearchQuery)}&limit=10`,
+      );
+      if (!res.ok) return [];
+      const { data } = await res.json();
+      return data as EntitySearchResult[];
+    },
+  });
+  const searchResults = searchQuery.length >= 2 ? searchData : [];
 
   // Run impact analysis
   const runImpactAnalysis = useCallback(
@@ -775,7 +850,6 @@ export default function GraphExplorerPage() {
   const handleSearchSelect = useCallback(
     (result: EntitySearchResult) => {
       setSearchQuery("");
-      setSearchResults([]);
       fetchGraph(result.entityId, result.entityType);
     },
     [fetchGraph],
@@ -1030,7 +1104,9 @@ export default function GraphExplorerPage() {
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
               <Network className="h-16 w-16 mb-4 opacity-20" />
               <p className="text-lg font-medium">{t("explorer.title")}</p>
-              <p className="text-sm mt-1">{t("explorer.empty")}</p>
+              <p className="text-sm mt-1">
+                {graphError ? t("explorer.loadError") : t("explorer.empty")}
+              </p>
               <p className="text-xs mt-4">{t("filter.search")}</p>
             </div>
           ) : (
@@ -1095,6 +1171,9 @@ export default function GraphExplorerPage() {
           <div
             className="fixed inset-0 z-40"
             onClick={() => setContextMenu(null)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => activateOnKey(e, () => setContextMenu(null))}
           />
         )}
       </div>

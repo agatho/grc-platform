@@ -155,6 +155,8 @@ export const riskCatalogEntry = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    description: jsonb("description"),
+    title: jsonb("title"),
   },
   (table) => [
     unique("risk_catalog_entry_code_uniq").on(table.catalogId, table.code),
@@ -226,6 +228,9 @@ export const controlCatalogEntry = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    description: jsonb("description"),
+    implementation: jsonb("implementation"),
+    title: jsonb("title"),
   },
   (table) => [
     unique("control_catalog_entry_code_uniq").on(table.catalogId, table.code),

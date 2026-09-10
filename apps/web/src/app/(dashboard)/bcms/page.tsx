@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BcmsDashboard, CrisisScenario, BcExercise } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 export default function BcmsPage() {
   return (
@@ -32,87 +34,109 @@ export default function BcmsPage() {
   );
 }
 
+interface BcRiskStats {
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  total: number;
+  syncedToErm: number;
+}
+
+interface BcmsDashboardBundle {
+  dashboard: BcmsDashboard | null;
+  activeCrises: CrisisScenario[];
+  upcomingExercises: BcExercise[];
+  bcRiskStats: BcRiskStats | null;
+}
+
 function BcmsDashboardInner() {
   const t = useTranslations("bcms");
   const { formatDateTime } = useDateFormat();
   const router = useRouter();
-  const [data, setData] = useState<BcmsDashboard | null>(null);
-  const [activeCrises, setActiveCrises] = useState<CrisisScenario[]>([]);
-  const [upcomingExercises, setUpcomingExercises] = useState<BcExercise[]>([]);
-  const [bcRiskStats, setBcRiskStats] = useState<{
-    critical: number;
-    high: number;
-    medium: number;
-    low: number;
-    total: number;
-    syncedToErm: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Abrufe liefen immer
+  // zusammen und werden zusammen gelesen — daher eine Abfrage mit einem
+  // Objekt. Die Aktualisieren-Schaltfläche hängt an `isFetching`.
+  const {
+    data: bundle,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<BcmsDashboardBundle>({
+    queryKey: ["bcms", "dashboard"],
+    queryFn: async () => {
       const [dashRes, crisisRes, exRes] = await Promise.all([
         fetch("/api/v1/bcms/dashboard"),
         fetch("/api/v1/bcms/crisis?status=activated&limit=5"),
         fetch("/api/v1/bcms/exercises?status=planned&limit=5"),
       ]);
 
+      let dashboard: BcmsDashboard | null = null;
+      let activeCrises: CrisisScenario[] = [];
+      let upcomingExercises: BcExercise[] = [];
+      let bcRiskStats: BcRiskStats | null = null;
+
       if (dashRes.ok) {
         const json = await dashRes.json();
-        setData(json.data);
+        dashboard = json.data ?? null;
       }
       if (crisisRes.ok) {
         const json = await crisisRes.json();
-        setActiveCrises(json.data ?? []);
+        activeCrises = json.data ?? [];
       }
       if (exRes.ok) {
         const json = await exRes.json();
-        setUpcomingExercises(json.data ?? []);
+        upcomingExercises = json.data ?? [];
       }
 
       // Fetch BC risk stats
       try {
-        const riskRes = await fetch("/api/v1/bcms/crisis?limit=200");
-        if (riskRes.ok) {
-          const riskJson = await riskRes.json();
-          const scenarios = (riskJson.data ?? []) as Array<{
-            riskScore?: number | null;
-            ermRiskId?: string | null;
-          }>;
-          let critical = 0,
-            high = 0,
-            medium = 0,
-            low = 0,
-            syncedToErm = 0;
-          for (const s of scenarios) {
-            const score = s.riskScore ?? 0;
-            if (score >= 20) critical++;
-            else if (score >= 15) high++;
-            else if (score >= 9) medium++;
-            else if (score > 0) low++;
-            if (s.ermRiskId) syncedToErm++;
-          }
-          setBcRiskStats({
-            critical,
-            high,
-            medium,
-            low,
-            total: critical + high + medium + low,
-            syncedToErm,
-          });
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ alle vier
+        // Zähler standen auf 0. Eine BCMS-Kachel, die „0 kritische Szenarien"
+        // zeigt, ist eine Aussage über das Notfallmanagement, kein Ladefehler.
+        const scenarios = await fetchAllPages<{
+          riskScore?: number | null;
+          ermRiskId?: string | null;
+        }>("/api/v1/bcms/crisis");
+        let critical = 0,
+          high = 0,
+          medium = 0,
+          low = 0,
+          syncedToErm = 0;
+        for (const s of scenarios) {
+          const score = s.riskScore ?? 0;
+          if (score >= 20) critical++;
+          else if (score >= 15) high++;
+          else if (score >= 9) medium++;
+          else if (score > 0) low++;
+          if (s.ermRiskId) syncedToErm++;
         }
-      } catch {
-        // non-critical
+        bcRiskStats = {
+          critical,
+          high,
+          medium,
+          low,
+          total: critical + high + medium + low,
+          syncedToErm,
+        };
+      } catch (err) {
+        console.error("bcms: Krisenszenarien nicht geladen", err);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+      return { dashboard, activeCrises, upcomingExercises, bcRiskStats };
+    },
+  });
+  const data = bundle?.dashboard ?? null;
+  const activeCrises = bundle?.activeCrises ?? [];
+  const upcomingExercises = bundle?.upcomingExercises ?? [];
+  const bcRiskStats = bundle?.bcRiskStats ?? null;
+
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -136,9 +160,9 @@ function BcmsDashboardInner() {
           variant="outline"
           size="sm"
           onClick={fetchDashboard}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

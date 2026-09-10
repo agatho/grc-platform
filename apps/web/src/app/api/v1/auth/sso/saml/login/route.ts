@@ -2,9 +2,10 @@ import { db, ssoConfig } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { buildAuthnRequest, buildSamlRedirectUrl } from "@grc/auth/saml";
 import { getBaseUrl } from "@/lib/base-url";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/auth/sso/saml/login?orgId=... — SP-initiated SAML login
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const url = new URL(req.url);
   const orgId = url.searchParams.get("orgId");
 
@@ -57,4 +58,4 @@ export async function GET(req: Request) {
   );
 
   return Response.redirect(redirectUrl, 302);
-}
+});

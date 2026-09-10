@@ -5,6 +5,7 @@ import { db, ddSession } from "@grc/db";
 import { and, sql, inArray, eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 interface DdExpiryResult {
   processed: number;
   expired: number;
@@ -35,7 +36,7 @@ export const processDdExpiry = withCronInstrumentation(
       );
 
     if (overdueSessions.length === 0) {
-      console.log("[cron:dd-expiry] No expired DD sessions found");
+      log.info("[cron:dd-expiry] No expired DD sessions found");
       return { processed: 0, expired: 0 };
     }
 
@@ -51,15 +52,17 @@ export const processDdExpiry = withCronInstrumentation(
 
         expired++;
 
-        console.log(
-          `[cron:dd-expiry] Expired session ${session.id} (vendor: ${session.vendorId}, email: ${session.supplierEmail})`,
-        );
+        log.info("[cron:dd-expiry] Expired session", {
+          ddSessionId: session.id,
+          vendorId: session.vendorId,
+          supplierEmail: session.supplierEmail,
+        });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[cron:dd-expiry] Failed to expire session ${session.id}:`,
-          message,
-        );
+        log.error("[cron:dd-expiry] Failed to expire session", {
+          ddSessionId: session.id,
+          err: message,
+        });
       }
     }
 

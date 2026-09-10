@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
+import { useModalDialog } from "@/components/ui/modal-shell";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface ActiveCatalog {
   id: string;
@@ -83,6 +85,10 @@ export default function CatalogActivationPage() {
   const [allCatalogs, setAllCatalogs] = useState<AvailableCatalog[]>([]);
   const [loading, setLoading] = useState(true);
   const [showActivateDialog, setShowActivateDialog] = useState(false);
+  // [WP12 · S14-13] See components/ui/modal-shell.tsx.
+  const activateDialog = useModalDialog(showActivateDialog, () =>
+    setShowActivateDialog(false),
+  );
   const [moduleFilter, setModuleFilter] = useState("");
   const [searchFilter, setSearchFilter] = useState("");
   const [activateForm, setActivateForm] = useState({
@@ -93,16 +99,24 @@ export default function CatalogActivationPage() {
 
   useEffect(() => {
     if (!orgId) return;
+    // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ `allCatalogs`
+    // blieb leer, und die Seite bot „keine Kataloge zur Aktivierung" an,
+    // obwohl 29 Rahmenwerke geseedet sind. Ohne `catch` blieb ausserdem
+    // `loading` für immer true, sobald die erste Antwort kein JSON war.
     Promise.all([
       fetch(`/api/v1/organizations/${orgId}/active-catalogs`).then((r) =>
         r.json(),
       ),
-      fetch("/api/v1/catalogs?limit=200").then((r) => r.json()),
-    ]).then(([activeRes, catalogsRes]) => {
-      setActiveCatalogs(activeRes.data ?? []);
-      setAllCatalogs(catalogsRes.data ?? []);
-      setLoading(false);
-    });
+      fetchAllPages<AvailableCatalog>("/api/v1/catalogs"),
+    ])
+      .then(([activeRes, catalogs]) => {
+        setActiveCatalogs(activeRes.data ?? []);
+        setAllCatalogs(catalogs);
+      })
+      .catch((err) => {
+        console.error("settings/catalogs: Kataloge nicht geladen", err);
+      })
+      .finally(() => setLoading(false));
   }, [orgId]);
 
   const filteredCatalogs = useMemo(() => {
@@ -275,8 +289,12 @@ export default function CatalogActivationPage() {
       {/* Activate Dialog */}
       {showActivateDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-lg font-semibold">
+          {/* [WP12 · S14-13] See components/ui/modal-shell.tsx. */}
+          <div
+            {...activateDialog.dialogProps}
+            className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl focus:outline-none"
+          >
+            <h2 id={activateDialog.titleId} className="text-lg font-semibold">
               {t("enforcement.activateCatalog")}
             </h2>
             <div className="mt-4 space-y-4">

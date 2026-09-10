@@ -30,6 +30,10 @@ import {
   type StepRaciAssignment,
   type RaciOverrideEntry,
 } from "@/lib/process-portal-roles";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 interface ProcessRow {
   id: string;
@@ -69,7 +73,7 @@ export interface MyProcessListItem extends ProcessRow {
   } | null;
 }
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
@@ -272,4 +276,4 @@ export async function GET(req: Request) {
     .filter((item) => item.myRoles.length > 0 || item.acknowledgment !== null);
 
   return Response.json({ data: items });
-}
+});

@@ -141,6 +141,35 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Betrieb — was ein Upgrade auf diesen Stand bricht (2026-09-05)
+
+- **BREAKING (Betrieb):** **Ausgehendes Klartext-HTTP wird abgelehnt.**
+  `checkOutboundUrl` (`packages/shared/src/url-safety.ts:324`) laesst
+  `http://` nur noch mit `WEBHOOK_ALLOW_HTTP=1` durch. Betroffen sind
+  **alle** ausgehenden Aufrufe, nicht nur Webhooks — insbesondere
+  Threat-Feeds. Eine Installation, die einen Feed oder ein Webhook-Ziel
+  ueber `http://` bezieht, verliert diese Verbindung beim Upgrade; im Log
+  steht eine Ablehnung, in der Oberflaeche nichts. Vor dem Rollout pruefen:
+
+  ```sql
+  SELECT 'webhook' AS art, id, url     FROM webhook_registration WHERE url      LIKE 'http://%'
+  UNION ALL
+  SELECT 'feed',          id, feed_url FROM threat_feed_source   WHERE feed_url LIKE 'http://%';
+  ```
+
+  Wo ein `https://`-Ziel existiert: URL aendern. Wo nicht:
+  `WEBHOOK_ALLOW_HTTP=1` in `.env`, mit Datum und Grund daneben.
+  SSO/SAML/OIDC lehnen Klartext ausnahmslos ab — dort wirkt die Variable
+  nicht. Grenzen und Begruendung: `docs/security/schutzgrenzen.md` §3.
+  (Audit ARCTOS-FULL-2026-08-31 / WP5 · OP-117)
+
+- **Klarstellung, keine Aenderung:** Die Magic-Bytes-Pruefung an Uploads ist
+  eine **Format**pruefung, keine Inhaltspruefung, und ClamAV ist
+  standardmaessig **fail-open** — ohne `CLAMAV_HOST` wird gar nicht
+  gescannt. Wer die Zusage „Uploads werden auf Schadsoftware geprueft"
+  braucht, setzt `CLAMAV_HOST` **und** `CLAMAV_FAIL_CLOSED=1`.
+  `docs/security/schutzgrenzen.md` §1. (OP-115)
+
 ### Next-16-Migration (2026-07-23)
 
 - **BREAKING (Betrieb/Build):** `apps/web` von Next.js 15.5.18 auf

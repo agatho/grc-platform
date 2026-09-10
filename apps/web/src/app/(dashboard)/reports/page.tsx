@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,7 +16,6 @@ import {
   Filter,
   CheckCircle,
   XCircle,
-  AlertCircle,
   FileSpreadsheet,
 } from "lucide-react";
 
@@ -266,11 +266,8 @@ function StandardReportsSection() {
 export default function ReportCenterPage() {
   const { formatDateTime } = useDateFormat();
   const t = useTranslations("reporting");
-  const router = useRouter();
+  const _router = useRouter();
 
-  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
-  const [history, setHistory] = useState<ReportGenerationLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [scopeFilter, setScopeFilter] = useState<string>("all");
 
@@ -282,31 +279,46 @@ export default function ReportCenterPage() {
   const [generating, setGenerating] = useState(false);
   const [activeJob, setActiveJob] = useState<GenerationJob | null>(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Vorlagen und Verlauf wurden bei
+  // jeder Filter-/Suchänderung zusammen neu geladen — daher eine Abfrage mit
+  // einem Objekt und beiden Eingaben im Schlüssel.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    templates: ReportTemplate[];
+    history: ReportGenerationLog[];
+  }>({
+    queryKey: ["reports", "center", scopeFilter, search],
+    queryFn: async () => {
       const [templatesRes, historyRes] = await Promise.all([
         fetch(
           `/api/v1/reports/templates?limit=100&moduleScope=${scopeFilter !== "all" ? scopeFilter : ""}&search=${search}`,
         ),
         fetch("/api/v1/reports/history?limit=20"),
       ]);
+      let templates: ReportTemplate[] = [];
+      let history: ReportGenerationLog[] = [];
       if (templatesRes.ok) {
-        const data = await templatesRes.json();
-        setTemplates(data.data || []);
+        const json = await templatesRes.json();
+        templates = json.data || [];
       }
       if (historyRes.ok) {
-        const data = await historyRes.json();
-        setHistory(data.data || []);
+        const json = await historyRes.json();
+        history = json.data || [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, scopeFilter]);
+      return { templates, history };
+    },
+  });
+  const templates = data?.templates ?? [];
+  const history = data?.history ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Poll active job status
   useEffect(() => {

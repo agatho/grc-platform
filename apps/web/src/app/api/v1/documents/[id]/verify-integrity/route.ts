@@ -1,14 +1,19 @@
-import { db, document, auditLog } from "@grc/db";
+import { db, document } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { getFileStorage } from "@grc/shared/lib/file-storage";
+import { getFileStorage, orgScopedStorage } from "@grc/shared/lib/file-storage";
 import { createHash } from "crypto";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/documents/:id/verify-integrity — Recompute the SHA-256
 // of the stored file and compare it with the hash captured at upload
 // time (D3). The verification result is written to the audit log.
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -55,7 +60,9 @@ export async function GET(
   let actual: string | null = null;
   let fileMissing = false;
   try {
-    const buffer = await getFileStorage().get(doc.filePath);
+    const buffer = await orgScopedStorage(getFileStorage(), ctx.orgId).get(
+      doc.filePath,
+    );
     actual = createHash("sha256").update(buffer).digest("hex");
   } catch {
     fileMissing = true;
@@ -65,7 +72,10 @@ export async function GET(
 
   // Audit trail: integrity verifications are compliance-relevant events
   await withAuditContext(ctx, async (tx) => {
-    await tx.insert(auditLog).values({
+    // S03-05: chained by the BEFORE INSERT trigger on audit_log
+    // (migration 0401). Before that, integrity-verification events were
+    // themselves written outside the integrity chain.
+    await writeAuditEntry(tx, {
       orgId: ctx.orgId,
       userId: ctx.userId,
       userEmail: ctx.session.user.email,
@@ -99,4 +109,4 @@ export async function GET(
       checkedAt: new Date().toISOString(),
     },
   });
-}
+});

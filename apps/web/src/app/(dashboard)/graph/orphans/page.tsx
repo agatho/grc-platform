@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -12,7 +13,6 @@ import {
   CheckCircle2,
   Network,
   Shield,
-  Bug,
   Cpu,
   Workflow,
 } from "lucide-react";
@@ -28,7 +28,7 @@ function OrphanSection({
   title,
   icon: Icon,
   orphans,
-  emptyMessage,
+  emptyMessage: _emptyMessage,
 }: {
   title: string;
   icon: React.ElementType;
@@ -112,27 +112,32 @@ function OrphanSection({
 export default function OrphanDetectionPage() {
   const t = useTranslations("graph");
 
-  const [orphans, setOrphans] = useState<OrphansResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort und ein
+  // Netzfehler liefern wie vorher `null`; der Netzfehler wird wie vorher
+  // protokolliert.
+  const {
+    data: orphans = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<OrphansResponse | null>({
+    queryKey: ["graph", "orphans"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/graph/orphans");
+        if (!res.ok) return null;
+        return (await res.json()) as OrphansResponse;
+      } catch (err) {
+        console.error("Failed to fetch orphans:", err);
+        return null;
+      }
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/graph/orphans");
-      if (res.ok) {
-        const data = await res.json();
-        setOrphans(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch orphans:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const totalOrphans = orphans
     ? orphans.risksWithoutControls.length +

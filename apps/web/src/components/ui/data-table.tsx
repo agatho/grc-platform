@@ -1,18 +1,26 @@
 "use client";
 
+// [OP-234] @tanstack/react-table 9 rewrote the API around a store and
+// composable features. Its `legacy` entry keeps the v8 shape (`useLegacyTable`,
+// `LegacyColumnDef`, the `get*RowModel` factories); the state types moved
+// to the main entry under their v9 names.
 import {
-  type ColumnDef,
   type ColumnFiltersState,
+  type ColumnVisibilityState as VisibilityState,
+  type RowData,
   type SortingState,
-  type VisibilityState,
   flexRender,
+} from "@tanstack/react-table";
+import {
+  type LegacyColumnDef as ColumnDef,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+  useLegacyTable,
+} from "@tanstack/react-table/legacy";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
@@ -22,30 +30,49 @@ import {
   TableHeader,
   TableRow,
 } from "./table";
-import { cn } from "@grc/ui";
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<TData, unknown>[];
   data: TData[];
   searchKey?: string;
   searchPlaceholder?: string;
   pageSize?: number;
   toolbar?: React.ReactNode;
+  /**
+   * [E2E-TRIAGE-2026-09-02 · C-13] Accessible names for the icon-only
+   * pagination buttons.
+   *
+   * [ARCTOS-FULL-2026-08-31 · OP-070] Sie sind jetzt optional im Wortsinn:
+   * fehlt der Wert, kommt er aus dem Katalog (`table.previousPage` /
+   * `table.nextPage`) statt aus einer englischen Vorgabe im Code. Dasselbe
+   * gilt fuer `searchPlaceholder`.
+   */
+  previousPageLabel?: string;
+  nextPageLabel?: string;
 }
 
-export function DataTable<TData, TValue>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   searchKey,
-  searchPlaceholder = "Filter...",
+  searchPlaceholder,
   pageSize = 10,
   toolbar,
-}: DataTableProps<TData, TValue>) {
+  previousPageLabel,
+  nextPageLabel,
+}: DataTableProps<TData>) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Der Rahmen dieser Tabelle war fest auf
+  // ENGLISCH verdrahtet — „No results.", „row(s)", „Page x of y",
+  // „Filter..." — in einem Produkt, dessen Vorgabesprache Deutsch ist. Der
+  // Fehler lief also in beide Richtungen: der englische Nutzer sah Deutsch,
+  // der deutsche sah hier Englisch. 27 Dateien binden diese Komponente ein,
+  // die Korrektur steht deshalb einmal hier statt 27-mal an den Aufrufstellen.
+  const t = useTranslations("table");
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const table = useReactTable({
+  const table = useLegacyTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -56,7 +83,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     state: { sorting, columnFilters, columnVisibility },
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
   return (
@@ -65,7 +92,7 @@ export function DataTable<TData, TValue>({
       <div className="flex items-center justify-between gap-4">
         {searchKey && (
           <input
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t("filterPlaceholder")}
             value={
               (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
             }
@@ -117,7 +144,7 @@ export function DataTable<TData, TValue>({
                   colSpan={columns.length}
                   className="h-24 text-center text-gray-500"
                 >
-                  No results.
+                  {t("noResults")}
                 </TableCell>
               </TableRow>
             )}
@@ -127,25 +154,44 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>{table.getFilteredRowModel().rows.length} row(s)</span>
+        <span>
+          {t("rowCount", {
+            count: String(table.getFilteredRowModel().rows.length),
+          })}
+        </span>
         <div className="flex items-center gap-2">
           <span>
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
+            {t("pageOf", {
+              page: String(table.getState().pagination.pageIndex + 1),
+              total: String(table.getPageCount()),
+            })}
           </span>
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] These two carry an icon and
+              nothing else, so their accessible name was empty and axe reports
+              `button-name` with impact CRITICAL — a screen-reader user hears
+              "button, button" and has no way to page a table. Every list view
+              in the product uses this component, so the finding is one line
+              here rather than N in the pages. `aria-hidden` on the glyph stops
+              the icon font from being announced alongside the label. */}
           <button
+            type="button"
+            aria-label={previousPageLabel ?? t("previousPage")}
+            title={previousPageLabel ?? t("previousPage")}
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button
+            type="button"
+            aria-label={nextPageLabel ?? t("nextPage")}
+            title={nextPageLabel ?? t("nextPage")}
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

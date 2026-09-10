@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Download, Maximize2, RotateCcw } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { ThreeLayerDiagram } from "@grc/shared";
 
 export default function ArchitectureDiagramPage() {
@@ -21,30 +21,26 @@ export default function ArchitectureDiagramPage() {
 
 function DiagramInner() {
   const t = useTranslations("eam");
-  const [diagram, setDiagram] = useState<ThreeLayerDiagram | null>(null);
-  const [loading, setLoading] = useState(true);
   const [layerFilters, setLayerFilters] = useState({
     business: true,
     application: true,
     technology: true,
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/eam/diagram");
-      if (res.ok) {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null`.
+  const { data: diagram = null, isPending: loading } =
+    useQuery<ThreeLayerDiagram | null>({
+      queryKey: ["eam", "diagram"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/eam/diagram");
+        if (!res.ok) return null;
         const json = await res.json();
-        setDiagram(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+        return (json.data ?? null) as ThreeLayerDiagram | null;
+      },
+    });
 
   if (loading || !diagram) {
     return (

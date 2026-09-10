@@ -10,6 +10,17 @@ import {
   type CrossModuleFinding,
 } from "../src/state-machines/cross-findings";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("severity normalizers", () => {
   it("ICS significant_nonconformity => high", () => {
     expect(normalizeIcsFindingSeverity("significant_nonconformity")).toBe(
@@ -145,8 +156,8 @@ describe("prioritizeFindings", () => {
       mk({ id: "e", severity: "critical" }),
     ];
     const r = prioritizeFindings(findings, now);
-    expect(r[0].id).toBe("e");
-    expect(r[4].id).toBe("a");
+    expect(at(r, 0).id).toBe("e");
+    expect(at(r, 4).id).toBe("a");
   });
 
   it("overdue boost elevates same severity above non-overdue", () => {
@@ -156,8 +167,8 @@ describe("prioritizeFindings", () => {
       mk({ id: "b", severity: "medium", dueDate: null }),
     ];
     const r = prioritizeFindings(findings, now);
-    expect(r[0].id).toBe("a");
-    expect(r[0].isOverdue).toBe(true);
+    expect(at(r, 0).id).toBe("a");
+    expect(at(r, 0).isOverdue).toBe(true);
   });
 
   it("> 30d overdue gets highest boost", () => {
@@ -168,7 +179,7 @@ describe("prioritizeFindings", () => {
       mk({ id: "b", severity: "medium", dueDate: longOverdue }),
     ];
     const r = prioritizeFindings(findings, now);
-    expect(r[0].id).toBe("b");
+    expect(at(r, 0).id).toBe("b");
   });
 
   it("age boost capped at +0.5", () => {
@@ -179,7 +190,7 @@ describe("prioritizeFindings", () => {
       identifiedAt: veryOld,
       dueDate: null,
     });
-    const [scored] = prioritizeFindings([f], now);
+    const scored = at(prioritizeFindings([f], now), 0);
     // severity=high (70) * (1 + 0.5) = 105 max without overdue
     expect(scored.priorityScore).toBeLessThanOrEqual(105);
     expect(scored.priorityScore).toBeGreaterThanOrEqual(100);
@@ -195,7 +206,7 @@ describe("prioritizeFindings", () => {
       identifiedAt: veryOld,
       dueDate: longOverdue,
     });
-    const [scored] = prioritizeFindings([f], now);
+    const scored = at(prioritizeFindings([f], now), 0);
     // 100 * 1.5 * 2.0 = 300
     expect(scored.priorityScore).toBe(300);
   });

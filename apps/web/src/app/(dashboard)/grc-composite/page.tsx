@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import {
   Loader2,
@@ -105,30 +106,34 @@ function scoreBar(score: number, status: HealthStatus) {
 }
 
 export default function GrcCompositeDashboardPage() {
-  const [data, setData] = useState<ExecutiveDashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/error/data state (pattern from wave
+  // 7b, `catalogs/objects/page.tsx`).
+  const {
+    data = null,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<ExecutiveDashboardResponse | null>({
+    queryKey: ["cross", "executive-dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/cross/executive-dashboard");
       if (!res.ok) {
         throw new Error(`API returned ${res.status}`);
       }
       const json = await res.json();
-      setData(json.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler beim Laden");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? null) as ExecutiveDashboardResponse | null;
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Fehler beim Laden"
+    : null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (

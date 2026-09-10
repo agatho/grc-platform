@@ -133,42 +133,19 @@ export const riskVarCalculation = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
-// 79.3 RiskAppetiteThreshold — Appetite vs Actual tracking
+// 79.3 RiskAppetiteThreshold — entfernt (S09-08)
 // ──────────────────────────────────────────────────────────────
-
-export const rqRiskAppetiteThreshold = pgTable(
-  "risk_appetite_threshold",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .notNull()
-      .references(() => organization.id),
-    name: varchar("name", { length: 300 }).notNull(),
-    category: varchar("category", { length: 100 }),
-    appetiteAmount: numeric("appetite_amount", {
-      precision: 15,
-      scale: 2,
-    }).notNull(),
-    toleranceAmount: numeric("tolerance_amount", { precision: 15, scale: 2 }),
-    currentExposure: numeric("current_exposure", { precision: 15, scale: 2 }),
-    status: rqAppetiteStatusEnum("status").notNull().default("within_appetite"),
-    lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }),
-    alertEnabled: boolean("alert_enabled").notNull().default(true),
-    trendData: jsonb("trend_data")
-      .notNull()
-      .default(sql`'[]'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => [
-    index("rat_org_idx").on(t.orgId),
-    index("rat_status_idx").on(t.orgId, t.status),
-  ],
-);
+// [ARCTOS-FULL-2026-08-31 / WP1 · S09-08] Die zweite pgTable-Definition für
+// die SQL-Tabelle `risk_appetite_threshold` ist hier entfernt. `rqRiskAppetiteThreshold` und
+// `riskAppetiteThreshold` (in ./board-kpi.ts) deklarierten dieselbe Tabelle mit
+// DISJUNKTEN Spaltenmengen und kollidierenden Indexnamen. Die Datenbank trägt
+// die Gestalt von `riskAppetiteThreshold`:
+//   id, org_id, risk_category, max_residual_score, max_residual_ale,
+//   escalation_role, is_active, created_by/at, updated_by/at, deleted_by/at
+// Ein Import der hier entfernten Definition hätte zur Laufzeit
+// `column … does not exist` erzeugt; der Schema-Drift-Endpunkt zählte beide
+// als „vorhanden". Wird die zweite Gestalt fachlich gebraucht, gehört sie in
+// eine eigene Tabelle mit eigenem Namen und eigener Migration.
 
 // ──────────────────────────────────────────────────────────────
 // 79.4 RiskSensitivityAnalysis — Tornado / what-if analysis

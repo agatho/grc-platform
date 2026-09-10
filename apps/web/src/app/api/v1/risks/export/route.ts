@@ -1,4 +1,12 @@
-import { db, risk, workItem, user, dataExportLog } from "@grc/db";
+import {
+  db,
+  risk,
+  workItem,
+  user,
+  dataExportLog,
+  riskStatusEnum,
+  riskCategoryEnum,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   eq,
@@ -10,15 +18,66 @@ import {
   gte,
   lte,
   or,
-  sql,
 } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
+import { toCsvRow } from "@/lib/import-export/csv-sanitizer";
+import { z } from "zod";
+import {
+  parseQueryParams,
+  searchQueryParam,
+  uuidQueryParam,
+  booleanQueryParam,
+  intQueryParam,
+} from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 const MAX_EXPORT_ROWS = 5000;
 
 // GET /api/v1/risks/export?format=csv|json
-export async function GET(req: Request) {
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const riskExportQuerySchema = z.object({
+  format: z.enum(["csv", "json"]).optional().default("csv"),
+  // Comma-separated enum lists — previously `split(",") as Array<...>`,
+  // i.e. an unchecked cast straight into inArray().
+  status: z
+    .string()
+    .transform((v) =>
+      v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.enum(riskStatusEnum.enumValues)).min(1).max(20))
+    .optional(),
+  category: z
+    .string()
+    .transform((v) =>
+      v
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    )
+    .pipe(z.array(z.enum(riskCategoryEnum.enumValues)).min(1).max(20))
+    .optional(),
+  ownerId: uuidQueryParam,
+  department: z.string().trim().min(1).max(200).optional(),
+  appetiteExceeded: booleanQueryParam,
+  // Were `Number(...)` — "abc" became NaN and reached the query builder.
+  scoreMin: intQueryParam(0, 100),
+  scoreMax: intQueryParam(0, 100),
+  search: searchQueryParam,
+});
+
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -26,70 +85,40 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const format = url.searchParams.get("format") || "csv";
-
-  if (format !== "csv" && format !== "json") {
+  const q = parseQueryParams(riskExportQuerySchema, url.searchParams);
+  if (!q.ok)
     return Response.json(
-      { error: "Invalid format. Supported: csv, json" },
-      { status: 400 },
+      { error: q.message, details: q.details },
+      { status: 422 },
     );
-  }
+  const format = q.data.format;
 
   // Build filter conditions (same as risk list endpoint)
   const conditions: SQL[] = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
-  const statusParam = url.searchParams.get("status");
-  if (statusParam) {
-    const statuses = statusParam.split(",") as Array<
-      "identified" | "assessed" | "treated" | "accepted" | "closed"
-    >;
-    conditions.push(inArray(risk.status, statuses));
+  if (q.data.status) {
+    conditions.push(inArray(risk.status, q.data.status));
   }
-
-  const categoryParam = url.searchParams.get("category");
-  if (categoryParam) {
-    const categories = categoryParam.split(",") as Array<
-      | "strategic"
-      | "operational"
-      | "financial"
-      | "compliance"
-      | "cyber"
-      | "reputational"
-      | "esg"
-    >;
-    conditions.push(inArray(risk.riskCategory, categories));
+  if (q.data.category) {
+    conditions.push(inArray(risk.riskCategory, q.data.category));
   }
-
-  const ownerId = url.searchParams.get("ownerId");
-  if (ownerId) {
-    conditions.push(eq(risk.ownerId, ownerId));
+  if (q.data.ownerId) {
+    conditions.push(eq(risk.ownerId, q.data.ownerId));
   }
-
-  const department = url.searchParams.get("department");
-  if (department) {
-    conditions.push(eq(risk.department, department));
+  if (q.data.department) {
+    conditions.push(eq(risk.department, q.data.department));
   }
-
-  const appetiteExceeded = url.searchParams.get("appetiteExceeded");
-  if (appetiteExceeded === "true") {
-    conditions.push(eq(risk.riskAppetiteExceeded, true));
-  } else if (appetiteExceeded === "false") {
-    conditions.push(eq(risk.riskAppetiteExceeded, false));
+  if (q.data.appetiteExceeded !== undefined) {
+    conditions.push(eq(risk.riskAppetiteExceeded, q.data.appetiteExceeded));
   }
-
-  const scoreMin = url.searchParams.get("scoreMin");
-  if (scoreMin) {
-    conditions.push(gte(risk.riskScoreResidual, Number(scoreMin)));
+  if (q.data.scoreMin !== undefined) {
+    conditions.push(gte(risk.riskScoreResidual, q.data.scoreMin));
   }
-
-  const scoreMax = url.searchParams.get("scoreMax");
-  if (scoreMax) {
-    conditions.push(lte(risk.riskScoreResidual, Number(scoreMax)));
+  if (q.data.scoreMax !== undefined) {
+    conditions.push(lte(risk.riskScoreResidual, q.data.scoreMax));
   }
-
-  const search = url.searchParams.get("search");
-  if (search) {
-    const pattern = `%${search}%`;
+  if (q.data.search) {
+    const pattern = `%${q.data.search}%`;
     conditions.push(
       or(ilike(risk.title, pattern), ilike(risk.description, pattern))!,
     );
@@ -151,10 +180,7 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     // Log failure should not block the export
-    console.error(
-      "[risks/export] Failed to log export:",
-      err instanceof Error ? err.message : String(err),
-    );
+    log.error("[risks/export] export audit log write failed", { err });
   }
 
   if (format === "json") {
@@ -181,14 +207,17 @@ export async function GET(req: Request) {
     "Created At",
   ];
 
+  // #S04-05: risk titles, owner names and departments are free text and were
+  // only RFC-4180-quoted, so `=cmd|'/C calc'!A1` in a risk title executed on
+  // the auditor's machine. Central helper neutralizes the formula triggers.
   const csvRows = rows.map((row) =>
-    [
-      escapeCsvField(row.elementId ?? ""),
-      escapeCsvField(row.title),
+    toCsvRow([
+      row.elementId ?? "",
+      row.title,
       row.riskCategory,
       row.status,
-      escapeCsvField(row.ownerName ?? ""),
-      escapeCsvField(row.department ?? ""),
+      row.ownerName ?? "",
+      row.department ?? "",
       row.inherentLikelihood ?? "",
       row.inherentImpact ?? "",
       row.riskScoreInherent ?? "",
@@ -199,10 +228,10 @@ export async function GET(req: Request) {
       row.riskAppetiteExceeded ? "Yes" : "No",
       row.reviewDate ?? "",
       row.createdAt ? new Date(row.createdAt).toISOString() : "",
-    ].join(","),
+    ]),
   );
 
-  const csv = [csvHeader.join(","), ...csvRows].join("\n");
+  const csv = [toCsvRow(csvHeader), ...csvRows].join("\n");
 
   return new Response(csv, {
     status: 200,
@@ -211,12 +240,4 @@ export async function GET(req: Request) {
       "Content-Disposition": `attachment; filename="${fileName}"`,
     },
   });
-}
-
-/** Escape a field for CSV (wrap in quotes if it contains commas, quotes, or newlines). */
-function escapeCsvField(field: string): string {
-  if (field.includes(",") || field.includes('"') || field.includes("\n")) {
-    return `"${field.replace(/"/g, '""')}"`;
-  }
-  return field;
-}
+});

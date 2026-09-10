@@ -1,14 +1,8 @@
 // Sprint 61: Worker — Generate monthly invoices for active subscriptions
-import {
-  db,
-  orgSubscription,
-  subscriptionPlan,
-  billingInvoice,
-  usageRecord,
-  usageMeter,
-} from "@grc/db";
-import { eq, and, sql, gte, lte } from "drizzle-orm";
+import { db, orgSubscription, subscriptionPlan, billingInvoice } from "@grc/db";
+import { eq, and, lte } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 function generateInvoiceNumber(): string {
   const now = new Date();
@@ -94,8 +88,15 @@ export const generateInvoices = withCronInstrumentation(
             updatedAt: new Date(),
           })
           .where(eq(orgSubscription.id, subscription.id));
-      } catch {
-        // Wrapper logs structured error; loop continues to next subscription.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "invoice-generation",
+            scope: "Advance the subscription period",
+          },
+          err,
+        );
       }
     }
   },

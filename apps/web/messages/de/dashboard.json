@@ -10,11 +10,19 @@
     "recentChanges": "Letzte Änderungen",
     "notifications": "Benachrichtigungen",
     "myTasks": "Meine Aufgaben",
-    "upcomingAudits": "Anstehende Audits"
+    "upcomingAudits": "Anstehende Audits",
+    "complianceScoreEmpty": "Noch keine Risiken erfasst",
+    "complianceScoreFormula": "Anteil der Risiken mit Status geschlossen oder akzeptiert an allen erfassten Risiken"
   },
   "risk": {
     "appetite": {
       "exceeded": "über Risikoappetit"
+    },
+    "detail": {
+      "statuses": {
+        "closed": "geschlossen",
+        "accepted": "akzeptiert"
+      }
     }
   },
   "subtitle": "Erstellen und verwalten Sie Ihre individuellen GRC-Dashboards",
@@ -106,5 +114,19 @@
     "created": "Dashboard erstellt",
     "updated": "Dashboard aktualisiert",
     "deleted": "Dashboard gelöscht"
+  },
+  "widgetsLabel": "Widgets",
+  "widget": {
+    "retry": "Erneut versuchen",
+    "configure": "Konfigurieren",
+    "remove": "Entfernen",
+    "moduleUnavailable": "Modul nicht verfügbar",
+    "dataUnavailable": "Daten nicht verfügbar",
+    "today": "Heute",
+    "overdueDays": "{days} T überfällig",
+    "inDays": "{days} T",
+    "yes": "Ja",
+    "no": "Nein",
+    "noUpcomingDeadlines": "Keine anstehenden Termine"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -33,9 +34,7 @@ export default function PlansPage() {
 
 function PlansInner() {
   const t = useTranslations("auditMgmt");
-  const router = useRouter();
-  const [plans, setPlans] = useState<AuditPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  const _router = useRouter();
   const [yearFilter, setYearFilter] = useState(
     String(new Date().getFullYear()),
   );
@@ -51,26 +50,32 @@ function PlansInner() {
     }>
   >([]);
 
-  const fetchPlans = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Jahresfilter steht im
+  // Schlüssel.
+  const {
+    data: plans = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<AuditPlan[]>({
+    queryKey: ["audit", "plans", "list", yearFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (yearFilter) params.set("year", yearFilter);
       params.set("limit", "50");
 
       const res = await fetch(`/api/v1/audit-mgmt/plans?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setPlans(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [yearFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditPlan[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchPlans();
-  }, [fetchPlans]);
+  const fetchPlans = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async (formData: FormData) => {
     const body = {
@@ -158,9 +163,12 @@ function PlansInner() {
             variant="outline"
             size="sm"
             onClick={fetchPlans}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>

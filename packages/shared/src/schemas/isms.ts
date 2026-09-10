@@ -147,13 +147,6 @@ export const createIncidentTimelineEntrySchema = z.object({
 
 // Sprint 5b: ISMS Assessment schemas
 
-const assessmentStatusValues = [
-  "planning",
-  "in_progress",
-  "review",
-  "completed",
-  "cancelled",
-] as const;
 const assessmentScopeTypeValues = [
   "full",
   "department",

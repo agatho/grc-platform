@@ -5,7 +5,8 @@
 // risk/control counts. Prominent acknowledgment banner when the user
 // still has to confirm the published version.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,7 +26,10 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BpmnViewer } from "@/components/bpmn/bpmn-viewer";
+// [ARCTOS-FULL-2026-08-31 · OP-026] Statt `BpmnViewer`: dieselbe Fläche mit
+// GRC-Sichtwahl. Die Wahl steht auf „aus"; erst wenn jemand eine Sicht
+// einschaltet, wird der Overlay-Endpunkt befragt.
+import { BpmnGrcViewer } from "@/components/bpmn/bpmn-viewer";
 import { useDateFormat } from "@/lib/format-date";
 import type { MyProcessRole } from "@/lib/process-portal-roles";
 
@@ -77,30 +81,30 @@ export default function MyProcessDetailPage() {
   const params = useParams();
   const processId = params.id as string;
 
-  const [detail, setDetail] = useState<MyProcessDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // `null`; das ist dieselbe „nicht gefunden"-Ansicht, die vorher ueber ein
+  // eigenes `notFound`-Flag erreicht wurde (beide Zweige rendern gleich).
+  const {
+    data: detail = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<MyProcessDetail | null>({
+    queryKey: ["bpm", "my-processes", processId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/bpm/my-processes/${processId}`);
-      if (res.ok) {
-        const json = await res.json();
-        setDetail(json.data ?? null);
-        setNotFound(false);
-      } else {
-        setNotFound(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as MyProcessDetail | null;
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleAcknowledge = async () => {
     setAcknowledging(true);
@@ -126,7 +130,7 @@ export default function MyProcessDetailPage() {
     );
   }
 
-  if (notFound || !detail) {
+  if (!detail) {
     return (
       <ModuleGate moduleKey="bpm">
         <div className="text-center py-12 space-y-4">
@@ -286,7 +290,11 @@ export default function MyProcessDetailPage() {
           </CardHeader>
           <CardContent>
             {detail.bpmnXml ? (
-              <BpmnViewer xml={detail.bpmnXml} minHeight={420} />
+              <BpmnGrcViewer
+                xml={detail.bpmnXml}
+                processId={detail.id}
+                minHeight={420}
+              />
             ) : (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {t("noDiagram")}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Bell, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -45,40 +46,78 @@ const DEFAULT_PREFS: NotificationPreferences = {
 // Component
 // ---------------------------------------------------------------------------
 
+// [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+// statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster aus
+// Welle 7b, `catalogs/objects/page.tsx`). Wie in `processes/[id]/ropa` ist
+// der Serverstand die SAAT des Formulars: das Formular wandert in ein eigenes
+// Bauteil, das mit den geladenen Einstellungen EINGEHÄNGT wird — ohne Effekt.
 export default function NotificationSettingsPage() {
+  const t = useTranslations("settings.notifications");
+
+  const { data, isPending, isFetching, isError, refetch } =
+    useQuery<NotificationPreferences>({
+      queryKey: ["users", "me", "notification-preferences"],
+      queryFn: async () => {
+        const res = await fetch("/api/v1/users/me/notification-preferences");
+        if (!res.ok) throw new Error("Failed");
+        const json = await res.json();
+        const body = json.data ?? json;
+        return {
+          emailMode: body.emailMode ?? "immediate",
+          digestTime: body.digestTime ?? "07:00",
+          quietHoursStart: body.quietHoursStart ?? null,
+          quietHoursEnd: body.quietHoursEnd ?? null,
+        };
+      },
+    });
+
+  const fetchPrefs = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  // Beim erneuten Versuch nach einem Fehler zeigte die Seite vorher den
+  // Ladekreis (Fehler wurde vor dem Abruf geleert); `isFetching` deckt das ab.
+  if (isPending || (isError && isFetching)) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+          <Bell size={32} className="mb-2" />
+          <p className="text-sm">{t("loadError")}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={fetchPrefs}
+          >
+            {t("retry")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <NotificationSettingsForm initial={data ?? DEFAULT_PREFS} />;
+}
+
+function NotificationSettingsForm({
+  initial,
+}: {
+  initial: NotificationPreferences;
+}) {
   const t = useTranslations("settings.notifications");
   const tActions = useTranslations("actions");
 
-  const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_PREFS);
-  const [loading, setLoading] = useState(true);
+  const [prefs, setPrefs] = useState<NotificationPreferences>(initial);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(false);
-
-  // Fetch preferences
-  const fetchPrefs = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
-      const res = await fetch("/api/v1/users/me/notification-preferences");
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      const data = json.data ?? json;
-      setPrefs({
-        emailMode: data.emailMode ?? "immediate",
-        digestTime: data.digestTime ?? "07:00",
-        quietHoursStart: data.quietHoursStart ?? null,
-        quietHoursEnd: data.quietHoursEnd ?? null,
-      });
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchPrefs();
-  }, [fetchPrefs]);
 
   // Save preferences
   const handleSave = async () => {
@@ -102,34 +141,6 @@ export default function NotificationSettingsPage() {
       setSaving(false);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 size={24} className="animate-spin text-gray-400" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-          <Bell size={32} className="mb-2" />
-          <p className="text-sm">{t("loadError")}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={fetchPrefs}
-          >
-            {t("retry")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6 max-w-2xl">

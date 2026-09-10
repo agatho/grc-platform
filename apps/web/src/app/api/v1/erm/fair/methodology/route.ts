@@ -4,9 +4,13 @@ import { updateRiskMethodologySchema } from "@grc/shared";
 import { eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/erm/fair/methodology — Get current risk methodology for org
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -26,10 +30,9 @@ export async function GET(req: Request) {
   const methodology = settings.riskMethodology ?? "qualitative";
 
   return Response.json({ data: { riskMethodology: methodology } });
-}
-
+});
 // PUT /api/v1/erm/fair/methodology — Update risk methodology setting
-export async function PUT(req: Request) {
+export const PUT = withErrorHandler(async function PUT(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -45,7 +48,7 @@ export async function PUT(req: Request) {
     );
   }
 
-  const result = await withAuditContext(ctx, async (tx) => {
+  await withAuditContext(ctx, async (tx) => {
     // Update the settings JSONB field
     const [updated] = await tx
       .update(organization)
@@ -65,4 +68,4 @@ export async function PUT(req: Request) {
       riskMethodology: parsed.data.riskMethodology,
     },
   });
-}
+});

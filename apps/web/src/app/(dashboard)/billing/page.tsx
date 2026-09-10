@@ -1,15 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   CreditCard,
   Receipt,
-  BarChart3,
   Loader2,
   ArrowUpRight,
-  Check,
   Gauge,
 } from "lucide-react";
 
@@ -69,47 +67,43 @@ interface InvoiceRow {
 
 export default function BillingPage() {
   const t = useTranslations("billing");
-  const { formatDate } = useDateFormat();
-  const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
-  const [usage, setUsage] = useState<UsageSummary | null>(null);
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { formatDate, formatCurrency: money } = useDateFormat();
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). The three requests were always issued and
+  // consumed together, so one `queryFn` returns them as one object; each
+  // non-ok response falls back to its previous default (null / empty list).
+  const { data, isPending: loading } = useQuery<{
+    planInfo: PlanInfo | null;
+    usage: UsageSummary | null;
+    invoices: InvoiceRow[];
+  }>({
+    queryKey: ["billing", "overview"],
+    queryFn: async () => {
       const [subRes, usageRes, invRes] = await Promise.all([
         fetch("/api/v1/subscriptions/current"),
         fetch("/api/v1/usage/summary"),
         fetch("/api/v1/billing/invoices?limit=5"),
       ]);
-      if (subRes.ok) {
-        const data = await subRes.json();
-        setPlanInfo(data.data);
-      }
-      if (usageRes.ok) {
-        const data = await usageRes.json();
-        setUsage(data.data);
-      }
-      if (invRes.ok) {
-        const data = await invRes.json();
-        setInvoices(data.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return {
+        planInfo: subRes.ok
+          ? ((await subRes.json()).data as PlanInfo | null)
+          : null,
+        usage: usageRes.ok
+          ? ((await usageRes.json()).data as UsageSummary | null)
+          : null,
+        invoices: invRes.ok
+          ? (((await invRes.json()).data ?? []) as InvoiceRow[])
+          : [],
+      };
+    },
+  });
+  const planInfo = data?.planInfo ?? null;
+  const usage = data?.usage ?? null;
+  const invoices = data?.invoices ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency,
-    }).format(amount / 100);
-  };
+  const formatCurrency = (amount: number, currency: string) =>
+    money(amount / 100, currency);
 
   if (loading) {
     return (

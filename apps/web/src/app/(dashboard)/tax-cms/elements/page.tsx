@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,20 +16,17 @@ const MATURITY_COLORS = [
 
 export default function TaxCmsElementsPage() {
   const t = useTranslations("taxCms");
-  const [rows, setRows] = useState<TaxCmsElement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: rows = [], isPending: loading } = useQuery<TaxCmsElement[]>({
+    queryKey: ["tax-cms", "elements"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/tax-cms/elements?limit=20");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as TaxCmsElement[];
+    },
+  });
   if (loading)
     return (
       <div className="flex items-center justify-center h-64">

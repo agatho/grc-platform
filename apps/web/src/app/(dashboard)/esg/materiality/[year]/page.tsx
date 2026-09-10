@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -47,50 +48,62 @@ function MaterialityYearInner() {
   const router = useRouter();
   const year = params.year as string;
 
-  const [assessment, setAssessment] = useState<EsgMaterialityAssessment | null>(
-    null,
-  );
-  const [topics, setTopics] = useState<EsgMaterialityTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [votes, setVotes] = useState<EsgMaterialityVote[]>([]);
-  const [iroItems, setIroItems] = useState<MaterialityIroItem[]>([]);
   const [syncingErm, setSyncingErm] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Abrufe wurden immer
+  // zusammen ausgelöst und zusammen verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    assessment: EsgMaterialityAssessment | null;
+    topics: EsgMaterialityTopic[];
+    iroItems: MaterialityIroItem[];
+  }>({
+    queryKey: ["esg", "materiality", year],
+    queryFn: async () => {
       const [aRes, tRes] = await Promise.all([
         fetch(`/api/v1/esg/materiality/${year}`),
         fetch(`/api/v1/esg/materiality/${year}/topics`),
       ]);
+      let assessment: EsgMaterialityAssessment | null = null;
+      let topics: EsgMaterialityTopic[] = [];
       if (aRes.ok) {
         const json = await aRes.json();
-        setAssessment(json.data);
+        assessment = json.data;
       }
       if (tRes.ok) {
         const json = await tRes.json();
-        setTopics(json.data ?? []);
+        topics = json.data ?? [];
       }
 
       // Fetch IRO items for ERM bridge
+      let iroItems: MaterialityIroItem[] = [];
       try {
         const iroRes = await fetch(`/api/v1/esg/materiality/${year}/iro`);
         if (iroRes.ok) {
           const iroJson = await iroRes.json();
-          setIroItems(iroJson.data ?? []);
+          iroItems = iroJson.data ?? [];
         }
       } catch {
         // non-critical
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [year]);
+      return { assessment, topics, iroItems };
+    },
+  });
+  const assessment = pageData?.assessment ?? null;
+  const topics = pageData?.topics ?? [];
+  const iroItems = pageData?.iroItems ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const fetchVotes = useCallback(async (topicId: string) => {
     setSelectedTopic(topicId);
@@ -188,9 +201,12 @@ function MaterialityYearInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           {assessment.status !== "completed" && (
             <Button

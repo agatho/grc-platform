@@ -1,21 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Loader2,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Trash2,
-} from "lucide-react";
+import { Loader2, Plus, CheckCircle, Trash2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ContinuityStrategy } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STRATEGY_COLORS: Record<string, string> = {
   active_active: "bg-green-100 text-green-900",
@@ -37,9 +33,8 @@ export default function StrategyListPage() {
 
 function StrategyListInner() {
   const t = useTranslations("bcms");
-  const router = useRouter();
-  const [items, setItems] = useState<ContinuityStrategy[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { formatCurrency: money } = useDateFormat();
+  const _router = useRouter();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("active_active");
@@ -47,22 +42,26 @@ function StrategyListInner() {
   const [newProcessId, setNewProcessId] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: items = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<ContinuityStrategy[]>({
+    queryKey: ["bcms", "strategies"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/bcms/strategies?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ContinuityStrategy[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newProcessId.trim()) return;
@@ -110,14 +109,8 @@ function StrategyListInner() {
     );
   }
 
-  const formatCurrency = (val: string | undefined) => {
-    if (!val) return "-";
-    return new Intl.NumberFormat("de-DE", {
-      style: "currency",
-      currency: "EUR",
-      maximumFractionDigits: 0,
-    }).format(parseFloat(val));
-  };
+  const formatCurrency = (val: string | undefined) =>
+    val ? money(parseFloat(val), "EUR", { maximumFractionDigits: 0 }) : "-";
 
   return (
     <div className="space-y-6">

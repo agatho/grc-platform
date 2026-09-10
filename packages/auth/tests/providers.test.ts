@@ -2,7 +2,7 @@
 // Tests isAzureAdConfigured and extractRequestInfo
 // These functions can be tested without DB access.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   isAzureAdConfigured,
   extractRequestInfo,

@@ -32,7 +32,8 @@
     "back": "Zurück",
     "apply": "Als Entwurf übernehmen",
     "created": "Dokument als Entwurf angelegt",
-    "error": "Der Entwurf konnte nicht erzeugt werden. Bitte erneut versuchen."
+    "error": "Der Entwurf konnte nicht erzeugt werden. Bitte erneut versuchen.",
+    "subtitle": "KI-gestützter Richtlinienentwurf auf Basis der ausgewählten Anforderungen."
   },
   "suggestControls": {
     "trigger": "KI-Vorschläge",
@@ -46,7 +47,8 @@
     "applied": "Vorschlag übernommen",
     "appliedBadge": "Übernommen",
     "empty": "Keine Vorschläge erhalten",
-    "error": "Vorschläge konnten nicht geladen bzw. übernommen werden."
+    "error": "Vorschläge konnten nicht geladen bzw. übernommen werden.",
+    "subtitle": "KI-gestützte Kontrollvorschläge zu diesem Risiko."
   },
   "explainGap": {
     "trigger": "Erklären",
@@ -55,6 +57,7 @@
     "explanation": "Was verlangt die Anforderung?",
     "steps": "Empfohlene Umsetzungsschritte",
     "evidence": "Erwartete Nachweise (Audit)",
-    "error": "Die Erklärung konnte nicht erzeugt werden. Bitte erneut versuchen."
+    "error": "Die Erklärung konnte nicht erzeugt werden. Bitte erneut versuchen.",
+    "subtitle": "KI-gestützte Erläuterung der Abweichung mit Umsetzungsvorschlägen."
   }
 }

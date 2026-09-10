@@ -1,622 +1,678 @@
-# RLS + Audit-Trail Coverage Report
+# RLS Coverage Report
 
-_Generated: 2026-07-20T13:34:19.571Z_
+**Quelle: die laufende Datenbank** (`pg_class`, `pg_policies`,
+`pg_trigger`, `information_schema`) — nicht die Migrationstexte.
 
-## Summary
+Erzeugt mit `node scripts/audit-rls-coverage.mjs` gegen `postgresql://grc:***@localhost:5432/grc_op089`.
+Die Gegenprüfung `node scripts/audit-rls-coverage.mjs --check` schlägt
+fehl, wenn eine Lücke besteht **oder** dieser Report vom gemessenen Ist
+abweicht.
 
-| Status          | Count   |
-| --------------- | ------- |
-| OK              | 555     |
-| PLATFORM_EXEMPT | 15      |
-| AUDIT_EXEMPT    | 4       |
-| **Total**       | **574** |
+> Diese Datei wurde im Rahmen der Remediation (WP2, Findings S01-14,
+> S01-15, S01-24) auf eine Messung umgestellt. Die Vorgängerfassung las
+> Migrationstexte per Regex und wies deshalb `session`, `account`,
+> `verification_token` und `audit_log` als RLS-geschützt aus, obwohl
+> Migration `0379` RLS auf ihnen abgeschaltet hatte.
 
-## Semantics
+## Zusammenfassung
 
-- `RLS_MISSING`: Table contains `org_id` (multi-tenant) but no `ENABLE ROW LEVEL SECURITY` statement was found in any migration.
-- `POLICY_MISSING`: RLS enabled but no `CREATE POLICY` referencing the table.
-- `AUDIT_MISSING`: Table missing an `audit_trigger()` registration (ADR-011).
-- `AUDIT_EXEMPT`: Table deliberately without `audit_trigger()` — Auth.js secret-bearing tables (session/account/verification_token) and the high-volume process-mining stream (process_event). See migration 0357.
-- `PLATFORM_EXEMPT`: Platform-wide table (user, module_definition, catalog, …) which by design does not use org-scoped RLS.
-- `OK`: RLS + policy + audit trigger all present.
+| Status             | Anzahl  |
+| ------------------ | ------- |
+| OK                 | 561     |
+| PLATFORM_EXEMPT    | 56      |
+| **Objekte gesamt** | **617** |
+| **Lücken**         | **0**   |
 
-## Findings by status
+## Geltungsbereiche
 
-### AUDIT_EXEMPT (4)
+| Scope          | Bedeutung                                                                                                                         |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `TENANT`       | Tabelle mit `org_id`/`organization_id`                                                                                            |
+| `TENANT_CHILD` | keine eigene `org_id`, aber Fremdschlüsselpfad auf eine org-skalierte Tabelle — braucht eine Policy über den Elternbezug (S01-03) |
+| `AUTH`         | `user`/`session`/`account`/`verification_token` — mandantenrelevant über die Mitgliedschaft, nicht über `org_id` (S01-04)         |
+| `VIEW`         | muss `security_invoker = true` tragen, sonst wird sie mit den Rechten des Eigentümers ausgewertet (S01-08)                        |
+| `MATVIEW`      | kann keine RLS tragen — Leserecht muss der Runtime-Rolle entzogen sein (S01-08)                                                   |
+| `PLATFORM`     | weder `org_id` noch FK-Pfad dorthin — echt global                                                                                 |
 
-| Table                | Schema file     | RLS | Policy | Audit |
-| -------------------- | --------------- | --- | ------ | ----- |
-| `account`            | platform.ts     | ✅  | ✅     | ❌    |
-| `process_event`      | bpm-advanced.ts | ✅  | ✅     | ❌    |
-| `session`            | platform.ts     | ✅  | ✅     | ❌    |
-| `verification_token` | platform.ts     | ✅  | ✅     | ❌    |
+## Statuswerte
 
-### PLATFORM_EXEMPT (15)
+- `RLS_MISSING` — mandantenbezogen, aber `relrowsecurity = false`
+- `POLICY_MISSING` — RLS aktiv, aber kein Policy-Satz für alle vier Kommandos
+- `FORCE_MISSING` — RLS aktiv, aber kein `FORCE`: der Eigentümer umgeht seine eigenen Policies (S01-20)
+- `WEAK_POLICY` — Policy vorhanden, Ausdruck fehlerhaft (`app.bypass_rls`, `USING (true)`, schreibbares `org_id IS NULL`, `::uuid`-Cast ohne `NULLIF`, Textvergleich)
+- `VIEW_NOT_INVOKER` / `MATVIEW_READABLE` — siehe oben
+- `OK` / `PLATFORM_EXEMPT`
 
-| Table                       | Schema file           | RLS | Policy | Audit |
-| --------------------------- | --------------------- | --- | ------ | ----- |
-| `access_log`                | platform.ts           | ❌  | ❌     | ❌    |
-| `audit_log`                 | platform.ts           | ✅  | ✅     | ❌    |
-| `catalog`                   | catalog.ts            | ❌  | ❌     | ❌    |
-| `catalog_entry`             | catalog.ts            | ❌  | ❌     | ❌    |
-| `catalog_entry_mapping`     | phase3-extras.ts      | ❌  | ❌     | ✅    |
-| `catalog_entry_reference`   | catalog.ts            | ✅  | ✅     | ❌    |
-| `connector_test_definition` | evidence-connector.ts | ❌  | ❌     | ✅    |
-| `connector_type_definition` | connector.ts          | ❌  | ❌     | ❌    |
-| `data_export_log`           | platform.ts           | ✅  | ✅     | ❌    |
-| `module_definition`         | module.ts             | ❌  | ❌     | ❌    |
-| `module_nav_item`           | phase3-extras.ts      | ❌  | ❌     | ✅    |
-| `user`                      | platform.ts           | ❌  | ❌     | ✅    |
-| `work_item_type`            | work-item.ts          | ❌  | ❌     | ❌    |
-| `xbrl_tag`                  | esef-xbrl.ts          | ❌  | ❌     | ❌    |
-| `xbrl_taxonomy`             | esef-xbrl.ts          | ❌  | ❌     | ❌    |
+## Offene Lücken
 
-### OK (555)
+Keine. Jedes Objekt mit Mandantenbezug trägt RLS, FORCE und einen
+vollständigen, fehlerfreien Policy-Satz; jede View läuft mit
+`security_invoker`; keine Materialized View ist für `grc_app` lesbar.
 
-| Table                                | Schema file                | RLS | Policy | Audit |
-| ------------------------------------ | -------------------------- | --- | ------ | ----- |
-| `abac_access_log`                    | abac.ts                    | ✅  | ✅     | ✅    |
-| `abac_policy`                        | abac.ts                    | ✅  | ✅     | ✅    |
-| `academy_certificate`                | academy.ts                 | ✅  | ✅     | ✅    |
-| `academy_course`                     | academy.ts                 | ✅  | ✅     | ✅    |
-| `academy_enrollment`                 | academy.ts                 | ✅  | ✅     | ✅    |
-| `academy_lesson`                     | academy.ts                 | ✅  | ✅     | ✅    |
-| `academy_quiz_attempt`               | academy.ts                 | ✅  | ✅     | ✅    |
-| `acknowledgment`                     | document.ts                | ✅  | ✅     | ✅    |
-| `agent_execution_log`                | agents.ts                  | ✅  | ✅     | ✅    |
-| `agent_recommendation`               | agents.ts                  | ✅  | ✅     | ✅    |
-| `agent_registration`                 | agents.ts                  | ✅  | ✅     | ✅    |
-| `ai_authority_communication`         | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_conformity_assessment`           | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_corrective_action`               | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_framework_mapping`               | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_fria`                            | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_gpai_model`                      | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_human_oversight_log`             | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_incident`                        | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_penalty`                         | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_prohibited_screening`            | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_prompt_log`                      | intelligence.ts            | ✅  | ✅     | ✅    |
-| `ai_provider_qms`                    | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_system`                          | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_transparency_entry`              | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `api_key`                            | api-platform.ts            | ✅  | ✅     | ✅    |
-| `api_key_scope`                      | api-platform.ts            | ✅  | ✅     | ✅    |
-| `api_playground_snippet`             | api-platform.ts            | ✅  | ✅     | ✅    |
-| `api_scope`                          | api-platform.ts            | ✅  | ✅     | ✅    |
-| `api_usage_log`                      | api-platform.ts            | ✅  | ✅     | ✅    |
-| `application_assessment_history`     | eam-dashboards.ts          | ✅  | ✅     | ✅    |
-| `application_interface`              | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `application_portfolio`              | eam.ts                     | ✅  | ✅     | ✅    |
-| `approval_decision`                  | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `approval_request`                   | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `approval_workflow`                  | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `architecture_change_request`        | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `architecture_change_vote`           | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `architecture_element`               | eam.ts                     | ✅  | ✅     | ✅    |
-| `architecture_health_snapshot`       | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `architecture_relationship`          | eam.ts                     | ✅  | ✅     | ✅    |
-| `architecture_rule`                  | eam.ts                     | ✅  | ✅     | ✅    |
-| `architecture_rule_violation`        | eam.ts                     | ✅  | ✅     | ✅    |
-| `assessment_control_eval`            | isms.ts                    | ✅  | ✅     | ✅    |
-| `assessment_risk_eval`               | isms.ts                    | ✅  | ✅     | ✅    |
-| `assessment_run`                     | isms.ts                    | ✅  | ✅     | ✅    |
-| `asset`                              | asset.ts                   | ✅  | ✅     | ✅    |
-| `asset_cia_profile`                  | asset.ts                   | ✅  | ✅     | ✅    |
-| `asset_classification`               | isms.ts                    | ✅  | ✅     | ✅    |
-| `asset_classification_override`      | isms.ts                    | ✅  | ✅     | ✅    |
-| `asset_cpe`                          | isms-intelligence.ts       | ✅  | ✅     | ✅    |
-| `asset_type_risk_recommendation`     | incident-timeline.ts       | ✅  | ✅     | ✅    |
-| `assurance_score_snapshot`           | board-kpi.ts               | ✅  | ✅     | ✅    |
-| `attack_path_result`                 | regulatory-simulator.ts    | ✅  | ✅     | ✅    |
-| `attestation_campaign`               | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `attestation_response`               | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `audit`                              | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_activity`                     | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_analytics_import`             | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `audit_analytics_result`             | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `audit_analytics_template`           | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `audit_anchor`                       | platform.ts                | ✅  | ✅     | ✅    |
-| `audit_checklist`                    | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_checklist_item`               | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_evidence`                     | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_plan`                         | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_plan_item`                    | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_qa_checklist_item`            | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_qa_review`                    | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_resource_allocation`          | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_risk_prediction`              | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `audit_risk_prediction_model`        | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `audit_sample`                       | audit-extras.ts            | ✅  | ✅     | ✅    |
-| `audit_sign_off`                     | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_time_entry`                   | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_universe_entry`               | audit-mgmt.ts              | ✅  | ✅     | ✅    |
-| `audit_working_paper`                | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_wp_folder`                    | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_wp_review_note`               | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `audit_wp_review_note_reply`         | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `auditor_profile`                    | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `automation_rule`                    | automation.ts              | ✅  | ✅     | ✅    |
-| `automation_rule_execution`          | automation.ts              | ✅  | ✅     | ✅    |
-| `automation_rule_template`           | automation.ts              | ✅  | ✅     | ✅    |
-| `bc_exercise`                        | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bc_exercise_finding`                | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bc_exercise_inject_log`             | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `bc_exercise_lesson`                 | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `bc_exercise_scenario`               | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `bcp`                                | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bcp_procedure`                      | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bcp_resource`                       | bcms.ts                    | ✅  | ✅     | ✅    |
-| `benchmark_pool`                     | benchmarking.ts            | ✅  | ✅     | ✅    |
-| `benchmark_submission`               | benchmarking.ts            | ✅  | ✅     | ✅    |
-| `bi_brand_config`                    | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_data_source`                     | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_query`                           | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_report`                          | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_report_execution`                | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_report_widget`                   | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_scheduled_report`                | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bi_shared_dashboard`                | bi-reporting.ts            | ✅  | ✅     | ✅    |
-| `bia_assessment`                     | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bia_process_impact`                 | bcms.ts                    | ✅  | ✅     | ✅    |
-| `bia_supplier_dependency`            | bcms.ts                    | ✅  | ✅     | ✅    |
-| `billing_invoice`                    | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `board_report`                       | audit-extras.ts            | ✅  | ✅     | ✅    |
-| `bowtie_element`                     | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `bowtie_path`                        | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `bowtie_template`                    | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `business_capability`                | eam.ts                     | ✅  | ✅     | ✅    |
-| `catalog_lifecycle_phase`            | catalog.ts                 | ✅  | ✅     | ✅    |
-| `cci_configuration`                  | compliance-culture.ts      | ✅  | ✅     | ✅    |
-| `ccm_connector`                      | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `ccm_evidence`                       | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `cert_evidence_package`              | cert-wizard.ts             | ✅  | ✅     | ✅    |
-| `cert_mock_audit`                    | cert-wizard.ts             | ✅  | ✅     | ✅    |
-| `cert_readiness_assessment`          | cert-wizard.ts             | ✅  | ✅     | ✅    |
-| `certification_readiness_snapshot`   | nis2-certification.ts      | ✅  | ✅     | ✅    |
-| `checklist_instance`                 | checklist.ts               | ✅  | ✅     | ✅    |
-| `checklist_template`                 | checklist.ts               | ✅  | ✅     | ✅    |
-| `climate_risk_scenario`              | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `cloud_compliance_snapshot`          | cloud-connector.ts         | ✅  | ✅     | ✅    |
-| `cloud_service_catalog`              | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `cloud_test_execution`               | cloud-connector.ts         | ✅  | ✅     | ✅    |
-| `cloud_test_suite`                   | cloud-connector.ts         | ✅  | ✅     | ✅    |
-| `community_contribution`             | community.ts               | ✅  | ✅     | ✅    |
-| `community_edition_config`           | community.ts               | ✅  | ✅     | ✅    |
-| `compliance_calendar_event`          | calendar.ts                | ✅  | ✅     | ✅    |
-| `compliance_culture_snapshot`        | compliance-culture.ts      | ✅  | ✅     | ✅    |
-| `connector_credential`               | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `connector_field_mapping`            | connector.ts               | ✅  | ✅     | ✅    |
-| `connector_health_check`             | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `connector_instance`                 | connector.ts               | ✅  | ✅     | ✅    |
-| `connector_schedule`                 | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `connector_sync_log`                 | connector.ts               | ✅  | ✅     | ✅    |
-| `connector_test_result`              | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `consent_record`                     | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `consent_type`                       | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `consolidation_entry`                | esef-xbrl.ts               | ✅  | ✅     | ✅    |
-| `consolidation_group`                | esef-xbrl.ts               | ✅  | ✅     | ✅    |
-| `content_placeholder`                | content-narrative.ts       | ✅  | ✅     | ✅    |
-| `content_request`                    | content-narrative.ts       | ✅  | ✅     | ✅    |
-| `continuity_strategy`                | bcms.ts                    | ✅  | ✅     | ✅    |
-| `continuous_audit_exception`         | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `continuous_audit_result`            | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `continuous_audit_rule`              | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `contract`                           | tprm.ts                    | ✅  | ✅     | ✅    |
-| `contract_amendment`                 | tprm.ts                    | ✅  | ✅     | ✅    |
-| `contract_obligation`                | tprm.ts                    | ✅  | ✅     | ✅    |
-| `contract_sla`                       | tprm.ts                    | ✅  | ✅     | ✅    |
-| `contract_sla_measurement`           | tprm.ts                    | ✅  | ✅     | ✅    |
-| `control`                            | control.ts                 | ✅  | ✅     | ✅    |
-| `control_catalog`                    | catalog.ts                 | ✅  | ✅     | ✅    |
-| `control_catalog_entry`              | catalog.ts                 | ✅  | ✅     | ✅    |
-| `control_deficiency`                 | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `control_effectiveness_score`        | intelligence.ts            | ✅  | ✅     | ✅    |
-| `control_embedding`                  | control-embedding.ts       | ✅  | ✅     | ✅    |
-| `control_framework_coverage`         | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `control_library_entry`              | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `control_maturity`                   | isms.ts                    | ✅  | ✅     | ✅    |
-| `control_monitoring_result`          | control-monitoring.ts      | ✅  | ✅     | ✅    |
-| `control_monitoring_rule`            | control-monitoring.ts      | ✅  | ✅     | ✅    |
-| `control_test`                       | control.ts                 | ✅  | ✅     | ✅    |
-| `control_test_campaign`              | control.ts                 | ✅  | ✅     | ✅    |
-| `control_test_checklist`             | control-testing-agent.ts   | ✅  | ✅     | ✅    |
-| `control_test_execution`             | control-testing-agent.ts   | ✅  | ✅     | ✅    |
-| `control_test_learning`              | control-testing-agent.ts   | ✅  | ✅     | ✅    |
-| `control_test_script`                | control-testing-agent.ts   | ✅  | ✅     | ✅    |
-| `copilot_conversation`               | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `copilot_feedback`                   | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `copilot_message`                    | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `copilot_prompt_template`            | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `copilot_rag_source`                 | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `copilot_suggested_action`           | copilot-chat.ts            | ✅  | ✅     | ✅    |
-| `country_risk_profile`               | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `crisis_communication_log`           | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `crisis_contact_node`                | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `crisis_contact_tree`                | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `crisis_log`                         | bcms.ts                    | ✅  | ✅     | ✅    |
-| `crisis_scenario`                    | bcms.ts                    | ✅  | ✅     | ✅    |
-| `crisis_team_member`                 | bcms.ts                    | ✅  | ✅     | ✅    |
-| `cross_region_replication`           | data-sovereignty.ts        | ✅  | ✅     | ✅    |
-| `custom_dashboard`                   | dashboard.ts               | ✅  | ✅     | ✅    |
-| `custom_dashboard_widget`            | dashboard.ts               | ✅  | ✅     | ✅    |
-| `custom_field_definition`            | platform-advanced.ts       | ✅  | ✅     | ✅    |
-| `custom_role`                        | platform.ts                | ✅  | ✅     | ✅    |
-| `cve_asset_match`                    | isms-intelligence.ts       | ✅  | ✅     | ✅    |
-| `cve_feed_item`                      | isms-intelligence.ts       | ✅  | ✅     | ✅    |
-| `data_breach`                        | dpms.ts                    | ✅  | ✅     | ✅    |
-| `data_breach_notification`           | dpms.ts                    | ✅  | ✅     | ✅    |
-| `data_flow`                          | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `data_lineage_entry`                 | data-governance.ts         | ✅  | ✅     | ✅    |
-| `data_lineage_source`                | data-governance.ts         | ✅  | ✅     | ✅    |
-| `data_link`                          | data-governance.ts         | ✅  | ✅     | ✅    |
-| `data_region`                        | data-sovereignty.ts        | ✅  | ✅     | ✅    |
-| `data_residency_rule`                | data-sovereignty.ts        | ✅  | ✅     | ✅    |
-| `data_validation_result`             | data-governance.ts         | ✅  | ✅     | ✅    |
-| `data_validation_rule`               | data-governance.ts         | ✅  | ✅     | ✅    |
-| `dd_evidence`                        | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `dd_response`                        | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `dd_session`                         | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `deletion_request`                   | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `developer_app`                      | api-platform.ts            | ✅  | ✅     | ✅    |
-| `device_registration`                | mobile.ts                  | ✅  | ✅     | ✅    |
-| `devops_connector_config`            | devops-connector.ts        | ✅  | ✅     | ✅    |
-| `devops_test_result`                 | devops-connector.ts        | ✅  | ✅     | ✅    |
-| `dmn_decision`                       | abac.ts                    | ✅  | ✅     | ✅    |
-| `document`                           | document.ts                | ✅  | ✅     | ✅    |
-| `document_approval_step`             | document.ts                | ✅  | ✅     | ✅    |
-| `document_entity_link`               | document.ts                | ✅  | ✅     | ✅    |
-| `document_file`                      | document.ts                | ✅  | ✅     | ✅    |
-| `document_signature`                 | document-signature.ts      | ✅  | ✅     | ✅    |
-| `document_signature_request`         | document-signature.ts      | ✅  | ✅     | ✅    |
-| `document_version`                   | document.ts                | ✅  | ✅     | ✅    |
-| `dora_ict_incident`                  | dora.ts                    | ✅  | ✅     | ✅    |
-| `dora_ict_provider`                  | dora.ts                    | ✅  | ✅     | ✅    |
-| `dora_ict_risk`                      | dora.ts                    | ✅  | ✅     | ✅    |
-| `dora_information_sharing`           | dora.ts                    | ✅  | ✅     | ✅    |
-| `dora_nis2_cross_ref`                | dora.ts                    | ✅  | ✅     | ✅    |
-| `dora_tlpt_plan`                     | dora.ts                    | ✅  | ✅     | ✅    |
-| `dpia`                               | dpms.ts                    | ✅  | ✅     | ✅    |
-| `dpia_measure`                       | dpms.ts                    | ✅  | ✅     | ✅    |
-| `dpia_risk`                          | dpms.ts                    | ✅  | ✅     | ✅    |
-| `dsr`                                | dpms.ts                    | ✅  | ✅     | ✅    |
-| `dsr_activity`                       | dpms.ts                    | ✅  | ✅     | ✅    |
-| `eam_ai_config`                      | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `eam_ai_prompt_template`             | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `eam_ai_suggestion_log`              | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `eam_bpmn_element_placement`         | eam-governance.ts          | ✅  | ✅     | ✅    |
-| `eam_business_context`               | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_chat_session`                   | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `eam_context`                        | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_context_attribute`              | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_data_object`                    | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_data_object_crud`               | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_governance_log`                 | eam-governance.ts          | ✅  | ✅     | ✅    |
-| `eam_homepage_layout`                | eam-catalog.ts             | ✅  | ✅     | ✅    |
-| `eam_keyword`                        | eam-catalog.ts             | ✅  | ✅     | ✅    |
-| `eam_object_suggestion`              | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `eam_org_unit`                       | eam-data-architecture.ts   | ✅  | ✅     | ✅    |
-| `eam_translation`                    | eam-ai.ts                  | ✅  | ✅     | ✅    |
-| `emerging_risk`                      | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `emission_activity_data`             | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `emission_factor`                    | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `emission_source`                    | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `entity_comment`                     | entity-comment.ts          | ✅  | ✅     | ✅    |
-| `entity_reference`                   | event-bus.ts               | ✅  | ✅     | ✅    |
-| `erm_sync_config`                    | risk-acceptance.ts         | ✅  | ✅     | ✅    |
-| `esef_filing`                        | esef-xbrl.ts               | ✅  | ✅     | ✅    |
-| `esg_annual_report`                  | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_collection_assignment`          | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `esg_collection_campaign`            | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `esg_control_link`                   | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_materiality_assessment`         | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_materiality_topic`              | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_materiality_vote`               | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_measurement`                    | esg.ts                     | ✅  | ✅     | ✅    |
-| `esg_target`                         | esg.ts                     | ✅  | ✅     | ✅    |
-| `esrs_datapoint_definition`          | esg.ts                     | ✅  | ✅     | ✅    |
-| `esrs_disclosure_template`           | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `esrs_metric`                        | esg.ts                     | ✅  | ✅     | ✅    |
-| `essential_process`                  | bcms.ts                    | ✅  | ✅     | ✅    |
-| `eu_taxonomy_assessment`             | esef-xbrl.ts               | ✅  | ✅     | ✅    |
-| `event_log`                          | event-bus.ts               | ✅  | ✅     | ✅    |
-| `evidence`                           | control.ts                 | ✅  | ✅     | ✅    |
-| `evidence_artifact`                  | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `evidence_connector`                 | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `evidence_freshness_config`          | evidence-connector.ts      | ✅  | ✅     | ✅    |
-| `evidence_request`                   | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `evidence_review_gap`                | evidence-review.ts         | ✅  | ✅     | ✅    |
-| `evidence_review_job`                | evidence-review.ts         | ✅  | ✅     | ✅    |
-| `evidence_review_result`             | evidence-review.ts         | ✅  | ✅     | ✅    |
-| `exception_report`                   | audit-extras.ts            | ✅  | ✅     | ✅    |
-| `executive_kpi_snapshot`             | intelligence.ts            | ✅  | ✅     | ✅    |
-| `export_schedule`                    | import-export.ts           | ✅  | ✅     | ✅    |
-| `extension_marketplace`              | extension.ts               | ✅  | ✅     | ✅    |
-| `external_auditor_activity`          | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `external_auditor_share`             | audit-advanced.ts          | ✅  | ✅     | ✅    |
-| `fair_parameters`                    | fair.ts                    | ✅  | ✅     | ✅    |
-| `fair_simulation_result`             | fair.ts                    | ✅  | ✅     | ✅    |
-| `feature_gate`                       | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `finding`                            | control.ts                 | ✅  | ✅     | ✅    |
-| `finding_sla_config`                 | intelligence.ts            | ✅  | ✅     | ✅    |
-| `framework_coverage_snapshot`        | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `framework_gap_analysis`             | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `framework_mapping`                  | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `framework_mapping_rule`             | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `general_catalog_entry`              | catalog.ts                 | ✅  | ✅     | ✅    |
-| `grc_budget`                         | budget.ts                  | ✅  | ✅     | ✅    |
-| `grc_budget_line`                    | budget.ts                  | ✅  | ✅     | ✅    |
-| `grc_cost_entry`                     | budget.ts                  | ✅  | ✅     | ✅    |
-| `grc_roi_calculation`                | budget.ts                  | ✅  | ✅     | ✅    |
-| `grc_time_entry`                     | budget.ts                  | ✅  | ✅     | ✅    |
-| `horizon_calendar_event`             | horizon-scanner.ts         | ✅  | ✅     | ✅    |
-| `horizon_impact_assessment`          | horizon-scanner.ts         | ✅  | ✅     | ✅    |
-| `horizon_scan_item`                  | horizon-scanner.ts         | ✅  | ✅     | ✅    |
-| `horizon_scan_source`                | horizon-scanner.ts         | ✅  | ✅     | ✅    |
-| `identity_connector_config`          | identity-saas-connector.ts | ✅  | ✅     | ✅    |
-| `identity_test_result`               | identity-saas-connector.ts | ✅  | ✅     | ✅    |
-| `import_column_mapping`              | import-export.ts           | ✅  | ✅     | ✅    |
-| `import_job`                         | import-export.ts           | ✅  | ✅     | ✅    |
-| `incident_correlation`               | risk-propagation.ts        | ✅  | ✅     | ✅    |
-| `incident_timeline_entry`            | isms.ts                    | ✅  | ✅     | ✅    |
-| `inline_comment`                     | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `invitation`                         | platform.ts                | ✅  | ✅     | ✅    |
-| `isms_corrective_action`             | isms-cap.ts                | ✅  | ✅     | ✅    |
-| `isms_nonconformity`                 | isms-cap.ts                | ✅  | ✅     | ✅    |
-| `it_infrastructure_check`            | devops-connector.ts        | ✅  | ✅     | ✅    |
-| `kri`                                | risk.ts                    | ✅  | ✅     | ✅    |
-| `kri_measurement`                    | risk.ts                    | ✅  | ✅     | ✅    |
-| `lksg_assessment`                    | tprm.ts                    | ✅  | ✅     | ✅    |
-| `lksg_due_diligence`                 | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `management_review`                  | isms.ts                    | ✅  | ✅     | ✅    |
-| `management_review_item`             | isms.ts                    | ✅  | ✅     | ✅    |
-| `marketplace_category`               | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_installation`           | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_listing`                | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_publisher`              | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_review`                 | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_security_scan`          | marketplace.ts             | ✅  | ✅     | ✅    |
-| `marketplace_version`                | marketplace.ts             | ✅  | ✅     | ✅    |
-| `materiality_assessment`             | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `materiality_iro`                    | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `materiality_stakeholder_engagement` | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `maturity_assessment`                | benchmarking.ts            | ✅  | ✅     | ✅    |
-| `maturity_model`                     | benchmarking.ts            | ✅  | ✅     | ✅    |
-| `maturity_roadmap_action`            | isms-intelligence.ts       | ✅  | ✅     | ✅    |
-| `maturity_roadmap_item`              | benchmarking.ts            | ✅  | ✅     | ✅    |
-| `messaging_integration`              | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `mobile_session`                     | mobile.ts                  | ✅  | ✅     | ✅    |
-| `module_config`                      | module.ts                  | ✅  | ✅     | ✅    |
-| `narrative_instance`                 | content-narrative.ts       | ✅  | ✅     | ✅    |
-| `narrative_template`                 | content-narrative.ts       | ✅  | ✅     | ✅    |
-| `nis2_incident_report`               | nis2-certification.ts      | ✅  | ✅     | ✅    |
-| `notification`                       | platform.ts                | ✅  | ✅     | ✅    |
-| `notification_preference`            | platform-advanced.ts       | ✅  | ✅     | ✅    |
-| `offline_sync_state`                 | mobile.ts                  | ✅  | ✅     | ✅    |
-| `onboarding_session`                 | onboarding.ts              | ✅  | ✅     | ✅    |
-| `onboarding_step`                    | onboarding.ts              | ✅  | ✅     | ✅    |
-| `org_active_catalog`                 | catalog.ts                 | ✅  | ✅     | ✅    |
-| `org_branding`                       | branding.ts                | ✅  | ✅     | ✅    |
-| `org_catalog_exclusion`              | catalog.ts                 | ✅  | ✅     | ✅    |
-| `org_entity_relationship`            | risk-propagation.ts        | ✅  | ✅     | ✅    |
-| `org_risk_methodology`               | catalog.ts                 | ✅  | ✅     | ✅    |
-| `org_subscription`                   | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `organization`                       | platform.ts                | ✅  | ✅     | ✅    |
-| `organization_contact`               | platform.ts                | ✅  | ✅     | ✅    |
-| `pbd_assessment`                     | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `playbook_activation`                | playbook.ts                | ✅  | ✅     | ✅    |
-| `playbook_phase`                     | playbook.ts                | ✅  | ✅     | ✅    |
-| `playbook_task_template`             | playbook.ts                | ✅  | ✅     | ✅    |
-| `playbook_template`                  | playbook.ts                | ✅  | ✅     | ✅    |
-| `plugin`                             | extension.ts               | ✅  | ✅     | ✅    |
-| `plugin_execution_log`               | extension.ts               | ✅  | ✅     | ✅    |
-| `plugin_hook`                        | extension.ts               | ✅  | ✅     | ✅    |
-| `plugin_installation`                | extension.ts               | ✅  | ✅     | ✅    |
-| `plugin_setting`                     | extension.ts               | ✅  | ✅     | ✅    |
-| `policy_acknowledgment`              | policy-acknowledgment.ts   | ✅  | ✅     | ✅    |
-| `policy_distribution`                | policy-acknowledgment.ts   | ✅  | ✅     | ✅    |
-| `policy_quiz_response`               | policy-acknowledgment.ts   | ✅  | ✅     | ✅    |
-| `portal_audit_trail`                 | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `portal_branding`                    | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `portal_config`                      | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `portal_evidence_upload`             | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `portal_questionnaire_response`      | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `portal_session`                     | stakeholder-portal.ts      | ✅  | ✅     | ✅    |
-| `process`                            | process.ts                 | ✅  | ✅     | ✅    |
-| `process_approval_step`              | process-approval.ts        | ✅  | ✅     | ✅    |
-| `process_asset`                      | process.ts                 | ✅  | ✅     | ✅    |
-| `process_comment`                    | process.ts                 | ✅  | ✅     | ✅    |
-| `process_conformance_result`         | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_control`                    | process.ts                 | ✅  | ✅     | ✅    |
-| `process_document`                   | process.ts                 | ✅  | ✅     | ✅    |
-| `process_event_log`                  | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_framework_mapping`          | process-grc.ts             | ✅  | ✅     | ✅    |
-| `process_kpi_definition`             | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_kpi_measurement`            | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_maturity_assessment`        | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_maturity_questionnaire`     | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_mining_suggestion`          | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_raci_override`              | process-raci.ts            | ✅  | ✅     | ✅    |
-| `process_review_schedule`            | process.ts                 | ✅  | ✅     | ✅    |
-| `process_risk`                       | risk.ts                    | ✅  | ✅     | ✅    |
-| `process_ropa_profile`               | process-grc.ts             | ✅  | ✅     | ✅    |
-| `process_sign_off`                   | process-grc.ts             | ✅  | ✅     | ✅    |
-| `process_simulation_result`          | abac.ts                    | ✅  | ✅     | ✅    |
-| `process_step`                       | process.ts                 | ✅  | ✅     | ✅    |
-| `process_step_asset`                 | process.ts                 | ✅  | ✅     | ✅    |
-| `process_step_control`               | process.ts                 | ✅  | ✅     | ✅    |
-| `process_step_risk`                  | risk.ts                    | ✅  | ✅     | ✅    |
-| `process_template`                   | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `process_version`                    | process.ts                 | ✅  | ✅     | ✅    |
-| `processor_agreement`                | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `programme_approval_event`           | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_journey`                  | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_journey_event`            | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_journey_phase`            | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_journey_step`             | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_journey_subtask`          | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_step_link`                | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_template`                 | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_template_phase`           | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_template_step`            | programme.ts               | ✅  | ✅     | ✅    |
-| `programme_template_subtask`         | programme.ts               | ✅  | ✅     | ✅    |
-| `push_notification`                  | mobile.ts                  | ✅  | ✅     | ✅    |
-| `questionnaire_question`             | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `questionnaire_section`              | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `questionnaire_template`             | supplier-portal.ts         | ✅  | ✅     | ✅    |
-| `rcsa_assignment`                    | rcsa.ts                    | ✅  | ✅     | ✅    |
-| `rcsa_campaign`                      | rcsa.ts                    | ✅  | ✅     | ✅    |
-| `rcsa_response`                      | rcsa.ts                    | ✅  | ✅     | ✅    |
-| `rcsa_result`                        | rcsa.ts                    | ✅  | ✅     | ✅    |
-| `recovery_procedure`                 | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `recovery_procedure_step`            | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `region_tenant_config`               | data-sovereignty.ts        | ✅  | ✅     | ✅    |
-| `regulation_simulation`              | regulatory-simulator.ts    | ✅  | ✅     | ✅    |
-| `regulatory_calendar_event`          | regulatory-change.ts       | ✅  | ✅     | ✅    |
-| `regulatory_change`                  | regulatory-change.ts       | ✅  | ✅     | ✅    |
-| `regulatory_digest`                  | regulatory-change.ts       | ✅  | ✅     | ✅    |
-| `regulatory_feed_item`               | intelligence.ts            | ✅  | ✅     | ✅    |
-| `regulatory_impact_assessment`       | regulatory-change.ts       | ✅  | ✅     | ✅    |
-| `regulatory_relevance_score`         | intelligence.ts            | ✅  | ✅     | ✅    |
-| `regulatory_source`                  | regulatory-change.ts       | ✅  | ✅     | ✅    |
-| `reminder_rule`                      | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `report_generation_log`              | reporting.ts               | ✅  | ✅     | ✅    |
-| `report_schedule`                    | reporting.ts               | ✅  | ✅     | ✅    |
-| `report_template`                    | reporting.ts               | ✅  | ✅     | ✅    |
-| `resilience_score_snapshot`          | bcms-advanced.ts           | ✅  | ✅     | ✅    |
-| `retention_exception`                | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `retention_policy`                   | document.ts                | ✅  | ✅     | ✅    |
-| `retention_schedule`                 | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `review_cycle`                       | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `review_decision`                    | approval-workflow.ts       | ✅  | ✅     | ✅    |
-| `risk`                               | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_acceptance`                    | risk-acceptance.ts         | ✅  | ✅     | ✅    |
-| `risk_acceptance_authority`          | risk-acceptance.ts         | ✅  | ✅     | ✅    |
-| `risk_anomaly_detection`             | predictive-risk.ts         | ✅  | ✅     | ✅    |
-| `risk_appetite`                      | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_appetite_threshold`            | board-kpi.ts               | ✅  | ✅     | ✅    |
-| `risk_asset`                         | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_catalog`                       | catalog.ts                 | ✅  | ✅     | ✅    |
-| `risk_catalog_entry`                 | catalog.ts                 | ✅  | ✅     | ✅    |
-| `risk_control`                       | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_evaluation_log`                | risk-evaluation.ts         | ✅  | ✅     | ✅    |
-| `risk_event`                         | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `risk_event_lesson`                  | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `risk_executive_summary`             | risk-quantification.ts     | ✅  | ✅     | ✅    |
-| `risk_framework_mapping`             | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_interconnection`               | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `risk_prediction`                    | predictive-risk.ts         | ✅  | ✅     | ✅    |
-| `risk_prediction_alert`              | audit-analytics.ts         | ✅  | ✅     | ✅    |
-| `risk_prediction_model`              | predictive-risk.ts         | ✅  | ✅     | ✅    |
-| `risk_propagation_result`            | risk-propagation.ts        | ✅  | ✅     | ✅    |
-| `risk_quantification_config`         | risk-quantification.ts     | ✅  | ✅     | ✅    |
-| `risk_scenario`                      | isms.ts                    | ✅  | ✅     | ✅    |
-| `risk_sensitivity_analysis`          | risk-quantification.ts     | ✅  | ✅     | ✅    |
-| `risk_treatment`                     | risk.ts                    | ✅  | ✅     | ✅    |
-| `risk_treatment_link`                | risk-evaluation.ts         | ✅  | ✅     | ✅    |
-| `risk_var_calculation`               | risk-quantification.ts     | ✅  | ✅     | ✅    |
-| `role_dashboard_config`              | role-dashboards.ts         | ✅  | ✅     | ✅    |
-| `role_dashboard_widget_preference`   | role-dashboards.ts         | ✅  | ✅     | ✅    |
-| `role_permission`                    | platform.ts                | ✅  | ✅     | ✅    |
-| `root_cause_analysis`                | isms-cap.ts                | ✅  | ✅     | ✅    |
-| `ropa_data_category`                 | dpms.ts                    | ✅  | ✅     | ✅    |
-| `ropa_data_subject`                  | dpms.ts                    | ✅  | ✅     | ✅    |
-| `ropa_entry`                         | dpms.ts                    | ✅  | ✅     | ✅    |
-| `ropa_recipient`                     | dpms.ts                    | ✅  | ✅     | ✅    |
-| `saas_compliance_check`              | identity-saas-connector.ts | ✅  | ✅     | ✅    |
-| `scenario_engine_scenario`           | simulation.ts              | ✅  | ✅     | ✅    |
-| `scim_sync_log`                      | identity.ts                | ✅  | ✅     | ✅    |
-| `scim_token`                         | identity.ts                | ✅  | ✅     | ✅    |
-| `search_index`                       | platform-advanced.ts       | ✅  | ✅     | ✅    |
-| `security_incident`                  | isms.ts                    | ✅  | ✅     | ✅    |
-| `security_posture_snapshot`          | board-kpi.ts               | ✅  | ✅     | ✅    |
-| `simulation_activity_param`          | abac.ts                    | ✅  | ✅     | ✅    |
-| `simulation_comparison`              | simulation.ts              | ✅  | ✅     | ✅    |
-| `simulation_parameter`               | simulation.ts              | ✅  | ✅     | ✅    |
-| `simulation_result`                  | risk.ts                    | ✅  | ✅     | ✅    |
-| `simulation_run`                     | simulation.ts              | ✅  | ✅     | ✅    |
-| `simulation_run_result`              | simulation.ts              | ✅  | ✅     | ✅    |
-| `simulation_scenario`                | abac.ts                    | ✅  | ✅     | ✅    |
-| `soa_ai_suggestion`                  | isms-intelligence.ts       | ✅  | ✅     | ✅    |
-| `soa_entry`                          | isms.ts                    | ✅  | ✅     | ✅    |
-| `sovereignty_audit_log`              | data-sovereignty.ts        | ✅  | ✅     | ✅    |
-| `sox_scope`                          | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `sox_scoping`                        | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `sox_walkthrough`                    | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `sso_config`                         | identity.ts                | ✅  | ✅     | ✅    |
-| `stakeholder`                        | stakeholder-register.ts    | ✅  | ✅     | ✅    |
-| `stakeholder_expectation`            | stakeholder-register.ts    | ✅  | ✅     | ✅    |
-| `sub_processor_notification`         | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `subscription_plan`                  | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `supplier_esg_assessment`            | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `supplier_esg_corrective_action`     | esg-advanced.ts            | ✅  | ✅     | ✅    |
-| `tag_definition`                     | phase3-extras.ts           | ✅  | ✅     | ✅    |
-| `task`                               | task.ts                    | ✅  | ✅     | ✅    |
-| `task_comment`                       | task.ts                    | ✅  | ✅     | ✅    |
-| `tax_audit_prep`                     | tax-cms.ts                 | ✅  | ✅     | ✅    |
-| `tax_cms_element`                    | tax-cms.ts                 | ✅  | ✅     | ✅    |
-| `tax_gobd_archive`                   | tax-cms.ts                 | ✅  | ✅     | ✅    |
-| `tax_icfr_control`                   | tax-cms.ts                 | ✅  | ✅     | ✅    |
-| `tax_risk`                           | tax-cms.ts                 | ✅  | ✅     | ✅    |
-| `technology_application_link`        | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `technology_entry`                   | eam-advanced.ts            | ✅  | ✅     | ✅    |
-| `template_pack`                      | onboarding.ts              | ✅  | ✅     | ✅    |
-| `template_pack_item`                 | onboarding.ts              | ✅  | ✅     | ✅    |
-| `threat`                             | isms.ts                    | ✅  | ✅     | ✅    |
-| `threat_feed_item`                   | reporting.ts               | ✅  | ✅     | ✅    |
-| `threat_feed_source`                 | reporting.ts               | ✅  | ✅     | ✅    |
-| `tia`                                | dpms.ts                    | ✅  | ✅     | ✅    |
-| `transfer_impact_assessment`         | dpms-advanced.ts           | ✅  | ✅     | ✅    |
-| `translation_status`                 | translation.ts             | ✅  | ✅     | ✅    |
-| `treatment_milestone`                | erm-advanced.ts            | ✅  | ✅     | ✅    |
-| `usage_meter`                        | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `usage_record`                       | saas-metering.ts           | ✅  | ✅     | ✅    |
-| `user_custom_role`                   | platform.ts                | ✅  | ✅     | ✅    |
-| `user_dashboard_layout`              | branding.ts                | ✅  | ✅     | ✅    |
-| `user_nav_preference`                | nav-preference.ts          | ✅  | ✅     | ✅    |
-| `user_organization_role`             | platform.ts                | ✅  | ✅     | ✅    |
-| `value_stream_map`                   | bpm-advanced.ts            | ✅  | ✅     | ✅    |
-| `vendor`                             | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_concentration_analysis`      | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_contact`                     | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_due_diligence`               | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_due_diligence_question`      | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_exit_plan`                   | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_risk_assessment`             | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_scorecard`                   | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_scorecard_history`           | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_sign_off`                    | tprm.ts                    | ✅  | ✅     | ✅    |
-| `vendor_sla_definition`              | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_sla_measurement`             | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_sub_processor`               | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vendor_sub_processor_notification`  | tprm-advanced.ts           | ✅  | ✅     | ✅    |
-| `vulnerability`                      | isms.ts                    | ✅  | ✅     | ✅    |
-| `wb_anonymous_mailbox`               | whistleblowing.ts          | ✅  | ✅     | ✅    |
-| `wb_case`                            | whistleblowing.ts          | ✅  | ✅     | ✅    |
-| `wb_case_evidence`                   | whistleblowing.ts          | ✅  | ✅     | ✅    |
-| `wb_case_message`                    | whistleblowing.ts          | ✅  | ✅     | ✅    |
-| `wb_evidence`                        | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_interview`                       | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_investigation`                   | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_investigation_log`               | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_ombudsperson_activity`           | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_ombudsperson_assignment`         | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_protection_case`                 | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_protection_event`                | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
-| `wb_report`                          | whistleblowing.ts          | ✅  | ✅     | ✅    |
-| `webhook_delivery_log`               | event-bus.ts               | ✅  | ✅     | ✅    |
-| `webhook_registration`               | event-bus.ts               | ✅  | ✅     | ✅    |
-| `widget_definition`                  | dashboard.ts               | ✅  | ✅     | ✅    |
-| `work_item`                          | work-item.ts               | ✅  | ✅     | ✅    |
-| `work_item_link`                     | work-item.ts               | ✅  | ✅     | ✅    |
-| `xbrl_tagging_instance`              | esef-xbrl.ts               | ✅  | ✅     | ✅    |
+Der Nachweis, dass diese Konfiguration auch WIRKT — Cross-Tenant-Lesen
+und -Schreiben mit Daten in zwei echten Orgs als Rolle `grc_app` —
+steht in `packages/db/tests/rls/tenant-isolation-systemtest.test.ts`.
+Ein grüner Report ohne diesen Test wäre genau die Behauptung, die
+Finding S01-14 beanstandet hat.
 
-## Methodology
+## Vollständige Objektliste
 
-This report is static analysis only:
-
-- Tables extracted from `pgTable("name", ...)` calls in `packages/db/src/schema/*.ts`
-- RLS/policies/audit detected via regex over all `*.sql` in `packages/db/drizzle/` and `packages/db/src/migrations/`
-- `PLATFORM_EXEMPT` list is hand-curated (see script `scripts/audit-rls-coverage.mjs`)
-
-False positives are possible if RLS is enabled via custom SQL not matched by the regex (e.g. dynamic SQL, conditional DO blocks that only fire under specific branches). Cross-check via `SELECT * FROM pg_policies` in the live DB for authoritative data.
+| Objekt                                     | Scope        | RLS | FORCE | Policies | audit_trigger | Status          |
+| ------------------------------------------ | ------------ | --- | ----- | -------- | ------------- | --------------- |
+| `_arctos_migrations`                       | INFRA        | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `abac_access_log`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `abac_policy`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `academy_certificate`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `academy_course`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `academy_enrollment`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `academy_lesson`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `academy_quiz_attempt`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `access_log`                               | TENANT       | ✅  | ✅    | 4        | ❌            | OK              |
+| `account`                                  | AUTH         | ✅  | ✅    | 0        | ✅            | OK              |
+| `acknowledgment`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `agent_execution_log`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `agent_recommendation`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `agent_registration`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_authority_communication`               | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `ai_conformity_assessment`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_corrective_action`                     | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `ai_egress_log`                            | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `ai_feature_registry`                      | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `ai_framework_mapping`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_fria`                                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_gpai_model`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_human_oversight_log`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_incident`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_org_policy`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_penalty`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_prohibited_screening`                  | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `ai_prompt_log`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_provider_qms`                          | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `ai_system`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ai_transparency_entry`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `api_key`                                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `api_key_scope`                            | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `api_playground_snippet`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `api_scope`                                | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `api_usage_log`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `application_assessment_history`           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `application_interface`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `application_portfolio`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `approval_decision`                        | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `approval_request`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `approval_workflow`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_change_request`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_change_vote`                 | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `architecture_element`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_health_snapshot`             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_relationship`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_rule`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `architecture_rule_violation`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `arctos_rls_guard_event`                   | PLATFORM     | ✅  | ❌    | 1        | ❌            | PLATFORM_EXEMPT |
+| `assessment_control_eval`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `assessment_risk_eval`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `assessment_run`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `asset`                                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `asset_cia_profile`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `asset_classification`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `asset_classification_override`            | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `asset_cpe`                                | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `asset_type_risk_recommendation`           | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `assurance_score_snapshot`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `attack_path_result`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `attestation_campaign`                     | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `attestation_response`                     | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `audit`                                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_activity`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_analytics_import`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_analytics_result`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_analytics_template`                 | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `audit_anchor`                             | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `audit_anchor_seal`                        | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |
+| `audit_chain_verification`                 | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
+| `audit_checklist`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_checklist_item`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_evidence`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_log`                                | TENANT       | ✅  | ✅    | 4        | ❌            | OK              |
+| `audit_log_write_attempt`                  | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `audit_plan`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_plan_item`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_qa_checklist_item`                  | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `audit_qa_review`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_resource_allocation`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_risk_prediction`                    | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `audit_risk_prediction_model`              | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `audit_sample`                             | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `audit_sensitive_column`                   | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `audit_sign_off`                           | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `audit_time_entry`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_universe_entry`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_working_paper`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_wp_folder`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `audit_wp_review_note`                     | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `audit_wp_review_note_reply`               | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `auditor_profile`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `automation_rule`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `automation_rule_execution`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `automation_rule_template`                 | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `bc_exercise`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bc_exercise_finding`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bc_exercise_inject_log`                   | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `bc_exercise_lesson`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bc_exercise_scenario`                     | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `bcp`                                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bcp_procedure`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bcp_resource`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `benchmark_pool`                           | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `benchmark_submission`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_brand_config`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_data_source`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_query`                                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_report`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_report_execution`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_report_widget`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_scheduled_report`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bi_shared_dashboard`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bia_assessment`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bia_process_impact`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bia_supplier_dependency`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `billing_invoice`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `board_report`                             | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `bowtie_element`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `bowtie_path`                              | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `bowtie_template`                          | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `bpm_simulation_result`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `business_capability`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `catalog`                                  | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `catalog_entry`                            | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `catalog_entry_mapping`                    | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `catalog_entry_reference`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `catalog_lifecycle_phase`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cci_configuration`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ccm_connector`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ccm_evidence`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cert_evidence_package`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cert_mock_audit`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cert_readiness_assessment`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `certification_readiness_snapshot`         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `checklist_instance`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `checklist_template`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `climate_risk_scenario`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cloud_compliance_snapshot`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cloud_service_catalog`                    | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `cloud_test_execution`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cloud_test_suite`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `community_contribution`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `community_edition_config`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `compliance_calendar_event`                | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `compliance_culture_snapshot`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `connector_credential`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `connector_field_mapping`                  | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `connector_health_check`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `connector_instance`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `connector_schedule`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `connector_sync_log`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `connector_test_definition`                | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `connector_test_result`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `connector_type_definition`                | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `consent_record`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `consent_type`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `consolidation_entry`                      | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `consolidation_group`                      | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `content_placeholder`                      | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `content_request`                          | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `continuity_strategy`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `continuous_audit_exception`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `continuous_audit_result`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `continuous_audit_rule`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `contract`                                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `contract_amendment`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `contract_obligation`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `contract_sla`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `contract_sla_measurement`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control`                                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_catalog`                          | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `control_catalog_entry`                    | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `control_catalog_entry_v`                  | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `control_catalog_v`                        | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `control_deficiency`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_effectiveness_score`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_embedding`                        | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `control_framework_coverage`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_library_entry`                    | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `control_maturity`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_monitoring_result`                | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `control_monitoring_rule`                  | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `control_test`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_test_campaign`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_test_checklist`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_test_execution`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_test_learning`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `control_test_script`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_conversation`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_feedback`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_message`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_prompt_template`                  | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `copilot_rag_source`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_suggested_action`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `copilot_usage_stats`                      | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `country_risk_profile`                     | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `crisis_communication_log`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `crisis_contact_node`                      | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `crisis_contact_tree`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `crisis_log`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `crisis_scenario`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `crisis_team_member`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cross_region_replication`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `custom_dashboard`                         | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `custom_dashboard_widget`                  | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `custom_field_definition`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `custom_role`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `cve_asset_match`                          | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `cve_feed_item`                            | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `data_breach`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `data_breach_notification`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `data_export_log`                          | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `data_flow`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `data_lineage_entry`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `data_lineage_source`                      | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `data_link`                                | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `data_region`                              | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `data_residency_rule`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `data_validation_result`                   | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `data_validation_rule`                     | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `dd_evidence`                              | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `dd_response`                              | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `dd_session`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `deletion_request`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `developer_app`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `device_registration`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `devops_connector_config`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `devops_test_result`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dmn_decision`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `document`                                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `document_approval_step`                   | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `document_entity_link`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `document_file`                            | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `document_signature`                       | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `document_signature_request`               | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `document_version`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_ict_incident`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_ict_provider`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_ict_risk`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_information_sharing`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_nis2_cross_ref`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dora_tlpt_plan`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dpia`                                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dpia_measure`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dpia_risk`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dsr`                                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dsr_activity`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `dsr_subject_index`                        | PLATFORM     | ✅  | ✅    | 2        | ❌            | PLATFORM_EXEMPT |
+| `eam_ai_config`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_ai_prompt_template`                   | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `eam_ai_suggestion_log`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_bpmn_element_placement`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_business_context`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_chat_session`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_context`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_context_attribute`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_data_object`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_data_object_crud`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_governance_log`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_homepage_layout`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_keyword`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_object_suggestion`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_org_unit`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eam_translation`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `emerging_risk`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `emission_activity_data`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `emission_factor`                          | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `emission_source`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `entity_comment`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `entity_reference`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `entity_translation`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `entity_translation_corruption_candidates` | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `erm_sync_config`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esef_filing`                              | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `esg_annual_report`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_collection_assignment`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_collection_campaign`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_control_link`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_materiality_assessment`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_materiality_topic`                    | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `esg_materiality_vote`                     | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `esg_measurement`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esg_target`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esrs_datapoint_definition`                | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `esrs_disclosure_template`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `esrs_metric`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `essential_process`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `eu_taxonomy_assessment`                   | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `event_log`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence`                                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_artifact`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_connector`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_freshness_config`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_request`                         | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `evidence_review_gap`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_review_job`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_review_result`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `evidence_review_summary`                  | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `exception_report`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `executive_kpi_snapshot`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `export_approval`                          | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |
+| `export_schedule`                          | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `extension_marketplace`                    | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `external_auditor_activity`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `external_auditor_share`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `fair_parameters`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `fair_simulation_result`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `feature_gate`                             | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `finding`                                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `finding_sla_config`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `framework_coverage_snapshot`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `framework_gap_analysis`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `framework_mapping`                        | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `framework_mapping_full`                   | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `framework_mapping_rule`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `gdpr_erasure_log`                         | TENANT       | ✅  | ✅    | 3        | ❌            | OK              |
+| `general_catalog_entry`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `grc_budget`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `grc_budget_line`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `grc_cost_entry`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `grc_roi_calculation`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `grc_time_entry`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `horizon_calendar_event`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `horizon_impact_assessment`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `horizon_scan_item`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `horizon_scan_source`                      | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `identity_connector_config`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `identity_test_result`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `import_column_mapping`                    | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `import_job`                               | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `incident_correlation`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `incident_timeline_entry`                  | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `inline_comment`                           | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `invitation`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `isms_corrective_action`                   | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `isms_nonconformity`                       | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `it_infrastructure_check`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `job_run`                                  | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `kri`                                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `kri_measurement`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `lksg_assessment`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `lksg_due_diligence`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `management_review`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `management_review_item`                   | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `marketplace_category`                     | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `marketplace_installation`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `marketplace_listing`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `marketplace_publisher`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `marketplace_review`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `marketplace_security_scan`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `marketplace_version`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `materiality_assessment`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `materiality_iro`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `materiality_stakeholder_engagement`       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `maturity_assessment`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `maturity_model`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `maturity_roadmap_action`                  | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `maturity_roadmap_item`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `messaging_integration`                    | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `mobile_session`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `module_config`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `module_definition`                        | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `module_nav_item`                          | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `narrative_instance`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `narrative_template`                       | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `nis2_incident_report`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `notification`                             | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `notification_preference`                  | PLATFORM     | ✅  | ✅    | 1        | ✅            | PLATFORM_EXEMPT |
+| `offline_sync_state`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `onboarding_session`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `onboarding_step`                          | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `org_active_catalog`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `org_branding`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `org_catalog_exclusion`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `org_entity_relationship`                  | PLATFORM     | ✅  | ✅    | 1        | ✅            | PLATFORM_EXEMPT |
+| `org_risk_methodology`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `org_subscription`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `organization`                             | PLATFORM     | ✅  | ✅    | 4        | ✅            | PLATFORM_EXEMPT |
+| `organization_contact`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `pbd_assessment`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `pii_pseudonym_key`                        | PLATFORM     | ✅  | ✅    | 1        | ❌            | PLATFORM_EXEMPT |
+| `pii_redaction_rule`                       | PLATFORM     | ✅  | ✅    | 2        | ❌            | PLATFORM_EXEMPT |
+| `platform_admin`                           | PLATFORM     | ✅  | ✅    | 1        | ❌            | PLATFORM_EXEMPT |
+| `playbook_activation`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `playbook_phase`                           | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `playbook_task_template`                   | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `playbook_template`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `plugin`                                   | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `plugin_execution_log`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `plugin_hook`                              | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `plugin_installation`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `plugin_setting`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `policy_acknowledgment`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `policy_distribution`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `policy_quiz_response`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_audit_trail`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_branding`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_config`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_evidence_upload`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_questionnaire_response`            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `portal_session`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process`                                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_approval_step`                    | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `process_asset`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_comment`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_conformance_result`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_control`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_document`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_event`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_event_activity_map`               | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
+| `process_event_log`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_event_transition_map`             | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
+| `process_framework_mapping`                | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `process_kpi_definition`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_kpi_measurement`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_lane`                             | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_maturity_assessment`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_maturity_questionnaire`           | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `process_mining_suggestion`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_raci_override`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_review_schedule`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_risk`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_ropa_profile`                     | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `process_sign_off`                         | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `process_simulation_result`                | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `process_step`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_step_asset`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_step_bia`                         | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_step_control`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_step_data_category`               | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_step_document`                    | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_step_raci`                        | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_step_recipient`                   | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_step_risk`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `process_step_ropa`                        | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `process_template`                         | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `process_version`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `processor_agreement`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_approval_event`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_journey`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_journey_event`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_journey_phase`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_journey_step`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_journey_subtask`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_step_link`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `programme_template`                       | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `programme_template_phase`                 | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `programme_template_step`                  | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `programme_template_subtask`               | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `push_notification`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `questionnaire_question`                   | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `questionnaire_section`                    | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `questionnaire_template`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `rcsa_assignment`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `rcsa_campaign`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `rcsa_response`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `rcsa_result`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `recovery_procedure`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `recovery_procedure_step`                  | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `region_tenant_config`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulation_simulation`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_calendar_event`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_change`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_digest`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_feed_item`                     | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `regulatory_impact_assessment`             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_relevance_score`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `regulatory_source`                        | TENANT       | ✅  | ✅    | 8        | ✅            | OK              |
+| `reminder_rule`                            | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `report_generation_log`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `report_schedule`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `report_template`                          | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `resilience_score_snapshot`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `retention_binding`                        | TENANT       | ✅  | ✅    | 3        | ❌            | OK              |
+| `retention_exception`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `retention_policy`                         | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `retention_run_log`                        | TENANT       | ✅  | ✅    | 3        | ❌            | OK              |
+| `retention_schedule`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `review_cycle`                             | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `review_decision`                          | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `risk`                                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_acceptance`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_acceptance_authority`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_anomaly_detection`                   | TENANT       | ✅  | ✅    | 2        | ✅            | OK              |
+| `risk_appetite`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_appetite_threshold`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_asset`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_catalog`                             | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `risk_catalog_entry`                       | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `risk_catalog_entry_v`                     | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `risk_catalog_v`                           | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `risk_control`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_evaluation_log`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_event`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_event_lesson`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_executive_summary`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_framework_mapping`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_interconnection`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_prediction`                          | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `risk_prediction_alert`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_prediction_model`                    | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `risk_propagation_result`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_quantification_config`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_scenario`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_sensitivity_analysis`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_treatment`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_treatment_link`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `risk_var_calculation`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `role_dashboard_config`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `role_dashboard_widget_preference`         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `role_permission`                          | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `root_cause_analysis`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ropa_data_category`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ropa_data_subject`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ropa_entry`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `ropa_recipient`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `saas_compliance_check`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `saml_assertion_replay`                    | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |
+| `scenario_engine_scenario`                 | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `scim_sync_log`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `scim_token`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `search_index`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `security_incident`                        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `security_posture_snapshot`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `session`                                  | AUTH         | ✅  | ✅    | 0        | ❌            | OK              |
+| `simulation_activity_param`                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `simulation_comparison`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `simulation_parameter`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `simulation_result`                        | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `simulation_run`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `simulation_run_result`                    | TENANT       | ✅  | ✅    | 1        | ❌            | OK              |
+| `simulation_scenario`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `soa_ai_suggestion`                        | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `soa_entry`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `sod_rule`                                 | TENANT       | ✅  | ✅    | 1        | ✅            | OK              |
+| `sovereignty_audit_log`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `sox_scope`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `sox_scoping`                              | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `sox_walkthrough`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `sso_config`                               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `stakeholder`                              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `stakeholder_expectation`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `sub_processor_notification`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `subscription_plan`                        | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `supplier_esg_assessment`                  | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `supplier_esg_corrective_action`           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tag_definition`                           | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `task`                                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `task_comment`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tax_audit_prep`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tax_cms_element`                          | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tax_gobd_archive`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tax_icfr_control`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tax_risk`                                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `technology_application_link`              | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `technology_entry`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `template_pack`                            | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `template_pack_item`                       | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `threat`                                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `threat_feed_item`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `threat_feed_source`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `tia`                                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `transfer_impact_assessment`               | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `translation_status`                       | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `treatment_milestone`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `usage_meter`                              | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `usage_record`                             | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `user`                                     | AUTH         | ✅  | ✅    | 4        | ✅            | OK              |
+| `user_custom_role`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `user_dashboard_layout`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `user_diagram_preference`                  | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |
+| `user_nav_preference`                      | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `user_organization_role`                   | TENANT       | ✅  | ✅    | 6        | ✅            | OK              |
+| `v_ai_documentation_status`                | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `v_budget_usage`                           | VIEW         | ❌  | ❌    | 0        | ❌            | OK              |
+| `value_stream_map`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor`                                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_concentration_analysis`            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_contact`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_due_diligence`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_due_diligence_question`            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_exit_plan`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_risk_assessment`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_scorecard`                         | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_scorecard_history`                 | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_sign_off`                          | TENANT       | ✅  | ✅    | 4        | ✅            | OK              |
+| `vendor_sla_definition`                    | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_sla_measurement`                   | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_sub_processor`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `vendor_sub_processor_notification`        | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `verification_token`                       | AUTH         | ✅  | ✅    | 0        | ❌            | OK              |
+| `vulnerability`                            | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `wb_anonymous_mailbox`                     | TENANT_CHILD | ✅  | ✅    | 1        | ❌            | OK              |
+| `wb_case`                                  | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_case_evidence`                         | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_case_message`                          | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_evidence`                              | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_interview`                             | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_investigation`                         | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_investigation_log`                     | TENANT_CHILD | ✅  | ✅    | 1        | ❌            | OK              |
+| `wb_ombudsperson_activity`                 | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_ombudsperson_assignment`               | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_protection_case`                       | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_protection_event`                      | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `wb_report`                                | TENANT       | ✅  | ✅    | 5        | ❌            | OK              |
+| `webhook_delivery_log`                     | TENANT_CHILD | ✅  | ✅    | 1        | ✅            | OK              |
+| `webhook_registration`                     | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `whistleblowing_audit_log`                 | TENANT       | ✅  | ✅    | 2        | ❌            | OK              |
+| `widget_definition`                        | PLATFORM     | ❌  | ❌    | 0        | ✅            | PLATFORM_EXEMPT |
+| `work_item`                                | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `work_item_link`                           | TENANT       | ✅  | ✅    | 5        | ✅            | OK              |
+| `work_item_type`                           | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `xbrl_tag`                                 | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |
+| `xbrl_tagging_instance`                    | TENANT       | ✅  | ✅    | 7        | ✅            | OK              |
+| `xbrl_taxonomy`                            | PLATFORM     | ❌  | ❌    | 0        | ❌            | PLATFORM_EXEMPT |

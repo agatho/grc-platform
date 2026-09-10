@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle, Globe } from "lucide-react";
 
@@ -22,31 +23,33 @@ export default function DataFlowsPage() {
 
 function DataFlowsInner() {
   const t = useTranslations("eam");
-  const [flows, setFlows] = useState<DataFlow[]>([]);
   const [filter, setFilter] = useState<"all" | "personal" | "crossBorder">(
     "all",
   );
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); der Filter steht im Schluessel.
+  // Eine nicht-ok-Antwort liefert wie vorher eine leere Liste und wird wie
+  // vorher protokolliert.
+  const { data: flows = [], isPending: loading } = useQuery<DataFlow[]>({
+    queryKey: ["eam", "data-flows", filter],
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] wie eam/applications: die Route
+      // klemmt selbst auf 500 und kennt kein `page`, also kein 422 — aber
+      // auch kein Vertrag. Umstellung der Route: Strang 1a.
       let url = "/api/v1/eam/data-flows?limit=200";
       if (filter === "personal") url += "&personalData=true";
       if (filter === "crossBorder") url += "&crossBorder=true";
       const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        setFlows(json.data ?? []);
+      if (!res.ok) {
+        console.error("eam/data-flows: Datenflüsse nicht geladen", res.status);
+        return [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const json = await res.json();
+      return (json.data ?? []) as DataFlow[];
+    },
+  });
 
   const crossBorderCount = flows.filter((f) => f.crossesEuBorder).length;
   const personalCount = flows.filter((f) => f.containsPersonalData).length;

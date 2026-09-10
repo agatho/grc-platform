@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { IncidentCorrelation } from "@grc/shared";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 export default function CorrelationDetailPage() {
   return (
@@ -124,6 +127,13 @@ function DetailInner() {
                 key={incId}
                 className="cursor-pointer rounded border p-3 text-sm hover:bg-muted/25"
                 onClick={() => router.push(`/isms/incidents/${incId}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  activateOnKey(e, () =>
+                    router.push(`/isms/incidents/${incId}`),
+                  )
+                }
               >
                 {incId}
               </div>

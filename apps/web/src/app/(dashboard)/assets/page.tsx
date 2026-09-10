@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -106,6 +107,11 @@ function filterByModule(nodes: AssetNode[], filter: ModuleFilter): AssetNode[] {
       ...n,
       children: filterByModule(n.children, filter),
     }));
+}
+
+/** Erste Ebene mit Kindern — der Ausgangszustand des Baums. */
+function firstLevelIds(nodes: AssetNode[]): Set<string> {
+  return new Set(nodes.filter((n) => n.children.length > 0).map((n) => n.id));
 }
 
 function flattenAssets(
@@ -368,37 +374,41 @@ export default function AssetsPage() {
   const router = useRouter();
   const { openTab } = useTabNavigation();
 
-  const [tree, setTree] = useState<AssetNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher einen leeren Baum (Leerzustand).
+  //
+  // Der Abruf hatte bisher auch `expanded` gesetzt (erste Ebene aufgeklappt).
+  // Dieser Zustand ist jetzt `null`, solange der Nutzer nichts angefasst hat,
+  // und wird dann aus dem geladenen Baum ABGELEITET statt in ihn
+  // zurueckgeschrieben; nach dem Anlegen wird er wie vorher auf die erste
+  // Ebene zurueckgesetzt.
+  const {
+    data: tree = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<AssetNode[]>({
+    queryKey: ["assets", "hierarchy"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/assets/hierarchy");
+      if (!res.ok) return [];
+      const json = (await res.json()) as { data: AssetNode[] };
+      return json.data;
+    },
+  });
+  const [expandedOverride, setExpandedOverride] = useState<Set<string> | null>(
+    null,
+  );
+  const expanded = expandedOverride ?? firstLevelIds(tree);
   const [moduleFilter, setModuleFilter] = useState<ModuleFilter>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const fetchTree = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/assets/hierarchy");
-      if (!res.ok) throw new Error("Failed to fetch tree");
-      const json = (await res.json()) as { data: AssetNode[] };
-      setTree(json.data);
-      // Auto-expand first level
-      const firstLevelIds = new Set(
-        json.data
-          .filter((n: AssetNode) => n.children.length > 0)
-          .map((n: AssetNode) => n.id),
-      );
-      setExpanded(firstLevelIds);
-    } catch {
-      // empty state
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchTree();
-  }, [fetchTree]);
-
-  // Register the page tab
+  // Register the page tab.
+  // [Welle 7a · OP-080] `t` gehoert in die Abhaengigkeiten: die Beschriftung
+  // IST uebersetzter Text. Ohne sie blieb der Reiter nach einem
+  // Sprachwechsel deutsch. `openTab` gibt seit dieser Welle bei gleichen
+  // Werten `prev` zurueck, der Effekt kann also gefahrlos erneut laufen.
   useEffect(() => {
     openTab({
       id: "assets",
@@ -406,11 +416,11 @@ export default function AssetsPage() {
       href: "/assets",
       icon: "Database",
     });
-  }, []);
+  }, [openTab, t]);
 
   const toggleNode = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
+    setExpandedOverride((prev) => {
+      const next = new Set(prev ?? firstLevelIds(tree));
       if (next.has(id)) {
         next.delete(id);
       } else {
@@ -420,8 +430,8 @@ export default function AssetsPage() {
     });
   };
 
-  const expandAll = () => setExpanded(collectIds(tree));
-  const collapseAll = () => setExpanded(new Set());
+  const expandAll = () => setExpandedOverride(collectIds(tree));
+  const collapseAll = () => setExpandedOverride(new Set());
 
   const filteredTree = filterByModule(tree, moduleFilter);
   const flatAssets = flattenAssets(tree);
@@ -511,8 +521,7 @@ export default function AssetsPage() {
         onOpenChange={setDialogOpen}
         flatAssets={flatAssets}
         onCreated={() => {
-          setLoading(true);
-          void fetchTree();
+          void refetch().then(() => setExpandedOverride(null));
         }}
         t={t}
       />

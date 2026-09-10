@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
-import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -24,11 +24,25 @@ import type {
   RcsaCampaignWithStats,
   RcsaResult,
   RcsaDiscrepancy,
-  RcsaAssignmentWithEntity,
   RcsaCompletionEntry,
 } from "@grc/shared";
 
 type Tab = "overview" | "results" | "discrepancies" | "participants" | "trend";
+
+type CampaignDetail = RcsaCampaignWithStats & {
+  overdueCount?: number;
+  pendingCount?: number;
+};
+
+type DiscrepancyRow = RcsaDiscrepancy & { entityTitle?: string };
+
+interface TrendData {
+  current: RcsaResult;
+  previous: RcsaResult | null;
+  previousCampaignName: string | null;
+  deltas: Record<string, number>;
+  hasPreviousData: boolean;
+}
 
 export default function CampaignDetailPage() {
   const t = useTranslations("rcsa");
@@ -37,99 +51,85 @@ export default function CampaignDetailPage() {
   const id = params.id as string;
   const { formatDate } = useDateFormat();
 
-  const [campaign, setCampaign] = useState<
-    | (RcsaCampaignWithStats & { overdueCount?: number; pendingCount?: number })
-    | null
-  >(null);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Results tab
-  const [result, setResult] = useState<RcsaResult | null>(null);
-
-  // Discrepancies tab
-  const [discrepancies, setDiscrepancies] = useState<
-    (RcsaDiscrepancy & { entityTitle?: string })[]
-  >([]);
-
-  // Participants tab
-  const [completion, setCompletion] = useState<RcsaCompletionEntry[]>([]);
-
-  // Trend tab
-  const [trend, setTrend] = useState<{
-    current: RcsaResult;
-    previous: RcsaResult | null;
-    previousCampaignName: string | null;
-    deltas: Record<string, number>;
-    hasPreviousData: boolean;
-  } | null>(null);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher `null`.
+  const {
+    data: campaign = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<CampaignDetail | null>({
+    queryKey: ["rcsa", "campaigns", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/rcsa/campaigns/${id}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as CampaignDetail | null;
+    },
+  });
 
   const fetchCampaign = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/rcsa/campaigns/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setCampaign(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+    await refetch();
+  }, [refetch]);
 
-  useEffect(() => {
-    void fetchCampaign();
-  }, [fetchCampaign]);
+  // [OP-245 · Gestalt A] Der zweite Befund derselben Datei: die Reiterdaten
+  // wurden in einem Effekt abhängig von Reiter und Kampagnenstatus geladen.
+  // Jetzt eine Abfrage je Reiter, jeweils mit `enabled` unter derselben
+  // Bedingung wie vorher (Muster aus Welle 7b, `dashboard/page.tsx`).
+  const isClosed =
+    campaign?.status === "closed" || campaign?.status === "archived";
 
-  const fetchTabData = useCallback(async () => {
-    if (!campaign) return;
-
-    if (
-      activeTab === "results" &&
-      (campaign.status === "closed" || campaign.status === "archived")
-    ) {
+  // Results tab
+  const { data: result = null } = useQuery<RcsaResult | null>({
+    queryKey: ["rcsa", "campaigns", id, "results"],
+    enabled: activeTab === "results" && isClosed,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/rcsa/campaigns/${id}/results`);
-      if (res.ok) {
-        const json = await res.json();
-        setResult(json.data);
-      }
-    }
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RcsaResult | null;
+    },
+  });
 
-    if (
-      activeTab === "discrepancies" &&
-      (campaign.status === "closed" || campaign.status === "archived")
-    ) {
+  // Discrepancies tab
+  const { data: discrepancies = [] } = useQuery<DiscrepancyRow[]>({
+    queryKey: ["rcsa", "campaigns", id, "discrepancies"],
+    enabled: activeTab === "discrepancies" && isClosed,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/rcsa/campaigns/${id}/discrepancies`);
-      if (res.ok) {
-        const json = await res.json();
-        setDiscrepancies(json.data ?? []);
-      }
-    }
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DiscrepancyRow[];
+    },
+  });
 
-    if (activeTab === "participants") {
+  // Participants tab
+  const { data: completion = [] } = useQuery<RcsaCompletionEntry[]>({
+    queryKey: ["rcsa", "campaigns", id, "completion"],
+    enabled: activeTab === "participants" && campaign !== null,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/rcsa/campaigns/${id}/completion`);
-      if (res.ok) {
-        const json = await res.json();
-        setCompletion(json.data ?? []);
-      }
-    }
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as RcsaCompletionEntry[];
+    },
+  });
 
-    if (
-      activeTab === "trend" &&
-      (campaign.status === "closed" || campaign.status === "archived")
-    ) {
+  // Trend tab
+  const { data: trend = null } = useQuery<TrendData | null>({
+    queryKey: ["rcsa", "campaigns", id, "trend"],
+    enabled: activeTab === "trend" && isClosed,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/rcsa/campaigns/${id}/trend`);
-      if (res.ok) {
-        const json = await res.json();
-        setTrend(json.data);
-      }
-    }
-  }, [id, activeTab, campaign]);
-
-  useEffect(() => {
-    void fetchTabData();
-  }, [fetchTabData]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as TrendData | null;
+    },
+  });
 
   const handleLaunch = async () => {
     setActionLoading(true);

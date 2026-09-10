@@ -3,7 +3,8 @@
 // ISMS SoA-Initialization + Gate-G2-Check
 // Sprint 1.2 aus docs/assessment-plans/06-implementation-roadmap.md
 
-import { useCallback, useEffect, useState, Suspense } from "react";
+import { useCallback, useState, Suspense } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -61,6 +62,10 @@ interface InitResponse {
   };
 }
 
+function gateCheckQueryKey(runId: string) {
+  return ["isms", "assessments", runId, "soa-gate-check"] as const;
+}
+
 export default function SoaInitPage() {
   return (
     <ModuleGate moduleKey="isms">
@@ -84,69 +89,83 @@ function SoaInitInner() {
   const searchParams = useSearchParams();
   const assessmentIdParam = searchParams.get("assessmentId");
 
-  const [runs, setRuns] = useState<AssessmentRun[]>([]);
+  const queryClient = useQueryClient();
   const [selectedRunId, setSelectedRunId] = useState<string | null>(
     assessmentIdParam,
   );
-  const [loadingRuns, setLoadingRuns] = useState(true);
-  const [gateResult, setGateResult] = useState<
-    GateCheckResponse["data"] | null
-  >(null);
-  const [gateLoading, setGateLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
   const [initResult, setInitResult] = useState<InitResponse["data"] | null>(
     null,
   );
-  const [error, setError] = useState<string | null>(null);
+  // Fehler aus den Aktionen (Init, Transition). Die Fehler der beiden
+  // Abfragen kommen aus der Abfrage selbst, siehe `error` weiter unten.
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const loadRuns = useCallback(async () => {
-    setLoadingRuns(true);
-    try {
+  // [OP-245 · Gestalt A] Beide Abrufe über `@tanstack/react-query` statt
+  // Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster aus
+  // Welle 7b, `dashboard/page.tsx`). Der Gate-Check hängt am gewählten Run:
+  // er steht im Schlüssel, und ohne Auswahl fragt die Abfrage nichts ab —
+  // das ersetzt den früheren `else setGateResult(null)`-Zweig.
+  const {
+    data: runs = [],
+    isPending: loadingRuns,
+    error: runsError,
+  } = useQuery<AssessmentRun[]>({
+    queryKey: ["isms", "assessments", "list", { limit: 50 }],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/assessments?limit=50");
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
-      setRuns(body.data ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler beim Laden");
-    } finally {
-      setLoadingRuns(false);
-    }
-  }, []);
+      return (body.data ?? []) as AssessmentRun[];
+    },
+  });
 
-  const loadGateStatus = useCallback(async (runId: string) => {
-    setGateLoading(true);
-    setError(null);
-    try {
+  const {
+    data: gateData,
+    isFetching: gateLoading,
+    error: gateError,
+  } = useQuery<GateCheckResponse["data"]>({
+    queryKey: gateCheckQueryKey(selectedRunId ?? ""),
+    enabled: selectedRunId !== null,
+    queryFn: async () => {
       const res = await fetch(
-        `/api/v1/isms/assessments/${runId}/soa-gate-check`,
+        `/api/v1/isms/assessments/${selectedRunId}/soa-gate-check`,
       );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `HTTP ${res.status}`);
       }
       const body: GateCheckResponse = await res.json();
-      setGateResult(body.data);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Fehler beim Gate-Check");
-      setGateResult(null);
-    } finally {
-      setGateLoading(false);
-    }
-  }, []);
+      return body.data;
+    },
+  });
 
-  useEffect(() => {
-    loadRuns();
-  }, [loadRuns]);
+  // Wie vorher: ohne Run kein Ergebnis, und nach einem Fehler auch nicht.
+  const gateResult =
+    selectedRunId !== null && !gateError ? (gateData ?? null) : null;
 
-  useEffect(() => {
-    if (selectedRunId) loadGateStatus(selectedRunId);
-    else setGateResult(null);
-  }, [selectedRunId, loadGateStatus]);
+  const error =
+    actionError ??
+    (gateError instanceof Error ? gateError.message : null) ??
+    (runsError instanceof Error ? runsError.message : null);
+
+  // Invalidiert genau den Run, der übergeben wird — so bleiben die beiden
+  // Aufrufstellen (nach Init, Reload-Knopf) unverändert. Löscht wie die
+  // alte Ladefunktion den Aktionsfehler.
+  const loadGateStatus = useCallback(
+    async (runId: string) => {
+      setActionError(null);
+      await queryClient.invalidateQueries({
+        queryKey: gateCheckQueryKey(runId),
+      });
+    },
+    [queryClient],
+  );
 
   async function runInit() {
     if (!selectedRunId) return;
     setInitLoading(true);
-    setError(null);
+    setActionError(null);
     setInitResult(null);
     try {
       const res = await fetch(
@@ -166,7 +185,7 @@ function SoaInitInner() {
       // Nach Init Gate neu laden
       await loadGateStatus(selectedRunId);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Init fehlgeschlagen");
+      setActionError(e instanceof Error ? e.message : "Init fehlgeschlagen");
     } finally {
       setInitLoading(false);
     }
@@ -185,7 +204,7 @@ function SoaInitInner() {
       );
       const body = await res.json();
       if (!res.ok) {
-        setError(
+        setActionError(
           `Transition blockiert: ${
             (body.blockers ?? [])
               .map((b: { message: string }) => b.message)
@@ -196,7 +215,9 @@ function SoaInitInner() {
       }
       router.push(`/isms/assessments/${selectedRunId}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Transition fehlgeschlagen");
+      setActionError(
+        e instanceof Error ? e.message : "Transition fehlgeschlagen",
+      );
     }
   }
 

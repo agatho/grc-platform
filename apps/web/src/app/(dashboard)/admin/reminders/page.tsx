@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Plus,
@@ -20,6 +21,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
+
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Fest verdrahtetes Deutsch.
+ *
+ * Ein Nebenbefund, der beim Umstellen sichtbar wurde: die Mehrzahl wurde von
+ * Hand gebaut — `Regel{rules.length !== 1 ? "n" : ""}`. Das ist genau die
+ * Regel, die ICU kennt und die in anderen Sprachen anders lautet; sie steht
+ * jetzt als `plural`-Ausdruck im Katalog.
+ */
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -38,20 +49,20 @@ interface ReminderRule {
 
 const CHANNEL_CONFIG: Record<
   string,
-  { label: string; icon: typeof Bell; className: string }
+  { key: string; icon: typeof Bell; className: string }
 > = {
   in_app: {
-    label: "In-App",
+    key: "in_app",
     icon: Bell,
     className: "bg-blue-100 text-blue-800 border-blue-200",
   },
   email: {
-    label: "E-Mail",
+    key: "email",
     icon: Mail,
     className: "bg-purple-100 text-purple-800 border-purple-200",
   },
   slack: {
-    label: "Slack",
+    key: "slack",
     icon: MessageSquare,
     className: "bg-green-100 text-green-800 border-green-200",
   },
@@ -60,29 +71,31 @@ const CHANNEL_CONFIG: Record<
 // ── Component ─────────────────────────────────────────────────
 
 export default function RemindersPage() {
-  const [rules, setRules] = useState<ReminderRule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(false);
-    try {
+  const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft
+  // wie vorher und landet im Fehlerzustand der Abfrage.
+  const {
+    data: rules = [],
+    isPending: loading,
+    isError: error,
+    isFetching,
+    refetch,
+  } = useQuery<ReminderRule[]>({
+    queryKey: ["reminders", "rules"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/reminders/rules");
       if (!res.ok) throw new Error("Failed to load");
       const json = await res.json();
-      setRules(json.data ?? []);
-    } catch {
-      setError(true);
-      setRules([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return (json.data ?? []) as ReminderRule[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -98,11 +111,10 @@ export default function RemindersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Erinnerungsregeln
+            {t("reminders.title")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Automatische Benachrichtigungen vor Fristablauf oder bei
-            Statusänderungen
+            {t("reminders.description")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -110,13 +122,17 @@ export default function RemindersPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
+            <span className="sr-only">{tCommon("actions.refresh")}</span>
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
-            Regel erstellen
+            {t("reminders.create")}
           </Button>
         </div>
       </div>
@@ -124,7 +140,7 @@ export default function RemindersPage() {
       {/* Error State */}
       {error && (
         <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
-          Fehler beim Laden der Erinnerungsregeln. Bitte erneut versuchen.
+          {t("reminders.loadError")}
         </div>
       )}
 
@@ -132,22 +148,21 @@ export default function RemindersPage() {
       {rules.length === 0 && !error ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
-            <BellOff size={48} className="text-gray-300 mb-4" />
+            <BellOff size={48} className="text-gray-500 mb-4" />
             <p className="text-sm font-medium text-gray-500">
-              Keine Erinnerungsregeln vorhanden
+              {t("reminders.empty")}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              Erstellen Sie eine Regel, um automatische Benachrichtigungen
-              einzurichten.
+              {t("reminders.emptyHint")}
             </p>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Alle Regeln</CardTitle>
+            <CardTitle>{t("reminders.allRules")}</CardTitle>
             <CardDescription>
-              {rules.length} Regel{rules.length !== 1 ? "n" : ""} konfiguriert
+              {t("reminders.ruleCount", { count: rules.length })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -156,19 +171,19 @@ export default function RemindersPage() {
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Name
+                      {t("reminders.column.name")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Entitätstyp
+                      {t("reminders.column.entityType")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Bedingung
+                      {t("reminders.column.condition")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Kanal
+                      {t("reminders.column.channel")}
                     </th>
                     <th className="text-left py-2 px-3 font-medium text-gray-600">
-                      Status
+                      {t("reminders.column.status")}
                     </th>
                   </tr>
                 </thead>
@@ -198,7 +213,7 @@ export default function RemindersPage() {
                             className={channelCfg.className}
                           >
                             <ChannelIcon size={12} className="mr-1" />
-                            {channelCfg.label}
+                            {t(`reminders.channel.${channelCfg.key}`)}
                           </Badge>
                         </td>
                         <td className="py-3 px-3">
@@ -207,14 +222,14 @@ export default function RemindersPage() {
                               variant="outline"
                               className="bg-green-100 text-green-800 border-green-200"
                             >
-                              Aktiv
+                              {tCommon("status.active")}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
                               className="bg-gray-100 text-gray-500 border-gray-200"
                             >
-                              Inaktiv
+                              {tCommon("status.inactive")}
                             </Badge>
                           )}
                         </td>

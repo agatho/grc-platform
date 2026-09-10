@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -52,50 +53,81 @@ export default function SecurityPosturePage() {
 
 function PostureInner() {
   const t = useTranslations("boardKpi");
-  const [overallScore, setOverallScore] = useState(0);
-  const [factors, setFactors] = useState<PostureFactors | null>(null);
-  const [trend, setTrend] = useState<string>("stable");
-  const [previousScore, setPreviousScore] = useState<number | null>(null);
-  const [domains, setDomains] = useState<DomainScores | null>(null);
-  const [trendData, setTrendData] = useState<TrendPoint[]>([]);
-  const [hasEnoughTrendData, setHasEnoughTrendData] = useState(false);
-  const [quarterlyDelta, setQuarterlyDelta] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt; die
+  // Leerwerte je nicht-ok-Antwort sind die bisherigen Anfangswerte.
+  const {
+    data,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    overallScore: number;
+    factors: PostureFactors | null;
+    trend: string;
+    previousScore: number | null;
+    domains: DomainScores | null;
+    trendData: TrendPoint[];
+    hasEnoughTrendData: boolean;
+    quarterlyDelta: number | null;
+  }>({
+    queryKey: ["isms", "posture"],
+    queryFn: async () => {
       const [postureRes, domainRes, trendRes] = await Promise.all([
         fetch("/api/v1/isms/posture"),
         fetch("/api/v1/isms/posture/domains"),
         fetch("/api/v1/isms/posture/trend"),
       ]);
 
+      let overallScore = 0;
+      let factors: PostureFactors | null = null;
+      let trend = "stable";
+      let previousScore: number | null = null;
       if (postureRes.ok) {
         const json = await postureRes.json();
-        setOverallScore(json.overallScore ?? 0);
-        setFactors(json.factors ?? null);
-        setTrend(json.trend ?? "stable");
-        setPreviousScore(json.previousScore ?? null);
+        overallScore = json.overallScore ?? 0;
+        factors = json.factors ?? null;
+        trend = json.trend ?? "stable";
+        previousScore = json.previousScore ?? null;
       }
+      let domains: DomainScores | null = null;
       if (domainRes.ok) {
         const json = await domainRes.json();
-        setDomains(json.domains ?? null);
+        domains = json.domains ?? null;
       }
+      let trendData: TrendPoint[] = [];
+      let hasEnoughTrendData = false;
+      let quarterlyDelta: number | null = null;
       if (trendRes.ok) {
         const json = await trendRes.json();
-        setTrendData(json.data ?? []);
-        setHasEnoughTrendData(json.hasEnoughData ?? false);
-        setQuarterlyDelta(json.quarterlyDelta ?? null);
+        trendData = json.data ?? [];
+        hasEnoughTrendData = json.hasEnoughData ?? false;
+        quarterlyDelta = json.quarterlyDelta ?? null;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return {
+        overallScore,
+        factors,
+        trend,
+        previousScore,
+        domains,
+        trendData,
+        hasEnoughTrendData,
+        quarterlyDelta,
+      };
+    },
+  });
+  const overallScore = data?.overallScore ?? 0;
+  const factors = data?.factors ?? null;
+  const trend = data?.trend ?? "stable";
+  const domains = data?.domains ?? null;
+  const hasEnoughTrendData = data?.hasEnoughTrendData ?? false;
+  const quarterlyDelta = data?.quarterlyDelta ?? null;
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !factors) {
     return (
@@ -150,9 +182,9 @@ function PostureInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

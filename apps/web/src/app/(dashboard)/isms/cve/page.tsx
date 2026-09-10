@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import type { CveDashboardKpis } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
 
@@ -66,6 +68,11 @@ interface CveMatch {
   assetName?: string;
 }
 
+// [OP-245] Stabile leere Liste: `data?.matches ?? []` liefert bei jedem
+// Rendern ein neues Array und liesse die Memos darunter jedes Mal neu
+// rechnen (react-hooks/exhaustive-deps).
+const EMPTY_MATCHES: CveMatch[] = [];
+
 export default function CveDashboardPage() {
   return (
     <ModuleGate moduleKey="isms">
@@ -78,43 +85,57 @@ export default function CveDashboardPage() {
 function CveDashboardInner() {
   const { formatDate, formatDateTime } = useDateFormat();
   const t = useTranslations("cve");
-  const [kpis, setKpis] = useState<CveDashboardKpis | null>(null);
-  const [matches, setMatches] = useState<CveMatch[]>([]);
-  const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("__all__");
   const [severityFilter, setSeverityFilter] = useState("__all__");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); beide Filter stehen im Schlüssel.
+  // KPIs und Treffer wurden immer gemeinsam geladen, daher eine Abfrage mit
+  // einem Ergebnisobjekt; der Fehlerpfad (Protokoll + leere Liste) bleibt.
+  // `keepPreviousData` hält beim Filterwechsel die bisherige Liste stehen,
+  // wie es der alte Zustand tat (er wurde erst nach der Antwort ersetzt).
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ kpis: CveDashboardKpis | null; matches: CveMatch[] }>({
+    queryKey: ["isms", "cve", "dashboard", statusFilter, severityFilter],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      try {
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422 ⇒ die
+        // CVE-Trefferliste war leer, während die KPI-Kacheln darüber Zahlen
+        // zeigten. Eine leere Schwachstellenliste neben „14 offene CVEs" ist
+        // ein Widerspruch, den niemand als Ladefehler liest.
+        const params: Record<string, string> = {};
+        if (statusFilter !== "__all__") params.status = statusFilter;
+        if (severityFilter !== "__all__") params.severity = severityFilter;
+
+        const [kpiRes, matchRows] = await Promise.all([
+          fetch("/api/v1/isms/cve/dashboard"),
+          fetchAllPages<CveMatch>("/api/v1/isms/cve/matches", { params }),
+        ]);
+
+        const kpis: CveDashboardKpis | null = kpiRes.ok
+          ? ((await kpiRes.json()).data ?? null)
+          : null;
+        return { kpis, matches: matchRows };
+      } catch (err) {
+        console.error("isms/cve: Treffer nicht geladen", err);
+        return { kpis: null, matches: [] };
+      }
+    },
+  });
+  const kpis = data?.kpis ?? null;
+  const matches = data?.matches ?? EMPTY_MATCHES;
+
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (statusFilter !== "__all__") params.set("status", statusFilter);
-      if (severityFilter !== "__all__") params.set("severity", severityFilter);
-
-      const [kpiRes, matchRes] = await Promise.all([
-        fetch("/api/v1/isms/cve/dashboard"),
-        fetch(`/api/v1/isms/cve/matches?${params.toString()}`),
-      ]);
-
-      if (kpiRes.ok) {
-        const kpiJson = await kpiRes.json();
-        setKpis(kpiJson.data);
-      }
-      if (matchRes.ok) {
-        const matchJson = await matchRes.json();
-        setMatches(matchJson.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, severityFilter]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     if (!search) return matches;

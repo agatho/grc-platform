@@ -1,8 +1,12 @@
-import { db } from "@grc/db";
+import { toRows, firstRow } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { problem, getRequestId } from "@/lib/api-errors";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 /**
  * POST /api/v1/esg/erm-sync
@@ -12,7 +16,7 @@ import { problem, getRequestId } from "@/lib/api-errors";
  *   iro_type = 'risk', financial_materiality_score >= threshold, erm_risk_id IS NULL
  * - Updates materiality_iro.erm_risk_id and erm_synced_at
  */
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -31,7 +35,7 @@ export async function POST(req: Request) {
           WHERE org_id = ${ctx.orgId} AND module_key = 'esg'
           LIMIT 1`,
     );
-    const threshold = configResult.rows?.[0]?.score_threshold ?? 15;
+    const threshold = firstRow(configResult)?.score_threshold ?? 15;
 
     // 2. Find material risk IROs eligible for sync
     const candidates = await tx.execute(
@@ -46,14 +50,14 @@ export async function POST(req: Request) {
             AND mi.erm_risk_id IS NULL`,
     );
 
-    if (!candidates.rows?.length) {
+    if (!toRows(candidates).length) {
       return [];
     }
 
     const results: Array<{ iroId: string; riskId: string; title: string }> = [];
 
     // 3. For each candidate, create a risk entry and link back
-    for (const row of candidates.rows) {
+    for (const row of toRows(candidates)) {
       const title = `ESG-Risiko: ${row.title}`;
       const description = `ESRS ${row.esrs_topic} — Automatisch aus ESG-Wesentlichkeitsanalyse synchronisiert. Finanzielle Wesentlichkeit: ${row.financial_materiality_score}, Impact: ${row.impact_materiality_score ?? "k.A."}`;
 
@@ -74,7 +78,7 @@ export async function POST(req: Request) {
             RETURNING id`,
       );
 
-      const riskId = riskResult.rows?.[0]?.id as string;
+      const riskId = firstRow(riskResult)?.id as string;
 
       // 4. Update materiality_iro with erm_risk_id
       await tx.execute(
@@ -101,8 +105,7 @@ export async function POST(req: Request) {
       items: synced,
     },
   });
-}
-
+});
 // #NIGHT-018: this is a sync trigger — POST-only. Make the Allow header
 // explicit so callers don't have to read source.
 export function GET(req: Request) {

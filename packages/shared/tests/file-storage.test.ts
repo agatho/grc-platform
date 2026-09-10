@@ -19,6 +19,17 @@ import {
 } from "../src/lib/file-storage";
 import { sha256Hex } from "../src/lib/sigv4";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("LocalFsStorage", () => {
   let dir: string;
   let storage: LocalFsStorage;
@@ -139,6 +150,35 @@ describe("S3Storage", () => {
     );
   });
 
+  it("strips a run of trailing slashes from the endpoint", () => {
+    // The endpoint is operator-configured, and a trailing slash in
+    // S3_ENDPOINT is the single most common way to write it. All three
+    // slashes have to go, and exactly the slashes — the URL must be the
+    // one the no-slash case produces.
+    const s3 = new S3Storage({
+      ...baseCfg,
+      endpoint: "http://127.0.0.1:9000///",
+    });
+    expect(s3.objectUrl("org/doc/f.pdf").toString()).toBe(
+      "http://127.0.0.1:9000/arctos-docs/org/doc/f.pdf",
+    );
+  });
+
+  it("trims the endpoint in linear time (js/polynomial-redos)", () => {
+    // Counter-proof for the `.replace(/\/+$/, "")` that used to sit here:
+    // a long run of slashes followed by a non-slash makes the anchored
+    // regex restart, consume the run and backtrack at every slash. The
+    // old code needs ~1.4 s for this input, the loop ~0 ms; the budget is
+    // wide enough that only the quadratic behaviour can blow it.
+    const endpoint = `http://x${"/".repeat(50_000)}x`;
+    const s3 = new S3Storage({ ...baseCfg, endpoint });
+    const started = performance.now();
+    const url = s3.objectUrl("k.txt").toString();
+    const elapsedMs = performance.now() - started;
+    expect(url.endsWith("/arctos-docs/k.txt")).toBe(true);
+    expect(elapsedMs).toBeLessThan(300);
+  });
+
   it("PUT signs the real payload hash and sends the body", async () => {
     const { fetchFn, requests } = mockFetch(() => ({ status: 200 }));
     const s3 = new S3Storage({ ...baseCfg, fetchFn });
@@ -147,7 +187,7 @@ describe("S3Storage", () => {
     await s3.put("org/doc/a.pdf", data, { contentType: "application/pdf" });
 
     expect(requests).toHaveLength(1);
-    const req = requests[0];
+    const req = at(requests, 0);
     expect(req.method).toBe("PUT");
     expect(req.url).toBe("http://127.0.0.1:9000/arctos-docs/org/doc/a.pdf");
     expect(req.headers["x-amz-content-sha256"]).toBe(sha256Hex(data));

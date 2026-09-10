@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Fehlender Wert fuer is_active_in_platform im module_definition-INSERT ergaenzt (42601, Pass-1-Ursache) und die Uebergangsspalte report_template.category aufgenommen, damit die unveraenderte Migration 0081 ihren Index behaelt (S09-16).
 -- Sprint 30: Report Engine + Threat Landscape Dashboard
 -- Migrations 387–394 consolidated
 
@@ -40,6 +45,15 @@ CREATE TABLE IF NOT EXISTS report_template (
   name VARCHAR(500) NOT NULL,
   description TEXT,
   module_scope report_module_scope NOT NULL DEFAULT 'all',
+  -- [ARCTOS-FULL-2026-08-31 / S09-16] `category` gehoert NICHT zur
+  -- kanonischen Gestalt (siehe src/schema/reporting.ts), wird hier aber
+  -- angelegt, weil 0081_round4_data_reporting.sql — eine Migration, die
+  -- bisher erfolgreich lief und darum unveraendert bleibt — einen Index
+  -- rt_category_idx darauf legt. Sobald 0042 wieder durchlaeuft, no-oppt
+  -- das CREATE TABLE IF NOT EXISTS in 0081, und ohne diese Spalte wuerde
+  -- dessen Index scheitern. 0383_report_template_canonical.sql entfernt
+  -- Index und Spalte am Ende der Sequenz wieder.
+  category VARCHAR(50),
   sections_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   parameters_json JSONB NOT NULL DEFAULT '[]'::jsonb,
   branding_json JSONB,
@@ -155,20 +169,45 @@ ALTER TABLE report_schedule ENABLE ROW LEVEL SECURITY;
 ALTER TABLE threat_feed_source ENABLE ROW LEVEL SECURITY;
 ALTER TABLE threat_feed_item ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY report_template_org_isolation ON report_template
-  USING (org_id = current_setting('app.current_org_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public'
+                 AND tablename='report_template' AND policyname='report_template_org_isolation') THEN
+    CREATE POLICY report_template_org_isolation ON report_template
+    USING (org_id = current_setting('app.current_org_id', true)::uuid);
+  END IF;
+END $$;
 
-CREATE POLICY report_generation_log_org_isolation ON report_generation_log
-  USING (org_id = current_setting('app.current_org_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public'
+                 AND tablename='report_generation_log' AND policyname='report_generation_log_org_isolation') THEN
+    CREATE POLICY report_generation_log_org_isolation ON report_generation_log
+    USING (org_id = current_setting('app.current_org_id', true)::uuid);
+  END IF;
+END $$;
 
-CREATE POLICY report_schedule_org_isolation ON report_schedule
-  USING (org_id = current_setting('app.current_org_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public'
+                 AND tablename='report_schedule' AND policyname='report_schedule_org_isolation') THEN
+    CREATE POLICY report_schedule_org_isolation ON report_schedule
+    USING (org_id = current_setting('app.current_org_id', true)::uuid);
+  END IF;
+END $$;
 
-CREATE POLICY threat_feed_source_org_isolation ON threat_feed_source
-  USING (org_id = current_setting('app.current_org_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public'
+                 AND tablename='threat_feed_source' AND policyname='threat_feed_source_org_isolation') THEN
+    CREATE POLICY threat_feed_source_org_isolation ON threat_feed_source
+    USING (org_id = current_setting('app.current_org_id', true)::uuid);
+  END IF;
+END $$;
 
-CREATE POLICY threat_feed_item_org_isolation ON threat_feed_item
-  USING (org_id = current_setting('app.current_org_id', true)::uuid);
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='public'
+                 AND tablename='threat_feed_item' AND policyname='threat_feed_item_org_isolation') THEN
+    CREATE POLICY threat_feed_item_org_isolation ON threat_feed_item
+    USING (org_id = current_setting('app.current_org_id', true)::uuid);
+  END IF;
+END $$;
 
 -- ──────────────────────────────────────────────────────────────
 -- 392: Audit triggers on Sprint 30 tables
@@ -229,7 +268,14 @@ INSERT INTO module_definition (
   '/reports',
   'management',
   85,
-  '[]'::jsonb,
+  -- [ARCTOS-FULL-2026-08-31 / S09-01] requires_modules und
+  -- background_processes sind text[] (module_definition), nicht jsonb.
+  '{}'::text[],
   'professional',
-  '["report-scheduler"]'::jsonb
+  -- [ARCTOS-FULL-2026-08-31 / S09-01] Wert fuer is_active_in_platform
+  -- ergaenzt: die Spaltenliste nennt 13 Spalten, die VALUES-Liste lieferte
+  -- nur 12 Werte (42601). Das war der Pass-1-Fehler dieser Datei; das im
+  -- Log sichtbare "column module_scope does not exist" war nur die Folge.
+  true,
+  ARRAY['report-scheduler']::text[]
 ) ON CONFLICT (module_key) DO NOTHING;

@@ -42,6 +42,28 @@ export const createPortalConfigSchema = z.object({
     .max(10)
     .default(["de", "en"]),
   accessPermissions: z.array(z.string().max(200)).max(50).default([]),
+  /**
+   * [ARCTOS-FULL-2026-08-31 / WP12 · S12-20] UNRENDERED AND UNSANITISED.
+   *
+   * This field is accepted, persisted and offered in the settings form, and it
+   * is rendered NOWHERE — `grep -rn "customCss|custom_css" apps packages`
+   * returns only schema, persistence and form-field hits. Today that is a
+   * functional defect (the user fills it in and nothing happens), not a
+   * vulnerability.
+   *
+   * BEFORE WIRING IT UP, read this. The obvious implementation is
+   * `<style dangerouslySetInnerHTML={{__html: customCss}} />`, and it turns
+   * this field into an org-wide stored-injection vector in one line:
+   * `</style><script>…` closes the style element and opens a script one. The
+   * length cap below is not a content check. For the stakeholder portals the
+   * audience is external third parties, so UI redressing is in scope too, and
+   * even script-free CSS can exfiltrate data through attribute selectors with
+   * `background-image: url(...)`.
+   *
+   * `react/no-danger` is an ERROR in apps/web/eslint.config.mjs, so the naive
+   * implementation now fails the build. Wiring this field up needs, first, an
+   * allow-list-based CSS sanitiser and an ADR — not a `// eslint-disable`.
+   */
   customCss: z.string().max(50000).optional(),
   welcomeMessage: z.string().max(5000).optional(),
   privacyPolicyUrl: z.string().url().max(2000).optional(),

@@ -19,9 +19,14 @@ import {
   organization,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, isNull, gte, lte, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { clientIpForAudit, logExportOrThrow } from "@/lib/export-audit";
 import { renderHtmlToPdfResponse } from "@/lib/pdf";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
@@ -226,7 +231,10 @@ function buildHtml(d: ReportData): string {
 
 type RouteParams = { params: Promise<{ year: string }> };
 
-export async function GET(_req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  req: Request,
+  { params }: RouteParams,
+) {
   const { year: yearStr } = await params;
   const year = parseInt(yearStr, 10);
   if (isNaN(year) || year < 2000 || year > 3000) {
@@ -250,25 +258,43 @@ export async function GET(_req: Request, { params }: RouteParams) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
   }
 
+  // #WP8-S07-17 — Der Jahresbericht ist der Rechenschaftsnachweis nach
+  // Art. 5(2)/Art. 30 gegenüber der Aufsichtsbehörde. Er zählte
+  // soft-gelöschte Verarbeitungstätigkeiten, DSFAs und TIAs mit: eine
+  // Organisation, die zwölf veraltete Verarbeitungen gelöscht hat, wies
+  // sie im Nachweis weiterhin aus. Alle Zählpfade filtern jetzt
+  // `deleted_at IS NULL`.
   // Same aggregation as the JSON endpoint — kept inline so the two
   // never drift on score weighting.
   const [{ ropaTotal }] = await db
     .select({ ropaTotal: sql<number>`count(*)::int` })
     .from(ropaEntry)
-    .where(eq(ropaEntry.orgId, ctx.orgId));
+    .where(and(eq(ropaEntry.orgId, ctx.orgId), isNull(ropaEntry.deletedAt)));
   const [{ ropaActive }] = await db
     .select({ ropaActive: sql<number>`count(*)::int` })
     .from(ropaEntry)
-    .where(and(eq(ropaEntry.orgId, ctx.orgId), eq(ropaEntry.status, "active")));
+    .where(
+      and(
+        eq(ropaEntry.orgId, ctx.orgId),
+        eq(ropaEntry.status, "active"),
+        isNull(ropaEntry.deletedAt),
+      ),
+    );
 
   const [{ dpiaTotal }] = await db
     .select({ dpiaTotal: sql<number>`count(*)::int` })
     .from(dpia)
-    .where(eq(dpia.orgId, ctx.orgId));
+    .where(and(eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)));
   const [{ dpiaApproved }] = await db
     .select({ dpiaApproved: sql<number>`count(*)::int` })
     .from(dpia)
-    .where(and(eq(dpia.orgId, ctx.orgId), eq(dpia.status, "approved")));
+    .where(
+      and(
+        eq(dpia.orgId, ctx.orgId),
+        eq(dpia.status, "approved"),
+        isNull(dpia.deletedAt),
+      ),
+    );
 
   const dsrRows = await db
     .select({
@@ -329,7 +355,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const [{ tiaActive }] = await db
     .select({ tiaActive: sql<number>`count(*)::int` })
     .from(tia)
-    .where(eq(tia.orgId, ctx.orgId));
+    .where(and(eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)));
 
   const consentRows = await db
     .select({
@@ -434,5 +460,20 @@ export async function GET(_req: Request, { params }: RouteParams) {
   // to renderHtmlToPdfResponse (pdfkit-backed) which always produces
   // a valid application/pdf.
   const filename = `DPMS-Annual-Report-${year}-${org.name.replace(/[^a-zA-Z0-9\-_]/g, "_")}`;
+
+  // #WP8-S07-14 — Exportnachweis; die Route stand auf der Liste der
+  // ungeloggten Exportpfade.
+  await logExportOrThrow({
+    orgId: ctx.orgId,
+    userId: ctx.userId,
+    exportType: "pdf_report",
+    entityType: "dpms_annual_report",
+    description: `DPMS annual report ${year}`,
+    recordCount: 1,
+    containsPersonalData: false,
+    fileName: `${filename}.pdf`,
+    ipAddress: clientIpForAudit(req),
+  });
+
   return renderHtmlToPdfResponse(html, filename);
-}
+});

@@ -131,12 +131,40 @@ async function fetchEntityData(
   filters: Record<string, string>,
   orgId: string,
 ): Promise<Record<string, unknown>[]> {
-  // Build WHERE conditions
-  const conditions: string[] = [`org_id = '${orgId}'`];
+  // #S04-07-EXT (found during WP5 remediation, same class as S04-07 /
+  // S10-19): this function used to build the WHERE clause by string
+  // concatenation:
+  //
+  //   const sanitizedValue = value.replace(/'/g, "''");
+  //   conditions.push(`"${key}" = '${sanitizedValue}'`);
+  //
+  // The VALUE was quote-escaped, but the KEY — an arbitrary query-string
+  // parameter name forwarded verbatim by /export/[entityType],
+  // /findings/export, /bcms/bia/export and /dpms/ropa/export — was
+  // interpolated into a double-quoted identifier with NO escaping at all.
+  // A `"` in the parameter NAME breaks out of the identifier, e.g.
+  //
+  //   ?title"='' OR 1=1 --=x
+  //
+  // yields `WHERE "title"='' OR 1=1 --" = 'x'` — a cross-tenant read
+  // (the org_id condition is commented out) on a route reachable by any
+  // authenticated user of the module.
+  //
+  // Fix: the filter key must be one of the entity definition's declared
+  // export columns (an allowlist that already exists and is exactly the
+  // set a filter is meaningful on), and both the identifier and the value
+  // now go through the SQL builder instead of string concatenation.
+  const allowedColumns = new Set<string>();
+  for (const col of def.exportColumns) {
+    allowedColumns.add(col.key);
+    allowedColumns.add(col.key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`));
+  }
+
+  const conditions = [sql`org_id = ${orgId}::uuid`];
 
   // Add soft-delete filter only if the column exists on the target table.
   if (await tableHasSoftDelete(def.tableName)) {
-    conditions.push("deleted_at IS NULL");
+    conditions.push(sql`deleted_at IS NULL`);
   }
 
   // Apply filters from query params
@@ -144,17 +172,17 @@ async function fetchEntityData(
     if (["format", "page", "limit"].includes(key) || !value) {
       continue;
     }
-    // Sanitize filter values to prevent SQL injection
-    const sanitizedValue = value.replace(/'/g, "''");
-    conditions.push(`"${key}" = '${sanitizedValue}'`);
+    if (!allowedColumns.has(key)) {
+      throw new Error(`Unknown filter column: ${key}`);
+    }
+    const column = key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+    conditions.push(sql`${sql.identifier(column)}::text = ${value}`);
   }
 
-  const whereClause = conditions.join(" AND ");
+  const whereClause = sql.join(conditions, sql` AND `);
 
   const result = await db.execute(
-    sql.raw(
-      `SELECT * FROM "${def.tableName}" WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${MAX_EXPORT_ROWS}`,
-    ),
+    sql`SELECT * FROM ${sql.identifier(def.tableName)} WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${MAX_EXPORT_ROWS}`,
   );
 
   return (result as unknown as Record<string, unknown>[]) ?? [];

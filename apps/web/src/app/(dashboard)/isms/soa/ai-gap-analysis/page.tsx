@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
   Sparkles,
-  AlertTriangle,
   Check,
   X,
   Info,
@@ -53,30 +53,37 @@ export default function SoaAiGapAnalysisPage() {
   );
 }
 
+const GAP_ANALYSIS_QUERY_KEY = ["isms", "soa", "ai-gap-analysis"] as const;
+
 function AiGapAnalysisInner() {
   const t = useTranslations("ismsIntelligence.soaGap");
-  const [data, setData] = useState<GapAnalysisData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [analyzing, setAnalyzing] = useState(false);
   const [filter, setFilter] = useState<string>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Das Ergebnis der Analyse (POST)
+  // wird unten über `setQueryData` unter demselben Schlüssel abgelegt, damit
+  // es wie vorher sofort erscheint.
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<GapAnalysisData | null>({
+    queryKey: GAP_ANALYSIS_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/soa/ai-gap-analysis");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as GapAnalysisData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchResults();
-  }, [fetchResults]);
+  const fetchResults = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleStartAnalysis = async () => {
     setAnalyzing(true);
@@ -88,7 +95,10 @@ function AiGapAnalysisInner() {
       });
       if (res.ok) {
         const json = await res.json();
-        setData(json.data);
+        queryClient.setQueryData<GapAnalysisData | null>(
+          GAP_ANALYSIS_QUERY_KEY,
+          json.data,
+        );
         toast.success(`${json.data.totalSuggestions} gaps identified`);
       } else if (res.status === 429) {
         toast.error(t("rateLimited"));

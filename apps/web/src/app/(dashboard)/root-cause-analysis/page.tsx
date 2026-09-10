@@ -1,22 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import {
-  Search,
-  Loader2,
-  Plus,
-  GitBranch,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  User,
-  Calendar,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Plus, GitBranch, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
 
 interface RCA {

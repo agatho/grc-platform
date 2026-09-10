@@ -5,12 +5,39 @@
 // (cross-domain conflict-of-interest). Moved to the same officer set as the
 // cases routes; admins retain access for platform-level oversight.
 
-import { db, wbCase, wbReport } from "@grc/db";
+import { db, wbCase } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, sql, gte, lt, isNotNull, count } from "drizzle-orm";
+import { eq, and, sql, gte, lt, count } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(req: Request) {
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076]
+//
+// Sieben Aggregatabfragen ueber `db.execute(sql`…`)`. Bis Welle 4b stand
+// hier siebenmal `as any[]` bzw. `(x as any)[0]`.
+//
+// Wichtig an dieser Datei: `COUNT(*)` ist in Postgres `bigint`, und der
+// Treiber `postgres` liefert `bigint` und `numeric` als ZEICHENKETTE. Der
+// Code rechnete an drei Stellen bereits mit `Number(...)`, an zwei aber
+// nicht (`sla7dRow.compliant / sla7dRow.total`) — das ging nur gut, weil
+// JavaScript beim `/` selbst umwandelt und weil `any` die Frage gar nicht
+// erst stellte. Die Zeilenformen nennen den Treibertyp deshalb ehrlich als
+// `string | number`; die beiden Divisionen wandeln jetzt sichtbar um.
+
+/** `COUNT(*)`/`AVG(...)` — vom Treiber als Zeichenkette geliefert. */
+type NumericCell = string | number;
+
+type AvgDaysRow = { avg_days: NumericCell | null };
+type SlaRow = { compliant: NumericCell | null; total: NumericCell | null };
+type CategoryRow = { category: string; cnt: NumericCell };
+type MonthRow = { month: string; cnt: NumericCell };
+type ResolutionRow = { resolution_category: string; cnt: NumericCell };
+type StatusRow = { status: string; cnt: NumericCell };
+
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
@@ -52,7 +79,7 @@ export async function GET(req: Request) {
         FROM wb_case WHERE org_id = ${ctx.orgId} AND resolved_at IS NOT NULL`,
   );
   const avgResolutionDays = Math.round(
-    Number((avgResResult as any)[0]?.avg_days ?? 0),
+    Number((avgResResult as unknown as AvgDaysRow[])[0]?.avg_days ?? 0),
   );
 
   // 7-day SLA compliance (acknowledged within 7 days)
@@ -62,10 +89,11 @@ export async function GET(req: Request) {
           COUNT(*) FILTER (WHERE acknowledged_at IS NOT NULL OR (acknowledge_deadline < NOW() AND acknowledged_at IS NULL)) as total
         FROM wb_case WHERE org_id = ${ctx.orgId}`,
   );
-  const sla7dRow = (sla7dResult as any)[0];
+  const sla7dRow = (sla7dResult as unknown as SlaRow[])[0];
+  const sla7dTotal = Number(sla7dRow?.total ?? 0);
   const sla7dCompliance =
-    sla7dRow?.total > 0
-      ? Math.round((sla7dRow.compliant / sla7dRow.total) * 100)
+    sla7dTotal > 0
+      ? Math.round((Number(sla7dRow?.compliant ?? 0) / sla7dTotal) * 100)
       : 100;
 
   // 3-month SLA compliance (resolved within 3 months)
@@ -75,10 +103,11 @@ export async function GET(req: Request) {
           COUNT(*) FILTER (WHERE resolved_at IS NOT NULL OR (response_deadline < NOW() AND resolved_at IS NULL)) as total
         FROM wb_case WHERE org_id = ${ctx.orgId}`,
   );
-  const sla3mRow = (sla3mResult as any)[0];
+  const sla3mRow = (sla3mResult as unknown as SlaRow[])[0];
+  const sla3mTotal = Number(sla3mRow?.total ?? 0);
   const sla3mCompliance =
-    sla3mRow?.total > 0
-      ? Math.round((sla3mRow.compliant / sla3mRow.total) * 100)
+    sla3mTotal > 0
+      ? Math.round((Number(sla3mRow?.compliant ?? 0) / sla3mTotal) * 100)
       : 100;
 
   // Category distribution (YTD)
@@ -90,7 +119,7 @@ export async function GET(req: Request) {
         GROUP BY r.category`,
   );
   const byCategory: Record<string, number> = {};
-  for (const row of categoryResult as any[]) {
+  for (const row of categoryResult as unknown as CategoryRow[]) {
     byCategory[row.category] = Number(row.cnt);
   }
 
@@ -103,7 +132,7 @@ export async function GET(req: Request) {
         GROUP BY TO_CHAR(created_at, 'YYYY-MM')
         ORDER BY month`,
   );
-  const byMonth = (monthlyResult as any[]).map((r: any) => ({
+  const byMonth = (monthlyResult as unknown as MonthRow[]).map((r) => ({
     month: r.month,
     count: Number(r.cnt),
   }));
@@ -116,7 +145,7 @@ export async function GET(req: Request) {
         GROUP BY resolution_category`,
   );
   const byResolution: Record<string, number> = {};
-  for (const row of resolutionResult as any[]) {
+  for (const row of resolutionResult as unknown as ResolutionRow[]) {
     byResolution[row.resolution_category] = Number(row.cnt);
   }
 
@@ -127,7 +156,7 @@ export async function GET(req: Request) {
         GROUP BY status`,
   );
   const byStatus: Record<string, number> = {};
-  for (const row of statusResult as any[]) {
+  for (const row of statusResult as unknown as StatusRow[]) {
     byStatus[row.status] = Number(row.cnt);
   }
 
@@ -144,4 +173,4 @@ export async function GET(req: Request) {
       byStatus,
     },
   });
-}
+});

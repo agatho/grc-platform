@@ -178,6 +178,14 @@ export const simulationActivityParam = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // STUFE2-E (0445): `process_step.step_key` des Schritts. Die Vorlage
+    // (STUFE2-A2-GRC.md §5.2) schreibt "activity_id -> step_key"; woertlich
+    // waere das ein Typwechsel an der Spalte, die HEUTE der einzige
+    // funktionierende Traeger des operations-Layers ist. Deshalb steht
+    // `step_key` daneben: `activityId` bleibt die Anzeige- und
+    // Zuordnungsquelle, `step_key` ueberlebt einen Re-Export durch ein
+    // fremdes Werkzeug.
+    stepKey: uuid("step_key"),
   },
   (table) => ({
     scenarioIdx: index("sim_param_scenario_idx").on(table.scenarioId),
@@ -185,6 +193,7 @@ export const simulationActivityParam = pgTable(
       table.scenarioId,
       table.activityId,
     ),
+    stepKeyIdx: index("sap_step_key_idx").on(table.orgId, table.stepKey),
   }),
 );
 

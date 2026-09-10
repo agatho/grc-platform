@@ -26,7 +26,7 @@ const colorByStatus: Record<ProgrammeJourneyStatus, string> = {
   blocked: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100",
   completed:
     "bg-violet-100 text-violet-800 dark:bg-violet-900 dark:text-violet-100",
-  archived: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+  archived: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-500",
 };
 
 export function ProgrammeStatusBadge({
@@ -48,8 +48,11 @@ const stepColorByStatus: Record<string, string> = {
   in_progress: "bg-blue-100 text-blue-800",
   review: "bg-amber-100 text-amber-800",
   completed: "bg-emerald-100 text-emerald-800",
-  skipped: "bg-slate-200 text-slate-500",
-  cancelled: "bg-slate-200 text-slate-500",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] slate-500 auf slate-200 = 4,12:1.
+  // „Übersprungen" und „abgebrochen" sollen gedämpft wirken — gedämpft
+  // heisst nicht unlesbar; slate-600 auf derselben Fläche ist 6,17:1.
+  skipped: "bg-slate-200 text-slate-600",
+  cancelled: "bg-slate-200 text-slate-600",
 };
 
 export function ProgrammeStepStatusBadge({ status }: { status: string }) {

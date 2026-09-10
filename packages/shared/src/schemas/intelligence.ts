@@ -2,8 +2,6 @@ import { z } from "zod";
 
 // Sprint 11: CCM + AI Intelligence schemas
 
-const cesTrendValues = ["improving", "stable", "declining"] as const;
-
 // ─── Finding SLA Config ─────────────────────────────────────────
 
 export const updateFindingSlaConfigSchema = z.object({

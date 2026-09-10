@@ -213,7 +213,7 @@ grc-platform/
 ```
 Push/PR auf main oder develop
   │
-  ├─ Job 1: Lint & Type Check (2-3 Min)
+  ├─ Job 1: Lint & Ratschen (~4 Min) und Type Check (~7 Min, parallel)
   │   └─ ESLint, TypeScript strict mode
   │
   ├─ Job 2: Unit Tests (3-5 Min)

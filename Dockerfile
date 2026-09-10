@@ -14,7 +14,17 @@
 # patch releases (security fixes) but won't silently jump majors.
 
 # Common Node base — single source of truth for all three stages.
-ARG NODE_IMAGE=node:22.20-alpine
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-21] Digest-Pinning.
+# Der Tag `node:22.20-alpine` ist innerhalb der Patch-Linie beweglich: zwei
+# Builds desselben Commits ergaben unterschiedliche Images. Fuer ein Produkt
+# mit Auditierbarkeitsanspruch heisst das, dass sich von einem laufenden
+# Container nicht auf einen reproduzierbaren Bauzustand zurueckschliessen
+# laesst. Der Digest unten ist bit-identisch-oder-Fehlschlag; der Tag bleibt
+# als Kommentar stehen, damit ein Bump lesbar ist. Dependabot bumpt
+# `docker`-Ecosystem-Digests automatisch (.github/dependabot.yml).
+# Ermittelt am 2026-09-01 mit:
+#   docker buildx imagetools inspect node:22.20-alpine --format '{{.Manifest.Digest}}'
+ARG NODE_IMAGE=node:22.20-alpine@sha256:dbcedd8aeab47fbc0f4dd4bffa55b7c3c729a707875968d467aaaea42d6225af
 
 # ── Stage 1: Dependencies ───────────────────────────────────────
 FROM ${NODE_IMAGE} AS deps
@@ -34,7 +44,22 @@ COPY packages/reporting/package.json packages/reporting/
 COPY packages/shared/package.json packages/shared/
 COPY packages/ui/package.json packages/ui/
 
-RUN npm ci
+# [ARCTOS-FULL-2026-08-31 / WP10 · S08-19]
+# Vorher: `npm ci` — der Web-Build fuehrte damit Lifecycle-Skripte JEDES
+# installierten Pakets aus (inkl. devDependencies), waehrend
+# Dockerfile.worker `--ignore-scripts` bereits korrekt setzte. Ein
+# kompromittiertes Paket haette im `postinstall` beliebigen Code in der
+# Builder-Stage ausgefuehrt — mit Zugriff auf den gesamten Quellbaum und
+# die Build-Argumente; das manipulierte `.next/standalone` waere danach im
+# Runtime-Image gelandet. Die Inkonsistenz zwischen beiden Images hatte
+# keine Begruendung.
+#
+# Die zwei Pakete des Produktionsbaums, die tatsaechlich Code ausfuehren
+# (@parcel/watcher: `install`, @swc/core: `postinstall`), werden danach
+# gezielt nachgezogen — `npm rebuild` fuehrt nur deren eigene Skripte aus,
+# nicht die des gesamten Baums.
+RUN npm ci --ignore-scripts \
+ && npm rebuild @parcel/watcher @swc/core --foreground-scripts 2>/dev/null || true
 
 # ── Stage 2: Build ──────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS builder
@@ -145,9 +170,24 @@ COPY --from=builder /app/apps/web/messages/en apps/web/messages/en
 COPY --from=builder /app/packages/db/drizzle packages/db/drizzle
 COPY --from=builder /app/packages/db/sql packages/db/sql
 
-# Copy entrypoint
+# [WP10 · S08-16] Namensnennungspflicht bei Weitergabe. MIT, Apache-2.0,
+# ISC, BSD-2/3-Clause verlangen saemtlich die Beibehaltung des
+# Copyright-Vermerks; ARCTOS wird als Image ueber ghcr.io und per deploy/
+# On-Prem verteilt — das ist Weitergabe im Lizenzsinn. Bis 2026-08-31 lag
+# dem Image nichts davon bei.
+COPY NOTICE THIRD-PARTY-LICENSES.md /app/
+
+# [WP10 · S08-12] Stueckliste im Image. Erscheint morgen ein Advisory zu
+# einem tief transitiven Paket, war vorher nicht feststellbar, welches
+# bereits ausgelieferte Image betroffen ist — `npm audit` beschreibt immer
+# nur den heutigen Baum.
+COPY SBOM/arctos-sbom-prod.cdx.json /app/SBOM/arctos-sbom-prod.cdx.json
+
+# Copy entrypoint + Pre-Start-Gate (#S13-10)
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
+COPY scripts/prestart.sh /app/prestart.sh
+COPY scripts/assert-runtime-config.mjs /app/scripts/assert-runtime-config.mjs
+RUN chmod +x /app/docker-entrypoint.sh /app/prestart.sh
 
 # Install psql for migrations. PDF export runs entirely through pdfkit
 # (pure Node, Standard-14 .afm font metrics shipped inside the package)
@@ -166,5 +206,21 @@ EXPOSE 3000
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
+# [WP10 · S13-13] Container-Healthcheck. `restart: unless-stopped` reagiert
+# nur auf einen BEENDETEN Prozess; ein haengender Node-Prozess (Event-Loop
+# blockiert, Pool erschoepft) wurde nie neu gestartet — waehrend
+# runbook.md:118 "Docker-Restart-Policy greift automatisch" zusagte. Der
+# Worker hatte seit WP9 einen Healthcheck, `web` nicht (Uebergabe aus
+# S10-21). `start-period` deckt den Migrationslauf des Entrypoints ab.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=180s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/v1/health')\
+    .then(r=>r.json().then(j=>process.exit(r.ok&&j.status!=='unhealthy'?0:1)))\
+    .catch(()=>process.exit(1))"
+
+# [WP10 · S13-10] prestart.sh prueft die Pflicht-Betriebsvariablen und
+# uebergibt danach an den Migrations-Entrypoint. Ohne APP_DATABASE_URL,
+# AUDIT_SEAL_KEY, PII_PSEUDONYM_KEY o. ae. startet der Container in
+# NODE_ENV=production nicht mehr — vorher lief er klaglos als Superuser
+# mit wirkungsloser RLS und meldete /api/v1/health mit 200.
+ENTRYPOINT ["/app/prestart.sh", "web"]
 CMD ["node", "apps/web/server.js"]

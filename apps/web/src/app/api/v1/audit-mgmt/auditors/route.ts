@@ -2,6 +2,10 @@ import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/audit-mgmt/auditors
 //
@@ -9,7 +13,7 @@ import { withAuth } from "@/lib/api";
 // Wird vom Lead-Auditor-Picker im Audit-Create/Edit-Form konsumiert.
 // Keine admin-Restriction — jede:r auditor darf andere Auditor:innen sehen
 // um Lead- oder Team-Zuweisungen vorzunehmen.
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -34,4 +38,4 @@ export async function GET(req: Request) {
   `);
 
   return Response.json({ data: rows });
-}
+});

@@ -1,4 +1,4 @@
-import { db, dpia, workItem, user } from "@grc/db";
+import { db, dpia, workItem } from "@grc/db";
 import { createDpiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc, asc, inArray, ilike } from "drizzle-orm";
@@ -12,7 +12,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/dpms/dpia — Create DPIA
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo");
   if (ctx instanceof Response) return ctx;
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/dpms/dpia — List DPIAs
 export const GET = withErrorHandler(async function GET(req: Request) {

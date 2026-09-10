@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Search, Link2 } from "lucide-react";
 
@@ -26,33 +27,37 @@ export default function DatapointsPage() {
 
 function DatapointsInner() {
   const t = useTranslations("esg");
-  const [datapoints, setDatapoints] = useState<DatapointRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filterStandard, setFilterStandard] = useState("");
   const [filterMandatory, setFilterMandatory] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Alle drei Filter stehen im
+  // Schlüssel.
+  const {
+    data: datapoints = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<DatapointRow[]>({
+    queryKey: ["esg", "datapoints", search, filterStandard, filterMandatory],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (filterStandard) params.set("standard", filterStandard);
       if (filterMandatory) params.set("mandatory", "true");
 
       const res = await fetch(`/api/v1/esg/datapoints?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setDatapoints(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search, filterStandard, filterMandatory]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DatapointRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Derive unique standards for filter
   const standards = [...new Set(datapoints.map((d) => d.esrsStandard))].sort();
@@ -73,9 +78,9 @@ function DatapointsInner() {
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

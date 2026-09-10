@@ -1,12 +1,17 @@
-import { db, process, auditLog, userOrganizationRole } from "@grc/db";
+import { db, process } from "@grc/db";
+import { writeAuditEntry } from "@/lib/audit-entry";
 import { requireModule } from "@grc/auth";
 import { bulkActionSchema, PROCESS_STATUS_TRANSITIONS } from "@grc/shared";
 import type { ProcessStatus } from "@grc/shared";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/processes/bulk — Bulk operations
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -146,8 +151,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // Write audit log entry for bulk operation
-    await tx.insert(auditLog).values({
+    // Write audit log entry for bulk operation.
+    //
+    // [ARCTOS-FULL-2026-08-31 / WP4 · S03-05] This INSERT used to land in
+    // audit_log with entry_hash NULL, previous_hash_scope NULL and
+    // hash_version 1 (the column default) — outside every integrity check
+    // and outside every external anchor, while /integrity reported such
+    // rows as historic "legacy" residue. Migration 0401 moved the chain
+    // assignment into a BEFORE INSERT trigger on audit_log itself, so this
+    // row is now scoped, scrubbed, committed and hashed like any other.
+    // No caller-side change is needed and none is possible to forget.
+    await writeAuditEntry(tx, {
       orgId: ctx.orgId,
       userId: ctx.userId,
       userEmail: ctx.session.user.email,
@@ -173,4 +187,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result });
-}
+});

@@ -4,10 +4,10 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
   useCallback,
   type ReactNode,
 } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import type { ModuleConfig, ModuleKey } from "@grc/shared";
 
@@ -35,54 +35,89 @@ const ModuleConfigContext = createContext<ModuleConfigContextValue>({
 
 interface ModuleConfigProviderProps {
   orgId: string | null;
+  /**
+   * [ARCTOS-FULL-2026-08-31 · OP-218, Welle 8b] True, solange die Sitzung
+   * noch laedt.
+   *
+   * `orgId` kommt aus `useSession()` und ist in ZWEI voellig verschiedenen
+   * Lagen `null`: „die Sitzung ist noch nicht da" und „die Sitzung ist da und
+   * hat keine Organisation". Der Anbieter hat beide gleich behandelt und
+   * `loading: false` mit leerer Liste gemeldet — fuer jedes `ModuleGate` ist
+   * das `status: "disabled"`, also der Teaser. Auf JEDER Modulseite blitzte
+   * deshalb kurz der Teaser mit dem ROHEN Modulschluessel auf
+   * (`definition?.displayNameDe ?? moduleKey`), dazu eine Konsolenwarnung,
+   * die dem Betreiber eine fehlende `module_definition`-Zeile meldete, die
+   * es gar nicht gab.
+   *
+   * Die Vorgabe ist `false`: ein Aufrufer, der das Flag nicht setzt,
+   * verhaelt sich wie bisher.
+   */
+  sessionLoading?: boolean;
   children: ReactNode;
 }
 
 export function ModuleConfigProvider({
   orgId,
+  sessionLoading = false,
   children,
 }: ModuleConfigProviderProps) {
-  const [configs, setConfigs] = useState<ModuleConfig[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchConfigs = useCallback(async () => {
-    if (!orgId) {
-      setConfigs([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
+  // [OP-245 · Gestalt A] Der Abruf laeuft ueber `@tanstack/react-query`;
+  // Effekt und gespiegelter Zustand entfallen. Die OP-218-Semantik bleibt
+  // Zeile fuer Zeile erhalten:
+  //   * ohne `orgId` wird nichts abgerufen (`enabled`), die Liste ist leer,
+  //     es gibt keinen Fehler, und `loading` ist genau `sessionLoading` —
+  //     solange die Sitzung laedt, ist „keine Organisation" kein Ergebnis,
+  //     sondern ein Zwischenstand, und der darf nicht als „Modul
+  //     abgeschaltet" durchgehen; ist die Sitzung fertig und hat trotzdem
+  //     keine Organisation, faellt das Flag und der Teaser erscheint wie
+  //     bisher (kein Dauerladekreis);
+  //   * mit `orgId` ist `loading` wahr, bis die Antwort da ist (`isPending`
+  //     gilt in react-query auch fuer eine abgeschaltete Abfrage, deshalb
+  //     der `orgId`-Wachtposten davor);
+  //   * ein Fehler liefert eine leere Liste und die Meldung, wie vorher;
+  //     kein automatischer Wiederholversuch, weil es vorher keinen gab.
+  const {
+    data,
+    error: queryError,
+    isPending,
+    refetch: refetchQuery,
+  } = useQuery<ModuleConfig[]>({
+    queryKey: ["organizations", orgId, "modules"],
+    enabled: Boolean(orgId),
+    retry: false,
+    queryFn: async () => {
       const res = await fetch(`/api/v1/organizations/${orgId}/modules`);
       if (!res.ok) {
         throw new Error(`Failed to load module configs (${res.status})`);
       }
       const json = await res.json();
-      const data: ModuleConfig[] = Array.isArray(json)
-        ? json
-        : (json.data ?? []);
-      setConfigs(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error("[ModuleConfig] fetch error:", message);
-      setError(message);
-      setConfigs([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [orgId]);
+      return (Array.isArray(json) ? json : (json.data ?? [])) as ModuleConfig[];
+    },
+  });
+
+  const error =
+    queryError === null
+      ? null
+      : queryError instanceof Error
+        ? queryError.message
+        : String(queryError);
 
   useEffect(() => {
-    void fetchConfigs();
-  }, [fetchConfigs]);
+    if (error) console.error("[ModuleConfig] fetch error:", error);
+  }, [error]);
+
+  const refetch = useCallback(() => {
+    if (orgId) void refetchQuery();
+  }, [orgId, refetchQuery]);
 
   return (
     <ModuleConfigContext.Provider
-      value={{ configs, loading, error, refetch: fetchConfigs }}
+      value={{
+        configs: error ? [] : (data ?? []),
+        loading: sessionLoading || (orgId ? isPending : false),
+        error,
+        refetch,
+      }}
     >
       {children}
     </ModuleConfigContext.Provider>
@@ -113,7 +148,7 @@ export function useAllModuleConfigs() {
 const warnedMissingKeys = new Set<string>();
 
 export function useModuleConfig(moduleKey: ModuleKey) {
-  const { configs, loading } = useAllModuleConfigs();
+  const { configs, loading, error, refetch } = useAllModuleConfigs();
   const { data: session } = useSession();
 
   const config = configs.find((m) => m.moduleKey === moduleKey);
@@ -124,10 +159,25 @@ export function useModuleConfig(moduleKey: ModuleKey) {
 
   // Surface the missing-definition footgun. `loading` guards against
   // the initial render before the configs fetch resolves.
-  if (!loading && !config && !warnedMissingKeys.has(moduleKey)) {
+  //
+  // [ARCTOS-FULL-2026-08-31 · OP-218, Welle 8b] `configs.length > 0` ist neu
+  // und traegt die halbe Aussage der Warnung: Ist die Liste LEER, wissen wir
+  // ueber `module_definition` gar nichts — dann ist „keine Zeile gefunden"
+  // eine Behauptung, die der Anbieter nicht belegen kann, und sie hat den
+  // Betreiber genau in die falsche Richtung geschickt (die Zeile existierte).
+  // Gewarnt wird jetzt nur, wenn Konfigurationen geladen wurden und dieser
+  // eine Schluessel nicht darunter ist.
+  if (
+    !loading &&
+    configs.length > 0 &&
+    !config &&
+    !warnedMissingKeys.has(moduleKey)
+  ) {
     warnedMissingKeys.add(moduleKey);
-    // eslint-disable-next-line no-console -- intentional: surface a
-    // provisioning gap that would otherwise default-disable the page.
+    // Intentional console.warn: surfaces a provisioning gap that would
+    // otherwise silently default-disable the page. (`no-console` is not
+    // enabled in apps/web/eslint.config.mjs, so no disable directive is
+    // needed — one was here and ESLint reported it as unused.)
     console.warn(
       `[useModuleConfig] No module_definition row found for moduleKey="${moduleKey}". ` +
         `Defaulting to status="disabled". Add a row via migration or seed_platform_baseline.sql.`,
@@ -150,6 +200,18 @@ export function useModuleConfig(moduleKey: ModuleKey) {
     isAdmin,
     /** Full module config + definition data */
     definition: config ?? null,
+    /**
+     * Meldung, wenn die Konfiguration NICHT geladen werden konnte.
+     *
+     * [ARCTOS-FULL-2026-08-31 · OP-256] Ohne dieses Feld war der Fehler
+     * fuer jeden Aufrufer von aussen nicht von „Modul abgeschaltet" zu
+     * unterscheiden: der Anbieter liefert bei einem Fehler eine LEERE Liste,
+     * und `status` faellt dann auf `"disabled"` zurueck. `ModuleGate` liest
+     * es und zeigt einen eigenen, wiederholbaren Zustand.
+     */
+    error,
+    /** Erneuter Abruf der Konfigurationen (prueft `orgId` selbst). */
+    refetch,
     /** Loading state */
     loading,
   };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -85,15 +85,18 @@ function FindingDetailInner() {
   const findingId = params.id as string;
   const { formatDate } = useDateFormat();
 
-  const [finding, setFinding] = useState<FindingDetail | null>(null);
-  const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
-  const [evidence, setEvidence] = useState<Evidence[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Anfragen wurden immer
+  // gemeinsam gestellt, daher eine Abfrage mit einem Objekt als Ergebnis.
+  const { data, isPending: loading } = useQuery<{
+    finding: FindingDetail | null;
+    statusHistory: StatusHistoryEntry[];
+    evidence: Evidence[];
+    auditLog: AuditLogEntry[];
+  }>({
+    queryKey: ["findings", "detail", findingId],
+    queryFn: async () => {
       const [findingRes, historyRes, evidenceRes, logRes] = await Promise.all([
         fetch(`/api/v1/findings/${findingId}`),
         fetch(`/api/v1/findings/${findingId}/status-history`),
@@ -102,32 +105,34 @@ function FindingDetailInner() {
           `/api/v1/audit-log?entityType=finding&entityId=${findingId}&limit=50`,
         ),
       ]);
+      let finding: FindingDetail | null = null;
+      let statusHistory: StatusHistoryEntry[] = [];
+      let evidence: Evidence[] = [];
+      let auditLog: AuditLogEntry[] = [];
       if (findingRes.ok) {
         const json = await findingRes.json();
-        setFinding(json.data ?? null);
+        finding = json.data ?? null;
       }
       if (historyRes.ok) {
         const json = await historyRes.json();
-        setStatusHistory(json.data ?? []);
+        statusHistory = json.data ?? [];
       }
       if (evidenceRes.ok) {
         const json = await evidenceRes.json();
-        setEvidence(json.data ?? []);
+        evidence = json.data ?? [];
       }
       if (logRes.ok) {
         const json = await logRes.json();
-        setAuditLog(json.data ?? []);
+        auditLog = json.data ?? [];
       }
-    } catch {
-      // handled by null checks
-    } finally {
-      setLoading(false);
-    }
-  }, [findingId]);
+      return { finding, statusHistory, evidence, auditLog };
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const finding = data?.finding ?? null;
+  const statusHistory = data?.statusHistory ?? [];
+  const evidence = data?.evidence ?? [];
+  const auditLog = data?.auditLog ?? [];
 
   if (loading) {
     return (

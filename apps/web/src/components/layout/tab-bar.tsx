@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { X, Star } from "lucide-react";
 import { cn } from "@grc/ui";
 import { useTabNavigation, type TabItem } from "@/hooks/use-tab-navigation";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { ModuleIcon } from "@/components/module/module-icon";
 
 // ---------------------------------------------------------------------------
 // Single Tab
@@ -26,8 +26,6 @@ function Tab({
   onPinToggle: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const IconComponent = tab.icon ? getLucideIcon(tab.icon) : null;
-
   return (
     <div
       className={cn(
@@ -56,8 +54,15 @@ function Tab({
       </button>
 
       {/* Icon */}
-      {IconComponent && (
-        <IconComponent size={12} className="shrink-0 text-gray-400" />
+      {/* [Welle 7a · OP-080] `<ModuleIcon>` statt eines Nachschlags im Rumpf, der
+          als JSX-Typ eingesetzt wird — siehe den Kopf von
+          `components/module/module-icon.tsx`. */}
+      {tab.icon && (
+        <ModuleIcon
+          name={tab.icon}
+          size={12}
+          className="shrink-0 text-gray-400"
+        />
       )}
 
       {/* Label — clickable to navigate */}

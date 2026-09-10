@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, useId } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, Plus, RefreshCcw, Bug, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -44,30 +45,37 @@ export default function VulnerabilitiesPage() {
   );
 }
 
+const VULNS_QUERY_KEY = ["isms", "vulnerabilities"] as const;
+
 function VulnerabilitiesInner() {
   const t = useTranslations("isms");
-  const [vulns, setVulns] = useState<Vulnerability[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("__all__");
   const [showCreate, setShowCreate] = useState(false);
 
-  const fetchVulns = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Das lokale Entfernen nach dem
+  // Löschen läuft unten über `setQueryData` unter demselben Schlüssel.
+  const {
+    data: vulns = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Vulnerability[]>({
+    queryKey: VULNS_QUERY_KEY,
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/vulnerabilities?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setVulns(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Vulnerability[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchVulns();
-  }, [fetchVulns]);
+  const fetchVulns = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = vulns;
@@ -92,10 +100,12 @@ function VulnerabilitiesInner() {
       });
       if (res.ok) {
         toast.success(t("deleted"));
-        setVulns((prev) => prev.filter((v) => v.id !== id));
+        queryClient.setQueryData<Vulnerability[]>(VULNS_QUERY_KEY, (prev) =>
+          (prev ?? []).filter((v) => v.id !== id),
+        );
       }
     },
-    [t],
+    [t, queryClient],
   );
 
   if (loading && vulns.length === 0) {
@@ -122,9 +132,12 @@ function VulnerabilitiesInner() {
             variant="outline"
             size="sm"
             onClick={fetchVulns}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
@@ -238,6 +251,11 @@ function CreateVulnForm({
   t: ReturnType<typeof useTranslations>;
   onSuccess: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [cveReference, setCveReference] = useState("");
@@ -296,10 +314,14 @@ function CreateVulnForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label
+          htmlFor={`${a11yId}-cve-reference`}
+          className="block text-sm font-medium text-gray-700 mb-1"
+        >
           CVE Reference
         </label>
         <input
+          id={`${a11yId}-cve-reference`}
           type="text"
           value={cveReference}
           onChange={(e) => setCveReference(e.target.value)}

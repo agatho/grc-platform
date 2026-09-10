@@ -204,7 +204,7 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
   ];
 }
 
-export const GET = withErrorHandler(async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 

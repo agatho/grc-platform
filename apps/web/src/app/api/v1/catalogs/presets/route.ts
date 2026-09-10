@@ -12,6 +12,10 @@ import { db, catalog, orgActiveCatalog } from "@grc/db";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const PRESETS = {
   cloud_saas: {
@@ -87,7 +91,7 @@ const PRESETS = {
 
 type PresetKey = keyof typeof PRESETS;
 
-export async function GET(_req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -139,8 +143,7 @@ export async function GET(_req: Request) {
   });
 
   return Response.json({ data });
-}
-
+});
 const activateSchema = z.object({
   preset: z
     .string()
@@ -150,7 +153,7 @@ const activateSchema = z.object({
     .default("recommended"),
 });
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -228,4 +231,4 @@ export async function POST(req: Request) {
     },
     { status: 201 },
   );
-}
+});

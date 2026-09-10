@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import {
   ArrowLeft,
   Webhook,
   Loader2,
   Check,
-  X as XIcon,
   RefreshCw,
-  AlertTriangle,
   Clock,
   CheckCircle2,
   XCircle,
@@ -41,38 +39,53 @@ export default function WebhookDetailPage() {
   const { formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [webhook, setWebhook] = useState<WebhookRegistrationData | null>(null);
-  const [deliveries, setDeliveries] = useState<WebhookDeliveryLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [deliveryPage, setDeliveryPage] = useState(1);
-  const [deliveryTotal, setDeliveryTotal] = useState(0);
 
-  const fetchWebhook = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Webhook und Zustellungen wurden
+  // immer zusammen geholt — daher EINE Abfrage; `id` und Seite gehen in die
+  // Anfrage und stehen deshalb im Schluessel. Eine nicht-ok-Antwort laesst
+  // den jeweiligen Teil wie vorher leer.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    webhook: WebhookRegistrationData | null;
+    deliveries: WebhookDeliveryLogEntry[];
+    deliveryTotal: number;
+  }>({
+    queryKey: ["webhooks", id, "deliveries", deliveryPage],
+    queryFn: async () => {
       const [whRes, dlRes] = await Promise.all([
         fetch(`/api/v1/webhooks/${id}`),
         fetch(
           `/api/v1/webhooks/${id}/deliveries?page=${deliveryPage}&limit=20`,
         ),
       ]);
+      let webhook: WebhookRegistrationData | null = null;
+      let deliveries: WebhookDeliveryLogEntry[] = [];
+      let deliveryTotal = 0;
       if (whRes.ok) {
         const whJson = await whRes.json();
-        setWebhook(whJson.data);
+        webhook = whJson.data as WebhookRegistrationData;
       }
       if (dlRes.ok) {
         const dlJson = await dlRes.json();
-        setDeliveries(dlJson.data ?? []);
-        setDeliveryTotal(dlJson.pagination?.total ?? 0);
+        deliveries = (dlJson.data ?? []) as WebhookDeliveryLogEntry[];
+        deliveryTotal = (dlJson.pagination?.total ?? 0) as number;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id, deliveryPage]);
+      return { webhook, deliveries, deliveryTotal };
+    },
+  });
+  const webhook = data?.webhook ?? null;
+  const deliveries = data?.deliveries ?? [];
+  const deliveryTotal = data?.deliveryTotal ?? 0;
 
-  useEffect(() => {
-    fetchWebhook();
-  }, [fetchWebhook]);
+  const fetchWebhook = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (

@@ -1,170 +1,174 @@
 // Cron Job: Calendar Overdue Check
 // DAILY at 08:00 — Find overdue events and create escalation notifications
+//
+// [ARCTOS-FULL-2026-08-31 / WP9 · S10-14, S10-10, S10-12]
+// Handed over by WP3 together with `calendar-digest.ts`.
+//
+// Three defects, all from the audit:
+//
+//   S10-14 The org context was `set_config('app.current_org_id', X, false)`
+//          on the shared base pool — session-scoped, applied to whichever
+//          pooled connection `db.execute` happened to take, and left behind
+//          on that connection afterwards. Since a custom GUC can never be
+//          reset to NULL (only to `''`, which throws as `''::uuid` inside
+//          the RLS policies), the loop poisoned base-pool connections for
+//          later context-less queries. It only appeared to work because the
+//          worker ran as a superuser with RLS inactive.
+//
+//   S10-10 No dedup guard. An overdue DSR produced a NEW escalation on every
+//          day it stayed overdue — an escalation repeated daily stops
+//          working as an escalation.
+//
+//   S10-12 Errors were collected into an `errors[]` array and returned in an
+//          HTTP 200 `{"success": true, …}` body that nothing reads.
+//
+// The rewrite runs one transaction per org with a transaction-local context,
+// deduplicates each escalation per entity, recipient and day, and reports a
+// partial failure as such.
 
-import { db, notification } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { db } from "@grc/db";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { withOrgContext } from "../lib/org-context";
+import { createRunReport } from "../lib/job-runtime";
+import { insertNotification } from "../lib/notify";
+
+interface OverdueRow {
+  id: string;
+  assignee: string | null;
+  title: string;
+}
 
 interface CalendarOverdueResult {
   processed: number;
   overdueFound: number;
   escalationsSent: number;
+  ok: boolean;
+  failed: number;
   errors: string[];
 }
 
 export const processCalendarOverdueCheck = withCronInstrumentation(
   "calendar-overdue-check",
   async (): Promise<CalendarOverdueResult> => {
-    const errors: string[] = [];
+    const report = createRunReport("calendar-overdue-check");
     let overdueFound = 0;
     let escalationsSent = 0;
     const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const nowIso = now.toISOString();
 
-    // Get all active orgs
-    const orgs = await db.execute(
+    const orgs = (await db.execute(
       sql`SELECT id FROM organization WHERE deleted_at IS NULL`,
-    );
+    )) as unknown as Array<{ id: string }>;
 
-    if (!orgs || orgs.length === 0) {
-      return { processed: 0, overdueFound: 0, escalationsSent: 0, errors: [] };
+    if (orgs.length === 0) {
+      return report.toResult({
+        processed: 0,
+        overdueFound: 0,
+        escalationsSent: 0,
+      });
     }
 
-    for (const org of orgs as Array<Record<string, unknown>>) {
+    for (const org of orgs) {
       const orgId = String(org.id);
-
       try {
-        await db.execute(
-          sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
-        );
+        await withOrgContext(orgId, async (tx) => {
+          const overdueDsrs = (await tx.execute(sql`
+            SELECT d.id, d.handler_id AS assignee, 'DSR: ' || d.request_type AS title
+              FROM dsr d
+             WHERE d.org_id = ${orgId}::uuid
+               AND d.deadline < ${nowIso}::timestamptz
+               AND d.status IN ('received', 'verified', 'processing')`)) as unknown as OverdueRow[];
 
-        // Check DSR deadlines that are overdue and still open
-        const overdueDsrs = await db.execute(sql`
-        SELECT d.id, d.handler_id, 'DSR: ' || d.request_type as title
-        FROM dsr d
-        WHERE d.org_id = ${orgId}
-          AND d.deadline < ${now.toISOString()}::timestamptz
-          AND d.status IN ('received', 'verified', 'processing')
-      `);
+          const overdueBreaches = (await tx.execute(sql`
+            SELECT b.id, b.assignee_id AS assignee, 'Breach 72h: ' || b.title AS title
+              FROM data_breach b
+             WHERE b.org_id = ${orgId}::uuid
+               AND (b.detected_at + interval '72 hours') < ${nowIso}::timestamptz
+               AND b.status IN ('detected', 'investigating')
+               AND b.dpa_notified_at IS NULL
+               AND b.deleted_at IS NULL`)) as unknown as OverdueRow[];
 
-        for (const dsr of (overdueDsrs ?? []) as Array<
-          Record<string, unknown>
-        >) {
-          overdueFound++;
-          if (dsr.handler_id) {
-            try {
-              await db.insert(notification).values({
-                orgId,
-                userId: String(dsr.handler_id),
-                type: "escalation",
-                entityType: "dsr",
-                entityId: String(dsr.id),
-                title: `Overdue: ${String(dsr.title)}`,
-                message:
-                  "This DSR has passed its deadline and is still open. Immediate action is required.",
-                channel: "both",
-                templateKey: "calendar_overdue_escalation",
-                createdAt: now,
-                updatedAt: now,
-              });
-              escalationsSent++;
-            } catch (err) {
-              errors.push(
-                `DSR notification ${dsr.id}: ${err instanceof Error ? err.message : String(err)}`,
+          const overdueFindings = (await tx.execute(sql`
+            SELECT f.id, f.assignee_id AS assignee, 'Finding: ' || f.title AS title
+              FROM finding f
+             WHERE f.org_id = ${orgId}::uuid
+               AND f.remediation_due_date IS NOT NULL
+               AND f.remediation_due_date::timestamptz < ${nowIso}::timestamptz
+               AND f.status IN ('open', 'in_progress')
+               AND f.deleted_at IS NULL`)) as unknown as OverdueRow[];
+
+          const groups = [
+            {
+              entityType: "dsr",
+              rows: overdueDsrs,
+              titlePrefix: "Overdue",
+              message:
+                "This DSR has passed its deadline and is still open. Immediate action is required.",
+            },
+            {
+              entityType: "data_breach",
+              rows: overdueBreaches,
+              titlePrefix: "URGENT Overdue",
+              message:
+                "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
+            },
+            {
+              entityType: "finding",
+              rows: overdueFindings,
+              titlePrefix: "Overdue",
+              message:
+                "This finding has passed its remediation due date and is still open.",
+            },
+          ];
+
+          for (const group of groups) {
+            for (const row of group.rows) {
+              overdueFound++;
+              if (!row.assignee) continue;
+              const title = `${group.titlePrefix}: ${String(row.title)}`;
+              const written = await insertNotification(
+                {
+                  orgId,
+                  userId: String(row.assignee),
+                  type: "escalation",
+                  entityType: group.entityType,
+                  entityId: String(row.id),
+                  title,
+                  message: group.message,
+                  channel: "both",
+                  templateKey: "calendar_overdue_escalation",
+                  templateData: {
+                    title,
+                    message: group.message,
+                    entityType: group.entityType,
+                    entityId: String(row.id),
+                  },
+                  scheduledFor: now,
+                  createdAt: now,
+                  updatedAt: now,
+                },
+                {
+                  job: "calendar-overdue-check",
+                  tx,
+                  // One escalation per entity, recipient and day.
+                  dedupeKey: `calendar-overdue|${group.entityType}|${row.id}|${row.assignee}|${today}`,
+                },
               );
+              if (written) escalationsSent++;
             }
           }
-        }
-
-        // Check overdue data breach 72h notifications
-        const overdueBreaches = await db.execute(sql`
-        SELECT db.id, db.assignee_id, 'Breach 72h: ' || db.title as title
-        FROM data_breach db
-        WHERE db.org_id = ${orgId}
-          AND (db.detected_at + interval '72 hours') < ${now.toISOString()}::timestamptz
-          AND db.status IN ('detected', 'investigating')
-          AND db.dpa_notified_at IS NULL
-          AND db.deleted_at IS NULL
-      `);
-
-        for (const breach of (overdueBreaches ?? []) as Array<
-          Record<string, unknown>
-        >) {
-          overdueFound++;
-          if (breach.assignee_id) {
-            try {
-              await db.insert(notification).values({
-                orgId,
-                userId: String(breach.assignee_id),
-                type: "escalation",
-                entityType: "data_breach",
-                entityId: String(breach.id),
-                title: `URGENT Overdue: ${String(breach.title)}`,
-                message:
-                  "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
-                channel: "both",
-                templateKey: "calendar_overdue_escalation",
-                createdAt: now,
-                updatedAt: now,
-              });
-              escalationsSent++;
-            } catch (err) {
-              errors.push(
-                `Breach notification ${breach.id}: ${err instanceof Error ? err.message : String(err)}`,
-              );
-            }
-          }
-        }
-
-        // Check overdue finding remediations
-        const overdueFindings = await db.execute(sql`
-        SELECT f.id, f.assignee_id, 'Finding: ' || f.title as title
-        FROM finding f
-        WHERE f.org_id = ${orgId}
-          AND f.remediation_due_date IS NOT NULL
-          AND f.remediation_due_date::timestamptz < ${now.toISOString()}::timestamptz
-          AND f.status IN ('open', 'in_progress')
-          AND f.deleted_at IS NULL
-      `);
-
-        for (const finding of (overdueFindings ?? []) as Array<
-          Record<string, unknown>
-        >) {
-          overdueFound++;
-          if (finding.assignee_id) {
-            try {
-              await db.insert(notification).values({
-                orgId,
-                userId: String(finding.assignee_id),
-                type: "escalation",
-                entityType: "finding",
-                entityId: String(finding.id),
-                title: `Overdue: ${String(finding.title)}`,
-                message:
-                  "This finding has passed its remediation due date and is still open.",
-                channel: "both",
-                templateKey: "calendar_overdue_escalation",
-                createdAt: now,
-                updatedAt: now,
-              });
-              escalationsSent++;
-            } catch (err) {
-              errors.push(
-                `Finding notification ${finding.id}: ${err instanceof Error ? err.message : String(err)}`,
-              );
-            }
-          }
-        }
+        });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        errors.push(`Org ${orgId}: ${message}`);
+        report.fail(`org ${orgId}`, err);
       }
     }
 
-    return {
-      processed: (orgs ?? []).length,
+    return report.toResult({
+      processed: orgs.length,
       overdueFound,
       escalationsSent,
-      errors,
-    };
+    });
   },
 );

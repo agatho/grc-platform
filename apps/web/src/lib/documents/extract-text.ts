@@ -48,14 +48,69 @@ function decodeXmlEntities(value: string): string {
     .replace(/&amp;/g, "&");
 }
 
+/**
+ * Remove XML/HTML tags — single linear scan, no regex.
+ *
+ * Replaces `.replace(/<[^>]+>/g, "")`. That regex backtracks: `[^>]+` runs to
+ * the end of the string at every `<`, so an input of `"<".repeat(n)` costs
+ * O(n²) — measured 0.2s at 20k, 0.7s at 40k, 3.0s at 80k, 18.5s at 200k. This
+ * input is `word/document.xml` out of an UPLOADED DOCX and is not
+ * length-capped before it reaches here (MAX_EXTRACT_CHARS is applied to the
+ * result, not the source), so that was a denial of service on attacker-
+ * supplied bytes: a few hundred KB of `<` burns minutes of CPU per upload.
+ * `indexOf` never revisits a character, so this is O(n).
+ *
+ * The CodeQL alert that started this (js/incomplete-multi-character-
+ * sanitization) is about a strip that can reconstruct a tag out of its own
+ * leftovers. That cannot happen with the `g` flag — a surviving `<` provably
+ * has no `>` after it, so one pass is already a fixpoint (verified by
+ * exhaustive search over `{<,>,!,-,/,a}` up to length 8). No repeat loop is
+ * needed and none is kept.
+ *
+ * Semantics kept identical to `/<[^>]+>/g`: the content needs at least ONE
+ * character, so `<>` is NOT a tag. It survives, and scanning resumes just
+ * after that `<` — exactly where the regex engine would retry.
+ *
+ * Order note: entity decoding must stay AFTER this step (pinned by
+ * extract-text.test.ts, "converts tabs/breaks and decodes entities"). Decoding
+ * first would turn a legitimate `&lt;` from the document body into a `<` and
+ * let it swallow the text behind it as if it were a tag.
+ */
+function stripXmlTags(value: string): string {
+  let out = "";
+  // `i` marks the start of the not-yet-emitted region; `from` is where the
+  // next `<` is looked for. They diverge on `<>`, which is kept, not emitted
+  // early — the surviving `<` is carried by a later slice.
+  let i = 0;
+  let from = 0;
+  for (;;) {
+    const lt = value.indexOf("<", from);
+    if (lt === -1) break;
+    const gt = value.indexOf(">", lt + 1);
+    // No `>` left anywhere: nothing from here on can match.
+    if (gt === -1) break;
+    if (gt === lt + 1) {
+      // `<>` — empty content, which `[^>]+` rejects. Keep both characters and
+      // retry from the next position, as the engine does.
+      from = lt + 1;
+      continue;
+    }
+    out += value.slice(i, lt);
+    i = gt + 1;
+    from = i;
+  }
+  return out + value.slice(i);
+}
+
 /** Strip WordprocessingML down to plain text (paragraphs → newlines). */
 export function docxXmlToText(xml: string): string {
   return decodeXmlEntities(
-    xml
-      .replace(/<w:tab[^>]*\/>/g, "\t")
-      .replace(/<w:br[^>]*\/>/g, "\n")
-      .replace(/<\/w:p>/g, "\n")
-      .replace(/<[^>]+>/g, ""),
+    stripXmlTags(
+      xml
+        .replace(/<w:tab[^>]*\/>/g, "\t")
+        .replace(/<w:br[^>]*\/>/g, "\n")
+        .replace(/<\/w:p>/g, "\n"),
+    ),
   )
     .replace(/[ \t]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
@@ -72,6 +127,10 @@ async function extractPdf(buffer: Buffer): Promise<string | null> {
     // Server-side hardening: no fetch from worker, no @font-face
     // injection (there is no DOM anyway). Note: `isEvalSupported` was
     // removed in pdfjs-dist 5.x — eval'd PS functions no longer exist.
+    // #S08-04 (WP10): pinned to pdfjs-dist >= 6.2.108 — that release closes
+    // GHSA-hq66-cqwq-w95j (arbitrary JS execution when opening a crafted
+    // PDF). This path processes untrusted user uploads from the DMS, so the
+    // hardening flags below are defence in depth, not the primary control.
     useWorkerFetch: false,
     disableFontFace: true,
     // Silence pdf.js warnings on slightly malformed uploads.
@@ -94,7 +153,9 @@ async function extractPdf(buffer: Buffer): Promise<string | null> {
     }
     return parts.join("\n");
   } finally {
-    await doc.destroy();
+    // pdfjs-dist 6 removed PDFDocumentProxy.destroy(); the loading task owns
+    // the transport/worker teardown now (#S08-04 upgrade 5.7 -> 6.3).
+    await task.destroy();
   }
 }
 

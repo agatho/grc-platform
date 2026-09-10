@@ -1,26 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
-import {
-  Download,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  FileSpreadsheet,
-} from "lucide-react";
+import { Download, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ImportLogEntry, ValidationError } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 
@@ -67,30 +55,35 @@ export default function ImportJobDetailPage() {
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
 
-  const [job, setJob] = useState<JobDetail | null>(null);
-  const [logData, setLogData] = useState<LogResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Der
+  // Toast bei Netzfehler bleibt wie vorher; die Seite zeigt dann „not found".
+  const { data: bundle, isPending: loading } = useQuery<{
+    job: JobDetail | null;
+    logData: LogResponse | null;
+  }>({
+    queryKey: ["import", "jobs", jobId, "detail"],
+    queryFn: async () => {
+      let job: JobDetail | null = null;
+      let logData: LogResponse | null = null;
+      try {
+        const [jobRes, logRes] = await Promise.all([
+          fetch(`/api/v1/import/${jobId}`),
+          fetch(`/api/v1/import/${jobId}/log`),
+        ]);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [jobRes, logRes] = await Promise.all([
-        fetch(`/api/v1/import/${jobId}`),
-        fetch(`/api/v1/import/${jobId}/log`),
-      ]);
-
-      if (jobRes.ok) setJob(await jobRes.json());
-      if (logRes.ok) setLogData(await logRes.json());
-    } catch {
-      toast.error("Failed to load import details");
-    } finally {
-      setLoading(false);
-    }
-  }, [jobId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+        if (jobRes.ok) job = (await jobRes.json()) as JobDetail;
+        if (logRes.ok) logData = (await logRes.json()) as LogResponse;
+      } catch {
+        toast.error("Failed to load import details");
+      }
+      return { job, logData };
+    },
+  });
+  const job = bundle?.job ?? null;
+  const logData = bundle?.logData ?? null;
 
   if (loading) {
     return (

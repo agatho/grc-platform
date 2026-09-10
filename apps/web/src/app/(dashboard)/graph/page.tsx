@@ -1,16 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
   Network,
   Loader2,
   RefreshCcw,
-  Target,
   Unlink,
   BarChart3,
-  AlertTriangle,
   ArrowRight,
 } from "lucide-react";
 
@@ -24,27 +23,32 @@ import { GRAPH_ENTITY_COLORS } from "@grc/shared";
 export default function GraphOverviewPage() {
   const t = useTranslations("graph");
 
-  const [stats, setStats] = useState<GraphStatsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort und ein
+  // Netzfehler liefern wie vorher `null`; der Netzfehler wird wie vorher
+  // protokolliert.
+  const {
+    data: stats = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<GraphStatsResponse | null>({
+    queryKey: ["graph", "stats"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/graph/stats");
+        if (!res.ok) return null;
+        return (await res.json()) as GraphStatsResponse;
+      } catch (err) {
+        console.error("Failed to fetch graph stats:", err);
+        return null;
+      }
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/graph/stats");
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch graph stats:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -74,7 +78,7 @@ export default function GraphOverviewPage() {
               <Card className="p-6 hover:border-primary/50 transition-colors cursor-pointer h-full">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <Network className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    <Network className="h-6 w-6 text-blue-600 dark:text-blue-600" />
                   </div>
                   <h2 className="font-semibold">{t("explorer.title")}</h2>
                 </div>

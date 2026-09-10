@@ -150,7 +150,7 @@ function NavItemLink({
           className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors ${
             pinned
               ? "text-amber-500 hover:text-amber-600"
-              : "text-gray-300 hover:text-gray-500"
+              : "text-gray-500 hover:text-gray-500"
           }`}
           aria-label={pinned ? "Unpin from favorites" : "Pin to favorites"}
         >
@@ -162,7 +162,7 @@ function NavItemLink({
 }
 
 function CollapsibleGroup({
-  groupKey,
+  groupKey: _groupKey,
   label,
   icon: Icon,
   isCollapsed: groupCollapsed,
@@ -193,7 +193,7 @@ function CollapsibleGroup({
       <div className="mx-3 mt-2 mb-1 border-t border-gray-200 dark:border-gray-700" />
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-500 transition-colors"
         aria-expanded={!groupCollapsed}
       >
         {groupCollapsed ? (

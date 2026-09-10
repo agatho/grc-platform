@@ -1,12 +1,28 @@
-import { db, user, userOrganizationRole, ssoConfig } from "@grc/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { db, userOrganizationRole, ssoConfig } from "@grc/db";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 import { compare } from "bcryptjs";
 import { breakGlassLoginSchema } from "@grc/shared";
-import { logAccessEvent } from "@grc/auth/providers";
+import {
+  logAccessEvent,
+  checkLoginLock,
+  registerLoginFailure,
+  registerLoginSuccess,
+  normaliseEmail,
+  lookupUserByEmail,
+} from "@grc/auth/providers";
 import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/auth/admin-login — Break-glass admin login
-// Only works for admin users when SSO enforcement is active
+//
+// #WP3-S02-18 — the header said "Only works for admin users when SSO
+// enforcement is active" and the handler imported `ssoConfig` for exactly that
+// purpose — but never used it (`grep -c ssoConfig` → 1 hit, the import). The
+// endpoint was therefore a second, fully general password-login path for
+// administrators, open even where the operator had enabled `enforceSSO`
+// precisely to switch password logins off. It now actually checks the
+// condition it documents: without SSO enforcement in any of the caller's orgs,
+// break-glass is refused and the regular login is the only way in.
 //
 // #SEC-HIGH-RL: rate-limit by client IP. The break-glass endpoint
 // bypasses NextAuth's own throttling. Memory note: prod
@@ -16,7 +32,7 @@ import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 // LIMITS.AUTH = 10 attempts/60s per IP — generous enough that a
 // fat-fingered admin doesn't get locked out, tight enough to stop
 // online brute force.
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ip = getClientIp(req);
   const limit = await rateLimit({
     key: `admin-login:${ip}`,
@@ -49,21 +65,32 @@ export async function POST(req: Request) {
     );
   }
 
-  const { email, password } = parsed.data;
+  const email = normaliseEmail(parsed.data.email);
+  const { password } = parsed.data;
 
-  // Find user
-  const [found] = await db
-    .select()
-    .from(user)
-    .where(
-      and(
-        eq(user.email, email.toLowerCase()),
-        eq(user.isActive, true),
-        isNull(user.deletedAt),
-      ),
-    );
+  // #WP3-S02-09: the same account lockout as the primary login. Per-IP rate
+  // limiting alone is bypassable by incrementing X-Forwarded-For.
+  const lock = await checkLoginLock(email);
+  if (lock.locked) {
+    await logAccessEvent({
+      emailAttempted: email,
+      eventType: "login_failed",
+      failureReason: "account_locked",
+    });
+    return Response.json({ error: "Invalid credentials" }, { status: 401 });
+  }
+
+  // Find user.
+  // [ARCTOS-FULL-2026-08-31 · OP-083] Der Break-Glass-Login ist der zweite
+  // kontextlose Leser der `user`-Tabelle. Er lief ueber den Basis-Pool und sah
+  // damit — wie der regulaere Login — das Nutzerverzeichnis ALLER Mandanten.
+  // Jetzt ueber dieselbe SECURITY-DEFINER-Kapsel (Migration 0455): eine
+  // Adresse rein, hoechstens eine Zeile raus.
+  const candidate = await lookupUserByEmail(email);
+  const found = candidate?.isActive ? candidate : null;
 
   if (!found?.passwordHash) {
+    await registerLoginFailure(email);
     await logAccessEvent({
       emailAttempted: email,
       eventType: "login_failed",
@@ -75,6 +102,7 @@ export async function POST(req: Request) {
   // Verify password
   const valid = await compare(password, found.passwordHash);
   if (!valid) {
+    await registerLoginFailure(email);
     await logAccessEvent({
       userId: found.id,
       emailAttempted: email,
@@ -109,6 +137,42 @@ export async function POST(req: Request) {
     );
   }
 
+  // #WP3-S02-18 — enforce the documented precondition. Break-glass exists for
+  // "SSO is enforced and the IdP is unavailable"; where SSO is NOT enforced the
+  // regular credentials login already works and this second password path adds
+  // only attack surface (it bypasses the IdP's MFA/conditional access).
+  const enforcingOrgs = await db
+    .select({ orgId: ssoConfig.orgId })
+    .from(ssoConfig)
+    .where(
+      and(
+        inArray(
+          ssoConfig.orgId,
+          adminRoles.map((r) => r.orgId),
+        ),
+        eq(ssoConfig.enforceSSO, true),
+        eq(ssoConfig.isActive, true),
+        isNull(ssoConfig.deletedAt),
+      ),
+    );
+
+  if (enforcingOrgs.length === 0) {
+    await logAccessEvent({
+      userId: found.id,
+      emailAttempted: email,
+      eventType: "login_failed",
+      failureReason: "break_glass_sso_not_enforced",
+    });
+    return Response.json(
+      {
+        error:
+          "Break-glass login is only available while SSO enforcement is active. Use the regular login.",
+      },
+      { status: 403 },
+    );
+  }
+
+  await registerLoginSuccess(found.id);
   await logAccessEvent({
     userId: found.id,
     emailAttempted: email,
@@ -123,6 +187,7 @@ export async function POST(req: Request) {
       email: found.email,
       name: found.name,
       isBreakGlass: true,
+      mustChangePassword: found.mustChangePassword === true,
     },
   });
-}
+});

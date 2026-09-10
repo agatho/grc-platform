@@ -69,7 +69,19 @@ vi.mock("@/lib/api", () => ({
   PaginationError: class PaginationError extends Error {},
 }));
 
-vi.mock("@/lib/api-errors", () => ({ getRequestId: () => "test-req-id" }));
+// [ARCTOS-FULL-2026-08-31 · OP-110] Diese Factory ersetzte `@/lib/api-errors`
+// vollstaendig und exportierte `normaliseErrorResponse` **nicht**. Der Wrapper
+// faengt einen Fehlschlag der Normalisierung seit WP12 ab und gibt die
+// Originalantwort zurueck — der Test lief damit gruen, pruefte den
+// RFC-7807-Ausgang aber gar nicht. Ein Test, der wegen eines Rettungspfads
+// gruen ist, misst den Rettungspfad, nicht den Vertrag.
+//
+// `importOriginal` holt das echte Modul; ueberschrieben wird nur, was
+// deterministisch sein muss.
+vi.mock("@/lib/api-errors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api-errors")>()),
+  getRequestId: () => "test-req-id",
+}));
 vi.mock("@/lib/param-validation", () => ({
   requireUuidParam: () => undefined,
 }));

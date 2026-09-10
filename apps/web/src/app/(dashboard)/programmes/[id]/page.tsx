@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -79,16 +80,14 @@ export default function ProgrammeCockpitPage({
   const { id } = use(params);
   const t = useTranslations("programme");
   const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [steps, setSteps] = useState<KanbanStep[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
     setDeleting(true);
-    setError(null);
+    setDeleteError(null);
     try {
       const r = await fetch(`/api/v1/programmes/journeys/${id}`, {
         method: "DELETE",
@@ -99,13 +98,25 @@ export default function ProgrammeCockpitPage({
       }
       router.push("/programmes");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setDeleteError(err instanceof Error ? err.message : String(err));
       setDeleting(false);
     }
   }
 
-  const loadData = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Daten- und Fehlerzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Eine
+  // nicht-ok-Antwort wirft wie vorher; der Fehlertext kommt aus dem
+  // Fehlerzustand der Abfrage. Der Loeschfehler bleibt lokaler Zustand und
+  // teilt sich wie vorher die Anzeige mit dem Ladefehler.
+  const {
+    data: bundle,
+    error: queryError,
+    refetch,
+  } = useQuery<{ data: DashboardData; steps: KanbanStep[] }>({
+    queryKey: ["programmes", "journeys", id, "cockpit"],
+    queryFn: async () => {
       const [dashRes, stepsRes] = await Promise.all([
         fetch(`/api/v1/programmes/journeys/${id}/dashboard`),
         fetch(`/api/v1/programmes/journeys/${id}/steps`),
@@ -114,16 +125,25 @@ export default function ProgrammeCockpitPage({
       if (!stepsRes.ok) throw new Error(`Steps HTTP ${stepsRes.status}`);
       const dashJson = await dashRes.json();
       const stepsJson = await stepsRes.json();
-      setData(dashJson.data);
-      setSteps(stepsJson.data ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    }
-  }, [id]);
+      return {
+        data: dashJson.data as DashboardData,
+        steps: (stepsJson.data ?? []) as KanbanStep[],
+      };
+    },
+  });
+  const data = bundle?.data ?? null;
+  const steps = bundle?.steps ?? [];
+  const error: string | null =
+    deleteError ??
+    (queryError
+      ? queryError instanceof Error
+        ? queryError.message
+        : String(queryError)
+      : null);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  const loadData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (error) {
     return (
@@ -162,7 +182,7 @@ export default function ProgrammeCockpitPage({
               {t(`msType.${j.msType}`)} • {j.templateCode}@{j.templateVersion}
             </p>
             {j.description && (
-              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-500">
                 {j.description}
               </p>
             )}

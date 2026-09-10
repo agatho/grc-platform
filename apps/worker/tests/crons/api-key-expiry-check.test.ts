@@ -1,7 +1,7 @@
 // Test for API-Key-Expiry-Check cron (Sprint 57).
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { chainable, makeMockDb, type MockDb } from "../helpers/mock-db";
+import { makeMockDb, type MockDb } from "../helpers/mock-db";
 
 let mockDb: MockDb;
 

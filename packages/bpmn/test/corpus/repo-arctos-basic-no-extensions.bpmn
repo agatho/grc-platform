@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+    xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+    id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1" isExecutable="false">
+    <bpmn:userTask id="Task_1" name="Check invoice"></bpmn:userTask>
+    <bpmn:serviceTask id="Task_2" name="Book payment"></bpmn:serviceTask>
+  </bpmn:process>
+</bpmn:definitions>

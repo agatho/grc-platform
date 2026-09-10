@@ -119,17 +119,66 @@ export function cvssToSeverity(
   return "none";
 }
 
+// [ARCTOS-FULL-2026-08-31 / WP6 · S05-06]
+//
+// Die Vorgängerfassung war eine Blocklist:
+//
+//   .replace(/\bignore\s+(all\s+)?previous\s+instructions?\b/gi, "")
+//   .replace(/\bsystem\s*:\s*/gi, "")
+//   .replace(/```/g, "") …
+//
+// Sie hatte drei Defekte, die der Audit einzeln reproduziert hat
+// (`evidence/S05_prompt_injection_sanitizer.txt`):
+//
+//  1. **Sprachgebunden.** „Ignoriere alle vorherigen Anweisungen" und
+//     „Disregard the prior directives" passierten unverändert. Eine
+//     Blocklist gegen natürliche Sprache ist grundsätzlich nicht
+//     vollständig — jede Umschreibung umgeht sie.
+//  2. **Kein Delimiter-Schutz.** `</grc_data>` wurde nicht angetastet;
+//     genau das Tag, auf dem die Instruktionshärtung beruht, konnte im
+//     Klartext aus den Daten heraus geschlossen werden.
+//  3. **Datenverfälschung.** Das Löschen von Treffern verändert
+//     GRC-Fachtexte still (ein Risiko namens „System: Kernbanksystem"
+//     verlor seinen Anfang), ohne die Injection zu verhindern.
+//
+// Der Ersatz verfolgt deshalb nicht mehr das Ziel, Angriffsabsicht zu
+// ERKENNEN. Die Trennung von Instruktion und Daten ist strukturell und
+// liegt in `@grc/ai` → `prompt-safety.ts` (`buildDataPrompt`): Nutzdaten
+// werden JSON-kodiert in einen Umschlag mit einem pro Aufruf zufälligen
+// Nonce-Delimiter gelegt, den der Angreifer nicht erraten kann.
+//
+// Diese Funktion leistet nur noch das, was sich verlustfrei und
+// sprachunabhängig begründen lässt: Normalisierung von Zeichen, die die
+// STRUKTUR des Prompts verfälschen können (Steuerzeichen, Bidi-/
+// Zero-Width-Overrides, Unicode-Homoglyph-Normalisierung) plus eine
+// Längenkappe. Fachlicher Inhalt bleibt unangetastet.
+
+/** Zeichen, die im Prompt nichts zu suchen haben, aber Struktur verfaelschen. */
+// C0 (ohne \t \n \r), DEL, C1
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g;
+// Bidi-Overrides + Zero-Width/Invisible: "Trojan Source"-Klasse. Diese
+// Zeichen erlauben es, im Rohtext etwas anderes zu zeigen als das Modell
+// liest — die einzige Klasse, deren Entfernung wirklich Angriffe verhindert.
+const INVISIBLE_CHARS =
+  /[\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g;
+
 /**
- * Sanitize user-generated content before including in LLM prompts.
- * Removes potential injection patterns.
+ * Normalisiert von Nutzern stammenden Text, bevor er als DATEN in einen
+ * LLM-Prompt gelegt wird.
+ *
+ * Wichtig: das ist **keine** Injection-Abwehr. Die Abwehr ist die
+ * strukturelle Trennung in `buildDataPrompt()` (@grc/ai). Diese Funktion
+ * entfernt ausschließlich Zeichen, die die Struktur des Umschlags oder
+ * die Darstellung verfälschen, und begrenzt die Länge.
+ *
+ * @param text     Rohtext aus der Datenbank oder vom Client
+ * @param maxChars Längenkappe (Default 2000, wie zuvor)
  */
-export function sanitizeForPrompt(text: string): string {
+export function sanitizeForPrompt(text: string, maxChars = 2000): string {
+  if (typeof text !== "string") return "";
   return text
-    .replace(/```/g, "")
-    .replace(/\{[{%]/g, "")
-    .replace(/[%}]\}/g, "")
-    .replace(/<\/?script>/gi, "")
-    .replace(/\bignore\s+(all\s+)?previous\s+instructions?\b/gi, "")
-    .replace(/\bsystem\s*:\s*/gi, "")
-    .slice(0, 2000); // cap length
+    .normalize("NFKC")
+    .replace(CONTROL_CHARS, " ")
+    .replace(INVISIBLE_CHARS, "")
+    .slice(0, maxChars);
 }

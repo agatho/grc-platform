@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Loader2, Play, Plus, GitBranch, Zap, BarChart3 } from "lucide-react";
+import { Loader2, Plus, GitBranch, Zap, BarChart3 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -50,11 +51,7 @@ export default function PropagationPage() {
 function PropagationInner() {
   const t = useTranslations("propagation");
   const router = useRouter();
-  const [relationships, setRelationships] = useState<OrgEntityRelationship[]>(
-    [],
-  );
-  const [loading, setLoading] = useState(true);
-  const [simulating, setSimulating] = useState(false);
+  const [_simulating, setSimulating] = useState(false);
   const [simulationResult, setSimulationResult] =
     useState<RiskPropagationResult | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,24 +61,29 @@ function PropagationInner() {
   const [relType, setRelType] = useState<OrgRelationshipType>("shared_it");
   const [strength, setStrength] = useState(50);
 
-  const fetchRelationships = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: relationships = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<OrgEntityRelationship[]>({
+    queryKey: ["erm", "propagation", "relationships"],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/erm/propagation/relationships?limit=100",
       );
-      if (res.ok) {
-        const json = await res.json();
-        setRelationships(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as OrgEntityRelationship[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchRelationships();
-  }, [fetchRelationships]);
+  const fetchRelationships = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const createRelationship = useCallback(async () => {
     if (!targetOrgId) return;
@@ -101,7 +103,7 @@ function PropagationInner() {
     }
   }, [targetOrgId, relType, strength, fetchRelationships]);
 
-  const runSimulation = useCallback(async (riskId: string) => {
+  const _runSimulation = useCallback(async (riskId: string) => {
     setSimulating(true);
     try {
       const res = await fetch("/api/v1/erm/propagation/simulate", {

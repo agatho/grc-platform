@@ -13,6 +13,7 @@ import {
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { isWithinSla } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface SnapshotResult {
   processed: number;
@@ -107,6 +108,16 @@ export const processExecutiveKpiSnapshot = withCronInstrumentation(
           }
         }
 
+        // [WP9 · S10-15] `auditSlaCompliance: 0`, `dsrSlaCompliance: 0` and
+        // `esgCompleteness: 0` used to be persisted here with the comment
+        // "Placeholder for <x> module". These are executive KPIs: a board
+        // dashboard reading a stored 0 sees "zero percent SLA compliance",
+        // i.e. a catastrophic figure, where the truth was "not computed".
+        //
+        // `kpis` is a jsonb column, so an unmeasured KPI is simply ABSENT
+        // rather than zero. `notMeasured` names them explicitly so a
+        // consumer can distinguish "we did not compute this" from "the key
+        // is new and the snapshot is old".
         const kpis = {
           avgCES: Number(cesRow?.avgCes ?? 0),
           totalControls: Number(cesRow?.total ?? 0),
@@ -116,9 +127,11 @@ export const processExecutiveKpiSnapshot = withCronInstrumentation(
             slaTotal > 0 ? Math.round((slaCompliant / slaTotal) * 100) : 100,
           riskScoreAvg: Number(riskRow?.avgResidual ?? 0),
           risksAboveAppetite: Number(riskRow?.above ?? 0),
-          auditSlaCompliance: 0, // Placeholder for audit module
-          dsrSlaCompliance: 0, // Placeholder for DPMS module
-          esgCompleteness: 0, // Placeholder for ESG module
+          notMeasured: [
+            "auditSlaCompliance",
+            "dsrSlaCompliance",
+            "esgCompleteness",
+          ],
         };
 
         // Upsert snapshot
@@ -141,9 +154,13 @@ export const processExecutiveKpiSnapshot = withCronInstrumentation(
           });
 
         processed++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "executive-kpi-snapshot", scope: "Upsert snapshot" },
+          err,
+        );
         errors++;
-        // Wrapper logs structured error; loop continues.
       }
     }
 

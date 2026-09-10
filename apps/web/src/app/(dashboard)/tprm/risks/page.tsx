@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -59,15 +60,23 @@ export default function TprmRiskDashboardPage() {
 
 function TprmRiskDashboardInner() {
   const t = useTranslations("tprm");
-  const [data, setData] = useState<VendorRiskAggregation | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `data` wie vorher leer; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<VendorRiskAggregation | null>({
+    queryKey: ["tprm", "risks", "overview"],
+    queryFn: async () => {
       // Fetch vendors with risk scores
       const res = await fetch("/api/v1/vendors?limit=100");
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const json = await res.json();
       const vendors: VendorRiskRow[] = json.data ?? [];
 
@@ -89,23 +98,19 @@ function TprmRiskDashboardInner() {
         (v) => (v.residualRiskScore ?? v.inherentRiskScore ?? 0) >= 15,
       ).length;
 
-      setData({
+      return {
         vendors,
         total: vendors.length,
         criticalCount,
         syncedCount,
         unsyncedHighCount,
-      });
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      };
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -121,43 +126,43 @@ function TprmRiskDashboardInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Lieferanten-Risiko&uuml;bersicht
+            {t("riskOverview.title")}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Aggregierte Risikoansicht aller Drittparteien mit
-            ERM-Synchronisation
+            {t("riskOverview.subtitle")}
           </p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={fetchData}
-          disabled={loading}
+          disabled={isFetching}
+          aria-label={t("riskOverview.refresh")}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <KpiCard
-          label="Lieferantenrisiken gesamt"
+          label={t("riskOverview.kpiTotal")}
           value={data?.total ?? 0}
           icon={<Shield className="h-5 w-5 text-blue-600" />}
         />
         <KpiCard
-          label="Kritisch (Score \u2265 15)"
+          label={t("riskOverview.kpiCritical")}
           value={data?.criticalCount ?? 0}
           icon={<AlertTriangle className="h-5 w-5 text-red-600" />}
           variant="danger"
         />
         <KpiCard
-          label="Im ERM synchronisiert"
+          label={t("riskOverview.kpiSynced")}
           value={data?.syncedCount ?? 0}
           icon={<Link2 className="h-5 w-5 text-green-600" />}
         />
         <KpiCard
-          label="Nicht synchronisiert (hoch)"
+          label={t("riskOverview.kpiUnsyncedHigh")}
           value={data?.unsyncedHighCount ?? 0}
           icon={<Link2Off className="h-5 w-5 text-orange-600" />}
           variant="warning"
@@ -168,7 +173,7 @@ function TprmRiskDashboardInner() {
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
           <h2 className="text-base font-semibold text-gray-900">
-            Lieferanten-Risikobewertungen
+            {t("riskOverview.tableTitle")}
           </h2>
         </div>
         <div className="overflow-x-auto">
@@ -176,22 +181,22 @@ function TprmRiskDashboardInner() {
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Lieferant
+                  {t("riskOverview.colVendor")}
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">
-                  Tier
+                  {t("riskOverview.colTier")}
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">
-                  Inherent Score
+                  {t("riskOverview.colInherent")}
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">
-                  Residual Score
+                  {t("riskOverview.colResidual")}
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">
-                  Status
+                  {t("riskOverview.colStatus")}
                 </th>
                 <th className="text-center px-4 py-3 font-medium text-gray-600">
-                  ERM-Sync
+                  {t("riskOverview.colErmSync")}
                 </th>
               </tr>
             </thead>
@@ -199,7 +204,7 @@ function TprmRiskDashboardInner() {
               {!data?.vendors || data.vendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-400">
-                    Keine Lieferantenrisiken vorhanden
+                    {t("riskOverview.empty")}
                   </td>
                 </tr>
               ) : (
@@ -243,9 +248,15 @@ function TprmRiskDashboardInner() {
                           <Link2Off
                             size={14}
                             className="inline text-orange-500"
+                            aria-label={t("riskOverview.notSynced")}
                           />
                         ) : (
-                          <span className="text-gray-300">-</span>
+                          <span
+                            className="text-gray-500"
+                            aria-label={t("riskOverview.synced")}
+                          >
+                            -
+                          </span>
                         )}
                       </td>
                     </tr>

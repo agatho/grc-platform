@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Calendar, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AggregatedCalendarEvent } from "@grc/shared";
-import { MODULE_COLORS } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
 
 const MODULE_LABELS: Record<string, string> = {
@@ -48,28 +47,26 @@ interface UpcomingEvent extends AggregatedCalendarEvent {
 export function CalendarUpcomingWidget() {
   const t = useTranslations("calendar");
   const { formatDate } = useDateFormat();
-  const [events, setEvents] = useState<UpcomingEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUpcoming = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before.
+  const { data: events = [], isPending: loading } = useQuery<UpcomingEvent[]>({
+    queryKey: ["calendar", "upcoming", { limit: 5 }],
+    queryFn: async () => {
       const res = await fetch("/api/v1/calendar/upcoming?limit=5");
-      if (res.ok) {
-        const json = await res.json();
-        setEvents(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchUpcoming();
-  }, [fetchUpcoming]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as UpcomingEvent[];
+    },
+  });
 
   const urgencyColors: Record<string, string> = {
-    green: "bg-green-100 text-green-700",
+    // [ARCTOS-FULL-2026-08-31 · OP-049] green-700 statt -800 ist die
+    // Familienschreibweise (rot, gelb, blau … alle -100/-700) — nur bei
+    // GRÜN verfehlt genau dieses Paar die 4,5:1 (4,497). Deshalb hier eine
+    // Stufe dunkler, sonst nirgends.
+    green: "bg-green-100 text-green-800",
     yellow: "bg-yellow-100 text-yellow-700",
     red: "bg-red-100 text-red-700",
   };

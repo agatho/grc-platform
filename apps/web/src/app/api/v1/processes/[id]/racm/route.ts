@@ -12,13 +12,16 @@ import {
   risk,
   control,
   finding,
-  controlTest,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, sql, desc } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -129,6 +132,27 @@ export async function GET(
       ),
     );
 
+  // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die drei Listenformen
+  // werden aus den Abfragen oben ABGELEITET statt hier erfunden: aendert
+  // sich eine SELECT-Liste, aendert sich der Typ mit.
+  type RiskDetail = {
+    id: (typeof stepsWithRisks)[number]["riskId"];
+    title: (typeof stepsWithRisks)[number]["riskTitle"];
+    inherent: (typeof stepsWithRisks)[number]["inherent"];
+    residual: (typeof stepsWithRisks)[number]["residual"];
+    status: (typeof stepsWithRisks)[number]["riskStatus"];
+  };
+  type ControlDetail = {
+    id: (typeof stepsWithControls)[number]["controlId"];
+    title: (typeof stepsWithControls)[number]["controlTitle"];
+    status: (typeof stepsWithControls)[number]["controlStatus"];
+    controlType: (typeof stepsWithControls)[number]["controlType"];
+    automationLevel: (typeof stepsWithControls)[number]["automationLevel"];
+    latestToeResult: (typeof stepsWithControls)[number]["latestToeResult"];
+    latestTestDate: (typeof stepsWithControls)[number]["latestTestDate"];
+  };
+  type FindingDetail = (typeof findings)[number];
+
   // Group into RACM rows per step
   const byStep = new Map<
     string,
@@ -138,9 +162,12 @@ export async function GET(
       stepName: string | null;
       lineOfDefense: string | null;
       risks: Set<string>;
-      riskDetails: any[];
-      controls: any[];
-      findings: any[];
+      // [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-076] Die drei Listen werden
+      // aus den Ergebniszeilen der drei Abfragen unten gefuellt; ihre Form
+      // steht dort und wird hier uebernommen.
+      riskDetails: RiskDetail[];
+      controls: ControlDetail[];
+      findings: FindingDetail[];
     }
   >();
 
@@ -224,4 +251,4 @@ export async function GET(
       },
     },
   });
-}
+});

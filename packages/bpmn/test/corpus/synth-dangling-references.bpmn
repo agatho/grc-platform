@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  id="Definitions_Dangling" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_Dangling" isExecutable="false">
+    <bpmn:dataStoreReference id="DSR_Missing" name="Fremdsystem" dataStoreRef="DataStore_Missing"/>
+    <bpmn:startEvent id="DR_Start" name="Start">
+      <bpmn:messageEventDefinition id="DR_MsgDef" messageRef="Message_Missing"/>
+      <bpmn:outgoing>DR_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="DR_Call" name="Fremdprozess aufrufen" calledElement="Process_Missing">
+      <bpmn:incoming>DR_F1</bpmn:incoming>
+      <bpmn:outgoing>DR_F2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="DR_End" name="Ende">
+      <bpmn:incoming>DR_F2</bpmn:incoming>
+      <bpmn:errorEventDefinition id="DR_ErrDef" errorRef="Error_Missing"/>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="DR_F1" sourceRef="DR_Start" targetRef="DR_Call"/>
+    <bpmn:sequenceFlow id="DR_F2" sourceRef="DR_Call" targetRef="DR_End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Dangling">
+    <bpmndi:BPMNPlane id="Plane_Dangling" bpmnElement="Process_Dangling">
+      <bpmndi:BPMNShape id="DR_Start_di" bpmnElement="DR_Start">
+        <dc:Bounds x="152" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DR_Ghost_di" bpmnElement="Shape_For_Missing_Element">
+        <dc:Bounds x="900" y="900" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

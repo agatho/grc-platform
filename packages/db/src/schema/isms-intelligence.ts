@@ -13,6 +13,7 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  char,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
@@ -152,6 +153,10 @@ export const soaAiSuggestion = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    aiModel: varchar("ai_model", { length: 120 }),
+    aiProvider: varchar("ai_provider", { length: 32 }),
+    egressLogId: uuid("egress_log_id"),
+    promptSha256: char("prompt_sha256", { length: 64 }),
   },
   (table) => [
     index("sas_org_idx").on(table.orgId),
@@ -191,6 +196,10 @@ export const maturityRoadmapAction = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    aiModel: varchar("ai_model", { length: 120 }),
+    aiProvider: varchar("ai_provider", { length: 32 }),
+    egressLogId: uuid("egress_log_id"),
+    promptSha256: char("prompt_sha256", { length: 64 }),
   },
   (table) => [
     index("mra_org_idx").on(table.orgId),

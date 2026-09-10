@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -46,39 +47,52 @@ function ReportYearInner() {
   const router = useRouter();
   const year = params.year as string;
 
-  const [report, setReport] = useState<EsgAnnualReport | null>(null);
-  const [completeness, setCompleteness] = useState<CompletenessItem[]>([]);
-  const [gaps, setGaps] = useState<GapItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die drei Abrufe wurden immer
+  // zusammen ausgelöst und zusammen verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    report: EsgAnnualReport | null;
+    completeness: CompletenessItem[];
+    gaps: GapItem[];
+  }>({
+    queryKey: ["esg", "reports", year],
+    queryFn: async () => {
       const [rRes, cRes, gRes] = await Promise.all([
         fetch(`/api/v1/esg/reports/${year}`),
         fetch(`/api/v1/esg/reports/${year}/completeness`),
         fetch(`/api/v1/esg/reports/${year}/gaps`),
       ]);
+      let report: EsgAnnualReport | null = null;
+      let completeness: CompletenessItem[] = [];
+      let gaps: GapItem[] = [];
       if (rRes.ok) {
         const json = await rRes.json();
-        setReport(json.data);
+        report = json.data;
       }
       if (cRes.ok) {
         const json = await cRes.json();
-        setCompleteness(json.data ?? []);
+        completeness = json.data ?? [];
       }
       if (gRes.ok) {
         const json = await gRes.json();
-        setGaps(json.data ?? []);
+        gaps = json.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [year]);
+      return { report, completeness, gaps };
+    },
+  });
+  const report = pageData?.report ?? null;
+  const completeness = pageData?.completeness ?? [];
+  const gaps = pageData?.gaps ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleWorkflow = async (action: string) => {
     try {
@@ -138,9 +152,12 @@ function ReportYearInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button
             variant="outline"
@@ -230,7 +247,7 @@ function ReportYearInner() {
                           ? "bg-green-100 text-green-900"
                           : isActive
                             ? "bg-blue-100 text-blue-900 ring-2 ring-blue-300"
-                            : "bg-gray-100 text-gray-400"
+                            : "bg-gray-100 text-gray-600"
                       }`}
                     >
                       {isPast ? <CheckCircle size={14} /> : idx + 1}

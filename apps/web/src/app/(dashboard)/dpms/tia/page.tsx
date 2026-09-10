@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, Globe } from "lucide-react";
@@ -36,33 +37,28 @@ export default function TiaListPage() {
 function TiaListInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
-  const [items, setItems] = useState<Tia[]>([]);
-  const [loading, setLoading] = useState(true);
   const [riskFilter, setRiskFilter] = useState("");
   const [countryFilter, setCountryFilter] = useState("");
   const [search, setSearch] = useState("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die Filter stehen im Schlüssel;
+  // eine nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const { data: items = [], isPending: loading } = useQuery<Tia[]>({
+    queryKey: ["dpms", "tia", riskFilter, countryFilter, search],
+    queryFn: async () => {
       const params = new URLSearchParams({ limit: "100" });
       if (riskFilter) params.set("riskRating", riskFilter);
       if (countryFilter) params.set("transferCountry", countryFilter);
       if (search) params.set("search", search);
 
       const res = await fetch(`/api/v1/dpms/tia?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [riskFilter, countryFilter, search]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Tia[];
+    },
+  });
 
   // Extract unique countries for filter
   const countries = [...new Set(items.map((i) => i.transferCountry))].sort();

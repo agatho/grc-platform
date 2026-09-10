@@ -2,9 +2,33 @@ import { db, cveFeedItem } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc, gte, lte, ilike, or } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
+import { z } from "zod";
+import {
+  parseQueryParams,
+  searchQueryParam,
+  dateQueryParam,
+} from "@/lib/query-schema";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const cveFeedQuerySchema = z.object({
+  severity: z.string().trim().min(1).max(40).optional(),
+  search: searchQueryParam,
+  // Previously fed straight into `new Date(...)`; an unparseable value
+  // produced an Invalid Date and a Postgres error.
+  startDate: dateQueryParam,
+  endDate: dateQueryParam,
+});
 
 // GET /api/v1/isms/cve/feed — Latest CVE feed items (paginated)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -12,10 +36,16 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const severity = searchParams.get("severity");
-  const search = searchParams.get("search");
-  const startDate = searchParams.get("startDate");
-  const endDate = searchParams.get("endDate");
+  const q = parseQueryParams(cveFeedQuerySchema, searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const severity = q.data.severity ?? null;
+  const search = q.data.search ?? null;
+  const startDate = q.data.startDate ?? null;
+  const endDate = q.data.endDate ?? null;
 
   const conditions: ReturnType<typeof eq>[] = [];
 
@@ -56,4 +86,4 @@ export async function GET(req: Request) {
     data: rows,
     pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
-}
+});

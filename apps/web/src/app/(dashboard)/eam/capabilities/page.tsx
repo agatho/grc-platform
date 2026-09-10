@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
 
@@ -9,7 +9,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import type { BusinessCapability } from "@grc/shared";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 const IMPORTANCE_COLORS: Record<string, string> = {
   core: "bg-red-100 text-red-900",
@@ -28,25 +28,19 @@ export default function CapabilitiesPage() {
 
 function CapabilitiesInner() {
   const t = useTranslations("eam");
-  const [tree, setTree] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: tree = [], isPending: loading } = useQuery<UnvalidatedJson[]>({
+    queryKey: ["eam", "capabilities"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/eam/capabilities");
-      if (res.ok) {
-        const json = await res.json();
-        setTree(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as UnvalidatedJson[];
+    },
+  });
 
   if (loading) {
     return (
@@ -67,7 +61,7 @@ function CapabilitiesInner() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {tree.map((cap: any) => (
+        {tree.map((cap: UnvalidatedJson) => (
           <Card key={cap.id} className="border-2">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -78,7 +72,11 @@ function CapabilitiesInner() {
                   <Badge
                     className={IMPORTANCE_COLORS[cap.strategicImportance] ?? ""}
                   >
-                    {t(`capabilities.${cap.strategicImportance}` as any)}
+                    {t(
+                      `capabilities.${cap.strategicImportance}` as Parameters<
+                        typeof t
+                      >[0],
+                    )}
                   </Badge>
                 )}
               </div>
@@ -95,7 +93,7 @@ function CapabilitiesInner() {
                 )}
               {cap.children?.length > 0 && (
                 <div className="mt-3 space-y-1">
-                  {cap.children.map((child: any) => (
+                  {cap.children.map((child: UnvalidatedJson) => (
                     <div
                       key={child.id}
                       className="bg-muted rounded px-2 py-1 text-sm"
@@ -103,7 +101,7 @@ function CapabilitiesInner() {
                       {child.element?.name ?? "Sub-capability"}
                       {child.children?.length > 0 && (
                         <div className="ml-3 mt-1 space-y-1">
-                          {child.children.map((gc: any) => (
+                          {child.children.map((gc: UnvalidatedJson) => (
                             <div
                               key={gc.id}
                               className="text-xs text-muted-foreground"

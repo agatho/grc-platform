@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +17,6 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
@@ -89,11 +88,11 @@ export default function CreateDistributionPage() {
   const [quizPassThreshold, setQuizPassThreshold] = useState(80);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [reminderDaysBefore, setReminderDaysBefore] = useState("7,3,1");
-  const [sendNow, setSendNow] = useState(false);
+  const [_sendNow, _setSendNow] = useState(false);
 
   // Temp inputs for audience
   const [deptInput, setDeptInput] = useState("");
-  const [roleInput, setRoleInput] = useState("");
+  const [_roleInput, _setRoleInput] = useState("");
 
   // Fetch documents from DMS
   useEffect(() => {

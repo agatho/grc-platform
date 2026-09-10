@@ -34,7 +34,7 @@ jobs:
     container:
       image: node:22.20-alpine # muss Dockerfile ARG NODE_IMAGE entsprechen
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Versions
         run: node --version && npm --version
       - name: Validate lockfile against container npm

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -21,6 +22,9 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 interface NIS2Requirement {
   id: string;
@@ -57,25 +61,27 @@ export default function NIS2DashboardPage() {
 function NIS2DashboardInner() {
   const t = useTranslations("nis2");
   const router = useRouter();
-  const [data, setData] = useState<NIS2DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<NIS2DashboardData | null>({
+    queryKey: ["isms", "nis2", "status"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/isms/nis2/status");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as NIS2DashboardData | null;
+    },
+  });
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/isms/nis2/status");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -106,9 +112,12 @@ function NIS2DashboardInner() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
         </div>
       </div>
@@ -214,6 +223,13 @@ function NIS2DashboardInner() {
               key={req.id}
               className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
               onClick={() => router.push(`/isms/nis2?detail=${req.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                activateOnKey(e, () =>
+                  router.push(`/isms/nis2?detail=${req.id}`),
+                )
+              }
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3 min-w-0">

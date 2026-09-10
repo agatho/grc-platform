@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="Definitions_LocalNs" targetNamespace="http://arctos.dev/bpmn">
+  <bpmn:process id="Process_LocalNs" isExecutable="false">
+    <bpmn:userTask id="LN_Task" name="Beleg pruefen">
+      <bpmn:extensionElements>
+        <vendor:meta xmlns:vendor="http://vendor.example/schema/1" key="cost-center" value="4711">
+          <vendor:note lang="de">Nur lokal deklarierter Namensraum</vendor:note>
+        </vendor:meta>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+  </bpmn:process>
+</bpmn:definitions>

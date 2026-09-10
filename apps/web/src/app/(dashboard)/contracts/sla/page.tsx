@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -15,6 +16,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface SlaWithMeasurement {
   slaId: string;
@@ -40,19 +42,27 @@ export default function SlaMonitoringPage() {
 
 function SlaMonitoringInner() {
   const t = useTranslations("contracts");
-  const [slaData, setSlaData] = useState<SlaWithMeasurement[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchSlaData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Ein Fehler der äusseren
+  // Vertragsliste wird nicht mehr verschluckt, sondern landet im
+  // Fehlerzustand der Abfrage (gleiche Darstellung: leere Liste).
+  const {
+    data: slaData = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<SlaWithMeasurement[]>({
+    queryKey: ["contracts", "sla", "monitoring"],
+    queryFn: async () => {
       // Fetch active contracts
-      const cRes = await fetch(
-        "/api/v1/contracts?limit=200&status=active,renewal",
+      // [ARCTOS-FULL-2026-08-31 · OP-050] siehe obligations/page.tsx —
+      // dasselbe Muster, dieselbe Route.
+      const contracts = await fetchAllPages<{ id: string; title: string }>(
+        "/api/v1/contracts",
+        { params: { status: "active,renewal" } },
       );
-      if (!cRes.ok) return;
-      const cJson = await cRes.json();
-      const contracts = cJson.data ?? [];
 
       const allSlas: SlaWithMeasurement[] = [];
       for (const c of contracts) {
@@ -100,17 +110,13 @@ function SlaMonitoringInner() {
         }
       }
 
-      setSlaData(allSlas);
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return allSlas;
+    },
+  });
 
-  useEffect(() => {
-    void fetchSlaData();
-  }, [fetchSlaData]);
+  const fetchSlaData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const breachCount = slaData.filter((s) => s.latestBreach).length;
   const okCount = slaData.filter((s) => s.latestBreach === false).length;
@@ -138,9 +144,9 @@ function SlaMonitoringInner() {
           variant="outline"
           size="sm"
           onClick={fetchSlaData}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

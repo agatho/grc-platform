@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Default-Konfiguration fuer Phantom-Org c2446a5c auf No-Op-Guard umgestellt (S09-07).
 -- Migration 0091: ERM Bridge Foundations
 -- Extends risk_source enum + adds riskId FK to all domain risk tables
 -- Pattern: Domain risk → auto-sync to central ERM register when score ≥ threshold
@@ -113,9 +118,18 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Default configs
-INSERT INTO erm_sync_config (org_id, module_key, score_threshold, default_risk_category) VALUES
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'tprm', 15, 'operational'),
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'dpms', 12, 'compliance'),
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'bcms', 12, 'operational'),
-('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'esg', 15, 'esg')
-ON CONFLICT DO NOTHING;
+DO $seed$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM organization WHERE id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41') THEN
+    RAISE NOTICE '0091: Demo-Org c2446a5c nicht vorhanden - ERM-Sync-Defaults uebersprungen';
+    RETURN;
+  END IF;
+
+  INSERT INTO erm_sync_config (org_id, module_key, score_threshold, default_risk_category) VALUES
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'tprm', 15, 'operational'),
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'dpms', 12, 'compliance'),
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'bcms', 12, 'operational'),
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'esg', 15, 'esg')
+  ON CONFLICT DO NOTHING;
+END
+$seed$;

@@ -16,7 +16,7 @@ import { LayoutProvider, useLayout } from "@/hooks/use-layout-preference";
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { layout } = useLayout();
 
   // Use the cookie-resolved currentOrgId from the session callback. Falls
@@ -25,7 +25,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
     session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   return (
-    <ModuleConfigProvider orgId={currentOrgId}>
+    <ModuleConfigProvider
+      orgId={currentOrgId}
+      sessionLoading={sessionStatus === "loading"}
+    >
       <NavPreferencesProvider>
         <TabProvider>
           <div className="flex h-screen bg-gray-50">

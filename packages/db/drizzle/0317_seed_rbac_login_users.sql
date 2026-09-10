@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-07] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Die 1 Seed-INSERTs auf user_organization_role setzen harte FK-Werte auf Demo-Org/Demo-User, die keine Migration erzeugt. Sie sind auf INSERT ... SELECT ... WHERE EXISTS umgestellt und damit zeilenweise ein No-Op statt eines Abbruchs (S09-07).
 -- Migration 0317: seed login-capable RBAC test users for Meridian Holdings.
 --
 -- #WAVE12-RBAC-01: the 0316 seed gave each role a user but with the
@@ -35,7 +40,8 @@ VALUES
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
-VALUES
+SELECT v.user_id::uuid, v.org_id::uuid, v.role::user_role, v.lod::line_of_defense
+FROM (VALUES
   ('a0000002-0000-0000-0000-000000000001', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'ciso',                    'second'),
   ('a0000002-0000-0000-0000-000000000002', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'dpo',                     'second'),
   ('a0000002-0000-0000-0000-000000000003', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'compliance_officer',      'second'),
@@ -45,6 +51,9 @@ VALUES
   ('a0000002-0000-0000-0000-000000000007', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'esg_manager',             'second'),
   ('a0000002-0000-0000-0000-000000000008', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'whistleblowing_officer',  NULL),
   ('a0000002-0000-0000-0000-000000000009', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'viewer',                  NULL)
+) AS v(user_id, org_id, role, lod)
+WHERE EXISTS (SELECT 1 FROM "user" u WHERE u.id = v.user_id::uuid)
+  AND EXISTS (SELECT 1 FROM organization o WHERE o.id = v.org_id::uuid)
 ON CONFLICT DO NOTHING;
 
 COMMIT;

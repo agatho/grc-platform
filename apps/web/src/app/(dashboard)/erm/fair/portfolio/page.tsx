@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
-import { Loader2, TrendingUp, Shield, AlertTriangle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocale, useTranslations } from "next-intl";
+import { Loader2 } from "lucide-react";
 import {
   ScatterChart,
   Scatter,
@@ -12,12 +12,12 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
   ZAxis,
-  ReferenceLine,
 } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { formatCompactCurrency, formatCurrency } from "@/lib/format-date";
 
 interface TopRisk {
   riskId: string;
@@ -64,37 +64,40 @@ export default function FAIRPortfolioPage() {
 
 function FAIRPortfolioInner() {
   const t = useTranslations("fair");
+  const locale = useLocale();
 
-  const [loading, setLoading] = useState(true);
-  const [topRisks, setTopRisks] = useState<TopRisk[]>([]);
-  const [aggregate, setAggregate] = useState<AggregateData | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die beiden Abrufe liefen immer
+  // gemeinsam und werden gemeinsam gelesen — deshalb eine Abfrage. Nicht-ok-
+  // Antworten ergeben wie vorher eine leere Liste bzw. `null`; ein Netzfehler
+  // landet im Fehlerzustand der Abfrage (Anzeige bleibt: leere Seite).
+  const { data: bundle, isPending: loading } = useQuery<{
+    topRisks: TopRisk[];
+    aggregate: AggregateData | null;
+  }>({
+    queryKey: ["erm", "fair", "portfolio"],
+    queryFn: async () => {
       const [topRes, aggRes] = await Promise.all([
         fetch("/api/v1/erm/fair/top-risks?limit=50"),
         fetch("/api/v1/erm/fair/aggregate"),
       ]);
 
+      let topRisks: TopRisk[] = [];
+      let aggregate: AggregateData | null = null;
       if (topRes.ok) {
         const data = await topRes.json();
-        setTopRisks(data.data ?? []);
+        topRisks = (data.data ?? []) as TopRisk[];
       }
       if (aggRes.ok) {
         const data = await aggRes.json();
-        setAggregate(data.data ?? null);
+        aggregate = (data.data ?? null) as AggregateData | null;
       }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+      return { topRisks, aggregate };
+    },
+  });
+  const topRisks = bundle?.topRisks ?? [];
+  const aggregate = bundle?.aggregate ?? null;
 
   if (loading) {
     return (
@@ -127,7 +130,7 @@ function FAIRPortfolioInner() {
           <Card className="p-4 border-l-4 border-l-blue-500">
             <p className="text-sm text-muted-foreground">{t("totalALE")}</p>
             <p className="text-2xl font-bold">
-              {formatEUR(aggregate.totalAleP50)}
+              {formatEUR(locale, aggregate.totalAleP50)}
             </p>
             <p className="text-xs text-muted-foreground">
               P50 {t("aggregate")}
@@ -136,7 +139,7 @@ function FAIRPortfolioInner() {
           <Card className="p-4 border-l-4 border-l-red-500">
             <p className="text-sm text-muted-foreground">{t("totalVaR")}</p>
             <p className="text-2xl font-bold text-red-700">
-              {formatEUR(aggregate.totalAleP95)}
+              {formatEUR(locale, aggregate.totalAleP95)}
             </p>
             <p className="text-xs text-muted-foreground">
               P95 {t("aggregate")}
@@ -152,7 +155,7 @@ function FAIRPortfolioInner() {
             <p className="text-sm text-muted-foreground">{t("avgALE")}</p>
             <p className="text-2xl font-bold">
               {aggregate.riskCount > 0
-                ? formatEUR(aggregate.totalAleP50 / aggregate.riskCount)
+                ? formatEUR(locale, aggregate.totalAleP50 / aggregate.riskCount)
                 : "-"}
             </p>
           </Card>
@@ -185,7 +188,9 @@ function FAIRPortfolioInner() {
                   type="number"
                   dataKey="y"
                   name={t("tailRisk")}
-                  tickFormatter={formatCompactEUR}
+                  tickFormatter={(v: number) =>
+                    formatCompactCurrency(locale, v, "EUR")
+                  }
                   label={{
                     value: t("tailRisk"),
                     angle: -90,
@@ -204,9 +209,9 @@ function FAIRPortfolioInner() {
                         <p>
                           {t("category")}: {d.category}
                         </p>
-                        <p>ALE P50: {formatEUR(d.z)}</p>
+                        <p>ALE P50: {formatEUR(locale, d.z)}</p>
                         <p>
-                          {t("tailRisk")}: {formatEUR(d.y)}
+                          {t("tailRisk")}: {formatEUR(locale, d.y)}
                         </p>
                       </div>
                     );
@@ -264,10 +269,10 @@ function FAIRPortfolioInner() {
                     </td>
                     <td className="p-2 text-right">{cat.count}</td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(cat.aleP50)}
+                      {formatEUR(locale, cat.aleP50)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {formatEUR(cat.aleP95)}
+                      {formatEUR(locale, cat.aleP95)}
                     </td>
                     <td className="p-2 text-right">
                       {aggregate.totalAleP50 > 0
@@ -306,10 +311,10 @@ function FAIRPortfolioInner() {
                     <Badge variant="outline">{r.riskCategory}</Badge>
                   </td>
                   <td className="p-2 text-right font-mono">
-                    {formatEUR(r.aleP50)}
+                    {formatEUR(locale, r.aleP50)}
                   </td>
                   <td className="p-2 text-right font-mono text-red-600">
-                    {formatEUR(r.aleP95)}
+                    {formatEUR(locale, r.aleP95)}
                   </td>
                   <td className="p-2 text-muted-foreground">
                     {r.ownerName ?? "-"}
@@ -324,16 +329,12 @@ function FAIRPortfolioInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }

@@ -5,6 +5,7 @@ import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
+import { log } from "../lib/logger";
 export const processEamPortfolioHealthCheck = withCronInstrumentation(
   "eam-portfolio-health-check",
   async (): Promise<{ totalApplications: number; alertsGenerated: number }> => {
@@ -36,21 +37,25 @@ export const processEamPortfolioHealthCheck = withCronInstrumentation(
 
     // Default thresholds (configurable per org in production)
     if (indicators.insufficientFitPct > 20) {
-      console.log(
-        `[eam-portfolio-health-check] ALERT: ${indicators.insufficientFitPct}% insufficient functional fit (threshold: 20%)`,
+      log.warn(
+        "[eam-portfolio-health-check] ALERT: insufficient functional fit above threshold",
+        { insufficientFitPct: indicators.insufficientFitPct, thresholdPct: 20 },
       );
       alertsGenerated++;
     }
     if (indicators.approachingEolPct > 15) {
-      console.log(
-        `[eam-portfolio-health-check] ALERT: ${indicators.approachingEolPct}% approaching EOL`,
+      log.warn(
+        "[eam-portfolio-health-check] ALERT: applications approaching EOL",
+        {
+          approachingEolPct: indicators.approachingEolPct,
+        },
       );
       alertsGenerated++;
     }
     if (indicators.unassessedPct > 30) {
-      console.log(
-        `[eam-portfolio-health-check] ALERT: ${indicators.unassessedPct}% unassessed`,
-      );
+      log.warn("[eam-portfolio-health-check] ALERT: applications unassessed", {
+        unassessedPct: indicators.unassessedPct,
+      });
       alertsGenerated++;
     }
 

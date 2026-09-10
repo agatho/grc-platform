@@ -2,8 +2,9 @@
 
 // BPM Overhaul Phase 4 C1: BIA-Processes overview with inline MTPD/RTO/RPO editor.
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
@@ -19,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface ImpactRow {
   id?: string;
@@ -39,17 +41,27 @@ export default function BiaProcessesPage() {
   const params = useParams<{ id: string }>();
   const biaId = params?.id ?? "";
 
-  const [rows, setRows] = useState<ImpactRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    // Existing endpoint /api/v1/bcms/bia/[id]/impacts returns the impact rows
-    const resp = await fetch(`/api/v1/bcms/bia/${biaId}/impacts`);
-    if (resp.ok) {
+  // [Welle 7b · OP-080, Gestalt A] Der Abruf beim Einhaengen lag in einem
+  // Effekt, der `setRows`/`setLoading` synchron rief
+  // (`react-hooks/set-state-in-effect`). Fuer genau diese Gestalt ist
+  // `@tanstack/react-query` die vorgesehene Aufloesung — und es ist seit
+  // langem Abhaengigkeit dieses Arbeitsbereichs. Der Ladezustand kommt jetzt
+  // aus der Abfrage selbst, nicht aus einem gespiegelten Zustandsfeld.
+  const {
+    data: serverRows = [],
+    isPending,
+    refetch,
+  } = useQuery<ImpactRow[]>({
+    queryKey: ["bcms", "bia", biaId, "impacts"],
+    enabled: biaId !== "",
+    queryFn: async () => {
+      // Existing endpoint /api/v1/bcms/bia/[id]/impacts returns the impact rows
+      const resp = await fetch(`/api/v1/bcms/bia/${biaId}/impacts`);
+      if (!resp.ok) return [];
       const j = await resp.json();
-      const data = (j.data ?? []).map((d: any) => ({
+      return ((j.data ?? []) as UnvalidatedJson[]).map((d) => ({
         id: d.id,
         processId: d.processId,
         processName: d.processName ?? "(unbenannt)",
@@ -62,15 +74,25 @@ export default function BiaProcessesPage() {
         impactFinancial: d.impactFinancial,
         priorityRanking: d.priorityRanking,
         isEssential: !!d.isEssential,
-      }));
-      setRows(data);
-    }
-    setLoading(false);
-  }, [biaId]);
+      })) as ImpactRow[];
+    },
+  });
 
-  useEffect(() => {
-    if (biaId) reload();
-  }, [biaId, reload]);
+  // Ohne `id` in der URL fragt die Abfrage nichts ab; dann ist auch nichts zu
+  // laden. `isPending` allein bliebe in diesem Fall dauerhaft wahr und die
+  // Seite zeigte fuer immer den Ladekreis.
+  const loading = biaId !== "" && isPending;
+
+  // Die Tabelle ist ein Inline-Editor: der Serverstand bleibt der Serverstand,
+  // die Eingaben des Nutzers liegen als Auflage darueber. Vorher war beides
+  // dasselbe Zustandsfeld, weshalb ein erneuter Abruf die offenen Eingaben
+  // stillschweigend ueberschrieben haette.
+  const [edits, setEdits] = useState<Record<string, Partial<ImpactRow>>>({});
+
+  const rows = useMemo<ImpactRow[]>(
+    () => serverRows.map((r) => ({ ...r, ...edits[r.processId] })),
+    [serverRows, edits],
+  );
 
   const saveRow = useCallback(
     async (row: ImpactRow) => {
@@ -91,17 +113,31 @@ export default function BiaProcessesPage() {
       });
       if (resp.ok) {
         toast.success("Saved");
+        // Die Auflage dieser Zeile ist gespeichert; ab jetzt gilt wieder der
+        // Serverstand fuer sie.
+        setEdits((cur) => {
+          if (!(row.processId in cur)) return cur;
+          const next = { ...cur };
+          delete next[row.processId];
+          return next;
+        });
+        void refetch();
       } else {
         const e = await resp.json().catch(() => ({}));
         toast.error(e.error ?? "Save failed");
       }
       setSavingId(null);
     },
-    [biaId],
+    [biaId, refetch],
   );
 
   const update = (i: number, patch: Partial<ImpactRow>) => {
-    setRows((cur) => cur.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+    const processId = rows[i]?.processId;
+    if (!processId) return;
+    setEdits((cur) => ({
+      ...cur,
+      [processId]: { ...cur[processId], ...patch },
+    }));
   };
 
   return (

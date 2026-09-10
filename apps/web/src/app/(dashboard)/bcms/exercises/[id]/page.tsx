@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Plus, CheckCircle } from "lucide-react";
@@ -36,17 +37,19 @@ export default function ExerciseDetailPage() {
 }
 
 function ExerciseDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("bcms");
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
 
-  const [exercise, setExercise] = useState<BcExercise | null>(null);
-  const [findings, setFindings] = useState<BcExerciseFinding[]>([]);
   const [activeTab, setActiveTab] = useState<
     "overview" | "objectives" | "findings" | "lessons"
   >("overview");
-  const [loading, setLoading] = useState(true);
 
   // Complete form
   const [showComplete, setShowComplete] = useState(false);
@@ -66,29 +69,43 @@ function ExerciseDetailInner() {
   const [findingDesc, setFindingDesc] = useState("");
   const [addingFinding, setAddingFinding] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Übung und Feststellungen wurden
+  // immer zusammen geladen und gelesen — daher eine Abfrage mit einem Objekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    exercise: BcExercise | null;
+    findings: BcExerciseFinding[];
+  }>({
+    queryKey: ["bcms", "exercises", id],
+    queryFn: async () => {
       const [eRes, fRes] = await Promise.all([
         fetch(`/api/v1/bcms/exercises/${id}`),
         fetch(`/api/v1/bcms/exercises/${id}/findings?limit=100`),
       ]);
+      let exercise: BcExercise | null = null;
+      let findings: BcExerciseFinding[] = [];
       if (eRes.ok) {
         const j = await eRes.json();
-        setExercise(j.data);
+        exercise = j.data ?? null;
       }
       if (fRes.ok) {
         const j = await fRes.json();
-        setFindings(j.data ?? []);
+        findings = j.data ?? [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return { exercise, findings };
+    },
+  });
+  const exercise = data?.exercise ?? null;
+  const findings = data?.findings ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleComplete = async () => {
     setCompleting(true);
@@ -229,10 +246,14 @@ function ExerciseDetailInner() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label
+                htmlFor={`${a11yId}-result`}
+                className="block text-xs font-medium text-gray-600 mb-1"
+              >
                 Result
               </label>
               <select
+                id={`${a11yId}-result`}
                 value={completeResult}
                 onChange={(e) =>
                   setCompleteResult(e.target.value as ExerciseResult)
@@ -364,7 +385,7 @@ function ExerciseDetailInner() {
                 className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white p-4"
               >
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}
+                  className={`w-6 h-6 rounded-full flex items-center justify-center ${obj.met ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"}`}
                 >
                   {obj.met ? (
                     <CheckCircle size={14} />

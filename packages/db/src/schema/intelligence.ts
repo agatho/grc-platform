@@ -15,7 +15,9 @@ import {
   jsonb,
   index,
   uniqueIndex,
+  char,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { control } from "./control";
 
@@ -115,6 +117,16 @@ export const regulatoryRelevanceScore = pgTable("regulatory_relevance_score", {
   computedAt: timestamp("computed_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  aiModel: varchar("ai_model", { length: 120 }),
+  aiProvider: varchar("ai_provider", { length: 32 }),
+  egressLogId: uuid("egress_log_id"),
+  isAiGenerated: boolean("is_ai_generated")
+    .notNull()
+    .default(sql`true`),
+  promptSha256: char("prompt_sha256", { length: 64 }),
+  reviewStatus: varchar("review_status", { length: 20 })
+    .notNull()
+    .default(sql`'unreviewed'::character varying`),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -141,6 +153,17 @@ export const aiPromptLog = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    containsPersonalData: boolean("contains_personal_data")
+      .notNull()
+      .default(sql`false`),
+    entityId: uuid("entity_id"),
+    entityType: varchar("entity_type", { length: 64 }),
+    feature: varchar("feature", { length: 120 }),
+    outcome: varchar("outcome", { length: 32 })
+      .notNull()
+      .default(sql`'completed'::character varying`),
+    promptSha256: char("prompt_sha256", { length: 64 }),
+    provider: varchar("provider", { length: 32 }),
   },
   (table) => [
     index("apl_org_idx").on(table.orgId),

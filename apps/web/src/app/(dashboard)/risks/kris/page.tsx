@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -26,7 +27,6 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -35,9 +35,11 @@ import type {
   KRIMeasurement,
   KriAlertStatus,
   KriTrend,
-  KriMeasurementFrequency,
 } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+// [WP12 · S14-13] Dialog semantics for the hand-built drawer below.
+import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,16 +47,6 @@ import { useDateFormat } from "@/lib/format-date";
 
 interface KriListItem extends KRI {
   linkedRiskName?: string;
-}
-
-interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -159,6 +151,7 @@ function KriSlideOver({
   onClose: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const tCommon = useTranslations("common");
   const { formatDate } = useDateFormat();
   const chartData = [...measurements]
     .sort(
@@ -170,19 +163,35 @@ function KriSlideOver({
       value: parseFloat(m.value),
     }));
 
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-13] This drawer was a bare overlay:
+  // no role="dialog", no aria-modal, no aria-labelledby, no Escape, no focus
+  // return, and the page behind it stayed tabbable. See components/ui/modal-shell.tsx.
+  const { dialogProps, titleId } = useModalDialog(true, onClose);
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto">
+      <ModalBackdrop
+        onClose={onClose}
+        closeLabel={tCommon("actions.close")}
+        className="fixed inset-0 cursor-default bg-black/50"
+      />
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg bg-white shadow-xl overflow-y-auto focus:outline-none"
+      >
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">{kri.name}</h2>
+            <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+              {kri.name}
+            </h2>
             {kri.linkedRiskName && (
               <p className="text-sm text-gray-500">{kri.linkedRiskName}</p>
             )}
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label={tCommon("actions.close")}
             className="rounded-lg p-1 hover:bg-gray-100"
           >
             <X size={20} />
@@ -329,15 +338,6 @@ function KriDashboardContent() {
   const t = useTranslations("risk.kri");
   const { formatDate } = useDateFormat();
 
-  const [kris, setKris] = useState<KriListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  // Measurements cache: kriId -> measurements
-  const [measurementsCache, setMeasurementsCache] = useState<
-    Record<string, KRIMeasurement[]>
-  >({});
-
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [riskFilter, setRiskFilter] = useState<string>("");
@@ -355,24 +355,38 @@ function KriDashboardContent() {
   // Fetch KRIs
   // ---------------------------------------------------------------------------
 
-  const fetchKris = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (statusFilter !== "all") params.set("alertStatus", statusFilter);
-      if (riskFilter) params.set("riskId", riskFilter);
-      if (frequencyFilter) params.set("measurementFrequency", frequencyFilter);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Alle drei Filter gehen in
+  // die Anfrage und stehen deshalb im Schluessel. Liste und Messwert-Cache
+  // kommen aus EINER Abfrage; ein Fehler von `fetchAllPages` landet wie
+  // vorher im Fehlerzustand.
+  const {
+    data,
+    isPending: loading,
+    isError: error,
+    refetch,
+  } = useQuery<{
+    kris: KriListItem[];
+    measurementsCache: Record<string, KRIMeasurement[]>;
+  }>({
+    queryKey: ["kris", "list", statusFilter, riskFilter, frequencyFilter],
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422. Der Fehler
+      // wurde immerhin gesetzt — die KRI-Seite war also nicht leer, sondern
+      // dauerhaft im Fehlerzustand. Die Route erlaubt selbst höchstens 200
+      // KRIs pro Mandant, zwei Seiten à 100 reichen also immer.
+      const params: Record<string, string> = {};
+      if (statusFilter !== "all") params.alertStatus = statusFilter;
+      if (riskFilter) params.riskId = riskFilter;
+      if (frequencyFilter) params.measurementFrequency = frequencyFilter;
 
-      const res = await fetch(`/api/v1/kris?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed");
-      const json: PaginatedResponse<KriListItem> = await res.json();
-      setKris(json.data);
-      setError(false);
+      const rows = await fetchAllPages<KriListItem>("/api/v1/kris", { params });
 
       // Fetch measurements for each KRI (last 12)
       const cache: Record<string, KRIMeasurement[]> = {};
       await Promise.all(
-        json.data.map(async (k) => {
+        rows.map(async (k) => {
           try {
             const mRes = await fetch(
               `/api/v1/kris/${k.id}/measurements?limit=12`,
@@ -386,17 +400,15 @@ function KriDashboardContent() {
           }
         }),
       );
-      setMeasurementsCache(cache);
-    } catch {
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter, riskFilter, frequencyFilter]);
+      return { kris: rows, measurementsCache: cache };
+    },
+  });
+  const kris = data?.kris ?? [];
+  const measurementsCache = data?.measurementsCache ?? {};
 
-  useEffect(() => {
-    void fetchKris();
-  }, [fetchKris]);
+  const fetchKris = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Status counts
   const greenCount = kris.filter(

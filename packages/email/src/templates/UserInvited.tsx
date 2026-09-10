@@ -20,7 +20,11 @@ interface UserInvitedProps {
   acceptUrl: string;
 }
 
-const roleLabels: Record<string, Record<string, string>> = {
+// [OP-065] Der äussere Record war auf `string` typisiert, obwohl es genau
+// zwei Sprachen gibt — jeder Zugriff darauf war deshalb
+// `Record<string,string> | undefined`. Die Schlüssel des Props sagen es
+// genauer, und damit entfällt die Prüfung, statt sie hinzuzufügen.
+const roleLabels: Record<UserInvitedProps["lang"], Record<string, string>> = {
   de: {
     admin: "Administrator",
     risk_manager: "Risikomanager",
@@ -93,7 +97,17 @@ export const UserInvited: React.FC<UserInvitedProps> = ({
   acceptUrl,
 }) => {
   const t = translations[lang];
-  const roleLabel = roleLabels[lang][roleName] || roleName;
+  // [OP-065] `roleLabels[lang][roleName]` griff mit einer Zeichenkette aus
+  // dem Aufrufer auf ein `Record<string, …>` zu. Für `roleName =
+  // "constructor"` kam der Object-Konstruktor zurück; `|| roleName` greift
+  // bei einer Funktion nicht (sie ist wahr), und React lehnt eine Funktion
+  // als Kind ab. Aus einer unbekannten Rolle wäre also kein Rohwert geworden,
+  // sondern eine kaputte E-Mail. `Object.hasOwn` fragt nach eigenen
+  // Schlüsseln; fehlt die Rolle, steht wie bisher der Rohwert da.
+  const labelsForLang = roleLabels[lang];
+  const roleLabel = Object.hasOwn(labelsForLang, roleName)
+    ? (labelsForLang[roleName] ?? roleName)
+    : roleName;
 
   return (
     <Html lang={lang}>

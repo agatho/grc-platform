@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import { Loader2, Save, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface MethodologyConfig {
   orgId: string;

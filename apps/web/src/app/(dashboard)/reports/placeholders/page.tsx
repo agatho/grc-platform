@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2, Plus, RefreshCcw, Code2, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -65,30 +66,33 @@ const CATEGORIES = [
 // ---------------------------------------------------------------------------
 
 export default function PlaceholdersPage() {
-  const [placeholders, setPlaceholders] = useState<Placeholder[]>([]);
-  const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string>("");
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`); der Kategoriefilter steht im
+  // Schlüssel. Ein Netzfehler wird nicht mehr verschluckt, sondern landet im
+  // Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data: placeholders = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<Placeholder[]>({
+    queryKey: ["reports", "placeholders", categoryFilter],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (categoryFilter) params.set("category", categoryFilter);
       const res = await fetch(`/api/v1/reports/placeholders?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setPlaceholders(json.data ?? []);
-      }
-    } catch {
-      // silently handle
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryFilter]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Placeholder[];
+    },
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && placeholders.length === 0) {
     return (
@@ -115,10 +119,10 @@ export default function PlaceholdersPage() {
             variant="outline"
             size="sm"
             onClick={fetchData}
-            disabled={loading}
+            disabled={isFetching}
           >
             <RefreshCcw
-              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
             />
             Aktualisieren
           </Button>
@@ -215,7 +219,7 @@ export default function PlaceholdersPage() {
                             {ph.currentValue}
                           </span>
                         ) : (
-                          <span className="text-gray-300">&mdash;</span>
+                          <span className="text-gray-500">&mdash;</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">

@@ -18,6 +18,7 @@ import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { computeSecurityPosture } from "@grc/shared";
 import type { PostureData, PostureDomain } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface PostureSnapshotResult {
   orgsProcessed: number;
@@ -72,8 +73,12 @@ export const processPostureSnapshot = withCronInstrumentation(
 
         snapshotsCreated++;
         orgsProcessed++;
-      } catch {
-        // Wrapper logs structured error; bump per-org counter.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "posture-snapshot", scope: "Compute domain scores" },
+          err,
+        );
         errors++;
       }
     }

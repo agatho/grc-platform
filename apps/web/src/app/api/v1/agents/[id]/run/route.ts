@@ -6,9 +6,13 @@ import {
 } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/agents/:id/run — Force run agent now
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -116,8 +120,7 @@ export async function POST(
 
     return Response.json({ error: "Agent execution failed" }, { status: 500 });
   }
-}
-
+});
 // Agent phase implementations (simplified — real agents use AI)
 async function observePhase(agent: typeof agentRegistration.$inferSelect) {
   const agentType = agent.agentType;
@@ -156,15 +159,15 @@ async function observePhase(agent: typeof agentRegistration.$inferSelect) {
 }
 
 async function evaluatePhase(
-  agent: typeof agentRegistration.$inferSelect,
-  observation: Record<string, unknown>,
+  _agent: typeof agentRegistration.$inferSelect,
+  _observation: Record<string, unknown>,
 ) {
   return { phase: "evaluate", significantFindings: 0, riskLevel: "low" };
 }
 
 async function recommendPhase(
-  agent: typeof agentRegistration.$inferSelect,
-  evaluation: Record<string, unknown>,
+  _agent: typeof agentRegistration.$inferSelect,
+  _evaluation: Record<string, unknown>,
 ) {
   // Returns empty recommendations by default; real implementation uses AI
   return [] as {

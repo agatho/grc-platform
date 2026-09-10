@@ -13,10 +13,10 @@ jobs:
     name: Review Dependencies
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Dependency Review
-        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           # Fail on high/critical vulnerabilities
           fail-on-severity: high
@@ -31,6 +31,34 @@ jobs:
           #   alongside gitleaks as second-opinion coverage ("4 eyes see
           #   more than 2"). Runs in CI only; never bundled into web /
           #   worker images.
-          allow-dependencies-licenses: pkg:githubactions/trufflesecurity/trufflehog
+          #
+          # [ARCTOS-FULL-2026-08-31 · OP-244] jszip (npm) steht hier aus einem
+          # ANDEREN Grund als trufflehog, und der Unterschied ist wichtig:
+          # jszip ist KEIN Copyleft-Paket, es ist doppelt lizenziert. Die
+          # eigene Angabe des Pakets lautet
+          #
+          #     "license": "(MIT OR GPL-3.0-or-later)"
+          #
+          # — der Nutzer waehlt. Die GitHub-Lizenzdatenbank normalisiert das
+          # zu „GPL-3.0-only OR MIT", und diese Action bewertet einen
+          # ODER-Ausdruck nicht als Wahl, sondern faellt ueber den Zweig, der
+          # auf der Sperrliste steht. Sie meldet also nicht, dass wir GPL-Code
+          # ausliefern, sondern dass sie den Ausdruck nicht auswerten kann.
+          #
+          # ARCTOS nimmt jszip unter MIT. Anders als trufflehog laeuft jszip
+          # NICHT nur in CI — es steckt im Web-Bundle (Offline-Prueffarchiv,
+          # ADR-011 rev.3). Genau deshalb steht die Begruendung hier
+          # ausgeschrieben und nicht unter der Zeile darueber: die Regel „nur
+          # CI-/Dev-Werkzeuge" gilt weiter, dieser Eintrag ist die benannte
+          # Ausnahme davon, und er faellt weg, sobald die Action
+          # ODER-Ausdruecke auswertet.
+          #
+          # Aufgefallen im Lauf 34345848114: `jszip@3.10.1 -> 3.10.2` aus dem
+          # Abhaengigkeits-Update (OP-234) hat das Paket erstmals in den
+          # PR-Diff gebracht, den diese Action prueft. Neu ist die Meldung,
+          # nicht das Paket — jszip kam mit `ccd171f4` und liegt in `main`.
+          allow-dependencies-licenses: >-
+            pkg:githubactions/trufflesecurity/trufflehog,
+            pkg:npm/jszip
           # Comment on PR with findings
           comment-summary-in-pr: always

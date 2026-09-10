@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
@@ -32,13 +33,7 @@ import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDateFormat } from "@/lib/format-date";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -47,7 +42,6 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@grc/ui";
 import type {
@@ -64,15 +58,15 @@ import {
   EMPTY_BPMN_XML,
 } from "@grc/shared";
 
-import type {
-  BpmnEditorRef,
-  RiskOverlayData,
-  CallActivityOverlayData,
-} from "@/components/bpmn/bpmn-editor";
+import type { CallActivityOverlayData } from "@/components/bpmn/bpmn-editor";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
+import { useGrcOverlay } from "@/hooks/use-grc-overlay";
+import { GrcViewSelect } from "@/components/bpmn/grc-view-select";
+import type { GrcViewId } from "@grc/bpmn/grc";
 import { ProcessComments } from "@/components/process/process-comments";
 import { ProcessReviewConfig } from "@/components/process/process-review-config";
 import { ProcessControlsTab } from "@/components/process/process-controls-tab";
@@ -98,6 +92,24 @@ const BpmnEditorDynamic = dynamic(
     loading: () => (
       <div className="flex items-center justify-center min-h-[500px]">
         <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    ),
+  },
+);
+// [ARCTOS-FULL-2026-08-31 · OP-026] Der Versionsdialog bekommt die Sichtwahl.
+// Eigene dynamische Einbindung, damit die vier Sichten und der Overlay-Haken
+// nicht in das Bündel jeder Prozessseite geraten, sondern erst beim Öffnen des
+// Dialogs geladen werden.
+const BpmnGrcViewerDynamic = dynamic(
+  () =>
+    import("@/components/bpmn/bpmn-viewer").then((m) => ({
+      default: m.BpmnGrcViewer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
       </div>
     ),
   },
@@ -177,6 +189,12 @@ interface AuditLogEntry {
   createdAt: string;
 }
 
+// [OP-245] Stabile Leerwerte für `data`-Vorgaben der Abfragen, damit ein
+// `useMemo` über ihnen nicht bei jedem Rendern ein neues `[]` sieht.
+const NO_RISKS: ProcessRisk[] = [];
+const NO_HISTORY: AuditLogEntry[] = [];
+const NO_STEPS: ProcessStep[] = [];
+
 // ---------------------------------------------------------------------------
 // Step type icons
 // ---------------------------------------------------------------------------
@@ -213,32 +231,36 @@ export default function ProcessDetailPage() {
 function ProcessDetailContent() {
   const t = useTranslations("process");
   const tDrill = useTranslations("bpmOverhaul");
+  // [ARCTOS-FULL-2026-08-31 · OP-001] Namensraum der GRC-Pflegemasken.
+  const tGrc = useTranslations("processGrc");
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const { data: session } = useSession();
   const processId = params.id as string;
 
-  const [process, setProcess] = useState<ProcessDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const shapeParam = searchParams.get("shape");
   const commentParam = searchParams.get("comment");
   const tabParam = searchParams.get("tab");
   // Call-Activity Drill-Down: ?from=<parentProcessId> → back bar
   const fromParam = searchParams.get("from");
-  const [fromProcessName, setFromProcessName] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!fromParam || fromParam === processId) {
-      setFromProcessName(null);
-      return;
-    }
-    fetch(`/api/v1/processes/${fromParam}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => setFromProcessName(json?.data?.name ?? null))
-      .catch(() => setFromProcessName(null));
-  }, [fromParam, processId]);
+  // [OP-245 · Gestalt A] Der Name des aufrufenden Prozesses wird nur abgefragt,
+  // wenn `?from=` gesetzt ist und nicht auf diese Seite selbst zeigt — vorher
+  // ein Effekt, der im Sonstfall `setFromProcessName(null)` schrieb. Ohne
+  // Abfrage ist `data` undefined, also der Name `null`, wie zuvor.
+  const drilldownEnabled = Boolean(fromParam) && fromParam !== processId;
+  const { data: fromProcessName = null } = useQuery<string | null>({
+    queryKey: ["processes", fromParam, "drilldown-name"],
+    enabled: drilldownEnabled,
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/processes/${fromParam}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json?.data?.name as string | undefined) ?? null;
+    },
+  });
 
   // Deep link: ?tab=editor&shape=Activity_1 or ?tab=comments&comment=uuid
   const [activeTab, setActiveTab] = useState(
@@ -248,70 +270,77 @@ function ProcessDetailContent() {
 
   // Editor state is now managed by EditorTab / useBpmnEditor
 
-  // Risks state
-  const [risks, setRisks] = useState<ProcessRisk[]>([]);
-  const [risksLoading, setRisksLoading] = useState(false);
-
-  // History state
-  const [history, setHistory] = useState<AuditLogEntry[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-
   // Transition state
   const [transitionTarget, setTransitionTarget] =
     useState<ProcessStatus | null>(null);
   const [transitionComment, setTransitionComment] = useState("");
   const [transitioning, setTransitioning] = useState(false);
 
-  // Fetch process detail
-  const fetchProcess = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Ein 404 liefert `null` (vorher
+  // `error = "not_found"`); jeder andere Fehlschlag wirft, und die Seite zeigt
+  // wie zuvor den Nicht-gefunden-Zustand (`isError`).
+  const {
+    data: process = null,
+    isPending: loading,
+    isError,
+  } = useQuery<ProcessDetail | null>({
+    queryKey: ["processes", processId, "detail"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/processes/${processId}`);
       if (!res.ok) {
-        if (res.status === 404) {
-          setError("not_found");
-          return;
-        }
+        if (res.status === 404) return null;
         throw new Error("Failed to load process");
       }
       const json = await res.json();
-      const data = json.data as ProcessDetail;
-      setProcess(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load");
-    } finally {
-      setLoading(false);
-    }
-  }, [processId]);
+      return json.data as ProcessDetail;
+    },
+  });
 
-  useEffect(() => {
-    void fetchProcess();
-  }, [fetchProcess]);
+  // Jeder Aufrufer (Statuswechsel, Speichern, Wiederherstellen, Freigabe,
+  // Dokument angehängt) verlangt den frischen Prozess. Die Ungültigerklärung
+  // über den Präfix nimmt die Reiterdaten (Risiken, Verlauf, Schritte) mit —
+  // deren Effekte hingen vorher an `process` und liefen nach jedem Abruf
+  // erneut; Abfragen ohne Beobachter werden beim nächsten Einschalten geholt.
+  const fetchProcess = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["processes", processId],
+    });
+  }, [queryClient, processId]);
 
-  // Fetch risks when tab changes
-  useEffect(() => {
-    if (activeTab === "risks" && process) {
-      setRisksLoading(true);
-      fetch(`/api/v1/processes/${processId}/risks`)
-        .then((r) => (r.ok ? r.json() : { data: [] }))
-        .then((json) => setRisks(json.data ?? []))
-        .catch(() => setRisks([]))
-        .finally(() => setRisksLoading(false));
-    }
-  }, [activeTab, processId, process]);
+  // Risiken und Verlauf werden nur für den aktiven Reiter abgefragt; der
+  // Reiterinhalt ist erst eingehängt, wenn `process` geladen ist. `staleTime: 0`
+  // hält das alte Verhalten: jeder Reiterwechsel hierher holt neu.
+  const {
+    data: risks = NO_RISKS,
+    isFetching: risksLoading,
+    refetch: refetchRisks,
+  } = useQuery<ProcessRisk[]>({
+    queryKey: ["processes", processId, "risks"],
+    enabled: activeTab === "risks" && process !== null,
+    staleTime: 0,
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/processes/${processId}/risks`);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as ProcessRisk[];
+    },
+  });
 
-  // Fetch history when tab changes
-  useEffect(() => {
-    if (activeTab === "history" && process) {
-      setHistoryLoading(true);
-      fetch(`/api/v1/processes/${processId}/history`)
-        .then((r) => (r.ok ? r.json() : { data: [] }))
-        .then((json) => setHistory(json.data ?? []))
-        .catch(() => setHistory([]))
-        .finally(() => setHistoryLoading(false));
-    }
-  }, [activeTab, processId, process]);
+  const { data: history = NO_HISTORY, isFetching: historyLoading } = useQuery<
+    AuditLogEntry[]
+  >({
+    queryKey: ["processes", processId, "history"],
+    enabled: activeTab === "history" && process !== null,
+    staleTime: 0,
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/processes/${processId}/history`);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditLogEntry[];
+    },
+  });
 
   // User role
   const userRole = useMemo(() => {
@@ -410,7 +439,7 @@ function ProcessDetailContent() {
     );
   }
 
-  if (error === "not_found" || !process) {
+  if (isError || !process) {
     return (
       <div className="space-y-4">
         <Link
@@ -463,7 +492,7 @@ function ProcessDetailContent() {
               <ProcessComplianceProfileSwitcher
                 processId={processId}
                 initialProfile={
-                  (process as any).complianceProfile ?? "standard"
+                  (process as UnvalidatedJson).complianceProfile ?? "standard"
                 }
                 onChange={() => fetchProcess()}
               />
@@ -592,6 +621,41 @@ function ProcessDetailContent() {
         </DialogContent>
       </Dialog>
 
+      {/* [ARCTOS-FULL-2026-08-31 · OP-001] Einstieg in die Pflegemasken der
+          GRC-Diagrammdaten. Ohne diese Zeile waeren die vier Seiten nur ueber
+          eine von Hand eingetippte URL erreichbar — dieselbe Lage, in der
+          `processes/[id]/racm` seit ihrem Bau steht (kein Verweis im ganzen
+          Baum). Eine Pflegeoberflaeche, die niemand findet, pflegt nichts. */}
+      <nav
+        aria-label={tGrc("nav.maintenance")}
+        className="flex flex-wrap items-center gap-3 text-sm"
+      >
+        <Link
+          href={`/processes/${processId}/lanes`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("lanes.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-raci`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("raci.title")}
+        </Link>
+        <Link
+          href={`/processes/${processId}/step-bia`}
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("bia.title")}
+        </Link>
+        <Link
+          href="/processes/sod-rules"
+          className="text-blue-700 hover:underline"
+        >
+          {tGrc("sod.title")}
+        </Link>
+      </nav>
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
@@ -648,12 +712,7 @@ function ProcessDetailContent() {
             risks={risks}
             loading={risksLoading}
             onRefresh={() => {
-              setRisksLoading(true);
-              fetch(`/api/v1/processes/${processId}/risks`)
-                .then((r) => (r.ok ? r.json() : { data: [] }))
-                .then((json) => setRisks(json.data ?? []))
-                .catch(() => setRisks([]))
-                .finally(() => setRisksLoading(false));
+              void refetchRisks();
             }}
             canEdit={canEdit}
             t={t}
@@ -751,7 +810,6 @@ function OverviewTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
-  const tGov = useTranslations("processGovernance");
   const tDrill = useTranslations("bpmOverhaul");
   const tMap = useTranslations("processMap");
   const router = useRouter();
@@ -769,6 +827,17 @@ function OverviewTab({
     calls: CallLinkCall[];
     calledBy: CallLinkCaller[];
   } | null>(null);
+
+  // GRC-Sicht der Vorschau. Eigener Zustand statt eines geteilten mit dem
+  // Editor-Reiter: die beiden Reiter werden nie gleichzeitig gerendert, ein
+  // gemeinsamer Zustand hätte also nur die Elternkomponente vergrößert.
+  // `null` = aus; dann läuft der Overlay-Endpunkt gar nicht erst an.
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(process.id, { enabled: grcView !== null });
 
   useEffect(() => {
     fetch(`/api/v1/processes/${process.id}/call-links`)
@@ -929,6 +998,21 @@ function OverviewTab({
           {process.versions?.some((v) => v.bpmnXml) ||
           Boolean(process.currentVersionData?.bpmnXml) ? (
             <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
+              {/*
+                Dieselbe Sichtwahl wie über der Bearbeitungsfläche — sie teilt
+                sich den Zustand mit ihr, weil beide dasselbe Diagramm zeigen
+                und ein Leser, der die Sicht einmal gewählt hat, sie nicht in
+                jedem Reiter erneut wählen will.
+              */}
+              <div className="flex justify-end border-b border-gray-100 px-2 py-1">
+                <GrcViewSelect
+                  value={grcView}
+                  onChange={setGrcView}
+                  computedAt={grcOverlayData?.computedAt}
+                  loading={grcLoading}
+                  error={grcError}
+                />
+              </div>
               <BpmnViewerDynamic
                 xml={
                   process.versions?.find((v) => v.isCurrent)?.bpmnXml ??
@@ -942,6 +1026,9 @@ function OverviewTab({
                 }
                 className="h-full"
                 minHeight={400}
+                {...(grcView !== null && grcOverlayData !== undefined
+                  ? { grcOverlayData, grcView }
+                  : {})}
               />
             </div>
           ) : (
@@ -1131,22 +1218,25 @@ function EditorTab({
 
   // Call-Activity Drill-Down: synced steps carry calledProcessId — used
   // for the drill-down badges (the detail payload doesn't include steps).
-  const [syncedSteps, setSyncedSteps] = useState<ProcessStep[]>([]);
-  const loadSyncedSteps = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/v1/processes/${processId}/steps`);
-      if (res.ok) {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Zustand. Die Versionsnummer steht im
+  // Schlüssel, weil die synchronisierten Schritte aus der Version entstehen —
+  // der Effekt lief vorher bei jedem Versionswechsel erneut. Ein Fehlschlag
+  // wirft, damit der letzte gute Stand stehen bleibt (vorher: `if (res.ok)`,
+  // sonst nichts) — die Abzeichen sind ohnehin nur nach bestem Bemühen.
+  const { data: syncedSteps = NO_STEPS, refetch: refetchSyncedSteps } =
+    useQuery<ProcessStep[]>({
+      queryKey: ["processes", processId, "steps", process.currentVersion],
+      queryFn: async () => {
+        const res = await fetch(`/api/v1/processes/${processId}/steps`);
+        if (!res.ok) throw new Error("Failed to load steps");
         const json = await res.json();
-        setSyncedSteps((json.data ?? []) as ProcessStep[]);
-      }
-    } catch {
-      // Best-effort — badges just stay hidden
-    }
-  }, [processId]);
-
-  useEffect(() => {
-    void loadSyncedSteps();
-  }, [loadSyncedSteps, process.currentVersion]);
+        return (json.data ?? []) as ProcessStep[];
+      },
+    });
+  const loadSyncedSteps = useCallback(async () => {
+    await refetchSyncedSteps();
+  }, [refetchSyncedSteps]);
 
   const callActivityOverlay = useMemo<CallActivityOverlayData[]>(
     () =>
@@ -1213,9 +1303,33 @@ function EditorTab({
   const [showLodOverlay, setShowLodOverlay] = useState(false);
   const [showFindingsOverlay, setShowFindingsOverlay] = useState(false);
 
-  const [coverageOverlay, setCoverageOverlay] = useState<any[]>([]);
-  const [lodOverlay, setLodOverlay] = useState<any[]>([]);
-  const [findingsOverlay, setFindingsOverlay] = useState<any[]>([]);
+  const [coverageOverlay, setCoverageOverlay] = useState<UnvalidatedJson[]>([]);
+  // [OP-245 · Gestalt E] Abgeleiteter Zustand: `process.steps` trägt die
+  // Verteidigungslinie je Schritt bereits; die Schicht wird beim Rendern
+  // abgeleitet statt in einem Effekt gesetzt. Ob sie gezeigt wird, entscheidet
+  // weiterhin `showLodOverlay` an der Einbindung.
+  const lodOverlay = useMemo<UnvalidatedJson[]>(
+    () =>
+      (process.steps ?? []).map((s: UnvalidatedJson) => ({
+        bpmnElementId: s.bpmnElementId,
+        lineOfDefense: s.lineOfDefense ?? null,
+      })),
+    [process.steps],
+  );
+  const [findingsOverlay, setFindingsOverlay] = useState<UnvalidatedJson[]>([]);
+
+  // Die GRC-Diagrammschicht (23 Layer, 9 Sichten aus Plan §3.3.3). `null` =
+  // aus; dann wird der Overlay-Endpunkt gar nicht erst befragt und die vier
+  // Badge-Kanäle darüber arbeiten wie bisher. Ist eine Sicht gewählt, lassen
+  // die Kanäle die Fläche in Ruhe — dieselbe Aussage zweimal am selben Element
+  // wäre kein Mehrwert, sondern ein Widerspruch in spe
+  // (STUFE2-C-ABSCHLUSS.md §1.3).
+  const [grcView, setGrcView] = useState<GrcViewId | null>(null);
+  const {
+    data: grcOverlayData,
+    loading: grcLoading,
+    error: grcError,
+  } = useGrcOverlay(processId, { enabled: grcView !== null });
 
   useEffect(() => {
     if (!showCoverageOverlay) return;
@@ -1223,7 +1337,7 @@ function EditorTab({
       .then((r) => (r.ok ? r.json() : { data: { activities: [] } }))
       .then((j) =>
         setCoverageOverlay(
-          (j.data?.activities ?? []).map((a: any) => ({
+          (j.data?.activities ?? []).map((a: UnvalidatedJson) => ({
             bpmnElementId: a.bpmnElementId,
             controlCount: a.controlCount ?? 0,
             effectiveCount: a.effectiveCount ?? 0,
@@ -1234,17 +1348,6 @@ function EditorTab({
   }, [showCoverageOverlay, processId]);
 
   useEffect(() => {
-    if (!showLodOverlay) return;
-    // process.steps already carries lineOfDefense per step
-    setLodOverlay(
-      (process.steps ?? []).map((s: any) => ({
-        bpmnElementId: s.bpmnElementId,
-        lineOfDefense: s.lineOfDefense ?? null,
-      })),
-    );
-  }, [showLodOverlay, process.steps]);
-
-  useEffect(() => {
     if (!showFindingsOverlay) return;
     fetch(`/api/v1/processes/${processId}/findings`)
       .then((r) => (r.ok ? r.json() : { data: [] }))
@@ -1253,7 +1356,9 @@ function EditorTab({
         for (const f of j.data ?? []) {
           const stepId = f.process_step_id;
           if (!stepId) continue;
-          const step = (process.steps ?? []).find((s: any) => s.id === stepId);
+          const step = (process.steps ?? []).find(
+            (s: UnvalidatedJson) => s.id === stepId,
+          );
           if (!step) continue;
           const k = step.bpmnElementId;
           const agg = byStep.get(k) ?? { open: 0, critical: 0 };
@@ -1316,9 +1421,29 @@ function EditorTab({
     [],
   );
 
+  // [OP-245 · refs] Ob Rückgängig/Wiederholen möglich ist, wurde beim Rendern
+  // aus `editorRef.current` gelesen — ein Verweis ist kein Rendereingang. Der
+  // Wert ist Zustand und wird dort geschrieben, wo er sich ändert: beide
+  // Engines melden `onChanged` bei jedem `commandStack.changed`, also nach
+  // jedem Kommando, jedem Rückgängig und jedem Wiederholen.
+  const [undoState, setUndoState] = useState({
+    canUndo: false,
+    canRedo: false,
+  });
+  const handleChanged = useCallback(() => {
+    markChanged();
+    const canUndo = editorRef.current?.canUndo() ?? false;
+    const canRedo = editorRef.current?.canRedo() ?? false;
+    setUndoState((prev) =>
+      prev.canUndo === canUndo && prev.canRedo === canRedo
+        ? prev
+        : { canUndo, canRedo },
+    );
+  }, [markChanged, editorRef]);
+
   // Handle save via BPMN XML
   const handleSave = useCallback(
-    async (xml: string) => {
+    async (_xml: string) => {
       // Save via the hook which posts to /versions
       await save();
     },
@@ -1395,8 +1520,8 @@ function EditorTab({
         onExportPng={() => void exportPng()}
         onUndo={undo}
         onRedo={redo}
-        canUndo={editorRef.current?.canUndo() ?? false}
-        canRedo={editorRef.current?.canRedo() ?? false}
+        canUndo={undoState.canUndo}
+        canRedo={undoState.canRedo}
       />
 
       {/* Editor area */}
@@ -1445,6 +1570,13 @@ function EditorTab({
             >
               Findings
             </button>
+            <GrcViewSelect
+              value={grcView}
+              onChange={setGrcView}
+              computedAt={grcOverlayData?.computedAt}
+              loading={grcLoading}
+              error={grcError}
+            />
           </div>
 
           <BpmnEditorDynamic
@@ -1453,7 +1585,7 @@ function EditorTab({
             readOnly={readOnly}
             onSave={handleSave}
             onElementClick={handleElementClick}
-            onChanged={markChanged}
+            onChanged={handleChanged}
             riskOverlayData={showRiskOverlay ? overlayData : []}
             controlCoverageOverlayData={
               showCoverageOverlay ? coverageOverlay : []
@@ -1463,6 +1595,9 @@ function EditorTab({
             callActivityOverlayData={callActivityOverlay}
             onNavigateToProcess={navigateToChildProcess}
             className="h-full"
+            {...(grcView !== null && grcOverlayData !== undefined
+              ? { grcOverlayData, grcView }
+              : {})}
           />
         </div>
 
@@ -1685,8 +1820,17 @@ function VersionsTab({
             style={{ height: "60vh" }}
           >
             {viewingVersion?.bpmnXml ? (
-              <BpmnViewerDynamic
+              /*
+               * [ARCTOS-FULL-2026-08-31 · OP-026] Dieselbe Fläche, jetzt mit
+               * GRC-Sichtwahl. `versionId` gehört dazu: der Dialog zeigt eine
+               * bestimmte Fassung, und der Overlay-Endpunkt kennt den
+               * Parameter (`useGrcOverlay`, `?version=`). Ohne ihn läge über
+               * einer alten Fassung der Stand von heute.
+               */
+              <BpmnGrcViewerDynamic
                 xml={viewingVersion.bpmnXml}
+                processId={process.id}
+                versionId={viewingVersion.id}
                 className="h-full"
                 minHeight={400}
               />
@@ -1753,12 +1897,12 @@ function RisksTab({
     return groups;
   }, [stepRisks]);
 
-  // Search risks
+  // Search risks. [OP-245 · Gestalt E] Das Leeren der Treffer unter zwei
+  // Zeichen geschieht in den beiden Handlern, die den Suchtext setzen
+  // (Eingabe, Verknüpfen) — nicht mehr im Effekt, der nur noch entprellt
+  // abruft.
   useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+    if (searchQuery.length < 2) return;
     const timer = setTimeout(async () => {
       setSearching(true);
       try {
@@ -1802,6 +1946,7 @@ function RisksTab({
       toast.success(t("risks.linked"));
       setLinkDialogOpen(false);
       setSearchQuery("");
+      setSearchResults([]);
       onRefresh();
     } catch {
       toast.error(t("risks.linkError"));
@@ -1963,10 +2108,16 @@ function RisksTab({
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSearchQuery(next);
+                if (next.length < 2) setSearchResults([]);
+              }}
               placeholder={t("risks.searchRisk")}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              autoFocus
+              // [WP12 · S14-09] `autoFocus` removed: Radix Dialog already moves
+              // focus into the panel on open, and a second, competing focus
+              // jump is what WCAG 3.2.1 (On Focus) warns about.
             />
             {searching && (
               <div className="flex items-center justify-center py-4">

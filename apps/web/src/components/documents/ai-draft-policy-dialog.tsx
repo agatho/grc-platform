@@ -6,7 +6,8 @@
 // document is only created after the explicit "apply as draft" click
 // (POST /api/v1/documents + document_entity_link per requirement).
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
@@ -30,6 +31,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AiDisclosureNotice,
+  readAiDisclosure,
+  type AiDisclosureData,
+} from "@/components/ai/ai-disclosure";
 
 const MAX_ENTRIES = 20;
 
@@ -60,10 +66,7 @@ export function AiDraftPolicyDialog() {
   const router = useRouter();
 
   const [open, setOpen] = useState(false);
-  const [frameworks, setFrameworks] = useState<FrameworkItem[]>([]);
   const [frameworkCode, setFrameworkCode] = useState<string>("");
-  const [entries, setEntries] = useState<EntryItem[]>([]);
-  const [entriesLoading, setEntriesLoading] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [category, setCategory] = useState<
     "policy" | "procedure" | "guideline"
@@ -74,42 +77,51 @@ export function AiDraftPolicyDialog() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<DraftResult | null>(null);
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S05-12, handed over by WP6] See
+  // components/ai/ai-disclosure.tsx.
+  const [disclosure, setDisclosure] = useState<AiDisclosureData | null>(null);
   const [entrySearch, setEntrySearch] = useState("");
 
-  // Load control frameworks when the dialog opens.
-  useEffect(() => {
-    if (!open || frameworks.length > 0) return;
-    void (async () => {
-      try {
-        const res = await fetch("/api/v1/compliance/frameworks?type=control");
-        if (!res.ok) return;
-        const json = await res.json();
-        setFrameworks(json.data?.items ?? []);
-      } catch {
-        // Non-fatal: the select simply stays empty.
-      }
-    })();
-  }, [open, frameworks.length]);
+  // [OP-245 · Gestalt A] Both loads go through `@tanstack/react-query`
+  // instead of effects that mirrored data and loading flags into state
+  // (pattern from wave 7b, `catalogs/objects/page.tsx`). Load control
+  // frameworks when the dialog opens; a non-ok answer or a network failure
+  // leaves the select empty, as before.
+  const { data: frameworks = [] } = useQuery<FrameworkItem[]>({
+    queryKey: ["compliance", "frameworks", { type: "control" }],
+    enabled: open,
+    queryFn: async () => {
+      const res = await fetch("/api/v1/compliance/frameworks?type=control");
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data?.items ?? []) as FrameworkItem[];
+    },
+  });
 
-  // Load requirements when a framework is picked.
-  useEffect(() => {
-    if (!frameworkCode) return;
-    setEntriesLoading(true);
-    setEntries([]);
+  // Load requirements when a framework is picked. The framework code is the
+  // key, so switching frameworks starts from an empty list; the selection is
+  // cleared where the switch happens (the select's `onValueChange`), not in
+  // an effect.
+  const { data: entries = [], isPending: entriesPending } = useQuery<
+    EntryItem[]
+  >({
+    queryKey: ["compliance", "frameworks", frameworkCode, "controls"],
+    enabled: Boolean(frameworkCode),
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/compliance/frameworks/${encodeURIComponent(frameworkCode)}?limit=500`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data?.controls?.items ?? []) as EntryItem[];
+    },
+  });
+  const entriesLoading = Boolean(frameworkCode) && entriesPending;
+
+  const pickFramework = (code: string) => {
+    setFrameworkCode(code);
     setSelected(new Set());
-    void (async () => {
-      try {
-        const res = await fetch(
-          `/api/v1/compliance/frameworks/${encodeURIComponent(frameworkCode)}?limit=500`,
-        );
-        if (!res.ok) return;
-        const json = await res.json();
-        setEntries(json.data?.controls?.items ?? []);
-      } finally {
-        setEntriesLoading(false);
-      }
-    })();
-  }, [frameworkCode]);
+  };
 
   const toggleEntry = (id: string) => {
     setSelected((prev) => {
@@ -151,6 +163,7 @@ export function AiDraftPolicyDialog() {
         return;
       }
       setDraft(json.data);
+      setDisclosure(readAiDisclosure(json.data));
     } catch {
       setError(t("draftPolicy.error"));
     } finally {
@@ -236,7 +249,9 @@ export function AiDraftPolicyDialog() {
               <Sparkles size={16} className="text-violet-600" />
               {t("draftPolicy.title")}
             </DialogTitle>
-            <DialogDescription>{t("common.aiDisclaimer")}</DialogDescription>
+            {/* [WP12 · S05-12] The notice moves below the result — see
+                ai-disclosure.tsx. */}
+            <DialogDescription>{t("draftPolicy.subtitle")}</DialogDescription>
           </DialogHeader>
 
           {error && (
@@ -252,7 +267,7 @@ export function AiDraftPolicyDialog() {
                 <label className="text-sm font-medium text-gray-700">
                   {t("draftPolicy.framework")}
                 </label>
-                <Select value={frameworkCode} onValueChange={setFrameworkCode}>
+                <Select value={frameworkCode} onValueChange={pickFramework}>
                   <SelectTrigger className="mt-1">
                     <SelectValue
                       placeholder={t("draftPolicy.frameworkPlaceholder")}
@@ -442,6 +457,8 @@ export function AiDraftPolicyDialog() {
               </DialogFooter>
             </div>
           )}
+          {/* [WP12 · S05-12] AI Act Art. 50 notice from the response. */}
+          <AiDisclosureNotice disclosure={disclosure} className="mt-4" />
         </DialogContent>
       </Dialog>
     </>

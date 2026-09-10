@@ -1,30 +1,66 @@
 // Platform core types (Sprint 1)
 export type OrgType = "subsidiary" | "holding" | "joint_venture" | "branch";
-export type UserRole =
-  | "admin"
-  | "risk_manager"
-  | "control_owner"
-  | "auditor"
-  | "dpo"
-  | "viewer"
-  | "process_owner"
-  | "ombudsperson"
-  | "esg_manager"
-  | "esg_contributor"
-  | "whistleblowing_officer"
-  | "compliance_officer"
-  | "ciso"
-  | "bcm_manager"
-  | "contract_manager"
-  | "quality_manager"
-  | "security_analyst"
-  | "department_head"
-  | "external_auditor"
-  // #WAVE19-MAR-P0-02: vendor_manager is the procurement-side
-  // counterpart to contract_manager. Added to the user_role enum
-  // via migration 0324; kept this TS union in sync.
-  | "vendor_manager";
-export type LineOfDefense = "first" | "second" | "third";
+/**
+ * #WP3-S02-14 — DIE Quelle der Wahrheit für das Rollenmodell.
+ *
+ * Befund: das Rollenmodell war dreifach inkonsistent —
+ *   * DB-Enum `user_role`      9 Werte
+ *   * TypeScript-Union        20 Werte
+ *   * `withAuth(...)`-Guards   17 Werte, davon 8 nicht im Enum
+ * 113 Guard-Slots über 79 Routendateien waren damit nicht zuweisbar
+ * (`POST /users/{id}/roles` mit `{"role":"ciso"}` → 22P02). Least Privilege war
+ * nicht umsetzbar: wer z. B. ISMS-Freigaben brauchte, musste `admin` bekommen —
+ * was die Wirkung von S02-02 und S02-03 verstärkte.
+ *
+ * Ab jetzt gilt: dieses Array ist die einzige Deklaration. Der TS-Typ leitet
+ * sich daraus ab, die Migration `0410_user_role_enum_single_source.sql`
+ * spiegelt es idempotent in das DB-Enum, und
+ * `packages/shared/tests/role-model-consistency.test.ts` vergleicht TS-Liste,
+ * DB-Enum und die tatsächliche Guard-Verwendung im Routenbaum. Drift lässt den
+ * Test rot werden — genau der Zustand, der hier unbemerkt blieb.
+ *
+ * Reihenfolge = `enumsortorder` des DB-Enums.
+ */
+export const USER_ROLES = [
+  "admin",
+  "risk_manager",
+  "control_owner",
+  "auditor",
+  "dpo",
+  "process_owner",
+  "viewer",
+  "whistleblowing_officer",
+  "compliance_officer",
+  "ciso",
+  "bcm_manager",
+  "contract_manager",
+  // S06-12: bis 0410 toter Code, weil der Enum-Wert fehlte.
+  "quality_manager",
+  "security_analyst",
+  "department_head",
+  "external_auditor",
+  "esg_manager",
+  "esg_contributor",
+  // S07-22: fehlte im Enum, obwohl die HinSchG-Isolation der Middleware
+  // ausdrücklich darauf prüft.
+  "ombudsperson",
+  // #WAVE19-MAR-P0-02: vendor_manager is the procurement-side counterpart to
+  // contract_manager.
+  "vendor_manager",
+] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+/** Laufzeit-Prüfung (Requests, SCIM, SSO-Gruppenmapping, Invitations). */
+export function isUserRole(value: unknown): value is UserRole {
+  return (
+    typeof value === "string" &&
+    (USER_ROLES as readonly string[]).includes(value)
+  );
+}
+
+export const LINES_OF_DEFENSE = ["first", "second", "third"] as const;
+export type LineOfDefense = (typeof LINES_OF_DEFENSE)[number];
 
 export interface Organization {
   id: string;

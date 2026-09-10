@@ -1,9 +1,10 @@
 import { db, vendorDueDiligence } from "@grc/db";
 import { completeDueDiligenceSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/vendors/dd/submit — External DD submission (token-based, NO auth)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const url = new URL(req.url);
   const token = url.searchParams.get("token");
 
@@ -70,4 +71,4 @@ export async function POST(req: Request) {
       completedAt: updated.completedAt,
     },
   });
-}
+});

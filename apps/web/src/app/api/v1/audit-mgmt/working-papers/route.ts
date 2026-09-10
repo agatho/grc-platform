@@ -8,9 +8,13 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/audit-mgmt/working-papers?auditId=...
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "auditor", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -38,10 +42,9 @@ export async function GET(req: Request) {
     .offset(offset);
 
   return paginatedResponse(rows, rows.length, limit, offset);
-}
-
+});
 // POST /api/v1/audit-mgmt/working-papers
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -85,7 +88,9 @@ export async function POST(req: Request) {
 
     const reference = generateWpReference(
       folder.code,
-      existingWps.map((w: { reference: string | null }) => w.reference),
+      existingWps
+        .map((w: { reference: string | null }) => w.reference)
+        .filter((r): r is string => r !== null),
     );
 
     const [row] = await tx
@@ -113,4 +118,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});

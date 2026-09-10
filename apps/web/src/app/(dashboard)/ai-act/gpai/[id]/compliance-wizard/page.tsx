@@ -28,7 +28,18 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { useTranslations } from "next-intl";
 
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. Der Assistent war Mischtext aus
+ * beiden Sprachen — "Beide Checks ausfuehren" neben "High-Impact Capabilities
+ * (Benchmarks)". `tierBadge` und `compliancePill` stehen ausserhalb der
+ * Komponente und koennen keinen Hook lesen; sie nehmen die
+ * Uebersetzungsfunktion jetzt als Parameter.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie die beiden Hilfsfunktionen brauchen. */
+type Translate = (key: string) => string;
 type RunStatus = "idle" | "running" | "done" | "error";
 
 interface ClassifyResult {
@@ -56,7 +67,10 @@ interface ObligationsResult {
   error?: string;
 }
 
-function tierBadge(tier: "systemic" | "high_capability" | "standard") {
+function tierBadge(
+  tier: "systemic" | "high_capability" | "standard",
+  t: Translate,
+) {
   if (tier === "systemic") {
     return (
       <Badge
@@ -64,7 +78,7 @@ function tierBadge(tier: "systemic" | "high_capability" | "standard") {
         className="bg-red-100 text-red-800 border-red-300"
       >
         <ShieldAlert className="h-3 w-3 mr-1" />
-        SYSTEMIC
+        {t("gpaiWizard.tier.systemic")}
       </Badge>
     );
   }
@@ -74,35 +88,37 @@ function tierBadge(tier: "systemic" | "high_capability" | "standard") {
         variant="outline"
         className="bg-amber-100 text-amber-800 border-amber-300"
       >
-        HIGH-CAPABILITY
+        {t("gpaiWizard.tier.high_capability")}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="bg-sky-100 text-sky-800 border-sky-300">
-      STANDARD
+      {t("gpaiWizard.tier.standard")}
     </Badge>
   );
 }
 
-function compliancePill(ok: boolean) {
+function compliancePill(ok: boolean, t: Translate) {
   return ok ? (
     <Badge
       variant="outline"
       className="bg-emerald-100 text-emerald-800 border-emerald-300"
     >
       <CheckCircle2 className="h-3 w-3 mr-1" />
-      Compliant
+      {t("gpaiWizard.compliant")}
     </Badge>
   ) : (
     <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
       <XCircle className="h-3 w-3 mr-1" />
-      Gaps
+      {t("gpaiWizard.gaps")}
     </Badge>
   );
 }
 
 export default function GpaiComplianceWizardPage() {
+  const t = useTranslations("aiAct");
+  const tCommon = useTranslations("common");
   const { id } = useParams<{ id: string }>();
 
   // ─── Classify inputs ─────────────────────────────────────
@@ -156,10 +172,10 @@ export default function GpaiComplianceWizardPage() {
     } catch (e) {
       setClassifyResult({
         status: "error",
-        error: e instanceof Error ? e.message : "Fehler",
+        error: e instanceof Error ? e.message : tCommon("common.error"),
       });
     }
-  }, [id, classify]);
+  }, [id, classify, tCommon]);
 
   const runObligations = useCallback(async () => {
     setObligationsResult({ status: "running" });
@@ -175,10 +191,10 @@ export default function GpaiComplianceWizardPage() {
     } catch (e) {
       setObligationsResult({
         status: "error",
-        error: e instanceof Error ? e.message : "Fehler",
+        error: e instanceof Error ? e.message : tCommon("common.error"),
       });
     }
-  }, [id, obligations]);
+  }, [id, obligations, tCommon]);
 
   const runAll = async () => {
     await runClassify();
@@ -210,19 +226,18 @@ export default function GpaiComplianceWizardPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zu GPAI Models
+            {t("gpaiWizard.backToModels")}
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">
-            GPAI Compliance Wizard
+            {t("gpaiWizard.title")}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Art. 51-55 Checks: Systemic-Risk-Klassifikation + Art. 53 (Standard)
-            / Art. 55 (Systemic) Obligations.
+            {t("gpaiWizard.description")}
           </p>
         </div>
         <Button onClick={runAll}>
           <FileCheck className="h-4 w-4 mr-2" />
-          Beide Checks ausfuehren
+          {t("gpaiWizard.runBoth")}
         </Button>
       </div>
 
@@ -234,11 +249,10 @@ export default function GpaiComplianceWizardPage() {
               <Cpu className="h-5 w-5 text-primary" />
               <div>
                 <CardTitle className="text-lg">
-                  Art. 51 Systemic-Risk Classification
+                  {t("gpaiWizard.classifyTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Compute-Threshold (10^25 FLOPs) / Commission-Designierung /
-                  High-Impact-Capabilities.
+                  {t("gpaiWizard.classifyDescription")}
                 </CardDescription>
               </div>
             </div>
@@ -246,19 +260,19 @@ export default function GpaiComplianceWizardPage() {
               {classifyResult.status === "running" && (
                 <Badge variant="outline">
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Laeuft...
+                  {t("gpaiWizard.running")}
                 </Badge>
               )}
               {classifyResult.status === "done" &&
                 classifyResult.data &&
-                tierBadge(classifyResult.data.tierLevel)}
+                tierBadge(classifyResult.data.tierLevel, t)}
               {classifyResult.status === "error" && (
                 <Badge
                   variant="outline"
                   className="bg-red-100 text-red-800 border-red-300"
                 >
                   <XCircle className="h-3 w-3 mr-1" />
-                  Fehler
+                  {tCommon("common.error")}
                 </Badge>
               )}
               <Button
@@ -266,7 +280,7 @@ export default function GpaiComplianceWizardPage() {
                 onClick={runClassify}
                 disabled={classifyResult.status === "running"}
               >
-                Klassifizieren
+                {t("gpaiWizard.classifyAction")}
               </Button>
             </div>
           </div>
@@ -275,7 +289,7 @@ export default function GpaiComplianceWizardPage() {
           <div className="grid md:grid-cols-2 gap-2">
             <div className="col-span-2">
               <Label htmlFor="c-flops" className="text-xs">
-                Training Compute (FLOPs) -- Systemic-Schwelle: 10^25
+                {t("gpaiWizard.flopsLabel")}
               </Label>
               <Input
                 id="c-flops"
@@ -294,31 +308,31 @@ export default function GpaiComplianceWizardPage() {
             </div>
             {boolRow(
               "c-designated",
-              "Von EU-Kommission als systemic designiert",
+              t("gpaiWizard.flag.designated"),
               classify.commissionDesignated,
               (v) => setClassify({ ...classify, commissionDesignated: v }),
             )}
             {boolRow(
               "c-highimpact",
-              "High-Impact Capabilities (Benchmarks)",
+              t("gpaiWizard.flag.highImpact"),
               classify.hasHighImpactCapabilities,
               (v) => setClassify({ ...classify, hasHighImpactCapabilities: v }),
             )}
             {boolRow(
               "c-reasoning",
-              "Advanced Reasoning",
+              t("gpaiWizard.flag.advancedReasoning"),
               classify.hasAdvancedReasoning,
               (v) => setClassify({ ...classify, hasAdvancedReasoning: v }),
             )}
             {boolRow(
               "c-multimodal",
-              "Multimodal Capabilities",
+              t("gpaiWizard.flag.multimodal"),
               classify.hasMultimodalCapabilities,
               (v) => setClassify({ ...classify, hasMultimodalCapabilities: v }),
             )}
             <div className="col-span-2">
               <Label htmlFor="c-params" className="text-xs">
-                Anzahl Parameter (optional)
+                {t("gpaiWizard.parametersLabel")}
               </Label>
               <Input
                 id="c-params"
@@ -338,15 +352,15 @@ export default function GpaiComplianceWizardPage() {
 
           {classifyResult.status === "done" && classifyResult.data && (
             <div className="border-t pt-3 space-y-2">
-              <p className="text-sm font-medium">Begruendung:</p>
+              <p className="text-sm font-medium">{t("gpaiWizard.reasoning")}</p>
               <p className="text-sm text-muted-foreground">
                 {classifyResult.data.reasoning}
               </p>
               {classifyResult.data.triggers.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
-                  {classifyResult.data.triggers.map((t, i) => (
+                  {classifyResult.data.triggers.map((trigger, i) => (
                     <Badge key={i} variant="outline" className="text-xs">
-                      {t}
+                      {trigger}
                     </Badge>
                   ))}
                 </div>
@@ -370,11 +384,10 @@ export default function GpaiComplianceWizardPage() {
               <ClipboardCheck className="h-5 w-5 text-primary" />
               <div>
                 <CardTitle className="text-lg">
-                  Art. 53 + Art. 55 Obligations-Check
+                  {t("gpaiWizard.obligationsTitle")}
                 </CardTitle>
                 <CardDescription>
-                  Technical-Doc / Training-Summary / Copyright / Downstream-Info
-                  / EU-Rep (non-EU) + Art. 55 wenn systemic.
+                  {t("gpaiWizard.obligationsDescription")}
                 </CardDescription>
               </div>
             </div>
@@ -382,18 +395,18 @@ export default function GpaiComplianceWizardPage() {
               {obligationsResult.status === "running" && (
                 <Badge variant="outline">
                   <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                  Laeuft...
+                  {t("gpaiWizard.running")}
                 </Badge>
               )}
               {obligationsResult.status === "done" &&
                 obligationsResult.data &&
-                compliancePill(obligationsResult.data.isFullyCompliant)}
+                compliancePill(obligationsResult.data.isFullyCompliant, t)}
               <Button
                 size="sm"
                 onClick={runObligations}
                 disabled={obligationsResult.status === "running"}
               >
-                Pruefen
+                {t("gpaiWizard.checkAction")}
               </Button>
             </div>
           </div>
@@ -402,19 +415,19 @@ export default function GpaiComplianceWizardPage() {
           <div className="grid md:grid-cols-2 gap-2">
             {boolRow(
               "o-systemic",
-              "Systemic Model (aus Classify Auto-Fill)",
+              t("gpaiWizard.flag.systemicModel"),
               obligations.isSystemic,
               (v) => setObligations({ ...obligations, isSystemic: v }),
             )}
             {boolRow(
               "o-noneu",
-              "Non-EU Provider (benoetigt EU-Representative)",
+              t("gpaiWizard.flag.nonEuProvider"),
               obligations.isNonEuProvider,
               (v) => setObligations({ ...obligations, isNonEuProvider: v }),
             )}
             {boolRow(
               "o-copyright",
-              "Art. 53 (1)(c) Copyright-Direktive eingehalten",
+              t("gpaiWizard.flag.copyright"),
               obligations.respectsCopyrightDirective,
               (v) =>
                 setObligations({
@@ -424,7 +437,7 @@ export default function GpaiComplianceWizardPage() {
             )}
             {boolRow(
               "o-downstream",
-              "Art. 53 Downstream-Provider-Info geteilt",
+              t("gpaiWizard.flag.downstream"),
               obligations.downstreamProviderInfoShared,
               (v) =>
                 setObligations({
@@ -434,13 +447,13 @@ export default function GpaiComplianceWizardPage() {
             )}
             {boolRow(
               "o-evals",
-              "Art. 55 (1)(a) Model-Evaluations durchgefuehrt",
+              t("gpaiWizard.flag.modelEvaluations"),
               obligations.hasModelEvaluations,
               (v) => setObligations({ ...obligations, hasModelEvaluations: v }),
             )}
             {boolRow(
               "o-sysrisk",
-              "Art. 55 (1)(b) Systemic-Risk-Assessment",
+              t("gpaiWizard.flag.systemicRiskAssessment"),
               obligations.hasSystemicRiskAssessment,
               (v) =>
                 setObligations({
@@ -456,8 +469,9 @@ export default function GpaiComplianceWizardPage() {
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span>
-                      Art. 53 Standard (
-                      {obligationsResult.data.standardObligationsMet} erfuellt)
+                      {t("gpaiWizard.standardProgress", {
+                        met: obligationsResult.data.standardObligationsMet,
+                      })}
                     </span>
                     <span className="font-medium">
                       {obligationsResult.data.standardPercent}%
@@ -472,9 +486,9 @@ export default function GpaiComplianceWizardPage() {
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span>
-                        Art. 55 Systemic (
-                        {obligationsResult.data.systemicObligationsMet}{" "}
-                        erfuellt)
+                        {t("gpaiWizard.systemicProgress", {
+                          met: obligationsResult.data.systemicObligationsMet,
+                        })}
                       </span>
                       <span className="font-medium">
                         {obligationsResult.data.systemicPercent}%
@@ -490,7 +504,7 @@ export default function GpaiComplianceWizardPage() {
               {obligationsResult.data.missing.length > 0 && (
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">
-                    Fehlende Pflichten:
+                    {t("gpaiWizard.missingObligations")}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {obligationsResult.data.missing.map((m, i) => (

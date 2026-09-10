@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -15,11 +16,9 @@ import {
   Loader2,
   SkipForward,
   ArrowRight,
-  ArrowLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -83,31 +82,40 @@ const MODULES = [
 export default function OnboardingPage() {
   const t = useTranslations("onboarding");
   const router = useRouter();
-  const [data, setData] = useState<OnboardingData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>([]);
-  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` (Willkommensansicht).
+  //
+  // Der Serverstand ist die SAAT der beiden Auswahllisten (Rahmenwerke,
+  // Module), nicht ihr Inhalt — dasselbe Muster wie in
+  // `processes/[id]/ropa/page.tsx`: die Listen wohnen in `OnboardingWizard`,
+  // das mit dem geladenen Stand eingehaengt wird; React setzt den Anfangswert
+  // beim Einhaengen, ein spiegelnder Effekt entfaellt.
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<OnboardingData | null>({
+    queryKey: ["onboarding", "current"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/onboarding");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as OnboardingData | null;
+    },
+  });
+
+  // Vorher wurden die Auswahllisten bei JEDEM Abruf neu aus dem Serverstand
+  // gesetzt (nach Start und nach jedem Schritt). Der Schluessel wird deshalb
+  // nach jedem ausdruecklichen Abruf erhoeht und haengt den Assistenten mit
+  // frischer Saat neu ein.
+  const [seedVersion, setSeedVersion] = useState(0);
 
   const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/onboarding");
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-        if (json.data?.selectedFrameworks)
-          setSelectedFrameworks(json.data.selectedFrameworks);
-        if (json.data?.selectedModules)
-          setSelectedModules(json.data.selectedModules);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    await refetch();
+    setSeedVersion((v) => v + 1);
+  }, [refetch]);
 
   const startOnboarding = async () => {
     const res = await fetch("/api/v1/onboarding", {
@@ -158,6 +166,33 @@ export default function OnboardingPage() {
     );
   }
 
+  return (
+    <OnboardingWizard
+      key={seedVersion}
+      data={data}
+      onCompleteStep={completeStep}
+      onSkip={skipOnboarding}
+    />
+  );
+}
+
+function OnboardingWizard({
+  data,
+  onCompleteStep,
+  onSkip,
+}: {
+  data: OnboardingData;
+  onCompleteStep: (stepNumber: number) => Promise<void>;
+  onSkip: () => Promise<void>;
+}) {
+  const t = useTranslations("onboarding");
+  const [selectedFrameworks, setSelectedFrameworks] = useState<string[]>(
+    data.selectedFrameworks ?? [],
+  );
+  const [selectedModules, setSelectedModules] = useState<string[]>(
+    data.selectedModules ?? [],
+  );
+
   const currentStepData = data.steps.find(
     (s) => s.stepNumber === data.currentStep,
   );
@@ -171,7 +206,7 @@ export default function OnboardingPage() {
             {t("stepOf", { current: data.currentStep, total: data.totalSteps })}
           </p>
         </div>
-        <Button variant="ghost" onClick={skipOnboarding}>
+        <Button variant="ghost" onClick={onSkip}>
           <SkipForward className="mr-2 h-4 w-4" />
           {t("skip")}
         </Button>
@@ -271,7 +306,7 @@ export default function OnboardingPage() {
           )}
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button onClick={() => completeStep(data.currentStep)}>
+            <Button onClick={() => onCompleteStep(data.currentStep)}>
               {data.currentStep === data.totalSteps ? t("finish") : t("next")}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

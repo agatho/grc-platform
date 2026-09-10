@@ -1,12 +1,30 @@
 import { db, plugin } from "@grc/db";
 import { createPluginSchema } from "@grc/shared";
 import { eq, desc, sql, ilike } from "drizzle-orm";
-import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  paginate,
+  paginatedResponse,
+  requirePlatformAdmin,
+} from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/plugins — Register a new plugin
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
+  // #WP3-S02-03 (Critical) — diese Tabelle hat KEIN `org_id`, keine RLS und
+  // keine Policy; eine Änderung wirkt auf ALLE Mandanten. Der bisherige Guard
+  // `withAuth("admin")` (bei framework-mappings sogar `risk_manager`) ist eine
+  // PRO-ORGANISATION vergebene Rolle — jeder Mandanten-Admin konnte damit
+  // Feature-, Abrechnungs- und Data-Sovereignty-Konfiguration aller Mandanten
+  // verändern. Schreibzugriff verlangt jetzt einen Plattform-Admin
+  // (Tabelle `platform_admin`, Migration 0411; nicht über die API vergebbar).
+  const platformCheck = await requirePlatformAdmin(ctx);
+  if (platformCheck) return platformCheck;
 
   const body = createPluginSchema.safeParse(await req.json());
   if (!body.success) {
@@ -19,10 +37,9 @@ export async function POST(req: Request) {
   const [created] = await db.insert(plugin).values(body.data).returning();
 
   return Response.json({ data: created }, { status: 201 });
-}
-
+});
 // GET /api/v1/plugins — List available plugins
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -54,4 +71,4 @@ export async function GET(req: Request) {
     .where(whereClause);
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
-}
+});

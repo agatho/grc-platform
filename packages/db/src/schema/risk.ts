@@ -16,7 +16,16 @@ import {
   pgEnum,
   index,
   unique,
+  jsonb,
+  smallint,
 } from "drizzle-orm/pg-core";
+import {
+  evaluationCycleEnum,
+  evaluationPhaseEnum,
+  evaluationTypeEnum,
+  riskObjectTypeEnum,
+} from "./risk-evaluation-enums";
+import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
 import { asset } from "./asset";
@@ -195,6 +204,44 @@ export const risk = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    benefitCategory: varchar("benefit_category", { length: 30 }),
+    commentManagement: text("comment_management"),
+    commentRiskManager: text("comment_risk_manager"),
+    commentRiskOwner: text("comment_risk_owner"),
+    customFields: jsonb("custom_fields").default(sql`'{}'::jsonb`),
+    evaluationCycle: evaluationCycleEnum("evaluation_cycle")
+      .notNull()
+      .default(sql`'quarterly'::evaluation_cycle`),
+    evaluationCycleDays: integer("evaluation_cycle_days").default(sql`90`),
+    evaluationPhase: evaluationPhaseEnum("evaluation_phase")
+      .notNull()
+      .default(sql`'assignment'::evaluation_phase`),
+    evaluationType: evaluationTypeEnum("evaluation_type")
+      .notNull()
+      .default(sql`'qualitative'::evaluation_type`),
+    expectedBenefit: text("expected_benefit"),
+    expectedLossMax: numeric("expected_loss_max", { precision: 15, scale: 2 }),
+    expectedLossMin: numeric("expected_loss_min", { precision: 15, scale: 2 }),
+    expectedLossMostLikely: numeric("expected_loss_most_likely", {
+      precision: 15,
+      scale: 2,
+    }),
+    isEsgRelevant: boolean("is_esg_relevant")
+      .notNull()
+      .default(sql`false`),
+    lineOfDefense: varchar("line_of_defense", { length: 10 }),
+    moduleRelevance: jsonb("module_relevance")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    nextEvaluationDate: date("next_evaluation_date"),
+    riskObjectType: riskObjectTypeEnum("risk_object_type")
+      .notNull()
+      .default(sql`'risk'::risk_object_type`),
+    riskValue: smallint("risk_value"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("risk_org_status_idx").on(table.orgId, table.status),
@@ -295,6 +342,10 @@ export const kri = pgTable(
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (table) => [
     index("kri_org_idx").on(table.orgId),

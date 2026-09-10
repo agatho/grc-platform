@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, Play } from "lucide-react";
@@ -54,30 +55,46 @@ function ScenarioDetail() {
   const { formatDateTime, formatNumber } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [parameters, setParameters] = useState<Parameter[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Szenario, Laeufe und Parameter
+  // wurden immer zusammen geholt — daher EINE Abfrage mit `id` im
+  // Schluessel. Eine nicht-ok-Antwort laesst den jeweiligen Teil wie vorher
+  // leer.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    scenario: ScenarioDetail | null;
+    runs: Run[];
+    parameters: Parameter[];
+  }>({
+    queryKey: ["simulations", "scenarios", id],
+    queryFn: async () => {
       const [sRes, rRes, pRes] = await Promise.all([
         fetch(`/api/v1/simulations/scenarios/${id}`),
         fetch(`/api/v1/simulations/runs?scenarioId=${id}`),
         fetch(`/api/v1/simulations/parameters?scenarioId=${id}`),
       ]);
-      if (sRes.ok) setScenario((await sRes.json()).data);
-      if (rRes.ok) setRuns((await rRes.json()).data ?? []);
-      if (pRes.ok) setParameters((await pRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
+      return {
+        scenario: sRes.ok
+          ? ((await sRes.json()).data as ScenarioDetail | null)
+          : null,
+        runs: rRes.ok ? (((await rRes.json()).data ?? []) as Run[]) : [],
+        parameters: pRes.ok
+          ? (((await pRes.json()).data ?? []) as Parameter[])
+          : [],
+      };
+    },
+  });
+  const scenario = data?.scenario ?? null;
+  const runs = data?.runs ?? [];
+  const parameters = data?.parameters ?? [];
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleRun = async () => {
     const res = await fetch("/api/v1/simulations/runs", {

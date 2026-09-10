@@ -1,9 +1,13 @@
 import { db, importColumnMapping } from "@grc/db";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/import/mappings/:entityType — List saved mappings for entity type
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ entityType: string }> },
 ) {
@@ -24,15 +28,26 @@ export async function GET(
     .orderBy(desc(importColumnMapping.createdAt));
 
   return Response.json({ data: mappings });
-}
-
+});
 // DELETE /api/v1/import/mappings/:entityType (with id query param)
-export async function DELETE(
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-4 · OP-180] Das Pfadsegment
+// `:entityType` wurde von DIESEM Handler nicht ausgewertet: geloescht wurde
+// allein nach `?id=` und `org_id`. Ein DELETE auf
+// `/import/mappings/asset?id=<mapping-einer-risiko-zuordnung>` traf damit
+// eine Zuordnung, die gar nicht unter der aufgerufenen URL liegt. Kein
+// Mandantenleck (die `org_id`-Bedingung stand), aber die URL benannte einen
+// Gegenstand, den der Handler nie geprueft hat — und die Antwort meldete
+// `success`. Der Entitaetstyp ist jetzt Teil der WHERE-Bedingung; ein
+// Treffer unter dem falschen Pfad ist damit ein 404 wie jeder andere
+// Nichttreffer.
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ entityType: string }> },
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+
+  const { entityType } = await params;
 
   const url = new URL(req.url);
   const id = url.searchParams.get("id");
@@ -50,6 +65,7 @@ export async function DELETE(
       and(
         eq(importColumnMapping.id, id),
         eq(importColumnMapping.orgId, ctx.orgId),
+        eq(importColumnMapping.entityType, entityType),
       ),
     )
     .returning();
@@ -59,4 +75,4 @@ export async function DELETE(
   }
 
   return Response.json({ success: true });
-}
+});

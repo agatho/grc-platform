@@ -3,7 +3,15 @@
 // #WAVE21-B4: Bulk-create controls. Same contract as /risks/bulk —
 // max 100 items per request, per-item audit-log entries.
 
-import { control, workItem } from "@grc/db";
+import {
+  control,
+  workItem,
+  toNumericInput,
+  controlTypeEnum,
+  controlFreqEnum,
+  automationLevelEnum,
+  controlAssertionEnum,
+} from "@grc/db";
 import { createControlSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -12,13 +20,22 @@ import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
 
 // Manual type — see comment in /risks/bulk/route.ts on why we don't
 // use z.infer here.
+// [ARCTOS-FULL-2026-08-31 / Restarbeiten] Die Enum-Felder standen hier als
+// blankes `string` und passten damit auf keine der pgEnum-Spalten. Sie
+// leiten sich jetzt aus den Enums selbst ab: aendert sich ein Enum, bricht
+// der Typ — statt erst der INSERT.
+type ControlTypeValue = (typeof controlTypeEnum.enumValues)[number];
+type ControlFreqValue = (typeof controlFreqEnum.enumValues)[number];
+type AutomationLevelValue = (typeof automationLevelEnum.enumValues)[number];
+type ControlAssertionValue = (typeof controlAssertionEnum.enumValues)[number];
+
 interface ControlInput {
   title: string;
   description?: string;
-  controlType: string;
-  frequency?: string;
-  automationLevel?: string;
-  assertions?: string[];
+  controlType: ControlTypeValue;
+  frequency?: ControlFreqValue;
+  automationLevel?: AutomationLevelValue;
+  assertions?: ControlAssertionValue[];
   ownerId?: string;
   department?: string;
   objective?: string;
@@ -84,9 +101,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
             objective: data.objective,
             testInstructions: data.testInstructions,
             reviewDate: data.reviewDate,
-            costOnetime: data.costOnetime,
-            costAnnual: data.costAnnual,
-            effortHours: data.effortHours,
+            costOnetime: toNumericInput(data.costOnetime),
+            costAnnual: toNumericInput(data.costAnnual),
+            effortHours: toNumericInput(data.effortHours),
             budgetId: data.budgetId,
             costNote: data.costNote,
             createdBy: ctx.userId,

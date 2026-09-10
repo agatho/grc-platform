@@ -5,7 +5,80 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { hash } from "bcryptjs";
+import { randomBytes } from "crypto";
 import { organization, user, userOrganizationRole } from "./schema/platform";
+import { requireRow } from "./sql-result";
+
+// ════════════════════════════════════════════════════════════════════
+// #WP3-S02-01 (Critical) — Environment-Guard und Erstpasswortzwang
+// ════════════════════════════════════════════════════════════════════
+//
+// Befund: dieser Seed legte `admin@arctos.dev` mit dem hartkodierten Passwort
+// `admin123` an — ohne jeden Environment-Guard
+// (`grep -n "NODE_ENV|production|ALLOW_SEED" packages/db/src/seed.ts` → keine
+// Treffer) — und `deploy/.env.production.example:48` setzte `RUN_SEEDS=true`,
+// während `deploy/setup.sh:88` und `deploy/create-tenant.sh:267` die
+// Zugangsdaten als dokumentierten Produktions-Login ausgaben. Zusammen mit dem
+// öffentlichen Repository (BASE-001) war das ein direkter
+// Authentifizierungs-Bypass auf jeder Instanz, deren Betreiber den manuellen
+// Rotationsschritt nicht ausgeführt hatte. `SECURITY.md:34` behauptete, die
+// Kennung werde "only seeded into demo tenants" — die Deploy-Skripte
+// widerlegten das.
+//
+// Drei Änderungen:
+//   1. Der Seed VERWEIGERT den Lauf in Produktion, sofern nicht ausdrücklich
+//      `ALLOW_PRODUCTION_SEED=true` gesetzt ist.
+//   2. Es gibt kein hartkodiertes Passwort mehr. Entweder der Betreiber setzt
+//      `SEED_ADMIN_PASSWORD`, oder es wird ein Zufallspasswort erzeugt und
+//      EINMALIG auf stdout ausgegeben.
+//   3. Jedes geseedete Konto bekommt `must_change_password = true`; der Login
+//      erzwingt die Änderung, bevor irgendetwas anderes möglich ist.
+
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+const ALLOW_PRODUCTION_SEED = process.env.ALLOW_PRODUCTION_SEED === "true";
+
+function assertSeedAllowed(): void {
+  if (IS_PRODUCTION && !ALLOW_PRODUCTION_SEED) {
+    console.error(
+      [
+        "",
+        "REFUSING TO SEED: NODE_ENV=production.",
+        "",
+        "This seed creates demo organizations and demo accounts. Running it",
+        "against a production database was the root cause of finding S02-01",
+        "(default admin with a known password on every documented production",
+        "install).",
+        "",
+        "If you really want demo data in this environment, set",
+        "ALLOW_PRODUCTION_SEED=true explicitly — and set SEED_ADMIN_PASSWORD",
+        "to a value only you know.",
+        "",
+      ].join("\n"),
+    );
+    process.exit(1);
+  }
+}
+
+/**
+ * Password for a seeded account: the operator-supplied one, or a fresh random
+ * one that is printed exactly once. Never a constant.
+ */
+function seedPassword(envVar: string, label: string): string {
+  const supplied = process.env[envVar];
+  if (supplied && supplied.length >= 12) return supplied;
+  if (supplied) {
+    console.error(
+      `${envVar} is set but shorter than 12 characters — refusing.`,
+    );
+    process.exit(1);
+  }
+  const generated = randomBytes(18).toString("base64url");
+  console.log(
+    `  GENERATED PASSWORD for ${label}: ${generated}  ` +
+      "(shown once; the account must change it at first login)",
+  );
+  return generated;
+}
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -55,6 +128,7 @@ const subsidiaries = [
 ];
 
 async function seed() {
+  assertSeedAllowed();
   console.log("Seeding database...");
 
   await db.transaction(async (tx) => {
@@ -67,7 +141,7 @@ async function seed() {
       holdingId = existingHolding[0].id;
       console.log(`  Holding:    ${holdingId} (exists)`);
     } else {
-      const [holding] = await tx
+      const holdingRows = await tx
         .insert(organization)
         .values({
           name: "Meridian Holdings GmbH",
@@ -79,6 +153,7 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const holding = requireRow(holdingRows, "Holding anlegen");
       holdingId = holding.id;
       console.log(`  Holding:    ${holdingId}`);
     }
@@ -97,7 +172,7 @@ async function seed() {
       subsidiaryId = existingSub[0].id;
       console.log(`  Subsidiary: ${subsidiaryId} (exists)`);
     } else {
-      const [subsidiary] = await tx
+      const subsidiaryRows = await tx
         .insert(organization)
         .values({
           name: "NovaTec Services GmbH",
@@ -112,12 +187,22 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const subsidiary = requireRow(
+        subsidiaryRows,
+        "Tochtergesellschaft anlegen",
+      );
       subsidiaryId = subsidiary.id;
       console.log(`  Subsidiary: ${subsidiaryId}`);
     }
 
     // 3. Create admin user (idempotent)
-    const passwordHash = await hash("admin123", 12);
+    // #WP3-S02-01: no hardcoded password. Either SEED_ADMIN_PASSWORD, or a
+    // random one printed once. `mustChangePassword` forces rotation at first
+    // login, so an un-rotated seeded account cannot be used at all.
+    const passwordHash = await hash(
+      seedPassword("SEED_ADMIN_PASSWORD", "admin@arctos.dev"),
+      12,
+    );
     const [admin] = await tx
       .insert(user)
       .values({
@@ -127,6 +212,9 @@ async function seed() {
         emailVerified: new Date(),
         language: "de",
         isActive: true,
+        // #WP3-S02-01: the account is unusable until the password is changed.
+        mustChangePassword: true,
+        passwordChangedAt: null,
       })
       .onConflictDoNothing({ target: [user.email] })
       .returning();
@@ -176,7 +264,7 @@ async function seed() {
       groupHoldingId = existingGroup[0].id;
       console.log(`  Arctis Group Holding already exists: ${groupHoldingId}`);
     } else {
-      const [groupHolding] = await tx
+      const groupHoldingRows = await tx
         .insert(organization)
         .values({
           name: "Arctis Group GmbH",
@@ -193,6 +281,10 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const groupHolding = requireRow(
+        groupHoldingRows,
+        "Gruppen-Holding anlegen",
+      );
 
       groupHoldingId = groupHolding.id;
       console.log(`  Arctis Group Holding: ${groupHoldingId}`);
@@ -222,7 +314,7 @@ async function seed() {
       }
 
       // Create subsidiary
-      const [subOrg] = await tx
+      const subOrgRows = await tx
         .insert(organization)
         .values({
           name: sub.name,
@@ -242,6 +334,7 @@ async function seed() {
           settings: { defaultLanguage: "de", mfaRequired: true },
         })
         .returning();
+      const subOrg = requireRow(subOrgRows, "Tochterorganisation anlegen");
 
       console.log(`  Subsidiary ${sub.orgCode}: ${subOrg.id}`);
 
@@ -298,18 +391,86 @@ async function seed() {
       }
     }
 
-    // ── Seed missing module_definitions (Sprint 1-3 modules) ──────────
-    // These are not covered by sql/seed_module_definitions_sprint4_9.sql
-    console.log("  Seeding core module definitions...");
+    // ── Seed module_definitions for EVERY key in MODULE_KEYS ──────────
+    //
+    // [E2E-TRIAGE-2026-09-02] This block used to insert FOUR keys (erm, bpm,
+    // esg, whistleblowing) and left the remaining eight of Sprint 4-9 to
+    // `sql/seed_module_definitions_sprint4_9.sql`, which only `scripts/
+    // setup.sh` applies — via `psql`, best-effort, output discarded. On any
+    // environment where that step did not run (no psql on PATH, a different
+    // port, a plain `npm run db:seed`), `module_definition` ended up with
+    // 11 of the 20 keys in `MODULE_KEYS`, and NOTHING said so.
+    //
+    // The consequence is not cosmetic. `requireModule(key, orgId)`
+    // (packages/auth/src/middleware/module-guard.ts) answers 404 for a key
+    // that has no definition row — "don't reveal the module exists" — so the
+    // ENTIRE ics / dms / isms / bcms / dpms / audit / tprm / contract API
+    // surface answered 404 for every organisation, and `ModuleGate` rendered
+    // the "Modul aktivieren" teaser on every page of those modules. Roughly
+    // half of the failing E2E suite traces back to exactly this.
+    //
+    // `db:seed` is `tsx`, runs everywhere, and is the one step every
+    // environment performs — so the platform baseline belongs HERE, not in a
+    // psql script that may or may not have been applied. The SQL file stays
+    // (it also seeds `module_nav_item`); both are ON CONFLICT DO NOTHING, so
+    // running either or both is idempotent.
+    //
+    // Keep this list in sync with MODULE_KEYS in packages/shared/src/modules.ts.
+    console.log("  Seeding module definitions (all MODULE_KEYS)...");
     await tx.execute(sql`
       INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, nav_order, license_tier)
       VALUES
         ('erm', 'Enterprise Risk Management', 'Enterprise Risk Management', 'shield-alert', 20, 'included'),
         ('bpm', 'Prozessmanagement', 'Process Management', 'workflow', 30, 'included'),
+        ('ics', 'Internes Kontrollsystem', 'Internal Control System', 'shield-check', 40, 'included'),
+        ('dms', 'Dokumentenmanagement', 'Document Management', 'file-text', 45, 'included'),
+        ('isms', 'Informationssicherheit', 'Information Security', 'lock', 50, 'included'),
+        ('bcms', 'Business Continuity', 'Business Continuity', 'activity', 60, 'included'),
+        ('dpms', 'Datenschutz', 'Data Protection', 'eye-off', 70, 'included'),
+        ('audit', 'Audit Management', 'Audit Management', 'clipboard-check', 80, 'included'),
+        ('tprm', 'Drittparteien-Risiko', 'Third-Party Risk', 'users', 90, 'included'),
+        ('contract', 'Vertragsmanagement', 'Contract Management', 'file-signature', 95, 'included'),
         ('esg', 'ESG & Nachhaltigkeit', 'ESG & Sustainability', 'leaf', 100, 'included'),
-        ('whistleblowing', 'Hinweisgebersystem', 'Whistleblowing', 'megaphone', 110, 'included')
+        ('whistleblowing', 'Hinweisgebersystem', 'Whistleblowing', 'megaphone', 110, 'included'),
+        ('reporting', 'Berichtswesen', 'Reporting', 'bar-chart-3', 120, 'included'),
+        ('eam', 'Enterprise Architecture', 'Enterprise Architecture', 'network', 130, 'included'),
+        ('academy', 'Academy', 'Academy', 'graduation-cap', 140, 'included'),
+        ('community', 'Community', 'Community', 'users-round', 150, 'included'),
+        ('marketplace', 'Marktplatz', 'Marketplace', 'store', 160, 'included'),
+        ('simulations', 'Simulationen', 'Simulations', 'flask-conical', 170, 'included'),
+        ('portals', 'Portale', 'Portals', 'door-open', 180, 'included'),
+        ('programme', 'Programme', 'Programmes', 'route', 190, 'included')
       ON CONFLICT (module_key) DO NOTHING
     `);
+
+    // A definition row that exists but is not active in the platform is
+    // invisible to `requireModule` in exactly the same way. The seed's job is
+    // a usable baseline, so make sure the keys it just declared are active.
+    await tx.execute(sql`
+      UPDATE module_definition SET is_active_in_platform = true
+      WHERE is_active_in_platform = false
+    `);
+
+    // Fail loudly instead of leaving the same hole open one layer down: if a
+    // key from MODULE_KEYS still has no definition after this insert, the
+    // guard will 404 that module for every tenant and nobody will notice.
+    const missingDefs = await tx.execute<{ module_key: string }>(sql`
+      SELECT k AS module_key
+      FROM unnest(ARRAY[
+        'erm','bpm','ics','dms','isms','bcms','dpms','audit','tprm','contract',
+        'esg','whistleblowing','reporting','eam','academy','community',
+        'marketplace','simulations','portals','programme'
+      ]) AS k
+      WHERE NOT EXISTS (SELECT 1 FROM module_definition md WHERE md.module_key = k)
+    `);
+    if (missingDefs.length > 0) {
+      throw new Error(
+        "module_definition is incomplete after seeding — missing: " +
+          missingDefs.map((r) => r.module_key).join(", ") +
+          ". requireModule() answers 404 for every one of these, for every " +
+          "organisation.",
+      );
+    }
 
     // ── Auto-enable ALL modules for ALL organizations ─────────────────
     console.log("  Enabling all modules for all organizations...");
@@ -327,7 +488,12 @@ async function seed() {
     console.log(
       "  Seeding demo users (risk_manager, auditor, control_owner)...",
     );
-    const demoPassword = await hash("arctos2026!", 12);
+    // #WP3-S02-01: the demo accounts shared the hardcoded password
+    // `arctos2026!`, which is in the public repository just like `admin123`.
+    const demoPassword = await hash(
+      seedPassword("SEED_DEMO_PASSWORD", "demo accounts (*@arctos.dev)"),
+      12,
+    );
 
     const demoUsers = [
       {
@@ -369,6 +535,7 @@ async function seed() {
           passwordHash: demoPassword,
           language: "de",
           isActive: true,
+          mustChangePassword: true,
         })
         .onConflictDoNothing()
         .returning({ id: user.id });

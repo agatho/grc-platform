@@ -9,6 +9,17 @@ import {
   priorityToProtectionLevel,
 } from "../src/cascades/bia-asset-criticality";
 
+// [OP-065] `arr[i]` ist unter `noUncheckedIndexedAccess` `T | undefined`.
+// In einem Test ist ein fehlendes Element kein Randfall, den man mit `!`
+// wegdrückt, sondern ein Fehlschlag mit Namen — `at` macht ihn dazu.
+function at<T>(arr: readonly T[], i: number): T {
+  const value = arr[i];
+  if (value === undefined) {
+    throw new Error(`erwartetes Element ${i} fehlt (Länge ${arr.length})`);
+  }
+  return value;
+}
+
 describe("priorityToProtectionLevel", () => {
   it("maps priority 1 to very_high (mission-critical)", () => {
     expect(priorityToProtectionLevel(1, false)).toBe("very_high");
@@ -45,9 +56,9 @@ describe("deriveAssetClassifications", () => {
       [{ processId: "p1", assetId: "a1" }],
     );
     expect(result).toHaveLength(1);
-    expect(result[0].assetId).toBe("a1");
-    expect(result[0].protectionLevel).toBe("high");
-    expect(result[0].drivingPriority).toBe(2);
+    expect(at(result, 0).assetId).toBe("a1");
+    expect(at(result, 0).protectionLevel).toBe("high");
+    expect(at(result, 0).drivingPriority).toBe(2);
   });
 
   it("applies max-wins when an asset is in multiple processes", () => {
@@ -64,9 +75,9 @@ describe("deriveAssetClassifications", () => {
       ],
     );
     expect(result).toHaveLength(1);
-    expect(result[0].assetId).toBe("shared");
-    expect(result[0].protectionLevel).toBe("very_high"); // p2 wins
-    expect(result[0].drivingProcessId).toBe("p2");
+    expect(at(result, 0).assetId).toBe("shared");
+    expect(at(result, 0).protectionLevel).toBe("very_high"); // p2 wins
+    expect(at(result, 0).drivingProcessId).toBe("p2");
   });
 
   it("essential beats non-essential at same priority", () => {
@@ -80,8 +91,8 @@ describe("deriveAssetClassifications", () => {
         { processId: "p2", assetId: "shared" },
       ],
     );
-    expect(result[0].drivingProcessId).toBe("p2");
-    expect(result[0].isEssential).toBe(true);
+    expect(at(result, 0).drivingProcessId).toBe("p2");
+    expect(at(result, 0).isEssential).toBe(true);
   });
 
   it("scored process beats unscored with same essential flag", () => {
@@ -95,8 +106,8 @@ describe("deriveAssetClassifications", () => {
         { processId: "p2", assetId: "shared" },
       ],
     );
-    expect(result[0].drivingProcessId).toBe("p2");
-    expect(result[0].drivingPriority).toBe(2);
+    expect(at(result, 0).drivingProcessId).toBe("p2");
+    expect(at(result, 0).drivingPriority).toBe(2);
   });
 
   it("ignores links pointing at impacts not in the input set", () => {
@@ -108,6 +119,6 @@ describe("deriveAssetClassifications", () => {
       ],
     );
     expect(result).toHaveLength(1);
-    expect(result[0].assetId).toBe("a1");
+    expect(at(result, 0).assetId).toBe("a1");
   });
 });

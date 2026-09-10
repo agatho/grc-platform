@@ -30,9 +30,17 @@ test("W22-C1-06: Vendor-Create UI form — required validation + happy path + pe
     const r = await fetch("/api/v1/vendors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      // [E2E-TRIAGE-2026-09-02] `category: "saas"` was never a legal value.
+      // `vendorCategoryValues` (packages/shared/src/schemas/tprm.ts:19) is
+      // it_services | cloud_provider | consulting | facility | logistics |
+      // raw_materials | financial | hr_services | other, and the API answered
+      // exactly that: `422 … Expected 'it_services' | … , received 'saas'`.
+      // The happy path has therefore never exercised a happy path. Step 4
+      // below still pins that an unknown category IS rejected, so nothing is
+      // weakened by making this one valid.
       body: JSON.stringify({
         name: n,
-        category: "saas",
+        category: "cloud_provider",
         tier: "standard",
       }),
     });
@@ -57,10 +65,29 @@ test("W22-C1-06: Vendor-Create UI form — required validation + happy path + pe
   expect(badEnum.status).toBe(422);
 
   // Step 5: persistence
-  await page.goto(`/vendors/${vendorId}`);
-  await page
-    .waitForLoadState("networkidle", { timeout: 15_000 })
-    .catch(() => {});
-  const pageText = await page.locator("body").innerText();
-  expect(pageText).toContain(name);
+  //
+  // [E2E-TRIAGE-2026-09-02] Was `/vendors/${vendorId}`. `app/(dashboard)/
+  // vendors/` holds only the list page; the vendor detail view is
+  // `app/(dashboard)/tprm/vendors/[id]/page.tsx`. The old URL resolved to the
+  // 404 page, so this step could never have passed even with a valid category.
+  await page.goto(`/tprm/vendors/${vendorId}`);
+  // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+  //   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(…)
+  //   const pageText = await page.locator("body").innerText();
+  //   expect(pageText).toContain(<Titel>);
+  // `waitForLoadState("networkidle")` kehrt sofort zurück, wenn im Moment des
+  // Aufrufs zufällig kein Abruf läuft — direkt nach `goto()` ist das der
+  // Regelfall, weil die Seite ihre Daten erst nach der Hydrierung holt.
+  // Danach liest `innerText()` **einmal**, und `expect(zeichenkette)`
+  // wiederholt nichts. Gemessen: die Seite lieferte die Hülle vor dem ersten
+  // Abruf ("A / U / Organisation / U / © 2026 ARCTOS"). Dieselbe Bauart wie
+  // der Testdefekt in `navigation.spec.ts` (Welle 6c §8.2). Die Erwartung ist
+  // unverändert; nur das Lesen wiederholt jetzt.
+  expect(
+    new URL(page.url()).pathname,
+    "navigation did not land on the vendor detail route",
+  ).toBe(`/tprm/vendors/${vendorId}`);
+  await expect(page.locator("body")).toContainText(name, {
+    timeout: 60_000,
+  });
 });

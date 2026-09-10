@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNow } from "@/hooks/use-now";
 import { useParams, useRouter } from "next/navigation";
 import {
   Loader2,
@@ -95,6 +96,7 @@ interface EvidenceFile {
 export default function DdPortalPage() {
   const { token } = useParams<{ token: string }>();
   const router = useRouter();
+  const now = useNow();
 
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<SessionData | null>(null);
@@ -320,8 +322,7 @@ export default function DdPortalPage() {
   const daysRemaining = Math.max(
     0,
     Math.ceil(
-      (new Date(session.deadline).getTime() - Date.now()) /
-        (1000 * 60 * 60 * 24),
+      (new Date(session.deadline).getTime() - now) / (1000 * 60 * 60 * 24),
     ),
   );
 
@@ -556,7 +557,7 @@ export default function DdPortalPage() {
               ) : prog > 0 ? (
                 <CircleDot size={14} className="text-blue-500" />
               ) : (
-                <Circle size={14} className="text-gray-300" />
+                <Circle size={14} className="text-gray-500" />
               )}
               <span className="whitespace-nowrap">
                 {lang === "de" ? section.titleDe : section.titleEn}

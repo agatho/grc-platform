@@ -9,6 +9,8 @@ import { Search, Star, Settings, X } from "lucide-react";
 import { NAV_GROUPS_CONDENSED, getAllFlatNavItems } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import type { UserRole } from "@grc/shared";
+// [WP12 · S14-13] Dialog semantics for the hand-built command palette.
+import { ModalBackdrop, useModalDialog } from "@/components/ui/modal-shell";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -47,27 +49,39 @@ function isItemVisible(
 // Search overlay
 // ──────────────────────────────────────────────────────────────
 
+// [Welle 7b · OP-080, Gestalt B] Diese Einblendung hatte einen Effekt
+// `if (open) { setQuery(""); ... }` — ein Zuruecksetzen beim Oeffnen, also
+// `react-hooks/set-state-in-effect`. Kein Abruf; `@tanstack/react-query` waere
+// hier keine Antwort.
+//
+// Sie war ausserdem DAUERHAFT eingehaengt und gab nur `null` zurueck, solange
+// sie zu war — deshalb ueberlebte der Suchtext das Schliessen ueberhaupt und
+// musste eigens geloescht werden. Die Aufrufstelle haengt sie jetzt nur ein,
+// solange sie offen ist; der Anfangszustand kommt damit vom Einhaengen, und die
+// `open`-Eigenschaft entfaellt mitsamt dem `if (!open) return null`. Nebenbei
+// laufen die Zuhoerer von `useModalDialog` (Escape, Tabfalle, `aria-hidden` der
+// uebrigen Seite) nur noch, solange die Einblendung wirklich sichtbar ist.
 function SearchOverlay({
-  open,
   onClose,
   items,
   t,
 }: {
-  open: boolean;
   onClose: () => void;
   items: ReturnType<typeof getAllFlatNavItems>;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const tCommon = useTranslations("common");
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const pathname = usePathname();
 
+  // Beim Einhaengen in die Suchzeile springen. `useModalDialog` setzt den
+  // Tastenfokus auf das erste bedienbare Element des Feldes — das ist der
+  // Schliessen-Knopf des Hintergrunds, nicht die Eingabe.
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [open]);
+    const id = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(id);
+  }, []);
 
   const results = useMemo(() => {
     if (!query.trim()) return items.slice(0, 10);
@@ -79,15 +93,27 @@ function SearchOverlay({
     });
   }, [query, items, t]);
 
-  if (!open) return null;
+  const { dialogProps } = useModalDialog(
+    true,
+    onClose,
+    tCommon("actions.search"),
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
+      {/* [ARCTOS-FULL-2026-08-31 / WP12 · S14-13] The palette had no
+          role="dialog", no aria-modal, no Escape handler, no focus return, and
+          the page behind it stayed in the tab order. The backdrop was a click-
+          only div. See components/ui/modal-shell.tsx. */}
+      <ModalBackdrop
+        onClose={onClose}
+        closeLabel={tCommon("actions.close")}
+        className="absolute inset-0 cursor-default bg-black/40 backdrop-blur-sm"
       />
-      <div className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden">
+      <div
+        {...dialogProps}
+        className="relative w-full max-w-lg mx-4 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden focus:outline-none"
+      >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
           <Search size={16} className="text-gray-400 shrink-0" />
           <input
@@ -199,7 +225,7 @@ function ModernNavItem({
           className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors ${
             pinned
               ? "text-amber-500 hover:text-amber-600"
-              : "text-gray-300 hover:text-gray-500"
+              : "text-gray-500 hover:text-gray-500"
           }`}
           aria-label={pinned ? "Unpin from favorites" : "Pin to favorites"}
         >
@@ -427,12 +453,13 @@ export function ModernSidebar({
       </aside>
 
       {/* Search command palette overlay */}
-      <SearchOverlay
-        open={searchOpen}
-        onClose={() => setSearchOpen(false)}
-        items={visibleItems}
-        t={t}
-      />
+      {searchOpen && (
+        <SearchOverlay
+          onClose={() => setSearchOpen(false)}
+          items={visibleItems}
+          t={t}
+        />
+      )}
     </>
   );
 }

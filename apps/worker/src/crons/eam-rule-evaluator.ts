@@ -1,15 +1,10 @@
 // Sprint 36: EAM Rule Evaluator Worker
 // Runs daily — evaluates architecture rules and generates/resolves violations
 
-import {
-  db,
-  architectureRule,
-  architectureRuleViolation,
-  architectureElement,
-  applicationPortfolio,
-} from "@grc/db";
+import { db, architectureRule, architectureRuleViolation } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 export const processEamRuleEvaluator = withCronInstrumentation(
   "eam-rule-evaluator",
@@ -19,7 +14,7 @@ export const processEamRuleEvaluator = withCronInstrumentation(
     resolvedViolations: number;
   }> => {
     let newViolations = 0;
-    let resolvedViolations = 0;
+    const resolvedViolations = 0;
 
     // Get all active rules across all orgs
     const rules = await db
@@ -29,7 +24,21 @@ export const processEamRuleEvaluator = withCronInstrumentation(
 
     for (const rule of rules) {
       try {
-        const condition = rule.condition as Record<string, unknown>;
+        // ── [N-2 · Welle 6a] BEFUND: `rule.condition` wird nicht gelesen ──
+        //
+        // Hier stand `const condition = rule.condition as Record<…>` — und
+        // keine Zeile darunter hat die Variable angefasst. Ausgewertet wird
+        // ausschliesslich `rule.ruleType`, mit fest verdrahtetem SQL je Typ.
+        //
+        // Die Spalte `architecture_rule.condition` ist damit eine
+        // Einstellung ohne Wirkung: zwei Regeln desselben Typs mit
+        // verschiedenen Bedingungen liefern dieselben Verstoesse. Dieselbe
+        // Form wie `automation_rule.cooldown_minutes` (siehe
+        // `packages/automation/src/rule-engine.ts`) — nur laesst sie sich
+        // hier nicht in einer Zeile beheben: es gibt keinen Auswerter fuer
+        // diese Bedingungen, das SQL je Typ ist die ganze Umsetzung. Das
+        // ist ein Feature, kein Aufraeumen, und steht deshalb als Befund in
+        // `docs/UMSETZUNG-WELLE-6A.md` §5 statt hier halb gebaut.
         const ruleType = rule.ruleType;
 
         // Evaluate based on rule type
@@ -85,8 +94,9 @@ export const processEamRuleEvaluator = withCronInstrumentation(
           }
         }
 
-        // Resolve violations that no longer apply
-        const resolved = await db.execute(sql`
+        // Resolve violations that no longer apply.
+        // [N-2] Rueckgabe wird nicht gebraucht — es ist ein UPDATE.
+        await db.execute(sql`
         UPDATE architecture_rule_violation
         SET status = 'resolved', resolved_at = NOW()
         WHERE rule_id = ${rule.id}
@@ -106,8 +116,12 @@ export const processEamRuleEvaluator = withCronInstrumentation(
           .update(architectureRule)
           .set({ lastEvaluatedAt: new Date() })
           .where(eq(architectureRule.id, rule.id));
-      } catch {
-        // Wrapper logs structured error; loop continues to next rule.
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          { job: "eam-rule-evaluator", scope: "Update last evaluated" },
+          err,
+        );
       }
     }
 

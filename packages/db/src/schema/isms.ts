@@ -17,6 +17,7 @@ import {
   jsonb,
   index,
   unique,
+  smallint,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
@@ -213,6 +214,10 @@ export const vulnerability = pgTable(
       .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("vuln_org_idx").on(t.orgId),
@@ -242,6 +247,38 @@ export const riskScenario = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    controlIds: uuid("control_ids")
+      .array()
+      .default(sql`'{}'::uuid[]`),
+    ermRiskId: uuid("erm_risk_id"),
+    impact: integer("impact").default(sql`0`),
+    likelihood: integer("likelihood").default(sql`0`),
+    ownerId: uuid("owner_id"),
+    residualImpact: integer("residual_impact").default(sql`0`),
+    residualLikelihood: integer("residual_likelihood").default(sql`0`),
+    residualScore: integer("residual_score").generatedAlwaysAs(
+      sql`(residual_likelihood * residual_impact)`,
+    ),
+    reviewDate: date("review_date"),
+    riskScore: integer("risk_score").generatedAlwaysAs(
+      sql`(likelihood * impact)`,
+    ),
+    scenarioCode: varchar("scenario_code", { length: 30 }),
+    status: varchar("status", { length: 30 }).default(
+      sql`'identified'::character varying`,
+    ),
+    syncedToErm: boolean("synced_to_erm").default(sql`false`),
+    tags: text("tags")
+      .array()
+      .default(sql`'{}'::text[]`),
+    title: varchar("title", { length: 500 }),
+    treatmentDescription: text("treatment_description"),
+    treatmentStrategy: varchar("treatment_strategy", { length: 20 }).default(
+      sql`'mitigate'::character varying`,
+    ),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).default(
+      sql`now()`,
+    ),
   },
   (t) => [
     index("rs_org_idx").on(t.orgId),
@@ -305,11 +342,20 @@ export const securityIncident = pgTable(
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    // STUFE2-E (0454): betroffener Prozessschritt (F14,
+    // GrcElementData.incidents). ON DELETE SET NULL — ein Vorfall bleibt ein
+    // Vorfall, wenn der Schritt aus dem Diagramm verschwindet.
+    processStepId: uuid("process_step_id"),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     index("si_org_idx").on(t.orgId),
     index("si_status_idx").on(t.orgId, t.status),
     index("si_severity_idx").on(t.orgId, t.severity),
+    index("security_incident_process_step_idx").on(t.processStepId),
     index("si_breach_idx")
       .on(t.orgId)
       .where(sql`is_data_breach = true`),
@@ -516,6 +562,7 @@ export const assessmentRiskEval = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    damageIndex: smallint("damage_index"),
   },
   (t) => [
     index("are_org_idx").on(t.orgId),
@@ -591,6 +638,10 @@ export const soaEntry = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    tags: text("tags")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
   },
   (t) => [
     unique("soa_org_catalog_uniq").on(t.orgId, t.catalogEntryId),

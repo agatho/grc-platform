@@ -3,9 +3,14 @@ import { requireModule } from "@grc/auth";
 import { createKeywordSchema } from "@grc/shared";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { isUuidParam, invalidUuidParam } from "@/lib/query-schema";
 
 // GET /api/v1/eam/keywords — List all keywords
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -19,10 +24,9 @@ export async function GET(req: Request) {
     .orderBy(desc(eamKeyword.usageCount));
 
   return Response.json({ data: keywords });
-}
-
+});
 // POST /api/v1/eam/keywords — Create keyword
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -43,10 +47,9 @@ export async function POST(req: Request) {
     .returning();
 
   return Response.json({ data: created[0] }, { status: 201 });
-}
-
+});
 // DELETE /api/v1/eam/keywords — Delete keyword
-export async function DELETE(req: Request) {
+export const DELETE = withErrorHandler(async function DELETE(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -57,6 +60,9 @@ export async function DELETE(req: Request) {
   const keywordId = url.searchParams.get("id");
   if (!keywordId)
     return Response.json({ error: "id required" }, { status: 400 });
+  // [Welle 4b-7 · OP-116] UUID-Form vor der Abfrage pruefen — sonst
+  // entscheidet Postgres (22P02) und die Antwort nennt den Parameter nicht.
+  if (!isUuidParam(keywordId)) return invalidUuidParam(req, "id");
 
   const deleted = await db
     .delete(eamKeyword)
@@ -66,4 +72,4 @@ export async function DELETE(req: Request) {
   if (!deleted.length)
     return Response.json({ error: "Keyword not found" }, { status: 404 });
   return Response.json({ data: { deleted: true } });
-}
+});

@@ -1,8 +1,7 @@
 // Sprint 30: Excel Renderer — ExcelJS workbook generation
 // Renders resolved sections into formatted Excel workbook
 
-import type { ReportSectionConfig } from "@grc/shared";
-import type { TableData, ChartData, KPIData } from "../section-data-fetcher";
+import type { TableData, ChartData } from "../section-data-fetcher";
 import type { ResolvedSection } from "./pdf-renderer";
 import ExcelJS from "exceljs";
 
@@ -46,7 +45,9 @@ export async function renderExcel(
         const ws = wb.addWorksheet(sheetName);
 
         // Determine columns from first row keys
-        const keys = Object.keys(tableData.rows[0]);
+        // [OP-065] `rows.length > 0` steht in der Zeile darüber; `?? {}`
+        // schreibt das auf, ohne einen erreichbaren Zweig hinzuzufügen.
+        const keys = Object.keys(tableData.rows[0] ?? {});
         ws.columns = keys.map((key, i) => ({
           header: tableData.headers[i] ?? key,
           key,
@@ -125,7 +126,11 @@ export async function renderExcel(
 function sanitizeSheetName(name: string): string {
   return (
     name
-      .replace(/[\\/*?\[\]:]/g, "")
+      // [Welle 8c] `\[` innerhalb einer Zeichenklasse ist ueberfluessig und
+      // war der einzige `no-useless-escape` der Lint-Ratsche. `\]` bleibt
+      // noetig. Verhaltensgleichheit gemessen: beide Fassungen liefern fuer
+      // "A[B]C", "x/y*z?", "Sheet:1" und "a\\b" dasselbe Ergebnis.
+      .replace(/[\\/*?[\]:]/g, "")
       .substring(0, 31)
       .trim() || "Sheet"
   );

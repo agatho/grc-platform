@@ -18,6 +18,7 @@ import {
   type CertReadinessCheckResult,
 } from "@grc/shared";
 
+import { log } from "../lib/logger";
 interface CertSnapshotResult {
   orgsProcessed: number;
   snapshotsCreated: number;
@@ -208,18 +209,15 @@ export const processCertReadinessSnapshot = withCronInstrumentation(
           snapshotsCreated++;
         } catch (err) {
           errors++;
-          console.error(
-            `[cron:cert-readiness-snapshot] Error for org ${org.id}:`,
-            err instanceof Error ? err.message : String(err),
-          );
+          log.error("[cron:cert-readiness-snapshot] Error for org", {
+            orgId: org.id,
+            err,
+          });
         }
       }
     } catch (err) {
       errors++;
-      console.error(
-        "[cron:cert-readiness-snapshot] Fatal error:",
-        err instanceof Error ? err.message : String(err),
-      );
+      log.error("[cron:cert-readiness-snapshot] Fatal error", { err });
     }
 
     return { orgsProcessed, snapshotsCreated, errors };

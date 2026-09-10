@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import { Euro, FileSearch, Loader2 } from "lucide-react";
 import {
@@ -12,6 +13,11 @@ import {
 } from "@/components/ui/card";
 
 export default function CfoDashboardPage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Diese Seite ist uebersetzt und
+  // formatierte trotzdem mit dem FESTEN Gebietsschema `de-DE`: der englische
+  // Leser sah „1.234,5". `useDateFormat` (FE-HIGH-2) gibt es seit dem
+  // Frontend-Audit genau dafuer — es war nur nie hier angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("roleDashboards");
   const [data, setData] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +55,7 @@ export default function CfoDashboardPage() {
             <CardTitle className="text-2xl flex items-center gap-2">
               <Euro className="h-5 w-5" />
               {Number(financial?.total_expected_loss_p50 ?? 0).toLocaleString(
-                "de-DE",
+                numberLocale,
               )}
             </CardTitle>
           </CardHeader>
@@ -59,7 +65,9 @@ export default function CfoDashboardPage() {
             <CardDescription>{t("varP95")}</CardDescription>
             <CardTitle className="text-2xl flex items-center gap-2">
               <Euro className="h-5 w-5" />
-              {Number(financial?.total_var_p95 ?? 0).toLocaleString("de-DE")}
+              {Number(financial?.total_var_p95 ?? 0).toLocaleString(
+                numberLocale,
+              )}
             </CardTitle>
           </CardHeader>
         </Card>

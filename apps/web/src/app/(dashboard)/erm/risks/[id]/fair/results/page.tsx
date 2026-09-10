@@ -1,18 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  ArrowLeft,
-  RefreshCcw,
-  Download,
-  TrendingUp,
-  Shield,
-  AlertTriangle,
-  BarChart3,
-} from "lucide-react";
+import { Loader2, ArrowLeft, RefreshCcw, BarChart3 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -32,7 +24,11 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDateFormat } from "@/lib/format-date";
+import {
+  formatCompactCurrency,
+  formatCurrency,
+  useDateFormat,
+} from "@/lib/format-date";
 
 interface SimResult {
   id: string;
@@ -65,35 +61,39 @@ export default function FAIRResultsPage() {
 }
 
 function FAIRResultsInner() {
-  const { formatDateTime, formatNumber } = useDateFormat();
+  const { formatDateTime, formatNumber, locale } = useDateFormat();
   const t = useTranslations("fair");
   const params = useParams();
   const router = useRouter();
   const riskId = params.id as string;
 
-  const [loading, setLoading] = useState(true);
-  const [result, setResult] = useState<SimResult | null>(null);
-  const [allResults, setAllResults] = useState<SimResult[]>([]);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher `null` und eine leere Liste; ein Netzfehler landet im Fehlerzustand
+  // der Abfrage statt still verschluckt zu werden (Anzeige bleibt gleich).
+  const {
+    data: bundle,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ latest: SimResult | null; results: SimResult[] }>({
+    queryKey: ["erm", "risks", riskId, "fair", "results"],
+    queryFn: async () => {
+      const res = await fetch(`/api/v1/erm/risks/${riskId}/fair/results`);
+      if (!res.ok) return { latest: null, results: [] };
+      const data = await res.json();
+      return {
+        latest: (data.data?.latest ?? null) as SimResult | null,
+        results: (data.data?.results ?? []) as SimResult[],
+      };
+    },
+  });
+  const result = bundle?.latest ?? null;
+  const allResults = bundle?.results ?? [];
 
   const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/v1/erm/risks/${riskId}/fair/results`);
-      if (res.ok) {
-        const data = await res.json();
-        setResult(data.data?.latest ?? null);
-        setAllResults(data.data?.results ?? []);
-      }
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
-  }, [riskId]);
-
-  useEffect(() => {
-    fetchResults();
-  }, [fetchResults]);
+    await refetch();
+  }, [refetch]);
 
   if (loading) {
     return (
@@ -160,24 +160,26 @@ function FAIRResultsInner() {
         <Card className="p-4 border-l-4 border-l-green-500">
           <p className="text-sm text-muted-foreground">{t("expectedALE")}</p>
           <p className="text-2xl font-bold text-green-700">
-            {formatEUR(aleP50)}
+            {formatEUR(locale, aleP50)}
           </p>
           <p className="text-xs text-muted-foreground">{t("median")} (P50)</p>
         </Card>
         <Card className="p-4 border-l-4 border-l-red-500">
           <p className="text-sm text-muted-foreground">VaR (95%)</p>
-          <p className="text-2xl font-bold text-red-700">{formatEUR(aleP95)}</p>
+          <p className="text-2xl font-bold text-red-700">
+            {formatEUR(locale, aleP95)}
+          </p>
           <p className="text-xs text-muted-foreground">{t("worstRealistic")}</p>
         </Card>
         <Card className="p-4 border-l-4 border-l-blue-500">
           <p className="text-sm text-muted-foreground">{t("aleMean")}</p>
-          <p className="text-2xl font-bold">{formatEUR(aleMean)}</p>
+          <p className="text-2xl font-bold">{formatEUR(locale, aleMean)}</p>
           <p className="text-xs text-muted-foreground">{t("arithmeticMean")}</p>
         </Card>
         <Card className="p-4 border-l-4 border-l-purple-500">
           <p className="text-sm text-muted-foreground">{t("aleStdDev")}</p>
           <p className="text-2xl font-bold text-muted-foreground">
-            {formatEUR(aleStdDev)}
+            {formatEUR(locale, aleStdDev)}
           </p>
           <p className="text-xs text-muted-foreground">{t("volatility")}</p>
         </Card>
@@ -204,7 +206,9 @@ function FAIRResultsInner() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="bucket"
-                    tickFormatter={(val) => formatCompactEUR(val)}
+                    tickFormatter={(val: number) =>
+                      formatCompactCurrency(locale, val, "EUR")
+                    }
                     fontSize={11}
                   />
                   <YAxis fontSize={11} />
@@ -214,7 +218,7 @@ function FAIRResultsInner() {
                       t("frequency"),
                     ]}
                     labelFormatter={(label: unknown) =>
-                      formatEURFromUnknown(label)
+                      formatEURFromUnknown(locale, label)
                     }
                   />
                   <ReferenceLine
@@ -282,7 +286,9 @@ function FAIRResultsInner() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="threshold"
-                    tickFormatter={(val) => formatCompactEUR(val)}
+                    tickFormatter={(val: number) =>
+                      formatCompactCurrency(locale, val, "EUR")
+                    }
                     fontSize={11}
                   />
                   <YAxis
@@ -296,7 +302,7 @@ function FAIRResultsInner() {
                       t("probability"),
                     ]}
                     labelFormatter={(label: unknown) =>
-                      `${t("lossExceeds")} ${formatEURFromUnknown(label)}`
+                      `${t("lossExceeds")} ${formatEURFromUnknown(locale, label)}`
                     }
                   />
                   <Line
@@ -380,7 +386,7 @@ function FAIRResultsInner() {
                     <tr key={row.p} className="border-b last:border-0">
                       <td className="p-2 font-medium">{row.p}</td>
                       <td className="p-2 text-right font-mono">
-                        {formatEUR(row.val)}
+                        {formatEUR(locale, row.val)}
                       </td>
                       <td className="p-2 text-muted-foreground">{row.desc}</td>
                     </tr>
@@ -419,10 +425,10 @@ function FAIRResultsInner() {
                       {formatNumber(r.iterations)}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {r.aleP50 ? formatEUR(Number(r.aleP50)) : "-"}
+                      {r.aleP50 ? formatEUR(locale, Number(r.aleP50)) : "-"}
                     </td>
                     <td className="p-2 text-right font-mono">
-                      {r.aleP95 ? formatEUR(Number(r.aleP95)) : "-"}
+                      {r.aleP95 ? formatEUR(locale, Number(r.aleP95)) : "-"}
                     </td>
                     <td className="p-2">
                       <Badge
@@ -448,25 +454,21 @@ function FAIRResultsInner() {
   );
 }
 
-function formatEUR(value: number): string {
-  return new Intl.NumberFormat("de-DE", {
-    style: "currency",
-    currency: "EUR",
-    maximumFractionDigits: 0,
-  }).format(value);
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-203, Welle 8b] Steht ausserhalb der Komponente
+ * und kann keinen Hook lesen — das Gebietsschema kommt deshalb als Parameter.
+ * Vorher: `new Intl.NumberFormat("de-DE", { style: "currency" })`, also
+ * deutsche Geldbetraege auf einer englisch gelesenen Seite.
+ */
+function formatEUR(locale: string, value: number): string {
+  return formatCurrency(locale, value, "EUR", { maximumFractionDigits: 0 });
 }
 
 /**
  * Recharts >=3.9 widens Tooltip label/formatter values from number to
  * ReactNode, so formatter callbacks must accept unknown and coerce.
  */
-function formatEURFromUnknown(value: unknown): string {
+function formatEURFromUnknown(locale: string, value: unknown): string {
   const num = Number(value);
-  return Number.isFinite(num) ? formatEUR(num) : String(value ?? "-");
-}
-
-function formatCompactEUR(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return value.toFixed(0);
+  return Number.isFinite(num) ? formatEUR(locale, num) : String(value ?? "-");
 }

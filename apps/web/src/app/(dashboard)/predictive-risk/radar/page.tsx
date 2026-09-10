@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Radar, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import type { RadarDataPoint } from "@grc/shared";
 
 const RISK_COLORS: Record<string, string> = {
@@ -23,22 +23,19 @@ const TREND_ICONS: Record<string, typeof TrendingUp> = {
 
 export default function PredictiveRadarPage() {
   const t = useTranslations("predictiveRisk");
-  const [radarData, setRadarData] = useState<RadarDataPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data: radarData = [], isPending: loading } = useQuery<
+    RadarDataPoint[]
+  >({
+    queryKey: ["predictive-risk", "radar", 30],
+    queryFn: async () => {
       const res = await fetch("/api/v1/predictive-risk/radar?horizonDays=30");
-      if (res.ok) setRadarData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as RadarDataPoint[];
+    },
+  });
 
   if (loading) {
     return (

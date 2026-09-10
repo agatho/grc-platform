@@ -102,7 +102,14 @@ export async function get(
     return null;
   }
 
+  // [OP-065] `rows.length === 0` steht direkt darüber, danach wurden sechzehn
+  // Felder von `rows[0]` gelesen. Die Prüfung des Werts statt der Länge macht
+  // aus derselben Aussage eine, die der Compiler mitträgt — und `null` ist
+  // genau das, was diese Funktion für „kein Datensatz" ohnehin liefert.
   const row = rows[0];
+  if (row === undefined) {
+    return null;
+  }
   const data: CachedModuleConfig = {
     moduleKey: row.moduleKey as ModuleKey,
     uiStatus: row.uiStatus as ModuleUiStatus,

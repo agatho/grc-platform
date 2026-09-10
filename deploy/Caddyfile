@@ -25,15 +25,41 @@
     }
   }
 
-  # Security Headers
+  # ── Security Headers ─────────────────────────────────────────────────
+  #
+  # [ARCTOS-FULL-2026-08-31 / WP12 · S12-04, S12-08]
+  #
+  # These headers used to exist ONLY here. `setup-hetzner.sh` installs this
+  # file for the single-server path, but neither `docker-compose.yml`,
+  # `docker-compose.production.yml` nor a Kubernetes ingress ships a proxy —
+  # those deployments served the application with no CSP, no HSTS and no
+  # frame protection at all (S12-08). The full set now lives in the
+  # application itself (`apps/web/src/lib/security-headers.ts`, applied from
+  # `next.config.ts` and `middleware.ts`), so every deployment mode is
+  # covered. This block stays as defence in depth.
+  #
+  # Content-Security-Policy is DELIBERATELY no longer set here: the
+  # application emits a per-request nonce (`script-src 'nonce-…'
+  # 'strict-dynamic'`, S12-04). A static header at this layer would replace
+  # that with a weaker, nonce-less policy on every response — and the old
+  # value carried `'unsafe-inline'` and `'unsafe-eval'`, which made the
+  # policy useless against exactly the injection path found in S12-06.
+  #
+  # X-XSS-Protection is gone: the legacy auditor is a no-op in every current
+  # browser and, where it still exists, can be abused to disable scripts
+  # selectively.
+  #
+  # `defer` makes Caddy apply these AFTER the upstream response, so the
+  # application's own values win and this block only fills gaps.
   header {
+    defer
     Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     X-Content-Type-Options "nosniff"
     X-Frame-Options "SAMEORIGIN"
     Referrer-Policy "strict-origin-when-cross-origin"
-    X-XSS-Protection "1; mode=block"
-    Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
-    Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Cross-Origin-Opener-Policy "same-origin"
+    X-Permitted-Cross-Domain-Policies "none"
     -Server
     -X-Powered-By
   }

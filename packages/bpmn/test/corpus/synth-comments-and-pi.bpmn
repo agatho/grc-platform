@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?arctos-hint layout="manual"?>
+<!-- Kopfkommentar: Freigabe durch QM am 2026-03-01 -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  id="Definitions_Comments" targetNamespace="http://arctos.dev/bpmn">
+  <!-- Kommentar innerhalb der Definitions -->
+  <bpmn:process id="Process_Comments" isExecutable="false">
+    <!-- Kommentar innerhalb des Prozesses, direkt vor dem Startereignis -->
+    <bpmn:startEvent id="C_Start" name="Start">
+      <bpmn:outgoing>C_F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="C_Task" name="Arbeit">
+      <!-- Kommentar innerhalb eines Flow-Nodes -->
+      <bpmn:incoming>C_F1</bpmn:incoming>
+      <bpmn:outgoing>C_F2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="C_End" name="Ende">
+      <bpmn:incoming>C_F2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="C_F1" sourceRef="C_Start" targetRef="C_Task"/>
+    <bpmn:sequenceFlow id="C_F2" sourceRef="C_Task" targetRef="C_End"/>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Comments">
+    <bpmndi:BPMNPlane id="Plane_Comments" bpmnElement="Process_Comments">
+      <bpmndi:BPMNShape id="C_Start_di" bpmnElement="C_Start">
+        <dc:Bounds x="152" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="C_Task_di" bpmnElement="C_Task">
+        <dc:Bounds x="240" y="80" width="100" height="80"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="C_End_di" bpmnElement="C_End">
+        <dc:Bounds x="402" y="102" width="36" height="36"/>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
+<!-- Fusskommentar -->

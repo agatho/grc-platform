@@ -52,15 +52,37 @@ type CronHandler<R extends CronResult, A extends unknown[] = []> = (
   ...args: A
 ) => Promise<R>;
 
+import { scrubLogFields, serialiseLogLine } from "@grc/shared/logger";
+
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-worker";
 
+// [WP9 · S10-11] Exported so job-runtime.ts can emit the SAME NDJSON shape
+// for errors caught inside a job's own loop. Those never reach the wrapper's
+// catch — which is precisely why the 39 empty `catch {}` blocks were
+// invisible in production despite the comment claiming otherwise.
+export function emitCronEvent(
+  level: "info" | "error",
+  payload: Record<string, unknown>,
+): void {
+  emit(level, payload);
+}
+
+// [ARCTOS-FULL-2026-08-31 / Welle 4b · OP-152] Bis hierher war dies ein
+// ZWEITER strukturierter Schreiber neben `apps/web/src/lib/logger.ts` — mit
+// demselben Format, aber OHNE Field-Scrubbing. Das `result`-Feld trägt den
+// Rückgabewert des Cron-Handlers, also genau die Art Objekt, in der eine
+// Adressliste oder ein Token landen kann; `message` trägt bei einem Fehler
+// `e.message`. Beides ging ungefiltert an den Log-Empfänger aus ADR-017.
+//
+// Der Schreiber bleibt hier (er hat ein eigenes Format: `phase`, `cron`,
+// `durationMs` statt einer freien Nachricht), benutzt aber jetzt dieselben
+// Regeln wie der Logger.
 function emit(level: "info" | "error", payload: Record<string, unknown>): void {
-  const line = JSON.stringify({
-    ts: new Date().toISOString(),
-    level,
-    service: SERVICE,
-    ...payload,
-  });
+  const ts = new Date().toISOString();
+  const line = serialiseLogLine(
+    { ts, level, service: SERVICE, ...scrubLogFields(payload) },
+    { ts, level, service: SERVICE },
+  );
   if (level === "error") {
     process.stderr.write(line + "\n");
   } else {

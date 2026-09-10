@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -11,7 +13,6 @@ import {
   Loader2,
   RefreshCcw,
   ExternalLink,
-  TrendingUp,
   TrendingDown,
   Rss,
 } from "lucide-react";
@@ -37,19 +38,31 @@ import type {
 } from "@grc/shared";
 
 export default function ThreatLandscapePage() {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Feste `de-DE`-Formatierung in einer
+  // uebersetzten Seite — `lib/format-date.ts` (FE-HIGH-2) gibt es genau
+  // dafuer und war hier nicht angeschlossen.
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("reporting");
 
-  const [kpis, setKpis] = useState<ThreatDashboardKPIs | null>(null);
-  const [heatmap, setHeatmap] = useState<ThreatHeatmapCell[]>([]);
-  const [trends, setTrends] = useState<ThreatTrendPoint[]>([]);
-  const [topThreats, setTopThreats] = useState<ThreatTopEntry[]>([]);
-  const [coverage, setCoverage] = useState<ThreatControlCoverage[]>([]);
-  const [feedItems, setFeedItems] = useState<ThreatFeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die sechs Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt; jede
+  // nicht-ok-Antwort liefert wie vorher ihren Leerwert.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{
+    kpis: ThreatDashboardKPIs | null;
+    heatmap: ThreatHeatmapCell[];
+    trends: ThreatTrendPoint[];
+    topThreats: ThreatTopEntry[];
+    coverage: ThreatControlCoverage[];
+    feedItems: ThreatFeedItem[];
+  }>({
+    queryKey: ["isms", "threats", "landscape"],
+    queryFn: async () => {
       const [kpisRes, heatmapRes, trendsRes, topRes, coverageRes, feedRes] =
         await Promise.all([
           fetch("/api/v1/isms/threats/dashboard"),
@@ -60,21 +73,37 @@ export default function ThreatLandscapePage() {
           fetch("/api/v1/isms/threats/feed?limit=10"),
         ]);
 
-      if (kpisRes.ok) setKpis((await kpisRes.json()).data);
-      if (heatmapRes.ok) setHeatmap((await heatmapRes.json()).data.cells || []);
-      if (trendsRes.ok) setTrends((await trendsRes.json()).data.trends || []);
-      if (topRes.ok) setTopThreats((await topRes.json()).data.threats || []);
-      if (coverageRes.ok)
-        setCoverage((await coverageRes.json()).data.coverage || []);
-      if (feedRes.ok) setFeedItems((await feedRes.json()).data || []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      const kpis: ThreatDashboardKPIs | null = kpisRes.ok
+        ? ((await kpisRes.json()).data ?? null)
+        : null;
+      const heatmap: ThreatHeatmapCell[] = heatmapRes.ok
+        ? (await heatmapRes.json()).data.cells || []
+        : [];
+      const trends: ThreatTrendPoint[] = trendsRes.ok
+        ? (await trendsRes.json()).data.trends || []
+        : [];
+      const topThreats: ThreatTopEntry[] = topRes.ok
+        ? (await topRes.json()).data.threats || []
+        : [];
+      const coverage: ThreatControlCoverage[] = coverageRes.ok
+        ? (await coverageRes.json()).data.coverage || []
+        : [];
+      const feedItems: ThreatFeedItem[] = feedRes.ok
+        ? (await feedRes.json()).data || []
+        : [];
+      return { kpis, heatmap, trends, topThreats, coverage, feedItems };
+    },
+  });
+  const kpis = data?.kpis ?? null;
+  const heatmap = data?.heatmap ?? [];
+  const trends = data?.trends ?? [];
+  const topThreats = data?.topThreats ?? [];
+  const coverage = data?.coverage ?? [];
+  const feedItems = data?.feedItems ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const heatmapColor = (color: string) => {
     switch (color) {
@@ -85,7 +114,7 @@ export default function ThreatLandscapePage() {
       case "yellow":
         return "bg-yellow-300 text-black";
       default:
-        return "bg-gray-100 text-gray-400";
+        return "bg-gray-100 text-gray-600";
     }
   };
 
@@ -402,7 +431,7 @@ export default function ThreatLandscapePage() {
                                 <span className="text-[10px] text-muted-foreground">
                                   {new Date(
                                     item.publishedAt,
-                                  ).toLocaleDateString("de-DE")}
+                                  ).toLocaleDateString(numberLocale)}
                                 </span>
                               )}
                             </div>

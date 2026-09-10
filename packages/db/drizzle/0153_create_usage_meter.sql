@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-18] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: create_hypertable()-Block fuer usage_record entfernt (TS103 bei vorhandener TimescaleDB-Extension); Tabelle bleibt eine gewoehnliche Postgres-Tabelle.
 -- Sprint 61: Usage Metering
 -- Migration 923: Create usage_meter and usage_record tables
 
@@ -49,14 +54,25 @@ ALTER TABLE usage_record ENABLE ROW LEVEL SECURITY;
 CREATE POLICY usage_record_org_isolation ON usage_record
   USING (org_id::text = current_setting('app.current_org_id', true));
 
--- TimescaleDB hypertable for usage data (skipped if the extension
--- isn't installed — dev envs without TimescaleDB fall back to a
--- plain table).
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
-    PERFORM create_hypertable('usage_record', 'created_at', if_not_exists => true, migrate_data => true);
-  ELSE
-    RAISE NOTICE 'timescaledb extension missing — usage_record stays a plain table';
-  END IF;
-END $$;
+-- [ARCTOS-FULL-2026-08-31 / S09-18] create_hypertable() entfernt.
+-- Der DO-Guard prueft nur, ob die Extension vorhanden ist. Ist sie es —
+-- und das Produktions-Image timescale/timescaledb:2.26.3-pg16 bringt sie
+-- mit — scheitert der Aufruf mit
+--   TS103 cannot create a unique index without the column "created_at"
+--         (used in partitioning)
+-- weil usage_record einen einspaltigen Primaerschluessel auf id hat. Die Datei
+-- war damit ueberall dort gruen, wo TimescaleDB fehlt, und genau dann rot,
+-- wenn jemand die Extension aktiviert.
+--
+-- Entscheidung (S09-18): Die TimescaleDB-Abhaengigkeit wird entfernt statt
+-- den Primaerschluessel auf (id, created_at) umzustellen. Gruende:
+--   * In keiner Umgebung existiert eine einzige Hypertable oder eine
+--     anwendungsbezogene Retention-/Compression-Policy — es gibt nichts,
+--     was hier weitergefuehrt wuerde.
+--   * Der zusammengesetzte PK widerspraeche der pgTable-Definition
+--     (id als alleiniger Primaerschluessel) und erzeugte genau den
+--     Schema-Drift, den ADR-014 verhindern soll.
+-- usage_record bleibt eine gewoehnliche Tabelle; der btree-Index auf created_at
+-- deckt die Zeitbereichsabfragen ab. Eine spaetere Partitionierung gehoert
+-- in eine eigene, bewusst geplante Migration mit PK-Wechsel.
+

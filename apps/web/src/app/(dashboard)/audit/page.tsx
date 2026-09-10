@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -20,7 +21,6 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useDateFormat } from "@/lib/format-date";
 
 interface AuditDashboard {
@@ -63,13 +63,18 @@ function AuditDashboardInner() {
   const t = useTranslations("auditMgmt");
   const { formatDateTime } = useDateFormat();
   const router = useRouter();
-  const [data, setData] = useState<AuditDashboard | null>(null);
-  const [kris, setKris] = useState<AuditImpactKris | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Beide Abrufe liefen immer
+  // zusammen und werden zusammen verwendet — eine Abfrage, ein Objekt.
+  const {
+    data: pageData,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{ data: AuditDashboard | null; kris: AuditImpactKris | null }>({
+    queryKey: ["audit", "dashboard"],
+    queryFn: async () => {
       // Fetch both the core dashboard KPIs and the cross-module KRIs in
       // parallel -- the KRIs slot in below and do not block the page if
       // that endpoint is slow or unavailable.
@@ -77,22 +82,25 @@ function AuditDashboardInner() {
         fetch("/api/v1/audit-mgmt/dashboard"),
         fetch("/api/v1/audit-mgmt/audit-impact-kris"),
       ]);
+      let data: AuditDashboard | null = null;
+      let kris: AuditImpactKris | null = null;
       if (res.ok) {
         const json = await res.json();
-        setData(json.data);
+        data = json.data;
       }
       if (krisRes.ok) {
         const kj = await krisRes.json();
-        setKris(kj.data);
+        kris = kj.data;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { data, kris };
+    },
+  });
+  const data = pageData?.data ?? null;
+  const kris = pageData?.kris ?? null;
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -116,9 +124,9 @@ function AuditDashboardInner() {
           variant="outline"
           size="sm"
           onClick={fetchDashboard}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

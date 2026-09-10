@@ -1,6 +1,6 @@
 -- seed_demo_00_platform.sql — Base platform data (Orgs + Users + Roles + Modules + Work Item Types)
 -- Must run BEFORE all other seed_demo_*.sql files
--- Password for all users: admin123
+-- Personas are login-disabled (see section 2); no password is seeded here.
 
 -- ============================================================
 -- 0. Required Extensions
@@ -36,22 +36,51 @@ WHERE id NOT IN ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'ccc4cc1c-4b09-499c-842
   AND parent_org_id IS NULL;
 
 -- ============================================================
--- 2. Users (password: admin123 for all)
--- bcrypt hash of "admin123" with 12 rounds
+-- 2. Users — LOGIN-DISABLED demo personas
 -- ============================================================
+-- [E2E-TRIAGE-2026-09-02] These ten rows used to carry ONE shared bcrypt hash
+-- of the literal `admin123`, printed in the header of this file and committed
+-- to the repository — exactly the default account WP3/S02-01 removed from
+-- `seed.ts` and `deploy/setup.sh`. Re-creating it here through `db:seed:demo`
+-- would have undone that finding on every demo/CI environment.
+--
+-- The rows themselves cannot simply be dropped: every seed_demo_*.sql file
+-- references these UUIDs as `created_by` / `owner_id` / `assignee_id`, and
+-- `8c148f0a…` is the `app.current_user_id` the audit triggers run under. So the
+-- personas stay — as data — but they are no longer credentials:
+--
+--   * `password_hash` is a fixed non-bcrypt sentinel. `bcrypt.compare()`
+--     returns false for EVERY input against it (it has no valid $2 prefix,
+--     salt or cost), so there is no password that logs these accounts in —
+--     not a guessable one, not a leaked one, not one.
+--   * `must_change_password = true` keeps them refused by the login flow even
+--     if someone later attaches a real hash by hand.
+--
+-- Every address also gained a `demo.` prefix. `"user".email` is UNIQUE, and
+-- `seed.ts` / `seed-all.ts` create accounts under the SAME addresses with
+-- DIFFERENT, generated ids. `ON CONFLICT (id) DO NOTHING` does not catch that
+-- collision — it is on `email` — so on any database where `db:seed` had run
+-- first (i.e. always) this whole INSERT aborted with
+-- `duplicate key value violates unique constraint "user_email_unique"`, no
+-- persona row was created, and every seed_demo file after it failed on the
+-- foreign key to `8c148f0a…`. The ids are what the demo data references; the
+-- addresses only have to be unique and unusable.
+--
+-- Real accounts come from `db:seed` (SEED_ADMIN_PASSWORD / a printed random
+-- one) and `db:create-admin`. Never from here.
 
-INSERT INTO "user" (id, email, name, password_hash, language)
+INSERT INTO "user" (id, email, name, password_hash, language, must_change_password)
 VALUES
-  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'admin@arctos.dev', 'Platform Admin', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'ciso@arctos.dev', 'Sarah Mueller', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'compliance@arctos.dev', 'Thomas Schmidt', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('e5f6a7b8-c9d0-1234-ef01-56789abcdef0', 'bcm@arctos.dev', 'Lisa Wagner', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('f6a7b8c9-d0e1-2345-f012-6789abcdef01', 'contracts@arctos.dev', 'Michael Hoffmann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('a7b8c9d0-e1f2-3456-0123-789abcdef012', 'qm@arctos.dev', 'Andrea Fischer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'security@arctos.dev', 'Markus Bauer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'auditor@arctos.dev', 'Dr. Klaus Richter', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'dpo@arctos.dev', 'Dr. Julia Krause', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
-  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'risk@arctos.dev', 'Peter Zimmermann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de')
+  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'demo.admin@arctos.dev', 'Demo Platform Admin', 'disabled:no-login-demo-persona', 'de', true),
+  ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'demo.ciso@arctos.dev', 'Sarah Mueller', 'disabled:no-login-demo-persona', 'de', true),
+  ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'demo.compliance@arctos.dev', 'Thomas Schmidt', 'disabled:no-login-demo-persona', 'de', true),
+  ('e5f6a7b8-c9d0-1234-ef01-56789abcdef0', 'demo.bcm@arctos.dev', 'Lisa Wagner', 'disabled:no-login-demo-persona', 'de', true),
+  ('f6a7b8c9-d0e1-2345-f012-6789abcdef01', 'demo.contracts@arctos.dev', 'Michael Hoffmann', 'disabled:no-login-demo-persona', 'de', true),
+  ('a7b8c9d0-e1f2-3456-0123-789abcdef012', 'demo.qm@arctos.dev', 'Andrea Fischer', 'disabled:no-login-demo-persona', 'de', true),
+  ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'demo.security@arctos.dev', 'Markus Bauer', 'disabled:no-login-demo-persona', 'de', true),
+  ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'demo.auditor@arctos.dev', 'Dr. Klaus Richter', 'disabled:no-login-demo-persona', 'de', true),
+  ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'demo.dpo@arctos.dev', 'Dr. Julia Krause', 'disabled:no-login-demo-persona', 'de', true),
+  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'demo.risk@arctos.dev', 'Peter Zimmermann', 'disabled:no-login-demo-persona', 'de', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
@@ -86,6 +115,31 @@ VALUES
   ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
   -- NovaTec
   ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
+ON CONFLICT DO NOTHING;
+
+-- ── Give the REAL admin accounts access to the demo tenants ──────────
+-- [E2E-TRIAGE-2026-09-02] Every seed_demo_*.sql file writes its rows into
+-- `c2446a5c…` / `ccc4cc1c…`. The only accounts that held a role there were the
+-- login-disabled personas above, so a human (or an E2E run) signing in with a
+-- `db:seed` / `db:create-admin` account saw an empty product and had no way to
+-- switch to the tenant that actually holds the demo data — the demo seed
+-- populated a tenant nobody could reach.
+--
+-- Grant admin on both demo tenants to every account that is already an admin
+-- somewhere, or a platform administrator. Derived, not hard-coded, because the
+-- ids of those accounts are generated at seed time.
+INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
+SELECT u.id, o.org_id, 'admin', 'first'
+FROM (
+  SELECT DISTINCT user_id AS id FROM user_organization_role WHERE role = 'admin'
+  UNION
+  SELECT user_id FROM platform_admin WHERE revoked_at IS NULL
+) u
+CROSS JOIN (VALUES
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41'::uuid),
+  ('ccc4cc1c-4b09-499c-8420-ebd8da655cd7'::uuid)
+) AS o(org_id)
+WHERE EXISTS (SELECT 1 FROM "user" usr WHERE usr.id = u.id AND usr.deleted_at IS NULL)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================

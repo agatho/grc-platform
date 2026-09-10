@@ -3,20 +3,22 @@ import { createVersionSchema } from "@grc/shared";
 import { parseBpmnXml, computeBpmnDiff } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext } from "@/lib/api";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 import {
   upsertWorkingVersion,
   findWorkingVersion,
 } from "@/lib/process-working-version";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-002] siehe `../../_lib/bpmn-lanes.ts`.
+import { syncProcessLanes } from "../../_lib/sync-process-lanes";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/processes/:id/versions — Save BPMN as new version
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -208,27 +210,44 @@ export async function POST(
       }
     }
 
+    // Re-read post-upsert step ids for the mapping — von der Lane-Synchro
+    // und der Rehydrierung gleichermassen gebraucht.
+    const allSteps = await tx
+      .select({
+        id: processStep.id,
+        bpmnElementId: processStep.bpmnElementId,
+      })
+      .from(processStep)
+      .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
+    const stepIdByBpmnElement = new Map<string, string>(
+      allSteps.map(
+        (s: { id: string; bpmnElementId: string }): [string, string] => [
+          s.bpmnElementId,
+          s.id,
+        ],
+      ),
+    );
+
+    // [ARCTOS-FULL-2026-08-31 · OP-002] Lanes und Pools aus dem Modell nach
+    // `process_lane` — ohne diesen Aufruf blieb die Tabelle beim Speichern
+    // einer Version leer, und die Lane-Zugehoerigkeit wurde geometrisch
+    // geraten (`packages/bpmn/src/grc/graph.ts:57`).
+    try {
+      await syncProcessLanes({
+        tx,
+        processId: id,
+        orgId: ctx.orgId,
+        userId: ctx.userId,
+        bpmnXml: body.data.bpmnXml,
+        stepIdByBpmnElement,
+      });
+    } catch (e) {
+      log.error("[processes/versions] process_lane sync failed", { err: e });
+    }
+
     // BPM Overhaul Phase 5 P5: rehydrate DB cross-links from arctos:*
     // metadata in the BPMN XML. Best-effort — never blocks the version save.
     try {
-      // Re-read post-upsert step ids for the mapping
-      const allSteps = await tx
-        .select({
-          id: processStep.id,
-          bpmnElementId: processStep.bpmnElementId,
-        })
-        .from(processStep)
-        .where(
-          and(eq(processStep.processId, id), isNull(processStep.deletedAt)),
-        );
-      const stepIdByBpmnElement = new Map<string, string>(
-        allSteps.map(
-          (s: { id: string; bpmnElementId: string }): [string, string] => [
-            s.bpmnElementId,
-            s.id,
-          ],
-        ),
-      );
       await rehydrateFromBpmnXml({
         tx,
         processId: id,
@@ -238,17 +257,16 @@ export async function POST(
         stepIdByBpmnElement,
       });
     } catch (e) {
-      console.error("arctos rehydrate failed", e);
+      log.error("[processes/versions] arctos rehydrate failed", { err: e });
     }
 
     return version;
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
-
+});
 // GET /api/v1/processes/:id/versions — List all versions
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -296,4 +314,4 @@ export async function GET(
     .orderBy(desc(processVersion.versionNumber));
 
   return Response.json({ data: versions });
-}
+});

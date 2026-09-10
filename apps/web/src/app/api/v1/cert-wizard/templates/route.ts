@@ -19,6 +19,10 @@ import { CERT_FRAMEWORK_VALUES } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, count, inArray } from "drizzle-orm";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const instantiateSchema = z.object({
   framework: z.enum(CERT_FRAMEWORK_VALUES),
@@ -60,7 +64,7 @@ const FRAMEWORK_TO_CATALOG_SOURCE: Record<string, string> = {
 };
 
 // GET — list available templates with control counts
-export async function GET(_req: Request) {
+export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -121,10 +125,9 @@ export async function GET(_req: Request) {
   );
 
   return Response.json({ data: templates });
-}
-
+});
 // POST — bootstrap a readiness assessment from the catalog
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -324,4 +327,4 @@ export async function POST(req: Request) {
     },
     { status: 201 },
   );
-}
+});

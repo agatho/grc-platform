@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useId } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Loader2,
   ArrowLeft,
-  RefreshCcw,
   Sparkles,
   Plus,
   CheckCircle2,
@@ -43,6 +43,8 @@ import type {
 } from "@grc/shared";
 import { checklistResultToFindingSeverity } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
+import { fetchAllPages } from "@/lib/api-client";
 
 interface AuditDetail extends Audit {
   leadAuditorName?: string | null;
@@ -56,6 +58,33 @@ interface Finding {
   createdAt: string;
 }
 
+interface EvidencePoolEntry {
+  id: string;
+  fileName: string;
+  category: string | null;
+  description?: string | null;
+  createdAt?: string;
+}
+
+// [OP-245] Stable empty defaults for `useQuery` data, so the lists keep
+// their identity while a query is still pending.
+const NO_CHECKLISTS: AuditChecklist[] = [];
+const NO_ITEMS: AuditChecklistItem[] = [];
+const NO_EVIDENCE: EvidencePoolEntry[] = [];
+const NO_FINDINGS: Finding[] = [];
+const NO_RISK_OPTIONS: Array<{ id: string; title: string }> = [];
+
+function checklistItemsQueryKey(auditId: string, checklistId: string) {
+  return [
+    "audit-mgmt",
+    "audits",
+    auditId,
+    "checklists",
+    checklistId,
+    "items",
+  ] as const;
+}
+
 export default function ExecutionDetailPage() {
   return (
     <ModuleGate moduleKey="audit">
@@ -67,10 +96,13 @@ export default function ExecutionDetailPage() {
 type TabKey = "overview" | "checklists" | "activities" | "findings" | "report";
 
 function ExecutionDetailInner() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const params = useParams<{ id: string }>();
-  const [audit, setAudit] = useState<AuditDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   // Transition-Dialog: wenn Audit in "completed"/"review" wechselt, braucht
@@ -82,22 +114,29 @@ function ExecutionDetailInner() {
     Array<{ kind: string; message: string; severity: "warning" | "error" }>
   >([]);
 
-  const fetchAudit = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `processes/[id]/ropa/page.tsx`). Eine nicht-ok-Antwort wirft,
+  // damit — wie vorher — ein fehlgeschlagener Neuabruf nach einem
+  // Statuswechsel die bereits angezeigte Akte stehen lässt; beim ersten
+  // Abruf bleibt sie `null` (→ „auditNotFound").
+  const {
+    data: audit = null,
+    isPending: loading,
+    refetch: refetchAudit,
+  } = useQuery<AuditDetail | null>({
+    queryKey: ["audit-mgmt", "audits", params.id],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/audit-mgmt/audits/${params.id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setAudit(json.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [params.id]);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return (json.data ?? null) as AuditDetail | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchAudit();
-  }, [fetchAudit]);
+  const fetchAudit = useCallback(async () => {
+    await refetchAudit();
+  }, [refetchAudit]);
 
   const handleStatusChange = async (newStatus: string, conclusion?: string) => {
     // ISO 19011 § 6.5: Audit-Konklusion beim Übergang in "review"/"completed"
@@ -327,7 +366,7 @@ function ExecutionDetailInner() {
           <DialogHeader>
             <DialogTitle>
               Übergang zu „
-              {transitionTo ? t(`auditStatus.${transitionTo}`) : ""}" —
+              {transitionTo ? t(`auditStatus.${transitionTo}`) : ""}&quot; —
               Audit-Konklusion erforderlich
             </DialogTitle>
           </DialogHeader>
@@ -377,8 +416,14 @@ function ExecutionDetailInner() {
               className="space-y-3"
             >
               <div>
-                <label className="text-sm font-medium">Audit-Konklusion</label>
+                <label
+                  htmlFor={`${a11yId}-audit-konklusion`}
+                  className="text-sm font-medium"
+                >
+                  Audit-Konklusion
+                </label>
                 <select
+                  id={`${a11yId}-audit-konklusion`}
                   name="conclusion"
                   required
                   defaultValue={audit.conclusion ?? ""}
@@ -555,6 +600,10 @@ function AuditEditDialog({
   audit: AuditDetail;
   onSaved: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const [saving, setSaving] = useState(false);
   const [auditors, setAuditors] = useState<
@@ -684,8 +733,14 @@ function AuditEditDialog({
               Auditor-Team (ISO 19011 § 5.4.4)
             </legend>
             <div>
-              <label className="text-sm font-medium">Lead-Auditor</label>
+              <label
+                htmlFor={`${a11yId}-lead-auditor`}
+                className="text-sm font-medium"
+              >
+                Lead-Auditor
+              </label>
               <select
+                id={`${a11yId}-lead-auditor`}
                 name="leadAuditorId"
                 defaultValue={audit.leadAuditorId ?? ""}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -701,8 +756,21 @@ function AuditEditDialog({
             </div>
             {auditors.length > 0 && (
               <div>
-                <label className="text-sm font-medium">Audit-Team</label>
-                <div className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1">
+                {/* [WP12 · S14-09] A group of checkboxes needs a GROUP name,
+                    not a <label> pointing at nothing. role="group" +
+                    aria-labelledby conveys "these checkboxes belong together
+                    and are called Audit-Team". */}
+                <span
+                  id={`${a11yId}-audit-team`}
+                  className="text-sm font-medium"
+                >
+                  Audit-Team
+                </span>
+                <div
+                  role="group"
+                  aria-labelledby={`${a11yId}-audit-team`}
+                  className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1"
+                >
                   {auditors.map((u) => (
                     <label
                       key={u.id}
@@ -735,8 +803,14 @@ function AuditEditDialog({
               Audit-Umfang (ISO 19011 § 5.4)
             </legend>
             <div>
-              <label className="text-sm font-medium">Scope-Beschreibung</label>
+              <label
+                htmlFor={`${a11yId}-scope-beschreibung`}
+                className="text-sm font-medium"
+              >
+                Scope-Beschreibung
+              </label>
               <textarea
+                id={`${a11yId}-scope-beschreibung`}
                 name="scopeDescription"
                 rows={2}
                 defaultValue={audit.scopeDescription ?? ""}
@@ -786,8 +860,8 @@ function AuditEditDialog({
           <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
             <strong>Hinweis:</strong> Tatsächliche Start-/Endtermine und die
             Audit-Konklusion werden beim Statuswechsel gesetzt (Buttons oben
-            rechts: „Weiter zu…"). Findings + Auditor-Zuweisungen pflegst du in
-            den jeweiligen Tabs.
+            rechts: „Weiter zu…&quot;). Findings + Auditor-Zuweisungen pflegst
+            du in den jeweiligen Tabs.
           </div>
 
           <div className="flex justify-end gap-2 pt-2 border-t">
@@ -920,9 +994,10 @@ function MethodEntriesEditor({
       {/* Entries */}
       {value.length === 0 && (
         <div className="text-xs text-gray-400 border border-dashed border-gray-200 rounded-md p-4 text-center">
-          Noch keine Nachweise erfasst. Unten „+ Nachweis hinzufügen" klicken —
-          pro Methode erscheint ein eigenes Mini-Formular mit den passenden
-          Feldern (z. B. Interview → Person, Stichprobe → Population + IDs).
+          Noch keine Nachweise erfasst. Unten „+ Nachweis hinzufügen&quot;
+          klicken — pro Methode erscheint ein eigenes Mini-Formular mit den
+          passenden Feldern (z. B. Interview → Person, Stichprobe → Population +
+          IDs).
         </div>
       )}
       {value.map((entry, idx) => (
@@ -995,6 +1070,10 @@ function MethodEntryCard({
   onChange: (patch: Partial<EditableMethodEntry>) => void;
   onRemove: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
@@ -1023,8 +1102,14 @@ function MethodEntryCard({
       {/* Gemeinsame Felder: Datum + Notizen */}
       <div className="grid grid-cols-3 gap-2">
         <div className="col-span-1">
-          <label className="text-xs font-medium text-gray-600">Datum</label>
+          <label
+            htmlFor={`${a11yId}-datum`}
+            className="text-xs font-medium text-gray-600"
+          >
+            Datum
+          </label>
           <Input
+            id={`${a11yId}-datum`}
             type="date"
             value={entry.date ?? ""}
             onChange={(e) => onChange({ date: e.target.value || undefined })}
@@ -1032,10 +1117,14 @@ function MethodEntryCard({
           />
         </div>
         <div className="col-span-2">
-          <label className="text-xs font-medium text-gray-600">
+          <label
+            htmlFor={`${a11yId}-kurz-notiz-zum-nachweis`}
+            className="text-xs font-medium text-gray-600"
+          >
             Kurz-Notiz zum Nachweis
           </label>
           <Input
+            id={`${a11yId}-kurz-notiz-zum-nachweis`}
             value={entry.notes ?? ""}
             onChange={(e) => onChange({ notes: e.target.value || undefined })}
             placeholder="optional — detaillierte Notizen kommen in das Haupt-Notizfeld unten"
@@ -1048,8 +1137,14 @@ function MethodEntryCard({
       {entry.method === "interview" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">Person</label>
+            <label
+              htmlFor={`${a11yId}-person`}
+              className="text-xs font-medium text-gray-600"
+            >
+              Person
+            </label>
             <Input
+              id={`${a11yId}-person`}
               value={
                 (entry as MethodEntry & { interviewee?: string }).interviewee ??
                 ""
@@ -1063,10 +1158,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-rolle-funktion`}
+              className="text-xs font-medium text-gray-600"
+            >
               Rolle / Funktion
             </label>
             <Input
+              id={`${a11yId}-rolle-funktion`}
               value={
                 (entry as MethodEntry & { intervieweeRole?: string })
                   .intervieweeRole ?? ""
@@ -1089,10 +1188,14 @@ function MethodEntryCard({
       {entry.method === "observation" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-ort-standort`}
+              className="text-xs font-medium text-gray-600"
+            >
               Ort / Standort
             </label>
             <Input
+              id={`${a11yId}-ort-standort`}
               value={
                 (entry as MethodEntry & { location?: string }).location ?? ""
               }
@@ -1105,10 +1208,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-beobachteter-prozess`}
+              className="text-xs font-medium text-gray-600"
+            >
               Beobachteter Prozess
             </label>
             <Input
+              id={`${a11yId}-beobachteter-prozess`}
               value={
                 (entry as MethodEntry & { observedProcess?: string })
                   .observedProcess ?? ""
@@ -1127,10 +1234,14 @@ function MethodEntryCard({
       {entry.method === "walkthrough" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-prozess-aktivitat`}
+              className="text-xs font-medium text-gray-600"
+            >
               Prozess / Aktivität
             </label>
             <Input
+              id={`${a11yId}-prozess-aktivitat`}
               value={
                 (entry as MethodEntry & { process?: string }).process ?? ""
               }
@@ -1143,10 +1254,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-teilnehmer`}
+              className="text-xs font-medium text-gray-600"
+            >
               Teilnehmer
             </label>
             <Input
+              id={`${a11yId}-teilnehmer`}
               value={
                 (entry as MethodEntry & { participants?: string })
                   .participants ?? ""
@@ -1166,10 +1281,14 @@ function MethodEntryCard({
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-system`}
+                className="text-xs font-medium text-gray-600"
+              >
                 System
               </label>
               <Input
+                id={`${a11yId}-system`}
                 value={
                   (entry as MethodEntry & { system?: string }).system ?? ""
                 }
@@ -1182,10 +1301,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-testbeschreibung`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Testbeschreibung
               </label>
               <Input
+                id={`${a11yId}-testbeschreibung`}
                 value={
                   (entry as MethodEntry & { testDescription?: string })
                     .testDescription ?? ""
@@ -1200,10 +1323,14 @@ function MethodEntryCard({
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-test-ergebnis`}
+              className="text-xs font-medium text-gray-600"
+            >
               Test-Ergebnis
             </label>
             <textarea
+              id={`${a11yId}-test-ergebnis`}
               value={
                 (entry as MethodEntry & { testResult?: string }).testResult ??
                 ""
@@ -1225,10 +1352,14 @@ function MethodEntryCard({
         <div className="space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-population-n`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Population N
               </label>
               <Input
+                id={`${a11yId}-population-n`}
                 type="number"
                 min={0}
                 value={
@@ -1246,10 +1377,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-stichprobe-n`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Stichprobe n
               </label>
               <Input
+                id={`${a11yId}-stichprobe-n`}
                 type="number"
                 min={0}
                 value={
@@ -1267,10 +1402,14 @@ function MethodEntryCard({
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-gray-600">
+              <label
+                htmlFor={`${a11yId}-auswahlverfahren`}
+                className="text-xs font-medium text-gray-600"
+              >
                 Auswahlverfahren
               </label>
               <Input
+                id={`${a11yId}-auswahlverfahren`}
                 value={
                   (entry as MethodEntry & { selectionMethod?: string })
                     .selectionMethod ?? ""
@@ -1285,10 +1424,14 @@ function MethodEntryCard({
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-field`}
+              className="text-xs font-medium text-gray-600"
+            >
               Sample-IDs / Referenzen (kommagetrennt)
             </label>
             <textarea
+              id={`${a11yId}-field`}
               value={(
                 (entry as MethodEntry & { sampleIds?: string[] }).sampleIds ??
                 []
@@ -1313,10 +1456,14 @@ function MethodEntryCard({
       {entry.method === "reperformance" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-nachvollzogene-aktivitat`}
+              className="text-xs font-medium text-gray-600"
+            >
               Nachvollzogene Aktivität
             </label>
             <Input
+              id={`${a11yId}-nachvollzogene-aktivitat`}
               value={
                 (entry as MethodEntry & { activity?: string }).activity ?? ""
               }
@@ -1329,10 +1476,14 @@ function MethodEntryCard({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">
+            <label
+              htmlFor={`${a11yId}-baseline-vergleich`}
+              className="text-xs font-medium text-gray-600"
+            >
               Baseline / Vergleich
             </label>
             <Input
+              id={`${a11yId}-baseline-vergleich`}
               value={
                 (entry as MethodEntry & { baseline?: string }).baseline ?? ""
               }
@@ -1358,6 +1509,10 @@ function DocumentReviewFields({
   entry: EditableMethodEntry;
   onChange: (patch: Partial<EditableMethodEntry>) => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id per instance: this editor
+  // renders once per method entry, so a fixed id would collide and every
+  // `aria-labelledby` would resolve to the first instance's heading.
+  const a11yId = useId();
   const docs =
     (
       entry as MethodEntry & {
@@ -1390,9 +1545,13 @@ function DocumentReviewFields({
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-gray-600">
+      {/* [WP12 · S14-09] Heads a repeating row editor, not one control. */}
+      <span
+        id={`${a11yId}-checked-docs`}
+        className="text-xs font-medium text-gray-600"
+      >
         Geprüfte Dokumente
-      </label>
+      </span>
       {docs.length === 0 && (
         <p className="text-[11px] text-gray-400">
           Noch keine Dokumente — Klick unten hinzufügt eine Zeile.
@@ -1439,13 +1598,17 @@ function DocumentReviewFields({
 // ─── Checklists Tab ──────────────────────────────────────────
 
 function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
-  const [checklists, setChecklists] = useState<AuditChecklist[]>([]);
-  const [selectedChecklist, setSelectedChecklist] = useState<string | null>(
-    null,
-  );
-  const [items, setItems] = useState<AuditChecklistItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  // Ausdrückliche Wahl des Nutzers; die wirksame Auswahl (mit der ersten
+  // Checkliste als Vorgabe) wird weiter unten beim Rendern abgeleitet.
+  const [selectedChecklistState, setSelectedChecklist] = useState<
+    string | null
+  >(null);
   const [generating, setGenerating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
@@ -1460,15 +1623,6 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   // initial aus item.evidenceIds, werden über Add/Remove-Buttons verändert,
   // erst beim Submit als evidenceIds an PUT .../items/[itemId] geschickt.
   const [evaluateEvidenceIds, setEvaluateEvidenceIds] = useState<string[]>([]);
-  const [evidencePool, setEvidencePool] = useState<
-    Array<{
-      id: string;
-      fileName: string;
-      category: string | null;
-      description?: string | null;
-      createdAt?: string;
-    }>
-  >([]);
   const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
   const [createFindingItem, setCreateFindingItem] =
     useState<AuditChecklistItem | null>(null);
@@ -1491,27 +1645,27 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          if (!cancelled) {
-            setRisks(
-              (j.data ?? []).map(
-                (x: {
-                  id: string;
-                  title: string;
-                  riskCategory?: string | null;
-                }) => ({
-                  id: x.id,
-                  title: x.title,
-                  riskCategory: x.riskCategory,
-                }),
-              ),
-            );
-          }
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422; der `catch`
+        // daneben nennt den Ausgang selbst beim Namen ("UI falls back to
+        // empty lists"). Damit war die Risiko-Auswahl im Befund-Dialog
+        // dauerhaft leer, und ein Befund liess sich nicht mit dem Risiko
+        // verknüpfen, das ihn ausgelöst hat.
+        const rows = await fetchAllPages<{
+          id: string;
+          title: string;
+          riskCategory?: string | null;
+        }>("/api/v1/risks");
+        if (!cancelled) {
+          setRisks(
+            rows.map((x) => ({
+              id: x.id,
+              title: x.title,
+              riskCategory: x.riskCategory,
+            })),
+          );
         }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
       }
       // Active control catalogs of the current org
       try {
@@ -1525,8 +1679,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             (x: { catalogId: string }) => x.catalogId,
           );
           if (ids.length > 0) {
+            // [ARCTOS-FULL-2026-08-31 · OP-050] war `limit=200` ⇒ 422 ⇒
+            // die Katalognamen fehlten, und die Framework-Auswahl blieb leer.
             const catRes = await fetch(
-              "/api/v1/catalogs?type=control&limit=200",
+              "/api/v1/catalogs?type=control&limit=100",
             );
             if (catRes.ok) {
               const catJ = await catRes.json();
@@ -1574,69 +1730,81 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     };
   }, [orgId]);
 
-  const fetchChecklists = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Checklisten, Items und Evidenz-Pool über
+  // `@tanstack/react-query` statt Effekt plus gespiegeltem Lade- und
+  // Datenzustand (Muster aus Welle 7b, `dashboard/page.tsx`). Eine
+  // nicht-ok-Antwort liefert wie vorher eine leere Liste.
+  const {
+    data: checklists = NO_CHECKLISTS,
+    isPending: loading,
+    refetch: refetchChecklists,
+  } = useQuery<AuditChecklist[]>({
+    queryKey: ["audit-mgmt", "audits", auditId, "checklists"],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/audit-mgmt/audits/${auditId}/checklists?limit=100`,
       );
-      if (res.ok) {
-        const json = await res.json();
-        setChecklists(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [auditId]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditChecklist[];
+    },
+  });
 
+  const fetchChecklists = useCallback(async () => {
+    await refetchChecklists();
+  }, [refetchChecklists]);
+
+  // [OP-245 · Gestalt E, Zug 3] Auto-select first checklist: beim Rendern
+  // abgeleitet statt in einem nachlaufenden Effekt gesetzt. Die
+  // ausdrückliche Wahl des Nutzers bleibt im Zustand; ohne Wahl gilt die
+  // erste Checkliste.
+  const selectedChecklist = selectedChecklistState ?? checklists[0]?.id ?? null;
+
+  // Die Items hängen an der gewählten Checkliste: sie steht im Schlüssel,
+  // und ohne Auswahl fragt die Abfrage nichts ab.
+  const { data: items = NO_ITEMS } = useQuery<AuditChecklistItem[]>({
+    queryKey: checklistItemsQueryKey(auditId, selectedChecklist ?? ""),
+    enabled: selectedChecklist !== null,
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/items`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AuditChecklistItem[];
+    },
+  });
+
+  // Invalidiert genau die Checkliste, die übergeben wird — so bleiben die
+  // Aufrufstellen (nach Generieren, Duplizieren, Bewerten, Import)
+  // unverändert. Für eine gerade erst gewählte Checkliste holt der
+  // Schlüsselwechsel die Items ohnehin; die Invalidierung schadet nicht.
   const fetchItems = useCallback(
     async (checklistId: string) => {
-      const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}/items`,
-      );
-      if (res.ok) {
-        const json = await res.json();
-        setItems(json.data ?? []);
-      }
+      await queryClient.invalidateQueries({
+        queryKey: checklistItemsQueryKey(auditId, checklistId),
+      });
     },
-    [auditId],
+    [queryClient, auditId],
   );
-
-  useEffect(() => {
-    void fetchChecklists();
-  }, [fetchChecklists]);
-
-  useEffect(() => {
-    if (selectedChecklist) {
-      void fetchItems(selectedChecklist);
-    }
-  }, [selectedChecklist, fetchItems]);
-
-  // Auto-select first checklist
-  useEffect(() => {
-    if (checklists.length > 0 && !selectedChecklist) {
-      setSelectedChecklist(checklists[0].id);
-    }
-  }, [checklists, selectedChecklist]);
 
   // Evidence-Pool laden (scope: org-weit, damit Auditor alles verknüpfen kann
   // was im Audit-Kontext sinnvoll ist — Kontroll-Tests, bestehende Audit-
   // Evidenzen, Policy-Dokumente usw.)
-  const fetchEvidencePool = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/evidence?limit=100&sortDir=desc");
-      if (res.ok) {
+  const { data: evidencePool = NO_EVIDENCE } = useQuery<EvidencePoolEntry[]>({
+    queryKey: ["evidence", "pool", { limit: 100, sortDir: "desc" }],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/evidence?limit=100&sortDir=desc");
+        if (!res.ok) return [];
         const json = await res.json();
-        setEvidencePool(json.data ?? []);
+        return (json.data ?? []) as EvidencePoolEntry[];
+      } catch {
+        // still usable with empty pool
+        return [];
       }
-    } catch {
-      // still usable with empty pool
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchEvidencePool();
-  }, [fetchEvidencePool]);
+    },
+  });
 
   // Task-13-Filter über die Items-Tabelle.
   const [resultFilter, setResultFilter] = useState<string>("");
@@ -1650,27 +1818,32 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
   // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste + Form-State aus Item
   // ziehen, damit das Dialog den bisherigen Stand anzeigt.
-  useEffect(() => {
-    if (evaluateItem) {
-      const item = evaluateItem as AuditChecklistItem & {
-        methodEntries?: MethodEntry[] | null;
-      };
-      setEvaluateEvidenceIds(item.evidenceIds ?? []);
-      setSelectedResult(item.result ?? "");
-      // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
-      // aber die Server-Antwort kann jsonb-Frozen/flat sein.
-      setMethodEntries(
-        (item.methodEntries ?? []).map((e) => ({
-          ...e,
-        })) as EditableMethodEntry[],
-      );
-      setEvidencePickerOpen(false);
-    } else {
-      setEvaluateEvidenceIds([]);
-      setSelectedResult("");
-      setMethodEntries([]);
-    }
-  }, [evaluateItem]);
+  // [OP-245 · Gestalt E, Zug 2] Vorbelegen und Zurücksetzen gehören in die
+  // Handler, die den Dialog öffnen bzw. schließen — nicht in einen Effekt,
+  // der der Zustandsänderung nachläuft.
+  const openEvaluateDialog = useCallback((target: AuditChecklistItem) => {
+    const item = target as AuditChecklistItem & {
+      methodEntries?: MethodEntry[] | null;
+    };
+    setEvaluateItem(target);
+    setEvaluateEvidenceIds(item.evidenceIds ?? []);
+    setSelectedResult(item.result ?? "");
+    // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
+    // aber die Server-Antwort kann jsonb-Frozen/flat sein.
+    setMethodEntries(
+      (item.methodEntries ?? []).map((e) => ({
+        ...e,
+      })) as EditableMethodEntry[],
+    );
+    setEvidencePickerOpen(false);
+  }, []);
+
+  const closeEvaluateDialog = useCallback(() => {
+    setEvaluateItem(null);
+    setEvaluateEvidenceIds([]);
+    setSelectedResult("");
+    setMethodEntries([]);
+  }, []);
 
   const handleGenerate = async (
     catalogId?: string,
@@ -1813,7 +1986,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     );
 
     if (res.ok) {
-      setEvaluateItem(null);
+      closeEvaluateDialog();
       void fetchItems(selectedChecklist);
       void fetchChecklists();
     } else {
@@ -1871,8 +2044,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     );
     if (res.ok) {
       if (selectedChecklist === checklistId) {
+        // Zurück auf die abgeleitete Vorgabe (erste Checkliste); die Items
+        // folgen dem Schlüssel der Auswahl.
         setSelectedChecklist(null);
-        setItems([]);
       }
       void fetchChecklists();
     } else {
@@ -2038,8 +2212,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           ))}
           {checklists.length === 0 && !loading && (
             <span className="text-sm text-gray-400">
-              Noch keine Checklisten. Rechts auf „Generieren" oder
-              „Framework-Import" klicken.
+              Noch keine Checklisten. Rechts auf „Generieren&quot; oder
+              „Framework-Import&quot; klicken.
             </span>
           )}
         </div>
@@ -2166,16 +2340,21 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           {/* CSV-Export der aktuell selektierten Checkliste (ISO 17021-1 § 9.5
               Arbeitspapier-Archivierung) */}
           {selectedChecklist && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                window.location.href = `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`;
-              }}
-              title="Als CSV exportieren (Excel-kompatibel)"
-            >
-              <Download size={14} className="mr-1" />
-              CSV
+            // [ARCTOS-FULL-2026-08-31 · OP-243] Ein Download, keine
+            // Seitennavigation: `router.push` waere hier falsch (es wuerde die
+            // API-Route als Seite zu laden versuchen), und
+            // `window.location.href` verlaesst die Anwendung fuer einen
+            // Moment ganz. Ein Anker mit `download` ist beides nicht — der
+            // Browser holt die Datei und laesst die Seite stehen.
+            <Button variant="outline" size="sm" asChild>
+              <a
+                href={`/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`}
+                download
+                title="Als CSV exportieren (Excel-kompatibel)"
+              >
+                <Download size={14} className="mr-1" />
+                CSV
+              </a>
             </Button>
           )}
         </div>
@@ -2447,7 +2626,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => setEvaluateItem(item)}
+                              onClick={() => openEvaluateDialog(item)}
                             >
                               {t("evaluate")}
                             </Button>
@@ -2473,7 +2652,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       )}
 
       {/* Evaluate Dialog — ISO 19011 § 6.4.5/6.4.7 konformes Arbeitspapier */}
-      <Dialog open={!!evaluateItem} onOpenChange={() => setEvaluateItem(null)}>
+      <Dialog open={!!evaluateItem} onOpenChange={() => closeEvaluateDialog()}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Audit-Bewertung erfassen</DialogTitle>
@@ -2612,10 +2791,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
                   {/* Beobachtungen / Auditor-Notizen */}
                   <div>
-                    <label className="text-sm font-medium">
+                    <label
+                      htmlFor={`${a11yId}-field-2`}
+                      className="text-sm font-medium"
+                    >
                       Beobachtungen & Auditor-Notizen
                     </label>
                     <textarea
+                      id={`${a11yId}-field-2`}
                       name="notes"
                       defaultValue={evaluateItem.notes ?? ""}
                       rows={4}
@@ -2654,10 +2837,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">
+                        <label
+                          htmlFor={`${a11yId}-field-3`}
+                          className="text-sm font-medium"
+                        >
                           Vorgeschlagene Korrekturmaßnahme
                         </label>
                         <textarea
+                          id={`${a11yId}-field-3`}
                           name="correctiveActionSuggestion"
                           defaultValue={item.correctiveActionSuggestion ?? ""}
                           rows={3}
@@ -2715,7 +2902,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       {evaluateEvidenceIds.length === 0 && (
                         <span className="text-xs text-gray-400">
                           Keine Evidenzen verknüpft. Klicke oben auf „Evidenz
-                          hinzufügen" um aus dem Evidenz-Pool zu wählen.
+                          hinzufügen&quot; um aus dem Evidenz-Pool zu wählen.
                         </span>
                       )}
                       {evaluateEvidenceIds.map((id) => {
@@ -2804,7 +2991,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setEvaluateItem(null)}
+                      onClick={() => closeEvaluateDialog()}
                     >
                       Abbrechen
                     </Button>
@@ -2925,13 +3112,17 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">
+                    <label
+                      htmlFor={`${a11yId}-field-4`}
+                      className="text-sm font-medium"
+                    >
                       Risiko-Verknüpfung
                       <span className="ml-1 text-xs text-gray-400">
                         (optional, ISO 27001 9.2 · ISO 31000 6.6)
                       </span>
                     </label>
                     <select
+                      id={`${a11yId}-field-4`}
                       name="riskId"
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                       defaultValue=""
@@ -3047,36 +3238,45 @@ const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
 ];
 
 type ActivityWithUser = AuditActivity & { performedByName?: string | null };
+const NO_ACTIVITIES: ActivityWithUser[] = [];
 
 function ActivitiesTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
   const { formatDate, formatDateTime } = useDateFormat();
-  const [activities, setActivities] = useState<ActivityWithUser[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [filterType, setFilterType] = useState<string>("");
   const [presetValues, setPresetValues] = useState<ActivityTemplate | null>(
     null,
   );
 
-  const fetchActivities = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=200`,
-      );
-      if (res.ok) {
-        const json = await res.json();
-        setActivities(json.data ?? []);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Fehlerpfad bleibt: Konsole
+  // und leere Liste.
+  const {
+    data: activities = NO_ACTIVITIES,
+    isPending: loading,
+    refetch: refetchActivities,
+  } = useQuery<ActivityWithUser[]>({
+    queryKey: ["audit-mgmt", "audits", auditId, "activities"],
+    queryFn: async () => {
+      try {
+        // [ARCTOS-FULL-2026-08-31 · OP-050] `limit=200` ⇒ 422 ⇒ das
+        // Prüfungsprogramm war leer. Für eine Prüfungsakte ist das die
+        // schlimmste Anzeige: „keine Prüfungshandlungen durchgeführt".
+        return await fetchAllPages<ActivityWithUser>(
+          `/api/v1/audit-mgmt/audits/${auditId}/activities`,
+        );
+      } catch (err) {
+        console.error("audit/executions: Aktivitäten nicht geladen", err);
+        return [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [auditId]);
+    },
+  });
 
-  useEffect(() => {
-    void fetchActivities();
-  }, [fetchActivities]);
+  const fetchActivities = useCallback(async () => {
+    await refetchActivities();
+  }, [refetchActivities]);
 
   const handleCreate = async (formData: FormData) => {
     const body = {
@@ -3422,49 +3622,59 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
 // ─── Findings Tab ────────────────────────────────────────────
 
 function FindingsTab({ auditId }: { auditId: string }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const t = useTranslations("auditMgmt");
   const { formatDate } = useDateFormat();
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [risks, setRisks] = useState<Array<{ id: string; title: string }>>([]);
 
-  const fetchFindings = async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Beide Abrufe über `@tanstack/react-query` statt
+  // Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus Welle 7b,
+  // `dashboard/page.tsx`). Die Welle-7a-Bemerkung zu den Abhaengigkeiten
+  // ist damit gegenstandslos: es gibt keinen Effekt mehr, dessen Liste
+  // von Hand gefuehrt werden muesste — der Schluessel traegt `auditId`.
+  const {
+    data: findings = NO_FINDINGS,
+    isPending: loading,
+    refetch: refetchFindings,
+  } = useQuery<Finding[]>({
+    queryKey: ["findings", "by-audit", auditId, { limit: 100 }],
+    queryFn: async () => {
       // F-14: proper server-side filter (auditId was client-side filtered
       // before -> UI showed ALL org audit findings, misleading).
       const res = await fetch(`/api/v1/findings?auditId=${auditId}&limit=100`);
-      if (res.ok) {
-        const json = await res.json();
-        setFindings(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Finding[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchFindings();
-    // Load risks for the optional risk-link picker
-    (async () => {
+  const fetchFindings = useCallback(async () => {
+    await refetchFindings();
+  }, [refetchFindings]);
+
+  // Load risks for the optional risk-link picker
+  const { data: risks = NO_RISK_OPTIONS } = useQuery<
+    Array<{ id: string; title: string }>
+  >({
+    queryKey: ["risks", "picker", "all"],
+    queryFn: async () => {
       try {
-        const r = await fetch("/api/v1/risks?limit=200");
-        if (r.ok) {
-          const j = await r.json();
-          setRisks(
-            (j.data ?? []).map((x: { id: string; title: string }) => ({
-              id: x.id,
-              title: x.title,
-            })),
-          );
-        }
-      } catch {
-        // ignore preload errors — UI falls back to empty lists
+        // [ARCTOS-FULL-2026-08-31 · OP-050] siehe oben — zweite Aufrufstelle
+        // desselben Musters in derselben Datei.
+        const rows = await fetchAllPages<{ id: string; title: string }>(
+          "/api/v1/risks",
+        );
+        return rows.map((x) => ({ id: x.id, title: x.title }));
+      } catch (err) {
+        console.error("audit/executions: Risikoliste nicht geladen", err);
+        return [];
       }
-    })();
-  }, [auditId]);
+    },
+  });
 
   const handleAdd = async (formData: FormData) => {
     setSaving(true);
@@ -3585,20 +3795,37 @@ function FindingsTab({ auditId }: { auditId: string }) {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium">Titel</label>
-                  <Input name="title" required />
+                  <label
+                    htmlFor={`${a11yId}-titel`}
+                    className="text-sm font-medium"
+                  >
+                    Titel
+                  </label>
+                  <Input id={`${a11yId}-titel`} name="title" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Beschreibung</label>
+                  <label
+                    htmlFor={`${a11yId}-beschreibung`}
+                    className="text-sm font-medium"
+                  >
+                    Beschreibung
+                  </label>
                   <textarea
+                    id={`${a11yId}-beschreibung`}
                     name="description"
                     rows={3}
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Schweregrad</label>
+                  <label
+                    htmlFor={`${a11yId}-schweregrad`}
+                    className="text-sm font-medium"
+                  >
+                    Schweregrad
+                  </label>
                   <select
+                    id={`${a11yId}-schweregrad`}
                     name="severity"
                     required
                     defaultValue="observation"
@@ -3618,13 +3845,17 @@ function FindingsTab({ auditId }: { auditId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">
+                  <label
+                    htmlFor={`${a11yId}-risiko-verknupfung`}
+                    className="text-sm font-medium"
+                  >
                     Risiko-Verknüpfung
                     <span className="ml-1 text-xs text-gray-400">
                       (optional, ISO 31000 6.6)
                     </span>
                   </label>
                   <select
+                    id={`${a11yId}-risiko-verknupfung`}
                     name="riskId"
                     defaultValue=""
                     className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -3638,8 +3869,17 @@ function FindingsTab({ auditId }: { auditId: string }) {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Fälligkeit</label>
-                  <Input name="remediationDueDate" type="date" />
+                  <label
+                    htmlFor={`${a11yId}-falligkeit`}
+                    className="text-sm font-medium"
+                  >
+                    Fälligkeit
+                  </label>
+                  <Input
+                    id={`${a11yId}-falligkeit`}
+                    name="remediationDueDate"
+                    type="date"
+                  />
                 </div>
                 <Button type="submit" className="w-full" disabled={saving}>
                   {saving ? (
@@ -3661,8 +3901,8 @@ function FindingsTab({ auditId }: { auditId: string }) {
         <div className="text-center py-8 text-gray-400">
           <p>{t("emptyFindings")}</p>
           <p className="text-xs mt-2">
-            Nutze „Feststellung hinzufügen" für Ad-hoc-Befunde oder erstelle aus
-            einer nicht-konformen Checklisten-Position heraus.
+            Nutze „Feststellung hinzufügen&quot; für Ad-hoc-Befunde oder
+            erstelle aus einer nicht-konformen Checklisten-Position heraus.
           </p>
         </div>
       ) : (
@@ -3912,7 +4152,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
           />
           <InfoRow
             label="E-Mail"
-            value={(report.audit as any).leadAuditorEmail ?? "-"}
+            value={(report.audit as UnvalidatedJson).leadAuditorEmail ?? "-"}
           />
           <InfoRow
             label={t("actualStart")}
@@ -4346,6 +4586,10 @@ function FindingRow({
   sevLabels: Record<string, string>;
   onUpdated: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control.
+  const a11yId = useId();
+
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -4498,10 +4742,14 @@ function FindingRow({
       {editing ? (
         <div className="rounded-md border border-blue-200 bg-blue-50/50 p-3 space-y-2 print:hidden">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">
+            <label
+              htmlFor={`${a11yId}-ma-nahmen-plan`}
+              className="text-xs font-medium text-gray-700 block mb-1"
+            >
               Maßnahmen-Plan
             </label>
             <textarea
+              id={`${a11yId}-ma-nahmen-plan`}
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
               rows={3}
@@ -4510,10 +4758,14 @@ function FindingRow({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">
+            <label
+              htmlFor={`${a11yId}-falligkeitsdatum`}
+              className="text-xs font-medium text-gray-700 block mb-1"
+            >
               Fälligkeitsdatum
             </label>
             <input
+              id={`${a11yId}-falligkeitsdatum`}
               type="date"
               value={due}
               onChange={(e) => setDue(e.target.value)}

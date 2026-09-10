@@ -3,8 +3,12 @@ import { updateDevopsConnectorConfigSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -24,9 +28,8 @@ export async function GET(
     );
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json({ data: row });
-}
-
-export async function PATCH(
+});
+export const PATCH = withErrorHandler(async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -56,13 +59,12 @@ export async function PATCH(
   });
   if (!updated) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json({ data: updated });
-}
-
+});
 // F#19 (overnight 2026-05-18): DevOps connector configs had no DELETE
 // handler, leaving stale rows un-removable from the API. The schema has
 // no soft-delete column, so this is a hard delete. Audit context is
 // still set so the deletion lands in audit_log.
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -91,4 +93,4 @@ export async function DELETE(
 
   if (!deleted) return Response.json({ error: "Not found" }, { status: 404 });
   return new Response(null, { status: 204 });
-}
+});

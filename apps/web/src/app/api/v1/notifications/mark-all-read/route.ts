@@ -11,7 +11,6 @@
 // Returns the count of rows actually flipped — clients use this to
 // drive the "X notifications marked as read" toast.
 
-import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";

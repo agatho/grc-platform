@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
@@ -67,9 +68,6 @@ export default function SoaPage() {
 
 function SoaInner() {
   const t = useTranslations("ismsAssessment");
-  const [rows, setRows] = useState<SoaRow[]>([]);
-  const [stats, setStats] = useState<SoaStats | null>(null);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -90,31 +88,88 @@ function SoaInner() {
     implementationNotes: "",
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "200" });
-      if (search) params.set("search", search);
-      if (filter === "applicable") params.set("applicability", "applicable");
-      if (filter === "not_applicable")
-        params.set("applicability", "not_applicable");
-      if (filter === "not_implemented")
-        params.set("implementation", "not_implemented");
+  /**
+   * [E2E-TRIAGE-3 · 2026-09-02] Two defects in six lines, measured against the
+   * running instance.
+   *
+   * 1. `limit: "200"`. `paginate()` caps `limit` at MAX_PAGE_SIZE = 100 and —
+   *    deliberately, #NIGHT-059 — rejects anything larger with 422 instead of
+   *    silently capping. `GET /api/v1/isms/soa?limit=200` therefore answered
+   *    422 for every tenant, always.
+   * 2. `if (res.ok)`. The 422 was then discarded without a trace: `rows` kept
+   *    its initial `[]`, `loading` went false, and the page rendered its empty
+   *    state — "Keine SoA-Einträge gefunden. Aus ISO 27002-Katalog
+   *    generieren." — over a tenant whose SoA the API returns without
+   *    complaint. Measured: `/isms/soa` shows the empty state while
+   *    `GET /api/v1/isms/soa` (no params) answers 200 with entries, and the
+   *    offered remedy ("generate from the catalogue") would have created
+   *    duplicates of rows that already exist.
+   *
+   * The Erklärung zur Anwendbarkeit is the central ISO-27001 document of this
+   * module; showing it as empty is the worst possible failure mode, and a
+   * swallowed status is what made it invisible for so long. Page through at
+   * the size the API allows, and let a failed load say so.
+   *
+   * [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+   * statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+   * aus Welle 7b, `catalogs/objects/page.tsx`); Filter und Suchbegriff stehen
+   * im Schlüssel. Ein geworfener `HTTP <status>` landet im Fehlerzustand der
+   * Abfrage und wird unten wie vorher als `loadError` angezeigt — NICHT als
+   * leere SoA.
+   */
+  const {
+    data,
+    isPending: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<{ rows: SoaRow[]; stats: SoaStats | null }>({
+    queryKey: ["isms", "soa", filter, search],
+    queryFn: async () => {
+      const collected: SoaRow[] = [];
+      let stats: SoaStats | null = null;
+      // MAX_PAGE_SIZE in apps/web/src/lib/api.ts. Bounded so a broken
+      // `totalPages` cannot spin here.
+      for (let pageNo = 1; pageNo <= 50; pageNo++) {
+        const params = new URLSearchParams({
+          limit: "100",
+          page: String(pageNo),
+        });
+        if (search) params.set("search", search);
+        if (filter === "applicable") params.set("applicability", "applicable");
+        if (filter === "not_applicable")
+          params.set("applicability", "not_applicable");
+        if (filter === "not_implemented")
+          params.set("implementation", "not_implemented");
 
-      const res = await fetch(`/api/v1/isms/soa?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setRows(json.data ?? []);
-        setStats(json.stats ?? null);
+        const res = await fetch(`/api/v1/isms/soa?${params.toString()}`);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const json = (await res.json()) as {
+          data?: SoaRow[];
+          stats?: SoaStats;
+          pagination?: { totalPages?: number };
+        };
+        collected.push(...(json.data ?? []));
+        stats = json.stats ?? stats;
+        if (pageNo >= (json.pagination?.totalPages ?? 1)) break;
       }
-    } finally {
-      setLoading(false);
-    }
-  }, [filter, search]);
+      return { rows: collected, stats };
+    },
+  });
+  // [E2E-TRIAGE-3] A failed load must not look like an empty SoA — see the
+  // `loadError` branch in the table below.
+  const loadError: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Unknown error"
+    : null;
+  const rows = loadError ? [] : (data?.rows ?? []);
+  const stats = loadError ? null : (data?.stats ?? null);
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleGenerate = async () => {
     await fetch("/api/v1/isms/soa", { method: "POST" });
@@ -277,6 +332,27 @@ function SoaInner() {
       {loading ? (
         <div className="flex items-center justify-center h-40">
           <Loader2 size={24} className="animate-spin text-gray-400" />
+        </div>
+      ) : loadError ? (
+        // [E2E-TRIAGE-3] NOT the empty state: the SoA could not be loaded, and
+        // offering "generate from the catalogue" here would create duplicates
+        // of entries that may well exist.
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-center text-sm text-red-800"
+        >
+          <p className="font-medium">
+            Die Erklärung zur Anwendbarkeit konnte nicht geladen werden.
+          </p>
+          <p className="mt-1 text-red-700">{loadError}</p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={() => void fetchData()}
+          >
+            <RefreshCcw size={14} className="mr-1" /> {t("actions.retry")}
+          </Button>
         </div>
       ) : rows.length === 0 ? (
         <div className="text-center py-12 text-gray-400">

@@ -57,6 +57,16 @@ vi.mock("@/hooks/use-module-config", () => ({
 }));
 
 import RiskAcceptancesPage from "@/app/(dashboard)/risk-acceptances/page";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// [OP-245] Die Seite holt ihre Daten jetzt ueber `useQuery`; im Baum steht
+// der Anbieter im Wurzel-Layout, hier stellt ihn die Pruefung selbst bereit.
+function withQuery(children: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
+}
 
 // ── Fetch fixture ─────────────────────────────────────────────────────
 
@@ -127,7 +137,7 @@ afterEach(() => {
 
 describe("Risk-Acceptance cockpit page", () => {
   it("renders acceptance rows from the list endpoint", async () => {
-    render(<RiskAcceptancesPage />);
+    render(withQuery(<RiskAcceptancesPage />));
 
     expect(
       await screen.findByText("Legacy VPN bleibt bis Migration in Betrieb"),
@@ -146,7 +156,7 @@ describe("Risk-Acceptance cockpit page", () => {
   });
 
   it("highlights active acceptances expiring within 30 days", async () => {
-    render(<RiskAcceptancesPage />);
+    render(withQuery(<RiskAcceptancesPage />));
     await screen.findByText("Legacy VPN bleibt bis Migration in Betrieb");
 
     // The <30-day active row gets the "expires in {days} days" chip;
@@ -158,7 +168,7 @@ describe("Risk-Acceptance cockpit page", () => {
   });
 
   it("re-fetches with expiringBefore when the expiring-soon toggle is enabled", async () => {
-    render(<RiskAcceptancesPage />);
+    render(withQuery(<RiskAcceptancesPage />));
     await screen.findByText("Legacy VPN bleibt bis Migration in Betrieb");
 
     const callsBefore = fetchMock.mock.calls.length;

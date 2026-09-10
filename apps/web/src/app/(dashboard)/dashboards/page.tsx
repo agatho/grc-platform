@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
@@ -50,8 +51,6 @@ export default function DashboardListPage() {
   const t = useTranslations("dashboard");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createName, setCreateName] = useState("");
@@ -61,29 +60,34 @@ export default function DashboardListPage() {
   >("personal");
   const [isCreating, setIsCreating] = useState(false);
 
-  const fetchDashboards = useCallback(async () => {
-    setIsLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der aktive Reiter steht im
+  // Schlüssel. Eine nicht-ok-Antwort liefert wie vorher eine leere Liste; ein
+  // Netzfehler wird nicht mehr verschluckt, sondern landet im Fehlerzustand
+  // der Abfrage.
+  const {
+    data: dashboards = [],
+    isPending: isLoading,
+    refetch,
+  } = useQuery<DashboardListItem[]>({
+    queryKey: ["dashboards", "list", activeTab],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (activeTab === "personal") params.set("visibility", "personal");
       if (activeTab === "team") params.set("visibility", "team");
       if (activeTab === "defaults") params.set("isDefault", "true");
 
       const res = await fetch(`/api/v1/dashboards?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setDashboards(json.data ?? []);
-      }
-    } catch {
-      // Silently handle
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeTab]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as DashboardListItem[];
+    },
+  });
 
-  useEffect(() => {
-    fetchDashboards();
-  }, [fetchDashboards]);
+  const fetchDashboards = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   async function handleCreate() {
     if (!createName.trim()) return;
@@ -287,9 +291,22 @@ export default function DashboardListPage() {
                             dash.visibility}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {dash.widgetCount} {t("widgets")}
+                          {dash.widgetCount} {t("widgetsLabel")}
                         </span>
                       </div>
+                      {/*
+                        [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] This wrapper
+                        is not a control. Its only handler stops a click from
+                        reaching the surrounding card, so that the edit and
+                        delete buttons inside it do not also open the
+                        dashboard. Giving it `role="button"` + `tabIndex={0}`
+                        (as an earlier pass did) added a tab stop that
+                        announces "button" and does nothing — a phantom target
+                        between two real ones. The buttons inside are keyboard
+                        operable on their own; a click they raise still
+                        bubbles through here and is still stopped.
+                      */}
+                      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- event-swallowing wrapper, not an activation target: see comment above */}
                       <div
                         className="flex items-center gap-0.5"
                         onClick={(e) => e.stopPropagation()}

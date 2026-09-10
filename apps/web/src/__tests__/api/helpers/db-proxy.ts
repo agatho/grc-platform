@@ -87,6 +87,24 @@ export function dbMockFactory(): Record<string, unknown> {
     {},
     { get: (_t, p) => (typeof p === "symbol" ? undefined : "x") },
   );
+  // [ARCTOS-FULL-2026-08-31 / WP11 · S11-02] `@grc/db` exports request-context
+  // wrappers, not only Drizzle tables. WP2 introduced `withOrgReadContext` and
+  // `runWithRequestContext`; 29 route files call them. The catch-all above
+  // handed those routes a plain object, so `withOrgReadContext(...)` threw
+  // "is not a function" and the route never reached its guard. Both wrappers
+  // take a callback that receives the (mocked) db handle.
+  const contextWrappers: Record<string, unknown> = {
+    withOrgReadContext: vi.fn(
+      async (_orgId: unknown, fn: (db: MockDb) => unknown) =>
+        fn(dbState.current),
+    ),
+    runWithRequestContext: vi.fn(async (...args: unknown[]) => {
+      const fn = args.find((a) => typeof a === "function") as
+        ((db: MockDb) => unknown) | undefined;
+      return fn ? fn(dbState.current) : undefined;
+    }),
+  };
+
   return new Proxy(
     { db: dbState.current },
     {
@@ -96,6 +114,7 @@ export function dbMockFactory(): Record<string, unknown> {
         if (typeof prop === "symbol") {
           return (target as Record<symbol, unknown>)[prop];
         }
+        if (prop in contextWrappers) return contextWrappers[prop as string];
         return tableStub;
       },
       has(_target, prop) {

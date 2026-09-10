@@ -23,6 +23,7 @@ import {
   searchParamsToObject,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { problem, getRequestId } from "@/lib/api-errors";
 
 const ALLOWED_PARAMS = [
   "status",
@@ -117,13 +118,27 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
 // Explicit 405 for POST — acceptances are created on the risk itself:
 // POST /api/v1/risks/:id/acceptance (the risk context is mandatory).
-export async function POST() {
-  return Response.json(
-    {
-      error: "Method not allowed",
-      detail:
-        "Create acceptances via POST /api/v1/risks/{riskId}/acceptance — an acceptance decision always belongs to a specific risk.",
-    },
-    { status: 405, headers: { Allow: "GET" } },
-  );
+//
+// [E2E-TRIAGE-2026-09-02 · C-10] Deliberately NOT wrapped in
+// `withErrorHandler`, unlike the 14 other create handlers the sweep found:
+// this one calls no `withAuth` and touches no database — it is a constant
+// 405, es gibt nichts zu fangen.
+//
+// [ARCTOS-FULL-2026-08-31 / Welle 4b-7 · OP-079] Was es zu ändern gab, war
+// die FORM. Hier stand `Response.json({ error, detail }, { status: 405 })`
+// in `application/json` — und weil der Handler nicht gewickelt ist, kam
+// dieser Rumpf auch so beim Aufrufer an. Nachgemessen am 2026-09-04 war das
+// die EINZIGE Fehlerantwort ausserhalb der beiden Sonden, die noch nicht
+// RFC 7807 war. Die dreizehn anderen 405 des Repositories benutzen längst
+// `problem.methodNotAllowed`, das denselben `Allow`-Kopf setzt. Der `req`
+// kommt von Next.js ohnehin; ihn zu benennen kostet nichts.
+export function POST(req: Request) {
+  return problem.methodNotAllowed({
+    requestId: getRequestId(req),
+    instance: req.url,
+    method: "POST",
+    allow: ["GET"],
+    detail:
+      "Create acceptances via POST /api/v1/risks/{riskId}/acceptance — an acceptance decision always belongs to a specific risk.",
+  });
 }

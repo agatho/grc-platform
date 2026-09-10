@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Building2, ChevronDown, Check } from "lucide-react";
@@ -19,13 +19,18 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
   const { data: session } = useSession();
   const t = useTranslations("orgSwitcher");
   const [open, setOpen] = useState(false);
-  const [orgs, setOrgs] = useState<OrgInfo[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
-  // Get accessible org IDs from session roles
-  const accessibleOrgIds = [
-    ...new Set(session?.user?.roles?.map((r) => r.orgId) ?? []),
-  ];
+  // Get accessible org IDs from session roles.
+  // [Welle 7a · OP-080] `useMemo` statt eines bei jedem Rendern neu gebauten
+  // Feldes: sonst ist der Wert bei jedem Rendern ein anderer, und jede
+  // ehrliche Abhaengigkeitsliste, die ihn nennt, laeuft in eine Schleife.
+  // Genau daran scheiterte die alte Fassung — sie nannte ersatzweise
+  // `session` und war damit eine von Hand gefuehrte Kopie.
+  const accessibleOrgIds = useMemo(
+    () => [...new Set(session?.user?.roles?.map((r) => r.orgId) ?? [])],
+    [session],
+  );
 
   // #NIGHT-042: shared react-query cache so the header's org-switcher
   // doesn't re-fire /organizations?limit=100 on every navigation or
@@ -43,15 +48,20 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
     enabled: accessibleOrgIds.length > 0,
   });
 
-  useEffect(() => {
-    if (!orgList) return;
-    const list = orgList
-      .filter((o) => accessibleOrgIds.includes(o.id))
-      .map((o) => ({ id: o.id, name: o.name }));
-    setOrgs(list);
-    // accessibleOrgIds is derived from `session` so listing `session` is enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgList, session]);
+  // [Welle 7a · OP-080] Die Liste der erreichbaren Organisationen ist
+  // ABGELEITETER Wert und war Zustand: ein Effekt spiegelte das Ergebnis von
+  // react-query in ein `useState`. Das kostete einen zusaetzlichen
+  // Renderdurchlauf je Aenderung — der Kopf zeigte kurz „keine Auswahl", weil
+  // `orgs.length <= 1` im ersten Durchlauf noch galt — und zwang die
+  // Abhaengigkeitsliste zur Unwahrheit. Jetzt wird sie beim Rendern
+  // berechnet; damit entfaellt der Effekt und mit ihm die falsche Liste.
+  const orgs = useMemo(
+    () =>
+      (orgList ?? [])
+        .filter((o) => accessibleOrgIds.includes(o.id))
+        .map((o) => ({ id: o.id, name: o.name })),
+    [orgList, accessibleOrgIds],
+  );
 
   // Close on outside click
   useEffect(() => {

@@ -24,10 +24,17 @@ import {
 } from "@grc/shared";
 import { and, eq, gte, lt, sql, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ year: string }> };
 
-export async function GET(_req: Request, { params }: RouteParams) {
+export const GET = withErrorHandler(async function GET(
+  _req: Request,
+  { params }: RouteParams,
+) {
   const { year: yearStr } = await params;
   const year = parseInt(yearStr, 10);
   if (isNaN(year) || year < 2000 || year > 3000) {
@@ -218,4 +225,4 @@ export async function GET(_req: Request, { params }: RouteParams) {
       rawInput: reportInput,
     },
   });
-}
+});

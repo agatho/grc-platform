@@ -5,15 +5,16 @@
  * Based on the manual browser test plan.
  */
 import { test, expect } from "@playwright/test";
+import { awaitAppReady } from "./fixtures/wait";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("Platform Smoke Tests", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   // ── 1. Dashboard ──────────────────────────────────────────
   test("dashboard renders with all widgets", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     // Welcome heading
     await expect(page.getByText(/willkommen|welcome/i).first()).toBeVisible();
@@ -82,8 +83,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 3. Risk CRUD ──────────────────────────────────────────
   test("risk register shows demo data", async ({ page }) => {
     await page.goto("/risks");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     // Title
     await expect(
@@ -102,8 +102,7 @@ test.describe("Platform Smoke Tests", () => {
 
   test("risk creation form renders", async ({ page }) => {
     await page.goto("/risks/new");
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
 
     // Page should contain form elements or risk-related content
     const body = await page.locator("body").innerText();
@@ -120,8 +119,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 4. Control Register ───────────────────────────────────
   test("control register shows demo data", async ({ page }) => {
     await page.goto("/controls");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(
       page.getByText(/kontrollregister|control register/i).first(),
@@ -133,8 +131,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 5. ISMS Dashboard ─────────────────────────────────────
   test("ISMS overview renders dashboard widgets", async ({ page }) => {
     await page.goto("/isms");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(page.getByText(/isms/i).first()).toBeVisible();
     // Should show compliance score or KPI
@@ -144,8 +141,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 6. DPMS Dashboard ─────────────────────────────────────
   test("data privacy overview renders", async ({ page }) => {
     await page.goto("/dpms");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(
       page.getByText(/datenschutz|data privacy/i).first(),
@@ -155,8 +151,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 7. Organizations ──────────────────────────────────────
   test("organization list shows seeded orgs", async ({ page }) => {
     await page.goto("/organizations");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(
       page.getByText(/organisationen|organizations/i).first(),
@@ -168,8 +163,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 8. Catalogs ───────────────────────────────────────────
   test("catalog browser shows seeded catalogs", async ({ page }) => {
     await page.goto("/catalogs");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(page.getByText(/kataloge|catalogs/i).first()).toBeVisible();
     // Should show catalog type cards
@@ -181,8 +175,7 @@ test.describe("Platform Smoke Tests", () => {
   // ── 9. Audit Log ──────────────────────────────────────────
   test("audit log shows entries with hash chain", async ({ page }) => {
     await page.goto("/audit-log");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     await expect(
       page.getByText(/nderungshistorie|audit.*trail|change.*history/i).first(),
@@ -196,20 +189,19 @@ test.describe("Platform Smoke Tests", () => {
   // ── 10. Theme Switching ───────────────────────────────────
   test("theme can be switched via user menu", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     // Open user menu by clicking the avatar button
     const userMenuBtn = page.locator('button[aria-label="User menu"]');
     await userMenuBtn.click();
-    await page.waitForTimeout(1000);
+    await awaitAppReady(page);
 
     // Click Obsidian theme button (inside the dropdown menu)
     const obsidianBtn = page.locator('[class*="shadow-lg"] button', {
       hasText: "Obsidian",
     });
     await obsidianBtn.click();
-    await page.waitForTimeout(1000);
+    await awaitAppReady(page);
 
     // HTML should have dark class
     const htmlClass = await page.locator("html").getAttribute("class");
@@ -222,19 +214,18 @@ test.describe("Platform Smoke Tests", () => {
   // ── 11. i18n ──────────────────────────────────────────────
   test("language switches between DE and EN", async ({ page }) => {
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     // Open user menu and switch to English
     await page.locator('button[aria-label="User menu"]').click();
-    await page.waitForTimeout(1000);
+    await awaitAppReady(page);
 
     // Click EN button (it's a small button inside the language switcher)
     const enBtn = page
       .locator('button[aria-label*="English"], button:text-is("EN")')
       .first();
     await enBtn.click();
-    await page.waitForTimeout(5000);
+    await awaitAppReady(page);
 
     // After language switch, page should contain English text
     const bodyText = await page.locator("body").innerText();
@@ -303,8 +294,7 @@ test.describe("Platform Smoke Tests", () => {
     });
 
     await page.goto("/dashboard");
-    await page.waitForLoadState("domcontentloaded");
-    await page.waitForTimeout(3000);
+    await awaitAppReady(page);
 
     // Filter out known non-critical warnings
     const critical = errors.filter(

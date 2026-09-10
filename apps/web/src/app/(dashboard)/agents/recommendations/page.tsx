@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { Check, X, ClipboardList } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,27 +20,29 @@ const SEVERITY_COLORS: Record<string, string> = {
 export default function RecommendationsPage() {
   const t = useTranslations("agents");
   const { formatDateTime } = useDateFormat();
-  const [recs, setRecs] = useState<AgentRecommendation[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). A non-ok response yields an empty list, as
+  // before.
+  const {
+    data: recs = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<AgentRecommendation[]>({
+    queryKey: ["agents", "recommendations", { status: "pending" }],
+    queryFn: async () => {
       const res = await fetch(
         "/api/v1/agents/recommendations?status=pending&limit=100",
       );
-      if (res.ok) {
-        const json = await res.json();
-        setRecs(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AgentRecommendation[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleAction = async (id: string, status: "accepted" | "dismissed") => {
     await fetch(`/api/v1/agents/recommendations/${id}`, {
@@ -69,7 +72,11 @@ export default function RecommendationsPage() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge className={SEVERITY_COLORS[rec.severity] ?? ""}>
-                    {t(`recommendations.severity.${rec.severity}` as any)}
+                    {t(
+                      `recommendations.severity.${rec.severity}` as Parameters<
+                        typeof t
+                      >[0],
+                    )}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
                     {rec.entityType}

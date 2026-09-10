@@ -1,14 +1,13 @@
 import { defineConfig } from "vitest/config";
-import { sharedCoverageConfig } from "../../vitest.coverage.shared";
+import { coverageFor } from "../../vitest.coverage.shared";
 
 export default defineConfig({
   test: {
     globals: true,
     environment: "node",
     include: ["tests/**/*.test.ts"],
-    coverage: {
-      ...sharedCoverageConfig,
+    coverage: coverageFor("packages/events", {
       include: ["src/**/*.ts"],
-    },
+    }),
   },
 });

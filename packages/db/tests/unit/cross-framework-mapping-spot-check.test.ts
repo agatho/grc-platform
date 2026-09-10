@@ -50,10 +50,12 @@ function parseMappings(): ParsedMapping[] {
     let m: RegExpExecArray | null;
     while ((m = callRe.exec(sql)) !== null) {
       results.push({
-        sourceCode: m[1],
-        sourceCatalog: m[2],
-        targetCode: m[3],
-        targetCatalog: m[4],
+        // [OP-065] Die ersten vier Gruppen sind im Muster nicht optional;
+        // `?? ""` schreibt das auf, statt es viermal mit `!` zu behaupten.
+        sourceCode: m[1] ?? "",
+        sourceCatalog: m[2] ?? "",
+        targetCode: m[3] ?? "",
+        targetCatalog: m[4] ?? "",
         relationship: m[5] ?? "equivalent",
         confidence: m[6] ? parseInt(m[6], 10) : 85,
       });

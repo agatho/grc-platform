@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
   Loader2,
   Activity,
-  AlertTriangle,
   Clock,
   CheckCircle2,
   ShieldAlert,
@@ -25,6 +25,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDateFormat } from "@/lib/format-date";
+import type { UnvalidatedJson } from "@/lib/unvalidated-json";
 
 interface CockpitData {
   stats: {
@@ -37,34 +38,40 @@ interface CockpitData {
     total: number;
   };
   quadrants: {
-    inReview: any[];
-    pendingApproval: any[];
-    overdueReview: any[];
-    criticalRisks: any[];
+    inReview: UnvalidatedJson[];
+    pendingApproval: UnvalidatedJson[];
+    overdueReview: UnvalidatedJson[];
+    criticalRisks: UnvalidatedJson[];
   };
 }
 
 export default function CockpitPage() {
   const t = useTranslations("bpmOverhaul");
   const { formatDate } = useDateFormat();
-  const [data, setData] = useState<CockpitData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkPending, setBulkPending] = useState(false);
 
-  const reload = async () => {
-    setLoading(true);
-    const resp = await fetch(`/api/v1/processes/cockpit`);
-    if (resp.ok) {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Ladekreis hing vorher an
+  // JEDEM Abruf (auch dem nach der Sammelfreigabe), darum `isFetching`.
+  const {
+    data = null,
+    isFetching: loading,
+    refetch,
+  } = useQuery<CockpitData | null>({
+    queryKey: ["processes", "cockpit"],
+    queryFn: async () => {
+      const resp = await fetch(`/api/v1/processes/cockpit`);
+      if (!resp.ok) return null;
       const j = await resp.json();
-      setData(j.data);
-    }
-    setLoading(false);
-  };
+      return (j.data ?? null) as CockpitData | null;
+    },
+  });
 
-  useEffect(() => {
-    void reload();
-  }, []);
+  const reload = async () => {
+    await refetch();
+  };
 
   const toggleSelect = (id: string) => {
     setSelected((s) => {
@@ -192,7 +199,7 @@ export default function CockpitPage() {
                     <ul className="max-h-96 space-y-1 overflow-auto">
                       {data.quadrants.pendingApproval
                         .slice(0, 25)
-                        .map((r: any) => (
+                        .map((r: UnvalidatedJson) => (
                           <li
                             key={r.id}
                             className="flex items-start gap-2 rounded p-2 hover:bg-muted"
@@ -288,8 +295,8 @@ function Quadrant({
 }: {
   title: string;
   icon: React.ReactNode;
-  rows: any[];
-  renderRow: (r: any) => React.ReactNode;
+  rows: UnvalidatedJson[];
+  renderRow: (r: UnvalidatedJson) => React.ReactNode;
 }) {
   return (
     <Card>

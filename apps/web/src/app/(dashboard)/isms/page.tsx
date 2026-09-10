@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Shield,
   AlertTriangle,
   Bug,
   Zap,
@@ -100,19 +100,25 @@ function IsmsDashboardInner() {
   const t = useTranslations("isms");
   const ta = useTranslations("ismsAssessment");
   const router = useRouter();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [latestAssessment, setLatestAssessment] =
-    useState<AssessmentSummary | null>(null);
-  const [soaStats, setSoaStats] = useState<SoaStats | null>(null);
-  const [maturityStats, setMaturityStats] = useState<MaturityStats | null>(
-    null,
-  );
-  const [latestReview, setLatestReview] = useState<ReviewSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchDashboard = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die fünf Teilabrufe wurden immer
+  // gemeinsam geladen, daher eine Abfrage mit einem Ergebnisobjekt; jede
+  // nicht-ok-Antwort liefert wie vorher `null`.
+  const {
+    data: dashboard,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<{
+    data: DashboardData | null;
+    latestAssessment: AssessmentSummary | null;
+    soaStats: SoaStats | null;
+    maturityStats: MaturityStats | null;
+    latestReview: ReviewSummary | null;
+  }>({
+    queryKey: ["isms", "dashboard"],
+    queryFn: async () => {
       const [dashRes, assessRes, soaRes, matRes, revRes] = await Promise.all([
         fetch("/api/v1/isms/dashboard"),
         fetch("/api/v1/isms/assessments?limit=1"),
@@ -121,34 +127,43 @@ function IsmsDashboardInner() {
         fetch("/api/v1/isms/reviews?limit=1"),
       ]);
 
+      let data: DashboardData | null = null;
       if (dashRes.ok) {
         const json = await dashRes.json();
-        setData(json.data);
+        data = json.data ?? null;
       }
+      let latestAssessment: AssessmentSummary | null = null;
       if (assessRes.ok) {
         const json = await assessRes.json();
-        if (json.data?.length > 0) setLatestAssessment(json.data[0]);
+        if (json.data?.length > 0) latestAssessment = json.data[0];
       }
+      let soaStats: SoaStats | null = null;
       if (soaRes.ok) {
         const json = await soaRes.json();
-        if (json.stats) setSoaStats(json.stats);
+        if (json.stats) soaStats = json.stats;
       }
+      let maturityStats: MaturityStats | null = null;
       if (matRes.ok) {
         const json = await matRes.json();
-        if (json.stats) setMaturityStats(json.stats);
+        if (json.stats) maturityStats = json.stats;
       }
+      let latestReview: ReviewSummary | null = null;
       if (revRes.ok) {
         const json = await revRes.json();
-        if (json.data?.length > 0) setLatestReview(json.data[0]);
+        if (json.data?.length > 0) latestReview = json.data[0];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { data, latestAssessment, soaStats, maturityStats, latestReview };
+    },
+  });
+  const data = dashboard?.data ?? null;
+  const latestAssessment = dashboard?.latestAssessment ?? null;
+  const soaStats = dashboard?.soaStats ?? null;
+  const maturityStats = dashboard?.maturityStats ?? null;
+  const latestReview = dashboard?.latestReview ?? null;
 
-  useEffect(() => {
-    void fetchDashboard();
-  }, [fetchDashboard]);
+  const fetchDashboard = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   if (loading && !data) {
     return (
@@ -177,9 +192,9 @@ function IsmsDashboardInner() {
           variant="outline"
           size="sm"
           onClick={fetchDashboard}
-          disabled={loading}
+          disabled={isFetching}
         >
-          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCcw size={14} className={isFetching ? "animate-spin" : ""} />
         </Button>
       </div>
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
-  Clock,
   Plus,
   Loader2,
   RefreshCcw,
@@ -43,9 +43,6 @@ export default function ScheduledReportsPage() {
   const { formatDateTime } = useDateFormat();
   const t = useTranslations("reporting");
 
-  const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
-  const [templates, setTemplates] = useState<ReportTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
 
   // Form state
@@ -56,29 +53,40 @@ export default function ScheduledReportsPage() {
   const [formEmails, setFormEmails] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Zeitpläne und Vorlagen wurden
+  // immer zusammen geladen — daher eine Abfrage mit einem Objekt.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ schedules: ReportSchedule[]; templates: ReportTemplate[] }>({
+    queryKey: ["reports", "schedules"],
+    queryFn: async () => {
       const [schedulesRes, templatesRes] = await Promise.all([
         fetch("/api/v1/reports/schedules?limit=100"),
         fetch("/api/v1/reports/templates?limit=100"),
       ]);
+      let schedules: ReportSchedule[] = [];
+      let templates: ReportTemplate[] = [];
       if (schedulesRes.ok) {
-        const data = await schedulesRes.json();
-        setSchedules(data.data || []);
+        const json = await schedulesRes.json();
+        schedules = json.data || [];
       }
       if (templatesRes.ok) {
-        const data = await templatesRes.json();
-        setTemplates(data.data || []);
+        const json = await templatesRes.json();
+        templates = json.data || [];
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      return { schedules, templates };
+    },
+  });
+  const schedules = data?.schedules ?? [];
+  const templates = data?.templates ?? [];
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleCreate = async () => {
     if (!formTemplateId || !formEmails.trim()) return;

@@ -1,9 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDateFormat } from "@/lib/format-date";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import {
   ShieldCheck,
   ShieldAlert,
@@ -37,6 +39,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -179,9 +184,15 @@ const ACTION_COLORS: Record<string, string> = {
 // Helpers
 // ──────────────────────────────────────────────────────────────
 
-function formatTimestamp(iso: string): string {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema als Parameter statt als
+ * Konstante. Das Protokoll ist die Ansicht, in der Zeitstempel am dichtesten
+ * stehen — sie alle im deutschen Format auszugeben, waehrend die Spalten
+ * daneben englisch beschriftet sind, ist die sichtbarste Form dieses Mangels.
+ */
+function formatTimestamp(locale: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString("de-DE", {
+  return d.toLocaleString(locale, {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -463,6 +474,9 @@ function ChangeDetailDialog({
   canTombstone: boolean;
   onTombstoned: () => void;
 }) {
+  // [ARCTOS-FULL-2026-08-31 · OP-070] Gebietsschema aus `useDateFormat`
+  // (FE-HIGH-2) statt fest `de-DE`.
+  const { locale: numberLocale } = useDateFormat();
   const [tombstoneOpen, setTombstoneOpen] = useState(false);
   const [tombstoneReason, setTombstoneReason] = useState<string>("gdpr_art_17");
   const [tombstoneBusy, setTombstoneBusy] = useState(false);
@@ -615,7 +629,7 @@ function ChangeDetailDialog({
               <>
                 <dt className="text-gray-500">{t("tombstonedAt")}</dt>
                 <dd className="font-mono text-xs text-purple-700">
-                  {formatTimestamp(entry.piiTombstonedAt!)}
+                  {formatTimestamp(numberLocale, entry.piiTombstonedAt!)}
                 </dd>
 
                 <dt className="text-gray-500">{t("tombstoneReason")}</dt>
@@ -717,25 +731,14 @@ function ChangeDetailDialog({
 // ──────────────────────────────────────────────────────────────
 
 export default function AuditLogPage() {
+  const { locale: numberLocale } = useDateFormat();
   const t = useTranslations("auditLog");
   const { data: session } = useSession();
-
-  // Data state
-  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [integrity, setIntegrity] = useState<IntegrityState>({
-    kind: "loading",
-  });
 
   // Filter state
   const [actionFilter, setActionFilter] = useState<string>("__all__");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("__all__");
   const [includeDescendants, setIncludeDescendants] = useState(false);
-
-  // Response scope
-  const [scope, setScope] = useState<AuditLogListResponse["scope"] | null>(
-    null,
-  );
 
   // Dialog state
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(
@@ -761,15 +764,63 @@ export default function AuditLogPage() {
     currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
 
   // Anchor state
-  const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(
-    null,
-  );
   const [anchorBusy, setAnchorBusy] = useState(false);
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [anchorError, setAnchorError] = useState<string | null>(null);
 
   // Archive download state
   const [archiveBusy, setArchiveBusy] = useState(false);
+
+  // [OP-245 · Gestalt A] Drei Abrufe beim Einhaengen (Eintraege, Integritaet,
+  // Anker) liefen je in einem Effekt und schrieben Ergebnis und Ladezustand
+  // synchron zurueck (`react-hooks/set-state-in-effect`). Alle drei liegen
+  // jetzt in `@tanstack/react-query` (Muster aus Welle 7b,
+  // `catalogs/objects/page.tsx`); die Fehlerpfade sind unveraendert — die
+  // Abfragefunktionen fangen wie vorher selbst und liefern den Leer- bzw.
+  // Fehlerwert, den die Anzeige schon kannte.
+  const descendantsRequested = includeDescendants && canIncludeDescendants;
+
+  // Fetch audit log entries
+  const {
+    data: entriesBundle,
+    isPending: loading,
+    refetch: refetchEntries,
+  } = useQuery<{
+    entries: AuditLogEntry[];
+    scope: AuditLogListResponse["scope"] | null;
+  }>({
+    queryKey: [
+      "audit-log",
+      "entries",
+      actionFilter,
+      entityTypeFilter,
+      descendantsRequested,
+    ],
+    queryFn: async () => {
+      try {
+        const params = new URLSearchParams({ limit: "50" });
+        if (actionFilter !== "__all__") params.set("action", actionFilter);
+        if (entityTypeFilter !== "__all__")
+          params.set("entity_type", entityTypeFilter);
+        if (descendantsRequested) {
+          params.set("includeDescendants", "true");
+        }
+
+        const res = await fetch(`/api/v1/audit-log?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as AuditLogListResponse;
+        return { entries: json.data, scope: json.scope ?? null };
+      } catch {
+        return { entries: [], scope: null };
+      }
+    },
+  });
+  const entries = useMemo(() => entriesBundle?.entries ?? [], [entriesBundle]);
+  const scope = entriesBundle?.scope ?? null;
+
+  const fetchEntries = useCallback(async () => {
+    await refetchEntries();
+  }, [refetchEntries]);
 
   // Derive unique entity types from data
   const entityTypes = useMemo(() => {
@@ -780,69 +831,76 @@ export default function AuditLogPage() {
     return Array.from(set).sort();
   }, [entries]);
 
-  // Fetch audit log entries
-  const fetchEntries = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      if (actionFilter !== "__all__") params.set("action", actionFilter);
-      if (entityTypeFilter !== "__all__")
-        params.set("entity_type", entityTypeFilter);
-      if (includeDescendants && canIncludeDescendants) {
-        params.set("includeDescendants", "true");
-      }
-
-      const res = await fetch(`/api/v1/audit-log?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as AuditLogListResponse;
-      setEntries(json.data);
-      setScope(json.scope ?? null);
-    } catch {
-      setEntries([]);
-      setScope(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    actionFilter,
-    entityTypeFilter,
-    includeDescendants,
-    canIncludeDescendants,
-  ]);
-
   // Fetch integrity check — ADR-011 rev.2 per-tenant endpoint
-  const fetchIntegrity = useCallback(async () => {
-    setIntegrity({ kind: "loading" });
-    try {
-      // 503 means "chain broken" — the body is still valid JSON, we read it
-      const res = await fetch("/api/v1/audit-log/integrity");
-      if (res.status !== 200 && res.status !== 503) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const json = (await res.json()) as { data: IntegrityCheckResult };
-      setIntegrity(
-        json.data.healthy
+  const {
+    data: integrityResult,
+    isFetching: integrityFetching,
+    refetch: refetchIntegrity,
+  } = useQuery<IntegrityState>({
+    queryKey: ["audit-log", "integrity"],
+    queryFn: async () => {
+      try {
+        // 503 means "chain broken" — the body is still valid JSON, we read it
+        const res = await fetch("/api/v1/audit-log/integrity");
+        // [E2E-TRIAGE-3 · 2026-09-02] A throttled check is not a failed check.
+        //
+        // Every non-200/503 became `HTTP <status>` in the panel, and on THIS
+        // panel an error reads as "the audit trail could not be verified" —
+        // indistinguishable from a broken hash chain. A 429 is neither: the
+        // verification simply did not run. Say so, and say when to retry.
+        if (res.status === 429) {
+          const retryAfter = Number(res.headers.get("Retry-After") ?? "0");
+          throw new Error(
+            retryAfter > 0
+              ? `Integritätsprüfung ist aktuell begrenzt — erneut möglich in ${retryAfter}s. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).`
+              : "Integritätsprüfung ist aktuell begrenzt. Der Audit-Trail wurde nicht geprüft (nicht: nicht bestanden).",
+          );
+        }
+        if (res.status !== 200 && res.status !== 503) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const json = (await res.json()) as { data: IntegrityCheckResult };
+        return json.data.healthy
           ? { kind: "healthy", data: json.data }
-          : { kind: "unhealthy", data: json.data },
-      );
-    } catch (err) {
-      setIntegrity({
-        kind: "error",
-        message: err instanceof Error ? err.message : "Unknown error",
-      });
-    }
-  }, []);
+          : { kind: "unhealthy", data: json.data };
+      } catch (err) {
+        return {
+          kind: "error",
+          message: err instanceof Error ? err.message : "Unknown error",
+        };
+      }
+    },
+  });
+  // Vorher setzte jeder Aufruf zuerst `{ kind: "loading" }`; das Abzeichen
+  // zeigte also auch bei einer erneuten Pruefung „wird geprueft". `isFetching`
+  // bildet genau das ab, `isPending` nur den ersten Lauf.
+  const integrity: IntegrityState =
+    integrityFetching || !integrityResult
+      ? { kind: "loading" }
+      : integrityResult;
+
+  const fetchIntegrity = useCallback(async () => {
+    await refetchIntegrity();
+  }, [refetchIntegrity]);
 
   // Fetch anchor status (ADR-011 rev.3)
+  const { data: anchorStatus = null, refetch: refetchAnchorStatus } =
+    useQuery<AnchorStatusResponse | null>({
+      queryKey: ["audit-log", "anchor"],
+      queryFn: async () => {
+        try {
+          const res = await fetch("/api/v1/audit-log/anchor");
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return (await res.json()) as AnchorStatusResponse;
+        } catch {
+          return null;
+        }
+      },
+    });
+
   const fetchAnchorStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/v1/audit-log/anchor");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setAnchorStatus((await res.json()) as AnchorStatusResponse);
-    } catch {
-      setAnchorStatus(null);
-    }
-  }, []);
+    await refetchAnchorStatus();
+  }, [refetchAnchorStatus]);
 
   async function triggerAnchor() {
     setAnchorBusy(true);
@@ -917,18 +975,6 @@ export default function AuditLogPage() {
     }
   }
 
-  useEffect(() => {
-    void fetchIntegrity();
-  }, [fetchIntegrity]);
-
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries]);
-
-  useEffect(() => {
-    void fetchAnchorStatus();
-  }, [fetchAnchorStatus]);
-
   // Table columns
   const columns = useMemo<ColumnDef<AuditLogEntry, unknown>[]>(
     () => [
@@ -939,7 +985,7 @@ export default function AuditLogPage() {
         ),
         cell: ({ getValue }) => (
           <span className="whitespace-nowrap text-xs text-gray-600">
-            {formatTimestamp(getValue() as string)}
+            {formatTimestamp(numberLocale, getValue() as string)}
           </span>
         ),
       },
@@ -1032,7 +1078,13 @@ export default function AuditLogPage() {
         },
       },
     ],
-    [t],
+    // [Welle 7a · OP-080] `numberLocale` gehoert in die Abhaengigkeiten. Die
+    // Spaltendefinitionen formatieren damit Datum bzw. Zahl; ohne den Eintrag
+    // blieb die Tabelle nach einem Sprachwechsel in der alten Schreibweise
+    // stehen (deutsch „23.05.2026" auf der englischen Oberflaeche), denn der
+    // Sprachwaehler haengt Clientkomponenten nicht neu ein — er setzt nur einen
+    // Keks und ruft `router.refresh()`.
+    [t, numberLocale],
   );
 
   // Row click handler
@@ -1202,17 +1254,31 @@ function AuditLogTable({
   // We render DataTable but wrap rows with click handlers via a wrapper
   // DataTable does not natively support row click, so we wrap it and
   // add a click listener at the table container level
+
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One resolver for both input
+  // modalities, so mouse and keyboard cannot drift apart.
+  const activateRowFrom = (target: EventTarget | null) => {
+    const row = (target as HTMLElement | null)?.closest?.(
+      "tbody tr[data-row-index]",
+    );
+    if (!row) return;
+    const idx = Number(row.getAttribute("data-row-index"));
+    const entry = data[idx];
+    if (!Number.isNaN(idx) && entry) onRowClick(entry);
+  };
+
   return (
+    // The container is deliberately NOT `role="button"` and NOT focusable: it
+    // wraps an entire table, so a tab stop here would announce "button" for
+    // the whole grid and hand the user one target with no predictable effect.
+    // The ROWS are focusable instead (`tabIndex={0}` in
+    // `DataTableWithRowIndex`); their key events bubble up here, where the
+    // same `closest()` lookup resolves the row that actually has focus. That
+    // is the keyboard equivalent of the click path — WCAG 2.1.1.
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- keyboard activation is implemented on the focusable rows, see above
     <div
-      onClick={(e) => {
-        const target = e.target as HTMLElement;
-        const row = target.closest("tbody tr[data-row-index]");
-        if (!row) return;
-        const idx = Number(row.getAttribute("data-row-index"));
-        if (!Number.isNaN(idx) && data[idx]) {
-          onRowClick(data[idx]);
-        }
-      }}
+      onClick={(e) => activateRowFrom(e.target)}
+      onKeyDown={(e) => activateOnKey(e, () => activateRowFrom(e.target))}
     >
       <DataTableWithRowIndex
         data={data}
@@ -1232,15 +1298,19 @@ function AuditLogTable({
 
 import {
   flexRender,
+  type ColumnFiltersState,
+  type SortingState,
+  type ColumnVisibilityState as VisibilityState,
+  type RowData,
+} from "@tanstack/react-table";
+// [OP-234] v9: the v8-shaped hook and row-model factories live in `legacy`.
+import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-} from "@tanstack/react-table";
+  useLegacyTable,
+} from "@tanstack/react-table/legacy";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
@@ -1251,7 +1321,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-function DataTableWithRowIndex<TData>({
+function DataTableWithRowIndex<TData extends RowData>({
   data,
   columns,
   searchKey,
@@ -1270,7 +1340,7 @@ function DataTableWithRowIndex<TData>({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  const table = useReactTable({
+  const table = useLegacyTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
@@ -1281,7 +1351,7 @@ function DataTableWithRowIndex<TData>({
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     state: { sorting, columnFilters, columnVisibility },
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
   return (
@@ -1326,7 +1396,13 @@ function DataTableWithRowIndex<TData>({
                 <TableRow
                   key={row.id}
                   data-row-index={row.index}
-                  className="cursor-pointer hover:bg-gray-50"
+                  // [WP12 · S14-09] The row is the activation target (the
+                  // container above delegates Enter/Space from here). Without
+                  // this the entry detail was reachable by mouse only.
+                  // `<tr>` keeps its row semantics — a `role="button"` here
+                  // would remove the row from the grid for a screen reader.
+                  tabIndex={0}
+                  className="cursor-pointer hover:bg-gray-50 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
@@ -1359,19 +1435,29 @@ function DataTableWithRowIndex<TData>({
             Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount()}
           </span>
+          {/* [E2E-TRIAGE-2026-09-02 · C-13] Icon-only buttons need an
+              accessible name (axe `button-name`, impact critical). This page
+              carries a private copy of the pagination block from
+              components/ui/data-table.tsx, which is fixed the same way. */}
           <button
+            type="button"
+            aria-label="Previous page"
+            title="Previous page"
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <button
+            type="button"
+            aria-label="Next page"
+            title="Next page"
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="rounded-md border border-gray-300 p-1.5 disabled:opacity-50 hover:bg-gray-50"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>
       </div>

@@ -8,7 +8,7 @@
 //   - duration is included in the finish log
 //   - cron name is included in every log line
 
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { withCronInstrumentation } from "../../src/lib/cron-instrument";
 
 type LogLine = Record<string, unknown>;

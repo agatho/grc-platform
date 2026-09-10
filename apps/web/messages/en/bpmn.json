@@ -1,0 +1,49 @@
+{
+  "a11y": {
+    "canvasLabel": "BPMN process diagram",
+    "editorLabel": "BPMN process diagram, editable",
+    "canvasHint": "Interactive diagram. Arrow keys pan, plus and minus zoom, 0 fits the diagram to the viewport. An equivalent table of all diagram elements is available below the diagram.",
+    "loading": "Loading diagram",
+    "tableHeading": "Diagram elements as a table",
+    "tableShow": "Show element table",
+    "tableHide": "Hide element table",
+    "tableEmpty": "The diagram contains no elements.",
+    "colName": "Label",
+    "colType": "Element type",
+    "colId": "Element ID",
+    "riskBadge": "{count, plural, =0 {No risk} one {1 risk} other {# risks}} linked, highest risk score {score}",
+    "controlBadge": "{effective} of {total} linked controls are effective",
+    "findingBadge": "{open, plural, one {1 open finding} other {# open findings}}, {critical} of them critical",
+    "lodStripe": "Line of defence: {lod}",
+    "drillDown": "Go to linked sub-process {name}"
+  },
+  "grcView": {
+    "label": "GRC view",
+    "off": "GRC view: off",
+    "frameworkLabel": "Framework",
+    "frameworkOff": "Framework: all",
+    "loading": "Loading GRC data …",
+    "error": "GRC data not loaded ({reason})",
+    "computedAt": "As of: {timestamp}",
+    "views": {
+      "modeling": "Modelling",
+      "risk-control": "Risk & control",
+      "compliance": "Compliance & evidence",
+      "privacy": "Data protection",
+      "continuity": "Continuity (BCM)",
+      "operations": "Operations & efficiency",
+      "organization": "Organisation & SoD",
+      "architecture": "Architecture (EAM)",
+      "responsibility": "Responsibility"
+    }
+  },
+  "chrome": {
+    "disabledReason": "Editing requires the process modeller role."
+  },
+  "plane": {
+    "label": "Level",
+    "up": "Back one level",
+    "breadcrumb": "Diagram levels",
+    "openHint": "Double-click or press O to open a sub-process level."
+  }
+}

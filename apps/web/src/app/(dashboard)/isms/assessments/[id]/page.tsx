@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
@@ -40,50 +41,48 @@ function AssessmentDetailInner() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [assessment, setAssessment] = useState<AssessmentRun | null>(null);
-  const [evaluations, setEvaluations] = useState<AssessmentControlEval[]>([]);
-  const [riskEvals, setRiskEvals] = useState<AssessmentRiskEval[]>([]);
-  const [progress, setProgress] = useState<Record<string, unknown> | null>(
-    null,
-  );
   const [activeTab, setActiveTab] = useState<
     "overview" | "evaluations" | "risks"
   >("overview");
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die vier Teilabrufe wurden immer
+  // gemeinsam geladen und gemeinsam verwendet, daher eine Abfrage mit einem
+  // Ergebnisobjekt; jede nicht-ok-Antwort liefert wie vorher ihren Leerwert.
+  const { data, isPending: loading } = useQuery<{
+    assessment: AssessmentRun | null;
+    evaluations: AssessmentControlEval[];
+    riskEvals: AssessmentRiskEval[];
+    progress: Record<string, unknown> | null;
+  }>({
+    queryKey: ["isms", "assessments", id, "detail"],
+    queryFn: async () => {
       const [aRes, eRes, rRes, pRes] = await Promise.all([
         fetch(`/api/v1/isms/assessments/${id}`),
         fetch(`/api/v1/isms/assessments/${id}/evaluations?limit=100`),
         fetch(`/api/v1/isms/assessments/${id}/risk-evaluations?limit=100`),
         fetch(`/api/v1/isms/assessments/${id}/progress`),
       ]);
-      if (aRes.ok) {
-        const j = await aRes.json();
-        setAssessment(j.data);
-      }
-      if (eRes.ok) {
-        const j = await eRes.json();
-        setEvaluations(j.data ?? []);
-      }
-      if (rRes.ok) {
-        const j = await rRes.json();
-        setRiskEvals(j.data ?? []);
-      }
-      if (pRes.ok) {
-        const j = await pRes.json();
-        setProgress(j.data);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      const assessment: AssessmentRun | null = aRes.ok
+        ? ((await aRes.json()).data ?? null)
+        : null;
+      const evaluations: AssessmentControlEval[] = eRes.ok
+        ? ((await eRes.json()).data ?? [])
+        : [];
+      const riskEvals: AssessmentRiskEval[] = rRes.ok
+        ? ((await rRes.json()).data ?? [])
+        : [];
+      const progress: Record<string, unknown> | null = pRes.ok
+        ? ((await pRes.json()).data ?? null)
+        : null;
+      return { assessment, evaluations, riskEvals, progress };
+    },
+  });
+  const assessment = data?.assessment ?? null;
+  const evaluations = data?.evaluations ?? [];
+  const riskEvals = data?.riskEvals ?? [];
+  const progress = data?.progress ?? null;
 
   if (loading && !assessment) {
     return (

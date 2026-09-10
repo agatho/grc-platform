@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { X, ChevronDown, Loader2, Download, UserPlus } from "lucide-react";
+import { X, ChevronDown, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ProcessStatus } from "@grc/shared";
 

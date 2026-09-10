@@ -3,10 +3,16 @@ import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { assignAssetCpeSchema } from "@grc/shared";
+import { parseQueryParams, uuidQueryParam } from "@/lib/query-schema";
 import { extractCpeVendorProduct } from "@grc/shared";
+import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/isms/assets/:id/cpe — Get CPE identifiers for asset
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -35,10 +41,9 @@ export async function GET(
     .where(and(eq(assetCpe.assetId, id), eq(assetCpe.orgId, ctx.orgId)));
 
   return Response.json({ data: cpes });
-}
-
+});
 // POST /api/v1/isms/assets/:id/cpe — Assign CPE to asset
-export async function POST(
+export const POST = withErrorHandler(async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -89,10 +94,20 @@ export async function POST(
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
-
+});
 // DELETE /api/v1/isms/assets/:id/cpe — Remove CPE from asset
-export async function DELETE(
+// #S04-09 (ARCTOS-FULL-2026-08-31): query parameters are now validated
+// against a schema instead of being read as `string | null` and cast
+// with `as <enum>`. An unknown filter value used to reach Postgres and
+// surface as a 500 (`invalid input value for enum …`); it is a 422 now,
+// and free-text search terms are length-bounded.
+const cpeDeleteQuerySchema = z.object({
+  // Was read raw and passed to eq(): a non-UUID reached Postgres as
+  // "invalid input syntax for type uuid" (500 instead of 400).
+  cpeId: uuidQueryParam,
+});
+
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -104,7 +119,13 @@ export async function DELETE(
 
   const { id } = await params;
   const url = new URL(req.url);
-  const cpeId = url.searchParams.get("cpeId");
+  const q = parseQueryParams(cpeDeleteQuerySchema, url.searchParams);
+  if (!q.ok)
+    return Response.json(
+      { error: q.message, details: q.details },
+      { status: 422 },
+    );
+  const cpeId = q.data.cpeId;
 
   if (!cpeId) {
     return Response.json(
@@ -132,4 +153,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { deleted: true } });
-}
+});

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { login } from "../fixtures/auth";
+import { login, awaitSessionRoles } from "../fixtures/auth";
 
 // F-15: /audits/[id]/checklists/generate falls back to catalog_entry when
 // no org-owned controls exist. Must produce exactly as many items as the
@@ -30,7 +30,10 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
 
   // Re-login to pick up the new admin role.
   await page.goto("/dashboard");
-  await page.waitForTimeout(1500);
+  // [ARCTOS-FULL-2026-08-31 / WP11 · S11-15] Was `waitForTimeout(1500)`: a
+  // guess at how long the JWT needs to pick up the new role. Wait for the
+  // session to actually carry it.
+  await awaitSessionRoles(page, 1);
 
   // Switch to the fresh org.
   await page.evaluate(async (id) => {
@@ -42,15 +45,27 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
   }, orgId);
 
   // Activate ISO 27001 Annex A.
+  //
+  // [E2E-TRIAGE-2026-09-02] Was `?limit=200`, which `paginate()` refuses with
+  // 422 ("must be <= 100 — use page+limit to traverse larger result sets").
+  // `catalogs.data` was then `undefined`, `iso` was `undefined`, and the run
+  // failed on `expect(iso).toBeTruthy()` — i.e. a pagination error reported as
+  // "the ISO 27001 catalogue is not seeded". Assert the status too, so the
+  // next such refusal names itself.
   const catalogs = await page.evaluate(async () => {
-    const r = await fetch("/api/v1/catalogs?type=control&limit=200");
-    return await r.json();
+    const r = await fetch("/api/v1/catalogs?type=control&limit=100");
+    return { status: r.status, body: await r.json() };
   });
+  expect(catalogs.status, JSON.stringify(catalogs.body)).toBe(200);
   type Cat = { id: string; name: string };
-  const iso = (catalogs.data ?? []).find((c: Cat) =>
+  const iso = (catalogs.body.data ?? []).find((c: Cat) =>
     /ISO.?IEC 27001:?2022 Annex A/i.test(c.name),
   );
-  expect(iso).toBeTruthy();
+  expect(
+    iso,
+    "no 'ISO/IEC 27001:2022 Annex A' control catalogue in the response — " +
+      "run `npm run db:seed:demo` (it applies the reference catalogues)",
+  ).toBeTruthy();
 
   const activationStatus = await page.evaluate(
     async ({ oId, cId }) => {

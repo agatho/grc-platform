@@ -22,7 +22,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/audit-mgmt/audits — Create audit (with work_item auto-creation)
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "auditor", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/audit-mgmt/audits — List audits with filters
 export const GET = withErrorHandler(async function GET(req: Request) {

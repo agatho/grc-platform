@@ -2,26 +2,21 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { ArrowLeft, Loader2, Link2, Plus, History, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
-import type { WorkItem, WorkItemLink } from "@grc/shared";
+import type { WorkItem } from "@grc/shared";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { DataTable } from "@/components/ui/data-table";
 import { useDateFormat } from "@/lib/format-date";
 import {
   Dialog,
@@ -38,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { ModuleIcon } from "@/components/module/module-icon";
 import { useTabNavigation } from "@/hooks/use-tab-navigation";
 
 // ---------------------------------------------------------------------------
@@ -376,26 +371,30 @@ function LinksTab({
   t: ReturnType<typeof useTranslations>;
 }) {
   const router = useRouter();
-  const [links, setLinks] = useState<LinkedWorkItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const fetchLinks = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage.
+  const {
+    data: links = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<LinkedWorkItem[]>({
+    queryKey: ["work-items", itemId, "links"],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/work-items/${itemId}/links`);
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) return [];
       const json = (await res.json()) as { data: LinkedWorkItem[] };
-      setLinks(json.data);
-    } catch {
-      // empty
-    } finally {
-      setLoading(false);
-    }
-  }, [itemId]);
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    void fetchLinks();
-  }, [fetchLinks]);
+  const fetchLinks = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const outgoing = links.filter((l) => l.direction === "outgoing");
   const incoming = links.filter((l) => l.direction === "incoming");
@@ -510,7 +509,6 @@ function LinksTab({
         onOpenChange={setDialogOpen}
         sourceId={itemId}
         onLinkAdded={() => {
-          setLoading(true);
           void fetchLinks();
         }}
         t={t}
@@ -530,7 +528,6 @@ function HistoryTab({
   itemId: string;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const tAudit = useTranslations("auditLog");
   const { formatDateTime } = useDateFormat();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -629,38 +626,43 @@ function HistoryTab({
 
 export default function WorkItemDetailPage() {
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const itemId = params.id as string;
 
   const t = useTranslations("workItems");
   const tCommon = useTranslations("common");
   const { openTab } = useTabNavigation();
 
-  const [item, setItem] = useState<WorkItemDetail | null>(null);
-  const [loading, setLoading] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
 
-  const fetchItem = useCallback(async () => {
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort ergibt wie
+  // vorher `null` („nicht gefunden"); ein Netzfehler wird nicht mehr
+  // verschluckt, sondern landet im Fehlerzustand der Abfrage — `item` ist
+  // dann ebenfalls `null`.
+  const {
+    data: item = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<WorkItemDetail | null>({
+    queryKey: ["work-items", itemId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/work-items/${itemId}`);
-      if (!res.ok) throw new Error("Not found");
+      if (!res.ok) return null;
       const json = (await res.json()) as { data: WorkItemDetail };
-      setItem(json.data);
-    } catch {
-      setItem(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [itemId]);
+      return json.data;
+    },
+  });
 
-  useEffect(() => {
-    void fetchItem();
-  }, [fetchItem]);
+  const fetchItem = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
-  // Register tab when item loads
+  // Register tab when item loads.
+  // [Welle 7a · OP-080] `itemId` fehlte — siehe /assets/[id].
   useEffect(() => {
     if (item) {
-      const IconComp = item.typeIcon ? getLucideIcon(item.typeIcon) : null;
       openTab({
         id: `wi-${itemId}`,
         label: item.elementId ? `${item.elementId} - ${item.name}` : item.name,
@@ -668,7 +670,7 @@ export default function WorkItemDetailPage() {
         icon: item.typeIcon,
       });
     }
-  }, [item]);
+  }, [item, itemId, openTab]);
 
   const handleTransition = async (newStatus: string) => {
     setTransitioning(true);
@@ -711,7 +713,6 @@ export default function WorkItemDetailPage() {
     );
   }
 
-  const IconComp = item.typeIcon ? getLucideIcon(item.typeIcon) : null;
   const validTransitions = STATUS_TRANSITIONS[item.status] ?? [];
 
   return (
@@ -719,9 +720,16 @@ export default function WorkItemDetailPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3">
-          {IconComp && (
+          {/* [OP-245] `<ModuleIcon>` statt eines Nachschlags im Rumpf — dieselbe
+              Aufloesung wie Welle 7a (`module-icon.tsx`) fuer
+              `react-hooks/static-components`. */}
+          {item.typeIcon && (
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100">
-              <IconComp size={20} className="text-gray-600" />
+              <ModuleIcon
+                name={item.typeIcon}
+                size={20}
+                className="text-gray-600"
+              />
             </div>
           )}
           <div>

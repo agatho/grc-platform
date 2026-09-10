@@ -18,8 +18,12 @@
 
 import { db, frameworkMapping, soaEntry, catalog, catalogEntry } from "@grc/db";
 import { withAuth } from "@/lib/api";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 const gapInputSchema = z.object({
   sourceFramework: z.string().min(1).max(50),
@@ -28,7 +32,7 @@ const gapInputSchema = z.object({
   onlyImplementedSource: z.boolean().default(true),
 });
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
 
@@ -291,8 +295,7 @@ export async function POST(req: Request) {
       ),
     },
   });
-}
-
+});
 function buildSummary(
   pct: number,
   covered: number,

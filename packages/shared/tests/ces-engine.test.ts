@@ -1,7 +1,7 @@
 // Unit tests for Sprint 11 Control Effectiveness Score (CES) Engine
 // Tests computeCES, computeResidualScore, computeTrend, isWithinSla
 
-import { describe, it, expect, vi, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   computeCES,
   computeResidualScore,

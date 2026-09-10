@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Plus, MoreHorizontal, Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDateFormat } from "@/lib/format-date";
+import { fetchAllPages } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -154,17 +156,6 @@ function CreateTaskDialog({
   orgUsers: OrgUser[];
 }) {
   const t = useTranslations("tasks");
-  const tActions = useTranslations("actions");
-  const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);
-
-  useEffect(() => {
-    if (open) setForm(EMPTY_FORM);
-  }, [open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(form);
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -173,134 +164,175 @@ function CreateTaskDialog({
           <DialogTitle>{t("create")}</DialogTitle>
           <DialogDescription>{t("createDescription")}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="task-title">{t("titleField")} *</Label>
-            <Input
-              id="task-title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-              maxLength={255}
-              placeholder={t("titlePlaceholder")}
-            />
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="task-desc">{t("description")}</Label>
-            <Textarea
-              id="task-desc"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-              rows={3}
-              placeholder={t("descriptionPlaceholder")}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {/* Priority */}
-            <div className="space-y-2">
-              <Label htmlFor="task-priority">{t("priority")}</Label>
-              <Select
-                value={form.priority}
-                onValueChange={(v) =>
-                  setForm({ ...form, priority: v as TaskFormData["priority"] })
-                }
-              >
-                <SelectTrigger id="task-priority">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRIORITIES.map((p) => (
-                    <SelectItem key={p} value={p}>
-                      {t(`priorities.${p}`)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Due Date */}
-            <div className="space-y-2">
-              <Label htmlFor="task-due">{t("dueDate")}</Label>
-              <Input
-                id="task-due"
-                type="date"
-                value={form.dueDate}
-                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              />
-            </div>
-          </div>
-
-          {/* Assignee */}
-          <div className="space-y-2">
-            <Label htmlFor="task-assignee">{t("assignee")}</Label>
-            <Select
-              value={form.assigneeId || "__none__"}
-              onValueChange={(v) =>
-                setForm({ ...form, assigneeId: v === "__none__" ? "" : v })
-              }
-            >
-              <SelectTrigger id="task-assignee">
-                <SelectValue placeholder={t("selectAssignee")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">{t("unassigned")}</SelectItem>
-                {orgUsers.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name} ({u.email})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Source entity (optional) */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="task-source-type">{t("sourceEntityType")}</Label>
-              <Input
-                id="task-source-type"
-                value={form.sourceEntityType}
-                onChange={(e) =>
-                  setForm({ ...form, sourceEntityType: e.target.value })
-                }
-                placeholder={t("sourceEntityTypePlaceholder")}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="task-source-id">{t("sourceEntityId")}</Label>
-              <Input
-                id="task-source-id"
-                value={form.sourceEntityId}
-                onChange={(e) =>
-                  setForm({ ...form, sourceEntityId: e.target.value })
-                }
-                placeholder={t("sourceEntityIdPlaceholder")}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              {tActions("cancel")}
-            </Button>
-            <Button type="submit" disabled={saving || !form.title.trim()}>
-              {saving ? <Loader2 size={16} className="animate-spin" /> : null}
-              {tActions("create")}
-            </Button>
-          </DialogFooter>
-        </form>
+        <CreateTaskForm
+          onOpenChange={onOpenChange}
+          onSave={onSave}
+          saving={saving}
+          orgUsers={orgUsers}
+        />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CreateTaskForm({
+  onOpenChange,
+  onSave,
+  saving,
+  orgUsers,
+}: {
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: TaskFormData) => void;
+  saving: boolean;
+  orgUsers: OrgUser[];
+}) {
+  // [Welle 7b · OP-080, Gestalt B] Hier stand `useEffect(() => { if (open)
+  // setForm(EMPTY_FORM); }, [open])` — ein Formular-Reset beim Oeffnen, also
+  // `react-hooks/set-state-in-effect`. Diese Gestalt ist KEIN Abruf beim
+  // Einhaengen; `@tanstack/react-query` waere hier keine Antwort, sondern eine
+  // Verschlechterung.
+  //
+  // Die Antwort, die React selbst gibt, ist das EINHAENGEN: `DialogContent`
+  // liegt hinter Radix' `DialogPortal` ohne `forceMount`, seine Kinder sind
+  // also nur eingehaengt, solange der Dialog offen ist. Der Formularzustand
+  // ist deshalb in ein Bauteil UNTERHALB von `DialogContent` gewandert und
+  // entsteht bei jedem Oeffnen neu — leer, ohne dass ihn ein Effekt leeren
+  // muss.
+
+  const t = useTranslations("tasks");
+  const tActions = useTranslations("actions");
+  const [form, setForm] = useState<TaskFormData>(EMPTY_FORM);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(form);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Title */}
+      <div className="space-y-2">
+        <Label htmlFor="task-title">{t("titleField")} *</Label>
+        <Input
+          id="task-title"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          required
+          maxLength={255}
+          placeholder={t("titlePlaceholder")}
+        />
+      </div>
+
+      {/* Description */}
+      <div className="space-y-2">
+        <Label htmlFor="task-desc">{t("description")}</Label>
+        <Textarea
+          id="task-desc"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          rows={3}
+          placeholder={t("descriptionPlaceholder")}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        {/* Priority */}
+        <div className="space-y-2">
+          <Label htmlFor="task-priority">{t("priority")}</Label>
+          <Select
+            value={form.priority}
+            onValueChange={(v) =>
+              setForm({ ...form, priority: v as TaskFormData["priority"] })
+            }
+          >
+            <SelectTrigger id="task-priority">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PRIORITIES.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {t(`priorities.${p}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Due Date */}
+        <div className="space-y-2">
+          <Label htmlFor="task-due">{t("dueDate")}</Label>
+          <Input
+            id="task-due"
+            type="date"
+            value={form.dueDate}
+            onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+          />
+        </div>
+      </div>
+
+      {/* Assignee */}
+      <div className="space-y-2">
+        <Label htmlFor="task-assignee">{t("assignee")}</Label>
+        <Select
+          value={form.assigneeId || "__none__"}
+          onValueChange={(v) =>
+            setForm({ ...form, assigneeId: v === "__none__" ? "" : v })
+          }
+        >
+          <SelectTrigger id="task-assignee">
+            <SelectValue placeholder={t("selectAssignee")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">{t("unassigned")}</SelectItem>
+            {orgUsers.map((u) => (
+              <SelectItem key={u.id} value={u.id}>
+                {u.name} ({u.email})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Source entity (optional) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="task-source-type">{t("sourceEntityType")}</Label>
+          <Input
+            id="task-source-type"
+            value={form.sourceEntityType}
+            onChange={(e) =>
+              setForm({ ...form, sourceEntityType: e.target.value })
+            }
+            placeholder={t("sourceEntityTypePlaceholder")}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="task-source-id">{t("sourceEntityId")}</Label>
+          <Input
+            id="task-source-id"
+            value={form.sourceEntityId}
+            onChange={(e) =>
+              setForm({ ...form, sourceEntityId: e.target.value })
+            }
+            placeholder={t("sourceEntityIdPlaceholder")}
+          />
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+        >
+          {tActions("cancel")}
+        </Button>
+        <Button type="submit" disabled={saving || !form.title.trim()}>
+          {saving ? <Loader2 size={16} className="animate-spin" /> : null}
+          {tActions("create")}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
 
@@ -313,9 +345,6 @@ export default function TasksPage() {
   const { data: session } = useSession();
   const { formatDate } = useDateFormat();
 
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
   const [activeTab, setActiveTab] = useState<"my" | "all">("my");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
   const [priorityFilter, setPriorityFilter] = useState<string>("__all__");
@@ -334,46 +363,58 @@ export default function TasksPage() {
   );
 
   // Fetch tasks
-  const fetchTasks = useCallback(async (view: "my" | "all") => {
-    setLoading(true);
-    setError(false);
-    try {
-      const params = new URLSearchParams({ view, limit: "200" });
-      const res = await fetch(`/api/v1/tasks?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch tasks");
-      const json = await res.json();
-      setTasks(json.data ?? []);
-    } catch {
-      setError(true);
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Der Reiter steht im Schlüssel;
+  // beim Reiterwechsel bleibt die alte Liste stehen, bis die neue da ist —
+  // wie vorher durch `loading && tasks.length === 0`. Ein Fehler des Helfers
+  // landet im Fehlerzustand der Abfrage (`isError`), die Liste ist dann leer.
+  const {
+    data: tasks = [],
+    isPending: loading,
+    isError: error,
+    refetch,
+  } = useQuery<Task[]>({
+    queryKey: ["tasks", { view: activeTab }],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      // [ARCTOS-FULL-2026-08-31 · OP-050] `limit: "200"` ⇒ 422 ⇒ die
+      // Aufgabenliste war für jeden Mandanten leer. Der `catch` unten hat den
+      // Fehlerzustand zwar gesetzt, aber nur als „Failed to fetch tasks" —
+      // die Ursache stand nirgends. Jetzt geblättert; der Helfer wirft mit
+      // Status und Detail aus dem problem+json.
+      return fetchAllPages<Task>("/api/v1/tasks", {
+        params: { view: activeTab },
+      });
+    },
+  });
+  // Die Aufrufer übergeben weiterhin den Reiter; er ist stets der aktive
+  // (die Wiederholen-Schaltfläche liegt im jeweiligen Reiterinhalt), deshalb
+  // genügt ein erneuter Abruf der aktiven Abfrage.
+  const fetchTasks = useCallback(
+    async (_view: "my" | "all") => {
+      await refetch();
+    },
+    [refetch],
+  );
 
   // Fetch org users
   useEffect(() => {
-    fetch("/api/v1/users?limit=200")
-      .then((r) => {
-        if (!r.ok) throw new Error("Failed");
-        return r.json();
+    // [ARCTOS-FULL-2026-08-31 · OP-050] dito für die Zuweisungsauswahl.
+    fetchAllPages<Record<string, unknown>>("/api/v1/users")
+      .then((rows) => {
+        setOrgUsers(
+          rows.map((u) => ({
+            id: u.id as string,
+            name: (u.name as string) || (u.email as string),
+            email: u.email as string,
+          })),
+        );
       })
-      .then((json) => {
-        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
-          id: u.id as string,
-          name: (u.name as string) || (u.email as string),
-          email: u.email as string,
-        }));
-        setOrgUsers(users);
-      })
-      .catch(() => {
-        // Non-critical
+      .catch((err) => {
+        console.error("tasks: Nutzerliste nicht geladen", err);
       });
   }, []);
-
-  useEffect(() => {
-    void fetchTasks(activeTab);
-  }, [activeTab, fetchTasks]);
 
   // Create task
   const handleCreate = async (data: TaskFormData) => {

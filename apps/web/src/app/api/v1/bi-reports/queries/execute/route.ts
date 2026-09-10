@@ -3,6 +3,11 @@ import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { executeBiQuerySchema } from "@grc/shared";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/bi-reports/queries/execute — Execute read-only query (RLS enforced)
 //
@@ -41,7 +46,7 @@ import { executeBiQuerySchema } from "@grc/shared";
 // return 500 — we NEVER fall through to an unguarded execution.
 const BI_QUERY_EXEC_ROLE = "grc_app";
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -145,9 +150,9 @@ export async function POST(req: Request) {
     // SET ROLE with SQLSTATE 22023 ("role \"grc_app\" does not exist").
     const pgCode = (err as { code?: string })?.code;
     if (pgCode === "22023" || /role .*does not exist/i.test(message)) {
-      console.error(
-        `[bi-reports/execute] SEC-F02 role '${BI_QUERY_EXEC_ROLE}' unavailable — refusing to run query unguarded`,
-        err,
+      log.error(
+        "[bi-reports/execute] SEC-F02: org-scoping role unavailable — refusing to run query unguarded",
+        { role: BI_QUERY_EXEC_ROLE, err },
       );
       return Response.json(
         {
@@ -167,7 +172,7 @@ export async function POST(req: Request) {
     // Postgres' raw error back to the client (it may include schema
     // names + table names from the failed query). validationError is
     // stored on the row for the admin to inspect.
-    console.error("[bi-reports/execute] query failed", err);
+    log.error("[bi-reports/execute] query failed", { err });
     return Response.json({ error: "Query execution failed" }, { status: 400 });
   }
-}
+});

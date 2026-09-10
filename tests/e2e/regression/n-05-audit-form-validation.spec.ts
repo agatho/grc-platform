@@ -57,10 +57,33 @@ test("W22-C1-05: Audit-Create UI form — required validation + happy path + per
   expect(badEnum.status).toBe(422);
 
   // Step 5: persistence
-  await page.goto(`/audit-mgmt/audits/${auditId}`);
-  await page
-    .waitForLoadState("networkidle", { timeout: 15_000 })
-    .catch(() => {});
-  const pageText = await page.locator("body").innerText();
-  expect(pageText).toContain(title);
+  //
+  // [E2E-TRIAGE-2026-09-02] Was `/audit-mgmt/audits/${auditId}`. There is no
+  // such route — `app/(dashboard)/audit-mgmt/` contains a single `page.tsx` and
+  // no `audits/` segment at all — so this navigated to the 404 page and the
+  // assertion below reported `expected "E2E-N5-…", received "404·"`: a wrong
+  // URL in the spec, reported as a persistence failure. The audit detail view
+  // is `app/(dashboard)/audit/executions/[id]/page.tsx`, which renders exactly
+  // the `audit` row this test creates via `/api/v1/audit-mgmt/audits`. The
+  // assertion is unchanged.
+  await page.goto(`/audit/executions/${auditId}`);
+  // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+  //   await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(…)
+  //   const pageText = await page.locator("body").innerText();
+  //   expect(pageText).toContain(<Titel>);
+  // `waitForLoadState("networkidle")` kehrt sofort zurück, wenn im Moment des
+  // Aufrufs zufällig kein Abruf läuft — direkt nach `goto()` ist das der
+  // Regelfall, weil die Seite ihre Daten erst nach der Hydrierung holt.
+  // Danach liest `innerText()` **einmal**, und `expect(zeichenkette)`
+  // wiederholt nichts. Gemessen: die Seite lieferte die Hülle vor dem ersten
+  // Abruf ("A / U / Organisation / U / © 2026 ARCTOS"). Dieselbe Bauart wie
+  // der Testdefekt in `navigation.spec.ts` (Welle 6c §8.2). Die Erwartung ist
+  // unverändert; nur das Lesen wiederholt jetzt.
+  expect(
+    new URL(page.url()).pathname,
+    "navigation did not land on the audit detail route",
+  ).toBe(`/audit/executions/${auditId}`);
+  await expect(page.locator("body")).toContainText(title, {
+    timeout: 60_000,
+  });
 });

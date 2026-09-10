@@ -8,11 +8,9 @@ import {
   boolean,
   timestamp,
   integer,
-  numeric,
   date,
   jsonb,
   index,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { organization, user } from "./platform";

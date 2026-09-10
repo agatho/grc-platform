@@ -48,6 +48,9 @@ vi.mock("@grc/db", () => ({
   dataExportLog: {},
 }));
 
+// #S04-07-EXT: fetchEntityData no longer concatenates the WHERE clause as a
+// string — it builds it with sql.identifier() + bound parameters and joins the
+// fragments with sql.join(). The stub gains those two members accordingly.
 vi.mock("drizzle-orm", () => ({
   sql: Object.assign(
     (strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -56,6 +59,8 @@ vi.mock("drizzle-orm", () => ({
     }),
     {
       raw: (s: string) => ({ raw: s }),
+      identifier: (s: string) => ({ identifier: s }),
+      join: (parts: unknown[], sep: unknown) => ({ parts, sep }),
     },
   ),
 }));

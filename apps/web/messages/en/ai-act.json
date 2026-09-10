@@ -29,5 +29,618 @@
     "high": "High",
     "limited": "Limited",
     "minimal": "Minimal"
+  },
+  "systemDetail": {
+    "notFound": "AI system not found",
+    "systemCode": "System code",
+    "purpose": "Purpose",
+    "aiTechnique": "AI technique",
+    "technique": {
+      "machine_learning": "Machine learning",
+      "deep_learning": "Deep learning",
+      "nlp": "Natural language processing (NLP)",
+      "computer_vision": "Computer vision",
+      "expert_system": "Expert system",
+      "generative_ai": "Generative AI"
+    },
+    "systemStatus": {
+      "draft": "Draft",
+      "registered": "Registered",
+      "under_review": "Under review",
+      "compliant": "Compliant",
+      "non_compliant": "Non-compliant",
+      "decommissioned": "Decommissioned"
+    },
+    "riskSection": "Risk classification (Art. 6)",
+    "riskClass": "Risk class",
+    "riskOption": {
+      "unacceptable": "Unacceptable risk (Art. 5)",
+      "high": "High risk (Art. 6)",
+      "limited": "Limited risk (Art. 50)",
+      "minimal": "Minimal risk"
+    },
+    "riskJustification": "Justification of the risk classification",
+    "annexCategory": "Annex category",
+    "annex": {
+      "annex_i": "Annex I",
+      "annex_ii": "Annex II",
+      "annex_iii": "Annex III",
+      "annex_iv": "Annex IV",
+      "none": "None"
+    },
+    "providerSection": "Provider / deployer",
+    "role": "Role",
+    "roleOption": {
+      "provider": "Provider",
+      "deployer": "Deployer",
+      "both": "Both"
+    },
+    "providerName": "Provider name",
+    "providerJurisdiction": "Provider jurisdiction",
+    "deploymentDate": "Deployment date",
+    "oversightSection": "Human oversight (Art. 14)",
+    "oversightRequired": "Human oversight required"
+  },
+  "monitor": {
+    "title": "Incident monitor",
+    "description": "Art. 73 deadline monitoring for all AI incidents. The escalation level follows the time remaining until the deadline (critical when more than 48 hours overdue).",
+    "backToIncidents": "Back to the incident list",
+    "loadError": "The monitor could not be loaded",
+    "pdf": "PDF",
+    "serious": "serious",
+    "empty": "No AI incidents recorded.",
+    "detectedAt": "Detected: {value}",
+    "deadlineAt": "Deadline: {value}",
+    "authorityNotified": "✓ Authority notified at {value}",
+    "overdueBy": "{value} overdue",
+    "remainingUntilDeadline": "{value} until the deadline",
+    "hoursShort": "{hours}h",
+    "daysShort": "{days}d",
+    "daysHoursShort": "{days}d {hours}h",
+    "level": {
+      "critical_overdue": "CRITICAL OVERDUE",
+      "overdue": "OVERDUE",
+      "approaching": "APPROACHING",
+      "none": "OK"
+    },
+    "kpi": {
+      "criticalOverdue": "Critical overdue",
+      "criticalOverdueHint": "more than 48h overdue",
+      "overdue": "Overdue",
+      "overdueHint": "0–48h overdue",
+      "approaching": "Approaching",
+      "approachingHint": "less than 24h until the deadline",
+      "ok": "OK",
+      "okHint": "notified or more than 24h remaining"
+    },
+    "criticalSectionTitle": "Critical overdue — report immediately!",
+    "criticalSectionDescription": "The Art. 73 deadline has been exceeded by more than 48 hours. Regulatory risk — inform the board immediately.",
+    "overdueSectionTitle": "Overdue (less than 48h)",
+    "approachingSectionTitle": "Approaching (less than 24h)",
+    "okSectionTitle": "OK ({count})"
+  },
+  "shared": {
+    "backToList": "Back to list",
+    "masterData": "Master data",
+    "metadata": "Metadata",
+    "createdAt": "Created:",
+    "updatedAt": "Updated:",
+    "id": "ID:",
+    "title": "Title",
+    "name": "Name",
+    "description": "Description",
+    "status": "Status",
+    "selectPlaceholder": "Please select"
+  },
+  "incidentDetail": {
+    "notFound": "Incident not found",
+    "serious": "Serious",
+    "days": "{days} days",
+    "hours": "{hours} hours",
+    "deadlineOverdue": "Reporting deadline exceeded by {span}",
+    "deadlineRemaining": "Reporting deadline: {span} remaining",
+    "deadlineAt": "Deadline: {value}",
+    "deadlineWindowSerious": " (2 days – serious)",
+    "deadlineWindowStandard": " (15 days – standard)",
+    "severity": "Severity",
+    "severityOption": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "statusOption": {
+      "detected": "Detected",
+      "investigating": "Investigating",
+      "mitigating": "Mitigating",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    },
+    "seriousIncident": "Serious incident (Art. 73(4))",
+    "affectedPersons": "Affected persons (count)",
+    "detectedAt": "Detected on",
+    "harmSection": "Harm and root cause analysis",
+    "harmType": "Type of harm",
+    "rootCauseCategory": "Root cause category",
+    "harmDescription": "Harm description",
+    "rootCause": "Root cause analysis",
+    "measuresSection": "Measures",
+    "remediationActions": "Immediate remediation",
+    "preventiveMeasures": "Preventive measures",
+    "lessonsLearned": "Lessons learned",
+    "authoritySection": "Authority notification",
+    "authorityNotifiedAt": "Authority notified on",
+    "authorityReference": "Authority case reference",
+    "resolvedAt": "Resolved:"
+  },
+  "correctiveAction": {
+    "notFound": "Corrective action not found",
+    "recall": "Recall",
+    "withdrawal": "Withdrawal",
+    "overdue": "Overdue",
+    "nonConformity": "Non-conformity",
+    "actionType": "Action type",
+    "typeOption": {
+      "corrective": "Correction",
+      "preventive": "Prevention",
+      "recall": "Recall",
+      "withdrawal": "Withdrawal",
+      "modification": "Modification",
+      "decommission": "Decommissioning"
+    },
+    "priority": "Priority",
+    "statusOption": {
+      "open": "Open",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "verified": "Verified"
+    },
+    "dueDate": "Due date",
+    "recallSection": "Recall / withdrawal (Art. 16/20)",
+    "withdrawalFromMarket": "Withdrawal from the market",
+    "recallReason": "Justification",
+    "authorityNotified": "Authority notified",
+    "notifiedOn": "Notified on",
+    "verificationSection": "Verification",
+    "verificationRequired": "Verification required",
+    "verificationNotes": "Verification notes",
+    "effectiveness": "Effectiveness rating",
+    "notRatedYet": "Not rated yet",
+    "effectivenessOption": {
+      "effective": "Effective",
+      "partially_effective": "Partially effective",
+      "ineffective": "Ineffective"
+    },
+    "verifiedAt": "Verified on: {value}",
+    "completedAt": "Completed:",
+    "sourceType": "Source type:"
+  },
+  "fria": {
+    "loadError": "The FRIA could not be loaded",
+    "notFound": "Not found",
+    "backToList": "Back to the FRIA list",
+    "subtitle": "Art. 27 fundamental rights impact assessment — linked to AI system",
+    "qualityCheck": "Quality check",
+    "overallImpact": "Overall: {value}",
+    "impactPill": "Impact: {value}",
+    "residualPill": "Residual: {value}",
+    "mitigation": "Mitigation:",
+    "impact": {
+      "high": "high",
+      "medium": "medium",
+      "low": "low",
+      "negligible": "negligible"
+    },
+    "right": {
+      "dignity": "Dignity",
+      "equality_non_discrimination": "Equality / non-discrimination",
+      "privacy_data_protection": "Privacy / data protection",
+      "freedom_expression": "Freedom of expression",
+      "freedom_assembly": "Freedom of assembly",
+      "freedom_movement": "Freedom of movement",
+      "access_to_justice": "Access to justice",
+      "workers_rights": "Workers' rights",
+      "consumer_protection": "Consumer protection",
+      "child_protection": "Child protection"
+    },
+    "rightsTitle": "Assessed fundamental rights ({count})",
+    "rightsDescription": "A complete FRIA should address at least 5 of the 10 core rights.",
+    "rightsEmpty": "No rights recorded yet. Rights assessments are maintained through the FRIA form (detail editing).",
+    "flagsTitle": "Quality flags",
+    "flagsDescription": "The assessor confirms which areas have been documented and reviewed.",
+    "flag": {
+      "discrimination": "Discrimination analysis",
+      "discriminationHint": "Bias and unequal treatment assessed systematically.",
+      "dataProtection": "Data protection impact",
+      "dataProtectionHint": "Data protection consequences documented separately (with a DPIA link where applicable).",
+      "accessToJustice": "Access-to-justice analysis",
+      "accessToJusticeHint": "Legal remedies, complaints and revocation options reviewed.",
+      "consultation": "Consultation of affected persons",
+      "consultationHint": "Affected persons or their representatives involved in the process.",
+      "overallImpactStatement": "Overall impact statement",
+      "overallImpactStatementHint": "A concluding assessment is on file.",
+      "mitigationDocumented": "Mitigation measures documented",
+      "mitigationDocumentedHint": "Concrete measures for every identified risk."
+    },
+    "resultTitle": "Quality check result",
+    "approvable": "Approvable",
+    "notApprovable": "Not approvable",
+    "rightsCoverage": "Rights coverage (10 core rights)",
+    "qualityChecks": "Quality checks (6)",
+    "highResidualTitle": "High residual risk on the following rights:",
+    "highResidualHint": "This blocks approval. Strengthen the mitigation measures or do not deploy the system.",
+    "missingChecks": "Missing quality checks:",
+    "approvalRequirements": "Required for approval: at least 5 rights recorded, all 6 quality checks met, no high residual risks.",
+    "nextReview": "Next review",
+    "aiSystem": "AI system"
+  },
+  "gpai": {
+    "notFound": "GPAI model not found",
+    "systemicRisk": "Systemic risk",
+    "modelType": "Model type",
+    "modelTypeOption": {
+      "general_purpose": "General purpose",
+      "foundation": "Foundation",
+      "fine_tuned": "Fine-tuned",
+      "open_source": "Open source"
+    },
+    "version": "Version",
+    "releaseDate": "Release date",
+    "systemicRiskSection": "Systemic risk (Art. 51)",
+    "systemicRiskJustification": "Justification of the systemic risk",
+    "technicalSection": "Technical details (Art. 52–53)",
+    "trainingData": "Training data summary",
+    "computationalResources": "Computational resources",
+    "energyConsumption": "Energy consumption (kWh)",
+    "capabilities": "Capabilities",
+    "limitations": "Limitations",
+    "intendedUse": "Intended use",
+    "cybersecurityMeasures": "Cybersecurity measures",
+    "euRepresentativeSection": "EU representative (Art. 54)",
+    "euRepresentativeName": "Name of the EU representative",
+    "euRepresentativeContact": "Contact of the EU representative",
+    "codeOfPracticeSection": "Code of practice (Art. 56)",
+    "codeOfPracticeAdherence": "Adherence to the code of practice",
+    "adherenceDate": "Date of commitment:",
+    "art56Title": "Requirements under Art. 56 of the AI Act",
+    "art56": {
+      "transparency_obligations": "Transparency obligations under Art. 53 met",
+      "copyright_policy": "Copyright policy and training data summary documented",
+      "risk_identification": "Systemic risks identified and assessed",
+      "risk_mitigation": "Risk mitigation measures implemented",
+      "incident_reporting": "Process for reporting serious incidents established",
+      "cybersecurity_measures": "Adequate cybersecurity measures implemented",
+      "energy_reporting": "Energy consumption and computational resources documented"
+    },
+    "art56Progress": "{done} of {total} requirements met",
+    "codeOfPracticeNotes": "Notes on the code of practice",
+    "codeOfPracticeNotesPlaceholder": "Further notes on adherence to the code of practice …"
+  },
+  "gpaiWizard": {
+    "backToModels": "Back to the GPAI models",
+    "title": "GPAI compliance wizard",
+    "description": "Art. 51–55 checks: systemic risk classification plus Art. 53 (standard) and Art. 55 (systemic) obligations.",
+    "runBoth": "Run both checks",
+    "running": "Running …",
+    "tier": {
+      "systemic": "SYSTEMIC",
+      "high_capability": "HIGH CAPABILITY",
+      "standard": "STANDARD"
+    },
+    "compliant": "Compliant",
+    "gaps": "Gaps",
+    "classifyTitle": "Art. 51 systemic risk classification",
+    "classifyDescription": "Compute threshold (10^25 FLOPs), Commission designation and high-impact capabilities.",
+    "classifyAction": "Classify",
+    "flopsLabel": "Training compute (FLOPs) — systemic threshold: 10^25",
+    "parametersLabel": "Number of parameters (optional)",
+    "reasoning": "Reasoning:",
+    "flag": {
+      "designated": "Designated as systemic by the EU Commission",
+      "highImpact": "High-impact capabilities (benchmarks)",
+      "advancedReasoning": "Advanced reasoning",
+      "multimodal": "Multimodal capabilities",
+      "systemicModel": "Systemic model (auto-filled from the classification)",
+      "nonEuProvider": "Non-EU provider (requires an EU representative)",
+      "copyright": "Art. 53(1)(c) copyright directive respected",
+      "downstream": "Art. 53 downstream provider information shared",
+      "modelEvaluations": "Art. 55(1)(a) model evaluations carried out",
+      "systemicRiskAssessment": "Art. 55(1)(b) systemic risk assessment"
+    },
+    "obligationsTitle": "Art. 53 and Art. 55 obligations check",
+    "obligationsDescription": "Technical documentation, training data summary, copyright, downstream provider information, EU representative (non-EU) and Art. 55 where systemic.",
+    "checkAction": "Check",
+    "standardProgress": "Art. 53 standard ({met} met)",
+    "systemicProgress": "Art. 55 systemic ({met} met)",
+    "missingObligations": "Missing obligations:"
+  },
+  "systemWizard": {
+    "backToSystem": "Back to the AI system",
+    "title": "AI Act compliance wizard",
+    "description": "Runs every relevant compliance check against the AI system: data governance (Art. 10), Annex IV technical documentation (Art. 11), logging (Art. 12), human oversight (Art. 14) and the CE marking gate (Art. 43).",
+    "runAll": "Run all checks",
+    "check": "Check",
+    "coverage": "Coverage",
+    "missing": "Missing:",
+    "networkError": "Network error",
+    "apiError": "API error {status}: {err}",
+    "status": {
+      "pass": "Pass",
+      "fail": "Fail",
+      "warning": "Warning",
+      "running": "Running …",
+      "not_run": "Not run"
+    },
+    "dg": {
+      "title": "Data governance (Art. 10)",
+      "description": "Training data quality, bias testing, provenance and legal basis.",
+      "trainingDataDescription": "Training data description available",
+      "collectionProcess": "Data collection process documented",
+      "labelingProcess": "Labelling process documented",
+      "cleaningSteps": "Data cleaning steps documented",
+      "demographicCoverage": "Demographic coverage analysed",
+      "biasTesting": "Bias testing carried out",
+      "provenance": "Data provenance documented",
+      "legalBasis": "Legal basis for training",
+      "datasetSize": "Dataset size (number of records)"
+    },
+    "annexIv": {
+      "title": "Technical documentation (Art. 11 and Annex IV)",
+      "description": "Nine sections of at least 200 characters each.",
+      "section1_GeneralDescription": "Section 1: General description",
+      "section2_DetailedElements": "Section 2: Detailed elements and development process",
+      "section3_Monitoring": "Section 3: Monitoring and functioning",
+      "section4_PerformanceMetrics": "Section 4: Performance metrics",
+      "section5_RiskManagement": "Section 5: Risk management system",
+      "section6_LifecycleChanges": "Section 6: Lifecycle changes",
+      "section7_HarmonisedStandards": "Section 7: Harmonised standards",
+      "section8_DeclarationOfConformity": "Section 8: Copy of the declaration of conformity",
+      "section9_PostMarketMonitoring": "Section 9: Post-market monitoring"
+    },
+    "logging": {
+      "title": "Automatic logging (Art. 12)",
+      "description": "Automatic logs, 180-day retention, tamper evidence and export.",
+      "automatic": "Automatic logging active",
+      "tamperEvident": "Tamper-evident (hash chain / WORM)",
+      "exportable": "Logs exportable for authorities",
+      "input": "Input data logged",
+      "output": "Output decisions logged",
+      "incident": "Incidents logged",
+      "retention": "Retention (days, at least 180 for high risk)"
+    },
+    "oversight": {
+      "title": "Human oversight (Art. 14)",
+      "description": "Design check: override, stop, understandable outputs, automation bias training.",
+      "understandableOutputs": "Understandable outputs",
+      "override": "Override capability",
+      "stopFunction": "Stop function",
+      "automationBiasTraining": "Automation bias training",
+      "definedRoles": "Roles defined",
+      "personnel": "Qualified oversight personnel (count)"
+    },
+    "ce": {
+      "title": "CE marking gate (Art. 43 and 47)",
+      "description": "Aggregated check of every condition for CE marking.",
+      "procedure": "Conformity assessment procedure",
+      "annexVi": "Annex VI (internal control)",
+      "annexVii": "Annex VII (notified body)",
+      "declarationSigned": "Declaration of conformity signed",
+      "notifiedBodyCertificate": "Notified body certificate available",
+      "euDatabase": "Registered in the EU database",
+      "postMarketPlan": "Post-market monitoring plan available",
+      "annexIvComplete": "Annex IV sections completed (0–9)"
+    }
+  },
+  "annualReport": {
+    "loadFailed": "Error while loading",
+    "loadError": "The annual report could not be loaded",
+    "backToOverview": "Back to the AI Act overview",
+    "title": "AI Act annual report {year}",
+    "print": "Print",
+    "downloadPdf": "Download PDF",
+    "overallScore": "Overall compliance score",
+    "overallScoreDescription": "Weighted composite: systems 25% / conformity 20% / incidents 15% / FRIA 15% / QMS 15% / GPAI 10%.",
+    "submittable": "Ready for submission",
+    "notSubmittable": "Not ready for submission",
+    "criticalFindings": "Critical findings ({count})",
+    "highlights": "Highlights ({count})",
+    "drillDown": "Figures in detail",
+    "drillDownDescription": "Raw data from the aggregation queries, for auditor traceability.",
+    "section": {
+      "systems": {
+        "label": "AI systems",
+        "description": "Portfolio, risk classification and compliance status."
+      },
+      "conformity": {
+        "label": "Conformity assessments",
+        "description": "Art. 43 assessments and their pass/fail rate."
+      },
+      "incidents": {
+        "label": "Post-market incidents",
+        "description": "Art. 73 incidents and Art. 33 notification timings."
+      },
+      "fria": {
+        "label": "FRIA",
+        "description": "Art. 27 fundamental rights impact assessments."
+      },
+      "qms": {
+        "label": "Quality management system",
+        "description": "Art. 17 QMS maturity and CE readiness."
+      },
+      "gpai": {
+        "label": "GPAI models",
+        "description": "Art. 51–55 GPAI and systemic risk designation."
+      }
+    },
+    "figure": {
+      "total": "Total",
+      "highRisk": "High risk",
+      "unacceptable": "Unacceptable",
+      "compliant": "Compliant",
+      "nonCompliant": "Non-compliant",
+      "conformity": "Conformity",
+      "completed": "Completed",
+      "passed": "Passed",
+      "failed": "Failed",
+      "pending": "Pending",
+      "incidents": "Incidents",
+      "reported": "Reported",
+      "serious": "Serious",
+      "overdueArt73": "Overdue (Art. 73)",
+      "avgNotify": "Avg. notify (h)",
+      "required": "Required",
+      "approved": "Approved",
+      "qms": "QMS",
+      "avgMaturity": "Avg. maturity",
+      "ceReady": "CE-ready",
+      "notCeReady": "Not CE-ready",
+      "gpai": "GPAI",
+      "systemic": "Systemic",
+      "correctiveActions": "Corrective actions"
+    }
+  },
+  "penalties": {
+    "title": "Penalty tracking",
+    "description": "Art. 99 of the AI Act",
+    "create": "Record penalty",
+    "authority": "Authority",
+    "type": "Penalty type",
+    "typeOption": {
+      "fine": "Fine",
+      "warning": "Warning",
+      "market_restriction": "Market restriction",
+      "withdrawal_order": "Withdrawal order"
+    },
+    "amount": "Amount",
+    "currency": "Currency",
+    "articleReference": "Article reference",
+    "articlePlaceholder": "e.g. Art. 99(3)",
+    "brackets": "Art. 99 fine brackets",
+    "bracket": {
+      "para3": {
+        "label": "Art. 99(3) — Prohibited practices",
+        "max": "— up to EUR 35 million or 7% of turnover"
+      },
+      "para4": {
+        "label": "Art. 99(4) — High-risk AI obligations",
+        "max": "— up to EUR 15 million or 3% of turnover"
+      },
+      "para5": {
+        "label": "Art. 99(5) — Other infringements",
+        "max": "— up to EUR 7.5 million or 1% of turnover"
+      }
+    },
+    "appeal": "Appeal: {status}",
+    "empty": "No penalties recorded"
+  },
+  "authority": {
+    "title": "Authority communication",
+    "description": "Art. 73–78 of the AI Act",
+    "create": "Record communication",
+    "subject": "Subject",
+    "direction": "Direction",
+    "outgoing": "Outgoing",
+    "incoming": "Incoming",
+    "date": "Date",
+    "responseDeadline": "Response deadline",
+    "content": "Content",
+    "deadlineExpired": "Deadline expired",
+    "daysRemainingShort": "{days}d left",
+    "daysRemaining": "{days, plural, one {# day} other {# days}}",
+    "empty": "No authority communication recorded"
+  },
+  "qms": {
+    "title": "Provider quality management system",
+    "description": "Art. 16–17 of the AI Act",
+    "create": "Record QMS",
+    "checklist": "QMS checklist",
+    "systemId": "AI system ID",
+    "maturityLabel": "Maturity (0–5)",
+    "nextAudit": "Next audit",
+    "nextAuditSuffix": " | Next audit: {value}",
+    "systemLine": "System: {id}",
+    "proceduresMet": "{done} of {total} procedures met",
+    "maturity": "Maturity {level}",
+    "empty": "No QMS assessments yet",
+    "procedure": {
+      "risk_management_procedure": "Risk management system (Art. 9)",
+      "data_governance_procedure": "Data governance (Art. 10)",
+      "technical_documentation_procedure": "Technical documentation (Art. 11)",
+      "record_keeping_procedure": "Record-keeping obligations (Art. 12)",
+      "transparency_procedure": "Transparency obligations (Art. 13)",
+      "human_oversight_procedure": "Human oversight (Art. 14)",
+      "accuracy_procedure": "Accuracy and robustness (Art. 15)",
+      "cybersecurity_procedure": "Cybersecurity (Art. 15)",
+      "conformity_procedure": "Conformity assessment (Art. 43)",
+      "post_market_procedure": "Post-market monitoring (Art. 72)"
+    }
+  },
+  "prohibited": {
+    "title": "Prohibited practices",
+    "description": "Art. 5 of the AI Act — screening",
+    "runScreening": "Run screening",
+    "dialogTitle": "Art. 5 prohibition screening",
+    "verdictProhibited": "PROHIBITED",
+    "verdictAllowed": "Not prohibited",
+    "saveResult": "Save result",
+    "checkedAt": "Checked on {value}",
+    "empty": "No prohibition screenings carried out yet",
+    "practice": {
+      "social_scoring": "Social scoring (Art. 5(1)(c))",
+      "real_time_biometric": "Real-time remote biometric identification (Art. 5(1)(h))",
+      "emotion_recognition": "Emotion recognition in the workplace (Art. 5(1)(f))",
+      "predictive_policing": "Predictive policing (Art. 5(1)(d))",
+      "untargeted_scraping": "Untargeted scraping of facial images (Art. 5(1)(e))",
+      "subliminal_manipulation": "Subliminal manipulation (Art. 5(1)(a))",
+      "exploiting_vulnerabilities": "Exploiting vulnerabilities (Art. 5(1)(b))",
+      "biometric_categorization": "Biometric categorisation (Art. 5(1)(g))"
+    }
+  },
+  "gpaiList": {
+    "title": "GPAI model register",
+    "description": "Art. 51–56 of the AI Act",
+    "create": "Record model",
+    "dialogTitle": "Record GPAI model",
+    "systemic": "Systemic",
+    "empty": "No GPAI models recorded yet"
+  },
+  "incidentList": {
+    "title": "AI incident reporting",
+    "description": "Art. 62–63 of the AI Act",
+    "report": "Report incident",
+    "dialogTitle": "Report AI incident",
+    "systemIdOptional": "AI system ID (optional)",
+    "seriousLabel": "Serious (death or severe harm)",
+    "deadlineSerious": "Reporting deadline: 2 days after detection",
+    "deadlineStandard": "Reporting deadline: 15 days after detection",
+    "hoursRemaining": "{hours}h left",
+    "empty": "No AI incidents reported"
+  },
+  "correctiveList": {
+    "title": "Corrective actions",
+    "description": "Art. 20–21 of the AI Act",
+    "create": "Create action",
+    "dialogTitle": "Corrective action",
+    "dueSuffix": " | Due: {value}",
+    "empty": "No corrective actions yet"
+  },
+  "friaList": {
+    "create": "New FRIA",
+    "nextReview": "Next review: {value}",
+    "empty": "No fundamental rights impact assessments yet"
+  },
+  "conformityList": {
+    "create": "New assessment",
+    "selfAssessed": "Self",
+    "validUntil": "Valid until {value}",
+    "empty": "No conformity assessments yet"
+  },
+  "oversightList": {
+    "create": "Log oversight",
+    "empty": "No oversight logs yet"
+  },
+  "mappingList": {
+    "create": "Add mapping",
+    "empty": "No framework mappings yet. Map ISO 42001 or NIST AI RMF controls."
   }
 }

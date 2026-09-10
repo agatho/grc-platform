@@ -1,9 +1,9 @@
 // Sprint 44: Vendor Scorecard Recomputer (Daily 06:00)
 // Recomputes scorecards for vendors with stale data
 
-import { db, vendorScorecard, notification } from "@grc/db";
+import { db, vendorScorecard } from "@grc/db";
 import { classifyVendorTier, DEFAULT_SCORECARD_WEIGHTS } from "@grc/shared";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ScorecardRecomputeResult {

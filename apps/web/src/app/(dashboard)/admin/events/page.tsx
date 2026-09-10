@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import {
   Activity,
   Loader2,
   RefreshCw,
   Filter,
-  ChevronDown,
   ChevronRight,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,9 @@ import {
 
 import type { EventLogEntry } from "@grc/shared";
 import { useDateFormat } from "@/lib/format-date";
+// [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] Keyboard equivalent for the
+// click-only rows below — see lib/keyboard-activation.ts.
+import { activateOnKey } from "@/lib/keyboard-activation";
 
 // ── Event type styling ────────────────────────────────────────
 
@@ -66,10 +69,7 @@ const EVENT_TYPES = [
 export default function EventLogPage() {
   const t = useTranslations("platform");
   const { formatDateTime } = useDateFormat();
-  const [events, setEvents] = useState<EventLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState<EventLogEntry | null>(
     null,
   );
@@ -79,28 +79,45 @@ export default function EventLogPage() {
   const [filterEventType, setFilterEventType] = useState("");
   const [filterEntityId, setFilterEntityId] = useState("");
 
-  const fetchEvents = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Seite und alle drei Filter gehen
+  // in die Anfrage und stehen deshalb im Schluessel. Eine nicht-ok-Antwort
+  // liefert eine leere Seite mit Gesamtzahl 0.
+  const {
+    data,
+    isPending: loading,
+    refetch,
+  } = useQuery<{ events: EventLogEntry[]; total: number }>({
+    queryKey: [
+      "events",
+      "log",
+      page,
+      filterEntityType,
+      filterEventType,
+      filterEntityId,
+    ],
+    queryFn: async () => {
       const params = new URLSearchParams({ page: String(page), limit: "30" });
       if (filterEntityType) params.set("entityType", filterEntityType);
       if (filterEventType) params.set("eventType", filterEventType);
       if (filterEntityId) params.set("entityId", filterEntityId);
 
       const res = await fetch(`/api/v1/events?${params}`);
-      if (res.ok) {
-        const json = await res.json();
-        setEvents(json.data ?? []);
-        setTotal(json.pagination?.total ?? 0);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, filterEntityType, filterEventType, filterEntityId]);
+      if (!res.ok) return { events: [], total: 0 };
+      const json = await res.json();
+      return {
+        events: (json.data ?? []) as EventLogEntry[],
+        total: (json.pagination?.total ?? 0) as number,
+      };
+    },
+  });
+  const events = data?.events ?? [];
+  const total = data?.total ?? 0;
 
-  useEffect(() => {
-    fetchEvents();
-  }, [fetchEvents]);
+  const fetchEvents = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleFilter = () => {
     setPage(1);
@@ -184,6 +201,9 @@ export default function EventLogPage() {
               key={evt.id}
               className="flex items-center gap-3 rounded-md border px-4 py-2.5 text-sm hover:bg-muted/50 cursor-pointer"
               onClick={() => setSelectedEvent(evt)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => activateOnKey(e, () => setSelectedEvent(evt))}
             >
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <Badge

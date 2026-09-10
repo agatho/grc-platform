@@ -1,3 +1,8 @@
+-- [ARCTOS-FULL-2026-08-31 / WP1 · S09-01] In-place repariert.
+-- Diese Migration ist gegen eine leere Datenbank nie erfolgreich gelaufen
+-- (Audit-Finding S09-01) und gilt nach ADR-014 als nicht ausgeliefert; die
+-- Änderung an der bestehenden Datei ist daher zulässig.
+-- Änderung: Index bc_name_idx auf business_capability(org_id, element_id) umgestellt (42703); dadurch entstehen auch eam_keyword und eam_homepage_layout wieder.
 -- Sprint 52: EAM UX & Unified Catalog
 -- Migration 801-815: Keywords, homepage layout, GIN indices
 
@@ -96,5 +101,7 @@ CREATE TRIGGER audit_eam_homepage_layout AFTER INSERT OR UPDATE OR DELETE ON "ea
 -- ──────────────────────────────────────────────────────────────
 
 CREATE INDEX IF NOT EXISTS "ae_type_name_idx" ON "architecture_element" ("org_id", "type", "name");
-CREATE INDEX IF NOT EXISTS "bc_name_idx" ON "business_capability" ("org_id", "name");
+-- [ARCTOS-FULL-2026-08-31 / S09-01] `business_capability` hat kein `name`;
+-- der Anzeigename haengt am verknuepften architecture_element (42703).
+CREATE INDEX IF NOT EXISTS "bc_element_idx" ON "business_capability" ("org_id", "element_id");
 CREATE INDEX IF NOT EXISTS "edo_name_idx" ON "eam_data_object" ("org_id", "name");

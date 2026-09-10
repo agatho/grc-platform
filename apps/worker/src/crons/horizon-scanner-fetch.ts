@@ -2,7 +2,7 @@
 // Fetches regulatory items from active horizon scan sources.
 
 import { db, horizonScanSource } from "@grc/db";
-import { and, eq, sql, lte, or, isNull } from "drizzle-orm";
+import { and, eq, sql, or, isNull } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface HorizonFetchResult {
@@ -15,7 +15,7 @@ export const processHorizonScannerFetch = withCronInstrumentation(
   "horizon-scanner-fetch",
   async (): Promise<HorizonFetchResult> => {
     const now = new Date();
-    let itemsFetched = 0;
+    const itemsFetched = 0;
     let errors = 0;
 
     // Find sources due for fetching

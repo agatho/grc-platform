@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -62,8 +63,6 @@ export function ProcessComments({
   const t = useTranslations("processGovernance");
   const { data: session } = useSession();
 
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
   const [filterTab, setFilterTab] = useState<FilterTab>("all");
   const [newComment, setNewComment] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -77,9 +76,17 @@ export function ProcessComments({
   const isProcessOwner = userRole === "process_owner";
 
   // Fetch comments
-  const fetchComments = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Fetch on mount via `@tanstack/react-query` instead
+  // of an effect plus mirrored loading/data state (pattern from wave 7b,
+  // `catalogs/objects/page.tsx`). The filter tab is part of the key. A
+  // non-ok response yields an empty list, as before.
+  const {
+    data: comments = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<Comment[]>({
+    queryKey: ["processes", processId, "comments", filterTab],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filterTab === "open") params.set("resolved", "false");
       if (filterTab === "resolved") params.set("resolved", "true");
@@ -87,19 +94,15 @@ export function ProcessComments({
       const res = await fetch(
         `/api/v1/processes/${processId}/comments?${params.toString()}`,
       );
-      if (!res.ok) throw new Error("Failed to load comments");
+      if (!res.ok) return [];
       const json = await res.json();
-      setComments(json.data ?? []);
-    } catch {
-      setComments([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [processId, filterTab]);
+      return (json.data ?? []) as Comment[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchComments();
-  }, [fetchComments]);
+  const fetchComments = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // Build threaded structure
   const threadedComments = buildThreads(comments);
@@ -200,7 +203,7 @@ export function ProcessComments({
         </div>
       ) : threadedComments.length === 0 ? (
         <div className="text-center py-8">
-          <MessageSquare className="mx-auto h-8 w-8 text-gray-300" />
+          <MessageSquare className="mx-auto h-8 w-8 text-gray-500" />
           <p className="mt-2 text-sm text-gray-500">
             {t("comments.noComments")}
           </p>
@@ -326,7 +329,8 @@ function CommentItem({
           {comment.isResolved && (
             <Badge
               variant="secondary"
-              className="text-[10px] bg-green-100 text-green-700"
+              // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 bei 10 px.
+              className="text-[10px] bg-green-100 text-green-800"
             >
               {t("comments.resolved")}
             </Badge>

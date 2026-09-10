@@ -1,6 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,31 +70,40 @@ export default function AuditSimulationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const [data, setData] = useState<AuditData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function runAudit() {
-    setLoading(true);
-    setError(null);
-    try {
+  // [Welle 7a · OP-080] Die Ladefunktion stand in `useCallback` und in den
+  // Abhaengigkeiten des Effekts.
+  //
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Fehler- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wirft wie
+  // vorher; der Fehlertext kommt aus dem Fehlerzustand der Abfrage. Der
+  // Knopf „Erneut simulieren" ist ein erneuter Abruf, deshalb `isFetching`.
+  const {
+    data = null,
+    isFetching: loading,
+    error: queryError,
+    refetch,
+  } = useQuery<AuditData | null>({
+    queryKey: ["programmes", "journeys", id, "synthetic-audit"],
+    queryFn: async () => {
       const r = await fetch(
         `/api/v1/programmes/journeys/${id}/synthetic-audit`,
       );
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const j = await r.json();
-      setData(j.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }
+      return (j.data ?? null) as AuditData | null;
+    },
+  });
+  const error: string | null = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : String(queryError)
+    : null;
 
-  useEffect(() => {
-    runAudit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  const runAudit = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return (
     <ModuleGate moduleKey="programme">

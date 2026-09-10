@@ -14,7 +14,6 @@ import {
   jsonb,
   index,
   unique,
-  numeric,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";

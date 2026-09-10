@@ -7,9 +7,13 @@ import {
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/vendors/:id — Vendor detail
-export async function GET(
+export const GET = withErrorHandler(async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -72,10 +76,9 @@ export async function GET(
     .where(and(eq(contract.vendorId, id), isNull(contract.deletedAt)));
 
   return Response.json({ data: { ...row, contractCount } });
-}
-
+});
 // PUT /api/v1/vendors/:id — Update vendor (also handles status transitions)
-export async function PUT(
+export const PUT = withErrorHandler(async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -179,10 +182,9 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
-
+});
 // DELETE /api/v1/vendors/:id — Soft delete
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -218,4 +220,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id: deleted.id, deleted: true } });
-}
+});

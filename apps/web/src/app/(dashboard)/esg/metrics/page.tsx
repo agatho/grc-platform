@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Loader2, RefreshCcw, Search, Plus } from "lucide-react";
@@ -30,28 +31,32 @@ export default function MetricsPage() {
 function MetricsInner() {
   const t = useTranslations("esg");
   const router = useRouter();
-  const [metrics, setMetrics] = useState<MetricRow[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const fetchMetrics = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Suchbegriff steht im
+  // Schlüssel.
+  const {
+    data: metrics = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<MetricRow[]>({
+    queryKey: ["esg", "metrics", "list", search],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       const res = await fetch(`/api/v1/esg/metrics?${params.toString()}`);
-      if (res.ok) {
-        const json = await res.json();
-        setMetrics(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as MetricRow[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchMetrics();
-  }, [fetchMetrics]);
+  const fetchMetrics = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   return (
     <div className="space-y-6">
@@ -68,9 +73,12 @@ function MetricsInner() {
             variant="outline"
             size="sm"
             onClick={fetchMetrics}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm">
             <Plus size={14} className="mr-1" />

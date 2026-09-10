@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useId } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -23,9 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@grc/ui";
 import { useDateFormat } from "@/lib/format-date";
-import type { VersionComparison, ElementDiffDetail } from "@grc/shared";
+import type { VersionComparison } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +52,11 @@ export default function VersionComparePage() {
 }
 
 function CompareContent() {
+  // [ARCTOS-FULL-2026-08-31 / WP12 · S14-09] One id root per component
+  // instance, so every <label htmlFor> below points at its own control
+  // even when this component is rendered more than once on a page.
+  const a11yId = useId();
+
   const t = useTranslations("processGovernance");
   const tProcess = useTranslations("process");
   const params = useParams();
@@ -61,58 +67,86 @@ function CompareContent() {
   const initialFrom = searchParams.get("from");
   const initialTo = searchParams.get("to");
 
-  const [versions, setVersions] = useState<ProcessVersion[]>([]);
-  const [versionFrom, setVersionFrom] = useState(initialFrom ?? "");
-  const [versionTo, setVersionTo] = useState(initialTo ?? "");
-  const [comparison, setComparison] = useState<VersionComparison | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [versionsLoading, setVersionsLoading] = useState(true);
+  const [versionFromChoice, setVersionFrom] = useState(initialFrom ?? "");
+  const [versionToChoice, setVersionTo] = useState(initialTo ?? "");
 
-  // Fetch available versions
-  useEffect(() => {
-    setVersionsLoading(true);
-    fetch(`/api/v1/processes/${processId}`)
-      .then((r) => (r.ok ? r.json() : { data: {} }))
-      .then((json) => {
-        const versionsList = (json.data?.versions ?? []) as ProcessVersion[];
-        setVersions(
-          versionsList.sort((a, b) => b.versionNumber - a.versionNumber),
+  // [OP-245 · Gestalt A] Verfügbare Versionen — vorher ein Effekt mit
+  // `setVersionsLoading(true)` synchron im Rumpf. Jetzt eine Abfrage über
+  // `@tanstack/react-query` (Muster aus Welle 7b, `catalogs/objects/page.tsx`).
+  // Eine nicht-ok-Antwort ergibt wie vorher eine leere Liste.
+  const { data: versions = [], isPending: versionsLoading } = useQuery<
+    ProcessVersion[]
+  >({
+    queryKey: ["processes", processId, "versions"],
+    queryFn: async () => {
+      const r = await fetch(`/api/v1/processes/${processId}`);
+      if (!r.ok) return [];
+      const json = await r.json();
+      const versionsList = (json.data?.versions ?? []) as ProcessVersion[];
+      return versionsList.sort((a, b) => b.versionNumber - a.versionNumber);
+    },
+  });
+
+  // [Welle 7a · OP-080] Die Vorbelegung der beiden Versionsfelder war bis
+  // Welle 7a Teil des Ladeeffekts und danach ein eigener Effekt an den
+  // geladenen Versionen und `versionFrom`.
+  // [OP-245 · Gestalt E] Sie ist jetzt eine Ableitung beim Rendern: die Wahl
+  // des Nutzers (oder der URL) bleibt im Zustand; solange ein Feld leer ist,
+  // gilt der Standard „vorletzte gegen letzte Version". Anders als vorher
+  // fällt jedes Feld für sich zurück, nicht paarweise — eine URL mit nur
+  // `?from=` oder nur `?to=` bekommt das fehlende Feld vorbelegt, statt dass
+  // beide überschrieben werden bzw. keines.
+  const defaultPair = useMemo(() => {
+    if (versions.length < 2) return null;
+    const sorted = [...versions].sort(
+      (a, b) => a.versionNumber - b.versionNumber,
+    );
+    return {
+      from: String(sorted[sorted.length - 2].versionNumber),
+      to: String(sorted[sorted.length - 1].versionNumber),
+    };
+  }, [versions]);
+  const versionFrom = versionFromChoice || defaultPair?.from || "";
+  const versionTo = versionToChoice || defaultPair?.to || "";
+
+  // [OP-245 · Gestalt A] Der Vergleich — vorher `fetchComparison` im Effekt.
+  // `enabled` trägt die alte Vorbedingung (beide Felder gesetzt und
+  // verschieden); eine nicht-ok-Antwort ergibt wie vorher `null`. Bei zwei
+  // gleichen Versionen bleibt nicht mehr der vorige Vergleich stehen, sondern
+  // es gibt keinen.
+  const compareEnabled = Boolean(
+    versionFrom && versionTo && versionFrom !== versionTo,
+  );
+  const { data: comparison = null, isPending: comparisonPending } =
+    useQuery<VersionComparison | null>({
+      queryKey: ["processes", processId, "compare", versionFrom, versionTo],
+      enabled: compareEnabled,
+      queryFn: async () => {
+        const res = await fetch(
+          `/api/v1/processes/${processId}/compare?from=${versionFrom}&to=${versionTo}`,
         );
-        if (!versionFrom && versionsList.length >= 2) {
-          const sorted = [...versionsList].sort(
-            (a, b) => a.versionNumber - b.versionNumber,
-          );
-          setVersionFrom(String(sorted[sorted.length - 2].versionNumber));
-          setVersionTo(String(sorted[sorted.length - 1].versionNumber));
+        // [ARCTOS-FULL-2026-08-31 · OP-249] Eine abgelehnte Anfrage ergab
+        // `null` und damit denselben leeren Bereich wie „noch nichts
+        // ausgewählt". Der Vergleich bleibt leer, der Fehlschlag wird
+        // gemeldet.
+        if (!res.ok) {
+          toast.error(t("compare.loadError"));
+          return null;
         }
-      })
-      .catch(() => setVersions([]))
-      .finally(() => setVersionsLoading(false));
-  }, [processId]);
+        const json = await res.json();
+        return (json.data ?? null) as VersionComparison | null;
+      },
+    });
+  // `isPending` bleibt bei abgeschalteter Abfrage wahr, deshalb steht die
+  // Vorbedingung auch in der Ableitung des Ladezustands.
+  const loading = compareEnabled && comparisonPending;
 
-  // Fetch comparison
-  const fetchComparison = useCallback(async () => {
-    if (!versionFrom || !versionTo || versionFrom === versionTo) return;
-    setLoading(true);
-    try {
-      const res = await fetch(
-        `/api/v1/processes/${processId}/compare?from=${versionFrom}&to=${versionTo}`,
-      );
-      if (!res.ok) throw new Error("Failed to load comparison");
-      const json = await res.json();
-      setComparison(json.data ?? null);
-    } catch {
-      setComparison(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [processId, versionFrom, versionTo]);
-
-  useEffect(() => {
-    if (versionFrom && versionTo) {
-      void fetchComparison();
-    }
-  }, [fetchComparison, versionFrom, versionTo]);
+  // [ARCTOS-FULL-2026-08-31 · OP-249] Zwei gleiche Versionen schalten die
+  // Abfrage ab; der leere Bereich sagte dazu nichts. Jetzt steht dort, warum
+  // es nichts zu sehen gibt.
+  const sameVersionSelected = Boolean(
+    versionFrom && versionTo && versionFrom === versionTo,
+  );
 
   const stats = comparison?.diff?.stats ?? {
     added: 0,
@@ -148,11 +182,14 @@ function CompareContent() {
       {/* Version selectors */}
       <div className="flex items-center gap-4 flex-wrap">
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 uppercase">
+          <label
+            htmlFor={`${a11yId}-from`}
+            className="text-xs font-medium text-gray-500 uppercase"
+          >
             From
           </label>
           <Select value={versionFrom} onValueChange={setVersionFrom}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger id={`${a11yId}-from`} className="w-[180px]">
               <SelectValue placeholder={t("compare.version")} />
             </SelectTrigger>
             <SelectContent>
@@ -171,11 +208,14 @@ function CompareContent() {
         <span className="text-gray-400 mt-5">vs</span>
 
         <div className="space-y-1">
-          <label className="text-xs font-medium text-gray-500 uppercase">
+          <label
+            htmlFor={`${a11yId}-to`}
+            className="text-xs font-medium text-gray-500 uppercase"
+          >
             To
           </label>
           <Select value={versionTo} onValueChange={setVersionTo}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger id={`${a11yId}-to`} className="w-[180px]">
               <SelectValue placeholder={t("compare.version")} />
             </SelectTrigger>
             <SelectContent>
@@ -311,7 +351,9 @@ function CompareContent() {
         <div className="text-center py-12">
           <GitCompare className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">
-            Select two different versions to compare
+            {sameVersionSelected
+              ? t("compare.sameVersion")
+              : t("compare.selectTwoVersions")}
           </p>
         </div>
       )}

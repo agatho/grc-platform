@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -131,10 +132,14 @@ function getEntityMeta(type: string) {
 const RELATIONSHIP_COLORS: Record<string, string> = {
   mitigates: "bg-blue-100 text-blue-700",
   affects: "bg-red-100 text-red-700",
-  implemented_in: "bg-green-100 text-green-700",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 4,497:1 — die einzige Lücke der
+  // -100/-700-Familie.
+  implemented_in: "bg-green-100 text-green-800",
   documented_in: "bg-amber-100 text-amber-700",
   found_in: "bg-orange-100 text-orange-700",
-  affected: "bg-red-100 text-red-600",
+  // [ARCTOS-FULL-2026-08-31 · OP-049] 3,90:1; die Schwester `affects`
+  // zwei Zeilen höher stand schon richtig auf red-700.
+  affected: "bg-red-100 text-red-700",
   tested_by: "bg-teal-100 text-teal-700",
   linked_to: "bg-gray-100 text-gray-700",
   depends_on: "bg-purple-100 text-purple-700",
@@ -152,30 +157,29 @@ const DEPTH_COLORS: Record<number, string> = {
 
 export function WhereUsedTab({ entityType, entityId }: WhereUsedTabProps) {
   const t = useTranslations("platform");
-  const [references, setReferences] = useState<EntityReference[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchReferences = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhaengen ueber `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade-, Daten- und Fehlerzustand (Muster
+  // aus Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort wird
+  // wie vorher zum Fehler `HTTP <status>`; der Fehlertext kommt aus dem
+  // Fehlerzustand der Abfrage.
+  const {
+    data: references = [],
+    isPending: loading,
+    error: queryError,
+  } = useQuery<EntityReference[]>({
+    queryKey: ["references", entityType, entityId],
+    queryFn: async () => {
       const res = await fetch(`/api/v1/references/${entityType}/${entityId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      setReferences(json.data ?? []);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to load references",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [entityType, entityId]);
-
-  useEffect(() => {
-    fetchReferences();
-  }, [fetchReferences]);
+      return (json.data ?? []) as EntityReference[];
+    },
+  });
+  const error = queryError
+    ? queryError instanceof Error
+      ? queryError.message
+      : "Failed to load references"
+    : null;
 
   if (loading) {
     return (
@@ -302,28 +306,27 @@ function ImpactAnalysisDialog({
 }) {
   const t = useTranslations("platform");
   const [open, setOpen] = useState(false);
-  const [impact, setImpact] = useState<ImpactData | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const fetchImpact = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Bedingter Abruf (`if (open) fetchImpact()`) als
+  // Abfrage mit `enabled: open`. `isFetching` ersetzt das Lade-Flag, das
+  // vorher bei jedem Oeffnen von `false` auf `true` ging; ein Fehler ergibt
+  // wie vorher `impact === null` und damit die „kein Impact"-Anzeige.
+  const {
+    data,
+    isFetching: loading,
+    error: impactError,
+  } = useQuery<ImpactData | null>({
+    queryKey: ["references", entityType, entityId, "impact", { maxDepth: 3 }],
+    enabled: open,
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/references/${entityType}/${entityId}/impact?maxDepth=3`,
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
-      setImpact(json.data);
-    } catch {
-      setImpact(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [entityType, entityId]);
-
-  useEffect(() => {
-    if (open) fetchImpact();
-  }, [open, fetchImpact]);
+      return (json.data ?? null) as ImpactData | null;
+    },
+  });
+  const impact = impactError ? null : (data ?? null);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

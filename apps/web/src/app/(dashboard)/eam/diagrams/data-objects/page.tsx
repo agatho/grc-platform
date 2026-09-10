@@ -2,14 +2,13 @@
 
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTable } from "@/components/data-table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function EamDataArchitecturePage() {
   const t = useTranslations("eamDataArchitecture");
-  const [data, setData] = useState<Array<Record<string, unknown>>>([]);
+  const [_data, _setData] = useState<Array<Record<string, unknown>>>([]);
 
   return (
     <ModuleGate moduleKey="eam">

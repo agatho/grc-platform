@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Plus, Clock, AlertTriangle } from "lucide-react";
 import Link from "next/link";
@@ -47,7 +48,20 @@ const SEVERITY_COLORS: Record<string, string> = {
   low: "bg-green-100 text-green-900",
 };
 
-function getDeadlineBadge(deadline: string) {
+/**
+ * [ARCTOS-FULL-2026-08-31 · OP-070] Welle 6b. `const _t = useTranslations(…)`,
+ * nie benutzt — die Seite galt der Ratsche als uebersetzt und stand auf fest
+ * verdrahtetem Deutsch („KI-Vorfalle", „Schaden" ohne Umlaut). Diese Seite
+ * ist der Einstieg in die Meldung nach Art. 62/63.
+ */
+
+/** Die Uebersetzungsfunktion, wie sie `getDeadlineBadge` braucht. */
+type Translate = (
+  key: string,
+  values?: Record<string, string | number>,
+) => string;
+
+function getDeadlineBadge(deadline: string, t: Translate) {
   const now = new Date();
   const dl = new Date(deadline);
   const diffMs = dl.getTime() - now.getTime();
@@ -58,20 +72,20 @@ function getDeadlineBadge(deadline: string) {
     return (
       <Badge className="bg-red-600 text-white">
         <Clock className="h-3 w-3 mr-1" />
-        Frist abgelaufen
+        {t("authority.deadlineExpired")}
       </Badge>
     );
   if (diffHours < 48)
     return (
       <Badge className="bg-red-100 text-red-900">
         <Clock className="h-3 w-3 mr-1" />
-        {diffHours}h verbleibend
+        {t("incidentList.hoursRemaining", { hours: diffHours })}
       </Badge>
     );
   return (
     <Badge className="bg-yellow-100 text-yellow-900">
       <Clock className="h-3 w-3 mr-1" />
-      {diffDays} Tage
+      {t("authority.daysRemaining", { days: diffDays })}
     </Badge>
   );
 }
@@ -79,8 +93,6 @@ function getDeadlineBadge(deadline: string) {
 function IncidentsPageInner() {
   const t = useTranslations("aiAct");
   const { formatDate } = useDateFormat();
-  const [rows, setRows] = useState<AiIncident[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
@@ -90,18 +102,25 @@ function IncidentsPageInner() {
     is_serious: false,
   });
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const {
+    data: rows = [],
+    isPending: loading,
+    refetch,
+  } = useQuery<AiIncident[]>({
+    queryKey: ["ai-act", "incidents"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/ai-act/incidents?limit=50");
-      if (res.ok) setRows((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      return (await res.json()).data as AiIncident[];
+    },
+  });
+  const fetchData = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const handleSubmit = async () => {
     const payload = { ...form, ai_system_id: form.ai_system_id || null };
@@ -135,30 +154,32 @@ function IncidentsPageInner() {
       <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">KI-Vorfallmeldung</h1>
-          <p className="text-muted-foreground">Art. 62-63 KI-Verordnung</p>
+          <h1 className="text-2xl font-bold">{t("incidentList.title")}</h1>
+          <p className="text-muted-foreground">
+            {t("incidentList.description")}
+          </p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Vorfall melden
+              {t("incidentList.report")}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>KI-Vorfall melden</DialogTitle>
+              <DialogTitle>{t("incidentList.dialogTitle")}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>Titel</Label>
+                <Label>{t("shared.title")}</Label>
                 <Input
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                 />
               </div>
               <div>
-                <Label>Beschreibung</Label>
+                <Label>{t("shared.description")}</Label>
                 <Textarea
                   value={form.description}
                   onChange={(e) =>
@@ -167,7 +188,7 @@ function IncidentsPageInner() {
                 />
               </div>
               <div>
-                <Label>KI-System ID (optional)</Label>
+                <Label>{t("incidentList.systemIdOptional")}</Label>
                 <Input
                   value={form.ai_system_id}
                   onChange={(e) =>
@@ -176,7 +197,7 @@ function IncidentsPageInner() {
                 />
               </div>
               <div>
-                <Label>Schweregrad</Label>
+                <Label>{t("incidentDetail.severity")}</Label>
                 <Select
                   value={form.severity}
                   onValueChange={(v) => setForm({ ...form, severity: v })}
@@ -185,10 +206,18 @@ function IncidentsPageInner() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="critical">Kritisch</SelectItem>
-                    <SelectItem value="high">Hoch</SelectItem>
-                    <SelectItem value="medium">Mittel</SelectItem>
-                    <SelectItem value="low">Niedrig</SelectItem>
+                    <SelectItem value="critical">
+                      {t("incidentDetail.severityOption.critical")}
+                    </SelectItem>
+                    <SelectItem value="high">
+                      {t("incidentDetail.severityOption.high")}
+                    </SelectItem>
+                    <SelectItem value="medium">
+                      {t("incidentDetail.severityOption.medium")}
+                    </SelectItem>
+                    <SelectItem value="low">
+                      {t("incidentDetail.severityOption.low")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -197,18 +226,19 @@ function IncidentsPageInner() {
                   checked={form.is_serious}
                   onCheckedChange={(v) => setForm({ ...form, is_serious: v })}
                 />
-                <Label>Schwerwiegend (Tod/ernste Schaden)</Label>
+                <Label>{t("incidentList.seriousLabel")}</Label>
               </div>
               <p className="text-sm text-muted-foreground">
-                Meldefrist: {form.is_serious ? "2 Tage" : "15 Tage"} nach
-                Erkennung
+                {form.is_serious
+                  ? t("incidentList.deadlineSerious")
+                  : t("incidentList.deadlineStandard")}
               </p>
               <Button
                 className="w-full"
                 onClick={handleSubmit}
                 disabled={!form.title || !form.severity}
               >
-                Vorfall melden
+                {t("incidentList.report")}
               </Button>
             </div>
           </DialogContent>
@@ -230,15 +260,17 @@ function IncidentsPageInner() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Erkannt: {formatDate(inc.detected_at)}
+                    {t("monitor.detectedAt", {
+                      value: formatDate(inc.detected_at),
+                    })}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <Badge className={SEVERITY_COLORS[inc.severity] ?? ""}>
-                    {inc.severity}
+                    {t(`incidentDetail.severityOption.${inc.severity}`)}
                   </Badge>
                   {inc.authority_deadline &&
-                    getDeadlineBadge(inc.authority_deadline)}
+                    getDeadlineBadge(inc.authority_deadline, t)}
                   <Badge variant="outline">{inc.status}</Badge>
                 </div>
               </CardContent>
@@ -247,7 +279,7 @@ function IncidentsPageInner() {
         ))}
         {rows.length === 0 && (
           <p className="text-muted-foreground text-center py-8">
-            Keine KI-Vorfalle gemeldet
+            {t("incidentList.empty")}
           </p>
         )}
       </div>

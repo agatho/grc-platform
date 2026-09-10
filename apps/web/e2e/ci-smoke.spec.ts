@@ -15,9 +15,10 @@
  * run in the CI smoke job.
  */
 import { test, expect } from "@playwright/test";
+import { STORAGE_STATE } from "./fixtures/storage";
 
 test.describe("CI smoke — release gate", () => {
-  test.use({ storageState: "e2e/.auth/admin.json" });
+  test.use({ storageState: STORAGE_STATE });
 
   test("dashboard loads after login", async ({ page }) => {
     const res = await page.goto("/dashboard");

@@ -1,28 +1,27 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { FileText, Scale, Archive, Shield } from "lucide-react";
+import { FileText, Scale, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxCmsDashboard } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function TaxCmsDashboardPage() {
   const t = useTranslations("taxCms");
-  const [data, setData] = useState<TaxCmsDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  const { formatCurrency: money } = useDateFormat();
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const { data = null, isPending: loading } = useQuery<TaxCmsDashboard | null>({
+    queryKey: ["tax-cms", "dashboard"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/tax-cms/dashboard");
-      if (res.ok) setData((await res.json()).data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return null;
+      return ((await res.json()).data ?? null) as TaxCmsDashboard | null;
+    },
+  });
   if (loading || !data)
     return (
       <div className="flex items-center justify-center h-64">
@@ -127,10 +126,7 @@ export default function TaxCmsDashboardPage() {
               {t("totalExposure")}
             </p>
             <p className="text-2xl font-bold">
-              {new Intl.NumberFormat("de-DE", {
-                style: "currency",
-                currency: "EUR",
-              }).format(data.totalExposure)}
+              {money(data.totalExposure, "EUR")}
             </p>
           </CardContent>
         </Card>

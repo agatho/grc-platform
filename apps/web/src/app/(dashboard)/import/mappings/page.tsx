@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { type ColumnDef } from "@tanstack/react-table";
+import type { LegacyColumnDef as ColumnDef } from "@tanstack/react-table/legacy";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,44 +28,52 @@ interface MappingRow {
 // Page
 // ---------------------------------------------------------------------------
 
+const MAPPINGS_KEY = ["import", "mappings"] as const;
+
 export default function ImportMappingsPage() {
   const t = useTranslations("import");
   const { formatDate } = useDateFormat();
+  const queryClient = useQueryClient();
 
-  const [mappings, setMappings] = useState<MappingRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Der Toast bei Fehler bleibt wie
+  // vorher, die Liste bleibt dann leer.
+  const { data: mappings = [], isPending: loading } = useQuery<MappingRow[]>({
+    queryKey: MAPPINGS_KEY,
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/v1/import/mappings");
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        return data.data as MappingRow[];
+      } catch {
+        toast.error("Failed to load mappings");
+        return [];
+      }
+    },
+  });
 
-  const fetchMappings = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/import/mappings");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setMappings(data.data);
-    } catch {
-      toast.error("Failed to load mappings");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchMappings();
-  }, [fetchMappings]);
-
-  const handleDelete = useCallback(async (id: string, entityType: string) => {
-    try {
-      const res = await fetch(
-        `/api/v1/import/mappings/${entityType}?id=${id}`,
-        { method: "DELETE" },
-      );
-      if (!res.ok) throw new Error("Failed to delete");
-      setMappings((prev) => prev.filter((m) => m.id !== id));
-      toast.success("Mapping deleted");
-    } catch {
-      toast.error("Failed to delete mapping");
-    }
-  }, []);
+  const handleDelete = useCallback(
+    async (id: string, entityType: string) => {
+      try {
+        const res = await fetch(
+          `/api/v1/import/mappings/${entityType}?id=${id}`,
+          { method: "DELETE" },
+        );
+        if (!res.ok) throw new Error("Failed to delete");
+        // Der Zwischenspeicher der Abfrage IST jetzt der Ort, an dem die
+        // Liste steht; er wird wie vorher lokal fortgeschrieben.
+        queryClient.setQueryData<MappingRow[]>(MAPPINGS_KEY, (prev) =>
+          (prev ?? []).filter((m) => m.id !== id),
+        );
+        toast.success("Mapping deleted");
+      } catch {
+        toast.error("Failed to delete mapping");
+      }
+    },
+    [queryClient],
+  );
 
   const columns: ColumnDef<MappingRow>[] = [
     {

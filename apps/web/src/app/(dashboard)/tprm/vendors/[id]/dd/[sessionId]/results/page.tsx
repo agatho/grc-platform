@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
@@ -117,8 +118,6 @@ function DdResultsInner() {
     sessionId: string;
   }>();
 
-  const [data, setData] = useState<ResultsData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(),
   );
@@ -127,26 +126,30 @@ function DdResultsInner() {
   // Fetch
   // ──────────────────────────────────────────────────────────────
 
-  const fetchResults = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort lässt
+  // `data` wie vorher leer; ein Netzfehler wird nicht mehr verschluckt,
+  // sondern landet im Fehlerzustand der Abfrage (gleiche Darstellung).
+  const {
+    data = null,
+    isPending: loading,
+    refetch,
+  } = useQuery<ResultsData | null>({
+    queryKey: ["vendors", vendorId, "dd-sessions", sessionId, "results"],
+    queryFn: async () => {
       const res = await fetch(
         `/api/v1/vendors/${vendorId}/dd-sessions/${sessionId}/results`,
       );
-      if (res.ok) {
-        const json = await res.json();
-        setData(json.data);
-      }
-    } catch {
-      /* ignore */
-    } finally {
-      setLoading(false);
-    }
-  }, [vendorId, sessionId]);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as ResultsData | null;
+    },
+  });
 
-  useEffect(() => {
-    void fetchResults();
-  }, [fetchResults]);
+  const fetchResults = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   // ──────────────────────────────────────────────────────────────
   // Actions

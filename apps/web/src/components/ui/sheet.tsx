@@ -78,7 +78,7 @@ function SheetFooter({
 
 function SheetTrigger({
   children,
-  asChild,
+  asChild: _asChild,
   className,
 }: {
   children: React.ReactNode;

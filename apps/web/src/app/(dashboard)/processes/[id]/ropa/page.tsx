@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, AlertTriangle } from "lucide-react";
@@ -74,26 +75,69 @@ function parseCsv(s: string): string[] {
     .filter(Boolean);
 }
 
+// [Welle 7b · OP-080, Gestalt A] Die Seite rief ihren Abruf in einem Effekt
+// und schrieb Ergebnis und Ladezustand mit `setProfile`/`setLoading` synchron
+// zurueck (`react-hooks/set-state-in-effect`). Der Abruf liegt jetzt in
+// `@tanstack/react-query` — die Aufloesung, die fuer genau diese Gestalt
+// vorgesehen ist.
+//
+// Das Formular ist dabei in eine eigene Komponente gewandert. Das ist kein
+// Beiwerk: der Serverstand ist die SAAT des Formulars, nicht sein Inhalt (die
+// Route setzt `requiresDpia` selbst, siehe die Beschreibung der Karte). Ein
+// eigenes Bauteil, das mit dem geladenen Stand EINGEHAENGT wird, braucht dafuer
+// keinen spiegelnden Effekt — React setzt den Anfangswert beim Einhaengen.
 export default function RopaProfilePage() {
   const params = useParams<{ id: string }>();
   const processId = params?.id ?? "";
-  const [profile, setProfile] = useState<RopaProfile>(empty);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const resp = await fetch(`/api/v1/processes/${processId}/ropa-profile`);
-    if (resp.ok) {
+  const { data, isPending, refetch } = useQuery<RopaProfile>({
+    queryKey: ["processes", processId, "ropa-profile"],
+    enabled: processId !== "",
+    queryFn: async () => {
+      const resp = await fetch(`/api/v1/processes/${processId}/ropa-profile`);
+      if (!resp.ok) return empty;
       const j = await resp.json();
-      if (j.data) setProfile({ ...empty, ...j.data });
-    }
-    setLoading(false);
-  }, [processId]);
+      return j.data ? { ...empty, ...j.data } : empty;
+    },
+  });
 
-  useEffect(() => {
-    if (processId) reload();
-  }, [processId, reload]);
+  // Der Schluessel wird NUR nach einem erfolgreichen Speichern erhoeht, nicht
+  // bei jedem Abruf. Sonst risse ein Hintergrundabruf dem Nutzer das Formular
+  // unter den Haenden weg.
+  const [seedVersion, setSeedVersion] = useState(0);
+
+  // Ohne `id` in der URL fragt die Abfrage nichts ab; `isPending` bliebe dann
+  // dauerhaft wahr und die Seite zeigte fuer immer den Ladekreis.
+  if (processId !== "" && isPending) {
+    return (
+      <Loader2 className="mx-auto mt-12 h-6 w-6 animate-spin text-muted-foreground" />
+    );
+  }
+
+  return (
+    <RopaProfileForm
+      key={seedVersion}
+      processId={processId}
+      initial={data ?? empty}
+      onSaved={async () => {
+        await refetch();
+        setSeedVersion((v) => v + 1);
+      }}
+    />
+  );
+}
+
+function RopaProfileForm({
+  processId,
+  initial,
+  onSaved,
+}: {
+  processId: string;
+  initial: RopaProfile;
+  onSaved: () => Promise<void>;
+}) {
+  const [profile, setProfile] = useState<RopaProfile>(initial);
+  const [saving, setSaving] = useState(false);
 
   const save = useCallback(async () => {
     setSaving(true);
@@ -104,19 +148,13 @@ export default function RopaProfilePage() {
     });
     if (resp.ok) {
       toast.success("ROPA profile saved");
-      reload();
+      await onSaved();
     } else {
       const e = await resp.json().catch(() => ({}));
       toast.error(e.error ?? "Save failed");
     }
     setSaving(false);
-  }, [processId, profile, reload]);
-
-  if (loading) {
-    return (
-      <Loader2 className="mx-auto mt-12 h-6 w-6 animate-spin text-muted-foreground" />
-    );
-  }
+  }, [processId, profile, onSaved]);
 
   return (
     <ModuleGate moduleKey="bpm">

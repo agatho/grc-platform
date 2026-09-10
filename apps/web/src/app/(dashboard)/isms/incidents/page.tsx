@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -63,28 +64,31 @@ function IncidentsInner() {
   const t = useTranslations("isms");
   const router = useRouter();
   const { formatDate } = useDateFormat();
-  const [incidents, setIncidents] = useState<SecurityIncident[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("__all__");
   const [statusFilter, setStatusFilter] = useState("__all__");
 
-  const fetchIncidents = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`).
+  const {
+    data: incidents = [],
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<SecurityIncident[]>({
+    queryKey: ["isms", "incidents"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/isms/incidents?limit=100");
-      if (res.ok) {
-        const json = await res.json();
-        setIncidents(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as SecurityIncident[];
+    },
+  });
 
-  useEffect(() => {
-    void fetchIncidents();
-  }, [fetchIncidents]);
+  const fetchIncidents = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
 
   const filtered = useMemo(() => {
     let result = incidents;
@@ -127,9 +131,12 @@ function IncidentsInner() {
             variant="outline"
             size="sm"
             onClick={fetchIncidents}
-            disabled={loading}
+            disabled={isFetching}
           >
-            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCcw
+              size={14}
+              className={isFetching ? "animate-spin" : ""}
+            />
           </Button>
           <Button size="sm" onClick={() => router.push("/isms/incidents/new")}>
             <Plus size={16} /> {t("createIncident")}

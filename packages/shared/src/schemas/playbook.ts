@@ -245,8 +245,10 @@ export function getNextPhase<T extends { id: string; sortOrder: number }>(
 ): T | null {
   const sorted = [...phases].sort((a, b) => a.sortOrder - b.sortOrder);
   const currentIdx = sorted.findIndex((p) => p.id === currentPhaseId);
+  // [OP-065] Beide Ausschlüsse stehen in der Zeile darüber, `?? null` ist
+  // derselbe Rückgabewert wie dort — kein zusätzlicher Ausgang.
   if (currentIdx === -1 || currentIdx === sorted.length - 1) return null;
-  return sorted[currentIdx + 1];
+  return sorted[currentIdx + 1] ?? null;
 }
 
 export function matchesSeverityThreshold(

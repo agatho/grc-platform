@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Loader2, RefreshCcw, Grid3X3, AlertTriangle } from "lucide-react";
@@ -8,7 +9,7 @@ import { Loader2, RefreshCcw, Grid3X3, AlertTriangle } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,26 +75,28 @@ export default function RcmPage() {
 
 function RcmPageInner() {
   const t = useTranslations("controls");
-  const [data, setData] = useState<RcmData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert
+  // wie vorher `null`.
+  const {
+    data = null,
+    isPending: loading,
+    isFetching,
+    refetch,
+  } = useQuery<RcmData | null>({
+    queryKey: ["controls", "rcm"],
+    queryFn: async () => {
+      const res = await fetch("/api/v1/controls/rcm");
+      if (!res.ok) return null;
+      const json = await res.json();
+      return (json.data ?? null) as RcmData | null;
+    },
+  });
 
   const fetchRcm = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/v1/controls/rcm");
-      if (!res.ok) throw new Error("Failed");
-      const json = await res.json();
-      setData(json.data ?? null);
-    } catch {
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchRcm();
-  }, [fetchRcm]);
+    await refetch();
+  }, [refetch]);
 
   const cellMap = useMemo(() => {
     const map = new Map<string, RcmCell>();
@@ -137,7 +140,7 @@ function RcmPageInner() {
           variant="outline"
           size="sm"
           onClick={() => fetchRcm()}
-          disabled={loading}
+          disabled={isFetching}
         >
           <RefreshCcw size={14} />
         </Button>

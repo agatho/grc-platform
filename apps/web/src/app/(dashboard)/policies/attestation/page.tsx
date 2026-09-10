@@ -1,19 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  Loader2,
-  Plus,
-  Users,
-  CalendarClock,
-  CheckCheck,
-  Clock,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Plus, Users, CalendarClock, CheckCheck } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
@@ -44,25 +37,21 @@ export default function PolicyAttestationPage() {
 
 function PolicyAttestationInner() {
   const { formatDate } = useDateFormat();
-  const [loading, setLoading] = useState(true);
-  const [campaigns, setCampaigns] = useState<AttestationCampaign[]>([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Eine nicht-ok-Antwort liefert wie
+  // vorher eine leere Liste.
+  const { data: campaigns = [], isPending: loading } = useQuery<
+    AttestationCampaign[]
+  >({
+    queryKey: ["policies", "attestation", "campaigns"],
+    queryFn: async () => {
       const res = await fetch("/api/v1/policies/attestation/campaigns");
-      if (res.ok) {
-        const json = await res.json();
-        setCampaigns(json.data ?? []);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as AttestationCampaign[];
+    },
+  });
 
   if (loading) {
     return (

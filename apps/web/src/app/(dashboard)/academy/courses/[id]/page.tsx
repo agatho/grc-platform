@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, ArrowLeft, BookOpen, Clock, CheckCircle } from "lucide-react";
@@ -41,27 +41,31 @@ function CourseDetail() {
   const t = useTranslations("academy");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const [course, setCourse] = useState<CourseDetail | null>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Kurs und Lektionen wurden immer
+  // zusammen geholt — daher EINE Abfrage mit `id` im Schluessel. Eine
+  // nicht-ok-Antwort laesst den jeweiligen Teil wie vorher leer.
+  const { data, isPending: loading } = useQuery<{
+    course: CourseDetail | null;
+    lessons: Lesson[];
+  }>({
+    queryKey: ["academy", "courses", id],
+    queryFn: async () => {
       const [cRes, lRes] = await Promise.all([
         fetch(`/api/v1/academy/courses/${id}`),
         fetch(`/api/v1/academy/lessons?courseId=${id}`),
       ]);
-      if (cRes.ok) setCourse((await cRes.json()).data);
-      if (lRes.ok) setLessons((await lRes.json()).data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+      return {
+        course: cRes.ok
+          ? ((await cRes.json()).data as CourseDetail | null)
+          : null,
+        lessons: lRes.ok ? (((await lRes.json()).data ?? []) as Lesson[]) : [],
+      };
+    },
+  });
+  const course = data?.course ?? null;
+  const lessons = data?.lessons ?? [];
 
   if (loading)
     return (

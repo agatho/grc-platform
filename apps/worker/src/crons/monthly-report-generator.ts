@@ -12,6 +12,7 @@ import {
 } from "@grc/db";
 import { eq, and, isNull, sql, gte, lte, desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface MonthlyReportResult {
   processed: number;
@@ -162,9 +163,16 @@ export const processMonthlyReportGenerator = withCronInstrumentation(
         });
 
         processed++;
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "monthly-report-generator",
+            scope: "Store report snapshot as a forecast cost entr",
+          },
+          err,
+        );
         errors++;
-        // Wrapper logs structured error; loop continues.
       }
     }
 

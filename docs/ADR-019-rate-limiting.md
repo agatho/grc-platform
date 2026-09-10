@@ -6,9 +6,17 @@
 
 ## Context
 
-ARCTOS hat aktuell **keine applikations-seitige Rate-Limitierung**. Caddy
-(Reverse-Proxy) rate-limitet pauschal pro IP, aber nicht pro User, nicht
-pro Endpoint, nicht pro Org.
+ARCTOS hat aktuell **keine applikations-seitige Rate-Limitierung**.
+
+> **Korrektur 2026-09-01 (ARCTOS-FULL-2026-08-31 / WP9 · S10-05d, WP10).**
+> Der urspruengliche Satz lautete: „Caddy (Reverse-Proxy) rate-limitet
+> pauschal pro IP". **Das war falsch.** Caddy hat ohne das
+> `caddy-ratelimit`-Plugin gar kein Rate-Limit, und `deploy/Caddyfile`
+> enthaelt weder das Plugin noch eine entsprechende Direktive. Die
+> Infrastruktur-Ebene, auf die sich dieses ADR als Grundschutz berief,
+> existierte nicht — die Anwendung war ungeschuetzt, waehrend das Dokument
+> eine erste Verteidigungslinie behauptete. In einem GRC-Produkt ist eine
+> behauptete, nicht geleistete Kontrolle der schwerere Mangel.
 
 Risiken ohne Rate-Limit:
 
@@ -26,20 +34,59 @@ inkl. Abwehr gegen Flooding/DoS.
 
 Mehrstufiges Rate-Limit mit:
 
-1. **Caddy (Infrastruktur-Ebene)** — bleibt: 100 req/s pro IP (bestehend)
+1. ~~**Caddy (Infrastruktur-Ebene)** — bleibt: 100 req/s pro IP (bestehend)~~
+   **ENTFAELLT.** Diese Ebene gab es nie (siehe Korrektur oben). Sie wird
+   auch nicht nachgeruestet: das `caddy-ratelimit`-Plugin verlangt einen
+   eigenen Caddy-Build, und die Anwendungsebene unten leistet mehr (pro
+   Nutzer, pro Endpunkt, pro Org statt pauschal pro IP). Wer sie dennoch
+   will, installiert das Plugin und traegt die Direktive in
+   `deploy/Caddyfile` ein — **und aktualisiert dann diesen Absatz.**
+
+   Was Caddy stattdessen leistet und was die Anwendung darauf stuetzt:
+   Caddy haengt genau EINEN `X-Forwarded-For`-Eintrag an. Deshalb muss
+   `TRUSTED_PROXY_HOPS` gleich 1 sein. Vor der Remediation nahm der Code den
+   ERSTEN (also den vom Client gelieferten) Eintrag — ein Header pro Versuch
+   genuegte, um das Login-Limit vollstaendig zu umgehen (S02-09/S10-05).
+
 2. **Middleware (Auth-Ebene)** — neu: Token-Bucket-Limit pro `user_id`
    auf `/api/v1/**`, Default 300 req/min
 3. **Per-Endpoint-Override** — fuer sensible oder teure Endpoints:
    - `/api/auth/**` → 10 req/min pro IP
    - `/api/v1/copilot/**` → 30 req/min pro User
    - `/api/v1/import-jobs` → 5 req/hour pro Org
-   - `/api/v1/audit-log/integrity` → 1 req/min pro User
+   - `/api/v1/audit-log/integrity` → 1 req/min pro User im Mittel,
+     **Burst 5** (Token-Bucket 5/300 s)
 
 Storage-Backend: **Redis** mit `rate_limit:{bucket}:{key}`-Keys,
 SETEX + Atomic Decrement.
 
-Fallback: wenn Redis nicht erreichbar, loggen und **durchlassen** (fail-open)
-— ein fehlgeschlagener Rate-Limit darf die App nicht blockieren.
+> **Stand 2026-09-02 (E2E-TRIAGE-3):** Der Integritaets-Endpunkt stand als
+> `capacity: 1, windowSeconds: 60` in `LIMITS`. Das ist die obige Rate mit
+> Burst 1 — der zweite Aufruf innerhalb der Minute wird abgewiesen, egal wie
+> weit die beiden auseinanderliegen. Gemessen: Aufruf 1 → 200, Aufruf 2
+> unmittelbar danach → 429 (Retry-After 60). `/audit-log` ruft den Endpunkt
+> beim Mounten auf, ein Seitenwechsel hin und zurueck meldete dem Nutzer also
+> eine fehlgeschlagene Integritaetspruefung des Audit-Trails. Der Eimer ist
+> jetzt `5/300 s` — dieselbe mittlere Rate, Burst 5.
+>
+> **Stand 2026-09-01:** Der Limiter ist implementiert (WP9), das
+> Redis-Backend ist **an WP10 uebergeben und noch nicht angeschlossen** —
+> der Store ist prozesslokal. Bei N Web-Containern ist das effektive Limit
+> `N x capacity`, und ein Neustart hebt einen laufenden Login-Lockout auf.
+> `REDIS_URL` ist seit dieser Runde eine Pflichtvariable und in beiden
+> Compose-Dateien gesetzt; die Umstellung von
+> `apps/web/src/lib/rate-limit.ts` auf Redis ist in WP10.md als offener
+> Punkt gefuehrt. Fuer den Login-Pfad ist der prozesslokale Zaehler
+> trotzdem eine Groessenordnung besser als der vorherige Zustand
+> (unbegrenzt).
+
+Fallback bei nicht erreichbarem Redis:
+
+- **Auth-Pfade: fail-CLOSED.** Ein ausgefallener Zaehler darf einen
+  Brute-Force-Schutz nicht abschalten. Geaendert gegenueber der
+  urspruenglichen Fassung, die pauschal fail-open vorsah (WP9/S10-05).
+- **Alle uebrigen Pfade: fail-open** — dort gilt weiterhin, dass ein
+  fehlgeschlagener Rate-Limit die Anwendung nicht blockieren soll.
 
 ## Rationale
 

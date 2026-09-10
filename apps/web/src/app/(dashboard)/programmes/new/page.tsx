@@ -112,7 +112,7 @@ export default function NewProgrammePage() {
                         </span>
                       </div>
                       {tpl.description && (
-                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                        <p className="mt-1 text-sm text-slate-600 dark:text-slate-500">
                           {tpl.description}
                         </p>
                       )}

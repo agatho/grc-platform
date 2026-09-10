@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -23,24 +23,10 @@ import { useDateFormat } from "@/lib/format-date";
 import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import type {
-  Control,
-  ControlTest,
-  Finding,
-  ControlStatus,
-  ControlType,
-  ControlAssertion,
-  TestResult,
-} from "@grc/shared";
+import type { Control, ControlTest, Finding, TestResult } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +52,14 @@ interface AuditLogEntry {
   entityType: string;
   changes: Record<string, { old: unknown; new: unknown }> | null;
   createdAt: string;
+}
+
+interface ControlDetailData {
+  control: ControlDetail | null;
+  tests: ControlTest[];
+  findings: Finding[];
+  linkedRisks: LinkedRisk[];
+  auditLog: AuditLogEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -142,57 +136,74 @@ function ControlDetailInner() {
   const router = useRouter();
   const controlId = params.id as string;
 
-  const [control, setControl] = useState<ControlDetail | null>(null);
-  const [tests, setTests] = useState<ControlTest[]>([]);
-  const [findings, setFindings] = useState<Finding[]>([]);
-  const [linkedRisks, setLinkedRisks] = useState<LinkedRisk[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
+  // [OP-245 · Gestalt A] Abruf beim Einhängen über `@tanstack/react-query`
+  // statt Effekt plus gespiegeltem Lade- und Datenzustand (Muster aus
+  // Welle 7b, `catalogs/objects/page.tsx`). Die fünf Anfragen wurden immer
+  // gemeinsam gestellt und gemeinsam verwendet, daher eine Abfrage, die ein
+  // Objekt liefert. Nicht-ok-Antworten lassen wie vorher den jeweiligen
+  // Teil leer; ein Netzfehler landet im Fehlerzustand der Abfrage.
+  const { data, isPending: loading } = useQuery<ControlDetailData>({
+    queryKey: ["controls", "detail", controlId],
+    queryFn: async () => {
       const [controlRes, testsRes, findingsRes, rcmRes, logRes] =
         await Promise.all([
           fetch(`/api/v1/controls/${controlId}`),
           fetch(`/api/v1/controls/${controlId}/tests`),
           fetch(`/api/v1/controls/${controlId}/findings`),
-          fetch(`/api/v1/controls/${controlId}/rcm`),
+          // [ARCTOS-FULL-2026-08-31 · Welle 8a] Hier stand
+          // `/api/v1/controls/:id/rcm`. Diesen Endpunkt gibt es nicht —
+          // `app/api/v1/controls/[id]/` hat kein `rcm/`-Segment, und der
+          // Entwicklungsserver antwortet mit einer HTML-404:
+          //   404 GET /api/v1/controls/<uuid>/rcm
+          // (gemessen 2026-09-08 beim Aufruf der Kontroll-Detailseite).
+          // `rcmRes.ok` war damit nie wahr, `linkedRisks` blieb leer, und der
+          // Reiter „RKM" meldete auch bei vorhandener `risk_control`-Zeile
+          // „Keine Risiko-Kontroll-Zuordnungen gefunden".
+          // Der richtige Endpunkt heisst `/risks` (#WAVE6-CROSS-02, die
+          // Gegenrichtung zu `/risks/:id/controls`) und liefert genau die
+          // Felder, die `LinkedRisk` erwartet.
+          fetch(`/api/v1/controls/${controlId}/risks`),
           fetch(
             `/api/v1/audit-log?entityType=control&entityId=${controlId}&limit=50`,
           ),
         ]);
 
+      const result: ControlDetailData = {
+        control: null,
+        tests: [],
+        findings: [],
+        linkedRisks: [],
+        auditLog: [],
+      };
       if (controlRes.ok) {
         const json = await controlRes.json();
-        setControl(json.data ?? null);
+        result.control = json.data ?? null;
       }
       if (testsRes.ok) {
         const json = await testsRes.json();
-        setTests(json.data ?? []);
+        result.tests = json.data ?? [];
       }
       if (findingsRes.ok) {
         const json = await findingsRes.json();
-        setFindings(json.data ?? []);
+        result.findings = json.data ?? [];
       }
       if (rcmRes.ok) {
         const json = await rcmRes.json();
-        setLinkedRisks(json.data ?? []);
+        result.linkedRisks = json.data ?? [];
       }
       if (logRes.ok) {
         const json = await logRes.json();
-        setAuditLog(json.data ?? []);
+        result.auditLog = json.data ?? [];
       }
-    } catch {
-      // error states handled by null checks
-    } finally {
-      setLoading(false);
-    }
-  }, [controlId]);
+      return result;
+    },
+  });
 
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
+  const control = data?.control ?? null;
+  const tests = data?.tests ?? [];
+  const findings = data?.findings ?? [];
+  const linkedRisks = data?.linkedRisks ?? [];
+  const auditLog = data?.auditLog ?? [];
 
   if (loading) {
     return (

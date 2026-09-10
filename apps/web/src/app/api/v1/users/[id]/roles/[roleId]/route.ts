@@ -1,9 +1,16 @@
 import { db, userOrganizationRole } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+// [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
+// frame that withAuth needs to bind the org-pinned connection; without it the
+// handler queries the context-less pool and RLS filters every row (api.ts:184).
+import { withErrorHandler } from "@/lib/api-wrapper";
+// [ARCTOS-FULL-2026-08-31 · OP-085] Rollenaenderung beendet die Sitzung —
+// Begruendung und Ausfallrichtung stehen im Modulkopf.
+import { invalidateUserSessions } from "@/lib/session-invalidation";
 
 // DELETE /api/v1/users/:id/roles/:roleId — Revoke role (admin)
-export async function DELETE(
+export const DELETE = withErrorHandler(async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string; roleId: string }> },
 ) {
@@ -52,5 +59,7 @@ export async function DELETE(
     `);
   });
 
+  await invalidateUserSessions(userId, ctx.userId);
+
   return Response.json({ data: { roleId, revoked: true } });
-}
+});

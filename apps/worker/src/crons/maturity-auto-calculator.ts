@@ -4,6 +4,7 @@
 import { db, maturityModel, maturityAssessment } from "@grc/db";
 import { eq, and, desc } from "drizzle-orm";
 import { withCronInstrumentation } from "../lib/cron-instrument";
+import { reportJobError } from "../lib/job-runtime";
 
 interface MaturityCalculatorResult {
   orgsProcessed: number;
@@ -70,9 +71,16 @@ export const processMaturityAutoCalculator = withCronInstrumentation(
             result.modelsUpdated++;
           }
         }
-      } catch {
+      } catch (err) {
+        // [WP9 · S10-11] was a silent catch — see lib/job-runtime.ts
+        reportJobError(
+          {
+            job: "maturity-auto-calculator",
+            scope: "Get the latest completed assessment for this",
+          },
+          err,
+        );
         result.errors++;
-        // Wrapper logs structured error; loop continues.
       }
     }
 
