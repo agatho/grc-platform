@@ -365,6 +365,20 @@ function showsLiteralText(source) {
 // Angebunden ist eine Datei jetzt erst, wenn mindestens eine Bindung auch
 // AUFGERUFEN wird. Geprueft wird der Bezeichner, nicht der Unterstrich:
 // `_t` ist nicht das Problem, der ungenutzte Aufruf ist es.
+// [ARCTOS-FULL-2026-08-31 · OP-257] Dieselbe Form wie
+// `apps/web/src/components/bpmn/arctos-grc-extractor.ts:334`.
+//
+// Hier stand `name.replace(/\$/g, "\\$")`. Das war KEIN Defekt: `name`
+// kommt aus `([A-Za-z_$][\w$]*)`, und `$` ist damit das einzige Metazeichen,
+// das ueberhaupt vorkommen kann — genau das wurde escapt. CodeQL meldete es
+// als `js/incomplete-sanitization`, und die Regel hat insofern recht, als die
+// Zeile mehr verspricht als sie haelt: wer die Fanggruppe spaeter erweitert,
+// bekommt lautlos einen kaputten Ausdruck. Die vollstaendige Form kostet
+// nichts und haelt, was sie sagt.
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function bindsButNeverCalls(source) {
   const bindings = [
     ...source.matchAll(
@@ -375,7 +389,7 @@ function bindsButNeverCalls(source) {
   return bindings.every((name) => {
     const calls = [
       ...source.matchAll(
-        new RegExp(`(?<![\\w$.])${name.replace(/\$/g, "\\$")}\\s*\\(`, "g"),
+        new RegExp(`(?<![\\w$.])${escapeRegex(name)}\\s*\\(`, "g"),
       ),
     ].length;
     return calls === 0;
