@@ -150,6 +150,35 @@ describe("S3Storage", () => {
     );
   });
 
+  it("strips a run of trailing slashes from the endpoint", () => {
+    // The endpoint is operator-configured, and a trailing slash in
+    // S3_ENDPOINT is the single most common way to write it. All three
+    // slashes have to go, and exactly the slashes — the URL must be the
+    // one the no-slash case produces.
+    const s3 = new S3Storage({
+      ...baseCfg,
+      endpoint: "http://127.0.0.1:9000///",
+    });
+    expect(s3.objectUrl("org/doc/f.pdf").toString()).toBe(
+      "http://127.0.0.1:9000/arctos-docs/org/doc/f.pdf",
+    );
+  });
+
+  it("trims the endpoint in linear time (js/polynomial-redos)", () => {
+    // Counter-proof for the `.replace(/\/+$/, "")` that used to sit here:
+    // a long run of slashes followed by a non-slash makes the anchored
+    // regex restart, consume the run and backtrack at every slash. The
+    // old code needs ~1.4 s for this input, the loop ~0 ms; the budget is
+    // wide enough that only the quadratic behaviour can blow it.
+    const endpoint = `http://x${"/".repeat(50_000)}x`;
+    const s3 = new S3Storage({ ...baseCfg, endpoint });
+    const started = performance.now();
+    const url = s3.objectUrl("k.txt").toString();
+    const elapsedMs = performance.now() - started;
+    expect(url.endsWith("/arctos-docs/k.txt")).toBe(true);
+    expect(elapsedMs).toBeLessThan(300);
+  });
+
   it("PUT signs the real payload hash and sends the body", async () => {
     const { fetchFn, requests } = mockFetch(() => ({ status: 200 }));
     const s3 = new S3Storage({ ...baseCfg, fetchFn });

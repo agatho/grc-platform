@@ -195,6 +195,15 @@ function catalogue(locale: string): Set<string> {
   return out;
 }
 
+/** Vollstaendiges Escaping fuer einen in ein RegExp interpolierten Bezeichner.
+ *  Gleiche Form wie `escapeRegex` in
+ *  `src/components/bpmn/arctos-grc-extractor.ts`. Vorher stand hier
+ *  `name.replace(/\$/g, "\\$")` — nur `$`, und damit eine Zusicherung, die
+ *  weniger haelt als sie sagt (OP-257, js/incomplete-sanitization). */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 describe("[OP-070] Welle 6b — ai-act, settings, admin, rls-audit", () => {
   // ── §1 ───────────────────────────────────────────────────────────────────
   it.each(CONVERTED)("%s bindet next-intl", (rel) => {
@@ -444,7 +453,7 @@ describe("[OP-070] Welle 6b — ai-act, settings, admin, rls-audit", () => {
         const name = m[1];
         const uses = [
           ...src.matchAll(
-            new RegExp(`(?<![\\w$.])${name.replace(/\$/g, "\\$")}\\s*\\(`, "g"),
+            new RegExp(`(?<![\\w$.])${escapeRegex(name)}\\s*\\(`, "g"),
           ),
         ].length;
         if (uses === 0) offenders.push(`${rel}: ${name}`);

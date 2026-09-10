@@ -19,6 +19,7 @@
 // private Ordner und erzeugt daraus keine Route.
 
 import { NextResponse } from "next/server";
+import { log } from "@/lib/logger";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
 import {
   AiPolicyViolationError,
@@ -123,12 +124,28 @@ export function aiErrorResponse(err: unknown): Response {
       { rawSample: err.rawSample },
     );
   }
-  const message = err instanceof Error ? err.message : String(err);
+  // Bis hierher ging die Meldung des Providers bzw. der darunterliegenden
+  // Bibliothek unverändert als `detail` an den Aufrufer zurück. Das war
+  // kein Stacktrace und der Pfad ist authentifiziert — die Meldung trägt
+  // aber Hostnamen, Ports und gelegentlich Tabellen- und Spaltennamen, und
+  // nichts davon muss ein angemeldeter Mandantennutzer sehen. Dieselbe
+  // Aufteilung wie in `@/lib/api-wrapper.ts`: vollständige Meldung samt
+  // Stack ins Log für den Betrieb, feste Meldung in die Antwort.
+  //
+  // Einen `requestId`-Korrelationsschlüssel gibt es an dieser Stelle nicht:
+  // `aiErrorResponse(err)` bekommt kein `Request` — `getRequestId()` aus
+  // `@/lib/api-errors` braucht eines, und alle 26 Aufrufstellen übergeben
+  // nur den Fehler. Das Feld `component` grenzt die Log-Zeilen ein.
+  log.withContext({ component: "ai-route" }).error("AI provider call failed", {
+    message: err instanceof Error ? err.message : String(err),
+    stack:
+      err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
+  });
   return problem(
     502,
     "ai-provider-failure",
     "KI-Provider nicht erreichbar",
-    message,
+    "Der KI-Provider ist derzeit nicht erreichbar. Der Fehler wurde protokolliert. Bitte später erneut versuchen.",
   );
 }
 

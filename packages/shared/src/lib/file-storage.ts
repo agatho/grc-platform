@@ -176,7 +176,14 @@ export class S3Storage implements FileStorage {
       .map((s) => encodeURIComponent(s))
       .join("/");
     if (this.cfg.endpoint) {
-      const base = this.cfg.endpoint.replace(/\/+$/, "");
+      // [CodeQL js/polynomial-redos] `.replace(/\/+$/, "")` is quadratic:
+      // on "…" + "/".repeat(n) + "x" the engine restarts at every slash,
+      // consumes the whole remaining run, fails the anchor, backtracks —
+      // O(n²) for an endpoint that never matches. The loop below strips
+      // exactly the same maximal run of trailing slashes (and nothing
+      // else, since `/+$` can only ever match trailing slashes) in O(n).
+      let base = this.cfg.endpoint;
+      while (base.endsWith("/")) base = base.slice(0, -1);
       if (this.cfg.forcePathStyle) {
         return new URL(`${base}/${this.cfg.bucket}/${encodedKey}`);
       }

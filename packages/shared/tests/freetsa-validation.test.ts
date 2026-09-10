@@ -148,6 +148,62 @@ describe("verifyTimestampResponse — forged and mismatched responses", () => {
   });
 });
 
+describe("splitPem — via the caPem trust anchor", () => {
+  // `splitPem` is module-private and stays that way; the only thing that
+  // reaches it is the `caPem` option of verifyTimestampResponse, which is
+  // enough to observe every branch of it. `caPem` is fed one certificate
+  // at a time into `new X509Certificate`, so how the bundle was split is
+  // visible in the outcome.
+
+  it("splits a two-certificate bundle into two anchors", () => {
+    // The TSA certificate alone is rejected (see the chain_untrusted case
+    // above). Put it first and the real CA second: the call can only
+    // succeed if both halves were handed to X509Certificate separately —
+    // a single un-split blob parses as its first certificate only, which
+    // is the TSA cert, and would throw chain_untrusted.
+    const bundle = `${fx.tsaCertPem.trim()}\n${fx.caPem.trim()}\n`;
+    const r = verifyTimestampResponse(response, imprint, nonce, {
+      caPem: bundle,
+    });
+    expect(r.verified).toBe(true);
+    expect(r.chainVerified).toBe(true);
+  });
+
+  it("falls back to the whole string when there are no certificate markers", () => {
+    // Fallback `[pem]`: the unparseable string reaches X509Certificate and
+    // its parse error propagates. Returning `[]` instead would produce a
+    // TimestampValidationError("chain_untrusted") — so the error type is
+    // what distinguishes the fallback from an empty result.
+    let thrown: unknown;
+    try {
+      verifyTimestampResponse(response, imprint, nonce, {
+        caPem: "-- definitely not a certificate --",
+      });
+    } catch (e) {
+      thrown = e;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect(thrown).not.toBeInstanceOf(TimestampValidationError);
+  });
+
+  it("scans a BEGIN-heavy bundle in linear time (js/polynomial-redos)", () => {
+    // Counter-proof for the lazy `[\s\S]*?` scan this used to be: after
+    // the one real certificate, every further BEGIN marker has no END
+    // after it, so the old regex expanded to end-of-string once per
+    // marker — several seconds for this input against ~0 ms for the
+    // indexOf walk. The result is identical either way: one usable
+    // anchor, so the call succeeds exactly as with a clean caPem.
+    const poisoned = `${fx.caPem.trim()}\n${"-----BEGIN CERTIFICATE-----\n".repeat(40_000)}`;
+    const started = performance.now();
+    const r = verifyTimestampResponse(response, imprint, nonce, {
+      caPem: poisoned,
+    });
+    const elapsedMs = performance.now() - started;
+    expect(r.chainVerified).toBe(true);
+    expect(elapsedMs).toBeLessThan(500);
+  });
+});
+
 describe("buildTimestampRequest", () => {
   it("refuses anything that is not a 32-byte SHA-256 hash", () => {
     expect(() =>

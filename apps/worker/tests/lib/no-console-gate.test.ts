@@ -42,11 +42,21 @@ const SRC_FILES = walk(SRC);
 const CALL_RE =
   /(^|[^.\w$])console\s*\.\s*(log|warn|error|info|debug|trace|table|dir|group|groupEnd|time|timeEnd|assert|count)\s*\(/;
 
+// [OP-257] Die Alternative war mehrdeutig: die Auffangklasse erfasste auch
+// das Dollarzeichen und die geschweiften Klammern, also konnte eine
+// Einsetzung sowohl vom eigenen Zweig als auch zeichenweise verschluckt
+// werden. Genau diese Ueberlappung macht den Ausdruck auf einer nie
+// geschlossenen Vorlage exponentiell — gemessen: ein Backtick gefolgt von
+// 26 leeren Einsetzungen brauchte 971 ms, mit je vier weiteren das
+// Sechzehnfache; nach der Umstellung 0 ms. Das Dollarzeichen ist jetzt aus
+// der Auffangklasse heraus und hat eigene Zweige, damit keine zwei Zweige
+// dasselbe Zeichen erfassen koennen. Die Ausgabe ist auf allen 1.522
+// geprueften Dateien unveraendert (nachgemessen).
 function stripCommentsAndStrings(src: string): string {
   return src
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ")
-    .replace(/`(?:\\.|\$\{[^}]*\}|[^`\\])*`/g, '""')
+    .replace(/`(?:\\.|\$\{[^}]*\}|\$(?!\{)|[^`\\$])*`/g, '""')
     .replace(/"(?:\\.|[^"\\])*"/g, '""')
     .replace(/'(?:\\.|[^'\\])*'/g, '""');
 }

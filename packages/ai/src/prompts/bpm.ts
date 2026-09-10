@@ -192,15 +192,26 @@ export function safeJsonParse<T = unknown>(text: string): T | null {
   try {
     return JSON.parse(stripped) as T;
   } catch {
-    // Best-effort: find the first {...} block
-    const match = stripped.match(/\{[\s\S]*\}/);
-    if (match) {
-      try {
-        return JSON.parse(match[0]) as T;
-      } catch {
-        return null;
-      }
+    // Best-effort: find the first {...} block.
+    //
+    // [CodeQL js/polynomial-redos] Hier stand `stripped.match(/\{[\s\S]*\}/)`.
+    // Unverankert ist jede `{`-Position ein möglicher Startpunkt, und das
+    // gierige `[\s\S]*` läuft von jedem davon bis zum Textende und backtrackt
+    // zurück — auf `"{{{{…"` (keine `}`) ist das O(n²) auf dem Event-Loop.
+    // `safeJsonParse` ist der `parse:`-Callback von 18 Routen, der Text kommt
+    // roh von einem fremden AI-Provider.
+    //
+    // Äquivalenz: Das gierige `[\s\S]*` dehnt sich immer bis zur LETZTEN `}`
+    // aus, und die am weitesten links stehende `{` ist immer ein gültiger
+    // Startpunkt, sobald überhaupt eine `}` danach folgt. Der Treffer ist also
+    // exakt `slice(erste "{", letzte "}" + 1)`.
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    if (start === -1 || end < start) return null;
+    try {
+      return JSON.parse(stripped.slice(start, end + 1)) as T;
+    } catch {
+      return null;
     }
-    return null;
   }
 }

@@ -13,7 +13,16 @@ import { safeFetch } from "@grc/shared/lib/url-safety-server";
 export async function discoverOIDCEndpoints(
   discoveryUrl: string,
 ): Promise<OidcDiscoveryDocument> {
-  let url = discoveryUrl.replace(/\/+$/, "");
+  // [CodeQL js/polynomial-redos] `.replace(/\/+$/, "")` is quadratic:
+  // on "…" + "/".repeat(n) + "x" the engine restarts at every slash,
+  // consumes the whole remaining run, fails the anchor, backtracks —
+  // O(n²) for a URL whose slash run is not the very end of the string.
+  // The loop below strips exactly the same maximal run of trailing
+  // slashes (and nothing else, since `/+$` can only ever match trailing
+  // slashes) in O(n). `discoveryUrl` is operator-supplied SSO
+  // configuration, so this is hardening, not a reachable DoS.
+  let url = discoveryUrl;
+  while (url.endsWith("/")) url = url.slice(0, -1);
 
   if (!url.endsWith(".well-known/openid-configuration")) {
     url = `${url}/.well-known/openid-configuration`;

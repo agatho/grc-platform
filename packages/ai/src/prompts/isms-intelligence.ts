@@ -145,11 +145,22 @@ export interface ParsedRoadmapAction {
  */
 export function parseSoaGapResponse(text: string): ParsedSoaGap[] {
   try {
-    // Try to extract JSON array from response
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
+    // Extract JSON array from response.
+    //
+    // [CodeQL js/polynomial-redos] Hier stand `text.match(/\[[\s\S]*\]/)`.
+    // Unverankert ist jede `[`-Position ein möglicher Startpunkt, und das
+    // gierige `[\s\S]*` läuft von jedem davon bis zum Textende und backtrackt
+    // zurück — auf `"[[[[…"` (kein `]`) ist das O(n²) auf dem Event-Loop.
+    //
+    // Äquivalenz: Das gierige `[\s\S]*` dehnt sich immer bis zur LETZTEN `]`
+    // aus, und die am weitesten links stehende `[` ist immer ein gültiger
+    // Startpunkt, sobald überhaupt eine `]` danach folgt. Der Treffer ist also
+    // exakt `slice(erste "[", letzte "]" + 1)`.
+    const start = text.indexOf("[");
+    const end = text.lastIndexOf("]");
+    if (start === -1 || end < start) return [];
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed: unknown = JSON.parse(text.slice(start, end + 1));
     if (!Array.isArray(parsed)) return [];
 
     const validGapTypes = ["not_covered", "partial", "full"];
@@ -184,10 +195,15 @@ export function parseMaturityRoadmapResponse(
   text: string,
 ): ParsedRoadmapAction[] {
   try {
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) return [];
+    // [CodeQL js/polynomial-redos] Siehe `parseSoaGapResponse` oben: dieselbe
+    // unverankerte, gierige `/\[[\s\S]*\]/`-Suche, dieselbe lineare Ersetzung.
+    // Der gierige Treffer endet immer an der LETZTEN `]`, und die erste `[` ist
+    // immer ein gültiger Startpunkt — `slice` liefert denselben Ausschnitt.
+    const start = text.indexOf("[");
+    const end = text.lastIndexOf("]");
+    if (start === -1 || end < start) return [];
 
-    const parsed = JSON.parse(jsonMatch[0]);
+    const parsed: unknown = JSON.parse(text.slice(start, end + 1));
     if (!Array.isArray(parsed)) return [];
 
     const validEfforts = ["S", "M", "L"];

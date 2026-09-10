@@ -222,4 +222,40 @@ describe("parseJsonArray", () => {
   it("liefert null bei Muell", () => {
     expect(parseJsonArray("Entschuldigung, ich kann das nicht.")).toBeNull();
   });
+
+  // [CodeQL js/polynomial-redos] Die drei Faelle oben erreichen die
+  // Extraktionszeile gar nicht: das nackte und das gefencte Array parsen
+  // bereits im `try`, der Muell-Fall hat keine Klammer. Erst ein Array
+  // MITTEN im Fliesstext faellt in den `catch`-Zweig und laeuft ueber die
+  // geaenderte Zeile.
+  it("liest ein Array aus umgebendem Fliesstext", () => {
+    expect(parseJsonArray('Here you go: [{"a":1}] hope that helps')).toEqual([
+      { a: 1 },
+    ]);
+  });
+
+  it("liest bei mehreren Klammern bis zur letzten schliessenden", () => {
+    // Der alte gierige Regex dehnte sich ebenfalls bis zur LETZTEN `]` aus.
+    // Der Fall haelt diese Aequivalenz fest, statt sie nur zu behaupten.
+    expect(parseJsonArray("Text [1, [2, 3]] Ende")).toEqual([1, [2, 3]]);
+  });
+
+  it("liefert null, wenn eine oeffnende Klammer ohne schliessende dasteht", () => {
+    expect(parseJsonArray("Ich beginne mit [ und hoere dann auf")).toBeNull();
+  });
+
+  it("liefert null, wenn die schliessende Klammer vor der oeffnenden steht", () => {
+    expect(parseJsonArray("] kommt vor [")).toBeNull();
+  });
+
+  // Zeitschranke, kein Verhaltenstest. Der alte Regex brauchte auf dieser
+  // Eingabe ~1,1 s (gemessen: 20k -> 186 ms, 40k -> 734 ms, 50k -> 1124 ms —
+  // sauber quadratisch), die lineare Fassung ~4 ms. Das Budget liegt so, dass
+  // es die alte Fassung sicher reisst und der neuen ~50x Luft laesst.
+  it("bleibt bei 50.000 oeffnenden Klammern unter dem Zeitbudget", () => {
+    const pathological = "[".repeat(50_000);
+    const started = performance.now();
+    expect(parseJsonArray(pathological)).toBeNull();
+    expect(performance.now() - started).toBeLessThan(250);
+  });
 });

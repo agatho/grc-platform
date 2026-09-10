@@ -387,10 +387,23 @@ export function parseJsonArray(text: string): unknown {
   try {
     return JSON.parse(stripped);
   } catch {
-    const match = stripped.match(/\[[\s\S]*\]/);
-    if (!match) return null;
+    // [CodeQL js/polynomial-redos] Hier stand `stripped.match(/\[[\s\S]*\]/)`.
+    // Unverankert ist jede `[`-Position ein möglicher Startpunkt, und das
+    // gierige `[\s\S]*` läuft von jedem dieser Startpunkte bis zum Textende
+    // und backtrackt zurück — auf `"[[[[…"` (kein `]`) ist das O(n²) auf dem
+    // Event-Loop, und der Text stammt aus der Antwort eines fremden
+    // AI-Providers.
+    //
+    // Äquivalenz: Das gierige `[\s\S]*` dehnt sich immer bis zur LETZTEN `]`
+    // aus, und die am weitesten links stehende `[` ist immer ein gültiger
+    // Startpunkt, sobald überhaupt eine `]` danach folgt. Der Regex-Treffer
+    // ist also exakt `slice(erste "[", letzte "]" + 1)` — linear statt
+    // quadratisch, bei identischem Ergebnis.
+    const start = stripped.indexOf("[");
+    const end = stripped.lastIndexOf("]");
+    if (start === -1 || end < start) return null;
     try {
-      return JSON.parse(match[0]);
+      return JSON.parse(stripped.slice(start, end + 1));
     } catch {
       return null;
     }

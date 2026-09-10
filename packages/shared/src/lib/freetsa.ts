@@ -753,10 +753,32 @@ function findGeneralizedTime(buf: Buffer): Date | undefined {
   return undefined;
 }
 
+// [CodeQL js/polynomial-redos] This used to scan with
+// /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g. On a
+// bundle carrying many BEGIN markers and no matching END, the lazy
+// quantifier expands to end-of-string once per start position — O(n²) for
+// input that produces no match at all.
+//
+// The indexOf walk below has the same match boundaries as the regex: the
+// regex takes the leftmost BEGIN at or after `lastIndex` and then the
+// *shortest* END following it (lazy quantifier), and resumes at the end of
+// that match — which is precisely `indexOf(BEGIN, i)` / `indexOf(END, …)` /
+// `i = e + END.length`. Breaking out when no END follows a BEGIN is
+// equivalent too: ENDs are found by a forward scan, so if none follows this
+// BEGIN, none follows any later one either. The fallback is unchanged.
+const PEM_BEGIN = "-----BEGIN CERTIFICATE-----";
+const PEM_END = "-----END CERTIFICATE-----";
+
 function splitPem(pem: string): string[] {
   const out: string[] = [];
-  const re = /-----BEGIN CERTIFICATE-----[\s\S]*?-----END CERTIFICATE-----/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(pem)) !== null) out.push(m[0]);
+  let i = 0;
+  for (;;) {
+    const s = pem.indexOf(PEM_BEGIN, i);
+    if (s === -1) break;
+    const e = pem.indexOf(PEM_END, s + PEM_BEGIN.length);
+    if (e === -1) break;
+    out.push(pem.slice(s, e + PEM_END.length));
+    i = e + PEM_END.length;
+  }
   return out.length > 0 ? out : [pem];
 }

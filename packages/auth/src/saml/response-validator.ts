@@ -668,16 +668,29 @@ export function extractSAMLAttributes(
   rejectXXE(assertionXml);
   const attrMap = new Map<string, string[]>();
 
+  // [CodeQL js/polynomial-redos] The start-tag regions were `[^>]*` /
+  // `[^>]*?`, and `[^>]` also matches `<`. On input carrying many
+  // `<Attribute ` fragments that never close, every fragment is a viable
+  // start position whose inner loop scans to the end of the string —
+  // O(n²). Narrowed to `[^<>]`, which stops at the next `<`. This is
+  // behaviour-preserving: a literal `<` inside a start tag is not
+  // well-formed XML, and this function only ever sees an assertion that
+  // already passed XML-DSig verification in `verifySamlResponse()` and
+  // `rejectXXE()` above. On every input the old code was meant to accept
+  // the two classes match identically; on malformed input the narrowed
+  // class fails fast instead of scanning to the end. Hardening — reaching
+  // it needs a malicious or compromised IdP attacking its own tenant.
   const attrRegex =
-    /<(?:[A-Za-z0-9_.-]+:)?Attribute\s+[^>]*?Name="([^"]*)"[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?Attribute>/gi;
+    /<(?:[A-Za-z0-9_.-]+:)?Attribute\s+[^<>]*?Name="([^"]*)"[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?Attribute>/gi;
   let match: RegExpExecArray | null;
   while ((match = attrRegex.exec(assertionXml)) !== null) {
     // [OP-065] Fanggruppen eines geglückten Treffers; `?? ""` statt `!`.
     const name = match[1] ?? "";
     const valueBlock = match[2] ?? "";
     const values: string[] = [];
+    // [CodeQL js/polynomial-redos] Same narrowing as `attrRegex` above.
     const valueRegex =
-      /<(?:[A-Za-z0-9_.-]+:)?AttributeValue[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?AttributeValue>/gi;
+      /<(?:[A-Za-z0-9_.-]+:)?AttributeValue[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?AttributeValue>/gi;
     let vm: RegExpExecArray | null;
     while ((vm = valueRegex.exec(valueBlock)) !== null) {
       values.push((vm[1] ?? "").trim());
@@ -685,8 +698,9 @@ export function extractSAMLAttributes(
     attrMap.set(name, values);
   }
 
+  // [CodeQL js/polynomial-redos] Same narrowing as `attrRegex` above.
   const nameIdMatch = assertionXml.match(
-    /<(?:[A-Za-z0-9_.-]+:)?NameID[^>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?NameID>/i,
+    /<(?:[A-Za-z0-9_.-]+:)?NameID[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?NameID>/i,
   );
   const nameId = nameIdMatch?.[1]?.trim() ?? null;
 

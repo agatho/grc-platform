@@ -134,7 +134,16 @@ export function parseBatchTranslateResponse(
     // fall through to fence extraction
   }
 
-  const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
+  // [CodeQL js/polynomial-redos] Hier stand `/```(?:json)?\s*([\s\S]*?)```/`.
+  // `\s*` und das direkt folgende `[\s\S]*?` matchen beide Whitespace — dieses
+  // benachbarte Paar ist der polynomiale Fall: auf `"``` " + " ".repeat(n)`
+  // (ohne schliessenden Fence) probiert die Engine jede Aufteilung der
+  // Leerzeichen zwischen beiden Teilen durch, O(n²) auf dem Event-Loop.
+  //
+  // Äquivalenz: Ohne `\s*` ist der Trefferbereich (`jsonMatch[0]`) unverändert
+  // — nur die Fanggruppe 1 behält den führenden Whitespace, und die Zeile
+  // darunter ruft ohnehin `.trim()` darauf auf.
+  const jsonMatch = response.match(/```(?:json)?([\s\S]*?)```/);
   if (jsonMatch) {
     try {
       // Die Fanggruppe ist bei einem Treffer vorhanden; `?? ""` lässt

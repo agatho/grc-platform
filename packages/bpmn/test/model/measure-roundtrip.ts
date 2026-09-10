@@ -29,7 +29,14 @@ function mark(ok: boolean): string {
 }
 
 function escapeCell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+  // [OP-257] Der Backslash muss ZUERST verdoppelt werden: sonst wird aus der
+  // Eingabe `\|` die Ausgabe `\\|`, und das ist in Markdown ein escapter
+  // Backslash gefolgt von einem unescapten Trennzeichen — die Zelle bricht
+  // auf. Zeilenumbrueche werden mit CR erfasst, nicht nur mit LF.
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\|/g, "\\|")
+    .replace(/\r\n?|\n/g, " ");
 }
 
 function truncate(value: string, max = 160): string {

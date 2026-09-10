@@ -240,4 +240,93 @@ describe("SAMLResponseValidator", () => {
     const noSig = `<samlp:Response><saml:Assertion/></samlp:Response>`;
     expect(validateSAMLSignature(noSig, "cert")).toBe(false);
   });
+
+  it("extracts attributes when start tags carry extra XML attributes", () => {
+    // Capture-semantics guard for the `[^>]*` → `[^<>]*` narrowing: every
+    // narrowed region here is non-empty and namespaced, so a narrowing that
+    // changed what the groups capture would show up as a wrong value rather
+    // than as a silent pass on an attribute-free tag.
+    const assertion = `
+      <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">
+        <saml:Subject>
+          <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress" SPNameQualifier="https://sp.example.de">nameid@example.de</saml:NameID>
+        </saml:Subject>
+        <saml:Attribute Name="mail" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic" FriendlyName="E-Mail">
+          <saml:AttributeValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">attr@example.de</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="givenName" FriendlyName="Vorname">
+          <saml:AttributeValue xsi:type="xs:string">Erika</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="sn" FriendlyName="Nachname">
+          <saml:AttributeValue xsi:type="xs:string">Musterfrau</saml:AttributeValue>
+        </saml:Attribute>
+        <saml:Attribute Name="memberOf" FriendlyName="Gruppen">
+          <saml:AttributeValue xsi:type="xs:string">GRC-Admins</saml:AttributeValue>
+          <saml:AttributeValue xsi:type="xs:string">Risk-Team</saml:AttributeValue>
+        </saml:Attribute>
+      </saml:Assertion>
+    `;
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+    const attrs = extractSAMLAttributes(assertion, mapping);
+    expect(attrs.email).toBe("attr@example.de");
+    expect(attrs.firstName).toBe("Erika");
+    expect(attrs.lastName).toBe("Musterfrau");
+    expect(attrs.groups).toEqual(["GRC-Admins", "Risk-Team"]);
+
+    // …and the NameID from the same attribute-rich start tag is still the
+    // email fallback when the mapped attribute is absent.
+    const fallback = extractSAMLAttributes(assertion, {
+      ...mapping,
+      email: "absent",
+    });
+    expect(fallback.email).toBe("nameid@example.de");
+  });
+
+  it("extracts attributes in linear time (js/polynomial-redos)", () => {
+    // Counter-proof for the `[^>]*` / `[^>]*?` start-tag regions that used
+    // to sit in `extractSAMLAttributes`. `[^>]` also matches `<`, so on an
+    // assertion carrying many `<Attribute ` fragments that never close,
+    // every fragment is a viable start position whose inner loop scans to
+    // the end of the string. The old classes need ~1.0 s (attrRegex),
+    // ~3.4 s (valueRegex) and ~2.2 s (NameID) for these inputs, the
+    // narrowed `[^<>]` ~1 ms; the budget is wide enough that only the
+    // quadratic behaviour can blow it.
+    //
+    // This is hardening, not a reachable DoS: `extractSAMLAttributes` only
+    // ever runs on an assertion that `verifySamlResponse()` has already
+    // validated with real XML-DSig, so producing such an input means a
+    // malicious or compromised IdP attacking its own tenant.
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+    const cases: Array<[string, string]> = [
+      // attrRegex: unterminated `<Attribute ` fragments at top level.
+      ["attrRegex", "<Attribute ".repeat(20_000)],
+      // valueRegex: it only ever runs on `match[2]`, so the fragments have
+      // to sit inside an Attribute block that does match.
+      [
+        "valueRegex",
+        `<Attribute Name="mail">${"<AttributeValue ".repeat(20_000)}</Attribute>`,
+      ],
+      // NameID: unterminated `<NameID ` fragments at top level.
+      ["NameID", "<NameID ".repeat(20_000)],
+    ];
+    for (const [, evil] of cases) {
+      const started = performance.now();
+      // No mapped attribute and no NameID resolve, so the function refuses —
+      // the point is that it refuses fast instead of scanning to the end.
+      expect(() => extractSAMLAttributes(evil, mapping)).toThrow(
+        /No email attribute found/,
+      );
+      expect(performance.now() - started).toBeLessThan(300);
+    }
+  });
 });

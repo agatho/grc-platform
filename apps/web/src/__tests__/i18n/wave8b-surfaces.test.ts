@@ -154,11 +154,8 @@ function deadBindings(src: string): string[] {
   ].map((m) => m[1]);
   return names.filter(
     (n) =>
-      [
-        ...src.matchAll(
-          new RegExp(`(?<![\\w$.])${n.replace(/\$/g, "\\$")}\\b`, "g"),
-        ),
-      ].length <= 1,
+      [...src.matchAll(new RegExp(`(?<![\\w$.])${escapeRegex(n)}\\b`, "g"))]
+        .length <= 1,
   );
 }
 
@@ -201,6 +198,15 @@ function nsLeaves(locale: string, file: string): Set<string> {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
+
+/** Vollstaendiges Escaping fuer einen in ein RegExp interpolierten Bezeichner.
+ *  Gleiche Form wie `escapeRegex` in
+ *  `src/components/bpmn/arctos-grc-extractor.ts`. Vorher stand hier
+ *  `name.replace(/\$/g, "\\$")` — nur `$`, und damit eine Zusicherung, die
+ *  weniger haelt als sie sagt (OP-257, js/incomplete-sanitization). */
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 describe("Welle 8b §1 — OP-203: die 18 Geldformatierer", () => {
   for (const rel of CURRENCY_FILES) {

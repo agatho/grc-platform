@@ -78,8 +78,14 @@ export async function renderStructuredPdfResponse(
   } catch (err) {
     // pdfkit doesn't depend on anything that can fail at runtime —
     // if this branch fires, something is genuinely broken (corrupt
-    // input, OOM). Surface a 503 with the underlying message rather
-    // than the legacy text/html fallback that masqueraded as a PDF.
+    // input, OOM). Surface a 503 rather than the legacy text/html
+    // fallback that masqueraded as a PDF.
+    //
+    // The `detail` used to repeat the underlying message. That message
+    // is no stack trace and this path is authenticated, but it can name
+    // internals (file paths, library frames) that an authenticated
+    // tenant user has no use for — and it is written to the log right
+    // below anyway, so the response loses nothing an operator needs.
     log
       .withContext({ component: "pdf", baseFilename: safeBase })
       .error("pdfkit render failed", {
@@ -90,7 +96,7 @@ export async function renderStructuredPdfResponse(
         type: "https://arctos.charliehund.de/errors/pdf-render-failed",
         title: "PDF generation failed",
         status: 503,
-        detail: err instanceof Error ? err.message : String(err),
+        detail: "PDF generation failed. The error has been logged server-side.",
       }),
       {
         status: 503,
@@ -422,9 +428,44 @@ const HTML_ENTITY_MAP: Record<string, string> = {
   "&amp;": "&",
 };
 
+/**
+ * Remove HTML tags, replacing each with a space — single linear scan, no regex.
+ *
+ * Was `.replace(/<[^>]+>/g, " ")`. That regex backtracks: `[^>]+` runs to the
+ * end of the string at every `<`, so `"<".repeat(n)` costs O(n²) (measured
+ * 0.2s at 20k, 3.0s at 80k, 18.5s at 200k). Same defect and same shape as the
+ * strips in lib/documents/extract-text.ts and the worker's threat-feed-sync;
+ * fixed here in the same change so it does not survive as a known-bad twin.
+ *
+ * Semantics kept identical to the regex, including the two details that are
+ * easy to lose:
+ *  - `[^>]+` needs at least ONE character, so `<>` is NOT a tag: it survives
+ *    and scanning resumes just after the `<`, as the engine would retry.
+ *  - each removed tag becomes a single SPACE, not "" — the `\s+` collapse
+ *    below then merges runs, which is what keeps `a<br/>b` reading as `a b`.
+ */
+function stripHtmlTags(value: string): string {
+  let out = "";
+  let i = 0;
+  let from = 0;
+  for (;;) {
+    const lt = value.indexOf("<", from);
+    if (lt === -1) break;
+    const gt = value.indexOf(">", lt + 1);
+    if (gt === -1) break;
+    if (gt === lt + 1) {
+      from = lt + 1;
+      continue;
+    }
+    out += value.slice(i, lt) + " ";
+    i = gt + 1;
+    from = i;
+  }
+  return out + value.slice(i);
+}
+
 function stripTags(s: string): string {
-  return s
-    .replace(/<[^>]+>/g, " ")
+  return stripHtmlTags(s)
     .replace(
       /&(?:nbsp|lt|gt|quot|auml|ouml|uuml|Auml|Ouml|Uuml|szlig|amp);/g,
       (m) => HTML_ENTITY_MAP[m] ?? m,

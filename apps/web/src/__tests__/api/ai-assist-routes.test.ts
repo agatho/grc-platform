@@ -432,9 +432,21 @@ describe("POST /api/v1/ai/draft-policy", { timeout: 90_000 }, () => {
         },
       ]),
     );
-    aiCompleteMock.mockRejectedValue(new Error("provider down"));
+    aiCompleteMock.mockRejectedValue(
+      new Error("connect ECONNREFUSED ollama.internal:11434"),
+    );
     const res = await call(validBody);
     expect(res.status).toBe(502);
+
+    // Die Antwort trägt die Meldung des Providers nicht mehr. Sie war
+    // kein Stacktrace und der Pfad ist angemeldet — sie nennt aber
+    // Hostnamen, Ports und gelegentlich Tabellen- und Spaltennamen, die
+    // ein Mandantennutzer nicht sehen muss. Der volle Text steht im Log
+    // (`component: "ai-route"`), siehe `_shared/ai-route.ts`.
+    const json = await res.json();
+    expect(JSON.stringify(json)).not.toContain("ECONNREFUSED");
+    expect(JSON.stringify(json)).not.toContain("ollama.internal");
+    expect(json.detail).toMatch(/nicht erreichbar/i);
   });
 });
 

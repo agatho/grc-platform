@@ -108,11 +108,37 @@ export function parseXliff(xml: string): XliffDocument {
   const targetLanguage = group1(trgLangMatch);
 
   // Extract units
-  const unitRegex = /<unit id="([^"]+)">([\s\S]*?)<\/unit>/g;
+  //
+  // [ARCTOS-FULL-2026-08-31 · CodeQL js/polynomial-redos] Hier stand
+  // `/<unit id="([^"]+)">([\s\S]*?)<\/unit>/g` in einer `exec`-Schleife. Das
+  // faule `[\s\S]*?` ist billig, solange es fündig wird — aber JEDER Öffner
+  // ohne folgendes `</unit>` lässt es bis ans Ende der Zeichenkette laufen.
+  // Bei n Öffnern ohne Schliesser sind das n²/2 Schritte: eine hochgeladene
+  // Datei mit 60 000 `<unit id="a">` und keinem `</unit>` blockierte die
+  // Event-Loop des ganzen Node-Prozesses für Sekunden (der Importpfad
+  // POST /api/v1/translations/import nimmt bis 50 MB entgegen).
+  //
+  // Stattdessen segmentierend: das nächste `</unit>` per `indexOf` suchen,
+  // das Stück davor nehmen und den Öffner NUR darin suchen. Öffner ohne
+  // Schliesser kosten dadurch nichts. Die ausgewählten Paare sind dieselben
+  // wie bisher: im Segment liegt kein weiteres `</unit>`, also ist der
+  // gefundene Schliesser genau der, den die alte Suche ab dem Öffner
+  // gefunden hätte — und `<unit>` verschachtelt sich in XLIFF nicht.
+  const CLOSING_TAG = "</unit>";
+  const unitRegex = /<unit id="([^"]+)">([\s\S]*)$/;
   const units: XliffTranslationUnit[] = [];
 
-  let unitMatch: RegExpExecArray | null;
-  while ((unitMatch = unitRegex.exec(xml)) !== null) {
+  let cursor = 0;
+  for (;;) {
+    const closingIndex = xml.indexOf(CLOSING_TAG, cursor);
+    if (closingIndex === -1) break;
+
+    const segment = xml.slice(cursor, closingIndex);
+    cursor = closingIndex + CLOSING_TAG.length;
+
+    const unitMatch = segment.match(unitRegex);
+    if (!unitMatch) continue;
+
     const unitId = unescapeXml(group1(unitMatch));
     const unitContent = unitMatch[2] ?? "";
 
@@ -126,8 +152,17 @@ export function parseXliff(xml: string): XliffDocument {
     const fieldMatch = unitContent.match(/<meta type="field">([^<]+)<\/meta>/);
 
     // Extract source and target
-    const sourceMatch = unitContent.match(/<source[^>]*>([^<]*)<\/source>/);
-    const targetMatch = unitContent.match(/<target[^>]*>([^<]*)<\/target>/);
+    //
+    // [ARCTOS-FULL-2026-08-31 · CodeQL js/polynomial-redos] Hier stand
+    // `[^>]*` für den Attributbereich. Das schliesst `<` NICHT aus, also ist
+    // jedes `<source`-Fragment ohne `>` eine gültige Startposition, deren
+    // `[^>]*` bis ans Ende des Rumpfes läuft — quadratisch in der Zahl der
+    // Fragmente. `[^<>]*` beendet jede solche Startposition sofort. Das
+    // Verhalten bleibt gleich: ein wörtliches `<` im Attributbereich ist
+    // kein wohlgeformtes XML, und `escapeXml()` in dieser Datei erzeugt dort
+    // nie eines.
+    const sourceMatch = unitContent.match(/<source[^<>]*>([^<]*)<\/source>/);
+    const targetMatch = unitContent.match(/<target[^<>]*>([^<]*)<\/target>/);
 
     if (!entityTypeMatch || !entityIdMatch || !fieldMatch || !sourceMatch) {
       continue; // Skip malformed units
@@ -234,13 +269,28 @@ function escapeXml(str: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// [ARCTOS-FULL-2026-08-31 · CodeQL js/double-escaping] Hier stand eine Kette
+// von fünf `replace()`, die `&amp;` ZUERST entschlüsselte — und war damit
+// nicht die Umkehrung von `escapeXml()`, das `&` korrekt zuerst
+// verschlüsselt. Folge: `&amp;lt;` wurde zweimal entschlüsselt und zu `<`.
+// Ein wörtliches `&lt;` in einem Fachtext (so gespeichert, so exportiert)
+// kam beim Import als `<` zurück — der Text änderte sich, und der
+// Rundlauf Export→Import war nicht verlustfrei. Jetzt eine einzige
+// Entschlüsselungsrunde über eine Nachschlagetabelle, dieselbe Form wie in
+// `apps/web/src/lib/pdf.ts`.
+const XML_ENTITY_MAP: Record<string, string> = {
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&apos;": "'",
+  "&amp;": "&",
+};
+
 function unescapeXml(str: string): string {
-  return str
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+  return str.replace(
+    /&(?:lt|gt|quot|apos|amp);/g,
+    (m) => XML_ENTITY_MAP[m] ?? m,
+  );
 }
 
 function csvEscape(value: string): string {

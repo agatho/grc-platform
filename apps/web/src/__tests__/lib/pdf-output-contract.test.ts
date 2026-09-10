@@ -19,7 +19,7 @@
 // The PDF/A-2b XMP-metadata + ICC-profile gap is tracked in
 // docs/qa-reports/wave19-pdf-a-followup.md so it doesn't get lost.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { type PdfReport, renderStructuredPdfResponse } from "../../lib/pdf";
 
 const sampleReport: PdfReport = {
@@ -156,5 +156,80 @@ describe("PDF output contract (Wave-19-W10)", () => {
     expect(fn).not.toContain(";");
     expect(fn).not.toContain(" ");
     expect(fn).toMatch(/^[a-zA-Z0-9_\-.]+\.pdf$/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────
+// Failure branch of renderStructuredPdfResponse.
+//
+// The eight tests above all take the success path; the `catch` was
+// uncovered, which is how the response could quote the underlying error
+// message unnoticed. It is not a stack trace and the callers are
+// authenticated — but it can name internals (file paths, library
+// frames), and an authenticated tenant user has no use for them.
+//
+// Forcing the failure without mocking pdfkit: `renderStructuredPdfBuffer`
+// is called directly inside the module, so spying on the module export
+// would not intercept the call. A property getter that throws when the
+// title is read fails inside that function's own try/catch and rejects
+// the promise — the same shape as a corrupt-input failure, and it pins
+// no pdfkit internals.
+// ─────────────────────────────────────────────────────────────────
+
+describe("PDF failure branch", () => {
+  const SECRET_DETAIL =
+    "ENOENT: no such file or directory, open '/srv/arctos/fonts/Helvetica.afm'";
+
+  const throwingReport: PdfReport = {
+    get title(): string {
+      throw new Error(SECRET_DETAIL);
+    },
+    sections: [],
+  };
+
+  it("returns a 503 problem+json that does not echo the error message", async () => {
+    // `@/lib/logger` writes to `process.stderr` in the Node runtime
+    // (console is only the Edge fallback), so that is what we capture.
+    const written: string[] = [];
+    const stderrWrite = vi
+      .spyOn(process.stderr, "write")
+      .mockImplementation((chunk: unknown) => {
+        written.push(String(chunk));
+        return true;
+      });
+    try {
+      const res = await renderStructuredPdfResponse(throwingReport, "boom");
+
+      expect(res.status).toBe(503);
+      expect(res.headers.get("content-type")).toBe(
+        "application/problem+json; charset=utf-8",
+      );
+
+      const body = (await res.json()) as {
+        type: string;
+        title: string;
+        status: number;
+        detail: string;
+      };
+      expect(body.type).toBe(
+        "https://arctos.charliehund.de/errors/pdf-render-failed",
+      );
+      expect(body.title).toBe("PDF generation failed");
+      expect(body.status).toBe(503);
+
+      const serialised = JSON.stringify(body);
+      expect(serialised).not.toContain("ENOENT");
+      expect(serialised).not.toContain("/srv/arctos/fonts");
+      expect(serialised).not.toContain("Helvetica.afm");
+
+      // The operator side loses nothing: the full message is logged,
+      // tagged with the component that produced it.
+      const logged = written.join("\n");
+      expect(logged).toContain('"component":"pdf"');
+      expect(logged).toContain("ENOENT");
+      expect(logged).toContain("Helvetica.afm");
+    } finally {
+      stderrWrite.mockRestore();
+    }
   });
 });
