@@ -23,7 +23,7 @@ import {
   compareTriggers,
   DRIFT_QUERIES,
   type DbTrigger,
-} from "../schema-drift";
+} from "../../src/schema-drift";
 
 let admin: ReturnType<typeof createTestDb>;
 let triggers: DbTrigger[] = [];
