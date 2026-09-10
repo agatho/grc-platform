@@ -19,7 +19,7 @@
 import { getTableColumns, getTableName, is, Table } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 
-export interface ColumnDrift {
+interface ColumnDrift {
   table: string;
   column: string;
   // [ARCTOS-FULL-2026-08-31 / Restdefekte · O-6] `extra-in-db` is the second
@@ -36,7 +36,7 @@ export interface ColumnDrift {
   actual?: string;
 }
 
-export interface TableDrift {
+interface TableDrift {
   table: string;
   kind: "missing-in-db" | "rls-missing" | "rls-without-policy";
 }
@@ -70,13 +70,13 @@ export interface TableDrift {
 //                           der aussieht, als wäre er da;
 //   `unregistered-always` — ENABLE ALWAYS in der Datenbank, aber nicht im
 //                           Register (siehe ALWAYS_ENABLED_GUARDS).
-export type TriggerDriftKind =
+type TriggerDriftKind =
   | "guard-missing"
   | "guard-not-always"
   | "trigger-disabled"
   | "unregistered-always";
 
-export interface TriggerDrift {
+interface TriggerDrift {
   table: string;
   trigger: string;
   kind: TriggerDriftKind;
@@ -84,7 +84,7 @@ export interface TriggerDrift {
   actual?: string;
 }
 
-export interface DriftReport {
+interface DriftReport {
   healthy: boolean;
   expectedTableCount: number;
   dbTableCount: number;
@@ -401,7 +401,7 @@ export function duplicateTableDefinitions(
  * not a baseline that silently absorbs new drift, because the comparison
  * still fails on anything not listed here.
  */
-export const ACCEPTED_TYPE_DRIFT: Record<string, string> = {
+const ACCEPTED_TYPE_DRIFT: Record<string, string> = {
   // [ARCTOS-FULL-2026-08-31 · OP-137] Die fuenf Eintraege, die hier standen,
   // sind erledigt: `*_sign_off.ip_address` ist im Schema jetzt `inet`, und
   // `catalog_entry_mapping.relationship`/`.mapping_source` benutzen die

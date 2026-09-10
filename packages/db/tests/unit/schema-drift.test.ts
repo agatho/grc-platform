@@ -20,7 +20,7 @@ import {
   type DbColumn,
   type DbTableFlags,
   type DbTrigger,
-} from "../schema-drift";
+} from "../../src/schema-drift";
 import { requireAt } from "../helpers";
 
 const exports_ = schemas as unknown as Record<string, unknown>;

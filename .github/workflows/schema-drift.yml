@@ -9,7 +9,7 @@ name: Schema Drift Report (F-18)
 # Spalten-, Typ- und RLS-Drift in keiner Umgebung geprueft wurde. Der Workflow
 # baut jetzt zusaetzlich das Schema aus den Migrationen auf und laesst
 # denselben Vergleicher laufen, den auch der Endpunkt benutzt
-# (packages/db/tests/schema-drift.ts).
+# (packages/db/src/schema-drift.ts).
 
 on:
   pull_request:
