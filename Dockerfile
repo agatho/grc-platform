@@ -106,7 +106,11 @@ ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
 ENV NEXT_PUBLIC_GIT_BRANCH=$GIT_BRANCH
 ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
-# Run from workspace root so hoisted node_modules are resolved.
+# Der Build laeuft in apps/web, nicht im Workspace-Root: next.config.ts
+# importiert ./src/lib/build-env-guard relativ, und Next loest das gegen
+# das Arbeitsverzeichnis auf - aus dem Root heraus scheitert das Laden der
+# Config (OP-...: 'Cannot find module ./src/lib/build-env-guard').
+# Hoisted node_modules werden trotzdem gefunden, Node sucht aufwaerts.
 # Next 16: the build uses Turbopack (the v16 default). The legacy
 # `--webpack` pipeline was evaluated during the 16.2.11 migration and
 # rejected: it OOMs below a ~7-8GB heap on this app (Next-16 webpack
@@ -118,7 +122,7 @@ ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 RUN AUTH_SECRET="$AUTH_SECRET" \
     AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
     DATABASE_URL="$DATABASE_URL" \
-    npx next build apps/web
+    sh -c 'cd apps/web && npx next build'
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS runner
