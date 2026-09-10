@@ -208,6 +208,37 @@ CPU. Das Muster ist an allen Stellen auf einen linearen Scan umgestellt.
 
 ---
 
+## 4a. Das gemessene Ergebnis, auf `92fa20b7`
+
+**Der CodeQL-Check ist grün.** Nicht „keine Befunde mehr", sondern: keiner der
+neuen ist hoch eingestuft.
+
+| Stand                          |                                                                       offen | `high` | `medium` |
+| ------------------------------ | --------------------------------------------------------------------------: | -----: | -------: |
+| vorher (`refs/pull/431/merge`) |                                                                          59 |     37 |        2 |
+| nachher (`92fa20b7`)           |                                                                          31 |     11 |        0 |
+| Check-Text                     | „28 new alerts including 17 high" → **„10 new alerts"**, Ergebnis `success` |        |          |
+
+**In Produktcode und Tests: null `high`, null `medium`.** Die verbleibenden elf
+`high` liegen **alle** in `scripts/**` und sind damit deine — Urteil in
+Abschnitt 3. Die zehn neuen Befunde, die der Check nennt, sind ausnahmslos
+`warning`/`note`; sie stammen aus dem neuen Code (Testdateien und die
+Scan-Schleifen) und reißen keine Schwelle.
+
+Von den zehn CI-Jobs ist alles grün außer dem Pilot Readiness Gate, das nach
+Entscheidung des Eigentümers ohne `STAGING_URL` absichtlich rot bleibt.
+
+**Ein Zwischenschritt gehört ins Protokoll, weil er eine Lehre trägt.** Auf
+`a7ec850c` standen die drei SAML-Alerts noch — meine erste Behebung hatte den
+Attributbereich verengt, und die Prüfungen dazu waren grün. Sie waren grün,
+weil sie genau die Kosten maßen, die die Behebung angefasst hatte. Die
+gemeldete Ursache war die andere: ein fauler Rumpf vor einem Schlusstag, das
+nie kommen muss. **Eine grüne Prüfung belegt nur, was sie misst** — und ein
+Alert, der nach einer Behebung stehen bleibt, ist der billigste verfügbare
+Hinweis darauf, dass die Prüfung woanders hinschaut als der Defekt liegt.
+
+---
+
 ## 5. Registereintrag — bitte mit der nächsten freien Nummer
 
 > **OP-257 — die 39 sicherheitsrelevanten CodeQL-Befunde sind triagiert und
