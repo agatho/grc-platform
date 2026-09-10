@@ -2924,3 +2924,69 @@ er den eigenen Merge.
 **Entscheidung des Eigentümers zu OP-224 (2026-09-09).** Zurückgestellt bis zum
 neuen Test-Deployment; das Deployment ist der Schwerpunkt. Offen und benannt,
 nicht abgeräumt.
+
+### Nachtrag 2026-09-10 — Welle 8r: der CodeQL-Check ist rot, und der grüne daneben heisst fast genauso
+
+| OP     | Was                                                                                                                                                                                                                                                            | Beleg                                                              | Art           | Stand                    |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------- | ------------------------ |
+| OP-257 | **37 CodeQL-Alerts mit hoher Schwere stehen offen auf dem Merge-Ref dieses Pull Requests**, davon 19 im Produktcode. Der Check `CodeQL` (github-advanced-security) meldet „28 new alerts including 17 high severity security vulnerabilities" und ist **rot**. | `gh pr checks 431`; `code-scanning/alerts?ref=refs/pull/431/merge` | Produktdefekt | **offen — Entscheidung** |
+
+**Wie es fast durchgerutscht wäre — und das ist der eigentliche Befund.** Auf
+der Prüfliste des Pull Requests stehen **zwei** Einträge mit fast demselben
+Namen:
+
+```
+CodeQL Analysis (javascript-typescript)   pass   4m36s   ← der SCAN-Job
+CodeQL                                    fail      7s   ← das ERGEBNIS
+```
+
+Der grüne sagt „der Scan ist durchgelaufen". Der rote sagt „und das hat er
+gefunden". Ein Bericht, der die Workflows durchzählt, findet den grünen und
+nicht den roten — genau die Form, die dieses Audit an achtzehn anderen Stellen
+als Befund geführt hat, diesmal in der Zusammenfassung eines Laufs, den ich
+selbst abgenommen habe. Ohne Nachzählen an der API wäre „alles grün ausser dem
+Pilot Readiness Gate" die Aussage gewesen, mit der gemergt worden wäre.
+
+**Was tatsächlich offen ist.** 59 Alerts auf `refs/pull/431/merge`, davon 37
+mit Schwere `high`:
+
+| Regel                                        | Anzahl | Schwerpunkt                                               |
+| -------------------------------------------- | ------ | --------------------------------------------------------- |
+| `js/polynomial-redos`                        | 14     | u. a. SAML-Response-Validator, OIDC-Discovery             |
+| `js/file-system-race`                        | 8      | ausschliesslich `scripts/**`                              |
+| `js/incomplete-sanitization`                 | 7      | überwiegend Tests und `scripts/**`                        |
+| `js/incomplete-multi-character-sanitization` | 3      | `extract-text.ts`, `tags/route.ts`, `threat-feed-sync.ts` |
+| `js/redos`                                   | 2      | Tests                                                     |
+| `js/regex/missing-regexp-anchor`             | 1      | `scripts/audit-secrets.mjs`                               |
+| `js/insecure-temporary-file`                 | 1      | `packages/reporting/src/generator.ts:165`                 |
+| `js/double-escaping`                         | 1      | `packages/shared/src/utils/xliff.ts:238`                  |
+
+Dazu 2× `js/stack-trace-exposure` (mittel) in `api/v1/ai/_shared/ai-route.ts`
+und `lib/pdf.ts`.
+
+**Keiner davon stammt von heute.** Nach Erstellungsdatum: 9 aus dem März, je
+einer bis Juli, und **20 aus dem 2026-09-01 bis 2026-09-04** — also aus dem
+Arbeitsfenster dieses Audits selbst. Einer vom 2026-09-09. Das ist kein
+Rückschritt aus der Arbeit dieser Woche, aber auch keine Altlast, die jemand
+anders hinterlassen hat.
+
+**Die drei, die ich nicht ohne Entscheidung ausliefern würde:**
+
+1. `packages/auth/src/saml/response-validator.ts:674/682/688` — dreimal
+   `polynomial-redos` auf einem Pfad, der **unauthentifizierte, vom Angreifer
+   gelieferte** SAML-XML verarbeitet. Zwei davon vom 2026-09-04.
+2. `packages/auth/src/oidc/discovery.ts:16` — dasselbe Muster auf dem
+   Discovery-Dokument des Identity Providers.
+3. `packages/reporting/src/generator.ts:165` — `insecure-temporary-file`.
+
+Die 8 `file-system-race` und der grösste Teil der `incomplete-sanitization`
+liegen in `scripts/**` und in Tests; dort ist die Angriffsfläche eine andere
+und die Dringlichkeit entsprechend geringer. Das ist eine Einschätzung, keine
+Freigabe — sie gehört in die Triage, nicht in eine pauschale Abwertung.
+
+**Warum das die Merge-Entscheidung berührt.** ADR-016 führt `CodeQL` als
+„nein (warn-only, bewusst)". Die Entscheidung ist nachvollziehbar; nur ist
+„warn-only" plus „niemand sieht hin" gleichbedeutend mit „niemand weiss es".
+Das Abnahmekriterium des Eigentümers war **grüne Pipeline**. Zwei Checks sind
+rot: das Pilot Readiness Gate (bewusst, entschieden) und dieser hier — und für
+diesen gibt es keine Entscheidung.

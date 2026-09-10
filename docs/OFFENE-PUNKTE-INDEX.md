@@ -9,15 +9,16 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **256**
+Nummern: **257**
 
-## offen (3)
+## offen (4)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                  | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
 | OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)       | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.         | Haupttabelle |
 | OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten. | 2026-09-03   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                | 2026-09-09   |
+| OP-257 | 37 CodeQL-Alerts mit hoher Schwere stehen offen auf dem Merge-Ref dieses Pull Requests, davon 19 im Produktco… | offen — Entscheidung                                                                 | 2026-09-10   |
 
 ## teilweise (0)
 
