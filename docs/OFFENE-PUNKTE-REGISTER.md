@@ -3032,3 +3032,43 @@ Gegenproben, beide gemessen:
 | eine Handbearbeitung eingesetzt (`/api/v1` → `/api/v2`) | **Exit 1** — `docs/API_REFERENCE.md is out of date.`                      |
 
 Die Handbearbeitung ist danach zurückgenommen; der Arbeitsbaum ist sauber.
+
+**Nachtrag am selben Tag — die SAML-Fundstellen sind weniger dringend, als sie
+aussehen.** Nachgesehen statt bei der Schwere-Einstufung stehen geblieben.
+`extractSAMLAttributes` (`response-validator.ts:664`) hat **eine** produktive
+Aufrufstelle:
+
+```
+apps/web/src/app/api/v1/auth/sso/saml/callback/route.ts:147
+  const attrs = extractSAMLAttributes(verified.assertionXml, attrMapping);
+```
+
+`verified` kommt aus `verifySamlResponse()`, das echte XML-DSig-Prüfung über
+`xml-crypto` macht (`sig.checkSignature(responseXml) !== true` → Ablehnung,
+Zeile 463); die Callback-Route verbraucht ausserdem die Assertion-ID gegen
+Wiedereinspielung (Zeile 130), **bevor** Zeile 147 erreicht wird, und
+`rejectXXE()` läuft innerhalb der Funktion. Der Doc-Kommentar sagt es selbst:
+„only ever call this with the assertion XML returned by
+`verifySamlResponse()`".
+
+Die Eingabe ist also eine **signaturgeprüfte Assertion des konfigurierten
+Identity Providers**, nicht rohes Angreifer-XML. Ein Ausnutzen setzt einen
+bösartigen oder übernommenen IdP voraus, der seinen eigenen Mandanten angreift.
+Das ist real und gehört behoben — es ist nicht der unauthentifizierte
+Fern-DoS, den das Etikett `high` nahelegt.
+
+Dasselbe gilt für `oidc/discovery.ts:16`: die Eingabe ist
+`discoveryUrl.replace(/\/+$/, "")`, und die Discovery-URL ist
+**Betreiberkonfiguration**, keine Anfragedaten.
+
+**Die Triage-Achse ist damit nicht die Schwere, sondern die Herkunft der
+Eingabe.** Der Auftrag an die lokale Sitzung steht in
+`docs/HANDOVER-OP-257.md` und sortiert nach genau dieser Achse: von einem
+Angreifer erreichbar / vertrauenswürdig oder konfiguriert / Skripte und Tests.
+Die zwei `stack-trace-exposure` (mittel) sind darin ausdrücklich als
+lohnendster Anfang genannt — wenn eine 500-Antwort einen Stack an den Client
+gibt, ist das ein Informationsleck ohne Ermessensfrage.
+
+**Nicht zulässig:** Alerts in der GitHub-Oberfläche wegdrücken, damit der Check
+grün wird. Ein weggedrückter Alert sieht aus wie ein behobener. Wo ein Befund
+wirklich nicht anwendbar ist, gehört die Begründung ins Register.
