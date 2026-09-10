@@ -153,7 +153,7 @@ export const POST = withErrorHandler(async function POST(
       outputSchema: copilotAnswerSchema,
     });
   } catch (err) {
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

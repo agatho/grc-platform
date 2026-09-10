@@ -95,7 +95,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       temperature: 0.1,
     });
   } catch (err) {
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 
   const translatedText = sanitizeTranslation(ai.text.trim());

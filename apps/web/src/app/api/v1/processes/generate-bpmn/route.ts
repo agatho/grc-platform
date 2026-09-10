@@ -127,7 +127,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       result.disclosure,
     );
   } catch (e) {
-    return aiErrorResponse(e);
+    return aiErrorResponse(e, { roles: ctx.roles });
   }
 });
 // GET /api/v1/processes/generate-bpmn — Provider, die DIESE Organisation wählen darf

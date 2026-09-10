@@ -97,16 +97,35 @@ export async function aiRateLimit(
  *         (S05-09). Es wird NICHTS persistiert.
  *   502 — der Provider selbst ist ausgefallen.
  */
-export function aiErrorResponse(err: unknown): Response {
+export function aiErrorResponse(
+  err: unknown,
+  /**
+   * [OP-261] Der Rollenkontext des Aufrufers, wenn die Route ihn hat —
+   * `ctx.roles` aus `withAuth(...)`, wie in `ai/router/health/route.ts`.
+   *
+   * Bewusst optional, und die Vorgabe ist die ENGERE Antwort: eine
+   * Aufrufstelle, die nichts übergibt, bekommt den Satz ohne
+   * Betreiber-Hinweis. Ein vergessener Parameter verschweigt damit etwas,
+   * statt etwas auszuplaudern — die Richtung, in der ein Fehler billig ist.
+   */
+  opts?: { roles?: readonly string[] },
+): Response {
   if (err instanceof AiPolicyViolationError) {
     const status = err.code === "no_provider_configured" ? 503 : 403;
+    // [OP-261] Rollenprüfung wie bei den Nachbarn
+    // (`ai/router/health/route.ts:61`), nicht neu erfunden.
+    const isAdmin = (opts?.roles ?? []).includes("admin");
+    const detail =
+      isAdmin && err.operatorHint
+        ? `${err.message} ${err.operatorHint}`
+        : err.message;
     return problem(
       status,
       status === 503 ? "ai-not-configured" : "ai-policy-violation",
       status === 503
         ? "Kein KI-Provider konfiguriert"
         : "KI-Richtlinie der Organisation",
-      err.message,
+      detail,
       {
         code: err.code,
         egressMode: err.egressMode,

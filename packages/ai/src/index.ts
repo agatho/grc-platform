@@ -34,6 +34,11 @@ export {
   EU_BOUND_COUNTRIES,
   AI_EGRESS_MODES,
   isAiEgressMode,
+  // [OP-261] Eine Quelle fuer „kein Provider freigeschaltet" — die drei
+  // Routen, die den Fehler bisher von Hand bauten, nehmen jetzt diese.
+  noProviderConfiguredError,
+  NO_PROVIDER_MESSAGE,
+  NO_PROVIDER_OPERATOR_HINT,
   defaultPolicySnapshot,
   evaluateProvider,
   selectProvider,

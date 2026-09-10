@@ -132,6 +132,6 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       provider: config.provider,
       model: config.values.model ?? null,
     });
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 });

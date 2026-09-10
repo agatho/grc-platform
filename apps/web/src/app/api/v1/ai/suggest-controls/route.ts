@@ -24,12 +24,12 @@
 import { db, risk, control, riskControl } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
-  AiPolicyViolationError,
   aiCompleteGoverned,
   buildControlAdvisorPrompt,
   generateEmbedding,
   getAvailableProviders,
   getEmbeddingProvider,
+  noProviderConfiguredError,
   safeJsonParse,
 } from "@grc/ai";
 import {
@@ -149,16 +149,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   // Aufruf aussichtslos. Die eigentliche Richtlinienpruefung (Org-Ebene,
   // Jurisdiktion, Nutzerwunsch) macht `aiCompleteGoverned`.
   if (getAvailableProviders().length === 0) {
-    return aiErrorResponse(
-      new AiPolicyViolationError({
-        code: "no_provider_configured",
-        message:
-          "Es ist kein KI-Provider konfiguriert. Der Betreiber muss einen Provider " +
-          "ausdruecklich freischalten (lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; " +
-          "Cloud: ANTHROPIC_API_KEY / OPENAI_API_KEY / GOOGLE_AI_API_KEY / " +
-          "CLAUDE_CLI_ENABLED=true).",
-      }),
-    );
+    return aiErrorResponse(noProviderConfiguredError({ orgId: ctx.orgId }), {
+      roles: ctx.roles,
+    });
   }
 
   // Load the risk (org-scoped).
@@ -302,6 +295,6 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       result.disclosure,
     );
   } catch (err) {
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 });

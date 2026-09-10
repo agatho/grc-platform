@@ -159,7 +159,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     });
   } catch (err) {
     // Nichts wird persistiert, wenn die Ausgabe unbrauchbar ist.
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 
   const gaps = aiResult.data;

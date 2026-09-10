@@ -93,6 +93,6 @@ export const POST = withErrorHandler(async function POST(
       result.disclosure,
     );
   } catch (err) {
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 });

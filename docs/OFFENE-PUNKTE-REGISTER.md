@@ -3168,3 +3168,51 @@ Namen der Provider-Umgebungsvariablen (`OLLAMA_BASE_URL`, `ANTHROPIC_API_KEY`,
 Sitzung hat es bewusst nicht geändert: es ist die Meldung, die dem
 Administrator sagt, was zu konfigurieren ist. Sie gehört einer Rolle, nicht
 jedem Konto — geändert wird das erst auf Ansage.
+
+### Nachtrag 2026-09-10 — OP-261: zwei Empfänger, eine Zeichenkette
+
+Entscheidung des Eigentümers vom 2026-09-10 auf den Befund aus der
+OP-257-Übergabe. Umfang und Weg waren vorgegeben: der Zustand bleibt für alle
+sichtbar, die Variablennamen sieht nur die Administration, und die Trennung
+geschieht **an der Quelle** statt über einen durchgereichten Kontext.
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Beleg                                                                                                                                                                                                | Art                                | Stand                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------- |
+| OP-261 | **Der 503-Zweig der AI-Routen nannte jedem angemeldeten Konto die Namen der Provider-Umgebungsvariablen.** `aiErrorResponse` bekommt einen Fehler, keine Rolle, und reichte `err.message` unveraendert als `detail` durch; in dieser einen Zeichenkette standen zwei Saetze fuer zwei verschiedene Empfaenger — der Zustand („kein Provider freigeschaltet“, geht jeden an) und die Anleitung fuer den Betreiber (`OLLAMA_BASE_URL`, `ANTHROPIC_API_KEY`, `CLAUDE_CLI_ENABLED` und drei weitere). Getrennt an der Quelle: `AiPolicyViolationError` hat jetzt ein eigenes Feld `operatorHint`, und die Antwortschicht haengt es nur an, wenn `ctx.roles` die Rolle `admin` enthaelt — Rollenpruefung wie beim Nachbarn `ai/router/health/route.ts:61`. Ohne Rollenkontext liefert die Vorgabe die ENGERE Antwort, ein vergessener Parameter verschweigt also etwas statt etwas auszuplaudern. | 29 Aufrufstellen in 26 Dateien (nicht 57 — die hoehere Zahl zaehlt Definition, Importe und Kommentare mit); drei Tests in `ai-assist-routes.test.ts`, der Nicht-Admin-Fall gegen den alten Stand rot | Sicherheit (Informationspreisgabe) | **behoben 2026-09-10** |
+
+**Warum die Trennung an der Quelle und nicht in der Antwortschicht.**
+`aiErrorResponse(err)` bekommt einen Fehler und sonst nichts — kein
+`Request`, keine Sitzung. Die Frage „ist der Aufrufer Administrator?“
+lässt sich dort nicht beantworten. Der zweite Weg wäre gewesen, den
+`withAuth`-Kontext durch jede Aufrufstelle zu fädeln; das bleibt nötig, aber
+es entscheidet nichts. Entschieden wird im Paket: solange beide Sätze in einer
+Zeichenkette stehen, **kann** keine Schicht darunter sie trennen. Jetzt sind es
+zwei Felder, und die Antwortschicht wählt.
+
+**Drei Stellen mehr als angenommen.** Die Vorgabe nannte eine offene Stelle
+(`policy.ts`). Es waren vier: `ai/draft-policy`, `ai/explain-gap` und
+`ai/suggest-controls` bauten denselben Fehler von Hand und schrieben den
+Variablentext dabei jedes Mal neu ab. Vier Kopien heissen vier Stellen, an
+denen die Trennung wieder verloren geht — sie nehmen jetzt alle die eine
+Fabrik `noProviderConfiguredError()`. Ausserhalb von
+`ai/providers/route.ts` (seit jeher `withAuth("admin")`, unverändert) steht
+kein Variablenname mehr in `apps/web/src/app/api/v1/ai/**`.
+
+**Die Attrappe war harmloser als das Original.** Der `@grc/ai`-Mock in
+`ai-assist-routes.test.ts` warf einen selbst gebauten Fehler mit dem kurzen
+Text `"Es ist kein KI-Provider konfiguriert."` — ohne die Variablennamen. Eine
+Prüfung gegen diese Attrappe hätte den Defekt nie sehen können, egal wie sie
+formuliert war. Sie wirft jetzt den echten Fehler aus `policy.ts`. Das ist der
+eigentliche Grund, aus dem der Befund erst über CodeQL und nicht über die
+Testsuite kam.
+
+**Gegenprobe.** Der Nicht-Admin-Fall ist gegen den alten Stand rot; der
+Admin-Fall ist ein Regressionsposten und war auch vorher grün — vorher sahen
+ihn ja alle. Beides ist so ausgewiesen und nicht als zwei Gegenproben
+ausgegeben.
+
+**Zur Nummer:** in `policy.ts`, `_shared/ai-route.ts` und der Prüfung steht
+`OP-261` im Kommentar, deshalb ist diese Zeile hier nötig —
+`check-op-numbers.mjs` meldet sonst eine Nummer, die im Code steht und im
+Register fehlt. Der Eigentümer hatte die Nummer für genau diesen Fall
+freigegeben; die Formulierung der Zeile darf gern überschrieben werden.

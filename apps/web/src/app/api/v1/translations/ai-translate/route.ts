@@ -234,7 +234,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   }
 
   if (policyError && Object.keys(translations).length === 0) {
-    return aiErrorResponse(policyError);
+    return aiErrorResponse(policyError, { roles: ctx.roles });
   }
 
   // Speichern — ausschliesslich in `entity_translation`. Die Fachspalte

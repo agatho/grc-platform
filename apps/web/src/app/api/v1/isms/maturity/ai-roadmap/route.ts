@@ -135,7 +135,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
       outputSchema: maturityRoadmapArraySchema,
     });
   } catch (err) {
-    return aiErrorResponse(err);
+    return aiErrorResponse(err, { roles: ctx.roles });
   }
 
   const actions = aiResult.data;

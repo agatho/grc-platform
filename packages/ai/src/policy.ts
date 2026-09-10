@@ -251,9 +251,26 @@ export class AiPolicyViolationError extends Error {
   readonly permittedProviders: AiProvider[];
   readonly egressMode: AiEgressMode;
 
+  /**
+   * [OP-261] Der Teil der Erklärung, der den BETREIBER angeht — Namen von
+   * Umgebungsvariablen, Schalter, Konfigurationswege.
+   *
+   * Warum getrennt von `message`: die beiden Sätze haben verschiedene
+   * Empfänger. `message` beantwortet „warum geht das gerade nicht?" und
+   * gehört jedem angemeldeten Konto; dieser Teil beantwortet „was muss ich
+   * einschalten?" und gehört der Administration. Solange beides in EINER
+   * Zeichenkette stand, konnte die Antwortschicht sie nicht trennen — sie
+   * bekommt einen Fehler, keine Rolle, und hat die ganze Kette
+   * durchgereicht.
+   *
+   * `null` heisst: es gibt nichts, was nur den Betreiber angeht.
+   */
+  readonly operatorHint: string | null;
+
   constructor(args: {
     code: AiPolicyViolationCode;
     message: string;
+    operatorHint?: string | null;
     orgId?: string | null;
     requestedProvider?: AiProvider | null;
     permittedProviders?: AiProvider[];
@@ -266,7 +283,47 @@ export class AiPolicyViolationError extends Error {
     this.requestedProvider = args.requestedProvider ?? null;
     this.permittedProviders = args.permittedProviders ?? [];
     this.egressMode = args.egressMode ?? "any_configured";
+    this.operatorHint = args.operatorHint ?? null;
   }
+}
+
+/**
+ * [OP-261] Der Satz, den JEDES angemeldete Konto sehen darf: der Zustand,
+ * und wohin man sich wendet.
+ */
+export const NO_PROVIDER_MESSAGE =
+  "Es ist kein KI-Provider freigeschaltet. Bitte wenden Sie sich an Ihre " +
+  "Administration.";
+
+/**
+ * [OP-261] Der Satz, der nur die Administration angeht: WELCHE Schalter der
+ * Betreiber setzen muss. Vorher stand er in `message` und ging damit an jedes
+ * angemeldete Konto in jeder AI-Route.
+ */
+export const NO_PROVIDER_OPERATOR_HINT =
+  "Der Betreiber muss einen Provider ausdrücklich freischalten " +
+  "(lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; Cloud: ANTHROPIC_API_KEY / " +
+  "OPENAI_API_KEY / GOOGLE_AI_API_KEY / CLAUDE_CLI_ENABLED=true).";
+
+/**
+ * [OP-261] Eine Quelle für „kein Provider freigeschaltet".
+ *
+ * Vorher gab es vier: diese Datei und drei Routen, die den Fehler von Hand
+ * bauten und dabei denselben Text noch einmal abschrieben. Vier Kopien
+ * heissen vier Stellen, an denen die Trennung der Empfänger wieder verloren
+ * gehen kann.
+ */
+export function noProviderConfiguredError(args?: {
+  orgId?: string | null;
+  egressMode?: AiEgressMode;
+}): AiPolicyViolationError {
+  return new AiPolicyViolationError({
+    code: "no_provider_configured",
+    orgId: args?.orgId ?? null,
+    egressMode: args?.egressMode,
+    message: NO_PROVIDER_MESSAGE,
+    operatorHint: NO_PROVIDER_OPERATOR_HINT,
+  });
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -396,14 +453,9 @@ export function selectProvider(args: SelectProviderArgs): ProviderSelection {
   }
 
   if (configured.length === 0) {
-    throw new AiPolicyViolationError({
-      code: "no_provider_configured",
+    throw noProviderConfiguredError({
       orgId: policy.orgId,
       egressMode: policy.egressMode,
-      message:
-        "Es ist kein KI-Provider konfiguriert. Der Betreiber muss einen Provider ausdrücklich freischalten " +
-        "(lokal: OLLAMA_BASE_URL / LMSTUDIO_BASE_URL; Cloud: ANTHROPIC_API_KEY / OPENAI_API_KEY / " +
-        "GOOGLE_AI_API_KEY / CLAUDE_CLI_ENABLED=true).",
     });
   }
 

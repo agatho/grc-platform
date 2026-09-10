@@ -116,10 +116,15 @@ vi.mock("@grc/ai", async () => {
       };
     }) => {
       if ((getAvailableProvidersMock() ?? []).length === 0) {
-        throw new actual.AiPolicyViolationError({
-          code: "no_provider_configured",
-          message: "Es ist kein KI-Provider konfiguriert.",
-        });
+        // [OP-261] Der ECHTE Fehler aus `policy.ts`, nicht ein selbst
+        // gebauter mit eigenem Text. Vorher stand hier
+        // `message: "Es ist kein KI-Provider konfiguriert."` — kuerzer als
+        // das, was die Anwendung wirklich wirft, und ohne
+        // `operatorHint`. Eine Attrappe, die harmloser ist als das Original,
+        // kann den Unterschied nicht pruefen, um den es hier geht: dieser
+        // Zweig trug die Namen der Provider-Umgebungsvariablen an jedes
+        // angemeldete Konto aus, und die Attrappe haette das nie gezeigt.
+        throw actual.noProviderConfiguredError();
       }
       const resp = await aiCompleteMock(req);
       const raw = req.parse ? req.parse(resp.text) : resp.text;
@@ -833,3 +838,86 @@ describe("POST /api/v1/ai/explain-gap", { timeout: 90_000 }, () => {
     expect(res.status).toBe(422);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────
+// [OP-261] Der 503-Zweig trennt jetzt zwei Empfaenger
+// ─────────────────────────────────────────────────────────────────────
+//
+// Vorher stand beides in EINER Zeichenkette: der Zustand ("kein Provider
+// freigeschaltet") und die Anleitung fuer den Betreiber (die Namen der
+// Umgebungsvariablen). `aiErrorResponse` bekommt einen Fehler, keine Rolle,
+// und hat die ganze Kette als `detail` zurueckgegeben — an jedes angemeldete
+// Konto, ueber alle AI-Routen.
+//
+// Die Rollenpruefung laeuft wie bei den Nachbarn ueber `ctx.roles`
+// (`ai/router/health/route.ts:61`), die Trennung sitzt in `policy.ts`.
+describe(
+  "OP-261 — die Namen der Provider-Variablen",
+  { timeout: 90_000 },
+  () => {
+    const validBody = {
+      catalogEntryIds: [UUID_A],
+      documentCategory: "policy",
+      language: "de",
+      context: "Test org",
+    };
+
+    const routeModule = import("../../app/api/v1/ai/draft-policy/route");
+
+    async function callAs(roles: string[]) {
+      withAuthMock.mockResolvedValue({ ...AUTH_CTX, roles });
+      getAvailableProvidersMock.mockReturnValue([]);
+      const { POST } = await routeModule;
+      const res = await POST(
+        post("http://localhost/api/v1/ai/draft-policy", validBody),
+      );
+      return { res, json: (await res.json()) as { detail?: string } };
+    }
+
+    // Die Namen einzeln, nicht als ein Muster: faellt einer heraus, soll der
+    // Fehlschlag sagen welcher.
+    const VARIABLEN = [
+      "OLLAMA_BASE_URL",
+      "LMSTUDIO_BASE_URL",
+      "ANTHROPIC_API_KEY",
+      "OPENAI_API_KEY",
+      "GOOGLE_AI_API_KEY",
+      "CLAUDE_CLI_ENABLED",
+    ];
+
+    it("nennt sie einem gewoehnlichen Konto nicht", async () => {
+      const { res, json } = await callAs(["risk_manager"]);
+
+      expect(res.status).toBe(503);
+      // Der Zustand bleibt sichtbar — das ist der Punkt der Trennung, nicht
+      // eine stillere Antwort.
+      expect(json.detail).toMatch(/kein KI-Provider/i);
+      expect(json.detail).toMatch(/Administration/i);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).not.toContain(name);
+      }
+    });
+
+    it("nennt sie der Administration", async () => {
+      const { res, json } = await callAs(["admin"]);
+
+      expect(res.status).toBe(503);
+      expect(json.detail).toMatch(/kein KI-Provider/i);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).toContain(name);
+      }
+    });
+
+    it("schweigt, wenn die Rolle gar nicht durchgereicht wird", async () => {
+      // Die Vorgabe von `aiErrorResponse` ohne `opts`: eine Aufrufstelle, die
+      // den Kontext vergisst, bekommt die ENGERE Antwort. Ein vergessener
+      // Parameter soll etwas verschweigen, nicht etwas ausplaudern.
+      const { res, json } = await callAs([]);
+
+      expect(res.status).toBe(503);
+      for (const name of VARIABLEN) {
+        expect(json.detail, name).not.toContain(name);
+      }
+    });
+  },
+);
