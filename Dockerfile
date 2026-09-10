@@ -115,10 +115,20 @@ ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 # serverExternalPackages + outputFileTracingIncludes (.afm font
 # metrics) — presence in .next/standalone is part of the migration
 # verification.
+# [ARCTOS-FULL-2026-08-31 · OP-262] Hier stand
+#   npx next build --dir apps/web || (cd apps/web && npx next build)
+# Der erste Teil kann seit Next 16 nicht mehr gelingen — `--dir` gibt es
+# nicht mehr:
+#   error: unknown option '--dir'
+# Gebaut hat immer der Zweig hinter `||`. Ein `||`, dessen linke Seite
+# grundsaetzlich faellt, ist kein Rueckfall, sondern eine Zeile, die bei
+# jedem Bau eine Fehlermeldung ins Protokoll schreibt, die nichts bedeutet —
+# und die die ECHTE Fehlermeldung darunter verdeckt. Genau daran ist der
+# Build-Job beim Merge von #431 schwer zu lesen gewesen.
 RUN AUTH_SECRET="$AUTH_SECRET" \
     AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
     DATABASE_URL="$DATABASE_URL" \
-    sh -c 'npx next build --dir apps/web || (cd apps/web && npx next build)'
+    sh -c 'cd apps/web && npx next build'
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS runner

@@ -3286,3 +3286,51 @@ irgendwo etwas rot wird.
 Behoben, und zwar dauerhaft: der Mock wirft jetzt den echten Fehler aus
 `policy.ts`. Wer die Meldung später verbreitert, sieht einen roten Test statt
 sie auszuliefern.
+
+### Nachtrag 2026-09-10 — Welle 8v: der Produktionsbau war erst nach dem Merge prüfbar, und er fällt
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                           | Beleg                                                          | Art           | Stand                      |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------- | -------------------------- |
+| OP-262 | **Der Job `Build` lief nur auf `main`** — der Produktionsbau war damit erst prüfbar, nachdem er gemergt war. Beim Merge von `#431` ist er zum ersten Mal gelaufen und sofort gefallen. Zwei Ursachen, eine davon ein echter Defekt.                                                                                                                                                           | Lauf `34468703822`, Job `Build`, 2m52s                         | Betrieb       | behoben (Tor + Dockerfile) |
+| OP-263 | **Eine produktive API-Route importiert aus einem Testverzeichnis.** `apps/web/src/app/api/v1/health/schema-drift/route.ts:11` zieht `compareSchema`, `duplicateTableDefinitions`, `DRIFT_QUERIES` und drei Typen aus `@grc/db/tests/schema-drift`. `.dockerignore` schliesst `**/tests/` aus — zu Recht, Tests gehören nicht ins Produktionsabbild. Folge: das Abbild lässt sich nicht bauen. | `Module not found: Can't resolve '@grc/db/tests/schema-drift'` | Produktdefekt | **offen — lokale Sitzung** |
+
+**Warum das keine CI-Panne ist, sondern die Bauart.** `Build` trug
+`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`. Auf einer
+Pull Request lief er nie — genau der Umstand, der ihn in OP-255 aus der
+Required-Liste geworfen hat. Die Konsequenz daraus war aber nur „nicht
+required"; richtig gewesen wäre „muss auf der PR laufen". Der Bau prüft jetzt
+auch dort. **Veröffentlicht wird weiterhin nur von `main`:** die beiden
+Push-Schritte tragen ihre eigene Bedingung, der Trivy-Scan liegt ohnehin davor
+(#S08-07). Ein Bau, der erst nach dem Merge prüft, prüft zu spät — die
+Korrektur muss dann wieder über `main`.
+
+**Ursache 1, behoben (Dockerfile).** Der Bauaufruf lautete
+
+```
+npx next build --dir apps/web || (cd apps/web && npx next build)
+```
+
+`--dir` gibt es seit Next 16 nicht mehr (`error: unknown option '--dir'`), der
+linke Zweig kann also **grundsätzlich** nicht gelingen. Gebaut hat immer der
+Teil hinter `||`. Ein `||`, dessen linke Seite immer fällt, ist kein Rückfall,
+sondern eine Zeile, die bei jedem Bau eine bedeutungslose Fehlermeldung ins
+Protokoll schreibt — und die echte darunter verdeckt. Jetzt steht dort nur
+noch der Zweig, der baut.
+
+**Ursache 2, OP-263, der eigentliche Defekt — nicht hier zu beheben.** Die
+Route ist produktiver Code und importiert aus `packages/db/tests/`. Lokal und
+in CI liegt das Verzeichnis vor, im Abbild nicht. Der Ausweg ist **nicht**, die
+Ausnahme in `.dockerignore` zu lockern: Testcode gehört nicht in ein
+Produktionsabbild. Was die Route braucht (`compareSchema`,
+`duplicateTableDefinitions`, `DRIFT_QUERIES` und die drei Typen), gehört nach
+`packages/db/src/`; Route **und** Test importieren es dann von dort. Damit
+bleibt auch der Vergleich, den `schema-drift.yml` fährt, derselbe Code.
+
+Übergeben an die lokale Sitzung — `apps/web` und `packages/db` liegen dort.
+
+**Nebenbefund zur Reihenfolge des Merges.** `#431` ist gemergt, und auf dem
+Merge-Commit ist der CI-Lauf `cancelled` — der Merge von `#433` (Dependabot)
+kam unmittelbar danach und hat ihn über `cancel-in-progress` abgebrochen.
+Deployt wird nach `deploy/update-all.sh` nur ein Commit, dessen CI-Lauf
+`success` meldet (#S13-19); `cancelled` und `failure` brechen ab. Der Stand von
+`main` ist damit derzeit **nicht deploybar**, und zwar unabhängig von OP-263.

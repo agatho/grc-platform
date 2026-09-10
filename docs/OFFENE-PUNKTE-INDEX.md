@@ -9,15 +9,16 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **261**
+Nummern: **263**
 
-## offen (3)
+## offen (4)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                  | Nachtrag     |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------ |
 | OP-024 | 2 Divergenzen `bounds/bpmn:EndEvent` und `bounds/bpmn:SubProcess` (Lane-Inhalte beim Poolwachstum, 5 px)       | Letzte Container-Geometrieabweichung; klein, aber sie hält die Klasse offen.         | Haupttabelle |
 | OP-176 | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten.                           | 6 von 7 Routen wirken jetzt; 4 Parameter bleiben mit Begründung offen — siehe unten. | 2026-09-03   |
 | OP-224 | Benachrichtigungstexte werden beim Schreiben festgelegt, der Empfänger steht erst beim Lesen fest. `title` un… | offen                                                                                | 2026-09-09   |
+| OP-263 | Eine produktive API-Route importiert aus einem Testverzeichnis. `apps/web/src/app/api/v1/health/schema-drift/… | offen — lokale Sitzung                                                               | 2026-09-10   |
 
 ## teilweise (0)
 
@@ -195,7 +196,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (96)
+## behoben (97)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -295,3 +296,4 @@ _keine_
 | OP-259 | Geplante Reports sind in Produktion nicht abrufbar. Der Worker erzeugt sie in seinem eigenen `tmpfs` und legt… | behoben                                                                                    | 2026-09-10 |
 | OP-260 | Vier doppelte Schlüssel im `environment:`-Block von `web` in `docker-compose.production.yml`: `TRUSTED_PROXY_… | behoben                                                                                    | 2026-09-10 |
 | OP-261 | Der 503-Zweig der AI-Routen nannte jedem angemeldeten Konto die Namen der Provider-Umgebungsvariablen. `aiErr… | behoben 2026-09-10                                                                         | 2026-09-10 |
+| OP-262 | Der Job `Build` lief nur auf `main` — der Produktionsbau war damit erst prüfbar, nachdem er gemergt war. Beim… | behoben (Tor + Dockerfile)                                                                 | 2026-09-10 |

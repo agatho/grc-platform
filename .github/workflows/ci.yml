@@ -1351,7 +1351,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [unit-tests, integration-tests, e2e-smoke, database]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # [ARCTOS-FULL-2026-08-31 · OP-262] Dieser Job lief NUR auf `main`. Der
+    # Produktionsbau war damit erst pruefbar, nachdem er gemergt war — und
+    # genau so ist er beim Merge von #431 zum ersten Mal gelaufen und
+    # sofort gefallen (`Module not found: @grc/db/tests/schema-drift`,
+    # Lauf 34468703822). Ein Bau, der nur nach dem Merge prueft, prueft zu
+    # spaet: die Korrektur muss dann wieder ueber `main`.
+    #
+    # Er laeuft jetzt auch auf Pull Requests. GEPUSHT wird weiterhin nur von
+    # `main` — die beiden Push-Schritte unten tragen dafuer ihre eigene
+    # Bedingung, und der Trivy-Scan liegt ohnehin davor (#S08-07).
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'pull_request'
 
     permissions:
       contents: read
@@ -1489,7 +1501,10 @@ jobs:
       # `sbom: true` und `provenance: mode=max` haengen jedem Image seine
       # Stueckliste und seine Build-Herkunft als Attestation an.
       # ────────────────────────────────────────────────────────────────
+      # [OP-262] Nur von `main`: auf einer Pull Request wird gebaut und
+      # gescannt, aber nichts veroeffentlicht.
       - name: Push Web Image (scan passed)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -1507,7 +1522,10 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
+      # [OP-262] Nur von `main`: auf einer Pull Request wird gebaut und
+      # gescannt, aber nichts veroeffentlicht.
       - name: Push Worker Image (scan passed)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
