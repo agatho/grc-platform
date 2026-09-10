@@ -288,14 +288,22 @@ describe("SAMLResponseValidator", () => {
   });
 
   it("extracts attributes in linear time (js/polynomial-redos)", () => {
-    // Counter-proof for the `[^>]*` / `[^>]*?` start-tag regions that used
-    // to sit in `extractSAMLAttributes`. `[^>]` also matches `<`, so on an
-    // assertion carrying many `<Attribute ` fragments that never close,
-    // every fragment is a viable start position whose inner loop scans to
-    // the end of the string. The old classes need ~1.0 s (attrRegex),
-    // ~3.4 s (valueRegex) and ~2.2 s (NameID) for these inputs, the
-    // narrowed `[^<>]` ~1 ms; the budget is wide enough that only the
-    // quadratic behaviour can blow it.
+    // Counter-proof for both costs that used to sit in
+    // `extractSAMLAttributes`. Two distinct input shapes, because they hit
+    // two different pairs:
+    //
+    //  1. ATTRIBUTE-REGION shape — many `<Attribute ` fragments with no `>`.
+    //     `[^>]` also matches `<`, so every fragment was a viable start
+    //     position whose region ran to the end of the string. ~1.0 s / 3.4 s
+    //     / 2.2 s before the `[^<>]` narrowing.
+    //  2. UNCLOSED-OPENER shape — many complete openers with no closing tag.
+    //     This is the pair CodeQL reports, and the `[^<>]` narrowing does
+    //     NOT address it: the lazy `([\s\S]*?)` runs to the end of the string
+    //     for every opener that never closes. ~1.8 s / 2.1 s / 1.2 s before
+    //     the segmentation in `segmentsBeforeClosingTag()`.
+    //
+    // Shape 1 alone passed against the narrowed-but-unsegmented code while
+    // the alert stayed open, which is why both are pinned here.
     //
     // This is hardening, not a reachable DoS: `extractSAMLAttributes` only
     // ever runs on an assertion that `verifySamlResponse()` has already
@@ -307,26 +315,81 @@ describe("SAMLResponseValidator", () => {
       lastName: "sn",
       groups: "memberOf",
     };
+    const N = 20_000;
     const cases: Array<[string, string]> = [
-      // attrRegex: unterminated `<Attribute ` fragments at top level.
-      ["attrRegex", "<Attribute ".repeat(20_000)],
-      // valueRegex: it only ever runs on `match[2]`, so the fragments have
-      // to sit inside an Attribute block that does match.
+      // ── shape 1: attribute region ──
+      ["attrRegex / attribute region", "<Attribute ".repeat(N)],
+      // valueRegex only ever runs on `match[2]`, so its fragments have to
+      // sit inside an Attribute block that does match.
       [
-        "valueRegex",
-        `<Attribute Name="mail">${"<AttributeValue ".repeat(20_000)}</Attribute>`,
+        "valueRegex / attribute region",
+        `<Attribute Name="mail">${"<AttributeValue ".repeat(N)}</Attribute>`,
       ],
-      // NameID: unterminated `<NameID ` fragments at top level.
-      ["NameID", "<NameID ".repeat(20_000)],
+      ["NameID / attribute region", "<NameID ".repeat(N)],
+      // ── shape 2: complete openers, no closing tag ──
+      ["attrRegex / unclosed openers", '<saml:Attribute Name="a">'.repeat(N)],
+      [
+        "valueRegex / unclosed openers",
+        `<saml:Attribute Name="mail">${"<saml:AttributeValue>".repeat(N)}</saml:Attribute>`,
+      ],
+      ["NameID / unclosed openers", "<saml:NameID>".repeat(N)],
     ];
-    for (const [, evil] of cases) {
+    for (const [label, evil] of cases) {
       const started = performance.now();
       // No mapped attribute and no NameID resolve, so the function refuses —
       // the point is that it refuses fast instead of scanning to the end.
       expect(() => extractSAMLAttributes(evil, mapping)).toThrow(
         /No email attribute found/,
       );
-      expect(performance.now() - started).toBeLessThan(300);
+      const elapsedMs = performance.now() - started;
+      expect(elapsedMs, `${label} took ${elapsedMs.toFixed(0)}ms`).toBeLessThan(
+        300,
+      );
     }
+  });
+
+  it("pairs openers and closers the same way after segmentation", () => {
+    // The segmentation inverts the search (closer first, then opener inside
+    // the segment). These are the inputs where an inverted search could
+    // plausibly pick a different pair than the old lazy-body regex did.
+    const mapping = {
+      email: "mail",
+      firstName: "givenName",
+      lastName: "sn",
+      groups: "memberOf",
+    };
+
+    // A stray closing tag before the real attribute must not swallow it.
+    const strayCloser = `</saml:Attribute><saml:Attribute Name="mail"><saml:AttributeValue>after@stray.de</saml:AttributeValue></saml:Attribute>`;
+    expect(extractSAMLAttributes(strayCloser, mapping).email).toBe(
+      "after@stray.de",
+    );
+
+    // Two attributes in sequence keep their own value blocks.
+    const sequence =
+      `<saml:Attribute Name="mail"><saml:AttributeValue>a@b.de</saml:AttributeValue></saml:Attribute>` +
+      `<saml:Attribute Name="memberOf"><saml:AttributeValue>G1</saml:AttributeValue><saml:AttributeValue>G2</saml:AttributeValue></saml:Attribute>`;
+    const seq = extractSAMLAttributes(sequence, mapping);
+    expect(seq.email).toBe("a@b.de");
+    expect(seq.groups).toEqual(["G1", "G2"]);
+
+    // An attribute with an empty body yields no values, and the NameID
+    // fallback still applies.
+    const empty = `<saml:NameID>fallback@example.de</saml:NameID><saml:Attribute Name="mail"></saml:Attribute>`;
+    expect(extractSAMLAttributes(empty, mapping).email).toBe(
+      "fallback@example.de",
+    );
+
+    // The leftmost NameID pair wins, exactly as `.match()` did.
+    const twoNameIds = `<saml:NameID>first@example.de</saml:NameID><saml:NameID>second@example.de</saml:NameID>`;
+    expect(extractSAMLAttributes(twoNameIds, mapping).email).toBe(
+      "first@example.de",
+    );
+
+    // An orphaned AttributeValue outside any Attribute is ignored.
+    const orphan = `<saml:NameID>n@example.de</saml:NameID><saml:AttributeValue>orphan</saml:AttributeValue>`;
+    const orphanAttrs = extractSAMLAttributes(orphan, mapping);
+    expect(orphanAttrs.email).toBe("n@example.de");
+    expect(orphanAttrs.groups).toBeUndefined();
   });
 });

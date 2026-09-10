@@ -27,7 +27,7 @@
  * vereinigt; er ist die billigere Hälfte und die, die sofort beisst.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -118,12 +118,26 @@ function declarationsUnder(dir: string): string[] {
   // Modulnamen gedeckt. Beides faellt mit dem statischen Import weg.
   const out: string[] = [];
   const walk = (current: string): void => {
-    for (const entry of readdirSync(current)) {
-      if (entry === "node_modules" || entry === ".next" || entry === "dist") {
+    // [OP-257 · js/file-system-race] Vorher: `readdirSync(current)`, dann
+    // `statSync(full)`, dann `readFileSync(full)` — zwischen Pruefung und
+    // Benutzung liegt ein Fenster, in dem sich der Eintrag aendern kann. Die
+    // Art des Eintrags kommt jetzt aus DEMSELBEN `readdir`-Aufruf; damit gibt
+    // es kein Fenster mehr und einen Systemaufruf je Eintrag weniger.
+    //
+    // Unterschied, der benannt gehoert: `statSync` folgt einem Symlink,
+    // `dirent.isDirectory()` nicht. Fuer diesen Baum ist das folgenlos —
+    // `node_modules` ist ausgeschlossen, und dort sitzen die einzigen
+    // verlinkten Verzeichnisse (npm-Workspaces).
+    for (const entry of readdirSync(current, { withFileTypes: true })) {
+      if (
+        entry.name === "node_modules" ||
+        entry.name === ".next" ||
+        entry.name === "dist"
+      ) {
         continue;
       }
-      const full = join(current, entry);
-      if (statSync(full).isDirectory()) {
+      const full = join(current, entry.name);
+      if (entry.isDirectory()) {
         walk(full);
         continue;
       }

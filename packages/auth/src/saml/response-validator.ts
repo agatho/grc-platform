@@ -656,6 +656,46 @@ export function validateSAMLAssertion(
 }
 
 /**
+ * Yield the text segment preceding each match of `closingTag`, advancing past
+ * the closer each time.
+ *
+ * [CodeQL js/polynomial-redos] This is the segmenting shape already used by
+ * `parseXliff()` in `packages/shared/src/utils/xliff.ts`, and it exists for
+ * the same reason. The pattern it replaces is an `<Opener …>([\s\S]*?)</Closer>`
+ * regex driven by an `exec` loop: the lazy body is cheap while it finds a
+ * closer, but every opener with NO closer after it lets the body run to the
+ * end of the string, and the `g` loop then advances and retries. With n such
+ * openers that is n²/2 steps.
+ *
+ * Segmenting inverts the search: find the closer first, take the text before
+ * it, and look for the opener only inside that segment. An opener without a
+ * closer then costs nothing, because a segment only exists where a closer was
+ * found. The caller's opener regex therefore ends in `([\s\S]*)$` — greedy and
+ * end-anchored — instead of a lazy body plus closing tag.
+ *
+ * `closingTag` must be a `g`-flagged regex matching at least one character, so
+ * the cursor always advances. The scan itself is linear: its character class
+ * excludes `<`, so a run after any `</` is bounded by the next tag start.
+ */
+function* segmentsBeforeClosingTag(
+  xml: string,
+  closingTag: RegExp,
+): Generator<string> {
+  closingTag.lastIndex = 0;
+  let cursor = 0;
+  let closer: RegExpExecArray | null;
+  // `exec()` on a `g`-flagged regex advances `lastIndex` past the match on
+  // its own, so the cursor is never written back onto the regex. That also
+  // keeps this generator free of state writes across a `yield`, which is
+  // what `require-atomic-updates` objects to.
+  while ((closer = closingTag.exec(xml)) !== null) {
+    const segment = xml.slice(cursor, closer.index);
+    cursor = closer.index + closer[0].length;
+    yield segment;
+  }
+}
+
+/**
  * Extract user attributes from a SAML assertion using the configured mapping.
  *
  * SECURITY: only ever call this with the assertion XML returned by
@@ -668,41 +708,72 @@ export function extractSAMLAttributes(
   rejectXXE(assertionXml);
   const attrMap = new Map<string, string[]>();
 
-  // [CodeQL js/polynomial-redos] The start-tag regions were `[^>]*` /
-  // `[^>]*?`, and `[^>]` also matches `<`. On input carrying many
-  // `<Attribute ` fragments that never close, every fragment is a viable
-  // start position whose inner loop scans to the end of the string —
-  // O(n²). Narrowed to `[^<>]`, which stops at the next `<`. This is
-  // behaviour-preserving: a literal `<` inside a start tag is not
-  // well-formed XML, and this function only ever sees an assertion that
-  // already passed XML-DSig verification in `verifySamlResponse()` and
-  // `rejectXXE()` above. On every input the old code was meant to accept
-  // the two classes match identically; on malformed input the narrowed
-  // class fails fast instead of scanning to the end. Hardening — reaching
-  // it needs a malicious or compromised IdP attacking its own tenant.
-  const attrRegex =
-    /<(?:[A-Za-z0-9_.-]+:)?Attribute\s+[^<>]*?Name="([^"]*)"[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?Attribute>/gi;
-  let match: RegExpExecArray | null;
-  while ((match = attrRegex.exec(assertionXml)) !== null) {
+  // [CodeQL js/polynomial-redos] Two separate costs lived in these three
+  // regexes, and both are gone now.
+  //
+  //  1. The start-tag regions were `[^>]*` / `[^>]*?`, and `[^>]` also
+  //     matches `<`, so every unclosed `<Attribute ` fragment was a viable
+  //     start position whose region ran to the end of the string. Narrowed
+  //     to `[^<>]`, which stops at the next `<`. Kept below.
+  //  2. The pair CodeQL actually reports: `([\s\S]*?)` followed by a closing
+  //     tag that may never appear. See `segmentsBeforeClosingTag()` above —
+  //     the openers are now found inside a segment that ends at a closer, so
+  //     an opener without a closer costs nothing.
+  //
+  // Both rewrites select the same pairs as before. A segment never contains
+  // a closing tag, so the closer bounding it is exactly the one the old lazy
+  // body would have stopped at; and `Attribute`, `AttributeValue` and
+  // `NameID` do not nest inside themselves in a SAML assertion (SAML 2.0
+  // Core §2.7.3.1 makes `AttributeValue` the only child of `Attribute`, and
+  // §2.2.3 makes `NameID` a leaf), so there is no inner closer that the
+  // segmentation could pair with an outer opener. A literal `<` inside a
+  // start tag is not well-formed XML either, and this function only ever
+  // sees an assertion that already passed XML-DSig verification in
+  // `verifySamlResponse()` and `rejectXXE()` above.
+  //
+  // Hardening, not a live vulnerability: reaching this needs a malicious or
+  // compromised IdP attacking its own tenant.
+  const attributeClose = /<\/(?:[A-Za-z0-9_.-]+:)?Attribute>/gi;
+  const attributeOpen =
+    /<(?:[A-Za-z0-9_.-]+:)?Attribute\s+[^<>]*?Name="([^"]*)"[^<>]*>([\s\S]*)$/i;
+  for (const attrSegment of segmentsBeforeClosingTag(
+    assertionXml,
+    attributeClose,
+  )) {
+    const match = attrSegment.match(attributeOpen);
+    if (!match) continue;
     // [OP-065] Fanggruppen eines geglückten Treffers; `?? ""` statt `!`.
     const name = match[1] ?? "";
     const valueBlock = match[2] ?? "";
     const values: string[] = [];
-    // [CodeQL js/polynomial-redos] Same narrowing as `attrRegex` above.
-    const valueRegex =
-      /<(?:[A-Za-z0-9_.-]+:)?AttributeValue[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?AttributeValue>/gi;
-    let vm: RegExpExecArray | null;
-    while ((vm = valueRegex.exec(valueBlock)) !== null) {
-      values.push((vm[1] ?? "").trim());
+    // Scoped to `match[2]`, exactly as the old inner `exec` loop was.
+    const valueClose = /<\/(?:[A-Za-z0-9_.-]+:)?AttributeValue>/gi;
+    const valueOpen = /<(?:[A-Za-z0-9_.-]+:)?AttributeValue[^<>]*>([\s\S]*)$/i;
+    for (const valueSegment of segmentsBeforeClosingTag(
+      valueBlock,
+      valueClose,
+    )) {
+      const vm = valueSegment.match(valueOpen);
+      if (vm) values.push((vm[1] ?? "").trim());
     }
     attrMap.set(name, values);
   }
 
-  // [CodeQL js/polynomial-redos] Same narrowing as `attrRegex` above.
-  const nameIdMatch = assertionXml.match(
-    /<(?:[A-Za-z0-9_.-]+:)?NameID[^<>]*>([\s\S]*?)<\/(?:[A-Za-z0-9_.-]+:)?NameID>/i,
-  );
-  const nameId = nameIdMatch?.[1]?.trim() ?? null;
+  // The old `.match()` took the leftmost NameID pair; the first segment that
+  // contains an opener is that same pair.
+  const nameIdClose = /<\/(?:[A-Za-z0-9_.-]+:)?NameID>/gi;
+  const nameIdOpen = /<(?:[A-Za-z0-9_.-]+:)?NameID[^<>]*>([\s\S]*)$/i;
+  let nameId: string | null = null;
+  for (const nameIdSegment of segmentsBeforeClosingTag(
+    assertionXml,
+    nameIdClose,
+  )) {
+    const nameIdMatch = nameIdSegment.match(nameIdOpen);
+    if (nameIdMatch) {
+      nameId = (nameIdMatch[1] ?? "").trim();
+      break;
+    }
+  }
 
   const email = attrMap.get(mapping.email)?.[0] ?? nameId ?? "";
   const firstName = attrMap.get(mapping.firstName)?.[0];
