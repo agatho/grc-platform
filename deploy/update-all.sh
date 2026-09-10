@@ -113,47 +113,150 @@ echo "  $(date -u +"%Y-%m-%d %H:%M UTC")"
 echo "============================================="
 echo ""
 
-# ── 1. Code aktualisieren ─────────────────────────────────
-echo "[1/5] Code aktualisieren..."
+# ── 1. Code holen (noch NICHT uebernehmen) ────────────────
+# #S13-19b: bis 2026-09 zog dieser Schritt den Code mit `git pull` und
+# prueste den CI-Status ERST DANACH. Brach die Pruefung ab, lag der
+# ungepruefte Stand bereits im Deploy-Baum — und jeder Folgelauf meldete
+# "Kein Update verfuegbar", weil Git ihn korrekt als aktuell ansah. Drei
+# Laeufe sahen damit aus wie "nichts zu tun", waehrend ungepruefter Code
+# ausgecheckt war. Geholt wird jetzt nach FETCH_HEAD; der Arbeitsbaum
+# wird erst in 1d bewegt, nach bestandener Pruefung.
+echo "[1/5] Code holen..."
 OLD_COMMIT=$(git rev-parse HEAD)
-git pull origin main
-NEW_COMMIT=$(git rev-parse HEAD)
+git fetch origin main
+TARGET_COMMIT=$(git rev-parse FETCH_HEAD)
+# Zielstand schon hier setzen, damit deploy_record bei einem Abbruch
+# protokolliert, WOHIN der Deploy wollte.
+NEW_COMMIT="$TARGET_COMMIT"
 
-if [ "$OLD_COMMIT" = "$NEW_COMMIT" ]; then
-  echo "  Kein Update verfuegbar ($OLD_COMMIT)"
+if [ "$OLD_COMMIT" = "$TARGET_COMMIT" ]; then
+  echo "  Kein Update verfuegbar (${OLD_COMMIT:0:8})"
 else
-  echo "  $OLD_COMMIT → $NEW_COMMIT"
+  echo "  Verfuegbar: ${OLD_COMMIT:0:8} → ${TARGET_COMMIT:0:8} (noch nicht uebernommen)"
 fi
 
 # ── 1c. Change-Control: lief CI fuer diesen Commit gruen? (#S13-19) ───────
 # ADR-016 entscheidet bewusst gegen Auto-Deploy und begruendet das mit
 # Change-Control. Der gewaehlte manuelle Pfad implementierte sie aber nicht:
 # deployt wurde der Spitzenstand von `main`, ohne Tag, ohne Release, ohne
-# Abfrage des CI-Status, ohne Signaturpruefung. Es gab keinen technischen
-# Zusammenhang zwischen "CI war gruen" und "das laeuft in Produktion".
+# Abfrage des CI-Status, ohne Signaturpruefung.
+#
+# #S13-19c: die erste Fassung fragte `gh run list --workflow CI` ab und
+# warf JEDEN Nicht-Erfolg in denselben Topf ("error" → "gh auth?").
+# Das war aus zwei Gruenden falsch:
+#   * Unter sudo ist HOME=/root, die gh-Anmeldung des Operators liegt
+#     aber unter dessen HOME — die Abfrage schlug zuverlaessig fehl und
+#     meldete das als "nicht abfragbar", auch bei roter CI.
+#   * Die Conclusion EINES Workflows sagt nichts ueber die Checks, die
+#     Branch Protection tatsaechlich verlangt.
+# Jetzt: Abfrage als aufrufender Operator, Required Checks aus dem Branch
+# Protection als einzige Quelle der Wahrheit, und drei unterscheidbare
+# Ausgaenge — gruen, rot, unbekannt. Nur "unbekannt" ist ueberhaupt ein
+# Kandidat fuer ARCTOS_ALLOW_UNVERIFIED_DEPLOY.
+gh_as_operator() {
+  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+    sudo -u "$SUDO_USER" -H gh "$@"
+  else
+    gh "$@"
+  fi
+}
+
 echo ""
-echo "[1c/6] CI-Status von ${NEW_COMMIT:0:8} pruefen (#S13-19, ISO 27001 A.14.2.2)..."
+echo "[1c/6] CI-Status von ${TARGET_COMMIT:0:8} pruefen (#S13-19, ISO 27001 A.14.2.2)..."
 if [ "${ARCTOS_ALLOW_UNVERIFIED_DEPLOY:-false}" = "true" ]; then
   echo "  UEBERSPRUNGEN: ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true."
   echo "  Diese Ausnahme steht im Deploy-Protokoll ($DEPLOY_LOG)."
   deploy_record "ci-check-skipped" "ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true"
 elif ! command -v gh >/dev/null 2>&1; then
-  abort "gh (GitHub CLI) ist nicht installiert — der CI-Status von ${NEW_COMMIT:0:8} ist nicht pruefbar.
-  Installieren (\`apt-get install -y gh\` + \`gh auth login\`) oder den Deploy
+  abort "gh (GitHub CLI) ist nicht installiert — der CI-Status von ${TARGET_COMMIT:0:8} ist nicht pruefbar.
+  Installieren (apt-get install -y gh, dann gh auth login) oder den Deploy
   bewusst ohne Nachweis fahren: ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true"
+elif ! gh_as_operator auth status >/dev/null 2>&1; then
+  abort "gh ist nicht angemeldet (geprueft als '${SUDO_USER:-root}').
+  Unter sudo liegt HOME bei /root; die Anmeldung des Operators wird ueber
+  sudo -u \$SUDO_USER gelesen. 'gh auth login' als dieser Nutzer, oder
+  GH_TOKEN setzen. Bewusst ohne Nachweis: ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true"
 else
-  CI_CONCLUSION=$(gh run list --commit "$NEW_COMMIT" --workflow CI \
-      --json conclusion,status --limit 1 --jq '.[0].conclusion // "none"' 2>/dev/null || echo "error")
-  echo "  CI-Ergebnis: $CI_CONCLUSION"
-  case "$CI_CONCLUSION" in
-    success) echo "  OK — CI ist fuer diesen Commit gruen." ;;
-    none)    abort "Fuer ${NEW_COMMIT:0:8} existiert kein CI-Lauf. Wurde der Commit gepusht?
-  ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true umgeht die Pruefung bewusst." ;;
-    error)   abort "CI-Status nicht abfragbar (gh auth?). ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true umgeht die Pruefung." ;;
-    *)       abort "CI fuer ${NEW_COMMIT:0:8} ist '$CI_CONCLUSION', nicht 'success'.
-  Ein Commit mit rotem CI gehoert nicht in Produktion (#S13-19)." ;;
-  esac
+  REPO_SLUG=$(git config --get remote.origin.url | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+
+  # Required Checks aus dem Branch Protection. Eine fest verdrahtete Liste
+  # im Skript driftet still, sobald ein Job umbenannt wird — genau das ist
+  # zwischen zwei Commits passiert ("Lint & Ratschen" + "Type Check" →
+  # "Lint & Type Check"). Der Rueckfall greift nur, wenn die API nichts
+  # liefert, und sagt das ausdruecklich.
+  REQUIRED=$(gh_as_operator api \
+      "repos/$REPO_SLUG/branches/main/protection/required_status_checks" \
+      --jq '.contexts[]' 2>/dev/null || true)
+  if [ -z "$REQUIRED" ]; then
+    echo "  HINWEIS: Required Checks nicht abrufbar (Branch ungeschuetzt?)."
+    echo "  Rueckfall auf die Liste im Skript — bitte Branch Protection pruefen."
+    REQUIRED=$'Build\nUnit Tests\nIntegration Tests\nLint & Type Check\nDB Migration & Integrity\nSecurity Audit'
+  fi
+
+  # GitHub Actions meldet ueber Check-Runs, nicht ueber den Legacy-
+  # Status-Endpoint; der liefert hier dauerhaft "pending" mit leerer
+  # Liste. Deshalb /check-runs.
+  if ! CHECKS=$(gh_as_operator api \
+        "repos/$REPO_SLUG/commits/$TARGET_COMMIT/check-runs" --paginate \
+        --jq '.check_runs[] | [.name, .status, (.conclusion // "")] | @tsv' 2>&1); then
+    abort "CI-Status nicht abfragbar — die GitHub-API antwortete:
+  $CHECKS
+  Das ist ein Infrastruktur-, kein Qualitaetsbefund. Nach Klaerung erneut
+  laufen lassen; bewusst ohne Nachweis: ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true"
+  fi
+
+  CI_FAILED=()
+  CI_PENDING=()
+  CI_GREEN=0
+  while IFS= read -r CTX; do
+    [ -z "$CTX" ] && continue
+    LINE=$(printf '%s\n' "$CHECKS" | awk -F'\t' -v n="$CTX" '$1 == n { print; exit }')
+    if [ -z "$LINE" ]; then
+      CI_PENDING+=("$CTX — kein Lauf fuer diesen Commit")
+      continue
+    fi
+    ST=$(printf '%s' "$LINE" | cut -f2)
+    CC=$(printf '%s' "$LINE" | cut -f3)
+    if [ "$ST" != "completed" ]; then
+      CI_PENDING+=("$CTX — laeuft noch ($ST)")
+    elif [ "$CC" != "success" ]; then
+      # 'skipped' zaehlt bewusst als NICHT bestanden: ein uebersprungenes
+      # Gate ist kein bestandenes Gate (die Jobs haengen per needs: am
+      # Build, ein roter Build laesst sie alle als 'skipped' zurueck).
+      CI_FAILED+=("$CTX — $CC")
+    else
+      CI_GREEN=$((CI_GREEN + 1))
+    fi
+  done <<< "$REQUIRED"
+
+  if [ ${#CI_FAILED[@]} -gt 0 ]; then
+    printf '    ROT:    %s\n' "${CI_FAILED[@]}"
+    abort "CI fuer ${TARGET_COMMIT:0:8} ist nicht gruen (${#CI_FAILED[@]} Required Checks nicht bestanden).
+  Ein Commit mit roter CI gehoert nicht in Produktion (#S13-19).
+  Der Deploy-Baum steht unveraendert auf ${OLD_COMMIT:0:8}."
+  elif [ ${#CI_PENDING[@]} -gt 0 ]; then
+    printf '    OFFEN:  %s\n' "${CI_PENDING[@]}"
+    abort "CI fuer ${TARGET_COMMIT:0:8} ist noch nicht entschieden.
+  Abwarten und erneut laufen lassen. Wenn ein Check fuer diesen Commit gar
+  nicht existiert: wurde er gepusht, greift der Workflow fuer diesen Pfad?
+  Bewusst ohne Nachweis: ARCTOS_ALLOW_UNVERIFIED_DEPLOY=true"
+  else
+    echo "  OK — alle $CI_GREEN Required Checks gruen."
+  fi
 fi
+
+# ── 1d. Geprueften Stand uebernehmen ──────────────────────
+if [ "$OLD_COMMIT" != "$TARGET_COMMIT" ]; then
+  echo ""
+  echo "[1d/6] Geprueften Stand uebernehmen..."
+  if ! git merge --ff-only "$TARGET_COMMIT"; then
+    abort "Fast-Forward auf ${TARGET_COMMIT:0:8} nicht moeglich — der Deploy-Baum
+  ist von origin/main abgewichen (Force-Push auf main?). Der Baum wurde NICHT
+  angefasst. Pruefen: git log --oneline HEAD..FETCH_HEAD und umgekehrt."
+  fi
+  echo "  ${OLD_COMMIT:0:8} → $(git rev-parse --short HEAD)"
+fi
+NEW_COMMIT=$(git rev-parse HEAD)
 
 # ── 1a. Self-Update: mit neuer Script-Version neu starten ─
 # bash fuehrt das bereits geladene Script zu Ende — Aenderungen an
