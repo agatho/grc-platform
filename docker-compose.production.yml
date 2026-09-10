@@ -202,6 +202,12 @@ services:
       # Fallback für STORAGE_BACKEND=local + Branding-Logos: ohne diese
       # Volumes schlagen Datei-Uploads am read_only-Rootfs fehl (EROFS).
       - uploads:/app/uploads
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Reports muessen dieselbe Sicht
+      # haben wie Uploads. Der Worker erzeugt sie, `web` liefert sie aus —
+      # ohne gemeinsames Volume schreibt der Worker in sein EIGENES `/tmp`,
+      # und `fs.readFile(log.filePath)` in der Download-Route findet dort
+      # nichts.
+      - reports:/app/reports
       - branding:/app/apps/web/public/uploads
     environment:
       # DATABASE_URL (superuser grc) is used by the docker-entrypoint ONLY,
@@ -242,11 +248,6 @@ services:
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:?Set SECRET_ENCRYPTION_KEY in .env — openssl rand -base64 32}
       SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
       # ── Neue Pflicht-Betriebsvariablen der Remediation ───────────────
-      # [WP4 · S03-01] HMAC-Siegel der Audit-Anker. Ohne ihn ist die Kette
-      # Integritaetspruefung, aber keine Tamper-Evidence gegen einen
-      # Datenbank-Superuser. Web braucht ihn fuer /api/v1/audit-log/integrity.
-      AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — openssl rand -hex 32 (WP4/S03-01)}
-      AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
       # [WP8 · S07-03] Pseudonymisierungsschluessel. Ohne ihn greift ein
       # Installationsschluessel IN der Datenbank — das "zusaetzliche Wissen"
       # nach Art. 4 Nr. 5 DSGVO laege dann im selben Dump wie die Daten.
@@ -255,11 +256,6 @@ services:
       PII_PSEUDONYM_KEY_ID: ${PII_PSEUDONYM_KEY_ID:-default}
       WB_PSEUDONYM_KEY: ${WB_PSEUDONYM_KEY:-}
       IP_PSEUDONYM_KEY: ${IP_PSEUDONYM_KEY:-}
-      # [WP9 · S10-05] Trusted-Proxy-Hops: bestimmt, welchem
-      # X-Forwarded-For-Eintrag geglaubt wird. Muss der tatsaechlichen Zahl
-      # eigener Reverse-Proxys entsprechen (Caddy = 1), sonst ist das
-      # Login-Rate-Limit per Header umgehbar.
-      TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
@@ -277,6 +273,10 @@ services:
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       # DMS-Storage (local = Volume oben; s3 = Garage-Sidecar/extern)
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads/documents}
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Ohne diese Zeile faellt
+      # `packages/reporting/src/generator.ts` auf `os.tmpdir()` zurueck —
+      # also auf das container-private tmpfs.
+      REPORT_OUTPUT_DIR: ${REPORT_OUTPUT_DIR:-/app/reports}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_REGION: ${S3_REGION:-us-east-1}
@@ -296,7 +296,17 @@ services:
       # X-Forwarded-For. Vorher nahm es den ERSTEN Eintrag — also den vom
       # Client gelieferten — und ein einziger Header-Wert pro Versuch hob das
       # Login-Limit vollständig auf. 0 = XFF ganz ignorieren (App direkt
-      # exponiert), 2 = CDN vor Caddy.
+      # exponiert), 2 = CDN vor Caddy. Muss der tatsaechlichen Zahl eigener
+      # Reverse-Proxys entsprechen (Caddy = 1), sonst ist das Login-Limit per
+      # Header umgehbar.
+      #
+      # [ARCTOS-FULL-2026-08-31 · OP-260] Dieser Schluessel stand hier
+      # ZWEIMAL im selben `environment:`-Block, mit zwei verschiedenen
+      # Begruendungen und demselben Wert. Wirkung hatte das keine — YAML
+      # behaelt den letzten, und beide lauteten `${TRUSTED_PROXY_HOPS:-1}`.
+      # Gefaehrlich war die Anlage: wer eine der beiden Stellen aendert,
+      # aendert je nach Reihenfolge nichts, und die Begruendung darueber
+      # stimmt dann fuer den geltenden Wert nicht mehr. Zusammengefuehrt.
       TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
       # [WP9 · S10-05] Rate-Limit-Budgets, Format "<Anzahl>/<Sekunden>".
       # ADR-019 hat diese Variablen versprochen; gelesen hat sie bis zu
@@ -312,9 +322,18 @@ services:
       RATE_LIMIT_INTAKE: ${RATE_LIMIT_INTAKE:-}
       # Obergrenze der Token-Bucket-Map (S10-23: vorher unbegrenzt).
       RATE_LIMIT_MAX_BUCKETS: ${RATE_LIMIT_MAX_BUCKETS:-50000}
-      # [WP4 · S03-01] Signaturschlüssel der Audit-Anker-Siegel. Wird von
-      # /api/v1/audit-log/integrity zur Prüfung gebraucht; ohne ihn meldet
-      # der Endpunkt `anchor_unsealed`.
+      # [WP4 · S03-01] HMAC-Siegel der Audit-Anker. Ohne ihn ist die Kette
+      # Integritaetspruefung, aber keine Tamper-Evidence gegen einen
+      # Datenbank-Superuser; /api/v1/audit-log/integrity meldet dann
+      # `anchor_unsealed`. Erzeugen mit `openssl rand -hex 32`.
+      #
+      # [ARCTOS-FULL-2026-08-31 · OP-260] `AUDIT_SEAL_KEY` und
+      # `AUDIT_SEAL_KEY_ID` standen hier ZWEIMAL im selben
+      # `environment:`-Block (Zeilen 254/255 und 333/334), mit zwei
+      # Begruendungen und zwei verschiedenen `:?`-Fehlermeldungen. Der Wert
+      # war beide Male derselbe, die Wirkung also keine — YAML behaelt den
+      # letzten. Zusammengefuehrt; die verbliebene Fehlermeldung ist die,
+      # die auch der `worker` fuehrt.
       AUDIT_SEAL_KEY: ${AUDIT_SEAL_KEY:?Set AUDIT_SEAL_KEY in .env — ohne ihn sind die Audit-Anker unsigniert (WP4/S03-01)}
       AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
       # #S06-05: RFC-3161-Zeitstempel für Signaturglieder ("0" = aus).
@@ -455,6 +474,10 @@ services:
       # Retention-Purge löscht Files über das Storage-Interface —
       # muss dieselbe Storage-Config sehen wie web
       UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads/documents}
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Ohne diese Zeile faellt
+      # `packages/reporting/src/generator.ts` auf `os.tmpdir()` zurueck —
+      # also auf das container-private tmpfs.
+      REPORT_OUTPUT_DIR: ${REPORT_OUTPUT_DIR:-/app/reports}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       S3_ENDPOINT: ${S3_ENDPOINT:-}
       S3_REGION: ${S3_REGION:-us-east-1}
@@ -473,6 +496,12 @@ services:
     volumes:
       # Gleiche Sicht auf lokale Uploads wie web (Retention-Purge/Erase)
       - uploads:/app/uploads
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Reports muessen dieselbe Sicht
+      # haben wie Uploads. Der Worker erzeugt sie, `web` liefert sie aus —
+      # ohne gemeinsames Volume schreibt der Worker in sein EIGENES `/tmp`,
+      # und `fs.readFile(log.filePath)` in der Download-Route findet dort
+      # nichts.
+      - reports:/app/reports
     # [WP9 · S10-21] Vorher hatte weder `web` noch `worker` einen
     # Healthcheck, und /health war eine Konstante: ein Worker mit totem
     # Verbindungspool antwortete weiter "ok", und `restart: unless-stopped`
@@ -577,6 +606,7 @@ services:
 
 volumes:
   pgdata:
+  reports:
   uploads:
   branding:
   # #S06-09: minio und minio-init sind entfernt. Das Volume bleibt nur,

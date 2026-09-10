@@ -88,8 +88,14 @@ const GATE_INPUTS = [
   // Tors, nicht nur Deployment-Artefakt. Verschwindet eine (Umbenennung,
   // .gitignore), meldete `check-compose-db-roles.mjs` bisher „Datei nicht
   // gefunden" — laut, aber erst im CI. Hier faellt es eine Stufe frueher auf.
-  ["docker-compose.production.yml", "scripts/check-compose-db-roles.mjs"],
-  ["deploy/docker-compose.yml", "scripts/check-compose-db-roles.mjs"],
+  [
+    "docker-compose.production.yml",
+    "scripts/check-compose-db-roles.mjs + check-compose-shared-paths.mjs",
+  ],
+  [
+    "deploy/docker-compose.yml",
+    "scripts/check-compose-db-roles.mjs + check-compose-shared-paths.mjs",
+  ],
   // [ARCTOS-FULL-2026-08-31 · OP-241] Das Provisionierungsskript ist Eingabe
   // von `check-provision-order.mjs`: die Pruefung liest die Workflows, aber
   // ihre ganze Aussage haengt daran, dass es dieses Skript und seine zwei

@@ -189,6 +189,10 @@ services:
       # #S13-09b: persistente DMS-Ablage.
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       UPLOAD_DIR: /app/uploads/documents
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Ohne diese Zeile faellt
+      # `packages/reporting/src/generator.ts` auf `os.tmpdir()` zurueck —
+      # also auf das container-private tmpfs.
+      REPORT_OUTPUT_DIR: ${REPORT_OUTPUT_DIR:-/app/reports}
       # #S13-09e: KEIN Demo-Seed. Der Admin entsteht ueber den Service
       # `create-admin`, nicht ueber ein oeffentlich bekanntes Standardpasswort.
       RUN_SEEDS: ${RUN_SEEDS:-true}
@@ -212,6 +216,12 @@ services:
       # `docker compose up -d web` nach einem `pull` saemtliche
       # hochgeladenen Dokumente.
       - uploads:/app/uploads
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Reports muessen dieselbe Sicht
+      # haben wie Uploads. Der Worker erzeugt sie, `web` liefert sie aus —
+      # ohne gemeinsames Volume schreibt der Worker in sein EIGENES `/tmp`,
+      # und `fs.readFile(log.filePath)` in der Download-Route findet dort
+      # nichts.
+      - reports:/app/reports
       - branding:/app/public/branding
     healthcheck:
       test:
@@ -256,12 +266,22 @@ services:
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       UPLOAD_DIR: /app/uploads/documents
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Ohne diese Zeile faellt
+      # `packages/reporting/src/generator.ts` auf `os.tmpdir()` zurueck —
+      # also auf das container-private tmpfs.
+      REPORT_OUTPUT_DIR: ${REPORT_OUTPUT_DIR:-/app/reports}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
       - uploads:/app/uploads
+      # [ARCTOS-FULL-2026-08-31 · OP-259] Reports muessen dieselbe Sicht
+      # haben wie Uploads. Der Worker erzeugt sie, `web` liefert sie aus —
+      # ohne gemeinsames Volume schreibt der Worker in sein EIGENES `/tmp`,
+      # und `fs.readFile(log.filePath)` in der Download-Route findet dort
+      # nichts.
+      - reports:/app/reports
     healthcheck:
       test:
         - CMD-SHELL
@@ -335,6 +355,7 @@ services:
 
 volumes:
   pgdata:
+  reports:
   redisdata:
   # #S13-09b: DIE beiden Volumes, deren Fehlen bei jedem Update saemtliche
   # DMS-Dokumente geloescht hat.

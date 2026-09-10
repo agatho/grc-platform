@@ -2927,9 +2927,9 @@ nicht abgeräumt.
 
 ### Nachtrag 2026-09-10 — Welle 8r: der CodeQL-Check ist rot, und der grüne daneben heisst fast genauso
 
-| OP     | Was                                                                                                                                                                                                                                                            | Beleg                                                              | Art           | Stand                    |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------- | ------------------------ |
-| OP-257 | **37 CodeQL-Alerts mit hoher Schwere stehen offen auf dem Merge-Ref dieses Pull Requests**, davon 19 im Produktcode. Der Check `CodeQL` (github-advanced-security) meldet „28 new alerts including 17 high severity security vulnerabilities" und ist **rot**. | `gh pr checks 431`; `code-scanning/alerts?ref=refs/pull/431/merge` | Produktdefekt | **offen — Entscheidung** |
+| OP     | Was                                                                                                                                                                                                                                                            | Beleg                                                              | Art           | Stand                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------------- | --------------------------------------------------- |
+| OP-257 | **37 CodeQL-Alerts mit hoher Schwere stehen offen auf dem Merge-Ref dieses Pull Requests**, davon 19 im Produktcode. Der Check `CodeQL` (github-advanced-security) meldet „28 new alerts including 17 high severity security vulnerabilities" und ist **rot**. | `gh pr checks 431`; `code-scanning/alerts?ref=refs/pull/431/merge` | Produktdefekt | **behoben 2026-09-10** (lokale Sitzung, `f5eaa8d9`) |
 
 **Wie es fast durchgerutscht wäre — und das ist der eigentliche Befund.** Auf
 der Prüfliste des Pull Requests stehen **zwei** Einträge mit fast demselben
@@ -3072,3 +3072,99 @@ gibt, ist das ein Informationsleck ohne Ermessensfrage.
 **Nicht zulässig:** Alerts in der GitHub-Oberfläche wegdrücken, damit der Check
 grün wird. Ein weggedrückter Alert sieht aus wie ein behobener. Wo ein Befund
 wirklich nicht anwendbar ist, gehört die Begründung ins Register.
+
+### Nachtrag 2026-09-10 — Welle 8t: OP-257 geschlossen, und zwei Funde beim Nachgehen
+
+**OP-257 ist behoben** (lokale Sitzung, Endstand `f5eaa8d9`). Der CodeQL-Check
+ist grün: von „28 new alerts including 17 high severity" auf „10 new alerts"
+mit `success`. Gemessen: offene Alerts 59 → 31, davon `high` 37 → 11,
+`medium` 2 → 0, **im Produktcode und in Tests 21 → 0**. Die verbleibenden elf
+liegen sämtlich in `scripts/**`.
+
+**Der schwerste Befund stand auf keiner unserer beiden Listen.** `parseXliff`
+fuhr drei quadratische Ausdrücke über eine hochgeladene, auf 50 MB gedeckelte
+Datei — ein Upload hätte die Event-Loop des Web-Prozesses blockiert. CodeQL
+hatte an dieser Stelle **nichts** gemeldet; der Fund entstand beim Widerlegen
+einer Annahme, die ich in der Übergabe als gegeben mitgegeben hatte („ein
+Durchgang kann ein Tag neu zusammensetzen"). Sie ist mit vollständiger Suche
+über 1.679.616 Zeichenketten widerlegt worden, und dabei fiel auf, dass
+`/<[^>]+>/g` **innerhalb eines Durchgangs** quadratisch ist (18,5 s für
+200.000 `<`). Meine Übergabe hat also an einer Stelle in die Irre geführt und
+genau dadurch den eigentlichen Defekt sichtbar gemacht.
+
+**Und meine SAML-Einordnung hat sich bestätigt:** die vier auffälligsten
+Befunde (SAML, OIDC) sind Haufen 2. Von den elf Fundstellen mit fremder
+Eingabe ist genau **eine** ohne Anmeldung erreichbar — der Threat-Feed-Cron,
+und der ist behoben.
+
+**Das Urteil zu den elf Skript-Befunden übernehme ich** (`scripts/**` liegt
+hier): sieben `file-system-race` sind `statSync` gefolgt von `readFileSync` auf
+Pfaden aus unserem eigenen Baum, ausgeführt von unseren eigenen Bau- und
+Testprozessen — wer dazwischen schreiben kann, ändert einfach die Datei;
+**nicht anwendbar**. Drei `incomplete-sanitization` escapen `$`, und `$` ist
+das einzige Metazeichen, das `([A-Za-z_$][\w$]*)` überhaupt einfangen kann;
+kein Defekt in der Sache. Der eine `missing-regexp-anchor` ist ein
+Secret-Scanner-Muster, das mitten in der Zeile treffen **soll**. Keiner der elf
+ist in der Oberfläche abgetan worden.
+
+---
+
+| OP     | Was                                                                                                                                                                                                                                                           | Beleg                                              | Art           | Stand   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------- | ------- |
+| OP-259 | **Geplante Reports sind in Produktion nicht abrufbar.** Der Worker erzeugt sie in seinem eigenen `tmpfs` und legt den absoluten Pfad in `report_generation_log.file_path`; die Download-Route von `web` liest genau diesen Pfad — in einem anderen Container. | Code und Compose, unten belegt                     | Produktdefekt | behoben |
+| OP-260 | **Vier doppelte Schlüssel im `environment:`-Block von `web`** in `docker-compose.production.yml`: `TRUSTED_PROXY_HOPS` zweimal, `AUDIT_SEAL_KEY` und `AUDIT_SEAL_KEY_ID` zweimal. Wirkung keine — die Werte waren gleich; gefährlich war die Anlage.          | Strenges Laden (`json: false`) der Compose-Dateien | Betrieb       | behoben |
+
+**OP-259 — von „Spur" auf „belegt".** Die lokale Sitzung hat den Verdacht aus
+der Compose-Datei geschlossen und ausdrücklich als ungeprüft übergeben. Die
+Kette ist jetzt durchgezogen:
+
+1. `packages/reporting/src/generator.ts:34` — `REPORT_OUTPUT_DIR ||
+path.join(os.tmpdir(), "arctos-reports")`.
+2. Zeile 175/185 — die Datei wird dort geschrieben und der **absolute** Pfad in
+   `report_generation_log.file_path` gespeichert.
+3. `apps/web/.../reports/jobs/[id]/download/route.ts:52` — `fs.readFile(log.filePath)`.
+4. `REPORT_OUTPUT_DIR` ist in **keiner** Compose-Datei, in `deploy/` und in CI
+   gesetzt; in `.env.example` stand es auskommentiert und zeigte auf
+   `/var/lib/arctos/reports` — einen **Host**-Pfad, der in keinem Container
+   gemountet ist.
+5. `web` und `worker` haben beide `read_only: true` und je ein **eigenes**
+   `tmpfs: - /tmp`. Ein gemeinsames Volume für Reports gab es nicht.
+
+Also: jeder Download eines geplanten Reports endet mit `ENOENT`, und beim
+Neustart des Workers ist die Datei ohnehin verloren. Behoben nach dem Muster,
+das `uploads` seit jeher richtig vormacht — benanntes Volume `reports`, in
+**beiden** Diensten unter `/app/reports` gemountet, `REPORT_OUTPUT_DIR` in
+beiden gesetzt, in beiden Compose-Dateien.
+
+**OP-260 — gefunden, weil die neue Prüfung streng lädt.** `js-yaml` mit
+`json: false` meldet doppelte Schlüssel als Fehler statt den letzten
+stillschweigend zu behalten. Genau diese Klasse hat in Welle 8i den gesamten
+CI-Workflow drei Commits lang nicht starten lassen (OP-239) — dort prüfte sie
+danach `check-workflow-yaml.mjs`, aber **nur** unter `.github/workflows`. Die
+Compose-Dateien hat bis heute niemand so geladen.
+
+Die Werte waren jeweils gleich, die Wirkung also keine. Der Schaden ist
+angelegt, nicht eingetreten: zwei Kommentare beanspruchen dieselbe Einstellung,
+und wer den falschen ändert, ändert nichts — bei `TRUSTED_PROXY_HOPS`
+(Login-Rate-Limit per Header umgehbar) und `AUDIT_SEAL_KEY` (Tamper-Evidence
+der Audit-Anker) wäre das teuer.
+
+**Die Prüfung.** `scripts/check-compose-shared-paths.mjs` hält beides fest: was
+`web` und `worker` sich teilen, liegt in **beiden** auf demselben Volume und
+die zugehörige Variable zeigt dorthin; und die Compose-Dateien werden streng
+geladen. Sie ist als 14. Tor-Eingabe an beide Compose-Dateien gebunden.
+
+Gegenproben, beide gemessen — der Fehlschlag jeweils im Protokoll:
+
+| Eingriff                                       | Ergebnis                                                                                                 |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `reports`-Mount aus `worker` entfernt          | Exit 1 — „Dienst `worker` mountet `reports` nicht … sonst schreibt der eine in sein eigenes Dateisystem" |
+| `AUDIT_SEAL_KEY_ID` ein zweites Mal eingesetzt | Exit 1 — „YAML nicht ladbar — duplicated mapping key (Zeile 339)"                                        |
+| wiederhergestellt                              | Exit 0                                                                                                   |
+
+**Offen, Entscheidung des Eigentümers:** `ai-route.ts` nennt im 503-Zweig die
+Namen der Provider-Umgebungsvariablen (`OLLAMA_BASE_URL`, `ANTHROPIC_API_KEY`,
+`CLAUDE_CLI_ENABLED`) gegenüber **jedem angemeldeten** Konto. Die lokale
+Sitzung hat es bewusst nicht geändert: es ist die Meldung, die dem
+Administrator sagt, was zu konfigurieren ist. Sie gehört einer Rolle, nicht
+jedem Konto — geändert wird das erst auf Ansage.

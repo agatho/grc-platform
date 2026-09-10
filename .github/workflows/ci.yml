@@ -212,6 +212,13 @@ jobs:
       - name: Kein apt-Zugriff ohne abgeschaltete Fremdquellen
         run: node scripts/check-apt-sources.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · OP-259/260] Was der eine Dienst schreibt und
+      # der andere liest, muss auf demselben Volume liegen — und die
+      # Compose-Dateien werden dabei streng geladen, also mit Fehler bei
+      # doppeltem Schluessel.
+      - name: Geteilte Pfade und wohlgeformte Compose-Dateien
+        run: node scripts/check-compose-shared-paths.mjs
+
   # ────────────────────────────────────────────────
   # 1b. Type check — eigener Job
   # ────────────────────────────────────────────────
