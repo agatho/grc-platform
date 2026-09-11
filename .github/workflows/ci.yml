@@ -1463,7 +1463,7 @@ jobs:
       # npm-shipped deps there (picomatch 4.0.3 in node:22-alpine) bleed
       # into the scan without being an actual attack surface for the app.
       - name: Trivy image scan — web (BEFORE push, #S08-07)
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: arctos-local/grc-web:${{ github.sha }}
           format: table
@@ -1474,7 +1474,7 @@ jobs:
           skip-dirs: /usr/local/lib/node_modules/npm
 
       - name: Trivy image scan — worker (BEFORE push, #S08-07)
-        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: arctos-local/grc-worker:${{ github.sha }}
           format: table
