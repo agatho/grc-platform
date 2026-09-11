@@ -1349,7 +1349,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 Minuten reichten nur, solange der Build frueh abbrach. Seit er
+    # durchlaeuft, brauchen Web-Image (~7 min), Worker-Image, Smoke-Test
+    # und die zwei Trivy-Scans zusammen mehr; der Lauf auf 590ed680 wurde
+    # nach genau 20 Minuten abgeschnitten (conclusion: cancelled).
+    timeout-minutes: 45
     needs: [unit-tests, integration-tests, e2e-smoke, database]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
