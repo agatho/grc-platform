@@ -49,6 +49,14 @@ import { createHash } from "crypto";
 import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { requireRow } from "./sql-result";
+import * as schemas from "./index";
+import {
+  compareSchema,
+  DRIFT_QUERIES,
+  type DbColumn,
+  type DbTableFlags,
+  type DbTrigger,
+} from "./schema-drift";
 
 const client = postgres(process.env.DATABASE_URL!, {
   max: 1,
@@ -330,12 +338,121 @@ async function runPass(
   return { ok, fail };
 }
 
+/**
+ * ── Baseline fuer bestehende Datenbanken (#S13-23) ────────────────────
+ * Der Ledger wurde am 31.08.2026 eingefuehrt. Datenbanken, die davor
+ * migriert wurden, kennen ihn nicht: dort ist er leer, obwohl das Schema
+ * vollstaendig ist. Ein Lauf ohne Baseline versucht dann JEDE Datei
+ * erneut und scheitert an den nicht-idempotenten (0285 Trigger, 0306
+ * Policy) — genau der Abbruch vom 10.09.2026 in Produktion.
+ *
+ * Die Baseline traegt alle Dateien als vorhanden ein, ohne sie
+ * auszufuehren. Voraussetzung, und zwar geprueft statt angenommen: der
+ * Vergleich des Drizzle-Schemas gegen die Live-Datenbank
+ * (compareSchema, dasselbe wie /api/v1/health/schema-drift und der
+ * CI-Job) findet keine fehlende Tabelle, keine Spalten- und keine
+ * Triggerabweichung. Eine frische Datenbank faellt dadurch von selbst
+ * heraus: dort fehlt alles, der Vergleich schlaegt an, es wird reguläer
+ * migriert.
+ *
+ * WICHTIG: Die Baseline belegt das SCHEMA. Reine Daten-Migrationen
+ * (z. B. 0307, Bereinigung von Test-Organisationen) gelten damit als
+ * erledigt, ohne ausgefuehrt worden zu sein. Sie brauchen eine eigene
+ * Betrachtung; siehe docs/runbook.md.
+ *
+ * Abschaltbar mit ARCTOS_NO_AUTO_BASELINE=true.
+ */
+async function baselineIfNeeded(files: string[]): Promise<boolean> {
+  if (process.env.ARCTOS_NO_AUTO_BASELINE === "true") {
+    console.log("Baseline uebersprungen (ARCTOS_NO_AUTO_BASELINE=true).");
+    return false;
+  }
+
+  const { count: tableCount } = requireRow(
+    await client.unsafe<{ count: number }[]>(
+      `SELECT count(*)::int as count FROM information_schema.tables
+        WHERE table_schema = 'public' AND table_name <> '_arctos_migrations'`,
+    ),
+    "Tabellen zaehlen (Baseline)",
+  );
+  if (tableCount === 0) return false;
+
+  const tables = (
+    await client.unsafe<{ table_name: string }[]>(DRIFT_QUERIES.tables)
+  ).map((r) => r.table_name);
+  const columns = await client.unsafe<DbColumn[]>(DRIFT_QUERIES.columns);
+  const flags = await client.unsafe<DbTableFlags[]>(DRIFT_QUERIES.flags);
+  const triggers = await client.unsafe<DbTrigger[]>(DRIFT_QUERIES.triggers);
+
+  const report = compareSchema(
+    schemas as unknown as Record<string, unknown>,
+    tables,
+    columns,
+    flags,
+    triggers,
+  );
+  const blocking =
+    report.missingInDb.length +
+    report.columnDrift.length +
+    report.triggerDrift.length;
+
+  console.log(
+    `\nLedger leer, Datenbank enthaelt ${tableCount} Tabellen — Baseline wird geprueft.`,
+  );
+  console.log(
+    `  Schemavergleich: ${report.missingInDb.length} fehlende Tabellen, ` +
+      `${report.columnDrift.length} Spalten-, ${report.triggerDrift.length} Triggerabweichungen.`,
+  );
+
+  if (blocking > 0) {
+    console.log(
+      `\n✗ KEINE Baseline: das Schema weicht vom Code ab. Die Migrationen laufen regulaer.`,
+    );
+    for (const t of report.missingInDb) console.log(`    MISSING TABLE  ${t}`);
+    for (const c of report.columnDrift) {
+      console.log(
+        `    ${c.kind.toUpperCase().padEnd(22)} ${c.table}.${c.column}`,
+      );
+    }
+    for (const t of report.triggerDrift) {
+      console.log(
+        `    ${t.kind.toUpperCase().padEnd(22)} ${t.table}.${t.trigger}`,
+      );
+    }
+    return false;
+  }
+
+  for (const file of files) {
+    const raw = readFileSync(join(MIGRATIONS_DIR, file), "utf-8");
+    await client.unsafe(
+      `INSERT INTO _arctos_migrations (filename, checksum, applied_by, status)
+       VALUES ($1, $2, 'baseline', 'baseline')
+       ON CONFLICT (filename) DO NOTHING`,
+      [file, checksum(raw)],
+    );
+  }
+  console.log(
+    `✓ Baseline gesetzt: ${files.length} Migrationen als vorhanden eingetragen (status='baseline').`,
+  );
+  console.log(
+    `  Grundlage: Schemavergleich ohne Abweichung. Reine Daten-Migrationen sind damit NICHT ausgefuehrt.`,
+  );
+  return true;
+}
+
 async function main() {
   const files = readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith(".sql"))
     .sort(migrationOrder);
 
   await client.unsafe(LEDGER_DDL);
+  const ledgerEmpty =
+    (
+      await client.unsafe<{ filename: string }[]>(
+        `SELECT filename FROM _arctos_migrations LIMIT 1`,
+      )
+    ).length === 0;
+  if (ledgerEmpty) await baselineIfNeeded(files);
   const ledgerRows = await client.unsafe<
     { filename: string; checksum: string }[]
   >(`SELECT filename, checksum FROM _arctos_migrations`);
