@@ -438,7 +438,14 @@ DB_PASSWORD_VALUE=$(grep -E '^DB_PASSWORD=' "$ENV_FILE" | head -1 | cut -d= -f2-
 
 for DB_NAME in "${MIGRATE_DBS[@]}"; do
   echo "  DB: $DB_NAME"
-  if ! docker compose -f "$COMPOSE_FILE" exec -T \
+  # #S13-23: NICHT `exec`. Das fuehrt den Befehl im LAUFENDEN Container aus,
+  # also im Image der VORVERSION — der Migrationslauf benutzte damit dauerhaft
+  # den Code und die SQL-Dateien des letzten Deploys, waehrend das frisch
+  # gebaute Image danebenstand. Am 10.09.2026 lief deshalb die unreparierte
+  # Fassung von 0300/0315 gegen Produktion. `run --rm` startet einen neuen
+  # Container aus dem gerade gebauten Image; --no-deps, weil die Datenbank
+  # bereits laeuft.
+  if ! docker compose -f "$COMPOSE_FILE" run --rm --no-deps -T \
         -e DATABASE_URL="postgresql://grc:${DB_PASSWORD_VALUE}@postgres:5432/${DB_NAME}" \
         worker sh -c 'cd /app && npx tsx packages/db/src/migrate-all.ts' 2>&1 | sed 's/^/    /'; then
     abort "Migration auf $DB_NAME FEHLGESCHLAGEN.
