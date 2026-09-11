@@ -80,6 +80,16 @@ docker-compose.yml
 docker-compose.production.yml
 docker/
 
+# ── Betriebsartefakte im Deploy-Baum (#S13-19) ─────────────────────────────
+# Der Build-Kontext ist /opt/arctos — also GENAU das Verzeichnis, in das
+# update-all.sh waehrend des Deploys schreibt. `COPY . .` (Dockerfile:69)
+# nimmt alles mit, was hier nicht steht. `*.env` deckt `.env` ab, nicht
+# aber `.env.bak.<epoch>`, wie es der Env-Migrationsschritt erzeugt.
+*.bak
+*.bak.*
+tenants/
+deploy-history.jsonl
+trace.out
 # ── Sonstiges ──────────────────────────────────────────────────────────────
 .DS_Store
 *.log
