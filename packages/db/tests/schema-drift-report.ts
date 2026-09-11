@@ -25,7 +25,7 @@ import {
   type DbColumn,
   type DbTableFlags,
   type DbTrigger,
-} from "./schema-drift";
+} from "../src/schema-drift";
 
 async function main() {
   const failOnDrift = process.argv.includes("--fail-on-drift");

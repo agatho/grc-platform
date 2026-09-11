@@ -8,7 +8,7 @@ import {
   type DbColumn,
   type DbTableFlags,
   type DbTrigger,
-} from "@grc/db/tests/schema-drift";
+} from "@grc/db/src/schema-drift";
 import { withAuth } from "@/lib/api";
 // [E2E-TRIAGE-2026-09-02] withErrorHandler opens the requestDbStorage.run()
 // frame that withAuth needs to bind the org-pinned connection; without it the
@@ -35,7 +35,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 // rewarded the very workaround it existed to catch.
 //
 // It now reports, through the shared comparator in
-// `@grc/db/tests/schema-drift` (the same code the CI rehearsal job runs):
+// `@grc/db/src/schema-drift` (the same code the CI rehearsal job runs):
 //   * tables declared but absent                       → missingInDb
 //   * tables present but undeclared (informational)    → extraInDb
 //   * columns absent, of the wrong type, or nullable

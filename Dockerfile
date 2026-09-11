@@ -118,7 +118,7 @@ ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 RUN AUTH_SECRET="$AUTH_SECRET" \
     AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
     DATABASE_URL="$DATABASE_URL" \
-    sh -c 'npx next build --dir apps/web || (cd apps/web && npx next build)'
+    npx next build apps/web
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
 FROM ${NODE_IMAGE} AS runner
