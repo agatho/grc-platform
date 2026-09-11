@@ -446,11 +446,12 @@ async function main() {
     .sort(migrationOrder);
 
   await client.unsafe(LEDGER_DDL);
-  const ledgerEmpty = (
-    await client.unsafe<{ filename: string }[]>(
-      `SELECT filename FROM _arctos_migrations LIMIT 1`,
-    )
-  ).length === 0;
+  const ledgerEmpty =
+    (
+      await client.unsafe<{ filename: string }[]>(
+        `SELECT filename FROM _arctos_migrations LIMIT 1`,
+      )
+    ).length === 0;
   if (ledgerEmpty) await baselineIfNeeded(files);
   const ledgerRows = await client.unsafe<
     { filename: string; checksum: string }[]
