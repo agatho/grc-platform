@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **261**
+Nummern: **263**
 
 ## offen (3)
 
@@ -195,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (96)
+## behoben (98)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -295,3 +295,5 @@ _keine_
 | OP-259 | Geplante Reports sind in Produktion nicht abrufbar. Der Worker erzeugt sie in seinem eigenen `tmpfs` und legt… | behoben                                                                                    | 2026-09-10 |
 | OP-260 | Vier doppelte Schlüssel im `environment:`-Block von `web` in `docker-compose.production.yml`: `TRUSTED_PROXY_… | behoben                                                                                    | 2026-09-10 |
 | OP-261 | Der 503-Zweig der AI-Routen nannte jedem angemeldeten Konto die Namen der Provider-Umgebungsvariablen. `aiErr… | behoben 2026-09-10                                                                         | 2026-09-10 |
+| OP-262 | Zwei Pflichtvariablen des Startup-Wächters wurden von der Env-Migration nie erzeugt — ein Bestandsdeployment … | behoben 2026-09-12                                                                         | 2026-09-12 |
+| OP-263 | Der Konfigurations-Wächter meldete sich erst nach Backup und zwei Image-Builds — und ein auskommentierter Sch… | behoben 2026-09-12                                                                         | 2026-09-12 |
