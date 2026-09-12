@@ -231,10 +231,86 @@ ensure_env_hint "CLAMAV_HOST" "ClamAV-Virus-Scan fuer DMS-Uploads (optional, z.B
 ensure_env_secret "GRC_WORKER_PASSWORD" "openssl rand -hex 24"   # WP2/S01-09
 ensure_env_secret "AUDIT_SEAL_KEY"      "openssl rand -hex 32"   # WP4/S03-01
 ensure_env_secret "PII_PSEUDONYM_KEY"   "openssl rand -hex 32"   # WP8/S07-03
+# [OP-262] Diese beiden verlangt `scripts/assert-runtime-config.mjs` fuer
+# `web` UND `worker`, erzeugt wurden sie hier aber nie: WB_ENCRYPTION_KEY nur
+# von `setup-hetzner.sh` bei der ERSTinstallation, CONNECTOR_ENCRYPTION_KEY in
+# keinem der beiden Skripte. Eine Installation, die aelter ist als der
+# Startup-Waechter, konnte die Pflicht deshalb auf dem normalen Update-Weg
+# nicht erfuellen — sie scheiterte in Schritt 3 an einem Container, der sich
+# zu starten weigert. Gemeldet aus einem echten Deploy am 2026-09-11.
+#
+# Beide sind SCHREIB-EINMAL wie die drei darueber: ein Wechsel des
+# WB_ENCRYPTION_KEY macht bestehende Hinweisgebermeldungen unentschluesselbar
+# (HinSchG-Daten, kein Wiederherstellungsweg), ein Wechsel des
+# CONNECTOR_ENCRYPTION_KEY entwertet jede gespeicherte Connector-Zugangsdaten-
+# Zeile. `ensure_env_secret` schreibt nur, wenn der Schluessel FEHLT — genau
+# deshalb ist das Erzeugen hier sicher und ein Rotieren es nicht.
+ensure_env_secret "WB_ENCRYPTION_KEY"        "openssl rand -hex 32"   # WP8/HinSchG
+ensure_env_secret "CONNECTOR_ENCRYPTION_KEY" "openssl rand -hex 32"   # Connector-Credentials
 ensure_env_hint   "AUDIT_SEAL_KEY_ID"   "Schluessel-ID der Ankersiegel (Default k1)"
 ensure_env_hint   "WB_PSEUDONYM_KEY"    "HMAC der Melder-IP-Pseudonymisierung; ohne ihn aus WB_ENCRYPTION_KEY abgeleitet (WP8/S07-02)"
 ensure_env_hint   "FREETSA_CA_PEM"      "CA-Kette zur Validierung der RFC-3161-Zeitstempel (WP4/S03-11)"
 ensure_env_hint   "TRUSTED_PROXY_HOPS"  "Anzahl eigener Reverse-Proxys; bestimmt, welchem X-Forwarded-For-Eintrag geglaubt wird (WP9/S10-05). Default 1 = ein Caddy."
+
+# ── 1b-Ende: die Pflichtvariablen JETZT pruefen, nicht erst in Schritt 3 ──
+#
+# [OP-263] `scripts/assert-runtime-config.mjs` laeuft heute erst im Container
+# (ueber `scripts/prestart.sh`). Beim Update heisst das: der Abbruch kommt in
+# Schritt 3 — also NACH dem Pre-Deploy-Backup und NACH zwei Image-Builds.
+# Zehn Minuten fuer eine Auskunft, die hier in einer Sekunde zu haben ist;
+# gemessen an einem echten Deploy am 2026-09-11.
+#
+# Der Waechter selbst laeuft hier NICHT: auf dem Host gibt es kein Node
+# (dieses Skript ruft Node ausschliesslich in Containern auf), und das Image
+# ist in Schritt 1b noch das alte. Deshalb dieselbe Pruefung in Shell — aber
+# die NAMEN kommen aus dem Waechter und nicht aus einer zweiten Liste, damit
+# die beiden nicht auseinanderlaufen.
+GUARD=/opt/arctos/scripts/assert-runtime-config.mjs
+if [ -f "$GUARD" ]; then
+  PFLICHT=$(awk '
+    /name: *"/ { gsub(/.*name: *"|".*/, ""); key = $0; next }
+    /roles: *\[/ && key != "" {
+      if ($0 ~ /"web"/ || $0 ~ /"worker"/) print key
+      key = ""
+    }
+  ' "$GUARD")
+
+  # Eine Pruefung, die ihre eigenen Regeln nicht findet, darf nicht
+  # "bestanden" melden — das ist die Form, die dieses Audit mehrfach gefunden
+  # hat.
+  [ -n "$PFLICHT" ] || abort \
+    "Konnte aus $GUARD keine Pflichtvariablen lesen. Format geaendert? Ohne diese Liste waere die Vorab-Pruefung wertlos."
+
+  FEHLEND=""
+  for KEY in $PFLICHT; do
+    VAL=$(grep -E "^${KEY}=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2-)
+    # Dieselben Platzhalter, die auch der Waechter ablehnt.
+    if [ -z "$VAL" ] || printf '%s' "$VAL" | grep -Eqi \
+         'generate-|generate a |change[-_ ]?me|placeholder|do-not-use'; then
+      FEHLEND="$FEHLEND $KEY"
+    fi
+  done
+
+  if [ -n "$FEHLEND" ]; then
+    echo ""
+    echo "  Pflichtvariablen fehlen oder tragen einen Platzhalter:"
+    for KEY in $FEHLEND; do echo "    x $KEY"; done
+    echo ""
+    echo "  Hinweis, weil genau das hier schon passiert ist: 'ensure_env_secret'"
+    echo "  oben ueberspringt einen Schluessel auch dann, wenn er AUSKOMMENTIERT"
+    echo "  in $ENV_FILE steht — die Pruefung dort ist '^#? *KEY='. Ein altes"
+    echo "  '# KEY=' aus einer .env.sample verhindert das Erzeugen dauerhaft."
+    echo "  Nachsehen mit:"
+    echo "    grep -nE '$(echo "$FEHLEND" | tr ' ' '|' | sed 's/^|//')' $ENV_FILE"
+    echo ""
+    echo "  Erzeugen (Hex-Schluessel):  openssl rand -hex 32"
+    echo "  Referenz: .env.example, docs/env-vars-reference.md, docs/runbook.md §1"
+    abort "Pflichtkonfiguration unvollstaendig — abgebrochen VOR Backup und Build."
+  fi
+  echo "  Pflichtvariablen vollstaendig ($(echo "$PFLICHT" | wc -w) geprueft)."
+else
+  echo "  ! $GUARD nicht gefunden — Vorab-Pruefung uebersprungen."
+fi
 
 # ── 1d. PRE-DEPLOY-BACKUP (#S13-04a) ─────────────────────
 # ADR-016:70-71 begruendet den manuellen Deploy ausdruecklich damit, dass
