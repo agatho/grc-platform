@@ -3334,3 +3334,42 @@ Prüfung nennt diesen Fall in ihrer eigenen Fehlermeldung, samt `grep`-Zeile.
 `/opt/arctos/.env` auf dem Host. Die Frage des Eigentümers — ob sich die Werte
 nicht gleich beim Update erzeugen lassen — war genau richtig: der Mechanismus
 dafür gab es längst, er deckte nur zwei der verlangten Schlüssel nicht ab.
+
+### Nachtrag 2026-09-14 — OP-264: der Pflicht-Check, der nie laufen konnte
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                                                                         | Art                         | Stand                  |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------- |
+| OP-264 | **Ein Pflicht-Check, der auf einer Pull Request bauartbedingt nie lief, blockierte jede Pull Request.** `Build` trug `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` und war damit auf jeder PR `skipped`; GitHub wertet einen uebersprungenen Pflicht-Check als NICHT erfuellt. Gemessen an PR #446: sieben Pflicht-Checks gruen, `Build` uebersprungen, Merge von der Policy abgelehnt — ohne einen einzigen Fehlschlag. OP-255 hatte daraus geschlossen, den Job aus der Required-Liste zu streichen; die Entscheidung des Eigentuemers am 2026-09-14 war die andere Richtung: **den Job auf Pull Requests laufen lassen**, weil er der einzige ist, der den Produktionsbau im Docker-Image ausfuehrt. Die beiden Push-Schritte nach ghcr.io bleiben auf main beschraenkt — eine PR baut, testet und scannt, veroeffentlicht aber nichts. | PR #446, Merge-Versuch abgelehnt mit „the base branch policy prohibits the merge“; `gh pr checks 446` zeigt `Build  skipping` | Betrieb (Tor-Konfiguration) | **behoben 2026-09-14** |
+
+**Warum nicht der einfache Weg.** OP-255 hatte den richtigen Befund und den
+naheliegenden Schluss: `Build` laeuft auf keiner PR, also gehoert er nicht in
+die Required-Liste. Streichen haette PR #446 sofort entsperrt — und eine echte
+Luecke gelassen. Dieser Job ist der **einzige**, der den Produktionsbau im
+Docker-Image ausfuehrt, und genau er hat den Import von
+`@grc/db/tests/schema-drift` in einer Laufzeitroute gefunden: ein Defekt, den
+kein anderes Tor sehen konnte, weil er erst beim Bauen des Images auftritt.
+Ein Fund dieser Art ist das Argument dafuer, den Job **vor** den Merge zu
+ziehen, nicht ihn aus der Pflicht zu nehmen.
+
+**Was das kostet und was nicht.** Es kostet Laufzeit: zwei Images, ein
+Smoke-Test und zwei Trivy-Scans, Zeitlimit 45 Minuten. Es kostet **keine**
+Sicherheit — die zwei Schritte, die `ghcr.io/...:latest` und `:<sha>`
+veroeffentlichen, tragen jetzt ausdruecklich
+`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`. Ohne
+diese Bedingung haette der Umbau jede PR `:latest` schieben lassen, also
+ungemergten Code unter genau dem Tag, den der Deploy zieht. Der Rest des Jobs
+(Bauen, Smoke, Scans, SBOM-Artefakt) laeuft auf beiden Wegen.
+
+**Notfallweg, ausdruecklich festgehalten, weil die Frage gestellt wurde.**
+Das Repository gehoert einem **Benutzerkonto**, nicht einer Organisation:
+einen Audit-Log gibt es damit nicht. `enforce_admins` steht auf `false`,
+also kann ein Administrator einen Pflicht-Check mit
+`gh pr merge <n> --admin` uebergehen. Das ist der Break-Glass-Pfad, und er
+funktioniert auch weiterhin — aber die einzige Spur, die er hinterlaesst, ist
+die Zeitleiste der PR selbst (gemergt, obwohl ein Pflicht-Check nicht erfuellt
+war). Wer das fuer zu wenig Nachweis haelt, hat zwei Moeglichkeiten: den
+Schutz kurzzeitig aendern (die Aenderung ist sichtbar, aber ebenfalls nicht
+protokolliert) oder das Repository in eine Organisation ueberfuehren, wo der
+Audit-Log `protected_branch.policy_override` festhaelt. Solange es ein
+Benutzer-Repository ist, ist der Notfallweg vorhanden, aber schlecht belegt —
+das gehoert in die Risikoakzeptanz, nicht in eine Fussnote.

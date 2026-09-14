@@ -1355,7 +1355,31 @@ jobs:
     # nach genau 20 Minuten abgeschnitten (conclusion: cancelled).
     timeout-minutes: 45
     needs: [unit-tests, integration-tests, e2e-smoke, database]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # [OP-264] Laeuft jetzt AUCH auf Pull Requests.
+    #
+    # Vorher: `github.event_name == 'push' && github.ref == 'refs/heads/main'`.
+    # Damit war dieser Job auf einer PR immer `skipped` — und da GitHub einen
+    # uebersprungenen Pflicht-Check als NICHT erfuellt wertet, blockierte er
+    # jede PR dauerhaft, sobald er in der Required-Liste stand (OP-255 hatte
+    # deshalb verlangt, ihn dort zu streichen). Gemessen an PR #446: sieben
+    # Pflicht-Checks gruen, `Build` uebersprungen, Merge von der Policy
+    # abgelehnt.
+    #
+    # Streichen waere die billige Loesung gewesen und haette eine echte Luecke
+    # gelassen: dieser Job ist der EINZIGE, der den Produktionsbau im
+    # Docker-Image ausfuehrt. Er hat den Import von `@grc/db/tests/schema-drift`
+    # in einer Laufzeitroute gefunden — einen Defekt, den kein anderer Check
+    # sehen konnte, weil er erst beim Bauen des Images auftritt. Genau dieser
+    # Fund ist das Argument dafuer, ihn VOR dem Merge laufen zu lassen statt
+    # danach.
+    #
+    # Der Preis ist Laufzeit (zwei Images, Smoke-Test, zwei Trivy-Scans), nicht
+    # Sicherheit: die beiden Push-Schritte weiter unten bleiben auf
+    # main-Pushes beschraenkt, eine PR baut und prueft also, veroeffentlicht
+    # aber nichts.
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
 
     permissions:
       contents: read
@@ -1493,7 +1517,13 @@ jobs:
       # `sbom: true` und `provenance: mode=max` haengen jedem Image seine
       # Stueckliste und seine Build-Herkunft als Attestation an.
       # ────────────────────────────────────────────────────────────────
+      # [OP-264] Nur von main. Der Job laeuft seit OP-264 auch auf Pull
+      # Requests; ohne diese Bedingung wuerde jede PR `:latest` nach ghcr.io
+      # schieben und damit ungemergten Code unter dem Tag veroeffentlichen,
+      # den der Deploy zieht. Bauen und pruefen: immer. Veroeffentlichen: nur
+      # nach dem Merge.
       - name: Push Web Image (scan passed)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
@@ -1511,7 +1541,9 @@ jobs:
           cache-from: type=gha,scope=web
           cache-to: type=gha,scope=web,mode=max
 
+      # [OP-264] Gleiche Bedingung wie beim Web-Image: nur von main.
       - name: Push Worker Image (scan passed)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
