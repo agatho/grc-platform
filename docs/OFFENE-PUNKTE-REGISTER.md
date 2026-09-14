@@ -3449,3 +3449,74 @@ Node-Bedarf auf dem Host und keine eigene Vorstellung davon, wie eine `.env`
 auszusehen hat. Beide Pfade sind unter `set -euo pipefail` getestet: der
 Erfolgsfall laeuft weiter, der Fehlerfall druckt die Compose-Meldung
 eingerueckt und bricht sichtbar ab.
+
+### Nachtrag 2026-09-14 — OP-267: drei Schalter, und der Weg fuehrte an allen dreien vorbei
+
+| OP     | Was | Beleg | Art | Stand |
+| ------ | --- | ----- | --- | ----- |
+| OP-267 | **Sechs Migrationen legten anmeldefaehige Konten an — unbedingt, auf jeder Datenbank, an allen drei Demo-Seed-Schaltern vorbei.** `0316` (13 × `@arctos.test`), `0317` (9 × `@meridian.test`), `0318` (Wiederholung), `0326` (4 × `@arctistx.test`), `0346` (3 × `@meridian.test`), `0096` (6 × `@arctos.dev`). 15 davon sind anmeldefaehig und teilen einen bcrypt-Hash, dessen Klartext in der Kopfzeile von `0317` steht — in einem oeffentlichen Repository. Behoben durch `0480_op267_disable_seeded_login_accounts.sql` (Vorwaertsschritt, kein Eingriff in ausgelieferte Dateien nach ADR-014), abgesichert durch `scripts/check-migration-credentials.mjs`; die Markerliste in `deploy/purge-demo-accounts.sh` erfasste 4 der 16 und ist ergaenzt. | Mandant `grc_qumasoft` am 2026-09-14: 35 Konten statt der einen laut eigenem Runbook, bei `RUN_SEEDS=false`; `UPDATE 28` je Datenbank auf allen vieren | Sicherheit (eigener Fehler) | **behoben 2026-09-14** |
+
+**Wie es auffiel.** Nach dem Wiederaufbau der Mandanten-Datenbanken wurde
+gezaehlt, was drin steht. `grc_qumasoft` sollte laut
+`deploy/qumasoft/README_DEPLOY.md` **ein** Konto haben
+(`admin@qumasoft.de`). Es waren **35**. Der Verdacht lag zuerst beim Seed —
+falsch: `RUN_SEEDS=false` stand im Mandanten-`env`, und der Seed war nie
+gelaufen. Die 34 zusaetzlichen Konten kamen aus **Migrationen**.
+
+**Warum keiner der Schutzmechanismen gegriffen hat.** Das Projekt hat fuer
+genau diesen Fall drei Schalter — `SEED_DEMO_DATA`,
+`ALLOW_DEMO_SEED_IN_PROD` (#SEC-F04) und `ALLOW_PRODUCTION_SEED` — und
+einen Waechter, der den Start verweigert, wenn die ersten beiden gesetzt sind
+(`scripts/assert-runtime-config.mjs`). **Alle drei wirken im Seed-Pfad.**
+Eine Migration laeuft unbedingt, auf jeder Datenbank, und bevor irgendein
+Schalter gelesen wird. Der Schutz war vorhanden, sorgfaeltig gebaut und
+vollstaendig — fuer die eine Tuer, die man im Blick hatte.
+
+**Warum es vorher nicht auffiel.** `deploy/create-tenant.sh` kopiert das
+Schema aus `grc_platform` (`pg_dump --schema-only`) und laesst die
+Migrationen danach mit `|| true` laufen. Ein so entstandener Mandant hat die
+sechs Dateien nie von vorn ausgefuehrt. Erst der Neuaufbau aus einer leeren
+Datenbank — 429 Migrationen der Reihe nach — machte sichtbar, was eine
+Neuinstallation seit jeher bekommt. **Der Unterschied zwischen
+„gewachsen“ und „neu gebaut“ ist hier kein Detail: nur der
+zweite Weg zeigt, was ausgeliefert wird.**
+
+**Was die Zahlen sagen.** Je Datenbank 28 Konten aus den `.test`-Domains
+plus 6 aus `0096`; auf allen vier Datenbanken identisch (`UPDATE 28`).
+Anmeldefaehig sind 15: `0317` nennt das Passwort im Klartext in der eigenen
+Kopfzeile, `0326` und `0346` benutzen denselben Hash. Die 13 aus `0316`
+tragen einen Platzhalter und koennen sich nicht anmelden — stillgelegt wurden
+sie trotzdem. Ihre Rollenzuweisungen waren ueberall `UPDATE 0`: `0317`
+haengt sie an eine fest verdrahtete Org-UUID, die in keiner der vier
+Datenbanken existiert. Die Konten konnten sich also anmelden und nichts
+sehen. Das ist kein Trost, sondern eine Rechtebruecke weniger.
+
+**Warum eine neue Migration und keine Korrektur der sechs.** Nach ADR-014
+gilt eine ausgelieferte Migration als unveraenderlich, und diese sechs sind
+ausgeliefert — sie sind am 2026-09-14 gegen vier produktive Datenbanken
+gelaufen. Der Ledger haelt sie fest; eine Aenderung an den Dateien wuerde auf
+keiner bestehenden Instanz mehr ausgefuehrt. Nur ein Vorwaertsschritt
+erreicht Bestand **und** Neuinstallation. Stillgelegt wird wie in
+`purge-demo-accounts.sh`: kein hartes `DELETE` (zu viele nullable
+Referenzen, und die Audit-Historie bleibt), sondern `is_active = false`,
+`deleted_at`, Hash unbrauchbar — jede der drei Aenderungen genuegt fuer sich.
+
+**Die Pruefung, und was sie beim ersten Lauf fand.**
+`scripts/check-migration-credentials.mjs` hat zwei Regeln: (1) keine
+Migration schreibt `password_hash` in `"user"` — die sechs historischen
+sind namentlich eingefroren, die Liste darf schrumpfen, nicht wachsen; (2)
+**jede** Adresse aus diesen sechs muss von `0480` erfasst sein. Regel 2 ist
+die tragende: sie faellt auch dann, wenn jemand einer eingefrorenen Datei
+eine Adresse hinzufuegt. Die erste Fassung las die ganze Datei und verlangte
+prompt die Stilllegung von `admin@arctos.dev` — das echte Administratorkonto
+jeder Installation, das `0096:170` nur als `granted_by` **nachliest**. Die
+Regel liest jetzt die `INSERT`-Anweisungen, nicht die Datei. Beide
+Fehlerwege sind gegengeprueft: eine neue Migration mit Konto und eine neue
+Adresse in einer eingefrorenen Datei brechen die Pruefung mit Exit 1.
+
+**Und die Markerliste.** `deploy/purge-demo-accounts.sh` — das Werkzeug, das
+es fuer genau diesen Fall schon gab — passte auf `@arctos.dev` und
+`@arctistx.test`. Von den 16 anmeldefaehigen Konten erfasste es **4**, und
+meldete Erfolg. Ein Aufraeumwerkzeug, dessen Liste hinter dem Bestand
+zurueckbleibt, ist gefaehrlicher als keines: es beantwortet die Frage, ohne
+sie zu beantworten. Ergaenzt um beide `.test`-Domains.

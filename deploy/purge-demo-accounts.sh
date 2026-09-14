@@ -57,8 +57,23 @@ if ! command -v psql >/dev/null 2>&1; then
   exit 2
 fi
 
-# Match predicate — the two known non-production account domains.
-MATCH="email ILIKE '%@arctos.dev' OR email ILIKE '%@arctistx.test'"
+# Match predicate — the known non-production account domains.
+#
+# [OP-267, 2026-09-14] This list held two of four. The gap was not cosmetic:
+# `@meridian.test` (12 accounts from migrations 0317 and 0346) and
+# `@arctos.test` (13 from 0316) were never matched, so a run of this script
+# neutralized 4 of the 16 login-capable accounts and reported success. Twelve
+# of them share the bcrypt hash whose plaintext stands in the header of
+# `packages/db/drizzle/0317_seed_rbac_login_users.sql`.
+#
+# All three `.test` domains are reserved by RFC 6761 and can never denote a
+# real account, so a pattern is safe there. `@arctos.dev` stays in the list
+# for the reason this script was written (seed_demo_00_platform.sql) — note
+# that it also matches `admin@arctos.dev`, i.e. running this locks out the
+# platform administrator unless another admin exists. That is deliberate for
+# an instance that is being handed real data; create the replacement admin
+# first with `packages/db/src/create-admin.ts`.
+MATCH="email ILIKE '%@arctos.dev' OR email ILIKE '%@arctistx.test' OR email ILIKE '%@meridian.test' OR email ILIKE '%@arctos.test'"
 
 echo "== ARCTOS demo/test account purge (#SEC-F04) =="
 echo "Target DB: ${DB_URL%%\?*}"

@@ -212,6 +212,12 @@ jobs:
       - name: Kein apt-Zugriff ohne abgeschaltete Fremdquellen
         run: node scripts/check-apt-sources.mjs
 
+      # [ARCTOS-FULL-2026-08-31 · OP-267] Sechs Migrationen legten
+      # anmeldefaehige Konten an — unbedingt, auf jeder Datenbank, an allen
+      # drei Demo-Seed-Schaltern vorbei. Sechs Faelle sind eine Klasse.
+      - name: Keine anmeldefaehigen Konten aus Migrationen
+        run: node scripts/check-migration-credentials.mjs
+
       # [ARCTOS-FULL-2026-08-31 · OP-259/260] Was der eine Dienst schreibt und
       # der andere liest, muss auf demselben Volume liegen — und die
       # Compose-Dateien werden dabei streng geladen, also mit Fehler bei
