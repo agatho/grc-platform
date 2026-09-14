@@ -355,64 +355,52 @@ ensure_env_hint   "WB_PSEUDONYM_KEY"    "HMAC der Melder-IP-Pseudonymisierung; o
 ensure_env_hint   "FREETSA_CA_PEM"      "CA-Kette zur Validierung der RFC-3161-Zeitstempel (WP4/S03-11)"
 ensure_env_hint   "TRUSTED_PROXY_HOPS"  "Anzahl eigener Reverse-Proxys; bestimmt, welchem X-Forwarded-For-Eintrag geglaubt wird (WP9/S10-05). Default 1 = ein Caddy."
 
-# ── 1b-Ende: die Pflichtvariablen JETZT pruefen, nicht erst in Schritt 3 ──
+# ── 1b-Ende: pruefen, was die CONTAINER bekommen ────────────────────────
 #
-# [OP-263] `scripts/assert-runtime-config.mjs` laeuft heute erst im Container
-# (ueber `scripts/prestart.sh`). Beim Update heisst das: der Abbruch kommt in
-# Schritt 3 — also NACH dem Pre-Deploy-Backup und NACH zwei Image-Builds.
-# Zehn Minuten fuer eine Auskunft, die hier in einer Sekunde zu haben ist;
-# gemessen an einem echten Deploy am 2026-09-11.
+# [OP-263] Der Waechter `scripts/assert-runtime-config.mjs` laeuft erst im
+# Container (ueber `scripts/prestart.sh`). Beim Update heisst das: der
+# Abbruch kommt in Schritt 3 — nach dem Pre-Deploy-Backup und nach zwei
+# Image-Builds. Diese Pruefung holt ihn nach vorn.
 #
-# Der Waechter selbst laeuft hier NICHT: auf dem Host gibt es kein Node
-# (dieses Skript ruft Node ausschliesslich in Containern auf), und das Image
-# ist in Schritt 1b noch das alte. Deshalb dieselbe Pruefung in Shell — aber
-# die NAMEN kommen aus dem Waechter und nicht aus einer zweiten Liste, damit
-# die beiden nicht auseinanderlaufen.
-GUARD=/opt/arctos/scripts/assert-runtime-config.mjs
-if [ -f "$GUARD" ]; then
-  PFLICHT=$(awk '
-    /name: *"/ { gsub(/.*name: *"|".*/, ""); key = $0; next }
-    /roles: *\[/ && key != "" {
-      if ($0 ~ /"web"/ || $0 ~ /"worker"/) print key
-      key = ""
-    }
-  ' "$GUARD")
-
-  # Eine Pruefung, die ihre eigenen Regeln nicht findet, darf nicht
-  # "bestanden" melden — das ist die Form, die dieses Audit mehrfach gefunden
-  # hat.
-  [ -n "$PFLICHT" ] || abort \
-    "Konnte aus $GUARD keine Pflichtvariablen lesen. Format geaendert? Ohne diese Liste waere die Vorab-Pruefung wertlos."
-
-  FEHLEND=""
-  for KEY in $PFLICHT; do
-    VAL=$(grep -E "^${KEY}=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2-)
-    # Dieselben Platzhalter, die auch der Waechter ablehnt.
-    if [ -z "$VAL" ] || printf '%s' "$VAL" | grep -Eqi \
-         'generate-|generate a |change[-_ ]?me|placeholder|do-not-use'; then
-      FEHLEND="$FEHLEND $KEY"
-    fi
-  done
-
-  if [ -n "$FEHLEND" ]; then
+# [OP-266] Die erste Fassung dieser Pruefung war zweimal falsch. Beide Fehler
+# stehen hier, weil sie zusammen die Lehre sind:
+#
+#   1. Sie las die Pflichtnamen aus dem Waechter und suchte jeden als ZEILE
+#      in der .env. Das ist die falsche Frage. DATABASE_URL etwa steht dort
+#      gar nicht — die Compose-Datei setzt sie aus GRC_WORKER_PASSWORD
+#      zusammen. Zu pruefen ist nicht "steht der Name in der Datei", sondern
+#      "laesst sich aufloesen, was die Container anfordern".
+#   2. Die Zeile las den Wert mit grep, head und cut in einer Pipeline. Findet
+#      grep nichts, ist der Rueckgabewert 1 — und mit `set -euo pipefail`
+#      (Zeile 72) beendet das den Deploy SOFORT und wortlos. Genau so am
+#      2026-09-14 geschehen: Ausgabe bis "[1b/6] Env-Migration...", danach
+#      Stille und Exit 1. Eine Pruefung, die den Lauf stiller abbricht als
+#      der Fehler, den sie finden soll, ist schlechter als keine.
+#
+# `docker compose config` beantwortet beides in einem Schritt: es loest jede
+# Variablenreferenz der Compose-Datei auf und scheitert mit genau der
+# Meldung, die dort fuer den Pflichtfall hinterlegt ist. Keine zweite
+# Namensliste, kein Node auf dem Host — und geprueft wird, was die Container
+# wirklich sehen.
+if command -v docker >/dev/null 2>&1; then
+  if CONFIG_ERR=$(docker compose -f "$COMPOSE_FILE" config --quiet 2>&1); then
+    echo "  Compose-Konfiguration vollstaendig aufloesbar."
+  else
     echo ""
-    echo "  Pflichtvariablen fehlen oder tragen einen Platzhalter:"
-    for KEY in $FEHLEND; do echo "    x $KEY"; done
+    printf '%s\n' "$CONFIG_ERR" | sed 's/^/    /'
     echo ""
-    echo "  Hinweis, weil genau das hier schon passiert ist: 'ensure_env_secret'"
-    echo "  oben ueberspringt einen Schluessel auch dann, wenn er AUSKOMMENTIERT"
-    echo "  in $ENV_FILE steht — die Pruefung dort ist '^#? *KEY='. Ein altes"
-    echo "  '# KEY=' aus einer .env.sample verhindert das Erzeugen dauerhaft."
-    echo "  Nachsehen mit:"
-    echo "    grep -nE '$(echo "$FEHLEND" | tr ' ' '|' | sed 's/^|//')' $ENV_FILE"
+    echo "  Die genannten Variablen fehlen in $ENV_FILE oder sind leer."
+    echo "  Hex-Schluessel erzeugen:  openssl rand -hex 32"
     echo ""
-    echo "  Erzeugen (Hex-Schluessel):  openssl rand -hex 32"
+    echo "  Steht eine davon dort AUSKOMMENTIERT, ueberspringt ensure_env_secret"
+    echo "  sie dauerhaft — die Pruefung oben lautet '^#? *KEY='. Nachsehen mit"
+    echo "  grep -nE '^#? *(NAME)=' $ENV_FILE und die Zeile loeschen."
+    echo ""
     echo "  Referenz: .env.example, docs/env-vars-reference.md, docs/runbook.md §1"
     abort "Pflichtkonfiguration unvollstaendig — abgebrochen VOR Backup und Build."
   fi
-  echo "  Pflichtvariablen vollstaendig ($(echo "$PFLICHT" | wc -w) geprueft)."
 else
-  echo "  ! $GUARD nicht gefunden — Vorab-Pruefung uebersprungen."
+  echo "  ! docker nicht gefunden — Vorab-Pruefung uebersprungen."
 fi
 
 # ── 1d. PRE-DEPLOY-BACKUP (#S13-04a) ─────────────────────
