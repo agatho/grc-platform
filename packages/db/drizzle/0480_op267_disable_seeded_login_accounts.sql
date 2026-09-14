@@ -1,3 +1,12 @@
+-- 0480_op267_disable_seeded_login_accounts.sql
+--
+-- Migration: 0480_op267_disable_seeded_login_accounts
+-- Breaking: no
+-- Estimated-Duration: 1
+-- Locking: short
+-- Compensating-Required: no
+-- Reviewer: audit/full-2026-08-31
+--
 -- ============================================================================
 -- [ARCTOS-FULL-2026-08-31 · OP-267] Migrationen legten anmeldefaehige Konten
 -- mit einem veroeffentlichten Passwort an — in JEDER frisch migrierten
