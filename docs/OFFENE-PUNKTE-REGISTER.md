@@ -3410,3 +3410,42 @@ gegen `assert-runtime-config.mjs` haelt, waere billig und gibt es nicht.
 Datei. Nach der Aenderung sind beide Dateien fuer `web` und `worker`
 vollstaendig; nachgemessen mit einem YAML-Parser gegen die Regelliste des
 Waechters, nicht per Augenschein.
+
+### Nachtrag 2026-09-14 — OP-266: die Pruefung, die stiller abbrach als der Fehler
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                       | Beleg   | Art                                                                                                                                                                                                                                                                                                                                                                                                                                             | Stand                                                                                                                                                             |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OP-266 | **Die Vorab-Pruefung aus OP-263 brach den Deploy wortlos ab — sie war selbst der Defekt, den sie verhindern sollte.** Zwei Fehler in einem Block: (a) sie las jeden Pflichtnamen als ZEILE aus der `.env`, doch `DATABASE_URL` steht dort gar nicht — die Compose-Datei setzt sie aus `GRC_WORKER_PASSWORD` zusammen; (b) `VAL=$(grep ... | head -1 | cut ...)`liefert bei fehlendem Treffer den Rueckgabewert 1, und mit`set -euo pipefail`beendet das den Lauf sofort. Ausgabe bis „[1b/6] Env-Migration...“, danach Stille und Exit 1. Ersetzt durch`docker compose config --quiet`: das loest jede Variablenreferenz der Compose-Datei auf, scheitert mit der dort hinterlegten Meldung und prueft damit, was die Container wirklich bekommen — keine zweite Namensliste, kein Node auf dem Host. | Deploy des Eigentuemers am 2026-09-14 06:58 UTC; lokal reproduziert (Kopfzeile, dann Exit 1) und beide Pfade der neuen Fassung unter denselben Schaltern getestet | Betrieb (selbst verursacht) | **behoben 2026-09-14** |
+
+**Eigener Defekt, eingefuehrt mit OP-263.** Die Absicht war richtig: den
+Konfigurations-Waechter nach vorn holen, damit ein Deploy nicht erst nach
+Backup und zwei Image-Builds scheitert. Die Umsetzung hatte zwei Fehler, und
+der zweite ist der schlimmere.
+
+**Die falsche Frage.** Die Pruefung nahm die Pflichtnamen aus
+`assert-runtime-config.mjs` und suchte jeden als Zeile in
+`/opt/arctos/.env`. Das setzt voraus, dass jede Pflichtvariable dort woertlich
+steht — und das ist nicht so: `DATABASE_URL` wird in der Compose-Datei aus
+`GRC_WORKER_PASSWORD` zusammengesetzt. Die richtige Frage ist nicht
+„steht der Name in der Datei“, sondern „laesst sich aufloesen,
+was die Container anfordern“.
+
+**Der stille Abbruch.** `VAL=\$(grep ... | head -1 | cut ...)`: findet
+`grep` nichts, ist der Rueckgabewert 1; mit `set -euo pipefail` beendet eine
+solche Zuweisung das Skript auf der Stelle. Der `ERR`-Trap schreibt eine
+Zeile ins Deploy-Protokoll und ruft `exit` — ohne Ausgabe auf dem Terminal.
+Der Operator sah die Kopfzeile des Schritts und danach seinen Prompt. **Eine
+Pruefung, die den Lauf stiller beendet als der Fehler, den sie finden soll,
+ist schlechter als keine.** Der erste Testlauf beim Bauen lief ohne
+`set -euo pipefail` und war deshalb gruen — die Schalter des Zielskripts
+gehoeren in den Test, nicht nur in das Skript.
+
+**Die Behebung ist eine Abgabe von Verantwortung, und das ist der Punkt.**
+`docker compose config --quiet` loest jede Variablenreferenz genau so auf,
+wie die Container sie bekommen, und scheitert mit der Meldung, die in der
+Compose-Datei ohnehin hinterlegt ist (`\${VAR:?Set VAR in .env ...}`). Damit
+gibt es keine zweite Namensliste, die auseinanderlaufen kann, keinen
+Node-Bedarf auf dem Host und keine eigene Vorstellung davon, wie eine `.env`
+auszusehen hat. Beide Pfade sind unter `set -euo pipefail` getestet: der
+Erfolgsfall laeuft weiter, der Fehlerfall druckt die Compose-Meldung
+eingerueckt und bricht sichtbar ab.
