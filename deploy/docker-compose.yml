@@ -264,6 +264,11 @@ services:
       WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY}
       CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
       SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY}
+      # [OP-265] Der Waechter prueft `process.env.GRC_WORKER_PASSWORD`. Bisher
+      # wurde der Wert hier nur IN die `DATABASE_URL` interpoliert (Zeile
+      # darueber) — das genuegt der Verbindung, nicht der Pruefung. Dieselbe
+      # Luecke wie im Produktions-Compose, hier fuer die Tenant-Worker.
+      GRC_WORKER_PASSWORD: ${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}
       STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
       UPLOAD_DIR: /app/uploads/documents
       # [ARCTOS-FULL-2026-08-31 · OP-259] Ohne diese Zeile faellt

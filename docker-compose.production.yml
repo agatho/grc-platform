@@ -463,6 +463,31 @@ services:
       AUDIT_SEAL_KEY_ID: ${AUDIT_SEAL_KEY_ID:-k1}
       FREETSA_CA_PEM: ${FREETSA_CA_PEM:-}
       AUDIT_ANCHOR_RETRY_DAYS: ${AUDIT_ANCHOR_RETRY_DAYS:-14}
+      # ── [OP-265] Vier Pflichtvariablen, die der Worker-Container nie sah ──
+      #
+      # `scripts/assert-runtime-config.mjs` verlangt sie fuer die Rolle
+      # `worker`; im `web`-Block stehen drei davon laengst. Hier fehlten sie
+      # alle vier — und ein Wert in `/opt/arctos/.env` erreicht einen
+      # Container NICHT von allein: die Datei speist die Variablen-Ersetzung
+      # dieser Compose-Datei, nicht die Umgebung des Prozesses. Was nicht hier
+      # steht, existiert drinnen nicht.
+      #
+      # Deshalb meldete der Waechter am 2026-09-11 genau diese vier als
+      # "nicht gesetzt", obwohl alle vier mit gueltigen Werten in der `.env`
+      # standen. Der Deploy brach in Schritt [3/6] ab; die naheliegende
+      # Vermutung (auskommentierte Platzhalter, die `ensure_env_secret`
+      # ueberspringt) war falsch — nachgesehen wurde, und die Werte waren da.
+      #
+      # GRC_WORKER_PASSWORD wurde bisher nur IN die `DATABASE_URL`
+      # interpoliert. Das genuegt der Verbindung, aber nicht dem Waechter, der
+      # `process.env.GRC_WORKER_PASSWORD` prueft — und die Pruefung ist
+      # berechtigt: `deploy/provision-grc-app.sh` legt die Rolle `grc_worker`
+      # mit genau diesem Wert an.
+      PII_PSEUDONYM_KEY: ${PII_PSEUDONYM_KEY:?Set PII_PSEUDONYM_KEY in .env — HMAC der Pseudonymisierung (WP8/S07-03)}
+      PII_PSEUDONYM_KEY_ID: ${PII_PSEUDONYM_KEY_ID:-default}
+      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env — AES-256-GCM der Hinweisgebermeldungen (HinSchG)}
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY:?Set CONNECTOR_ENCRYPTION_KEY in .env — Verschluesselung gespeicherter Connector-Zugangsdaten}
+      GRC_WORKER_PASSWORD: ${GRC_WORKER_PASSWORD:?Set GRC_WORKER_PASSWORD in .env — siehe deploy/provision-grc-app.sh}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
