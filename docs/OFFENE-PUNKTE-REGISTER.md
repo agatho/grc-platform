@@ -3373,3 +3373,40 @@ protokolliert) oder das Repository in eine Organisation ueberfuehren, wo der
 Audit-Log `protected_branch.policy_override` festhaelt. Solange es ein
 Benutzer-Repository ist, ist der Notfallweg vorhanden, aber schlecht belegt —
 das gehoert in die Risikoakzeptanz, nicht in eine Fussnote.
+
+### Nachtrag 2026-09-14 — OP-265: in der Datei gesetzt, im Container nicht vorhanden
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Beleg                                                                                                                                                                     | Art                                | Stand                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------- |
+| OP-265 | **Der Worker-Container bekam vier Pflichtvariablen nie zu sehen — sie standen in der `.env`, aber in keinem `environment:`-Block.** `scripts/assert-runtime-config.mjs` prueft `process.env` INNERHALB des Containers. Eine Zeile in `/opt/arctos/.env` speist jedoch nur die Variablen-Ersetzung der Compose-Datei; was dort nicht als `KEY: ${KEY}` steht, existiert im Prozess nicht. Im `web`-Block standen `PII_PSEUDONYM_KEY`, `WB_ENCRYPTION_KEY` und `CONNECTOR_ENCRYPTION_KEY` laengst, im `worker`-Block keine davon. `GRC_WORKER_PASSWORD` wurde ueberall nur IN die `DATABASE_URL` interpoliert — das genuegt der Verbindung, nicht der Pruefung. Ergaenzt in `docker-compose.production.yml` (vier) und `deploy/docker-compose.yml` (eine, fuer die Tenant-Worker). | Deploy des Eigentuemers am 2026-09-11, Abbruch in `[3/6]` mit genau diesen vier; `grep` in `/opt/arctos/.env` am 2026-09-14 zeigte alle vier mit gueltigen Werten gesetzt | Betrieb (Konfigurationsweitergabe) | **behoben 2026-09-14** |
+
+**Der Satz, um den es geht:** eine Variable in `/opt/arctos/.env` ist keine
+Variable im Container. Docker Compose liest diese Datei fuer die
+**Ersetzung** von `${...}` in der Compose-Datei; in die Prozessumgebung
+gelangt nur, was ein `environment:`-Eintrag ausdruecklich hineinschreibt.
+Der Waechter prueft aber die Prozessumgebung — und meldete deshalb vier
+Variablen als fehlend, die vollstaendig und gueltig in der `.env` standen.
+
+**Wie die Fehlersuche schiefging, und was sie gerettet hat.** Die erste
+Vermutung war eine andere: `ensure_env_secret` in `update-all.sh`
+ueberspringt einen auskommentierten Schluessel (`^#? *KEY=`), ein altes
+`# KEY=` aus einer Beispieldatei haette das Erzeugen also dauerhaft
+verhindert. Das ist wahr, es ist eine echte Falle (OP-263 haelt sie fest) —
+hier war es nur nicht der Fall. Der Eigentuemer hat nachgesehen statt
+zuzustimmen, und der `grep` zeigte alle vier gesetzt. Erst danach war die
+richtige Frage zu stellen: nicht „steht der Wert in der Datei?“,
+sondern „reicht ihn jemand weiter?“
+
+**Warum es den Worker traf und nicht die Web-Anwendung.** Drei der vier
+standen im `web`-Block bereits. Der `worker`-Block ist ueber die Zeit
+mitgewachsen, ohne dass jemand ihn gegen die Pflichtliste des Waechters
+gehalten hat. Genau diese Form — zwei Blocks, die dasselbe leisten sollen und
+auseinanderlaufen — findet sich in diesem Register mehrfach; sie faellt nur
+auf, wenn etwas sie vergleicht. Eine Pruefung, die beide Compose-Dateien
+gegen `assert-runtime-config.mjs` haelt, waere billig und gibt es nicht.
+
+**Reichweite.** Betroffen war auch `deploy/docker-compose.yml`, dort fehlte
+`GRC_WORKER_PASSWORD` fuer die Tenant-Worker — also dieselbe Klasse, zweite
+Datei. Nach der Aenderung sind beide Dateien fuer `web` und `worker`
+vollstaendig; nachgemessen mit einem YAML-Parser gegen die Regelliste des
+Waechters, nicht per Augenschein.

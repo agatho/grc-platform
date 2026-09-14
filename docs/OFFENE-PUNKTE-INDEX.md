@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **264**
+Nummern: **265**
 
 ## offen (3)
 
@@ -195,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (99)
+## behoben (100)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -298,3 +298,4 @@ _keine_
 | OP-262 | Zwei Pflichtvariablen des Startup-Wächters wurden von der Env-Migration nie erzeugt — ein Bestandsdeployment … | behoben 2026-09-12                                                                         | 2026-09-12 |
 | OP-263 | Der Konfigurations-Wächter meldete sich erst nach Backup und zwei Image-Builds — und ein auskommentierter Sch… | behoben 2026-09-12                                                                         | 2026-09-12 |
 | OP-264 | Ein Pflicht-Check, der auf einer Pull Request bauartbedingt nie lief, blockierte jede Pull Request. `Build` t… | behoben 2026-09-14                                                                         | 2026-09-14 |
+| OP-265 | Der Worker-Container bekam vier Pflichtvariablen nie zu sehen — sie standen in der `.env`, aber in keinem `en… | behoben 2026-09-14                                                                         | 2026-09-14 |
