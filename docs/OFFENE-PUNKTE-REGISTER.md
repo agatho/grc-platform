@@ -3286,3 +3286,90 @@ irgendwo etwas rot wird.
 Behoben, und zwar dauerhaft: der Mock wirft jetzt den echten Fehler aus
 `policy.ts`. Wer die Meldung später verbreitert, sieht einen roten Test statt
 sie auszuliefern.
+
+### Nachtrag 2026-09-12 — OP-262/OP-263: das Update konnte die eigene Pflicht nicht erfüllen
+
+Aus einem echten Deploy des Eigentümers am 2026-09-11, nicht aus einer
+Messung am Schreibtisch. `update all` brach in Schritt `[3/6]` ab:
+
+```
+[config:worker] FATAL: die Pflichtkonfiguration ist unvollständig — der Start wird abgebrochen.
+  ✗ PII_PSEUDONYM_KEY ist nicht gesetzt.
+  ✗ WB_ENCRYPTION_KEY ist nicht gesetzt.
+  ✗ CONNECTOR_ENCRYPTION_KEY ist nicht gesetzt.
+  ✗ GRC_WORKER_PASSWORD ist nicht gesetzt.
+```
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Beleg                                                                                                                                            | Art                       | Stand                  |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- | ---------------------- |
+| OP-262 | **Zwei Pflichtvariablen des Startup-Wächters wurden von der Env-Migration nie erzeugt — ein Bestandsdeployment konnte die Pflicht auf dem normalen Update-Weg nicht erfüllen.** `scripts/assert-runtime-config.mjs` verlangt `WB_ENCRYPTION_KEY` und `CONNECTOR_ENCRYPTION_KEY` für `web` und `worker`. Schritt 1b von `deploy/update-all.sh` erzeugt sechs Schlüssel, diese beiden aber nicht: `WB_ENCRYPTION_KEY` entsteht nur in `setup-hetzner.sh` bei der ERSTinstallation, `CONNECTOR_ENCRYPTION_KEY` in keinem der beiden Skripte. Wer vor dem Wächter installiert hat, scheiterte deshalb in Schritt 3 an einem Container, der sich zu starten weigert. Beide werden jetzt in 1b erzeugt — mit `ensure_env_secret`, das nur bei FEHLENDEM Schlüssel schreibt, denn beide sind schreib-einmal: ein Wechsel macht Hinweisgebermeldungen unentschlüsselbar bzw. entwertet jede gespeicherte Connector-Zugangsdaten-Zeile.                                                          | Deploy des Eigentümers am 2026-09-11: `[config:worker] FATAL` mit vier fehlenden Variablen in Schritt `[3/6]`                                    | Betrieb (Provisionierung) | **behoben 2026-09-12** |
+| OP-263 | **Der Konfigurations-Wächter meldete sich erst nach Backup und zwei Image-Builds — und ein auskommentierter Schlüssel verhindert das Erzeugen dauerhaft.** Zwei Teile: (a) `assert-runtime-config.mjs` läuft nur im Container (`prestart.sh`), der Abbruch kam deshalb in Schritt 3 statt in Schritt 1b — rund zehn Minuten für eine Auskunft, die in einer Sekunde zu haben ist. (b) `ensure_env_secret` überspringt einen Schlüssel auch dann, wenn er AUSKOMMENTIERT in der `.env` steht (`^#? *KEY=`). Das ist als Idempotenz gewollt, heisst aber: ein altes `# KEY=` aus einer `.env.sample` verhindert das Erzeugen für immer, und der Fehler taucht erst zwei Schritte später auf. Schritt 1b prüft jetzt selbst und bricht vor Backup und Build ab; die Namen liest die Prüfung **aus dem Wächter**, nicht aus einer zweiten Liste, und sie bricht ab, wenn sie dort keine Regeln findet, statt „bestanden“ zu melden. Die Meldung nennt die Auskommentier-Falle ausdrücklich. | Gegen eine synthetische `.env` geprüft: fehlend, auskommentiert und Platzhalter werden alle vier erkannt, eine vollständige `.env` meldet nichts | Betrieb (Diagnose)        | **behoben 2026-09-12** |
+
+**Der Wächter hatte recht.** Er ist aus WP10 (#S13-10) und tut genau das,
+wofür er gebaut wurde: fail-closed, statt mit einem Installationsschlüssel aus
+der Datenbank weiterzulaufen. Der Defekt liegt nicht bei ihm, sondern darin,
+dass die Provisionierung nie nachgezogen wurde: **der Wächter verlangte etwas,
+das kein Skript erzeugt.** Eine Anforderung ohne Erfüllungsweg ist keine
+Härtung, sie ist eine Sackgasse — und sie trifft ausgerechnet den Bestand,
+also die Installationen mit Daten drauf.
+
+**Warum das Erzeugen sicher ist und das Rotieren nicht.** Alle fünf Schlüssel
+in diesem Block sind schreib-einmal. `ensure_env_secret` schreibt nur, wenn
+der Eintrag fehlt; genau deshalb darf es automatisch laufen. Ein
+`WB_ENCRYPTION_KEY`, der sich bei jedem Update ändert, macht jede bestehende
+Hinweisgebermeldung unentschlüsselbar — HinSchG-Daten, ohne
+Wiederherstellungsweg. Das Skript sagte das bisher für zwei der Schlüssel;
+jetzt steht es bei allen.
+
+**Die zweite Falle ist die unangenehmere.** `ensure_env_secret` prüft mit
+`^#? *KEY=` — ein **auskommentierter** Schlüssel gilt als vorhanden und wird
+nie erzeugt. Das ist als Idempotenz richtig (wer etwas auskommentiert hat,
+meinte es vielleicht so), führt aber dazu, dass eine `.env` mit einem alten
+`# KEY=` aus einer Beispieldatei den Fehler dauerhaft konserviert — sichtbar
+erst zwei Schritte später, in einem Container, der sich weigert. Die neue
+Prüfung nennt diesen Fall in ihrer eigenen Fehlermeldung, samt `grep`-Zeile.
+
+**Kein Geheimnis wandert dabei ins Repository.** `*.env` ist in
+`.gitignore`, verfolgt ist nur `deploy/.env.sample`; erzeugt wird in
+`/opt/arctos/.env` auf dem Host. Die Frage des Eigentümers — ob sich die Werte
+nicht gleich beim Update erzeugen lassen — war genau richtig: der Mechanismus
+dafür gab es längst, er deckte nur zwei der verlangten Schlüssel nicht ab.
+
+### Nachtrag 2026-09-14 — OP-264: der Pflicht-Check, der nie laufen konnte
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                                                                         | Art                         | Stand                  |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------- |
+| OP-264 | **Ein Pflicht-Check, der auf einer Pull Request bauartbedingt nie lief, blockierte jede Pull Request.** `Build` trug `if: github.event_name == 'push' && github.ref == 'refs/heads/main'` und war damit auf jeder PR `skipped`; GitHub wertet einen uebersprungenen Pflicht-Check als NICHT erfuellt. Gemessen an PR #446: sieben Pflicht-Checks gruen, `Build` uebersprungen, Merge von der Policy abgelehnt — ohne einen einzigen Fehlschlag. OP-255 hatte daraus geschlossen, den Job aus der Required-Liste zu streichen; die Entscheidung des Eigentuemers am 2026-09-14 war die andere Richtung: **den Job auf Pull Requests laufen lassen**, weil er der einzige ist, der den Produktionsbau im Docker-Image ausfuehrt. Die beiden Push-Schritte nach ghcr.io bleiben auf main beschraenkt — eine PR baut, testet und scannt, veroeffentlicht aber nichts. | PR #446, Merge-Versuch abgelehnt mit „the base branch policy prohibits the merge“; `gh pr checks 446` zeigt `Build  skipping` | Betrieb (Tor-Konfiguration) | **behoben 2026-09-14** |
+
+**Warum nicht der einfache Weg.** OP-255 hatte den richtigen Befund und den
+naheliegenden Schluss: `Build` laeuft auf keiner PR, also gehoert er nicht in
+die Required-Liste. Streichen haette PR #446 sofort entsperrt — und eine echte
+Luecke gelassen. Dieser Job ist der **einzige**, der den Produktionsbau im
+Docker-Image ausfuehrt, und genau er hat den Import von
+`@grc/db/tests/schema-drift` in einer Laufzeitroute gefunden: ein Defekt, den
+kein anderes Tor sehen konnte, weil er erst beim Bauen des Images auftritt.
+Ein Fund dieser Art ist das Argument dafuer, den Job **vor** den Merge zu
+ziehen, nicht ihn aus der Pflicht zu nehmen.
+
+**Was das kostet und was nicht.** Es kostet Laufzeit: zwei Images, ein
+Smoke-Test und zwei Trivy-Scans, Zeitlimit 45 Minuten. Es kostet **keine**
+Sicherheit — die zwei Schritte, die `ghcr.io/...:latest` und `:<sha>`
+veroeffentlichen, tragen jetzt ausdruecklich
+`if: github.event_name == 'push' && github.ref == 'refs/heads/main'`. Ohne
+diese Bedingung haette der Umbau jede PR `:latest` schieben lassen, also
+ungemergten Code unter genau dem Tag, den der Deploy zieht. Der Rest des Jobs
+(Bauen, Smoke, Scans, SBOM-Artefakt) laeuft auf beiden Wegen.
+
+**Notfallweg, ausdruecklich festgehalten, weil die Frage gestellt wurde.**
+Das Repository gehoert einem **Benutzerkonto**, nicht einer Organisation:
+einen Audit-Log gibt es damit nicht. `enforce_admins` steht auf `false`,
+also kann ein Administrator einen Pflicht-Check mit
+`gh pr merge <n> --admin` uebergehen. Das ist der Break-Glass-Pfad, und er
+funktioniert auch weiterhin — aber die einzige Spur, die er hinterlaesst, ist
+die Zeitleiste der PR selbst (gemergt, obwohl ein Pflicht-Check nicht erfuellt
+war). Wer das fuer zu wenig Nachweis haelt, hat zwei Moeglichkeiten: den
+Schutz kurzzeitig aendern (die Aenderung ist sichtbar, aber ebenfalls nicht
+protokolliert) oder das Repository in eine Organisation ueberfuehren, wo der
+Audit-Log `protected_branch.policy_override` festhaelt. Solange es ein
+Benutzer-Repository ist, ist der Notfallweg vorhanden, aber schlecht belegt —
+das gehoert in die Risikoakzeptanz, nicht in eine Fussnote.
