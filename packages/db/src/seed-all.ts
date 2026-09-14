@@ -49,6 +49,13 @@ const REFERENCE_SEEDS = [
   "seed_esrs_datapoints.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
+  // [OP-268] Projiziert Annex A nach `control_catalog_entry`. MUSS vor
+  // `seed_demo_01_assets_isms.sql` laufen: dessen SoA-Teil loest
+  // `catalog_entry_id` ueber den Annex-A-Code aus dieser Tabelle auf, und die
+  // Spalte ist NOT NULL. Fehlt die Projektion, bricht die ganze Datei ab und
+  // nimmt Assets, Bedrohungen und Schwachstellen mit — gemessen am
+  // 2026-09-14 auf `grc_platform`: `assets 0`.
+  "seed_control_catalog_annex_a.sql",
 ];
 
 // ── Demo data (risks, controls, documents, etc.) ─────────────────────────
@@ -97,8 +104,14 @@ async function main() {
   for (const file of REFERENCE_SEEDS) {
     try {
       const sql = readFileSync(join(SQL_DIR, file), "utf-8");
-      console.log(`  ✓ ${file}`);
+      // [OP-268] Das Haekchen stand hier VOR dem `await`. Phase 1 meldete
+      // damit jede Datei als gelungen, sobald sie gelesen war; eine
+      // gescheiterte Datei erschien mit ✓ UND ✗. Im Protokoll des Deploys vom
+      // 2026-09-14 steht `seed_cross_framework_mappings.sql` genau so zweimal.
+      // Phase 2 macht es seit jeher richtig — hier war es schlicht falsch
+      // herum.
       await client.unsafe(sql);
+      console.log(`  ✓ ${file}`);
     } catch (err) {
       console.error(`  ✗ ${file}:`, (err as Error).message);
     }

@@ -3520,3 +3520,57 @@ es fuer genau diesen Fall schon gab — passte auf `@arctos.dev` und
 meldete Erfolg. Ein Aufraeumwerkzeug, dessen Liste hinter dem Bestand
 zurueckbleibt, ist gefaehrlicher als keines: es beantwortet die Frage, ohne
 sie zu beantworten. Ergaenzt um beide `.test`-Domains.
+
+### Nachtrag 2026-09-15 — OP-268: eine Behebung, zwei Runner, und eine Bruecke vor dem Fluss
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Beleg                                                                                                                                                                                    | Art                      | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-268 | **Die Behebung von OP-208 erreichte nur einen von zwei Seed-Runnern — und die Framework-Bruecke laeuft auf jeder Installation zu frueh.** (a) `fix_soa_annex_a.sql` stand nie in einer Liste von `seed-all.ts`, dem Runner, den `deploy/update-all.sh` und die Runbooks benutzen; ohne die Projektion nach `control_catalog_entry` stirbt `seed_demo_01_assets_isms.sql` an `catalog_entry_id` NOT NULL und nimmt Assets, Bedrohungen und Schwachstellen mit. (b) `0106_framework_mapping_bridge.sql` ueberfuehrt `catalog_entry_mapping` nach `framework_mapping` — als Migration laeuft sie VOR den Katalog-Seeds und findet nichts. (c) Phase 1 von `seed-all.ts` druckte das Haekchen VOR dem `await`. | Deploy-Protokoll 2026-09-14: `assets 0` in der Bilanz, `framework_mapping` = 88 gegen 943 in den Seed-Dateien, `seed_cross_framework_mappings.sql` mit ✓ UND ✗ in derselben Zeilengruppe | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**(a) Dieselbe Ursache wie OP-208, eine Datei weiter.** Welle 6C hat am
+2026-09-07 genau diesen Ausfall beschrieben — ein Fremdschluesselfehler im
+org-abhaengigen Schritt 3 von `fix_soa_annex_a.sql` rollt die
+mandantenunabhaengigen Schritte 1 und 2 mit zurueck, weil der Runner jede
+Datei in EINER Transaktion ausfuehrt; ohne `control_catalog_entry` sterben
+`seed_demo_01_assets_isms.sql` und in der Folge `seed_demo_15_cve.sql`.
+Die Behebung war „ein Listeneintrag, verschoben“ — in
+`seed-demo.ts`. **Es gibt zwei Runner.** `seed-all.ts` fuehrt eine eigene,
+abweichende Liste und hatte die Datei ueberhaupt nicht; genau dieser Runner
+steht im Deploy-Runbook. Am 2026-09-14 lief er gegen `grc_platform`, und die
+Bilanz meldete `assets 0`.
+
+**Und ein Verschieben haette es dort nicht behoben.** `seed-all.ts` kennt
+`seed_demo_00_platform.sql` gar nicht, die Demo-Organisation
+`c2446a5c-…` entsteht dort also nie — Schritt 3 waere in jedem Fall am
+Fremdschluessel gescheitert. Die Datei wurde deshalb **geteilt**:
+`seed_control_catalog_annex_a.sql` (Referenzdaten, ohne `org_id`) steht in
+`REFERENCE_SEEDS` **beider** Runner, `fix_soa_annex_a.sql` behaelt nur die
+SoA-Zeilen und bleibt in `DEMO_SEEDS` von `seed-demo.ts`. Referenzdaten und
+Demo-Daten haben verschiedene Voraussetzungen; sie in eine Transaktion zu
+legen war die eigentliche Ursache — zweimal.
+
+**(b) Die Bruecke laeuft vor dem Fluss.** `framework_mapping` (die Tabelle
+der Framework-Coverage-Oberflaeche) wird aus `catalog_entry_mapping` (die
+der Seeds) von Migration `0106` gefuellt. Migrationen laufen vor den
+Katalog-Seeds — auf **jeder** Installation findet die Bruecke eine leere
+Quelle. Gemessen: 88 Zeilen, wo die fuenf Seed-Dateien 943 Zuordnungen
+definieren. Die Migration sagt selbst „Safe to re-run after adding new
+catalog_entry_mapping rows“; sie steht jetzt zusaetzlich am Ende von
+`deploy/seed-catalogs.sh`, also hinter den Seeds, die ihr Futter liefern —
+und damit auch in `create-tenant.sh` und in Schritt 3b von
+`update-all.sh`, die dieses Skript aufrufen.
+
+**(c) Ein Haekchen an der falschen Stelle.** `seed-all.ts` Phase 1 druckte
+`✓ ${file}` **vor** `await client.unsafe(sql)`. Jede Datei galt damit als
+gelungen, sobald sie gelesen war; eine gescheiterte erschien mit ✓ **und** ✗.
+Im Protokoll vom 2026-09-14 steht `seed_cross_framework_mappings.sql` genau
+so zweimal. Phase 2 macht es seit jeher richtig. **Ein Protokoll, das Erfolg
+meldet, bevor die Arbeit getan ist, ist kein Protokoll.**
+
+**Was das festhaelt.** Fuenf Tests in
+`packages/db/tests/unit/seed-wiring.test.ts`: die Projektion ist in beiden
+Runnern verdrahtet, sie steht in beiden **vor** `seed_demo_01_assets_isms`,
+`fix_soa_annex_a.sql` enthaelt keine Referenz-Schritte mehr, und das
+Haekchen steht hinter dem `await`. Alle vier Regeln sind gegengeprueft: mit
+zurueckgedrehter Aenderung fallen sie (3 von 12 rot), mit der Aenderung laufen
+sie (12 von 12).

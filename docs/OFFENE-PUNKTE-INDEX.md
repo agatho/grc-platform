@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **267**
+Nummern: **268**
 
 ## offen (3)
 
@@ -195,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (102)
+## behoben (103)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -301,3 +301,4 @@ _keine_
 | OP-265 | Der Worker-Container bekam vier Pflichtvariablen nie zu sehen — sie standen in der `.env`, aber in keinem `en… | behoben 2026-09-14                                                                         | 2026-09-14 |
 | OP-266 | Die Vorab-Pruefung aus OP-263 brach den Deploy wortlos ab — sie war selbst der Defekt, den sie verhindern sol… | behoben 2026-09-14                                                                         | 2026-09-14 |
 | OP-267 | Sechs Migrationen legten anmeldefaehige Konten an — unbedingt, auf jeder Datenbank, an allen drei Demo-Seed-S… | behoben 2026-09-14                                                                         | 2026-09-14 |
+| OP-268 | Die Behebung von OP-208 erreichte nur einen von zwei Seed-Runnern — und die Framework-Bruecke laeuft auf jede… | behoben 2026-09-15                                                                         | 2026-09-15 |

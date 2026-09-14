@@ -95,6 +95,11 @@ const REFERENCE_SEEDS = [
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
   "seed_tag_definitions.sql",
+  // [OP-268] Der mandantenunabhaengige Teil des frueheren
+  // `fix_soa_annex_a.sql`. Er gehoert hierher, die verbleibenden
+  // SoA-Zeilen bleiben in DEMO_SEEDS — siehe den Kommentar dort und
+  // `seed_control_catalog_annex_a.sql`.
+  "seed_control_catalog_annex_a.sql",
 ];
 
 /**
@@ -133,6 +138,15 @@ const DEMO_SEEDS = [
   //
   // Hierher verschoben, nicht umgeschrieben: die Datei gehört fachlich nach
   // 00_platform und vor 01_assets_isms.
+  //
+  // [OP-268 · 2026-09-15] Jetzt doch umgeschrieben, und zwar an der Wurzel:
+  // Schritt 1/2 stehen in `seed_control_catalog_annex_a.sql` und laufen als
+  // Referenz-Seed, hier bleibt nur Schritt 3. Das Verschieben hat diesen
+  // Runner repariert, den ZWEITEN aber nicht — `seed-all.ts` hatte die Datei
+  // nie in der Liste, und dort gibt es `seed_demo_00_platform.sql` gar nicht,
+  // ein Verschieben wäre also keine Behebung gewesen. Am 2026-09-14 fehlten
+  // auf `grc_platform` deshalb erneut Assets, Bedrohungen und Schwachstellen
+  // (`assets 0`). Getrennte Voraussetzungen, getrennte Dateien.
   "fix_soa_annex_a.sql",
   "seed_demo_data.sql", // budgets, risks, controls, treatments (base)
   "seed_demo_09_processes.sql", // processes — BCMS references them

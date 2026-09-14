@@ -154,6 +154,33 @@ for v in v2 v3 v4 v5; do
   fi
 done
 
+# ── Bruecke nach `framework_mapping` (#OP-268) ─────────────────────────
+#
+# Die Seeds oben schreiben nach `catalog_entry_mapping` (UUID-verschluesselt).
+# Die Framework-Coverage-Oberflaeche liest `framework_mapping`
+# (zeichenkettenbasiert). Migration `0106_framework_mapping_bridge.sql`
+# ueberfuehrt das eine ins andere — und laeuft bei jeder Installation zu
+# frueh: Migrationen kommen VOR den Katalog-Seeds, sie findet also nichts.
+#
+# Gemessen am 2026-09-14 auf `grc_platform`: 88 Zeilen in
+# `framework_mapping`, waehrend die Seed-Dateien 943 Zuordnungen definieren.
+# Die Bruecke ist ausdruecklich wiederholbar ("Safe to re-run after adding
+# new catalog_entry_mapping rows", ON CONFLICT DO NOTHING) — sie gehoert
+# hinter die Seeds, die ihr Futter liefern, und nicht nur in die Migration.
+BRIDGE="/opt/arctos/packages/db/drizzle/0106_framework_mapping_bridge.sql"
+[ -f "$BRIDGE" ] || BRIDGE="$(dirname "$SQL_DIR")/drizzle/0106_framework_mapping_bridge.sql"
+echo ""
+echo "[3b/3] Bruecke catalog_entry_mapping → framework_mapping..."
+if [ -f "$BRIDGE" ]; then
+  if run_sql "$BRIDGE" "bridge"; then
+    echo "  ✓ 0106_framework_mapping_bridge.sql"
+  else
+    echo "  ✗ 0106_framework_mapping_bridge.sql (exit != 0)"
+  fi
+else
+  echo "  ! $BRIDGE nicht gefunden — uebersprungen."
+fi
+
 # ── Bilanz ─────────────────────────────────────────────────────────────
 echo ""
 echo "── Bilanz: $DB_NAME ──"
