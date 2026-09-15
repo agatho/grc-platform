@@ -94,6 +94,13 @@ const REFERENCE_SEEDS = [
   "seed_emission_factors_eu.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
+  // [OP-269] Auch hier fehlten v2 bis v5 — 854 der 943 Zuordnungen. Die
+  // Reihenfolge ist bindend: v1 definiert `insert_mapping()`, v2 bis v5
+  // benutzen es und definieren es nicht.
+  "seed_cross_framework_mappings_v2.sql",
+  "seed_cross_framework_mappings_v3.sql",
+  "seed_cross_framework_mappings_v4.sql",
+  "seed_cross_framework_mappings_v5.sql",
   "seed_tag_definitions.sql",
   // [OP-268] Der mandantenunabhaengige Teil des frueheren
   // `fix_soa_annex_a.sql`. Er gehoert hierher, die verbleibenden

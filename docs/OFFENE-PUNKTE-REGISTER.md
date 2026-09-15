@@ -3574,3 +3574,68 @@ Runnern verdrahtet, sie steht in beiden **vor** `seed_demo_01_assets_isms`,
 Haekchen steht hinter dem `await`. Alle vier Regeln sind gegengeprueft: mit
 zurueckgedrehter Aenderung fallen sie (3 von 12 rot), mit der Aenderung laufen
 sie (12 von 12).
+
+### Nachtrag 2026-09-15 — OP-269: der Helfer raeumte sich weg, und niemand sah die 854 Fehler
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                                                                                                                                                 | Art                      | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-269 | **854 der 943 Cross-Framework-Zuordnungen hat es nie gegeben — auf keiner Installation.** `seed_cross_framework_mappings.sql` legt den Helfer `insert_mapping()` an und loescht ihn in der letzten Zeile wieder (`DROP FUNCTION IF EXISTS`). Die vier Folgedateien v2 bis v5 rufen genau diese Funktion auf und definieren sie nirgends; jeder ihrer Aufrufe endete mit `function insert_mapping(...) does not exist`. Zwei Dinge hielten das verborgen: der Fehlerfilter in `deploy/seed-catalogs.sh` war auf den Zeilenanfang verankert, waehrend psql `psql:/dev/stdin:24: ` voranstellt — und das Haekchen wurde unbedingt gedruckt. | `sudo VERBOSE=1 bash deploy/seed-catalogs.sh grc_platform` am 2026-09-15; `framework_mapping` = 88 = die 89 Aufrufe von v1 minus einem; Δ mappings = 0 bei einem Lauf, der vier Dateien als ✓ meldete | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**Wie es gefunden wurde, und was dabei zuerst falsch war.** Die Suche begann
+bei OP-268 (b): `framework_mapping` = 88 gegen 943 in den Seed-Dateien, und
+die Bruecke `0106` laeuft als Migration vor den Katalog-Seeds. Diese Analyse
+stimmt — sie war nur nicht die Ursache. Nach dem Lauf der Bruecke gegen alle
+vier Datenbanken blieb die Zahl bei 88. **Eine Behebung, die die Zahl nicht
+bewegt, war nicht die Behebung.** Erst der naechste Schritt —
+`deploy/seed-catalogs.sh` von Hand, dann mit `VERBOSE=1` — zeigte den
+Grund: es gab nichts zu ueberbruecken.
+
+**Die Ursache in einer Zeile.**
+`seed_cross_framework_mappings.sql:141` lautete
+`DROP FUNCTION IF EXISTS insert_mapping;`, mit dem Kommentar
+„Cleanup helper function“. v2 bis v5 benutzen diese Funktion
+ausschliesslich und definieren sie in keiner Zeile. Die 88 sind deshalb kein
+Teilstand, sondern **exakt der Beitrag von v1** (89 Aufrufe, einer davon ohne
+Treffer). Das Aufraeumen war der Defekt; der Helfer bleibt jetzt stehen. Er
+ist deterministisch, idempotent und ohne Seiteneffekt.
+
+**Warum es niemandem auffiel — zwei Blenden hintereinander.**
+
+1. `run_sql()` filterte mit `^(ERROR|FATAL|WARNING):`, also verankert auf
+   den Zeilenanfang. psql schreibt
+   `psql:/dev/stdin:24: ERROR: function insert_mapping(...) does not exist`.
+   Der Filter hat nie etwas gefunden. Der Kommentar daneben sagte sogar
+   „psql prepends diese“ — und die Verankerung blieb stehen.
+2. Das Haekchen stand unbedingt hinter dem Aufruf. Vier Dateien, von denen
+   keine eine einzige Zeile schrieb, wurden als ✓ gemeldet.
+
+Dazu kommt `ON_ERROR_STOP=0`: psql endet mit 0, egal wie viele Anweisungen
+scheitern. Der Rueckgabewert taugt hier also nicht als Erfolgsmeldung — das
+ist bewusst so (eine Zeilenkollision soll nicht die Datei abbrechen), aber
+dann muss der Erfolg **anders** festgestellt werden. `run_sql()` zaehlt jetzt
+die harten Fehlerzeilen und meldet sie dem Aufrufer.
+
+**Ein stiller Nebenbefund.** `insert_mapping()` tut nichts, wenn eine der
+beiden Nachschlagungen ins Leere geht
+(`IF v_source_id IS NOT NULL AND v_target_id IS NOT NULL`). Ein Tippfehler
+im Katalog-Schluessel kostet damit Zuordnungen ohne eine einzige Meldung. v5
+verlangte siebenmal `eu_ai_act_2024_1689`, waehrend der Katalog
+`eu_ai_act` deklariert. Korrigiert; ein Test vergleicht jetzt alle
+verlangten Schluessel gegen die deklarierten.
+
+**Und beide Runner fuehrten ohnehin nur v1.** Weder `seed-all.ts` noch
+`seed-demo.ts` hatten v2 bis v5 in ihrer Liste — selbst mit funktionierendem
+Helfer waeren ueber diesen Weg nur 89 Zuordnungen entstanden. Jetzt stehen
+alle fuenf dort, in bindender Reihenfolge.
+
+**Was das festhaelt.** `packages/db/tests/unit/seed-sql-helpers.test.ts`:
+keine Seed-Datei loescht `insert_mapping()`; genau eine definiert es; jede
+Datei, die es benutzt, steht in **beiden** Runnern und **hinter** der
+definierenden; und jeder verlangte Katalog-Schluessel wird von einem
+Katalog-Seed deklariert. Alle vier gegengeprueft — mit zurueckgedrehter
+Aenderung fallen sie einzeln.
+
+**Was OP-268 (b) davon behaelt.** Die Bruecke lief wirklich zu frueh, und sie
+steht zu Recht jetzt hinter den Seeds. Ohne OP-269 haette sie nur nichts zu
+tun gehabt. Beide Aenderungen sind noetig; die Reihenfolge der Erkenntnis war
+umgekehrt zur Reihenfolge der Wirkung.

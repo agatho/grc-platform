@@ -137,8 +137,17 @@ SELECT insert_mapping('RC.RP-01', 'nist_csf_2', 'A.5.30', 'iso27002_2022', 'equi
 SELECT insert_mapping('RC.RP-03', 'nist_csf_2', 'A.8.13', 'iso27002_2022', 'equivalent', 90, 'official');
 SELECT insert_mapping('RC.RP-05', 'nist_csf_2', 'A.8.14', 'iso27002_2022', 'partial_overlap', 80, 'official');
 
--- Cleanup helper function
-DROP FUNCTION IF EXISTS insert_mapping;
+-- [ARCTOS-FULL-2026-08-31 · OP-269] Hier stand `DROP FUNCTION IF EXISTS
+-- insert_mapping;`. Die Datei raeumte damit den Helfer weg, den die vier
+-- Folgedateien v2 bis v5 AUSSCHLIESSLICH benutzen und selbst nirgends
+-- definieren. Wirkung: jeder ihrer 854 Aufrufe scheiterte mit "function
+-- insert_mapping(...) does not exist" — auf jeder Installation, seit es die
+-- Dateien gibt. Gemessen am 2026-09-15 auf `grc_platform`: 88 Zuordnungen
+-- statt 943, und das sind genau die 89 Aufrufe DIESER Datei.
+--
+-- Der Helfer bleibt jetzt stehen. Er ist deterministisch, idempotent und
+-- ohne Seiteneffekt; ihn zu behalten kostet nichts und beseitigt die
+-- Reihenfolgenfalle dauerhaft. Das Aufraeumen war der Defekt.
 
 -- ============================================================================
 -- Summary: ~90 NIST CSF 2.0 ↔ ISO 27002:2022 mappings

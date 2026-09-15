@@ -96,13 +96,34 @@ run_sql() {
   if [ "$VERBOSE" = "1" ]; then
     printf '%s\n' "$output" | sed 's/^/      /'
   else
-    # Zeige nur ERROR/FATAL/WARNING-Zeilen (psql prepends diese)
+    # Zeige nur ERROR/FATAL/WARNING-Zeilen.
+    #
+    # [OP-269] Das Muster war auf den Zeilenanfang verankert —
+    # `^(ERROR|FATAL|WARNING):`. psql schreibt aber
+    # `psql:/dev/stdin:24: ERROR:  function insert_mapping(...) does not exist`,
+    # stellt also Datei und Zeilennummer VORAN. Der Filter hat deshalb nie
+    # etwas gefunden, und 854 fehlgeschlagene Aufrufe liefen ohne eine einzige
+    # sichtbare Zeile durch. Der Kommentar daneben sagte sogar „psql prepends
+    # diese" — und die Verankerung blieb trotzdem stehen.
     local errs
-    errs=$(printf '%s\n' "$output" | grep -E '^(ERROR|FATAL|WARNING):' || true)
+    errs=$(printf '%s\n' "$output" | grep -E '(^|: )(ERROR|FATAL|WARNING):' || true)
     if [ -n "$errs" ]; then
       printf '%s\n' "$errs" | head -5 | sed 's/^/      /'
     fi
   fi
+  # [OP-269] `ON_ERROR_STOP=0` ist gewollt — eine einzelne Zeilenkollision
+  # soll nicht die ganze Datei abbrechen. Es bedeutet aber auch, dass psql
+  # mit 0 endet, egal wie viele Anweisungen gescheitert sind. Der
+  # Rueckgabewert allein taugt hier also nicht als Erfolgsmeldung: die vier
+  # Mapping-Dateien endeten mit 0, nachdem JEDE ihrer Anweisungen gescheitert
+  # war. Wer ruft, soll beides unterscheiden koennen.
+  local harte
+  harte=$(printf '%s\n' "$output" | grep -cE '(^|: )(ERROR|FATAL):' || true)
+  if [ "${harte:-0}" -gt 0 ]; then
+    LAST_SQL_ERRORS="$harte"
+    return 1
+  fi
+  LAST_SQL_ERRORS=0
   return $rc
 }
 
@@ -148,9 +169,20 @@ echo ""
 echo "[3/3] Cross-Framework-Mappings v2–v5..."
 for v in v2 v3 v4 v5; do
   f="$SQL_DIR/seed_cross_framework_mappings_${v}.sql"
-  if [ -f "$f" ]; then
-    run_sql "$f" "$v"
+  if [ ! -f "$f" ]; then
+    # [OP-269] Fehlende Datei war bisher ein stiller Sprung.
+    echo "  ! seed_cross_framework_mappings_${v}.sql fehlt — uebersprungen."
+    continue
+  fi
+  # [OP-269] Das Haekchen stand hier UNBEDINGT hinter `run_sql`, ohne dessen
+  # Rueckgabewert anzusehen. Zusammen mit dem blinden Fehlerfilter oben hat
+  # das vier Dateien, von denen keine eine einzige Zeile schrieb, als
+  # erfolgreich gemeldet.
+  if run_sql "$f" "$v"; then
     echo "  ✓ seed_cross_framework_mappings_${v}.sql"
+  else
+    echo "  ✗ seed_cross_framework_mappings_${v}.sql (${LAST_SQL_ERRORS:-?} Fehler — mit VERBOSE=1 sichtbar)"
+    failed=$((failed + 1))
   fi
 done
 

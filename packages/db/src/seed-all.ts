@@ -49,6 +49,16 @@ const REFERENCE_SEEDS = [
   "seed_esrs_datapoints.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
+  // [OP-269] v2 bis v5 fehlten hier. Dieser Runner spielte damit 89 von 943
+  // Zuordnungen ein — und weil v1 seinen Helfer `insert_mapping()` am Ende
+  // wegraeumte, scheiterten dieselben vier Dateien auch auf dem einzigen
+  // anderen Weg (`deploy/seed-catalogs.sh`) restlos. Der DROP ist raus, die
+  // Reihenfolge ist hier bindend: v1 definiert den Helfer, den v2 bis v5
+  // benutzen und selbst nicht definieren.
+  "seed_cross_framework_mappings_v2.sql",
+  "seed_cross_framework_mappings_v3.sql",
+  "seed_cross_framework_mappings_v4.sql",
+  "seed_cross_framework_mappings_v5.sql",
   // [OP-268] Projiziert Annex A nach `control_catalog_entry`. MUSS vor
   // `seed_demo_01_assets_isms.sql` laufen: dessen SoA-Teil loest
   // `catalog_entry_id` ueber den Annex-A-Code aus dieser Tabelle auf, und die
