@@ -906,8 +906,21 @@ PILOT_PASSWORD="$(env_value PILOT_GATE_ADMIN_PASSWORD)"
 PILOT_MODE="$(env_value PILOT_GATE_MODE)"
 PILOT_ORG="$(env_value PILOT_GATE_ORG_ID)"
 PILOT_SCRIPT=/opt/arctos/scripts/pilot-readiness-gate.sh
+# The checks log in, so they must use the PUBLIC https URL, not
+# http://127.0.0.1:3000. With AUTH_URL on https, Auth.js issues its CSRF and
+# session cookies as `__Host-…` / `__Secure-…` with the Secure flag, and curl
+# does not send those over plain http: the CSRF check fails silently, the
+# login "succeeds" with HTTP 200, and no session exists. That is exactly how
+# the first run of this step failed on 2026-09-15 ("Session not established
+# after login"). Going through the public URL also exercises Caddy and TLS,
+# which is what a user hits.
+PILOT_URL="$(env_value AUTH_URL)"
+[ -n "$PILOT_URL" ] || PILOT_URL="$(env_value NEXTAUTH_URL)"
 
-if [ -z "$PILOT_EMAIL" ] || [ -z "$PILOT_PASSWORD" ]; then
+if [ -z "$PILOT_URL" ]; then
+  echo "  NOT RUN: neither AUTH_URL nor NEXTAUTH_URL is set in $ENV_FILE."
+  deploy_record "pilot-gate-skipped" "no AUTH_URL/NEXTAUTH_URL"
+elif [ -z "$PILOT_EMAIL" ] || [ -z "$PILOT_PASSWORD" ]; then
   echo "  NOT RUN: PILOT_GATE_ADMIN_EMAIL / PILOT_GATE_ADMIN_PASSWORD are not set in $ENV_FILE."
   echo "  Use a dedicated admin account for the checks, not your own login."
   deploy_record "pilot-gate-skipped" "PILOT_GATE_ADMIN_EMAIL/PASSWORD not configured"
@@ -918,7 +931,7 @@ elif [ ! -f "$PILOT_SCRIPT" ]; then
   echo "  NOT RUN: $PILOT_SCRIPT not found."
   deploy_record "pilot-gate-skipped" "script missing"
 else
-  if STAGING_URL="http://127.0.0.1:3000" \
+  if STAGING_URL="$PILOT_URL" \
      STAGING_ADMIN_EMAIL="$PILOT_EMAIL" \
      STAGING_ADMIN_PASSWORD="$PILOT_PASSWORD" \
      STAGING_DEMO_ORG_ID="$PILOT_ORG" \
