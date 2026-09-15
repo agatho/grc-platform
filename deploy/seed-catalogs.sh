@@ -164,6 +164,34 @@ for f in "$SQL_DIR"/seed_catalog_*.sql; do
 done
 echo "  → $count Seeds angewendet, $failed fehlgeschlagen"
 
+# ── Typed Annex A projection (#OP-270) ─────────────────────────────────
+#
+# `control_catalog_entry` is what the SoA module reads, and the only file
+# that fills it is `seed_control_catalog_annex_a.sql`. OP-268 wired that file
+# into the two seed runners — but `deploy/update-all.sh` runs neither of them
+# (deliberately: seed-all.ts phase 2 is demo data, and #S13-20 was exactly
+# that data landing in the production main database on every update).
+#
+# The projection is NOT demo data. It is tenant-independent reference data
+# with no org_id, and without it every tenant created by the normal deploy
+# path has an empty Statement of Applicability. It therefore belongs here, in
+# the script that runs for every database in step 3b — after the catalog loop
+# above, because it reads the Annex A entries that
+# `seed_catalog_iso27001_annex_a.sql` writes.
+ANNEX_A="$SQL_DIR/seed_control_catalog_annex_a.sql"
+echo ""
+echo "[2b/3] Annex A → control_catalog_entry (SoA reference data)..."
+if [ -f "$ANNEX_A" ]; then
+  if run_sql "$ANNEX_A" "annex-a"; then
+    echo "  ✓ seed_control_catalog_annex_a.sql"
+  else
+    echo "  ✗ seed_control_catalog_annex_a.sql (${LAST_SQL_ERRORS:-?} errors — run with VERBOSE=1 to see them)"
+    failed=$((failed + 1))
+  fi
+else
+  echo "  ! seed_control_catalog_annex_a.sql not found — skipped."
+fi
+
 echo ""
 echo "[3/3] Cross-Framework-Mappings v2–v5..."
 for v in v2 v3 v4 v5; do
