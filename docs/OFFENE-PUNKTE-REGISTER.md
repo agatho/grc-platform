@@ -3449,3 +3449,193 @@ Node-Bedarf auf dem Host und keine eigene Vorstellung davon, wie eine `.env`
 auszusehen hat. Beide Pfade sind unter `set -euo pipefail` getestet: der
 Erfolgsfall laeuft weiter, der Fehlerfall druckt die Compose-Meldung
 eingerueckt und bricht sichtbar ab.
+
+### Nachtrag 2026-09-14 — OP-267: drei Schalter, und der Weg fuehrte an allen dreien vorbei
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Beleg                                                                                                                                                  | Art                         | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- | ---------------------- |
+| OP-267 | **Sechs Migrationen legten anmeldefaehige Konten an — unbedingt, auf jeder Datenbank, an allen drei Demo-Seed-Schaltern vorbei.** `0316` (13 × `@arctos.test`), `0317` (9 × `@meridian.test`), `0318` (Wiederholung), `0326` (4 × `@arctistx.test`), `0346` (3 × `@meridian.test`), `0096` (6 × `@arctos.dev`). 15 davon sind anmeldefaehig und teilen einen bcrypt-Hash, dessen Klartext in der Kopfzeile von `0317` steht — in einem oeffentlichen Repository. Behoben durch `0480_op267_disable_seeded_login_accounts.sql` (Vorwaertsschritt, kein Eingriff in ausgelieferte Dateien nach ADR-014), abgesichert durch `scripts/check-migration-credentials.mjs`; die Markerliste in `deploy/purge-demo-accounts.sh` erfasste 4 der 16 und ist ergaenzt. | Mandant `grc_qumasoft` am 2026-09-14: 35 Konten statt der einen laut eigenem Runbook, bei `RUN_SEEDS=false`; `UPDATE 28` je Datenbank auf allen vieren | Sicherheit (eigener Fehler) | **behoben 2026-09-14** |
+
+**Wie es auffiel.** Nach dem Wiederaufbau der Mandanten-Datenbanken wurde
+gezaehlt, was drin steht. `grc_qumasoft` sollte laut
+`deploy/qumasoft/README_DEPLOY.md` **ein** Konto haben
+(`admin@qumasoft.de`). Es waren **35**. Der Verdacht lag zuerst beim Seed —
+falsch: `RUN_SEEDS=false` stand im Mandanten-`env`, und der Seed war nie
+gelaufen. Die 34 zusaetzlichen Konten kamen aus **Migrationen**.
+
+**Warum keiner der Schutzmechanismen gegriffen hat.** Das Projekt hat fuer
+genau diesen Fall drei Schalter — `SEED_DEMO_DATA`,
+`ALLOW_DEMO_SEED_IN_PROD` (#SEC-F04) und `ALLOW_PRODUCTION_SEED` — und
+einen Waechter, der den Start verweigert, wenn die ersten beiden gesetzt sind
+(`scripts/assert-runtime-config.mjs`). **Alle drei wirken im Seed-Pfad.**
+Eine Migration laeuft unbedingt, auf jeder Datenbank, und bevor irgendein
+Schalter gelesen wird. Der Schutz war vorhanden, sorgfaeltig gebaut und
+vollstaendig — fuer die eine Tuer, die man im Blick hatte.
+
+**Warum es vorher nicht auffiel.** `deploy/create-tenant.sh` kopiert das
+Schema aus `grc_platform` (`pg_dump --schema-only`) und laesst die
+Migrationen danach mit `|| true` laufen. Ein so entstandener Mandant hat die
+sechs Dateien nie von vorn ausgefuehrt. Erst der Neuaufbau aus einer leeren
+Datenbank — 429 Migrationen der Reihe nach — machte sichtbar, was eine
+Neuinstallation seit jeher bekommt. **Der Unterschied zwischen
+„gewachsen“ und „neu gebaut“ ist hier kein Detail: nur der
+zweite Weg zeigt, was ausgeliefert wird.**
+
+**Was die Zahlen sagen.** Je Datenbank 28 Konten aus den `.test`-Domains
+plus 6 aus `0096`; auf allen vier Datenbanken identisch (`UPDATE 28`).
+Anmeldefaehig sind 15: `0317` nennt das Passwort im Klartext in der eigenen
+Kopfzeile, `0326` und `0346` benutzen denselben Hash. Die 13 aus `0316`
+tragen einen Platzhalter und koennen sich nicht anmelden — stillgelegt wurden
+sie trotzdem. Ihre Rollenzuweisungen waren ueberall `UPDATE 0`: `0317`
+haengt sie an eine fest verdrahtete Org-UUID, die in keiner der vier
+Datenbanken existiert. Die Konten konnten sich also anmelden und nichts
+sehen. Das ist kein Trost, sondern eine Rechtebruecke weniger.
+
+**Warum eine neue Migration und keine Korrektur der sechs.** Nach ADR-014
+gilt eine ausgelieferte Migration als unveraenderlich, und diese sechs sind
+ausgeliefert — sie sind am 2026-09-14 gegen vier produktive Datenbanken
+gelaufen. Der Ledger haelt sie fest; eine Aenderung an den Dateien wuerde auf
+keiner bestehenden Instanz mehr ausgefuehrt. Nur ein Vorwaertsschritt
+erreicht Bestand **und** Neuinstallation. Stillgelegt wird wie in
+`purge-demo-accounts.sh`: kein hartes `DELETE` (zu viele nullable
+Referenzen, und die Audit-Historie bleibt), sondern `is_active = false`,
+`deleted_at`, Hash unbrauchbar — jede der drei Aenderungen genuegt fuer sich.
+
+**Die Pruefung, und was sie beim ersten Lauf fand.**
+`scripts/check-migration-credentials.mjs` hat zwei Regeln: (1) keine
+Migration schreibt `password_hash` in `"user"` — die sechs historischen
+sind namentlich eingefroren, die Liste darf schrumpfen, nicht wachsen; (2)
+**jede** Adresse aus diesen sechs muss von `0480` erfasst sein. Regel 2 ist
+die tragende: sie faellt auch dann, wenn jemand einer eingefrorenen Datei
+eine Adresse hinzufuegt. Die erste Fassung las die ganze Datei und verlangte
+prompt die Stilllegung von `admin@arctos.dev` — das echte Administratorkonto
+jeder Installation, das `0096:170` nur als `granted_by` **nachliest**. Die
+Regel liest jetzt die `INSERT`-Anweisungen, nicht die Datei. Beide
+Fehlerwege sind gegengeprueft: eine neue Migration mit Konto und eine neue
+Adresse in einer eingefrorenen Datei brechen die Pruefung mit Exit 1.
+
+**Und die Markerliste.** `deploy/purge-demo-accounts.sh` — das Werkzeug, das
+es fuer genau diesen Fall schon gab — passte auf `@arctos.dev` und
+`@arctistx.test`. Von den 16 anmeldefaehigen Konten erfasste es **4**, und
+meldete Erfolg. Ein Aufraeumwerkzeug, dessen Liste hinter dem Bestand
+zurueckbleibt, ist gefaehrlicher als keines: es beantwortet die Frage, ohne
+sie zu beantworten. Ergaenzt um beide `.test`-Domains.
+
+### Nachtrag 2026-09-15 — OP-268: eine Behebung, zwei Runner, und eine Bruecke vor dem Fluss
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Beleg                                                                                                                                                                                    | Art                      | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-268 | **Die Behebung von OP-208 erreichte nur einen von zwei Seed-Runnern — und die Framework-Bruecke laeuft auf jeder Installation zu frueh.** (a) `fix_soa_annex_a.sql` stand nie in einer Liste von `seed-all.ts`, dem Runner, den `deploy/update-all.sh` und die Runbooks benutzen; ohne die Projektion nach `control_catalog_entry` stirbt `seed_demo_01_assets_isms.sql` an `catalog_entry_id` NOT NULL und nimmt Assets, Bedrohungen und Schwachstellen mit. (b) `0106_framework_mapping_bridge.sql` ueberfuehrt `catalog_entry_mapping` nach `framework_mapping` — als Migration laeuft sie VOR den Katalog-Seeds und findet nichts. (c) Phase 1 von `seed-all.ts` druckte das Haekchen VOR dem `await`. | Deploy-Protokoll 2026-09-14: `assets 0` in der Bilanz, `framework_mapping` = 88 gegen 943 in den Seed-Dateien, `seed_cross_framework_mappings.sql` mit ✓ UND ✗ in derselben Zeilengruppe | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**(a) Dieselbe Ursache wie OP-208, eine Datei weiter.** Welle 6C hat am
+2026-09-07 genau diesen Ausfall beschrieben — ein Fremdschluesselfehler im
+org-abhaengigen Schritt 3 von `fix_soa_annex_a.sql` rollt die
+mandantenunabhaengigen Schritte 1 und 2 mit zurueck, weil der Runner jede
+Datei in EINER Transaktion ausfuehrt; ohne `control_catalog_entry` sterben
+`seed_demo_01_assets_isms.sql` und in der Folge `seed_demo_15_cve.sql`.
+Die Behebung war „ein Listeneintrag, verschoben“ — in
+`seed-demo.ts`. **Es gibt zwei Runner.** `seed-all.ts` fuehrt eine eigene,
+abweichende Liste und hatte die Datei ueberhaupt nicht; genau dieser Runner
+steht im Deploy-Runbook. Am 2026-09-14 lief er gegen `grc_platform`, und die
+Bilanz meldete `assets 0`.
+
+**Und ein Verschieben haette es dort nicht behoben.** `seed-all.ts` kennt
+`seed_demo_00_platform.sql` gar nicht, die Demo-Organisation
+`c2446a5c-…` entsteht dort also nie — Schritt 3 waere in jedem Fall am
+Fremdschluessel gescheitert. Die Datei wurde deshalb **geteilt**:
+`seed_control_catalog_annex_a.sql` (Referenzdaten, ohne `org_id`) steht in
+`REFERENCE_SEEDS` **beider** Runner, `fix_soa_annex_a.sql` behaelt nur die
+SoA-Zeilen und bleibt in `DEMO_SEEDS` von `seed-demo.ts`. Referenzdaten und
+Demo-Daten haben verschiedene Voraussetzungen; sie in eine Transaktion zu
+legen war die eigentliche Ursache — zweimal.
+
+**(b) Die Bruecke laeuft vor dem Fluss.** `framework_mapping` (die Tabelle
+der Framework-Coverage-Oberflaeche) wird aus `catalog_entry_mapping` (die
+der Seeds) von Migration `0106` gefuellt. Migrationen laufen vor den
+Katalog-Seeds — auf **jeder** Installation findet die Bruecke eine leere
+Quelle. Gemessen: 88 Zeilen, wo die fuenf Seed-Dateien 943 Zuordnungen
+definieren. Die Migration sagt selbst „Safe to re-run after adding new
+catalog_entry_mapping rows“; sie steht jetzt zusaetzlich am Ende von
+`deploy/seed-catalogs.sh`, also hinter den Seeds, die ihr Futter liefern —
+und damit auch in `create-tenant.sh` und in Schritt 3b von
+`update-all.sh`, die dieses Skript aufrufen.
+
+**(c) Ein Haekchen an der falschen Stelle.** `seed-all.ts` Phase 1 druckte
+`✓ ${file}` **vor** `await client.unsafe(sql)`. Jede Datei galt damit als
+gelungen, sobald sie gelesen war; eine gescheiterte erschien mit ✓ **und** ✗.
+Im Protokoll vom 2026-09-14 steht `seed_cross_framework_mappings.sql` genau
+so zweimal. Phase 2 macht es seit jeher richtig. **Ein Protokoll, das Erfolg
+meldet, bevor die Arbeit getan ist, ist kein Protokoll.**
+
+**Was das festhaelt.** Fuenf Tests in
+`packages/db/tests/unit/seed-wiring.test.ts`: die Projektion ist in beiden
+Runnern verdrahtet, sie steht in beiden **vor** `seed_demo_01_assets_isms`,
+`fix_soa_annex_a.sql` enthaelt keine Referenz-Schritte mehr, und das
+Haekchen steht hinter dem `await`. Alle vier Regeln sind gegengeprueft: mit
+zurueckgedrehter Aenderung fallen sie (3 von 12 rot), mit der Aenderung laufen
+sie (12 von 12).
+
+### Nachtrag 2026-09-15 — OP-269: der Helfer raeumte sich weg, und niemand sah die 854 Fehler
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                                                                                                                                                 | Art                      | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-269 | **854 der 943 Cross-Framework-Zuordnungen hat es nie gegeben — auf keiner Installation.** `seed_cross_framework_mappings.sql` legt den Helfer `insert_mapping()` an und loescht ihn in der letzten Zeile wieder (`DROP FUNCTION IF EXISTS`). Die vier Folgedateien v2 bis v5 rufen genau diese Funktion auf und definieren sie nirgends; jeder ihrer Aufrufe endete mit `function insert_mapping(...) does not exist`. Zwei Dinge hielten das verborgen: der Fehlerfilter in `deploy/seed-catalogs.sh` war auf den Zeilenanfang verankert, waehrend psql `psql:/dev/stdin:24: ` voranstellt — und das Haekchen wurde unbedingt gedruckt. | `sudo VERBOSE=1 bash deploy/seed-catalogs.sh grc_platform` am 2026-09-15; `framework_mapping` = 88 = die 89 Aufrufe von v1 minus einem; Δ mappings = 0 bei einem Lauf, der vier Dateien als ✓ meldete | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**Wie es gefunden wurde, und was dabei zuerst falsch war.** Die Suche begann
+bei OP-268 (b): `framework_mapping` = 88 gegen 943 in den Seed-Dateien, und
+die Bruecke `0106` laeuft als Migration vor den Katalog-Seeds. Diese Analyse
+stimmt — sie war nur nicht die Ursache. Nach dem Lauf der Bruecke gegen alle
+vier Datenbanken blieb die Zahl bei 88. **Eine Behebung, die die Zahl nicht
+bewegt, war nicht die Behebung.** Erst der naechste Schritt —
+`deploy/seed-catalogs.sh` von Hand, dann mit `VERBOSE=1` — zeigte den
+Grund: es gab nichts zu ueberbruecken.
+
+**Die Ursache in einer Zeile.**
+`seed_cross_framework_mappings.sql:141` lautete
+`DROP FUNCTION IF EXISTS insert_mapping;`, mit dem Kommentar
+„Cleanup helper function“. v2 bis v5 benutzen diese Funktion
+ausschliesslich und definieren sie in keiner Zeile. Die 88 sind deshalb kein
+Teilstand, sondern **exakt der Beitrag von v1** (89 Aufrufe, einer davon ohne
+Treffer). Das Aufraeumen war der Defekt; der Helfer bleibt jetzt stehen. Er
+ist deterministisch, idempotent und ohne Seiteneffekt.
+
+**Warum es niemandem auffiel — zwei Blenden hintereinander.**
+
+1. `run_sql()` filterte mit `^(ERROR|FATAL|WARNING):`, also verankert auf
+   den Zeilenanfang. psql schreibt
+   `psql:/dev/stdin:24: ERROR: function insert_mapping(...) does not exist`.
+   Der Filter hat nie etwas gefunden. Der Kommentar daneben sagte sogar
+   „psql prepends diese“ — und die Verankerung blieb stehen.
+2. Das Haekchen stand unbedingt hinter dem Aufruf. Vier Dateien, von denen
+   keine eine einzige Zeile schrieb, wurden als ✓ gemeldet.
+
+Dazu kommt `ON_ERROR_STOP=0`: psql endet mit 0, egal wie viele Anweisungen
+scheitern. Der Rueckgabewert taugt hier also nicht als Erfolgsmeldung — das
+ist bewusst so (eine Zeilenkollision soll nicht die Datei abbrechen), aber
+dann muss der Erfolg **anders** festgestellt werden. `run_sql()` zaehlt jetzt
+die harten Fehlerzeilen und meldet sie dem Aufrufer.
+
+**Ein stiller Nebenbefund.** `insert_mapping()` tut nichts, wenn eine der
+beiden Nachschlagungen ins Leere geht
+(`IF v_source_id IS NOT NULL AND v_target_id IS NOT NULL`). Ein Tippfehler
+im Katalog-Schluessel kostet damit Zuordnungen ohne eine einzige Meldung. v5
+verlangte siebenmal `eu_ai_act_2024_1689`, waehrend der Katalog
+`eu_ai_act` deklariert. Korrigiert; ein Test vergleicht jetzt alle
+verlangten Schluessel gegen die deklarierten.
+
+**Und beide Runner fuehrten ohnehin nur v1.** Weder `seed-all.ts` noch
+`seed-demo.ts` hatten v2 bis v5 in ihrer Liste — selbst mit funktionierendem
+Helfer waeren ueber diesen Weg nur 89 Zuordnungen entstanden. Jetzt stehen
+alle fuenf dort, in bindender Reihenfolge.
+
+**Was das festhaelt.** `packages/db/tests/unit/seed-sql-helpers.test.ts`:
+keine Seed-Datei loescht `insert_mapping()`; genau eine definiert es; jede
+Datei, die es benutzt, steht in **beiden** Runnern und **hinter** der
+definierenden; und jeder verlangte Katalog-Schluessel wird von einem
+Katalog-Seed deklariert. Alle vier gegengeprueft — mit zurueckgedrehter
+Aenderung fallen sie einzeln.
+
+**Was OP-268 (b) davon behaelt.** Die Bruecke lief wirklich zu frueh, und sie
+steht zu Recht jetzt hinter den Seeds. Ohne OP-269 haette sie nur nichts zu
+tun gehabt. Beide Aenderungen sind noetig; die Reihenfolge der Erkenntnis war
+umgekehrt zur Reihenfolge der Wirkung.

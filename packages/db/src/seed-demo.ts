@@ -94,7 +94,18 @@ const REFERENCE_SEEDS = [
   "seed_emission_factors_eu.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
+  // [OP-269] v2 to v5 were missing here too — 854 of the 943 mappings. The
+  // order is binding: v1 defines `insert_mapping()`, v2 to v5 use it and do
+  // not define it.
+  "seed_cross_framework_mappings_v2.sql",
+  "seed_cross_framework_mappings_v3.sql",
+  "seed_cross_framework_mappings_v4.sql",
+  "seed_cross_framework_mappings_v5.sql",
   "seed_tag_definitions.sql",
+  // [OP-268] The tenant-independent half of the former `fix_soa_annex_a.sql`.
+  // It belongs here; the remaining SoA rows stay in DEMO_SEEDS — see the
+  // comment there and `seed_control_catalog_annex_a.sql`.
+  "seed_control_catalog_annex_a.sql",
 ];
 
 /**
@@ -133,6 +144,15 @@ const DEMO_SEEDS = [
   //
   // Hierher verschoben, nicht umgeschrieben: die Datei gehört fachlich nach
   // 00_platform und vor 01_assets_isms.
+  //
+  // [OP-268 · 2026-09-15] Rewritten after all, at the root: steps 1 and 2 now
+  // live in `seed_control_catalog_annex_a.sql` and run as a reference seed;
+  // only step 3 stays here. Moving the entry fixed THIS runner but not the
+  // second one — `seed-all.ts` never had the file in any list, and it has no
+  // `seed_demo_00_platform.sql` at all, so moving would not have been a fix
+  // there. That is why `grc_platform` was missing assets, threats and
+  // vulnerabilities again on 2026-09-14 (`assets 0`). Separate prerequisites,
+  // separate files.
   "fix_soa_annex_a.sql",
   "seed_demo_data.sql", // budgets, risks, controls, treatments (base)
   "seed_demo_09_processes.sql", // processes — BCMS references them

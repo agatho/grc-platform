@@ -91,4 +91,72 @@ describe("seed-all.ts wiring (Wave-21-W22-B2/B6)", () => {
       "seed_demo_13_programmes.sql contains 'in_progress' as a status literal — that's NOT a valid programme_journey_status enum value (valid: planned, active, on_track, at_risk, blocked, completed, archived).",
     ).toBe(false);
   });
+
+  // [OP-268 · 2026-09-15] Die Behebung von OP-208 erreichte nur EINEN der
+  // beiden Runner. `seed-all.ts` — der, den `deploy/update-all.sh` und die
+  // Runbooks benutzen — hatte `fix_soa_annex_a.sql` nie in einer Liste, und
+  // ohne die Projektion nach `control_catalog_entry` stirbt
+  // `seed_demo_01_assets_isms.sql` an `catalog_entry_id` NOT NULL und nimmt
+  // Assets, Bedrohungen und Schwachstellen mit. Am 2026-09-14 auf
+  // `grc_platform` nachgemessen: `assets 0`.
+  //
+  // Der mandantenunabhaengige Teil steht jetzt in einer eigenen Datei, die in
+  // BEIDE Runner gehoert. Diese Tests halten beide fest.
+  const SEED_DEMO_PATH = join(__dirname, "..", "..", "src", "seed-demo.ts");
+  const ANNEX_A_REF = '"seed_control_catalog_annex_a.sql"';
+
+  it("seed_control_catalog_annex_a.sql ist in seed-all.ts verdrahtet (OP-268)", () => {
+    expect(readFileSync(SEED_ALL_PATH, "utf-8")).toContain(ANNEX_A_REF);
+  });
+
+  it("seed_control_catalog_annex_a.sql ist in seed-demo.ts verdrahtet (OP-268)", () => {
+    expect(readFileSync(SEED_DEMO_PATH, "utf-8")).toContain(ANNEX_A_REF);
+  });
+
+  it("die Projektion laeuft VOR seed_demo_01_assets_isms.sql (OP-268)", () => {
+    for (const p of [SEED_ALL_PATH, SEED_DEMO_PATH]) {
+      const src = readFileSync(p, "utf-8");
+      const projektion = src.indexOf(ANNEX_A_REF);
+      const assets = src.indexOf('"seed_demo_01_assets_isms.sql"');
+      expect(projektion, `${p}: Projektion nicht verdrahtet`).toBeGreaterThan(
+        0,
+      );
+      expect(assets, `${p}: assets-Seed nicht verdrahtet`).toBeGreaterThan(0);
+      expect(
+        projektion,
+        `${p}: seed_control_catalog_annex_a.sql muss VOR seed_demo_01_assets_isms.sql stehen — sonst ist catalog_entry_id NULL und die Datei bricht ab.`,
+      ).toBeLessThan(assets);
+    }
+  });
+
+  it("fix_soa_annex_a.sql enthaelt keine mandantenunabhaengigen Schritte mehr (OP-268)", () => {
+    const sql = readFileSync(
+      join(__dirname, "..", "..", "sql", "fix_soa_annex_a.sql"),
+      "utf-8",
+    );
+    // Nur der org-abhaengige Schritt 3 gehoert noch hierher. Stuenden die
+    // Referenz-Schritte wieder daneben, rollt ein FK-Fehler sie erneut mit
+    // zurueck — das war OP-208.
+    expect(
+      /INSERT\s+INTO\s+control_catalog\b/i.test(sql),
+      "control_catalog gehoert nach seed_control_catalog_annex_a.sql",
+    ).toBe(false);
+    expect(
+      /INSERT\s+INTO\s+control_catalog_entry\b/i.test(sql),
+      "control_catalog_entry gehoert nach seed_control_catalog_annex_a.sql",
+    ).toBe(false);
+    expect(/INSERT\s+INTO\s+soa_entry\b/i.test(sql)).toBe(true);
+  });
+
+  it("Phase 1 meldet das Haekchen erst NACH dem await (OP-268)", () => {
+    const src = readFileSync(SEED_ALL_PATH, "utf-8");
+    // Das Haekchen stand vor dem `await`: eine gescheiterte Datei erschien
+    // mit ✓ UND ✗. Gepruefft wird das Muster, nicht die Zeilennummer.
+    expect(
+      /console\.log\(`\s*✓ \$\{file\}`\);\s*\n\s*await client\.unsafe\(sql\);/.test(
+        src,
+      ),
+      "seed-all.ts meldet ✓ vor dem await — Phase 1 wuerde gescheiterte Dateien als gelungen protokollieren.",
+    ).toBe(false);
+  });
 });

@@ -137,8 +137,17 @@ SELECT insert_mapping('RC.RP-01', 'nist_csf_2', 'A.5.30', 'iso27002_2022', 'equi
 SELECT insert_mapping('RC.RP-03', 'nist_csf_2', 'A.8.13', 'iso27002_2022', 'equivalent', 90, 'official');
 SELECT insert_mapping('RC.RP-05', 'nist_csf_2', 'A.8.14', 'iso27002_2022', 'partial_overlap', 80, 'official');
 
--- Cleanup helper function
-DROP FUNCTION IF EXISTS insert_mapping;
+-- [ARCTOS-FULL-2026-08-31 · OP-269] This line used to read
+-- `DROP FUNCTION IF EXISTS insert_mapping;`. It removed the helper that the
+-- four follow-up files v2 to v5 use EXCLUSIVELY and define nowhere. Effect:
+-- every one of their 854 calls failed with "function insert_mapping(...) does
+-- not exist" — on every installation, for as long as the files have existed.
+-- Measured on `grc_platform` 2026-09-15: 88 mappings instead of 943, which is
+-- exactly the 89 calls in THIS file.
+--
+-- The helper now stays. It is deterministic, idempotent and free of side
+-- effects; keeping it costs nothing and removes the ordering trap for good.
+-- The cleanup was the defect.
 
 -- ============================================================================
 -- Summary: ~90 NIST CSF 2.0 ↔ ISO 27002:2022 mappings

@@ -49,6 +49,22 @@ const REFERENCE_SEEDS = [
   "seed_esrs_datapoints.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
+  // [OP-269] v2 to v5 were missing here, so this runner loaded 89 of 943
+  // mappings — and because v1 dropped its `insert_mapping()` helper at the
+  // end, the same four files also failed completely on the only other path
+  // (`deploy/seed-catalogs.sh`). The DROP is gone; the order below is binding:
+  // v1 defines the helper that v2 to v5 use and never define themselves.
+  "seed_cross_framework_mappings_v2.sql",
+  "seed_cross_framework_mappings_v3.sql",
+  "seed_cross_framework_mappings_v4.sql",
+  "seed_cross_framework_mappings_v5.sql",
+  // [OP-268] Projects Annex A into `control_catalog_entry`. MUST run before
+  // `seed_demo_01_assets_isms.sql`: its SoA part resolves `catalog_entry_id`
+  // from this table by Annex A code, and the column is NOT NULL. Without the
+  // projection the whole file aborts and takes assets, threats and
+  // vulnerabilities with it — measured on `grc_platform` 2026-09-14:
+  // `assets 0`.
+  "seed_control_catalog_annex_a.sql",
 ];
 
 // ── Demo data (risks, controls, documents, etc.) ─────────────────────────
@@ -97,8 +113,13 @@ async function main() {
   for (const file of REFERENCE_SEEDS) {
     try {
       const sql = readFileSync(join(SQL_DIR, file), "utf-8");
-      console.log(`  ✓ ${file}`);
+      // [OP-268] The tick used to be printed BEFORE the `await`, so phase 1
+      // reported every file as successful as soon as it had been read; a
+      // failing file appeared with ✓ AND ✗. That is why
+      // `seed_cross_framework_mappings.sql` shows up twice in the deploy log
+      // of 2026-09-14. Phase 2 has always had it the right way round.
       await client.unsafe(sql);
+      console.log(`  ✓ ${file}`);
     } catch (err) {
       console.error(`  ✗ ${file}:`, (err as Error).message);
     }

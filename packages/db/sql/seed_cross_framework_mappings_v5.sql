@@ -23,13 +23,13 @@ SELECT insert_mapping('A.6.2.8', 'iso_42001_2023', 'A.8.15', 'iso_27001_2022_ann
 SELECT insert_mapping('A.10.3', 'iso_42001_2023', 'A.5.19', 'iso_27001_2022_annex_a', 'partial_overlap', 85, 'official');
 
 -- ISO 42001 ↔ EU AI Act
-SELECT insert_mapping('A.5.2', 'iso_42001_2023', 'Art.9', 'eu_ai_act_2024_1689', 'equivalent', 90, 'official');
-SELECT insert_mapping('A.5.4', 'iso_42001_2023', 'Art.9', 'eu_ai_act_2024_1689', 'partial_overlap', 85, 'official');
-SELECT insert_mapping('A.7.4', 'iso_42001_2023', 'Art.10', 'eu_ai_act_2024_1689', 'partial_overlap', 85, 'official');
-SELECT insert_mapping('A.6.2.7', 'iso_42001_2023', 'Art.11', 'eu_ai_act_2024_1689', 'partial_overlap', 85, 'official');
-SELECT insert_mapping('A.6.2.8', 'iso_42001_2023', 'Art.12', 'eu_ai_act_2024_1689', 'partial_overlap', 85, 'official');
-SELECT insert_mapping('A.8.2', 'iso_42001_2023', 'Art.13', 'eu_ai_act_2024_1689', 'partial_overlap', 80, 'official');
-SELECT insert_mapping('A.6.2.6', 'iso_42001_2023', 'Art.14', 'eu_ai_act_2024_1689', 'partial_overlap', 80, 'official');
+SELECT insert_mapping('A.5.2', 'iso_42001_2023', 'Art.9', 'eu_ai_act', 'equivalent', 90, 'official');
+SELECT insert_mapping('A.5.4', 'iso_42001_2023', 'Art.9', 'eu_ai_act', 'partial_overlap', 85, 'official');
+SELECT insert_mapping('A.7.4', 'iso_42001_2023', 'Art.10', 'eu_ai_act', 'partial_overlap', 85, 'official');
+SELECT insert_mapping('A.6.2.7', 'iso_42001_2023', 'Art.11', 'eu_ai_act', 'partial_overlap', 85, 'official');
+SELECT insert_mapping('A.6.2.8', 'iso_42001_2023', 'Art.12', 'eu_ai_act', 'partial_overlap', 85, 'official');
+SELECT insert_mapping('A.8.2', 'iso_42001_2023', 'Art.13', 'eu_ai_act', 'partial_overlap', 80, 'official');
+SELECT insert_mapping('A.6.2.6', 'iso_42001_2023', 'Art.14', 'eu_ai_act', 'partial_overlap', 80, 'official');
 
 -- ============================================================================
 -- 2. HIPAA Security Rule ↔ ISO 27001 / NIST 800-53 / ISO 27701
