@@ -92,71 +92,97 @@ describe("seed-all.ts wiring (Wave-21-W22-B2/B6)", () => {
     ).toBe(false);
   });
 
-  // [OP-268 · 2026-09-15] Die Behebung von OP-208 erreichte nur EINEN der
-  // beiden Runner. `seed-all.ts` — der, den `deploy/update-all.sh` und die
-  // Runbooks benutzen — hatte `fix_soa_annex_a.sql` nie in einer Liste, und
-  // ohne die Projektion nach `control_catalog_entry` stirbt
-  // `seed_demo_01_assets_isms.sql` an `catalog_entry_id` NOT NULL und nimmt
-  // Assets, Bedrohungen und Schwachstellen mit. Am 2026-09-14 auf
-  // `grc_platform` nachgemessen: `assets 0`.
+  // [OP-268 · 2026-09-15] The OP-208 fix reached only ONE of the two runners.
+  // `seed-all.ts` never had `fix_soa_annex_a.sql` in any list, and without the
+  // projection into `control_catalog_entry`, `seed_demo_01_assets_isms.sql`
+  // dies on `catalog_entry_id` NOT NULL and takes assets, threats and
+  // vulnerabilities with it. Measured on `grc_platform` 2026-09-14:
+  // `assets 0`.
   //
-  // Der mandantenunabhaengige Teil steht jetzt in einer eigenen Datei, die in
-  // BEIDE Runner gehoert. Diese Tests halten beide fest.
+  // The tenant-independent part now lives in its own file, which belongs in
+  // BOTH runners. These tests pin both.
   const SEED_DEMO_PATH = join(__dirname, "..", "..", "src", "seed-demo.ts");
   const ANNEX_A_REF = '"seed_control_catalog_annex_a.sql"';
 
-  it("seed_control_catalog_annex_a.sql ist in seed-all.ts verdrahtet (OP-268)", () => {
+  it("seed_control_catalog_annex_a.sql is wired into seed-all.ts (OP-268)", () => {
     expect(readFileSync(SEED_ALL_PATH, "utf-8")).toContain(ANNEX_A_REF);
   });
 
-  it("seed_control_catalog_annex_a.sql ist in seed-demo.ts verdrahtet (OP-268)", () => {
+  it("seed_control_catalog_annex_a.sql is wired into seed-demo.ts (OP-268)", () => {
     expect(readFileSync(SEED_DEMO_PATH, "utf-8")).toContain(ANNEX_A_REF);
   });
 
-  it("die Projektion laeuft VOR seed_demo_01_assets_isms.sql (OP-268)", () => {
+  it("the projection runs BEFORE seed_demo_01_assets_isms.sql (OP-268)", () => {
     for (const p of [SEED_ALL_PATH, SEED_DEMO_PATH]) {
       const src = readFileSync(p, "utf-8");
-      const projektion = src.indexOf(ANNEX_A_REF);
+      const projection = src.indexOf(ANNEX_A_REF);
       const assets = src.indexOf('"seed_demo_01_assets_isms.sql"');
-      expect(projektion, `${p}: Projektion nicht verdrahtet`).toBeGreaterThan(
-        0,
-      );
-      expect(assets, `${p}: assets-Seed nicht verdrahtet`).toBeGreaterThan(0);
+      expect(projection, `${p}: projection not wired in`).toBeGreaterThan(0);
+      expect(assets, `${p}: assets seed not wired in`).toBeGreaterThan(0);
       expect(
-        projektion,
-        `${p}: seed_control_catalog_annex_a.sql muss VOR seed_demo_01_assets_isms.sql stehen — sonst ist catalog_entry_id NULL und die Datei bricht ab.`,
+        projection,
+        `${p}: seed_control_catalog_annex_a.sql must come BEFORE seed_demo_01_assets_isms.sql — otherwise catalog_entry_id is NULL and the file aborts.`,
       ).toBeLessThan(assets);
     }
   });
 
-  it("fix_soa_annex_a.sql enthaelt keine mandantenunabhaengigen Schritte mehr (OP-268)", () => {
+  it("fix_soa_annex_a.sql no longer contains tenant-independent steps (OP-268)", () => {
     const sql = readFileSync(
       join(__dirname, "..", "..", "sql", "fix_soa_annex_a.sql"),
       "utf-8",
     );
-    // Nur der org-abhaengige Schritt 3 gehoert noch hierher. Stuenden die
-    // Referenz-Schritte wieder daneben, rollt ein FK-Fehler sie erneut mit
-    // zurueck — das war OP-208.
+    // Only the org-dependent step 3 still belongs here. If the reference
+    // steps sat next to it again, an FK error would roll them back with it
+    // once more — that was OP-208.
     expect(
       /INSERT\s+INTO\s+control_catalog\b/i.test(sql),
-      "control_catalog gehoert nach seed_control_catalog_annex_a.sql",
+      "control_catalog belongs in seed_control_catalog_annex_a.sql",
     ).toBe(false);
     expect(
       /INSERT\s+INTO\s+control_catalog_entry\b/i.test(sql),
-      "control_catalog_entry gehoert nach seed_control_catalog_annex_a.sql",
+      "control_catalog_entry belongs in seed_control_catalog_annex_a.sql",
     ).toBe(false);
     expect(/INSERT\s+INTO\s+soa_entry\b/i.test(sql)).toBe(true);
   });
 
-  it("Phase 1 meldet das Haekchen erst NACH dem await (OP-268)", () => {
+  it("phase 1 prints the tick only AFTER the await (OP-268)", () => {
     const src = readFileSync(SEED_ALL_PATH, "utf-8");
-    // Das Haekchen stand vor dem `await`: eine gescheiterte Datei erschien
-    // mit ✓ UND ✗. Gepruefft wird das Muster, nicht die Zeilennummer.
+    // The tick used to be printed before the `await`: a failing file showed
+    // up with ✓ AND ✗. The pattern is checked, not the line number.
     expect(
       /console\.log\(`\s*✓ \$\{file\}`\);\s*\n\s*await client\.unsafe\(sql\);/.test(
         src,
       ),
-      "seed-all.ts meldet ✓ vor dem await — Phase 1 wuerde gescheiterte Dateien als gelungen protokollieren.",
+      "seed-all.ts prints ✓ before the await — phase 1 would log failing files as successful.",
     ).toBe(false);
+  });
+
+  // [OP-270] `deploy/update-all.sh` runs neither seed runner — deliberately,
+  // because seed-all.ts phase 2 is demo data (#S13-20). The Annex A
+  // projection is NOT demo data: `control_catalog_entry` is what the SoA
+  // module reads, nothing else fills it, and without it every tenant created
+  // by the normal deploy path has an empty Statement of Applicability. It
+  // must therefore also run from `deploy/seed-catalogs.sh`, which step 3b
+  // calls for every database.
+  it("the Annex A projection also runs from deploy/seed-catalogs.sh (OP-270)", () => {
+    const script = readFileSync(
+      join(__dirname, "..", "..", "..", "..", "deploy", "seed-catalogs.sh"),
+      "utf-8",
+    );
+    expect(
+      script.includes("seed_control_catalog_annex_a.sql"),
+      "Without this the deploy path leaves control_catalog_entry empty and the SoA module has no controls.",
+    ).toBe(true);
+    // It reads the entries that the catalog loop writes, so it has to come
+    // after that loop.
+    const loop = script.indexOf('for f in "$SQL_DIR"/seed_catalog_');
+    const projection = script.indexOf(
+      "$SQL_DIR/seed_control_catalog_annex_a.sql",
+    );
+    expect(loop).toBeGreaterThan(0);
+    expect(
+      projection,
+      "The projection reads catalog_entry rows written by seed_catalog_iso27001_annex_a.sql — it must run after the catalog loop.",
+    ).toBeGreaterThan(loop);
   });
 });

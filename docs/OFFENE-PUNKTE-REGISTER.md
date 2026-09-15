@@ -3639,3 +3639,46 @@ Aenderung fallen sie einzeln.
 steht zu Recht jetzt hinter den Seeds. Ohne OP-269 haette sie nur nichts zu
 tun gehabt. Beide Aenderungen sind noetig; die Reihenfolge der Erkenntnis war
 umgekehrt zur Reihenfolge der Wirkung.
+
+### Nachtrag 2026-09-15 — OP-270: Referenzdaten, die nur der Demo-Weg kannte
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Beleg                                                                                                                                                                                                                   | Art                      | Stand                  |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-270 | **Die Annex-A-Projektion war nur in den Seed-Runnern verdrahtet — und `deploy/update-all.sh` ruft keinen davon.** `control_catalog_entry` ist die Tabelle, aus der das SoA-Modul liest; gefuellt wird sie ausschliesslich von `seed_control_catalog_annex_a.sql`. OP-268 hat diese Datei in `seed-all.ts` und `seed-demo.ts` eingetragen, nicht aber in `deploy/seed-catalogs.sh`. Wirkung: jeder Mandant, der ueber den normalen Deploy-Weg entsteht, hat eine leere Statement of Applicability. | Frage des Eigentuemers am 2026-09-15 („shouldn't be all handled via arctos update?“); `update-all.sh` Schritt 3b ruft `seed-catalogs.sh`, Schritt 3c die Referenz-Seeds — `seed-all.ts` ruft es bewusst nicht (#S13-20) | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**Die Frage, die den Punkt gefunden hat.** Nach OP-268/269 lautete meine
+Anweisung an den Eigentuemer: nach dem Deploy zusaetzlich `seed-all.ts` von
+Hand laufen lassen. Die Rueckfrage war
+„why do we need the extra seed? shouldn't be all handled via arctos
+update?“ — und sie trifft. Ein Deploy, der eine Handanweisung
+hinterherschickt, hat die Sache nicht erledigt.
+
+**Was `update-all.sh` zu Recht nicht tut.** Es ruft keinen der beiden
+Seed-Runner. Das ist kein Versaeumnis, sondern #S13-20: `seed-all.ts` Phase 2
+ist Demo-Fachdaten, und die liefen frueher bei JEDEM Update unbedingt gegen
+die produktive Haupt-Datenbank. Eine leere `assets`-Zahl auf einer sauberen
+Produktions-Instanz ist deshalb richtig, nicht defekt.
+
+**Was dabei auf der falschen Seite der Grenze lag.**
+`seed_control_catalog_annex_a.sql` ist keine Demo-Datei. Sie hat kein
+`org_id`, sie projiziert die 97 Annex-A-Eintraege aus `catalog_entry` in
+die typisierte Tabelle `control_catalog_entry` — und **keine andere Datei im
+Repository fuellt diese Tabelle**. Wer sie nur in die Seed-Runner eintraegt,
+macht Referenzdaten von einem Demo-Weg abhaengig. Ergebnis: ein Mandant aus
+`create-tenant.sh` plus `arctos-update` hat Kataloge, Mappings und Rollen,
+aber eine leere Statement of Applicability — und das SoA-Modul ist eines der
+beiden, um die es in ISO 27001 ueberhaupt geht.
+
+Die Datei laeuft jetzt zusaetzlich in `deploy/seed-catalogs.sh` (Schritt
+2b), also fuer **jede** Datenbank in Schritt 3b des Updates und fuer jeden
+neuen Mandanten. Sie steht dort hinter der Katalog-Schleife, weil sie die
+Eintraege liest, die `seed_catalog_iso27001_annex_a.sql` schreibt.
+
+**Die Trennlinie, die dieser Punkt schaerft.** Referenzdaten gehoeren in den
+Deploy-Weg, Demo-Daten nicht. `seed-all.ts` mischt beides in einer Datei —
+REFERENCE_SEEDS und DEMO_SEEDS —, und genau an dieser Naht sind jetzt drei
+Punkte hintereinander entstanden: OP-208 (Reihenfolge), OP-268 (nur ein
+Runner behoben), OP-270 (Referenzdaten nur im Runner). Ein Test in
+`packages/db/tests/unit/seed-wiring.test.ts` haelt die Projektion in beiden
+Wegen fest und prueft ihre Position hinter der Katalog-Schleife;
+gegengeprueft, indem die Zeilen aus dem Skript entfernt wurden (1 von 13 rot).
