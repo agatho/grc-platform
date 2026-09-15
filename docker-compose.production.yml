@@ -405,6 +405,11 @@ services:
   # ── ARCTOS Worker (Cron Jobs, Background Tasks) ───────────────
   worker:
     logging: *default-logging # #S13-16
+    # [OP-273] An explicit name, like `web`. Without it Compose named the image
+    # after the project (`arctos-worker`), so rollback.sh — which looks for
+    # `grc-worker` — never found a target and never swapped the worker image,
+    # and tenants had no stable name to run the same worker build under.
+    image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-worker:${IMAGE_TAG:-latest}
     build:
       context: .
       dockerfile: Dockerfile.worker
