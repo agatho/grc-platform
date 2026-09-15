@@ -438,6 +438,18 @@ for svc in web worker; do
   if [ -n "$CUR_IMG" ]; then
     docker tag "$CUR_IMG" "arctos-rollback/grc-${svc}:${OLD_COMMIT:0:12}" 2>/dev/null || true
     echo "  Rollback-Image gesichert: arctos-rollback/grc-${svc}:${OLD_COMMIT:0:12}"
+    # [OP-272] The tag names the CHECKOUT, not the image. After an aborted run
+    # the checkout has already moved on while the container still runs an
+    # older build — on 2026-09-14 a "7b9c3604" snapshot contained a build from
+    # 2026-07-28. Say what is really being saved; rollback.sh checks it again.
+    SNAP_SHA=$(docker image inspect "$CUR_IMG" \
+                 --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+               | sed -n 's/^NEXT_PUBLIC_GIT_SHA=//p' | head -1 || true)
+    SNAP_BUILT=$(docker image inspect "$CUR_IMG" --format '{{.Created}}' 2>/dev/null || true)
+    echo "    contains: revision ${SNAP_SHA:-unknown}, built ${SNAP_BUILT:-unknown}"
+    if [ -n "$SNAP_SHA" ] && [ "$SNAP_SHA" != "unknown" ] && [ "${SNAP_SHA:0:12}" != "${OLD_COMMIT:0:12}" ]; then
+      echo "    WARNING: this snapshot does not contain ${OLD_COMMIT:0:12}."
+    fi
   fi
 done
 

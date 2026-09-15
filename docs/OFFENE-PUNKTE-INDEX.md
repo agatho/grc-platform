@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **271**
+Nummern: **272**
 
 ## offen (3)
 
@@ -195,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (106)
+## behoben (107)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -305,3 +305,4 @@ _keine_
 | OP-269 | 854 der 943 Cross-Framework-Zuordnungen hat es nie gegeben — auf keiner Installation. `seed_cross_framework_m… | behoben 2026-09-15                                                                         | 2026-09-15 |
 | OP-270 | Die Annex-A-Projektion war nur in den Seed-Runnern verdrahtet — und `deploy/update-all.sh` ruft keinen davon.… | behoben 2026-09-15                                                                         | 2026-09-15 |
 | OP-271 | Das Pilot-Readiness-Gate konnte vor dem Merge nie gruen werden — und hat damit beigebracht, ueber einen roten… | behoben 2026-09-15                                                                         | 2026-09-15 |
+| OP-272 | Ein automatischer Image-Rollback startete einen Build aus der Zeit vor dem Migrations-Ledger — und dessen Ent… | behoben 2026-09-15                                                                         | 2026-09-15 |

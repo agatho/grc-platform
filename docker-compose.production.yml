@@ -260,6 +260,10 @@ services:
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       RUN_SEEDS: ${RUN_SEEDS:-false}
+      # [OP-272] deploy/rollback.sh sets this for the rolled-back container: the
+      # database is always newer than an old image, so the old image must not
+      # migrate. Regular deploys leave it unset.
+      SKIP_MIGRATIONS: ${SKIP_MIGRATIONS:-false}
       # #SEC-F04: SEED_DEMO_DATA seeds accounts with KNOWN passwords — keep
       # false on any instance with real data. Even if set to true, the
       # entrypoint refuses in production unless ALLOW_DEMO_SEED_IN_PROD=true

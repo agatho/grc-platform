@@ -3781,3 +3781,72 @@ dass die https-URL beim Skript ankommt.
 `curl` geprueft, das Cookies gar nicht kennt. Sie konnten diesen Fehler
 grundsaetzlich nicht finden: eine Attrappe prueft nur, was sie nachbildet. Die
 Behebung ist erst bestaetigt, wenn die Pruefung auf dem Server gruen laeuft.
+
+### Nachtrag 2026-09-15 — OP-272: ein Rollback, der die Datenbank zurueckdrehte, ohne es zu wollen
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Beleg                                                                                                                                                                                                                                                                                                                                           | Art                  | Stand                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- | ---------------------- |
+| OP-272 | **Ein automatischer Image-Rollback startete einen Build aus der Zeit vor dem Migrations-Ledger — und dessen Entrypoint spielte 0000–0381 gegen die aktuelle Datenbank neu ein.** Folgen auf `grc_platform`: `reporting_bypass`-Policies wieder aktiv (RLS-Umgehung per GUC, von 0390 entfernt), rund 130 ueberholte Policies neben den aktuellen, `audit_trigger()` und die Tombstone-Funktionen auf Altstand, 440 Trigger unter alten Namen, RLS auf den fuenf Log-Tabellen abgeschaltet — deren Reparatur durch den RLS-Waechter brach **jeden Login** (`access_log`-INSERT an RLS gescheitert, 42501). `rollback.sh` verweigert jetzt Images ohne Ledger, startet jeden Rollback mit `SKIP_MIGRATIONS=true` und zeigt Baudatum und eingebettete Revision; `update-all.sh` meldet, was ein Rollback-Schnappschuss wirklich enthaelt. | Diagnose 2026-09-15: `arctos_rls_guard_event` 09:38:12 (fuenf Tabellen, eine Transaktion); `docker image inspect arctos-rollback/grc-web:7b9c3604e2bc` → gebaut 2026-07-28, kein `_arctos_migrations` im Entrypoint, neueste Migration 0381; Schema-Vergleich gegen `grc_daimon` (135 Policies, 17 Funktionen, 440 Trigger, 1 Regel abweichend) | Sicherheit / Betrieb | **behoben 2026-09-15** |
+
+**Wie es gefunden wurde.** Die Pilot-Readiness-Pruefung (OP-271) scheiterte an
+„Session not established after login“. Das Passwort war korrekt
+(`last_login_at` gesetzt), aber das Protokollieren des erfolgreichen Logins
+scheiterte an RLS; der Sammel-`catch` im Credentials-Provider machte daraus
+`CredentialsSignin`. `access_log` war leer — auf `grc_platform` hatte
+sich seit dem Neuaufbau niemand anmelden koennen. Statt der vier Policies aus
+0396 trug die Tabelle nur `access_log_org_isolation`, eine Reparatur des
+RLS-Waechters aus 0477, datiert 2026-09-14 09:38:12 — zeitgleich fuer alle
+fuenf Tabellen, die 0379 anfasst. Ein Vergleich aller Policies, Funktionen,
+Trigger und Regeln gegen `grc_daimon` zeigte dann, dass es nicht bei den
+Log-Tabellen geblieben war.
+
+**Die Ursache.** Um 09:37 scheiterte ein Deploy am Health-Gate (damals
+`SEED_DEMO_DATA=true`), und `update-all.sh` rollte automatisch auf
+`arctos-rollback/grc-web:7b9c3604e2bc` zurueck. **Der Name taeuschte.**
+`update-all.sh:437` benennt den Schnappschuss nach dem Checkout
+(`OLD_COMMIT`), nicht nach dem Inhalt. Fruehere, abgebrochene Laeufe desselben
+Tages hatten den Checkout schon vorgezogen, waehrend der Container noch den
+Build vom 2026-07-28 fuhr. Dessen Entrypoint stammt aus der Zeit vor
+`f6eafc23` (2026-09-01): kein Ledger, also bei jedem Start das **gesamte**
+Migrationsverzeichnis erneut, `ON_ERROR_STOP=0`. Im Image lagen 0000 bis 0381.
+Die alten Dateien legten wieder an, was spaetere Migrationen entfernt oder
+umbenannt hatten — und keine spaetere lief hinterher, weil das Image sie nicht
+enthielt.
+
+**Warum `SKIP_MIGRATIONS` allein nicht reicht.** Die Variable kam im selben
+Commit wie der Ledger. Ein Image von davor kennt beides nicht; keine
+Umgebungsvariable macht es ungefaehrlich. Deshalb verweigert `rollback.sh`
+solche Images **bevor** ein Container angefasst wird (Probe: `grep
+_arctos_migrations` im Entrypoint des Images; eine gescheiterte Probe gilt als
+„kein Ledger“). Fuer Images mit Ledger setzt der Rollback zusaetzlich
+`SKIP_MIGRATIONS=true`: die Datenbank ist nach einem Image-Rollback per
+Definition neuer als das Image. `docker-compose.production.yml` reicht die
+Variable jetzt an `web` durch; der naechste regulaere Deploy erzeugt den
+Container ohne sie.
+
+**Gegenprobe.** `rollback_image()` unter `set -euo pipefail` mit einem
+protokollierenden `docker`-Stub: Image ohne Ledger → verweigert, **0**
+Umtaggungen, **0** Containerstarts; Image mit Ledger → Start mit
+`SKIP_MIGRATIONS=true`; ausdrueckliche Freigabe → Start mit Hinweis; falsch
+benanntes Image → Warnung mit tatsaechlicher Revision.
+
+**Was auf dem Server geschah.** Log-Tabellen-Policies zunaechst aus
+`grc_daimon` uebernommen (Login wieder moeglich). Weil die Abweichungen weit
+darueber hinausgingen, wurde `grc_platform` am 2026-09-15 verworfen und neu
+aufgebaut (Ledger beginnt am 2026-09-15; Demo-Daten mit `assets 10`,
+Pruefkonto, Pilot-Readiness-Pruefung bestanden). Im selben Arbeitsblock liefen
+zuvor die Probe und das Entfernen aller Rollback-Images ohne Ledger.
+`grc_daimon` und `grc_qumasoft` sind in allen fuenf Kategorien (RLS-Flags,
+Policies, Funktionen, Trigger, Regeln) identisch und damit eine belastbare
+Referenz; der Nachweis fuer den Neuaufbau ist derselbe Vergleich
+`grc_platform` gegen `grc_daimon`. Die drei Mandanten waren nicht betroffen:
+sie wurden erst nach dem Rollback mit dem neuen Code aufgebaut.
+
+**Zwei Lehren, beide unbequem.** Erstens: der Deploy hatte an dieser Stelle
+**zwei** Schutzmassnahmen, die beide funktionierten — der automatische
+Rollback und der RLS-Waechter —, und zusammen haben sie den Schaden erst
+erzeugt und dann so repariert, dass der Login brach. Eine Sicherung, die nicht
+prueft, was sie zurueckholt, ist ein zweiter Deploy ohne Tests. Zweitens:
+sichtbar wurde es nicht durch eine Pruefung des Schemas, sondern weil ein
+eigens gebauter Abnahmetest sich anmelden wollte. Ohne OP-271 haette die
+Instanz mit wiederhergestellter RLS-Umgehung weitergelaufen.
