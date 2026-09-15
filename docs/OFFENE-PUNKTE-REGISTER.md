@@ -3682,3 +3682,70 @@ Runner behoben), OP-270 (Referenzdaten nur im Runner). Ein Test in
 `packages/db/tests/unit/seed-wiring.test.ts` haelt die Projektion in beiden
 Wegen fest und prueft ihre Position hinter der Katalog-Schleife;
 gegengeprueft, indem die Zeilen aus dem Skript entfernt wurden (1 von 13 rot).
+
+### Nachtrag 2026-09-15 — OP-271: ein Gate, das nie gruen werden konnte
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Beleg                                                                                     | Art                                  | Stand                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------- |
+| OP-271 | **Das Pilot-Readiness-Gate konnte vor dem Merge nie gruen werden — und hat damit beigebracht, ueber einen roten Check zu mergen.** Der CI-Job pruefte gegen eine Staging-URL, deren Secrets nie gesetzt waren; und selbst mit Secrets haette der seit #S13-30 verbindliche SHA-Abgleich gefehlt, weil nichts den Commit eines PR vor dem Merge nach Staging deployt. Rot auf jedem PR seit #S13-30, darunter #449–#452; #451 und #452 wurden trotzdem gemergt. Jetzt Schritt 6b von `deploy/update-all.sh` gegen die gerade deployte Instanz, standardmaessig nur lesend (A1/B4/C3 legen Datensaetze an und laufen nur mit `PILOT_GATE_MODE=full`); der Org-Wechsel auf die fest verdrahtete Demo-Organisation ist optional. | Eigentuemer am 2026-09-15: „ci has to be green first“; Entscheidung „Run it after deploy“ | Betrieb (eigener Fehler beim Mergen) | **behoben 2026-09-15** |
+
+**Was passiert ist.** #451 und #452 habe ich gemergt, obwohl der Check
+„Pilot Readiness Gate“ rot war — mit der Begruendung, er sei auf
+jedem PR rot und nicht meiner. Beides stimmte. Es war trotzdem falsch: ein
+Check, der immer rot ist, ist kein Grund zum Ignorieren, sondern ein Defekt,
+und wer ihn wegerklaert, macht aus einem Gate eine Gewohnheit. Der Eigentuemer
+hat es in einem Satz gesagt: „ci has to be green first“.
+
+**Warum das Gate so nie gruen werden konnte.** Zwei unabhaengige Gruende:
+
+1. Die Secrets `STAGING_URL`, `STAGING_ADMIN_EMAIL` und
+   `STAGING_ADMIN_PASSWORD` sind im Repository nie gesetzt worden.
+2. Selbst mit Secrets: #S13-30 hat den Build-SHA-Abgleich zu Recht
+   verbindlich gemacht — das Gate prueft, ob auf Staging **der Commit des PR**
+   laeuft. Nichts deployt einen PR-Commit vor dem Merge nach Staging, und es
+   gibt keine eigene Staging-Instanz; der einzige Server laeuft auf `main`.
+
+#S13-30 hat also einen stillen Skip durch einen dauerhaften Fehlschlag
+ersetzt. Das war ehrlicher, aber kein Gate: eine Pruefung, die unabhaengig vom
+Code immer rot ist, sagt ueber den Code nichts.
+
+**Entscheidung des Eigentuemers (2026-09-15):** die Pruefungen nach dem Deploy
+laufen lassen, nicht vor dem Merge. Verworfen wurden: Admin-Zugangsdaten des
+echten Servers in GitHub-Secrets bei abgeschaltetem SHA-Abgleich (prueft
+`main` statt des PR, Passwort bei GitHub) und eine echte
+Staging-Pipeline (richtig, aber ein eigenes Infrastrukturprojekt).
+
+**Was das an der Stelle aendert, an der es jetzt laeuft.** Die Pruefungen
+laufen gegen eine Instanz mit echten Daten hinter einem append-only
+Audit-Trail. A1, B4 und C3 **legen** einen Befund, einen Kontrolltest und
+einen Vertrag **an** — bei jedem Deploy stuenden Testdatensaetze im Audit-Log
+eines GRC-Systems. Das Skript hat deshalb jetzt `PILOT_GATE_MODE`:
+`read-only` (Standard) ueberspringt die drei, `full` ist fuer eine
+Wegwerf-Staging-Instanz. Gegengeprueft mit einem Attrappen-`curl`, das jeden
+Aufruf protokolliert: `full` sendet 3 datenanlegende POSTs, `read-only`
+sendet 0. Die uebrigen schreibenden Aufrufe im Lesemodus sind die Anmeldung,
+ein PUT auf Platzhalter-IDs (404) und ein POST mit ungueltigem Rumpf (422) —
+beide legen nichts an.
+
+Der Org-Wechsel ging bisher fest auf `ccc4cc1c-…`, die Demo-Organisation
+aus dem rohen Demo-SQL. `seed-all.ts` ersetzt diese ID, eine echte Instanz
+hat sie gar nicht — der Wechsel war dort ein sicherer Abbruch. Er ist jetzt
+optional (`PILOT_GATE_ORG_ID`).
+
+**In `update-all.sh`.** Schritt 6b nach dem Health-Gate, gegen
+`http://127.0.0.1:3000`, mit `EXPECTED_STAGING_SHA=$NEW_COMMIT` — der
+SHA-Abgleich ist hier per Konstruktion wahr, weil das Skript genau diesen
+Commit gerade gebaut hat. Fehlen die Zugangsdaten, `jq` oder das Skript,
+wird das **ausgegeben und in `deploy-history.jsonl` vermerkt**, nicht still
+uebersprungen (#S13-30). Schlaegt eine Pruefung fehl, wird der Deploy als
+gescheitert markiert, aber **nicht automatisch zurueckgerollt**: die Container
+haben das Health-Gate bestanden, und ein roter Abnahmepunkt (etwa die
+Hash-Kette) wird von einem aelteren Image nicht zwingend repariert. Alle drei
+Ausgaenge (nicht konfiguriert / bestanden / gescheitert) sind unter
+`set -euo pipefail` gegengeprueft — genau die Schalter, an denen OP-266 mit
+einem stillen `grep` gescheitert war.
+
+**Offen:** Zugangsdaten eines eigens angelegten Admin-Kontos in
+`/opt/arctos/.env` eintragen (`PILOT_GATE_ADMIN_EMAIL`,
+`PILOT_GATE_ADMIN_PASSWORD`); bis dahin meldet jeder Deploy den Schritt als
+„NOT RUN“.

@@ -1575,44 +1575,17 @@ jobs:
           retention-days: 365
 
   # ────────────────────────────────────────────────
-  # 6. Pilot-Readiness-Gate (Wave-23)
+  # 6. Pilot-Readiness-Gate — moved out of CI (#OP-271)
   #
-  # Runs scripts/pilot-readiness-gate.sh against the staging URL.
-  # Verifies the W23 acceptance items live: A1 finding FK persistence,
-  # A2 /admin/branding never-500, C3 contracts name-alias never-500,
-  # plus hash-chain integrity. Required for merge to main.
+  # This job ran scripts/pilot-readiness-gate.sh against a staging URL before
+  # merge. It could never pass: nothing deploys a PR's head commit to
+  # staging, so the script's build-SHA check failed by construction, and the
+  # STAGING_* secrets were never configured. Every PR since #S13-30 was red on
+  # it, which trained everyone to merge over a red check.
   #
-  # [ARCTOS-FULL-2026-08-31 / WP10 · S13-30] Der Skip ist nicht mehr
-  # bedingungslos. Ohne STAGING_URL failt das Gate — ausser bei einem
-  # Fork-PR, wo GitHub Secrets bauartbedingt nicht bereitstellt; das meldet
-  # das Skript als NOT_APPLICABLE, nicht als bestanden. Zusaetzlich failt
-  # es, wenn auf Staging ein anderer Commit laeuft als der gepruefte.
-  # ────────────────────────────────────────────────
-  pilot-readiness-gate:
-    name: Pilot Readiness Gate
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    needs: [unit-tests, integration-tests]
-    # Only on PRs targeting main — push to main means the merge already
-    # happened, gate is informational at that point.
-    if: github.event_name == 'pull_request' && github.base_ref == 'main'
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Run pilot-readiness-gate against staging
-        env:
-          STAGING_URL: ${{ secrets.STAGING_URL }}
-          STAGING_ADMIN_EMAIL: ${{ secrets.STAGING_ADMIN_EMAIL }}
-          STAGING_ADMIN_PASSWORD: ${{ secrets.STAGING_ADMIN_PASSWORD }}
-          # #S13-30: das Skript unterscheidet Fork-PR (Secrets bauartbedingt
-          # nicht verfuegbar) von "Secret fehlt" nur, wenn es das
-          # Head-Repository kennt.
-          GITHUB_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          # #S13-30: gegen welchen Commit die Aussage gilt.
-          EXPECTED_STAGING_SHA: ${{ github.event.pull_request.head.sha }}
-        run: bash scripts/pilot-readiness-gate.sh
-
+  # The checks now run at the end of deploy/update-all.sh (step 6b), against
+  # the instance that was just built from the deployed commit — read-only by
+  # default. See the "Mode" block in the script.
   # ────────────────────────────────────────────────
   # 7. Security audit
   # ────────────────────────────────────────────────

@@ -151,28 +151,65 @@ fi
 echo "✓ Authenticated as ${SESSION_USER}"
 
 # ────────────────────────────────────────────────────────────
-# Org context: switch to the demo tenant so the data assertions
-# below see populated seed data. Admin lands in their first org
-# by default (often a fresh/empty tenant); the demo seeds live
-# in the Meridian Demo tenant.
-# Override via STAGING_DEMO_ORG_ID env var if your staging uses
-# a different tenant id.
+# Mode (#OP-271)
+#
+# The gate used to run in CI against a staging instance, before merge. It
+# could never pass there: nothing deploys a PR's head commit to staging, so
+# the build-SHA check above failed by construction, and the STAGING_* secrets
+# were never configured. It now runs at the end of `deploy/update-all.sh`,
+# against the instance that was just deployed — where the SHA check is true
+# by construction.
+#
+# That instance holds real data behind an append-only audit trail. A1, B4 and
+# C3 CREATE a finding, a control test and a contract; running them on every
+# deploy would leave test records in the audit log of a production GRC
+# system. They therefore only run with PILOT_GATE_MODE=full, which is meant
+# for a disposable staging instance. The default is read-only.
 # ────────────────────────────────────────────────────────────
-STAGING_DEMO_ORG_ID="${STAGING_DEMO_ORG_ID:-ccc4cc1c-4b09-499c-8420-ebd8da655cd7}"
-SWITCH_RES=$(curl -sS -m 10 -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
-  -X POST -H "Content-Type: application/json" \
-  "${STAGING_URL}/api/v1/auth/switch-org" \
-  -d "{\"orgId\":\"${STAGING_DEMO_ORG_ID}\"}")
-if [[ "$(echo "$SWITCH_RES" | jq -r '.ok // false')" != "true" ]]; then
-  echo "::error::Org-switch to ${STAGING_DEMO_ORG_ID} failed: $SWITCH_RES"
-  exit 1
+PILOT_GATE_MODE="${PILOT_GATE_MODE:-read-only}"
+case "$PILOT_GATE_MODE" in
+  read-only|full) ;;
+  *)
+    echo "::error::PILOT_GATE_MODE must be 'read-only' or 'full', got '${PILOT_GATE_MODE}'"
+    exit 1
+    ;;
+esac
+echo "ℹ Mode: ${PILOT_GATE_MODE}"
+SKIPPED="skipped (read-only)"
+BRAND_CODE="n/a"; C3_CODE="$SKIPPED"; B4_CODE="$SKIPPED"; CTRL=""
+
+# ────────────────────────────────────────────────────────────
+# Org context (#OP-271: optional)
+#
+# This used to switch unconditionally to the Meridian demo org
+# `ccc4cc1c-…`. That id only exists where the raw demo SQL was loaded;
+# `seed-all.ts` replaces it with a generated id, and a real instance has no
+# demo org at all — the switch failed and ended the gate. Without
+# STAGING_DEMO_ORG_ID the admin's default org is used.
+# ────────────────────────────────────────────────────────────
+STAGING_DEMO_ORG_ID="${STAGING_DEMO_ORG_ID:-}"
+if [[ -n "$STAGING_DEMO_ORG_ID" ]]; then
+  SWITCH_RES=$(curl -sS -m 10 -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+    -X POST -H "Content-Type: application/json" \
+    "${STAGING_URL}/api/v1/auth/switch-org" \
+    -d "{\"orgId\":\"${STAGING_DEMO_ORG_ID}\"}")
+  if [[ "$(echo "$SWITCH_RES" | jq -r '.ok // false')" != "true" ]]; then
+    echo "::error::Org-switch to ${STAGING_DEMO_ORG_ID} failed: $SWITCH_RES"
+    exit 1
+  fi
+  echo "✓ Org context set to ${STAGING_DEMO_ORG_ID:0:8}..."
+else
+  echo "ℹ No STAGING_DEMO_ORG_ID — using the admin's default org"
 fi
-echo "✓ Org context set to ${STAGING_DEMO_ORG_ID:0:8}..."
 
 # ────────────────────────────────────────────────────────────
 # A1 — POST /findings persists controlId from body
+# (writes a finding — full mode only, see "Mode" above)
 # ────────────────────────────────────────────────────────────
 echo ""
+if [[ "$PILOT_GATE_MODE" != "full" ]]; then
+  echo "▶ A1: POST /findings persists controlId — ${SKIPPED}"
+else
 echo "▶ A1: POST /findings persists controlId"
 CTRL=$(curl -fsS -m 10 -b "$COOKIE_JAR" \
   "${STAGING_URL}/api/v1/controls?limit=1" | jq -r '.data[0].id // empty')
@@ -204,6 +241,7 @@ if [[ "$PERSISTED_CTRL" != "$CTRL" ]]; then
   exit 1
 fi
 echo "✓ A1 passed (controlId persisted as ${CTRL:0:8}...)"
+fi
 
 # ────────────────────────────────────────────────────────────
 # A2 — /admin/branding returns 200 or 501, never 500
@@ -222,6 +260,9 @@ echo "✓ A2 passed (branding returned ${BRAND_CODE})"
 # C3 — Contract POST {name:'X'} never 500
 # ────────────────────────────────────────────────────────────
 echo ""
+if [[ "$PILOT_GATE_MODE" != "full" ]]; then
+  echo "▶ C3: POST /contracts {name:'X'} never 500 — ${SKIPPED}"
+else
 echo "▶ C3: POST /contracts {name:'X'} never 500"
 C3_CODE=$(curl -sS -m 10 -o /dev/null -w "%{http_code}" \
   -b "$COOKIE_JAR" -H "content-type: application/json" \
@@ -238,6 +279,7 @@ if [[ "$C3_CODE" != "201" && "$C3_CODE" != "422" ]]; then
   echo "::warning::C3 unexpected status ${C3_CODE} (acceptable: 201 or 422)"
 fi
 echo "✓ C3 passed (contracts returned ${C3_CODE})"
+fi
 
 # ────────────────────────────────────────────────────────────
 # Hash-Chain integrity — Wave-23-Vorbedingung
@@ -309,6 +351,9 @@ echo "✓ B3 passed (status=${B3_CODE})"
 
 # B4 — POST /control-tests succeeds with a valid body.
 echo ""
+if [[ "$PILOT_GATE_MODE" != "full" ]]; then
+  echo "▶ B4: POST /control-tests {valid body} → 201 — ${SKIPPED}"
+else
 echo "▶ B4: POST /control-tests {valid body} → 201"
 # Reuse the control from A1 — already verified to exist.
 B4_CODE=$(curl -sS -m 15 -o /dev/null -w "%{http_code}" \
@@ -320,6 +365,7 @@ if [[ "$B4_CODE" != "201" ]]; then
   exit 1
 fi
 echo "✓ B4 passed (status=${B4_CODE})"
+fi
 
 # C1 — Hash-chain v3 continuity proof.
 echo ""
@@ -441,7 +487,12 @@ echo "✓ W25-C3 passed (metricId=${W25_C3_MID:0:8}...)"
 echo ""
 echo "✅ Pilot-Readiness-Gate PASSED"
 echo "   Staging SHA: ${PROD_SHA:0:8}"
-echo "   W23 A1 controlId persistence: ✓"
+echo "   Mode: ${PILOT_GATE_MODE}"
+if [[ "$PILOT_GATE_MODE" == "full" ]]; then
+  echo "   W23 A1 controlId persistence: ✓"
+else
+  echo "   W23 A1 controlId persistence: ${SKIPPED}"
+fi
 echo "   W23 A2 /admin/branding: ${BRAND_CODE}"
 echo "   W23 C3 /contracts {name}: ${C3_CODE}"
 echo "   W24 B1 /audit-log/integrity: ${B1_CODE}"
