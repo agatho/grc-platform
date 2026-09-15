@@ -103,7 +103,7 @@ describe("SQL-Seed-Helfer (OP-269)", () => {
     for (const f of sqlDateien.filter((f) => f.startsWith("seed_catalog_"))) {
       const text = readFileSync(join(SQL_DIR, f), "utf-8");
       for (const lit of text.matchAll(/'([a-z0-9_]{4,})'/g)) {
-        deklariert.add(lit[1]);
+        if (lit[1]) deklariert.add(lit[1]);
       }
     }
 
@@ -115,8 +115,9 @@ describe("SQL-Seed-Helfer (OP-269)", () => {
       for (const m of text.matchAll(
         /insert_mapping\(\s*'[^']*'\s*,\s*'([^']+)'\s*,\s*'[^']*'\s*,\s*'([^']+)'/g,
       )) {
-        verlangt.set(m[1], f);
-        verlangt.set(m[2], f);
+        const [, quellKatalog, zielKatalog] = m;
+        if (quellKatalog) verlangt.set(quellKatalog, f);
+        if (zielKatalog) verlangt.set(zielKatalog, f);
       }
     }
     expect(verlangt.size).toBeGreaterThan(5);
