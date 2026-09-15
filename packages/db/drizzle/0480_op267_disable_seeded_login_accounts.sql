@@ -8,63 +8,60 @@
 -- Reviewer: audit/full-2026-08-31
 --
 -- ============================================================================
--- [ARCTOS-FULL-2026-08-31 · OP-267] Migrationen legten anmeldefaehige Konten
--- mit einem veroeffentlichten Passwort an — in JEDER frisch migrierten
--- Datenbank.
+-- [ARCTOS-FULL-2026-08-31 · OP-267] Migrations created login-capable accounts
+-- with a published password — in EVERY freshly migrated database.
 -- ============================================================================
 --
--- Gefunden am 2026-09-14 beim Wiederaufbau der drei Mandanten-Datenbanken.
--- `grc_qumasoft` sollte laut eigenem Runbook GENAU EIN Konto enthalten
--- (`admin@qumasoft.de`). Gezaehlt wurden 35. Die 34 zusaetzlichen stammen aus
--- Migrationen, nicht aus einem Seed:
+-- Found on 2026-09-14 while rebuilding the three tenant databases.
+-- `grc_qumasoft` should hold EXACTLY ONE account according to its own runbook
+-- (`admin@qumasoft.de`). It held 35. The 34 extra ones come from migrations,
+-- not from a seed:
 --
 --   0316_seed_rbac_test_users.sql                13 × @arctos.test
 --   0317_seed_rbac_login_users.sql                9 × @meridian.test
---   0318_user_role_enum_backfill_and_rbac_retry   (Wiederholung von 0316/0317)
+--   0318_user_role_enum_backfill_and_rbac_retry   (repeat of 0316/0317)
 --   0326_seed_arctistx_rbac_users.sql             4 × @arctistx.test
 --   0346_seed_bcm_security_external_auditor_users 3 × @meridian.test
---   0096_additional_system_roles.sql              6 × @arctos.dev (namentlich)
+--   0096_additional_system_roles.sql              6 × @arctos.dev (named)
 --
--- Der Kern des Befunds ist nicht die Zahl, sondern der WEG. Das Projekt hat
--- fuer genau diesen Fall drei Schalter gebaut — `SEED_DEMO_DATA`,
--- `ALLOW_DEMO_SEED_IN_PROD` (#SEC-F04) und `ALLOW_PRODUCTION_SEED` —, und der
--- Waechter `scripts/assert-runtime-config.mjs` verweigert den Start, wenn die
--- ersten beiden gesetzt sind. Alle drei greifen ausschliesslich im SEED-Pfad.
--- Eine Migration laeuft daran vorbei: sie ist unbedingt, sie laeuft auf jeder
--- Datenbank, und sie laeuft, BEVOR irgendein Schalter gelesen wird. Auf dem
--- Mandanten stand `RUN_SEEDS=false` — die Konten waren trotzdem da.
+-- The heart of the finding is not the number but the PATH. The project built
+-- three switches for exactly this case — `SEED_DEMO_DATA`,
+-- `ALLOW_DEMO_SEED_IN_PROD` (#SEC-F04) and `ALLOW_PRODUCTION_SEED` — and the
+-- guard `scripts/assert-runtime-config.mjs` refuses to start when the first
+-- two are set. All three act on the SEED path only. A migration walks past
+-- them: it is unconditional, it runs on every database, and it runs BEFORE
+-- any switch is read. The tenant had `RUN_SEEDS=false`; the accounts were
+-- there anyway.
 --
--- 0317 nennt das Passwort in der eigenen Kopfzeile im Klartext, und das
--- Repository ist oeffentlich; 0326 und 0346 benutzen denselben bcrypt-Hash.
--- Das sind 15 anmeldefaehige Konten je Datenbank mit einem Passwort, das
--- jeder lesen kann. Die 13 aus 0316 tragen einen Platzhalter-Hash und koennen
--- sich nicht anmelden — sie werden trotzdem stillgelegt: ein Konto, das
--- niemand braucht, ist ein Konto zu viel.
+-- 0317 states the password in plain text in its own header, and the
+-- repository is public; 0326 and 0346 use the same bcrypt hash. That is 15
+-- login-capable accounts per database with a password anyone can read. The 13
+-- from 0316 carry a placeholder hash and cannot log in — they are neutralized
+-- all the same: an account nobody needs is one account too many.
 --
--- Warum eine NEUE Migration und keine Korrektur der sechs alten: nach ADR-014
--- gilt eine ausgelieferte Migration als unveraenderlich. Diese sechs SIND
--- ausgeliefert — sie sind am 2026-09-14 gegen vier produktive Datenbanken
--- gelaufen. Der Ledger haelt sie fest; eine Aenderung an den Dateien wuerde
--- auf keiner bestehenden Instanz mehr ausgefuehrt und dort genau nichts
--- bewirken. Nur ein Vorwaertsschritt erreicht Bestand UND Neuinstallation.
+-- Why a NEW migration and not a correction of the six old ones: under ADR-014
+-- a delivered migration is immutable. These six ARE delivered — they ran
+-- against four production databases on 2026-09-14. The ledger records them; a
+-- change to the files would never execute again on any existing instance and
+-- would achieve exactly nothing there. Only a forward step reaches both the
+-- installed base and new installations.
 --
--- Vorgehen wie in `deploy/purge-demo-accounts.sh` (#SEC-F04): KEIN hartes
--- DELETE. Auf `user.id` zeigen zahlreiche nullable Referenzen, und die
--- Audit-Historie soll erhalten bleiben. Stattdessen deaktivieren,
--- soft-loeschen und den Hash unbrauchbar machen — der Credentials-Provider
--- verlangt `is_active = true AND deleted_at IS NULL` und einen gueltigen
--- Hash, jede der drei Aenderungen genuegt fuer sich.
+-- Approach as in `deploy/purge-demo-accounts.sh` (#SEC-F04): NO hard DELETE.
+-- Many nullable references point at `user.id`, and the audit history should
+-- survive. Instead deactivate, soft-delete and make the hash unusable — the
+-- credentials provider requires `is_active = true AND deleted_at IS NULL` and
+-- a valid hash, so any one of the three changes is sufficient on its own.
 --
--- Idempotent: die WHERE-Klausel fasst nur an, was noch nicht stillgelegt ist.
+-- Idempotent: the WHERE clause only touches what is not already neutralized.
 -- ============================================================================
 
--- Die drei Domains sind nach RFC 6761 reserviert (`.test`) und koennen daher
--- niemals ein echtes Konto bezeichnen — hier ist ein Muster zulaessig.
--- Bei `@arctos.dev` ist es das NICHT: dort legt `packages/db/src/seed.ts` die
--- echten Betriebskonten an (`admin@arctos.dev` und die Rollen-Demo-Konten,
--- deren Passwort der Seed zufaellig erzeugt). Ein Muster auf diese Domain
--- wuerde den Administrator jeder Installation aussperren. Die sechs Konten
--- aus 0096 werden deshalb namentlich genannt.
+-- The three domains are reserved by RFC 6761 (`.test`) and can therefore never
+-- denote a real account — a pattern is safe there. For `@arctos.dev` it is
+-- NOT: that is where `packages/db/src/seed.ts` creates the real operational
+-- accounts (`admin@arctos.dev` and the role demo accounts, whose password the
+-- seed generates randomly). A pattern on that domain would lock the
+-- administrator out of every installation. The six accounts from 0096 are
+-- therefore named individually.
 UPDATE "user"
    SET is_active     = false,
        deleted_at    = COALESCE(deleted_at, now()),
@@ -89,11 +86,10 @@ UPDATE "user"
      OR password_hash NOT LIKE 'DISABLED-DEMO-ACCOUNT-%'
    );
 
--- Rollenzuweisungen derselben Konten mit stilllegen. Auf den vier
--- Datenbanken vom 2026-09-14 war das ein No-Op (0317 haengt seine
--- `INSERT ... SELECT ... WHERE EXISTS` an eine fest verdrahtete Org-UUID, die
--- dort nicht existierte) — auf einer Datenbank, auf der die Org existiert,
--- ist es kein No-Op.
+-- Neutralize the role assignments of the same accounts. On the four databases
+-- of 2026-09-14 this was a no-op (0317 attaches its
+-- `INSERT ... SELECT ... WHERE EXISTS` to a hardcoded org UUID that does not
+-- exist there) — on a database where that org does exist, it is not.
 UPDATE user_organization_role
    SET deleted_at = now()
  WHERE deleted_at IS NULL

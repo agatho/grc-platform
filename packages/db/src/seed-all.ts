@@ -49,22 +49,21 @@ const REFERENCE_SEEDS = [
   "seed_esrs_datapoints.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
-  // [OP-269] v2 bis v5 fehlten hier. Dieser Runner spielte damit 89 von 943
-  // Zuordnungen ein — und weil v1 seinen Helfer `insert_mapping()` am Ende
-  // wegraeumte, scheiterten dieselben vier Dateien auch auf dem einzigen
-  // anderen Weg (`deploy/seed-catalogs.sh`) restlos. Der DROP ist raus, die
-  // Reihenfolge ist hier bindend: v1 definiert den Helfer, den v2 bis v5
-  // benutzen und selbst nicht definieren.
+  // [OP-269] v2 to v5 were missing here, so this runner loaded 89 of 943
+  // mappings — and because v1 dropped its `insert_mapping()` helper at the
+  // end, the same four files also failed completely on the only other path
+  // (`deploy/seed-catalogs.sh`). The DROP is gone; the order below is binding:
+  // v1 defines the helper that v2 to v5 use and never define themselves.
   "seed_cross_framework_mappings_v2.sql",
   "seed_cross_framework_mappings_v3.sql",
   "seed_cross_framework_mappings_v4.sql",
   "seed_cross_framework_mappings_v5.sql",
-  // [OP-268] Projiziert Annex A nach `control_catalog_entry`. MUSS vor
-  // `seed_demo_01_assets_isms.sql` laufen: dessen SoA-Teil loest
-  // `catalog_entry_id` ueber den Annex-A-Code aus dieser Tabelle auf, und die
-  // Spalte ist NOT NULL. Fehlt die Projektion, bricht die ganze Datei ab und
-  // nimmt Assets, Bedrohungen und Schwachstellen mit — gemessen am
-  // 2026-09-14 auf `grc_platform`: `assets 0`.
+  // [OP-268] Projects Annex A into `control_catalog_entry`. MUST run before
+  // `seed_demo_01_assets_isms.sql`: its SoA part resolves `catalog_entry_id`
+  // from this table by Annex A code, and the column is NOT NULL. Without the
+  // projection the whole file aborts and takes assets, threats and
+  // vulnerabilities with it — measured on `grc_platform` 2026-09-14:
+  // `assets 0`.
   "seed_control_catalog_annex_a.sql",
 ];
 
@@ -114,12 +113,11 @@ async function main() {
   for (const file of REFERENCE_SEEDS) {
     try {
       const sql = readFileSync(join(SQL_DIR, file), "utf-8");
-      // [OP-268] Das Haekchen stand hier VOR dem `await`. Phase 1 meldete
-      // damit jede Datei als gelungen, sobald sie gelesen war; eine
-      // gescheiterte Datei erschien mit ✓ UND ✗. Im Protokoll des Deploys vom
-      // 2026-09-14 steht `seed_cross_framework_mappings.sql` genau so zweimal.
-      // Phase 2 macht es seit jeher richtig — hier war es schlicht falsch
-      // herum.
+      // [OP-268] The tick used to be printed BEFORE the `await`, so phase 1
+      // reported every file as successful as soon as it had been read; a
+      // failing file appeared with ✓ AND ✗. That is why
+      // `seed_cross_framework_mappings.sql` shows up twice in the deploy log
+      // of 2026-09-14. Phase 2 has always had it the right way round.
       await client.unsafe(sql);
       console.log(`  ✓ ${file}`);
     } catch (err) {

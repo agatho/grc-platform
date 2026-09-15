@@ -212,10 +212,10 @@ jobs:
       - name: Kein apt-Zugriff ohne abgeschaltete Fremdquellen
         run: node scripts/check-apt-sources.mjs
 
-      # [ARCTOS-FULL-2026-08-31 · OP-267] Sechs Migrationen legten
-      # anmeldefaehige Konten an — unbedingt, auf jeder Datenbank, an allen
-      # drei Demo-Seed-Schaltern vorbei. Sechs Faelle sind eine Klasse.
-      - name: Keine anmeldefaehigen Konten aus Migrationen
+      # [ARCTOS-FULL-2026-08-31 · OP-267] Six migrations created login-capable
+      # accounts — unconditionally, on every database, past all three demo-seed
+      # switches. Six cases are a class.
+      - name: No login-capable accounts from migrations
         run: node scripts/check-migration-credentials.mjs
 
       # [ARCTOS-FULL-2026-08-31 · OP-259/260] Was der eine Dienst schreibt und

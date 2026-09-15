@@ -96,31 +96,30 @@ run_sql() {
   if [ "$VERBOSE" = "1" ]; then
     printf '%s\n' "$output" | sed 's/^/      /'
   else
-    # Zeige nur ERROR/FATAL/WARNING-Zeilen.
+    # Show ERROR/FATAL/WARNING lines only.
     #
-    # [OP-269] Das Muster war auf den Zeilenanfang verankert —
-    # `^(ERROR|FATAL|WARNING):`. psql schreibt aber
+    # [OP-269] The pattern was anchored to the start of the line —
+    # `^(ERROR|FATAL|WARNING):`. But psql writes
     # `psql:/dev/stdin:24: ERROR:  function insert_mapping(...) does not exist`,
-    # stellt also Datei und Zeilennummer VORAN. Der Filter hat deshalb nie
-    # etwas gefunden, und 854 fehlgeschlagene Aufrufe liefen ohne eine einzige
-    # sichtbare Zeile durch. Der Kommentar daneben sagte sogar „psql prepends
-    # diese" — und die Verankerung blieb trotzdem stehen.
+    # i.e. it PREPENDS file and line number. The filter therefore never matched
+    # anything, and 854 failed calls went through without a single visible
+    # line. The comment next to it even said "psql prepends diese" — and the
+    # anchor stayed anyway.
     local errs
     errs=$(printf '%s\n' "$output" | grep -E '(^|: )(ERROR|FATAL|WARNING):' || true)
     if [ -n "$errs" ]; then
       printf '%s\n' "$errs" | head -5 | sed 's/^/      /'
     fi
   fi
-  # [OP-269] `ON_ERROR_STOP=0` ist gewollt — eine einzelne Zeilenkollision
-  # soll nicht die ganze Datei abbrechen. Es bedeutet aber auch, dass psql
-  # mit 0 endet, egal wie viele Anweisungen gescheitert sind. Der
-  # Rueckgabewert allein taugt hier also nicht als Erfolgsmeldung: die vier
-  # Mapping-Dateien endeten mit 0, nachdem JEDE ihrer Anweisungen gescheitert
-  # war. Wer ruft, soll beides unterscheiden koennen.
-  local harte
-  harte=$(printf '%s\n' "$output" | grep -cE '(^|: )(ERROR|FATAL):' || true)
-  if [ "${harte:-0}" -gt 0 ]; then
-    LAST_SQL_ERRORS="$harte"
+  # [OP-269] `ON_ERROR_STOP=0` is deliberate — a single row collision should
+  # not abort the whole file. But it also means psql exits 0 no matter how
+  # many statements failed. The return code alone is therefore not a success
+  # signal here: the four mapping files exited 0 after EVERY one of their
+  # statements had failed. The caller must be able to tell the two apart.
+  local hard_errors
+  hard_errors=$(printf '%s\n' "$output" | grep -cE '(^|: )(ERROR|FATAL):' || true)
+  if [ "${hard_errors:-0}" -gt 0 ]; then
+    LAST_SQL_ERRORS="$hard_errors"
     return 1
   fi
   LAST_SQL_ERRORS=0
@@ -170,39 +169,39 @@ echo "[3/3] Cross-Framework-Mappings v2–v5..."
 for v in v2 v3 v4 v5; do
   f="$SQL_DIR/seed_cross_framework_mappings_${v}.sql"
   if [ ! -f "$f" ]; then
-    # [OP-269] Fehlende Datei war bisher ein stiller Sprung.
-    echo "  ! seed_cross_framework_mappings_${v}.sql fehlt — uebersprungen."
+    # [OP-269] A missing file used to be a silent skip.
+    echo "  ! seed_cross_framework_mappings_${v}.sql missing — skipped."
     continue
   fi
-  # [OP-269] Das Haekchen stand hier UNBEDINGT hinter `run_sql`, ohne dessen
-  # Rueckgabewert anzusehen. Zusammen mit dem blinden Fehlerfilter oben hat
-  # das vier Dateien, von denen keine eine einzige Zeile schrieb, als
-  # erfolgreich gemeldet.
+  # [OP-269] The tick was printed UNCONDITIONALLY after `run_sql`, without
+  # looking at its return value. Together with the blind error filter above
+  # that reported four files as successful although not one of them wrote a
+  # single row.
   if run_sql "$f" "$v"; then
     echo "  ✓ seed_cross_framework_mappings_${v}.sql"
   else
-    echo "  ✗ seed_cross_framework_mappings_${v}.sql (${LAST_SQL_ERRORS:-?} Fehler — mit VERBOSE=1 sichtbar)"
+    echo "  ✗ seed_cross_framework_mappings_${v}.sql (${LAST_SQL_ERRORS:-?} errors — run with VERBOSE=1 to see them)"
     failed=$((failed + 1))
   fi
 done
 
-# ── Bruecke nach `framework_mapping` (#OP-268) ─────────────────────────
+# ── Bridge into `framework_mapping` (#OP-268) ──────────────────────────
 #
-# Die Seeds oben schreiben nach `catalog_entry_mapping` (UUID-verschluesselt).
-# Die Framework-Coverage-Oberflaeche liest `framework_mapping`
-# (zeichenkettenbasiert). Migration `0106_framework_mapping_bridge.sql`
-# ueberfuehrt das eine ins andere — und laeuft bei jeder Installation zu
-# frueh: Migrationen kommen VOR den Katalog-Seeds, sie findet also nichts.
+# The seeds above write into `catalog_entry_mapping` (UUID-keyed). The
+# framework-coverage UI reads `framework_mapping` (string-keyed). Migration
+# `0106_framework_mapping_bridge.sql` carries one into the other — and on
+# every installation it runs too early: migrations come BEFORE the catalog
+# seeds, so it finds nothing.
 #
-# Gemessen am 2026-09-14 auf `grc_platform`: 88 Zeilen in
-# `framework_mapping`, waehrend die Seed-Dateien 943 Zuordnungen definieren.
-# Die Bruecke ist ausdruecklich wiederholbar ("Safe to re-run after adding
-# new catalog_entry_mapping rows", ON CONFLICT DO NOTHING) — sie gehoert
-# hinter die Seeds, die ihr Futter liefern, und nicht nur in die Migration.
+# Measured on `grc_platform` 2026-09-14: 88 rows in `framework_mapping` while
+# the seed files define 943 mappings. The bridge is explicitly repeatable
+# ("Safe to re-run after adding new catalog_entry_mapping rows",
+# ON CONFLICT DO NOTHING) — it belongs behind the seeds that feed it, not only
+# in the migration.
 BRIDGE="/opt/arctos/packages/db/drizzle/0106_framework_mapping_bridge.sql"
 [ -f "$BRIDGE" ] || BRIDGE="$(dirname "$SQL_DIR")/drizzle/0106_framework_mapping_bridge.sql"
 echo ""
-echo "[3b/3] Bruecke catalog_entry_mapping → framework_mapping..."
+echo "[3b/3] Bridge catalog_entry_mapping → framework_mapping..."
 if [ -f "$BRIDGE" ]; then
   if run_sql "$BRIDGE" "bridge"; then
     echo "  ✓ 0106_framework_mapping_bridge.sql"
@@ -210,7 +209,7 @@ if [ -f "$BRIDGE" ]; then
     echo "  ✗ 0106_framework_mapping_bridge.sql (exit != 0)"
   fi
 else
-  echo "  ! $BRIDGE nicht gefunden — uebersprungen."
+  echo "  ! $BRIDGE not found — skipped."
 fi
 
 # ── Bilanz ─────────────────────────────────────────────────────────────

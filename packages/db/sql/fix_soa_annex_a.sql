@@ -1,20 +1,20 @@
 -- ============================================================================
--- SoA-Zeilen fuer ALLE Annex-A-Kontrollen der Demo-Organisation
+-- SoA rows for ALL Annex A controls of the demo organisation
 -- ============================================================================
 --
--- [ARCTOS-FULL-2026-08-31 · OP-268, 2026-09-15] Die Schritte 1 und 2 dieser
--- Datei — Katalog-Kopf und Projektion nach `control_catalog_entry` — stehen
--- jetzt in `seed_control_catalog_annex_a.sql` und laufen als
--- REFERENZ-Seed. Hier bleibt nur, was eine Organisation voraussetzt.
+-- [ARCTOS-FULL-2026-08-31 · OP-268, 2026-09-15] Steps 1 and 2 of this file —
+-- the catalog header and the projection into `control_catalog_entry` — now
+-- live in `seed_control_catalog_annex_a.sql` and run as a REFERENCE seed.
+-- What stays here is only what requires an organisation.
 --
--- Der Grund steht ausfuehrlich in der neuen Datei: Referenzdaten und
--- Demo-Daten in EINER Transaktion zu mischen hat zweimal dafuer gesorgt,
--- dass ein Fremdschluesselfehler im org-abhaengigen Teil die
--- mandantenunabhaengigen Schritte mit zurueckgerollt hat (OP-208, OP-268).
+-- The reasoning is spelled out in that new file: mixing reference data and
+-- demo data in ONE transaction meant that, twice, a foreign-key error in the
+-- org-dependent part rolled the tenant-independent steps back with it
+-- (OP-208, OP-268).
 --
--- Voraussetzung: `seed_control_catalog_annex_a.sql` (REFERENCE_SEEDS) und
--- `seed_demo_00_platform.sql`, das die Organisation anlegt. Diese Datei
--- gehoert deshalb in DEMO_SEEDS, hinter beide.
+-- Prerequisites: `seed_control_catalog_annex_a.sql` (REFERENCE_SEEDS) and
+-- `seed_demo_00_platform.sql`, which creates the organisation. This file
+-- therefore belongs in DEMO_SEEDS, after both.
 -- ============================================================================
 
 INSERT INTO soa_entry (org_id, catalog_entry_id, applicability, implementation, created_at, updated_at)
@@ -28,5 +28,5 @@ SELECT
 FROM control_catalog_entry cce
 WHERE cce.catalog_id = 'c0000000-0000-0000-0000-270010000106'
   AND cce.is_active = true
-  AND cce.code LIKE 'A.%.%'  -- nur Blattkontrollen, keine Gruppenueberschriften
+  AND cce.code LIKE 'A.%.%'  -- leaf controls only, not group headers
 ON CONFLICT (org_id, catalog_entry_id) DO NOTHING;

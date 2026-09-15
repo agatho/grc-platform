@@ -1,20 +1,20 @@
-// [ARCTOS-FULL-2026-08-31 · OP-269] Ein Helfer, der weggeraeumt wird, bevor
-// seine Aufrufer laufen.
+// [ARCTOS-FULL-2026-08-31 · OP-269] A helper that is dropped before its
+// callers run.
 //
-// `seed_cross_framework_mappings.sql` definierte `insert_mapping()` und
-// entfernte es in der letzten Zeile wieder (`DROP FUNCTION IF EXISTS`). Die
-// vier Folgedateien v2 bis v5 rufen dieselbe Funktion auf und definieren sie
-// nirgends. Jeder ihrer 854 Aufrufe scheiterte mit
+// `seed_cross_framework_mappings.sql` defined `insert_mapping()` and removed
+// it again on its last line (`DROP FUNCTION IF EXISTS`). The four follow-up
+// files v2 to v5 call that same function and define it nowhere. Every one of
+// their 854 calls failed with
 //
 //   ERROR:  function insert_mapping(unknown, ..., integer, unknown) does not exist
 //
-// auf jeder Installation, seit es die Dateien gibt. Gemessen am 2026-09-15 auf
-// `grc_platform`: 88 Zuordnungen, also genau die 89 Aufrufe von v1 minus einem.
-// Sichtbar wurde es nie, weil `deploy/seed-catalogs.sh` seine Fehlerzeilen auf
-// den Zeilenanfang verankerte, waehrend psql `psql:/dev/stdin:24: ` voranstellt.
+// on every installation, for as long as the files have existed. Measured on
+// 2026-09-15 against `grc_platform`: 88 mappings — exactly v1's 89 calls minus
+// one. It never showed because `deploy/seed-catalogs.sh` anchored its error
+// filter to the start of the line while psql prefixes `psql:/dev/stdin:24: `.
 //
-// Diese Tests pruefen die Datei-Ebene, nicht die Datenbank: welche Datei eine
-// SQL-Funktion definiert, benutzt und loescht, steht im Text.
+// These tests work on the file level, not against a database: which file
+// defines, uses and drops a SQL function is right there in the text.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "fs";
@@ -23,112 +23,111 @@ import { join } from "path";
 const SQL_DIR = join(__dirname, "..", "..", "sql");
 const SRC_DIR = join(__dirname, "..", "..", "src");
 
-const sqlDateien = readdirSync(SQL_DIR).filter((f) => f.endsWith(".sql"));
+const sqlFiles = readdirSync(SQL_DIR).filter((f) => f.endsWith(".sql"));
 
-/** "insert_mapping" → { definiert, benutzt, geloescht } je Datei. */
-function analysiere(datei: string) {
-  const text = readFileSync(join(SQL_DIR, datei), "utf-8");
-  // Kommentarzeilen zaehlen nicht — der Hinweis auf den frueheren DROP steht
-  // absichtlich als Kommentar in v1.
+/** Per file: does it define, use or drop `insert_mapping()`? */
+function inspect(file: string) {
+  const text = readFileSync(join(SQL_DIR, file), "utf-8");
+  // Comment lines do not count — the note about the former DROP deliberately
+  // stays as a comment in v1.
   const code = text
     .split(/\r?\n/)
-    .filter((z) => !/^\s*--/.test(z))
+    .filter((l) => !/^\s*--/.test(l))
     .join("\n");
   return {
-    definiert: /CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+insert_mapping/i.test(
-      code,
-    ),
-    benutzt: /\binsert_mapping\s*\(/.test(code),
-    geloescht: /DROP\s+FUNCTION[^;]*\binsert_mapping/i.test(code),
+    defines: /CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+insert_mapping/i.test(code),
+    uses: /\binsert_mapping\s*\(/.test(code),
+    drops: /DROP\s+FUNCTION[^;]*\binsert_mapping/i.test(code),
   };
 }
 
-describe("SQL-Seed-Helfer (OP-269)", () => {
-  it("keine Seed-Datei loescht insert_mapping()", () => {
-    const loeschende = sqlDateien.filter((f) => analysiere(f).geloescht);
+describe("SQL seed helpers (OP-269)", () => {
+  it("no seed file drops insert_mapping()", () => {
+    const droppers = sqlFiles.filter((f) => inspect(f).drops);
     expect(
-      loeschende,
-      "Der Helfer wird von v2 bis v5 gebraucht, die ihn nicht selbst definieren. " +
-        "Wer ihn loescht, macht 854 Zuordnungen unsichtbar kaputt.",
+      droppers,
+      "v2 to v5 need the helper and do not define it themselves. " +
+        "Dropping it breaks 854 mappings silently.",
     ).toEqual([]);
   });
 
-  it("genau eine Datei definiert insert_mapping(), und sie ist v1", () => {
-    const definierende = sqlDateien.filter((f) => analysiere(f).definiert);
-    expect(definierende).toEqual(["seed_cross_framework_mappings.sql"]);
+  it("exactly one file defines insert_mapping(), and it is v1", () => {
+    const definers = sqlFiles.filter((f) => inspect(f).defines);
+    expect(definers).toEqual(["seed_cross_framework_mappings.sql"]);
   });
 
-  it("jede Datei, die insert_mapping() benutzt, ist in beiden Runnern verdrahtet — hinter v1", () => {
-    const benutzer = sqlDateien
+  it("every file using insert_mapping() is wired into both runners, after v1", () => {
+    const users = sqlFiles
       .filter((f) => {
-        const a = analysiere(f);
-        return a.benutzt && !a.definiert;
+        const i = inspect(f);
+        return i.uses && !i.defines;
       })
       .sort();
-    expect(benutzer.length).toBeGreaterThan(0);
+    expect(users.length).toBeGreaterThan(0);
 
     for (const runner of ["seed-all.ts", "seed-demo.ts"]) {
       const src = readFileSync(join(SRC_DIR, runner), "utf-8");
       const v1 = src.indexOf('"seed_cross_framework_mappings.sql"');
-      expect(v1, `${runner}: v1 nicht verdrahtet`).toBeGreaterThan(0);
-      for (const datei of benutzer) {
-        const pos = src.indexOf(`"${datei}"`);
+      expect(v1, `${runner}: v1 is not wired in`).toBeGreaterThan(0);
+      for (const file of users) {
+        const pos = src.indexOf(`"${file}"`);
         expect(
           pos,
-          `${runner}: ${datei} ruft insert_mapping() auf, steht aber in keiner Liste — ` +
-            `ihre Zuordnungen landen nirgends.`,
+          `${runner}: ${file} calls insert_mapping() but is in no list — ` +
+            `its mappings go nowhere.`,
         ).toBeGreaterThan(0);
         expect(
           pos,
-          `${runner}: ${datei} muss NACH seed_cross_framework_mappings.sql stehen, ` +
-            `die den Helfer definiert.`,
+          `${runner}: ${file} must come AFTER seed_cross_framework_mappings.sql, ` +
+            `which defines the helper.`,
         ).toBeGreaterThan(v1);
       }
     }
   });
 
-  it("jeder in einem Mapping verlangte Katalog-Schluessel wird von einem Katalog-Seed deklariert", () => {
-    // `insert_mapping()` schweigt, wenn eine der beiden Nachschlagungen ins
-    // Leere geht (`IF v_source_id IS NOT NULL AND v_target_id IS NOT NULL`).
-    // Ein Tippfehler im Katalog-Schluessel kostet daher Zuordnungen ohne eine
-    // einzige Meldung — `eu_ai_act_2024_1689` gegen `eu_ai_act` waren sieben.
-    // Bewusst grob: jedes einfach zitierte Kleinbuchstaben-Literal aus einem
-    // `seed_catalog_*.sql` gilt als deklariert. Eine genauere Fassung, die nur
-    // die `source`-Spalte des `INSERT INTO catalog` las, meldete beim ersten
-    // Lauf sieben korrekte Schluessel als unbekannt — sie scheiterte an den
-    // `ON CONFLICT`-Varianten der Anweisung. Fuer den Fehler, um den es geht —
-    // ein Schluessel, den KEIN Katalog kennt —, genuegt die grobe Fassung, und
-    // sie meldet nichts Falsches.
-    const deklariert = new Set<string>();
-    for (const f of sqlDateien.filter((f) => f.startsWith("seed_catalog_"))) {
+  it("every catalog key a mapping asks for is declared by a catalog seed", () => {
+    // `insert_mapping()` stays silent when either lookup comes up empty
+    // (`IF v_source_id IS NOT NULL AND v_target_id IS NOT NULL`). A typo in a
+    // catalog key therefore costs mappings without a single message —
+    // `eu_ai_act_2024_1689` against `eu_ai_act` cost seven.
+    //
+    // Deliberately coarse: any single-quoted lowercase literal in a
+    // `seed_catalog_*.sql` counts as declared. A stricter version that read
+    // only the `source` column of `INSERT INTO catalog` reported seven correct
+    // keys as unknown on its first run — it broke on the `ON CONFLICT` forms
+    // of the statement. For the failure this guards against — a key no catalog
+    // knows at all — the coarse version is enough, and it reports nothing
+    // false.
+    const declared = new Set<string>();
+    for (const f of sqlFiles.filter((f) => f.startsWith("seed_catalog_"))) {
       const text = readFileSync(join(SQL_DIR, f), "utf-8");
       for (const lit of text.matchAll(/'([a-z0-9_]{4,})'/g)) {
-        if (lit[1]) deklariert.add(lit[1]);
+        if (lit[1]) declared.add(lit[1]);
       }
     }
 
-    const verlangt = new Map<string, string>();
-    for (const f of sqlDateien.filter((f) =>
+    const requested = new Map<string, string>();
+    for (const f of sqlFiles.filter((f) =>
       f.startsWith("seed_cross_framework_mappings"),
     )) {
       const text = readFileSync(join(SQL_DIR, f), "utf-8");
       for (const m of text.matchAll(
         /insert_mapping\(\s*'[^']*'\s*,\s*'([^']+)'\s*,\s*'[^']*'\s*,\s*'([^']+)'/g,
       )) {
-        const [, quellKatalog, zielKatalog] = m;
-        if (quellKatalog) verlangt.set(quellKatalog, f);
-        if (zielKatalog) verlangt.set(zielKatalog, f);
+        const [, sourceCatalog, targetCatalog] = m;
+        if (sourceCatalog) requested.set(sourceCatalog, f);
+        if (targetCatalog) requested.set(targetCatalog, f);
       }
     }
-    expect(verlangt.size).toBeGreaterThan(5);
+    expect(requested.size).toBeGreaterThan(5);
 
-    const unbekannt = [...verlangt.entries()]
-      .filter(([key]) => !deklariert.has(key))
-      .map(([key, datei]) => `${key} (${datei})`);
+    const unknown = [...requested.entries()]
+      .filter(([key]) => !declared.has(key))
+      .map(([key, file]) => `${key} (${file})`);
     expect(
-      unbekannt,
-      "Diese Katalog-Schluessel verlangt eine Mapping-Datei, aber kein seed_catalog_*.sql deklariert sie. " +
-        "insert_mapping() ueberspringt solche Aufrufe stillschweigend.",
+      unknown,
+      "These catalog keys are requested by a mapping file but declared by no seed_catalog_*.sql. " +
+        "insert_mapping() skips such calls silently.",
     ).toEqual([]);
   });
 });

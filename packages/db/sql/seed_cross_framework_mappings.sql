@@ -137,17 +137,17 @@ SELECT insert_mapping('RC.RP-01', 'nist_csf_2', 'A.5.30', 'iso27002_2022', 'equi
 SELECT insert_mapping('RC.RP-03', 'nist_csf_2', 'A.8.13', 'iso27002_2022', 'equivalent', 90, 'official');
 SELECT insert_mapping('RC.RP-05', 'nist_csf_2', 'A.8.14', 'iso27002_2022', 'partial_overlap', 80, 'official');
 
--- [ARCTOS-FULL-2026-08-31 · OP-269] Hier stand `DROP FUNCTION IF EXISTS
--- insert_mapping;`. Die Datei raeumte damit den Helfer weg, den die vier
--- Folgedateien v2 bis v5 AUSSCHLIESSLICH benutzen und selbst nirgends
--- definieren. Wirkung: jeder ihrer 854 Aufrufe scheiterte mit "function
--- insert_mapping(...) does not exist" — auf jeder Installation, seit es die
--- Dateien gibt. Gemessen am 2026-09-15 auf `grc_platform`: 88 Zuordnungen
--- statt 943, und das sind genau die 89 Aufrufe DIESER Datei.
+-- [ARCTOS-FULL-2026-08-31 · OP-269] This line used to read
+-- `DROP FUNCTION IF EXISTS insert_mapping;`. It removed the helper that the
+-- four follow-up files v2 to v5 use EXCLUSIVELY and define nowhere. Effect:
+-- every one of their 854 calls failed with "function insert_mapping(...) does
+-- not exist" — on every installation, for as long as the files have existed.
+-- Measured on `grc_platform` 2026-09-15: 88 mappings instead of 943, which is
+-- exactly the 89 calls in THIS file.
 --
--- Der Helfer bleibt jetzt stehen. Er ist deterministisch, idempotent und
--- ohne Seiteneffekt; ihn zu behalten kostet nichts und beseitigt die
--- Reihenfolgenfalle dauerhaft. Das Aufraeumen war der Defekt.
+-- The helper now stays. It is deterministic, idempotent and free of side
+-- effects; keeping it costs nothing and removes the ordering trap for good.
+-- The cleanup was the defect.
 
 -- ============================================================================
 -- Summary: ~90 NIST CSF 2.0 ↔ ISO 27002:2022 mappings

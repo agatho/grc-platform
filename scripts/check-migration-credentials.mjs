@@ -1,159 +1,152 @@
 #!/usr/bin/env node
 // ============================================================================
-// [ARCTOS-FULL-2026-08-31 · OP-267] Keine anmeldefaehigen Konten aus Migrationen
+// [ARCTOS-FULL-2026-08-31 · OP-267] No login-capable accounts from migrations
 // ============================================================================
 //
-// Das Projekt hat drei Schalter gegen Demo-Konten mit bekanntem Passwort —
-// `SEED_DEMO_DATA`, `ALLOW_DEMO_SEED_IN_PROD` (#SEC-F04) und
-// `ALLOW_PRODUCTION_SEED` — und einen Waechter, der den Start verweigert,
-// wenn die ersten beiden gesetzt sind (`scripts/assert-runtime-config.mjs`).
-// Alle drei wirken im SEED-Pfad. Sechs MIGRATIONEN laufen daran vorbei: sie
-// sind unbedingt, sie laufen auf jeder Datenbank, und sie laufen, bevor
-// irgendein Schalter gelesen wird. Am 2026-09-14 standen deshalb in einem
-// Mandanten, der laut Runbook genau ein Konto haben sollte, 35 — davon 15
-// anmeldefaehig mit einem Passwort, das in der Kopfzeile von 0317 im Klartext
-// steht (oeffentliches Repository).
+// The project has three switches against demo accounts with known passwords —
+// SEED_DEMO_DATA, ALLOW_DEMO_SEED_IN_PROD (#SEC-F04) and
+// ALLOW_PRODUCTION_SEED — plus a guard that refuses to start when the first
+// two are set (scripts/assert-runtime-config.mjs). All three act on the SEED
+// path. Six MIGRATIONS walk past them: they run unconditionally, on every
+// database, and before any switch is read. On 2026-09-14 a tenant that should
+// have held exactly one account held 35 — 15 of them login-capable with a
+// password printed in plain text in the header of 0317 (public repository).
 //
-// Sechs Dateien in einer Klasse sind keine Einzelfaelle. Die Antwort auf eine
-// Klasse ist eine Pruefung.
+// Six files in one class are not individual cases. The answer to a class is a
+// check.
 //
-// Zwei Regeln:
+// Two rules:
 //
-//   1. Eine Migration darf `password_hash` nicht in `"user"` schreiben.
-//      Die sechs historischen Dateien sind namentlich eingefroren; die Liste
-//      darf schrumpfen, nicht wachsen. (Aendern lassen sie sich nach ADR-014
-//      nicht — sie sind ausgeliefert. Stillgelegt werden sie von
-//      `0480_op267_disable_seeded_login_accounts.sql`.)
+//   1. A migration must not write `password_hash` into `"user"`. The six
+//      historical files are frozen by name; the list may shrink, not grow.
+//      (They cannot be edited — ADR-014, they are delivered. They are
+//      neutralized by 0480_op267_disable_seeded_login_accounts.sql.)
 //
-//   2. JEDE Adresse aus diesen sechs Dateien muss von 0480 erfasst sein.
-//      Das ist die Regel, die wirklich traegt: sie faellt auch dann, wenn
-//      jemand einer eingefrorenen Datei eine Adresse hinzufuegt, die die
-//      Stilllegung nicht kennt. Ohne sie waere die Freigabeliste eine
-//      Erlaubnis; mit ihr ist sie eine Buchfuehrung.
+//   2. EVERY address in those six files must be covered by 0480. This is the
+//      rule that carries: it also fails when someone adds an address to a
+//      frozen file that the neutralization does not know about. Without it
+//      the freeze list would be a permission; with it, it is a ledger.
 //
-// Seeds unter `packages/db/sql/` prueft dieses Skript NICHT: sie haengen an
-// den Schaltern oben, und das ist der vorgesehene Weg.
+// Seeds under packages/db/sql/ are NOT checked here: they hang off the
+// switches above, which is the intended path.
 // ============================================================================
 
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-const MIGRATIONEN = "packages/db/drizzle";
-const STILLLEGUNG = "0480_op267_disable_seeded_login_accounts.sql";
+const MIGRATIONS = "packages/db/drizzle";
+const NEUTRALIZER = "0480_op267_disable_seeded_login_accounts.sql";
 
-// Eingefroren am 2026-09-14. Jede Zeile nennt, was die Datei anlegt.
-const EINGEFROREN = new Map([
-  ["0096_additional_system_roles.sql", "6 × @arctos.dev (namentlich)"],
-  ["0316_seed_rbac_test_users.sql", "13 × @arctos.test (Platzhalter-Hash)"],
+// Frozen on 2026-09-14. Each line names what the file creates.
+const FROZEN = new Map([
+  ["0096_additional_system_roles.sql", "6 × @arctos.dev (named individually)"],
+  ["0316_seed_rbac_test_users.sql", "13 × @arctos.test (placeholder hash)"],
   [
     "0317_seed_rbac_login_users.sql",
-    "9 × @meridian.test (Passwort im Klartext in der Kopfzeile)",
+    "9 × @meridian.test (password in plain text in the header)",
   ],
-  [
-    "0318_user_role_enum_backfill_and_rbac_retry.sql",
-    "Wiederholung von 0316/0317",
-  ],
+  ["0318_user_role_enum_backfill_and_rbac_retry.sql", "retry of 0316/0317"],
   ["0326_seed_arctistx_rbac_users.sql", "4 × @arctistx.test"],
   ["0346_seed_bcm_security_external_auditor_users.sql", "3 × @meridian.test"],
 ]);
 
-const fehler = [];
-const zeilen = (t) => t.split(/\r?\n/);
+const problems = [];
+const lines = (t) => t.split(/\r?\n/);
 
-const dateien = readdirSync(MIGRATIONEN)
+const files = readdirSync(MIGRATIONS)
   .filter((f) => f.endsWith(".sql"))
   .sort();
 
-// ── Regel 1: keine neuen Konten aus Migrationen ─────────────────────────────
-const gefunden = new Set();
-for (const datei of dateien) {
-  const text = readFileSync(join(MIGRATIONEN, datei), "utf8");
-  // Nur Treffer, die BEIDES tun: in `"user"` einfuegen und dabei einen
-  // Passwort-Hash setzen. `UPDATE "user" SET password_hash = ...` (wie die
-  // Stilllegung selbst) ist ausdruecklich erlaubt.
+// ── Rule 1: no new accounts from migrations ─────────────────────────────────
+const creators = new Set();
+for (const file of files) {
+  const text = readFileSync(join(MIGRATIONS, file), "utf8");
+  // Only hits that do BOTH: insert into `"user"` and set a password hash.
+  // `UPDATE "user" SET password_hash = ...` (as the neutralizer itself does)
+  // is explicitly allowed.
   if (!/INSERT\s+INTO\s+"user"/i.test(text)) continue;
   if (!/password_hash/i.test(text)) continue;
-  gefunden.add(datei);
-  if (!EINGEFROREN.has(datei)) {
-    const nr =
-      zeilen(text).findIndex((z) => /INSERT\s+INTO\s+"user"/i.test(z)) + 1;
-    fehler.push(
-      `${MIGRATIONEN}/${datei}:${nr}\n` +
-        `    Diese Migration legt ein Konto mit Passwort-Hash an. Migrationen laufen\n` +
-        `    unbedingt auf JEDER Datenbank und an SEED_DEMO_DATA,\n` +
-        `    ALLOW_DEMO_SEED_IN_PROD und ALLOW_PRODUCTION_SEED vorbei (OP-267).\n` +
-        `    Konten gehoeren in einen Seed unter packages/db/sql/ oder in\n` +
-        `    packages/db/src/create-admin.ts — nicht in eine Migration.`,
+  creators.add(file);
+  if (!FROZEN.has(file)) {
+    const lineNo =
+      lines(text).findIndex((l) => /INSERT\s+INTO\s+"user"/i.test(l)) + 1;
+    problems.push(
+      `${MIGRATIONS}/${file}:${lineNo}\n` +
+        `    This migration creates an account with a password hash. Migrations run\n` +
+        `    unconditionally on EVERY database and bypass SEED_DEMO_DATA,\n` +
+        `    ALLOW_DEMO_SEED_IN_PROD and ALLOW_PRODUCTION_SEED (OP-267).\n` +
+        `    Accounts belong in a seed under packages/db/sql/ or in\n` +
+        `    packages/db/src/create-admin.ts — not in a migration.`,
     );
   }
 }
 
-for (const [datei, was] of EINGEFROREN) {
-  if (!gefunden.has(datei)) {
-    fehler.push(
-      `${MIGRATIONEN}/${datei}\n` +
-        `    steht als eingefroren in dieser Liste (${was}), legt aber kein Konto\n` +
-        `    mehr an. Wenn das gewollt ist: Zeile aus EINGEFROREN entfernen.`,
+for (const [file, what] of FROZEN) {
+  if (!creators.has(file)) {
+    problems.push(
+      `${MIGRATIONS}/${file}\n` +
+        `    is listed as frozen (${what}) but no longer creates an account.\n` +
+        `    If that is intended: remove its entry from FROZEN.`,
     );
   }
 }
 
-// ── Regel 2: die Stilllegung erfasst jede dieser Adressen ───────────────────
-const stillText = readFileSync(join(MIGRATIONEN, STILLLEGUNG), "utf8");
+// ── Rule 2: the neutralizer covers every one of those addresses ─────────────
+const neutralizerText = readFileSync(join(MIGRATIONS, NEUTRALIZER), "utf8");
 
-// Muster der Form  email ILIKE '%@arctos.test'
-const muster = [...stillText.matchAll(/ILIKE\s+'%@([A-Za-z0-9.-]+)'/g)].map(
-  (m) => "@" + m[1].toLowerCase(),
-);
-// Einzeln genannte Adressen aus der IN-Liste
-const einzeln = new Set(
-  [...stillText.matchAll(/'([A-Za-z0-9._+-]+@[A-Za-z0-9.-]+)'/g)].map((m) =>
-    m[1].toLowerCase(),
+// Patterns of the form  email ILIKE '%@arctos.test'
+const domainPatterns = [
+  ...neutralizerText.matchAll(/ILIKE\s+'%@([A-Za-z0-9.-]+)'/g),
+].map((m) => "@" + m[1].toLowerCase());
+// Individually named addresses from the IN list
+const namedAddresses = new Set(
+  [...neutralizerText.matchAll(/'([A-Za-z0-9._+-]+@[A-Za-z0-9.-]+)'/g)].map(
+    (m) => m[1].toLowerCase(),
   ),
 );
 
-const erfasst = (adresse) =>
-  einzeln.has(adresse) || muster.some((d) => adresse.endsWith(d));
+const isCovered = (address) =>
+  namedAddresses.has(address) ||
+  domainPatterns.some((d) => address.endsWith(d));
 
-for (const datei of EINGEFROREN.keys()) {
-  if (!gefunden.has(datei)) continue;
-  const text = readFileSync(join(MIGRATIONEN, datei), "utf8");
-  // Nur Adressen aus den INSERT-Anweisungen auf `"user"`. Eine Datei nennt
-  // fremde Adressen auch, ohne sie anzulegen: 0096:170 liest
-  // `admin@arctos.dev` als `granted_by` nach. Dieses Konto legt der Seed an,
-  // es ist das echte Administratorkonto der Installation und muss
-  // anmeldefaehig bleiben — die erste Fassung dieser Regel las die ganze
-  // Datei und verlangte prompt seine Stilllegung.
-  const anweisungen = text.match(/INSERT\s+INTO\s+"user"[\s\S]*?;/gi) ?? [];
-  const adressen = new Set(
-    anweisungen.flatMap((a) =>
-      [...a.matchAll(/'([A-Za-z0-9._+-]+@[A-Za-z0-9.-]+)'/g)].map((m) =>
+for (const file of FROZEN.keys()) {
+  if (!creators.has(file)) continue;
+  const text = readFileSync(join(MIGRATIONS, file), "utf8");
+  // Only addresses from the INSERT statements on `"user"`. A file may name
+  // foreign addresses without creating them: 0096:170 reads back
+  // `admin@arctos.dev` as `granted_by`. That account is created by the seed,
+  // it is the real administrator of the installation and must stay
+  // login-capable — the first version of this rule read the whole file and
+  // promptly demanded its neutralization.
+  const statements = text.match(/INSERT\s+INTO\s+"user"[\s\S]*?;/gi) ?? [];
+  const addresses = new Set(
+    statements.flatMap((s) =>
+      [...s.matchAll(/'([A-Za-z0-9._+-]+@[A-Za-z0-9.-]+)'/g)].map((m) =>
         m[1].toLowerCase(),
       ),
     ),
   );
-  for (const adresse of adressen) {
-    if (!erfasst(adresse)) {
-      fehler.push(
-        `${MIGRATIONEN}/${datei}\n` +
-          `    '${adresse}' wird von ${STILLLEGUNG} nicht erfasst.\n` +
-          `    Entweder die Adresse dort aufnehmen oder begruenden, warum sie\n` +
-          `    anmeldefaehig bleiben soll.`,
+  for (const address of addresses) {
+    if (!isCovered(address)) {
+      problems.push(
+        `${MIGRATIONS}/${file}\n` +
+          `    '${address}' is not covered by ${NEUTRALIZER}.\n` +
+          `    Either add it there, or justify why it should stay login-capable.`,
       );
     }
   }
 }
 
-if (fehler.length > 0) {
+if (problems.length > 0) {
   console.error("");
-  console.error("Konten aus Migrationen (OP-267):");
+  console.error("Accounts created by migrations (OP-267):");
   console.error("");
-  for (const f of fehler) console.error("  " + f + "\n");
+  for (const p of problems) console.error("  " + p + "\n");
   process.exit(1);
 }
 
-const zahl = gefunden.size;
+const n = creators.size;
 console.log(
-  `OK — ${zahl} historische Migration${zahl === 1 ? "" : "en"} mit Konten, ` +
-    `alle von ${STILLLEGUNG} stillgelegt; keine neuen.`,
+  `OK — ${n} historical migration${n === 1 ? "" : "s"} creating accounts, ` +
+    `all neutralized by ${NEUTRALIZER}; no new ones.`,
 );
