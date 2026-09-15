@@ -179,6 +179,54 @@ rollback_image() {
     docker pull "$worker_img" >/dev/null 2>&1 || { echo "  FEHLER: $worker_img nicht ziehbar."; return 1; }
   fi
 
+  # ── What is actually in this image? (#OP-272) ─────────────────────────
+  #
+  # On 2026-09-14 an automatic rollback started `arctos-rollback/grc-web:
+  # 7b9c3604e2bc`. The tag named the checkout at the time; the image itself
+  # had been built on 2026-07-28. Its entrypoint predated the migration
+  # ledger (f6eafc23, 2026-09-01) and therefore replayed its entire migration
+  # directory (0000–0381) on start, errors ignored, against a database that
+  # was already at 0479. That re-enabled `reporting_bypass` policies, put
+  # ~130 superseded policies back next to the current ones, reverted
+  # `audit_trigger()` and the tombstone functions, switched RLS off on the
+  # five log tables — and the RLS guard's repair of those tables broke every
+  # login. Nothing here looked at what the image contained.
+  #
+  # Checked BEFORE any container is touched:
+  local img_created img_sha has_ledger=0
+  img_created=$(docker image inspect "$web_img" --format '{{.Created}}' 2>/dev/null || true)
+  img_sha=$(docker image inspect "$web_img" \
+              --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null \
+            | sed -n 's/^NEXT_PUBLIC_GIT_SHA=//p' | head -1 || true)
+  echo "  Image built: ${img_created:-unknown}, embedded revision: ${img_sha:-unknown}"
+  if [[ "$ref" =~ ^[0-9a-f]{7,40}$ ]] && [ -n "$img_sha" ] && [ "$img_sha" != "unknown" ] \
+     && [ "${img_sha:0:${#ref}}" != "$ref" ]; then
+    echo "  WARNING: the tag says $ref, but the image was built from ${img_sha:0:12}."
+  fi
+
+  # An entrypoint without the ledger replays ALL of its migrations on every
+  # start and does not know SKIP_MIGRATIONS either (both arrived together in
+  # f6eafc23). No environment variable can make such an image safe, so it is
+  # refused. A failed probe (no shell, no entrypoint file) counts as "no
+  # ledger" — fail closed.
+  if docker run --rm --entrypoint sh "$web_img" \
+       -c 'grep -q _arctos_migrations /app/docker-entrypoint.sh' </dev/null >/dev/null 2>&1; then
+    has_ledger=1
+  fi
+  if [ "$has_ledger" != "1" ]; then
+    if [ "${ARCTOS_ALLOW_PRELEDGER_ROLLBACK:-false}" != "true" ]; then
+      echo "  REFUSED: $web_img predates the migration ledger (2026-09-01)."
+      echo "  Starting it would replay its whole migration directory against the"
+      echo "  CURRENT database and revert security-relevant schema (OP-272)."
+      echo "  Pick a newer rollback image (sudo bash $0 --list), or restore a"
+      echo "  database backup together with a matching image (--full)."
+      echo "  Override only with a restored matching database:"
+      echo "    ARCTOS_ALLOW_PRELEDGER_ROLLBACK=true"
+      return 1
+    fi
+    echo "  ARCTOS_ALLOW_PRELEDGER_ROLLBACK=true — starting a pre-ledger image on explicit instruction."
+  fi
+
   # `image:` in der Compose zeigt auf ein bewegliches Tag. Der zuverlaessige
   # Weg ist, das Zielimage AUF dieses Tag zu taggen und neu zu erstellen —
   # damit ist der Rollback unabhaengig davon, welche Variable die Compose
@@ -193,7 +241,12 @@ rollback_image() {
   docker tag "$web_img" "$target_web"
   [ -n "$target_worker" ] && docker tag "$worker_img" "$target_worker"
 
-  docker compose -f "$COMPOSE_FILE" up -d --force-recreate --no-build web worker 2>&1 | tail -5
+  # [OP-272] The database is always newer than a rolled-back image — migrations
+  # run forward, the database is not rolled back. The old image must therefore
+  # never migrate. docker-compose.production.yml passes SKIP_MIGRATIONS into
+  # the web container; the next regular deploy recreates the container without
+  # it.
+  SKIP_MIGRATIONS=true docker compose -f "$COMPOSE_FILE" up -d --force-recreate --no-build web worker 2>&1 | tail -5
 
   local failed=0
   for svc in web worker; do
