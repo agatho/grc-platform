@@ -3749,3 +3749,35 @@ einem stillen `grep` gescheitert war.
 `/opt/arctos/.env` eintragen (`PILOT_GATE_ADMIN_EMAIL`,
 `PILOT_GATE_ADMIN_PASSWORD`); bis dahin meldet jeder Deploy den Schritt als
 „NOT RUN“.
+
+### Nachtrag 2026-09-15 — OP-271, Nachtrag: die Pruefung sprach die Anwendung ueber http an
+
+**Was geschah.** Beim ersten echten Lauf gegen `grc_platform` bestand die
+Pruefung den Build-SHA-Abgleich und scheiterte dann an
+„Session not established after login“. Das Konto war korrekt angelegt
+(`UPDATE 1` fuer `must_change_password = false`), das Passwort stimmte.
+
+**Ursache — eigener Fehler aus OP-271.** Schritt 6b rief das Skript mit
+`STAGING_URL=http://127.0.0.1:3000` auf. `AUTH_URL` steht auf dem Server
+auf https, und Auth.js setzt ohne eigene Cookie-Konfiguration (keine im
+Repository) dann `__Host-authjs.csrf-token` und
+`__Secure-authjs.session-token` mit dem Secure-Attribut. curl sendet solche
+Cookies ueber http nicht zurueck: die CSRF-Pruefung schlaegt still fehl, der
+Login antwortet trotzdem mit HTTP 200 (`json=true` meldet auch einen
+Fehlschlag mit 200), und eine Sitzung entsteht nie. Dieselbe Mechanik steht
+fuer die E2E-Suite bereits in `.env.example` („Das Cookie traegt
+`Secure` und erreicht gegen ein `http://`-Ziel … nicht“) — gelesen und
+beim Bau von 6b nicht angewendet.
+
+**Behebung.** 6b benutzt jetzt `AUTH_URL` (Rueckfall `NEXTAUTH_URL`) aus
+`/opt/arctos/.env`. Fehlt beides, wird der Schritt als NICHT GELAUFEN
+ausgegeben und im Deploy-Protokoll vermerkt. Nebeneffekt, der gewollt ist: die
+Pruefung laeuft jetzt ueber Caddy und TLS, also ueber denselben Weg wie ein
+Benutzer. Alle vier Ausgaenge (keine URL / nicht konfiguriert / bestanden /
+gescheitert) unter `set -euo pipefail` gegengeprueft; die Attrappe bestaetigt,
+dass die https-URL beim Skript ankommt.
+
+**Lehre.** Die Stub-Tests von OP-271 haben das Skript mit einem falschen
+`curl` geprueft, das Cookies gar nicht kennt. Sie konnten diesen Fehler
+grundsaetzlich nicht finden: eine Attrappe prueft nur, was sie nachbildet. Die
+Behebung ist erst bestaetigt, wenn die Pruefung auf dem Server gruen laeuft.
