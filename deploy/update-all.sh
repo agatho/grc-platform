@@ -879,6 +879,62 @@ if [ "$HEALTH_FAILED" -gt 0 ]; then
   Exit 0 (#S13-04c)."
 fi
 
+# ── 6b. Pilot-readiness checks against the deployed instance (#OP-271) ──
+#
+# `scripts/pilot-readiness-gate.sh` used to be a pre-merge CI job against a
+# staging URL. It could never pass there: nothing deploys a PR's commit to
+# staging, so its build-SHA check failed by construction, and the STAGING_*
+# secrets were never set — every PR since #S13-30 was red on it. Here it runs
+# against the instance this script has just built from $NEW_COMMIT, so the
+# SHA check is true by construction and no admin password has to live in
+# GitHub.
+#
+# Read-only by default: the write checks (A1/B4/C3) would put test findings,
+# control tests and contracts into the audit trail of a real instance on every
+# deploy. PILOT_GATE_MODE=full is for a disposable staging instance only.
+#
+# Not configured is NOT silent (#S13-30): it is printed and recorded in the
+# deploy history. On failure there is no automatic rollback — the containers
+# already passed the health gate, and a failing acceptance check (e.g. hash
+# chain) is not something an image rollback repairs. The deploy is marked
+# failed and the operator decides.
+echo ""
+echo "[6b/6] Pilot-readiness checks (main instance)..."
+env_value() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- || true; }
+PILOT_EMAIL="$(env_value PILOT_GATE_ADMIN_EMAIL)"
+PILOT_PASSWORD="$(env_value PILOT_GATE_ADMIN_PASSWORD)"
+PILOT_MODE="$(env_value PILOT_GATE_MODE)"
+PILOT_ORG="$(env_value PILOT_GATE_ORG_ID)"
+PILOT_SCRIPT=/opt/arctos/scripts/pilot-readiness-gate.sh
+
+if [ -z "$PILOT_EMAIL" ] || [ -z "$PILOT_PASSWORD" ]; then
+  echo "  NOT RUN: PILOT_GATE_ADMIN_EMAIL / PILOT_GATE_ADMIN_PASSWORD are not set in $ENV_FILE."
+  echo "  Use a dedicated admin account for the checks, not your own login."
+  deploy_record "pilot-gate-skipped" "PILOT_GATE_ADMIN_EMAIL/PASSWORD not configured"
+elif ! command -v jq >/dev/null 2>&1; then
+  echo "  NOT RUN: jq is not installed (apt-get install -y jq)."
+  deploy_record "pilot-gate-skipped" "jq not installed"
+elif [ ! -f "$PILOT_SCRIPT" ]; then
+  echo "  NOT RUN: $PILOT_SCRIPT not found."
+  deploy_record "pilot-gate-skipped" "script missing"
+else
+  if STAGING_URL="http://127.0.0.1:3000" \
+     STAGING_ADMIN_EMAIL="$PILOT_EMAIL" \
+     STAGING_ADMIN_PASSWORD="$PILOT_PASSWORD" \
+     STAGING_DEMO_ORG_ID="$PILOT_ORG" \
+     PILOT_GATE_MODE="${PILOT_MODE:-read-only}" \
+     EXPECTED_STAGING_SHA="$NEW_COMMIT" \
+     bash "$PILOT_SCRIPT" 2>&1 | sed 's/^/  /'; then
+    echo "  Pilot-readiness checks passed."
+  else
+    abort "Pilot-readiness checks FAILED against $NEW_COMMIT (see above).
+  The new version IS running and passed the health gate; it was not rolled
+  back automatically, because a failed acceptance check is not necessarily
+  fixed by an older image. Roll back deliberately if needed:
+    sudo bash /opt/arctos/deploy/rollback.sh --image ${OLD_COMMIT:0:12}"
+  fi
+fi
+
 deploy_record "success" "$NEW_COMMIT deployed, alle Health-Pruefungen gruen"
 
 echo ""

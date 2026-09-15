@@ -9,7 +9,7 @@ offen?" war bisher nur über eine Sortierregel zu beantworten, und die Regel gal
 nicht einmal durchgehend — ein Nachtrag vom 2026-09-03 steht über welchen vom
 2026-09-09. Zweimal an einem Tag kam so eine falsche Liste heraus.
 
-Nummern: **270**
+Nummern: **271**
 
 ## offen (3)
 
@@ -195,7 +195,7 @@ _keine_
 | OP-166 | Kein Penetrationstest gegen eine laufende Produktivinstanz                                                     | Der Audit war statisch plus Testumgebung; die Angriffsfläche im Betrieb ist unvermessen.   | Haupttabelle |
 | OP-246 | Die Testsuite läuft auf Windows nicht durch — aus fünf benennbaren, vom Upgrade unabhängigen Gründen (Tabelle… | teilweise                                                                                  | 2026-09-09   |
 
-## behoben (105)
+## behoben (106)
 
 | Nr     | Titel                                                                                                          | Stand laut Register                                                                        | Nachtrag   |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
@@ -304,3 +304,4 @@ _keine_
 | OP-268 | Die Behebung von OP-208 erreichte nur einen von zwei Seed-Runnern — und die Framework-Bruecke laeuft auf jede… | behoben 2026-09-15                                                                         | 2026-09-15 |
 | OP-269 | 854 der 943 Cross-Framework-Zuordnungen hat es nie gegeben — auf keiner Installation. `seed_cross_framework_m… | behoben 2026-09-15                                                                         | 2026-09-15 |
 | OP-270 | Die Annex-A-Projektion war nur in den Seed-Runnern verdrahtet — und `deploy/update-all.sh` ruft keinen davon.… | behoben 2026-09-15                                                                         | 2026-09-15 |
+| OP-271 | Das Pilot-Readiness-Gate konnte vor dem Merge nie gruen werden — und hat damit beigebracht, ueber einen roten… | behoben 2026-09-15                                                                         | 2026-09-15 |
