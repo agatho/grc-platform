@@ -3850,3 +3850,68 @@ prueft, was sie zurueckholt, ist ein zweiter Deploy ohne Tests. Zweitens:
 sichtbar wurde es nicht durch eine Pruefung des Schemas, sondern weil ein
 eigens gebauter Abnahmetest sich anmelden wollte. Ohne OP-271 haette die
 Instanz mit wiederhergestellter RLS-Umgehung weitergelaufen.
+
+### Nachtrag 2026-09-15 — OP-273: der Rollback, den es nie gab
+
+| OP     | Was                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Beleg                                                                                                                                                            | Art                      | Stand                  |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | ---------------------- |
+| OP-273 | **Kein einziges Web-Rollback-Image existierte — die Mandanten bauten die Anwendung bei jedem Deploy neu und nahmen dem Hauptcontainer das Image weg.** Schritt 5 von `update-all.sh` lief je Mandant mit `up -d --force-recreate --build`; die Mandanten-Compose deklariert dasselbe `ghcr.io/arctos/grc-web:latest` mit eigenem `build:` ohne Build-Args. Das Tag wanderte auf den Mandanten-Build, das Image des Haupt-`web` wurde namenlos (`<none>`, 0B), und der Rollback-Schnappschuss des naechsten Deploys konnte es nicht taggen — der Fehler wurde verworfen, die Meldung „Rollback-Image gesichert“ trotzdem ausgegeben. Nebenbefunde: Mandanten liefen auf einem eigenen, unrevisionierten Build; der Haupt-Worker hatte keinen Image-Namen, weshalb `rollback.sh` nie ein Worker-Ziel fand. | Server 2026-09-15: `arctos-rollback/*` enthielt nur `grc-worker`-Tags; `docker compose images web` → `<none> <none> 0B N/A`, `ps` → Image nur als `sha256:6d8c…` | Betrieb (eigener Fehler) | **behoben 2026-09-15** |
+
+**Wie es auffiel.** Nach OP-272 war die Frage, welche Rollback-Images auf dem
+Host noch liegen. Die Antwort: nur Worker-Images. Fuer keinen der letzten
+Deploys existierte ein `arctos-rollback/grc-web:*`. Das Deploy-Protokoll hatte
+fuer jeden davon „Rollback-Image gesichert“ gemeldet.
+
+**Der Mechanismus.** Schritt 2 baut `ghcr.io/arctos/grc-web:latest` mit
+`GIT_SHA`, `GIT_BRANCH`, `BUILD_TIME`; Schritt 4 startet den Haupt-`web`
+darauf. Schritt 5 lief dann je Mandant mit `--build`, und die
+Mandanten-Compose deklariert **dasselbe** Image mit einem **eigenen**
+`build:`-Block ohne Build-Args. Jeder Mandant baute die Anwendung also neu und
+setzte `:latest` auf diesen Build. Das Image des laufenden Haupt-`web` verlor
+seinen Namen. Beim naechsten Deploy fand der Schnappschuss (`docker compose
+images -q web`) zwar dessen ID, konnte sie aber nicht taggen —
+`docker tag … 2>/dev/null || true` verwarf den Fehler, und die naechste Zeile
+meldete Erfolg. Seit wann das so ist, ist offen; sicher ist, dass es fuer jeden
+Deploy gilt, der Mandanten neu startet.
+
+**Was das ausser dem Rollback bedeutete.** Die Mandanten liefen auf einem
+separat gebauten Artefakt ohne eingebettete Revision, das weder der
+Pilot-Readiness-Schritt (OP-271) noch sonst etwas je gepruefte. Die
+Mandanten-Worker bauten eigene Images unter mandantenspezifischen Namen. Und
+der Haupt-Worker hatte keinen `image:`-Namen — Compose nannte ihn
+`arctos-worker` —, weshalb `rollback.sh` beim Suchen nach `grc-worker` nie ein
+Ziel fand („<kein worker-Image>“ im Protokoll vom 2026-09-14): ein
+Image-Rollback tauschte den Worker nie mit aus.
+
+**Behebung.**
+
+1. Haupt-`worker` bekommt einen expliziten Namen
+   (`ghcr.io/…/grc-worker:latest`), wie `web`.
+2. Schritt 5 baut nicht mehr. Er schreibt je Mandant eine
+   `docker-compose.override.yml`, die beide Dienste auf genau die in Schritt 2
+   gebauten Images festlegt, und startet mit `--no-build`. Compose liest die
+   Datei automatisch mit — auch ein manuelles `docker compose up -d` im
+   Mandantenverzeichnis nutzt dieselben Images. Gepinnt wird nur, was die
+   Mandanten-Compose tatsaechlich definiert (ein Dienst nur im Override wuerde
+   neu angelegt); eine fremde Override-Datei wird nicht ueberschrieben, der
+   Mandant dann nicht neu gestartet und das gemeldet.
+3. Der Schnappschuss prueft das Ergebnis von `docker tag`; scheitert es, steht
+   eine Warnung da und `snapshot-failed` im Deploy-Protokoll statt einer
+   Erfolgsmeldung.
+4. `create-tenant.sh` und `ensure-tenant-worker.sh` erzeugen Mandanten ohne
+   `build:`-Bloecke; `create-tenant.sh` startet mit `--no-build`.
+5. Nebenbei: die Worker-Zustandsabfrage in Schritt 5 endete ohne Treffer mit
+   dem Rueckgabewert 1 und haette unter `set -euo pipefail` den Deploy still
+   beendet (Muster OP-266) — jetzt `|| true`.
+
+**Gegenprobe.** Schnappschuss und Schritt 5 aus dem echten Skript unter
+`set -euo pipefail` mit protokollierendem `docker`-Stub: nicht taggbares
+Web-Image → Warnung und Protokolleintrag, Worker gesichert; Mandant mit Web und
+Worker → beide gepinnt; Mandant nur mit Web → nur Web gepinnt, Lauf geht
+weiter; Mandant mit fremder Override-Datei → unangetastet, nicht neu gestartet;
+`--build` in keinem einzigen Aufruf.
+
+**Offen.** Ein Image-Rollback retaggt weiterhin nur die Images und startet den
+**Haupt**-`web`/`worker` neu; laufende Mandanten-Container behalten ihr Image,
+bis sie neu erzeugt werden. Das war vorher genauso und ist nicht Teil dieses
+Punkts.

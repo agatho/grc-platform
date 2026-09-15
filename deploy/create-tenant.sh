@@ -172,11 +172,11 @@ cat > "$TENANT_DIR/docker-compose.yml" << DCEOF
 # ============================================================================
 
 services:
+  # [OP-273] No build: blocks. Tenants run the images deploy/update-all.sh
+  # builds for the main instance; update-all.sh additionally pins both
+  # services via docker-compose.override.yml on every deploy.
   web-$TENANT:
     image: ghcr.io/arctos/grc-web:latest
-    build:
-      context: /opt/arctos
-      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:$NEXT_PORT:3000"
@@ -191,9 +191,7 @@ services:
       - arctos_arctos
 
   worker-$TENANT:
-    build:
-      context: /opt/arctos
-      dockerfile: Dockerfile.worker
+    image: ghcr.io/arctos/grc-worker:latest
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -212,7 +210,10 @@ networks:
 DCEOF
 
 cd "$TENANT_DIR"
-docker compose up -d --build 2>&1 | tail -5
+# [OP-273] No --build: rebuilding here moved `:latest` off the image the main
+# instance runs and left it without a rollback snapshot. The images come from
+# the last `arctos-update`; without one, this fails with a clear "not found".
+docker compose up -d --no-build 2>&1 | tail -5
 
 echo "  Container web-$TENANT auf Port $NEXT_PORT gestartet"
 

@@ -74,11 +74,10 @@ for tdir in "$TENANTS_DIR"/*/; do
 # ============================================================================
 
 services:
+  # [OP-273] No build: blocks — tenants run the images update-all.sh builds,
+  # pinned per deploy via docker-compose.override.yml.
   web-$TENANT:
     image: ghcr.io/arctos/grc-web:latest
-    build:
-      context: /opt/arctos
-      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:$HOST_PORT:3000"
@@ -93,9 +92,7 @@ services:
       - arctos_arctos
 
   worker-$TENANT:
-    build:
-      context: /opt/arctos
-      dockerfile: Dockerfile.worker
+    image: ghcr.io/arctos/grc-worker:latest
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
