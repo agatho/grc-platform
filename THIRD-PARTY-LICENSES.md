@@ -6,13 +6,13 @@
 
 Diese Datei listet jedes Paket, das im **ausgelieferten Produktionsbaum** (`npm ls --omit=dev`) enthalten ist, mit Version, Lizenzkennung, Copyright-Vermerk und — soweit im Paket vorhanden — dem vollständigen Lizenztext. Sie erfüllt die Namensnennungspflichten von MIT, Apache-2.0, ISC, BSD-2-Clause und BSD-3-Clause sowie die Zusatzpflichten aus LGPL-3.0-or-later, MPL-2.0 und CC-BY-4.0.
 
-**Pakete:** 451
+**Pakete:** 446
 
 ## Lizenzübersicht
 
 | Lizenz                                     | Pakete |
 | ------------------------------------------ | -----: |
-| `MIT`                                      |    367 |
+| `MIT`                                      |    362 |
 | `ISC`                                      |     30 |
 | `Apache-2.0`                               |     21 |
 | `BSD-3-Clause`                             |      6 |
@@ -2742,13 +2742,6 @@ _Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung a
 
 _Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung aus der `package.json` des Pakets._
 
-### @next/env@16.3.4
-
-- Lizenz: `MIT`
-- Copyright (c) Next.js Team <support@vercel.com>
-
-_Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung aus der `package.json` des Pakets._
-
 ### @next/env@16.3.5
 
 - Lizenz: `MIT`
@@ -2756,19 +2749,7 @@ _Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung a
 
 _Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung aus der `package.json` des Pakets._
 
-### @next/swc-linux-x64-gnu@16.3.4
-
-- Lizenz: `MIT`
-
-_Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung aus der `package.json` des Pakets._
-
 ### @next/swc-linux-x64-gnu@16.3.5
-
-- Lizenz: `MIT`
-
-_Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung aus der `package.json` des Pakets._
-
-### @next/swc-linux-x64-musl@16.3.4
 
 - Lizenz: `MIT`
 
@@ -15133,40 +15114,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </details>
 
-### next@16.3.4
-
-- Lizenz: `MIT`
-- Homepage: https://nextjs.org
-- Copyright (c) 2025 Vercel, Inc.
-
-<details><summary>Lizenztext (license.md)</summary>
-
-```text
-The MIT License (MIT)
-
-Copyright (c) 2025 Vercel, Inc.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-</details>
-
 ### next@16.3.5
 
 - Lizenz: `MIT`
@@ -16827,39 +16774,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-```
-
-</details>
-
-### postcss@8.5.23
-
-- Lizenz: `MIT`
-- Homepage: https://postcss.org/
-- Copyright 2013 Andrey Sitnik <andrey@sitnik.es>
-
-<details><summary>Lizenztext (LICENSE)</summary>
-
-```text
-The MIT License (MIT)
-
-Copyright 2013 Andrey Sitnik <andrey@sitnik.es>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ```
 
 </details>

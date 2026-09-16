@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-16T08:35:41.475Z",
+    "timestamp": "2026-09-16T09:02:00.176Z",
     "tools": [
       {
         "vendor": "ARCTOS",
@@ -4070,39 +4070,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40next/env@16.3.4",
-      "name": "@next/env",
-      "version": "16.3.4",
-      "description": "Next.js dotenv file loading",
-      "purl": "pkg:npm/%40next/env@16.3.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "7235999d451aea366ada415a35efd9c89759a27399fd0a0dd1991ada7cff14b3ab7f1d78a50b8cf5ce5169256458caa076de24b203c03163f21d2b3f0b2578f1"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/env/-/env-16.3.4.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/%40next/env@16.3.5",
       "name": "@next/env",
       "version": "16.3.5",
@@ -4169,38 +4136,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.4",
-      "name": "@next/swc-linux-x64-gnu",
-      "version": "16.3.4",
-      "purl": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "60884663a7d231f85ae766e75719f373dcda541cc983e72a413383f2d5c8052c787eebf4a553314131343da4b9f5886730e898886d3d20cc312407ff0859bf0f"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.3.4.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.5",
       "name": "@next/swc-linux-x64-gnu",
       "version": "16.3.5",
@@ -4222,38 +4157,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.3.5.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/%40next/swc-linux-x64-musl@16.3.4",
-      "name": "@next/swc-linux-x64-musl",
-      "version": "16.3.4",
-      "purl": "pkg:npm/%40next/swc-linux-x64-musl@16.3.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "f9e69a5fa6b1a436f4c85d460a988445eea78e996f742fa792cfdf29f707bb75cf191ada95df0fdff5fbcafed02dd8c0e759279f1c25f69c5d209b20fb0d4bf9"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.3.4.tgz"
         }
       ],
       "properties": [
@@ -7385,6 +7288,10 @@
         {
           "type": "website",
           "url": "https://swc.rs"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.23.tgz"
         }
       ],
       "properties": [
@@ -10862,7 +10769,12 @@
           "content": "ba1f2fa58ff5fd8c8592e9c80c51ffd76a7bffb55d3ca03585e8cc5446dd9046969d4cf41deb2fc7911b894e97c63c876483a3bbe64c6d0264461f9eb37feca5"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.21.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -11783,7 +11695,12 @@
           "content": "4c84d03d491acfe69593918be8d84e77093568468d4d20cfb06156ad3ba1286b634c5ef48cbfce86dd96e1ceab5d47b97eeec87b5f5521a8405c720889658d7a"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001810.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21901,7 +21818,12 @@
           "content": "0d38383096c631691f8ba55915d36ddbf71a31b432e0ebbe3a9fe1250bc611672755fa00d5003ec7344a033c3d8c3ebe19538e798aff98872e0d276e83a17afb"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.18.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -22153,43 +22075,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/next@16.3.4",
-      "name": "next",
-      "version": "16.3.4",
-      "description": "The React Framework",
-      "purl": "pkg:npm/next@16.3.4",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "fd9b5fe827911fe7a311752b62da88e20912eba785207b92c2a8bad1181ca562a8771159c76fdda9508c281c082df0075d0f85d5bd6f02e7608f79a7c6ab6820"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://nextjs.org"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/next/-/next-16.3.4.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/next@16.3.5",
       "name": "next",
       "version": "16.3.5",
@@ -22212,10 +22097,6 @@
         {
           "type": "website",
           "url": "https://nextjs.org"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/next/-/next-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -23549,7 +23430,12 @@
           "content": "c5c787dac9e1b5be4cf658aa0ec984c39ea57b7efa993664117fe311bfd1c4d1727a036e97b78db250973fd1438ff2dcbb45fc284c8c71e3f69eda5a1eb0c454"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -23796,43 +23682,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/postal-mime/-/postal-mime-2.7.6.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/postcss@8.5.23",
-      "name": "postcss",
-      "version": "8.5.23",
-      "description": "Tool for transforming styles with JS plugins",
-      "purl": "pkg:npm/postcss@8.5.23",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "839d39f3acebe1b666c0589395f94cbbc1346c34dbe48e607abb60c002a6b1d5254d022166dba7cd4943d564b3c1c5563e8015a6cac0eaf95f083ee85ef47082"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://postcss.org/"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/postcss/-/postcss-8.5.23.tgz"
         }
       ],
       "properties": [
@@ -25983,6 +25832,10 @@
         {
           "type": "website",
           "url": "https://sharp.pixelplumbing.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/sharp/-/sharp-0.35.4.tgz"
         }
       ],
       "properties": [
@@ -26983,7 +26836,12 @@
           "content": "a925720d378ca2d76f418a0758b346c111491c2fa2f99bdd051628b0e1600be5a0d6fc787eb376fd11bf340ed262aaaf28d2dfdfd3f62d2440da9bba9f45d864"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/styled-jsx/-/styled-jsx-5.1.6.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",

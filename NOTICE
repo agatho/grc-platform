@@ -10,10 +10,10 @@ GENERIERT — nicht von Hand bearbeiten.
 Erzeugt von scripts/generate-notice.mjs aus dem installierten npm-Baum.
 Neu erzeugen: npm run notice
 
-Pakete im Produktionsbaum: 451
+Pakete im Produktionsbaum: 446
 
 Lizenzverteilung (Produktionsbaum):
-   367  MIT
+   362  MIT
     30  ISC
     21  Apache-2.0
      6  BSD-3-Clause
