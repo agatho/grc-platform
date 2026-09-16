@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-16T09:02:00.176Z",
+    "timestamp": "2026-09-16T09:52:55.730Z",
     "tools": [
       {
         "vendor": "ARCTOS",
@@ -805,6 +805,10 @@
         {
           "type": "website",
           "url": "https://babel.dev/docs/en/next/babel-runtime"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.7.tgz"
         }
       ],
       "properties": [
@@ -838,6 +842,10 @@
         {
           "type": "website",
           "url": "https://babel.dev/docs/en/next/babel-template"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/template/-/template-7.29.7.tgz"
         }
       ],
       "properties": [
@@ -871,6 +879,10 @@
         {
           "type": "website",
           "url": "https://babel.dev/docs/en/next/babel-traverse"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.8.tgz"
         }
       ],
       "properties": [
@@ -904,6 +916,10 @@
         {
           "type": "website",
           "url": "https://babel.dev/docs/en/next/babel-types"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@babel/types/-/types-7.29.8.tgz"
         }
       ],
       "properties": [
@@ -1303,7 +1319,12 @@
           "content": "fb05a0e033f687c58e110c76073e756e5b30f5d0aa2a3de420329871c001ba800487365e0e19a6d00da4e003669bd95fd30e69266552633d9d8edadbccebf3cc"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@bpmn-io/lezer-feel/-/lezer-feel-3.0.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1401,6 +1422,10 @@
         {
           "type": "website",
           "url": "https://github.com/bpmn-io/semver-compat#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@bpmn-io/semver-compat/-/semver-compat-0.1.0.tgz"
         }
       ],
       "properties": [
@@ -1504,7 +1529,12 @@
           "content": "b65a2c52a6fedc16f10b165dbb8b4a7918213c50be40ceeae17e5884a57678298f1bed6bd85ddfe00692cf9b02ac5a94b57e09876d1515329e725d7a320895f6"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/autocomplete/-/autocomplete-6.20.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1532,7 +1562,12 @@
           "content": "fcae1197904dd0eb5388f5a624276a383bb7f179c332c0f1298e6b82b3e70a4bad3d325fdb055b9288b12df79a945e4ac2c7bfb3c3fc3398c0894462c12c2714"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/commands/-/commands-6.11.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1593,7 +1628,12 @@
           "content": "d6ae0f693fa8e8f6e0a6426de10f05bf95c9c53cb8154678316113b72883c372743f2afd136bea70a2fe93dc1cbe335322c6aec6f13b39f9968f71513c743be8"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/language/-/language-6.12.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1621,7 +1661,12 @@
           "content": "dbcffe8962d8c4ac6cbc66214982fbcda099a8bcf9f851450eaf6d56cbc6bfd92ff116387c501c849e565fd33762bad195322c1028ec5cfa9e3609d298d3f676"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/lint/-/lint-6.9.7.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1649,7 +1694,12 @@
           "content": "42140855163ec47643c7039216b27579431aa49054203dc875e0237fb7473bbcc15334a4ca8a078a87676a5cf9306de21f3c22c4a325000ca7ef6e38cb9dfb10"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/state/-/state-6.7.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1677,7 +1727,12 @@
           "content": "dbe7acb9c6d05fac01d89622d5e0ef7423c54c0df504df284b2eb10a69371ba0a5a15d75c8ebc48d893e807ee42eb3f432e1c6f7813c583863b39a0c8aedfe5a"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@codemirror/view/-/view-6.43.11.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -1820,6 +1875,10 @@
         {
           "type": "website",
           "url": "https://github.com/csstools/postcss-plugins/tree/main/packages/css-parser-algorithms#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@csstools/css-parser-algorithms/-/css-parser-algorithms-4.0.0.tgz"
         }
       ],
       "properties": [
@@ -1890,6 +1949,10 @@
         {
           "type": "website",
           "url": "https://github.com/csstools/postcss-plugins/tree/main/packages/css-tokenizer#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@csstools/css-tokenizer/-/css-tokenizer-4.0.0.tgz"
         }
       ],
       "properties": [
@@ -2145,6 +2208,10 @@
         {
           "type": "website",
           "url": "https://github.com/toyobayashi/emnapi#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@emnapi/wasi-threads/-/wasi-threads-1.2.1.tgz"
         }
       ],
       "properties": [
@@ -2527,6 +2594,10 @@
         {
           "type": "website",
           "url": "https://github.com/eslint/rewrite/tree/main/packages/core#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@eslint/core/-/core-0.17.0.tgz"
         }
       ],
       "properties": [
@@ -2930,6 +3001,10 @@
         {
           "type": "website",
           "url": "https://floating-ui.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.12.tgz"
         }
       ],
       "properties": [
@@ -3249,6 +3324,10 @@
         {
           "type": "website",
           "url": "https://github.com/humanwhocodes/humanfs#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@humanfs/types/-/types-0.15.0.tgz"
         }
       ],
       "properties": [
@@ -3311,7 +3390,12 @@
           "content": "6d5d13828f4ae217cf09e93e68c027f35469a452afdb248341e328499baf4c04b2c0d4e7549080ac2644d855aaa6f21ab4abbb54c44b5a547511acef5610f285"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@humanwhocodes/retry/-/retry-0.4.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -3666,6 +3750,10 @@
         {
           "type": "website",
           "url": "https://github.com/jridgewell/sourcemaps/tree/main/packages/sourcemap-codec"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.6.0.tgz"
         }
       ],
       "properties": [
@@ -3732,7 +3820,12 @@
           "content": "b31404e3ad1f3d9c94dec75cf2569fc623f0247073651cbfb9d345ca7190932d5278f60176190197590e6a003db93de9c51f0ad3d6ceae64d4a80f706ff3e349"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@lezer/common/-/common-1.5.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -3760,7 +3853,12 @@
           "content": "a97747ed4a93bc67dd54120dae02a10ec553253c5a72d34dc4b93bf94330661535de530768e06525ef55aa9f74ef26b9e98dfe79ddad96acf2b3b8c3913996d2"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@lezer/highlight/-/highlight-1.2.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -3854,7 +3952,12 @@
           "content": "ae70a94c805a7cec78991a78df13b10c96c58a9266fdcd1c89afd5e5388696198c6bec2c49da06994377c3906aae4b3fd3d43f0f8b4d02659a4fca7a3518bbec"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@lezer/lr/-/lr-1.4.10.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -4259,6 +4362,10 @@
         {
           "type": "website",
           "url": "https://paulmillr.com/noble/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@noble/hashes/-/hashes-1.8.0.tgz"
         }
       ],
       "properties": [
@@ -4699,6 +4806,10 @@
         {
           "type": "website",
           "url": "https://playwright.dev"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@playwright/test/-/test-1.63.0.tgz"
         }
       ],
       "properties": [
@@ -4947,6 +5058,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-collection/-/react-collection-1.1.15.tgz"
         }
       ],
       "properties": [
@@ -5051,6 +5166,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.1.23.tgz"
         }
       ],
       "properties": [
@@ -5083,6 +5202,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-direction/-/react-direction-1.1.4.tgz"
         }
       ],
       "properties": [
@@ -5367,6 +5490,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-popper/-/react-popper-1.3.7.tgz"
         }
       ],
       "properties": [
@@ -5507,6 +5634,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-roving-focus/-/react-roving-focus-1.1.19.tgz"
         }
       ],
       "properties": [
@@ -5647,6 +5778,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.3.3.tgz"
         }
       ],
       "properties": [
@@ -6075,6 +6210,10 @@
         {
           "type": "website",
           "url": "https://radix-ui.com/primitives"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@radix-ui/rect/-/rect-1.1.3.tgz"
         }
       ],
       "properties": [
@@ -6269,7 +6408,12 @@
           "content": "b47d7c2613c35a013ede39d8933c81e99ad975f36712c15ee0fc26b979a53b0e0d188cac3fcc0f639697660fbea531bda9469b5e0d67cd7fc51871a439b1fcc5"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@react-email/components/-/components-1.0.12.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -6759,7 +6903,12 @@
           "content": "4d8aa48a8452e39c134798a5ddd624fd26d48e311d852c21f41b51341f7da8d1f5a57030038e47eeb02ec5e862bbc8894091f423222bfba9fada0073f5ece6b3"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@react-email/text/-/text-0.1.6.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -6902,6 +7051,10 @@
         {
           "type": "website",
           "url": "https://github.com/rolldown/plugins/tree/main/packages/pluginutils#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz"
         }
       ],
       "properties": [
@@ -7861,7 +8014,12 @@
           "content": "1777e8d4c62b44960bdf3111d0e50e9a4bad8ebd55a76de6eceb12829ee7ab848fe8ea97e82ff9e971483c09796eddf3681463996ed21b3deeffa2f016961c3a"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tybys/wasm-util/-/wasm-util-0.10.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -8263,6 +8421,10 @@
         {
           "type": "website",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/d3-time"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz"
         }
       ],
       "properties": [
@@ -8370,6 +8532,10 @@
         {
           "type": "website",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/estree"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz"
         }
       ],
       "properties": [
@@ -8510,6 +8676,10 @@
         {
           "type": "website",
           "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/node/-/node-22.20.2.tgz"
         }
       ],
       "properties": [
@@ -8728,6 +8898,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io/packages/parser"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -8835,6 +9009,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -8905,6 +9083,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/types/-/types-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -8938,6 +9120,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io/packages/typescript-estree"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -8971,6 +9157,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io/packages/utils"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -9004,6 +9194,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -9259,6 +9453,10 @@
         {
           "type": "website",
           "url": "https://github.com/vitest-dev/vitest/tree/main/packages/pretty-format"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@vitest/pretty-format/-/pretty-format-4.1.11.tgz"
         }
       ],
       "properties": [
@@ -9366,6 +9564,10 @@
         {
           "type": "website",
           "url": "https://vitest.dev/api/mock"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@vitest/spy/-/spy-4.1.11.tgz"
         }
       ],
       "properties": [
@@ -9584,6 +9786,10 @@
         {
           "type": "website",
           "url": "https://github.com/acornjs/acorn"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/acorn/-/acorn-8.18.0.tgz"
         }
       ],
       "properties": [
@@ -9617,6 +9823,10 @@
         {
           "type": "website",
           "url": "https://github.com/ajv-validator/ajv"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ajv/-/ajv-6.15.0.tgz"
         }
       ],
       "properties": [
@@ -10243,7 +10453,12 @@
           "content": "63b5ade7578a252ca2f34845ac909e3c618da3992d242b2516e6e8a89b1b7f9ec208f726e73ced96e3e5738fda0fcb16b0abe5c1ab5ece957853579f93c9298e"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/array.prototype.flatmap/-/array.prototype.flatmap-1.3.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -10641,6 +10856,10 @@
         {
           "type": "website",
           "url": "https://github.com/juliangruber/balanced-match"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"
         }
       ],
       "properties": [
@@ -10740,6 +10959,10 @@
         {
           "type": "website",
           "url": "https://github.com/beatgammit/base64-js"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz"
         }
       ],
       "properties": [
@@ -11041,7 +11264,12 @@
           "content": "e713bc741ba003b510ae260078fe457031be9153652fd265334bf502d602c50c773f46d790bcb5f55c539f38014a8d1df36e92640a539c8798161506f7de1749"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/bpmn-js/-/bpmn-js-18.28.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -11971,7 +12199,12 @@
           "content": "7989b441606d52b0566561b4777f3a386030d7a67df793e2395a3607b6e35926c779d1a5e5ed1959aabae6438681448d7ac1080e407d2126d383f24af5d84264"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -12209,7 +12442,12 @@
           "content": "65006f8b50dca49e060ea6a78ee719d878f7c043b9a590d2f3d0566e472bbddc64b09a2bc140c365a997f65745929f5ac369660432e090e6c40380d6349f4561"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -12385,7 +12623,12 @@
           "content": "5fbb2343371e521bb5bbb63fca5ad1645536152e8b462155a7aaca2cf836df2df1ddcdc338a030b97183a7e3c01a387a0929c28d8780ba5f29713f1b025fa548"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/css-tree/-/css-tree-3.2.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -12783,6 +13026,10 @@
         {
           "type": "website",
           "url": "https://d3js.org/d3-time/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/d3-time/-/d3-time-3.1.0.tgz"
         }
       ],
       "properties": [
@@ -13096,7 +13343,12 @@
           "content": "446c305a7c10be455f6af295b76d8518bc3ec5849dcc04709b4aeee83853540dee994e6165cdbc57790ee2cb6062bcab4e52e9baf808f468a28e5b408cd6dca8"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -13264,6 +13516,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/define-data-property#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/define-data-property/-/define-data-property-1.1.4.tgz"
         }
       ],
       "properties": [
@@ -13359,7 +13615,12 @@
           "content": "06d8f604e38ef37a375b21f9f5ef0c817b3111055c6ab9143a9118aee6c1d2eaf09cdd74c90dfae2bb22072535d67665a966199b4e62fe87fb8a8e26ce2841b5"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -13663,7 +13924,12 @@
           "content": "38b113063eb0d0eb1a801c1d5e73dd37472731f17da2937af5ca3eed9adb7cf1ab7693d5341523d36b298ba07537bc0284b4223e7e02487ff326f5f0e7a8261f"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/domelementtype/-/domelementtype-2.3.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -13790,7 +14056,12 @@
           "content": "af9a40f2275b93b1855ae1c453bb6b4937e559c741a5010af80c35ed4ad21e34ba0917ae86bacf7320b7cdc4013d0be102b4479c1a3f87a78b1f57e40af365c3"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/dotenv-cli/-/dotenv-cli-11.0.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -14035,6 +14306,10 @@
         {
           "type": "website",
           "url": "https://github.com/es-shims/dunder-proto#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz"
         }
       ],
       "properties": [
@@ -14529,6 +14804,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/es-object-atoms#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/es-object-atoms/-/es-object-atoms-1.1.2.tgz"
         }
       ],
       "properties": [
@@ -14562,6 +14841,10 @@
         {
           "type": "website",
           "url": "https://github.com/es-shims/es-set-tostringtag#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz"
         }
       ],
       "properties": [
@@ -14764,7 +15047,12 @@
           "content": "1ca54b4bc76f208fb1a0a5bd926ab16d12ab9d61177c926bfc56618499a2a880747b4e7740d605a8e068b9330efe4e6c203e0cbc28940afbfc6fd338877db020"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -15006,6 +15294,10 @@
         {
           "type": "website",
           "url": "https://github.com/import-js/eslint-plugin-import"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/eslint-plugin-import/-/eslint-plugin-import-2.32.0.tgz"
         }
       ],
       "properties": [
@@ -15294,6 +15586,10 @@
         {
           "type": "website",
           "url": "https://eslint.org"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/eslint/-/eslint-9.39.5.tgz"
         }
       ],
       "properties": [
@@ -15327,6 +15623,10 @@
         {
           "type": "website",
           "url": "https://github.com/eslint/js/blob/main/packages/espree/README.md"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/espree/-/espree-10.4.0.tgz"
         }
       ],
       "properties": [
@@ -15434,6 +15734,10 @@
         {
           "type": "website",
           "url": "https://github.com/estools/estraverse"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/estraverse/-/estraverse-5.3.0.tgz"
         }
       ],
       "properties": [
@@ -15500,6 +15804,10 @@
         {
           "type": "website",
           "url": "https://github.com/estools/esutils"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/esutils/-/esutils-2.0.3.tgz"
         }
       ],
       "properties": [
@@ -15672,6 +15980,10 @@
         {
           "type": "website",
           "url": "https://github.com/epoberezkin/fast-deep-equal#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz"
         }
       ],
       "properties": [
@@ -16471,6 +16783,10 @@
         {
           "type": "website",
           "url": "https://github.com/Raynos/function-bind"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz"
         }
       ],
       "properties": [
@@ -16537,6 +16853,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/functions-have-names#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/functions-have-names/-/functions-have-names-1.2.3.tgz"
         }
       ],
       "properties": [
@@ -16644,6 +16964,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/get-intrinsic#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/get-intrinsic/-/get-intrinsic-1.3.0.tgz"
         }
       ],
       "properties": [
@@ -16982,7 +17306,12 @@
           "content": "0e92ca6cd5385b2969c49ca442e8df09cc185a257f2619b9d06a28d30ad520b02fe633abf5df87f944773e14820f6ac2084220d2e73e1be9ae053c03e782610d"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/globalthis/-/globalthis-1.0.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -17014,6 +17343,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/gopd#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/gopd/-/gopd-1.2.0.tgz"
         }
       ],
       "properties": [
@@ -17043,7 +17376,12 @@
           "content": "45b279fe398570d342703579a3d7939c12c9fc7b33595d0fef76dcf857f89d2feb263f98692e881b288e2f45680585fe9755ab97793ade1fcaac7fa7849d17bd"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -17145,6 +17483,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/has-property-descriptors#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-property-descriptors/-/has-property-descriptors-1.0.2.tgz"
         }
       ],
       "properties": [
@@ -17178,6 +17520,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/has-proto#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-proto/-/has-proto-1.2.0.tgz"
         }
       ],
       "properties": [
@@ -17211,6 +17557,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/has-symbols#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-symbols/-/has-symbols-1.1.0.tgz"
         }
       ],
       "properties": [
@@ -17244,6 +17594,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/has-tostringtag#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/has-tostringtag/-/has-tostringtag-1.0.2.tgz"
         }
       ],
       "properties": [
@@ -17277,6 +17631,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/hasOwn#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/hasown/-/hasown-2.0.4.tgz"
         }
       ],
       "properties": [
@@ -17376,6 +17734,10 @@
         {
           "type": "website",
           "url": "https://hono.dev"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/hono/-/hono-4.13.7.tgz"
         }
       ],
       "properties": [
@@ -17619,7 +17981,12 @@
           "content": "b7a6093f899d0be18717de8d6e2b3fe051003613fff155a660cbd4b98a57bd276b860e61a4855bab65d994e0375164dbb5dc0f0a2d2aee311739d1e4027a8e9f"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ids/-/ids-3.0.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -17680,7 +18047,12 @@
           "content": "86c053354a904c3c245ad71d608da2d3a63f9d4044b0d10324a8d676280bbde832f240ee2404bcb91969924710a721172f467fa630f2e4706632344227682afa"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ignore/-/ignore-5.3.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -17778,6 +18150,10 @@
         {
           "type": "website",
           "url": "https://github.com/immerjs/immer#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/immer/-/immer-11.1.18.tgz"
         }
       ],
       "properties": [
@@ -17947,7 +18323,12 @@
           "content": "93fbc6697e3f6256b75b3c8c0af4d039761e207bea38ab67a8176ecd31e9ce9419cc0b2428c859d8af849c189233dcc64a820578ca572b16b8758799210a9ec1"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -17979,6 +18360,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/internal-slot#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/internal-slot/-/internal-slot-1.1.0.tgz"
         }
       ],
       "properties": [
@@ -18086,6 +18471,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/is-array-buffer#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-array-buffer/-/is-array-buffer-3.0.5.tgz"
         }
       ],
       "properties": [
@@ -18255,7 +18644,12 @@
           "content": "d410b40551614bfa74aadc3a7a7a7c7bef0e0f452b2b4a052f3b528cdce170a037583b89c7100f5f33ee3ed2a48c463d514a045a55fff1f80a7aed92f22f494c"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-callable/-/is-callable-1.2.7.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -18324,6 +18718,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/is-data-view#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-data-view/-/is-data-view-1.0.2.tgz"
         }
       ],
       "properties": [
@@ -18534,6 +18932,10 @@
         {
           "type": "website",
           "url": "https://github.com/micromatch/is-glob"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-glob/-/is-glob-4.0.3.tgz"
         }
       ],
       "properties": [
@@ -18715,6 +19117,10 @@
         {
           "type": "website",
           "url": "https://github.com/mathiasbynens/is-potential-custom-element-name"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-potential-custom-element-name/-/is-potential-custom-element-name-1.0.1.tgz"
         }
       ],
       "properties": [
@@ -18748,6 +19154,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/is-regex"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-regex/-/is-regex-1.2.1.tgz"
         }
       ],
       "properties": [
@@ -18851,7 +19261,12 @@
           "content": "06d11e4aca1a4239523c17a631022b635318d2e33abe74b58397e6b9f60eb67c4b19464cdb5efc3ca6e1b24ec57efe7c217f99b5cbe81b071c62c8743e096400"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-string/-/is-string-1.1.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -18912,7 +19327,12 @@
           "content": "a7711cb227178e2b7b49ab245c7b35840f75431813c38e85bfa10528a192e434452c3f322a7a218c5de1c688eef786ff39c319a10ba4ce93e9044f6e2d52b381"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-typed-array/-/is-typed-array-1.1.15.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -19343,7 +19763,12 @@
           "content": "002ffb2687c9bd91abae779635a12725e38b531f89946b7bb4d6b4c198913d3e0c635c267ca8eddbee8eda9daecf6fac92597c39966624c36a7a47bb90a6cd81"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jiti/-/jiti-2.7.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -19507,7 +19932,12 @@
           "content": "1028b8162d9fec1749b542937e56114e268cc480743bacdf4757d7d065e952b7fa7e5a7c408627d544f6d1842a75239f93675f902c12f0b005a090c4a6934ae5"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jsdom/-/jsdom-29.1.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -19825,7 +20255,12 @@
           "content": "de5fab6f5e48396b54854d07e4c16a112fd3e8a87b69b6308e8b017b2fef0fa843b7cce811f7e4482e56b39486b60570de0071d8d11b8537925b5fa45a4a724d"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jszip/-/jszip-3.10.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21104,7 +21539,12 @@
           "content": "bddd85e1853211728670b1e8abe4c4c828f1b9e49e1e7171cb28cda7cd328345d5e2f5219c37abfe5bef96a33f6ab0796d740de4adbfde88a7c82472c7c4f609"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/magic-string/-/magic-string-0.30.21.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21239,6 +21679,10 @@
         {
           "type": "website",
           "url": "https://github.com/es-shims/math-intrinsics#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz"
         }
       ],
       "properties": [
@@ -21383,6 +21827,10 @@
         {
           "type": "website",
           "url": "https://github.com/bpmn-io/min-dash"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/min-dash/-/min-dash-5.1.0.tgz"
         }
       ],
       "properties": [
@@ -21412,7 +21860,12 @@
           "content": "d30e4510180f0321e1985a235b7cf177bc1edc3fa6e57612dc4ff4e8ecafc666c726889055ae0d6a08fa456be800a611c39c6d87a70fe5331e3dce5c47533d84"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/min-dom/-/min-dom-5.3.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21473,7 +21926,12 @@
           "content": "5608d652c9e74fa9fe35493a799abbef37857695b62d60f33facc51ab09b1d789836e9790f3aa4d871d0e6e147d83356e576e9f3e8d5cda78db7de2cb04125e3"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/minimatch/-/minimatch-3.1.5.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21538,6 +21996,10 @@
         {
           "type": "website",
           "url": "https://github.com/minimistjs/minimist"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz"
         }
       ],
       "properties": [
@@ -21670,7 +22132,12 @@
           "content": "db4ab33bf6693063bd8fd81d4205e4f5b7c6c5bf7003724a9c6b61ff6d5864a3832eb644e115bfb953082f9a53b24626df867ad43b9c0443e4abddea07236c05"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/moddle/-/moddle-8.2.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21729,7 +22196,12 @@
           "content": "ec39cded399b2dc617706e1155a757222856972b8cf5a7e8530c3c639020838df59062a2b8bdbf38cc8fe26279c0bcfea6f377b79c920a52ce6955c9fb07a445"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/motion-utils/-/motion-utils-13.0.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -21790,7 +22262,12 @@
           "content": "e85973b9b4cb646dc9d9afcd542025784863ceae68c601f268253dc985ef70bb2fa1568726afece715c8ebf5d73fab73ed1f7100eb479d23bfb57b45dd645394"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -22097,6 +22574,10 @@
         {
           "type": "website",
           "url": "https://nextjs.org"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/next/-/next-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -22344,6 +22825,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/object-inspect"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz"
         }
       ],
       "properties": [
@@ -22439,7 +22924,12 @@
           "content": "9cadbc58ea3e4088c190376e4c8344e09905fd42492b27f6109c6f24a7db943a7283443ea643873532f4430cba34fe85844fc49f357bdc1c71a9c25a5d8f5a9f"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/object.assign/-/object.assign-4.1.7.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -22467,7 +22957,12 @@
           "content": "f2efe17d7151043d4ed213d48e2a0b8685851d19adead280e3fbd93f272406bd7c975284f6e1eb15a15a522f0c0d14e98b8b9a936828c8f4d23492d75f69361f"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/object.entries/-/object.entries-1.1.9.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -22635,7 +23130,12 @@
           "content": "94d689808fb643951140191c7042874d038f697754c67659125413658d0c15402e684a9ed44f8dcaf81dcff688c8d8ba67d3333b976fd47f27e7cfc610ba77fb"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/once/-/once-1.4.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -23089,6 +23589,10 @@
         {
           "type": "website",
           "url": "https://github.com/NaturalIntelligence/path-expression-matcher#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/path-expression-matcher/-/path-expression-matcher-1.6.2.tgz"
         }
       ],
       "properties": [
@@ -23254,7 +23758,12 @@
           "content": "5948c6700a8fd6041a72841ef8e049b0503b2dde03c97b9422367971cef970b1ef27b76d36c4ee8298712000f0b294be02b68051e3c22ab495b4f2c58ff17cf3"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pathe/-/pathe-2.0.3.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -23715,6 +24224,10 @@
         {
           "type": "website",
           "url": "https://postcss.org/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postcss/-/postcss-8.5.28.tgz"
         }
       ],
       "properties": [
@@ -23748,6 +24261,10 @@
         {
           "type": "website",
           "url": "https://github.com/porsager/postgres"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres/-/postgres-3.4.9.tgz"
         }
       ],
       "properties": [
@@ -23855,6 +24372,10 @@
         {
           "type": "website",
           "url": "https://preactjs.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/preact/-/preact-10.29.8.tgz"
         }
       ],
       "properties": [
@@ -23888,6 +24409,10 @@
         {
           "type": "website",
           "url": "http://preludels.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/prelude-ls/-/prelude-ls-1.2.1.tgz"
         }
       ],
       "properties": [
@@ -23921,6 +24446,10 @@
         {
           "type": "website",
           "url": "https://prettier.io"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/prettier/-/prettier-3.9.6.tgz"
         }
       ],
       "properties": [
@@ -24020,6 +24549,10 @@
         {
           "type": "website",
           "url": "https://github.com/calvinmetcalf/process-nextick-args"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz"
         }
       ],
       "properties": [
@@ -24053,6 +24586,10 @@
         {
           "type": "website",
           "url": "https://facebook.github.io/react/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz"
         }
       ],
       "properties": [
@@ -24086,6 +24623,10 @@
         {
           "type": "website",
           "url": "https://mths.be/punycode"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
         }
       ],
       "properties": [
@@ -24156,6 +24697,10 @@
         {
           "type": "website",
           "url": "https://react.dev/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.0.tgz"
         }
       ],
       "properties": [
@@ -24374,6 +24919,10 @@
         {
           "type": "website",
           "url": "https://github.com/reduxjs/react-redux"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-redux/-/react-redux-9.3.0.tgz"
         }
       ],
       "properties": [
@@ -24510,6 +25059,10 @@
         {
           "type": "website",
           "url": "https://github.com/theKashey/react-style-singleton#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react-style-singleton/-/react-style-singleton-2.2.3.tgz"
         }
       ],
       "properties": [
@@ -24543,6 +25096,10 @@
         {
           "type": "website",
           "url": "https://react.dev/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/react/-/react-19.3.0.tgz"
         }
       ],
       "properties": [
@@ -24605,7 +25162,12 @@
           "content": "f6efec9e20ab6370f959db04447cc71381b66025eaa06e454c7522082e1221bafa5dc2d9058d39c9af442a361e93d3b9c4e0308c6abed497460404bb43d49ca0"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -24748,6 +25310,10 @@
         {
           "type": "website",
           "url": "http://redux.js.org"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/redux/-/redux-5.0.1.tgz"
         }
       ],
       "properties": [
@@ -24814,7 +25380,12 @@
           "content": "758aa035265b0f091a27671e45df688c21a306afa63a6f4b9ad5e7027106c8784dff947b8835b64d1c3787ea3f8c2171bacdcfd8b7d62088b0a3002300d9bb20"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/regexp.prototype.flags/-/regexp.prototype.flags-1.5.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -24875,7 +25446,12 @@
           "content": "02067750e666dd89dd7eb2783988e0ad3edb9829bfd62aa48ef11f1ffa188f387a3c3daac3842e4f78e39d722ba5db78313a4c5dc94c4f79576e6458f9745a93"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/reselect/-/reselect-5.2.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -24907,6 +25483,10 @@
         {
           "type": "website",
           "url": "https://github.com/resend/resend-node#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/resend/-/resend-6.28.1.tgz"
         }
       ],
       "properties": [
@@ -25368,6 +25948,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/safe-push-apply#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safe-push-apply/-/safe-push-apply-1.0.0.tgz"
         }
       ],
       "properties": [
@@ -25401,6 +25985,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/safe-regex-test#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safe-regex-test/-/safe-regex-test-1.1.0.tgz"
         }
       ],
       "properties": [
@@ -25570,6 +26158,10 @@
         {
           "type": "website",
           "url": "https://github.com/mxxii/selderee"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/selderee/-/selderee-0.11.0.tgz"
         }
       ],
       "properties": [
@@ -25632,7 +26224,12 @@
           "content": "63bfca0ec6fc2e3a28669c1aa86cae94ee8342592c8029dc7211c693eb19218e1206f52870c044147e54af57c8e1d57e26f974c3a723bee71a222e34a6e462a0"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -25664,6 +26261,10 @@
         {
           "type": "website",
           "url": "https://reactjs.org/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/server-only/-/server-only-0.0.1.tgz"
         }
       ],
       "properties": [
@@ -25734,6 +26335,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/set-function-name#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/set-function-name/-/set-function-name-2.0.2.tgz"
         }
       ],
       "properties": [
@@ -25800,7 +26405,12 @@
           "content": "3004c9759a7cb0ba8397febc2df4266cff3328f2d0355e81219a0882bb1c14343e46cbcafc1c5e0d03a0cb128aa21d32ffc87706a5459c2a90fe077eade8885c"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/setimmediate/-/setimmediate-1.0.5.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -26046,6 +26656,10 @@
         {
           "type": "website",
           "url": "https://github.com/ljharb/side-channel#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/side-channel/-/side-channel-1.1.1.tgz"
         }
       ],
       "properties": [
@@ -26326,6 +26940,10 @@
         {
           "type": "website",
           "url": "https://github.com/standard-webhooks/standard-webhooks/tree/main/libraries/javascript"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/standardwebhooks/-/standardwebhooks-1.1.1.tgz"
         }
       ],
       "properties": [
@@ -26569,7 +27187,12 @@
           "content": "dbedda0c03a63d39ae1708c39e6246d9cb44910295922eef392a9ac64bf8d8ca308f557a3e7beec05091ad1e650a152ec754c1b243e37e47933a1a9ccc33314f"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/string.prototype.trimend/-/string.prototype.trimend-1.0.10.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -26869,7 +27492,12 @@
           "content": "aa9080bd197db2db8e1ef78ab27ec79dc251befe74d6a21a70acd094effe2f0c5cf7ed2adb02f2bf80dfbedf34fc33e7da9a8e06c25d0e2a205c647df8ebf047"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/supports-color/-/supports-color-7.2.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -27049,6 +27677,10 @@
         {
           "type": "website",
           "url": "https://tailwindcss.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.3.3.tgz"
         }
       ],
       "properties": [
@@ -27222,7 +27854,12 @@
           "content": "70168400209ba2e62b41cf511be7935e73d8a2c5f5223aadcbf23a0dd5e8bf00ddf3d3f0bb88dc9a9391ec1b85105f5809c77bfc05b06ac134db4ed630aee177"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tiny-svg/-/tiny-svg-4.1.4.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -27360,6 +27997,10 @@
         {
           "type": "website",
           "url": "https://github.com/tinylibs/tinyrainbow#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tinyrainbow/-/tinyrainbow-3.1.1.tgz"
         }
       ],
       "properties": [
@@ -27677,7 +28318,12 @@
           "content": "389fe26f184f96aacc33452234727fd02290928285db8dff0049a996ddeaa518245bc546ec87ce4b8d61ed5f138c84ea741c87ceb8dc4bfdac8becb894887c34"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.5.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -27816,6 +28462,10 @@
         {
           "type": "website",
           "url": "https://tsx.hirok.io"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tsx/-/tsx-4.23.13.tgz"
         }
       ],
       "properties": [
@@ -27886,6 +28536,10 @@
         {
           "type": "website",
           "url": "https://github.com/gkz/type-check"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/type-check/-/type-check-0.4.0.tgz"
         }
       ],
       "properties": [
@@ -28067,6 +28721,10 @@
         {
           "type": "website",
           "url": "https://typescript-eslint.io/packages/typescript-eslint"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/typescript-eslint/-/typescript-eslint-8.70.0.tgz"
         }
       ],
       "properties": [
@@ -28137,6 +28795,10 @@
         {
           "type": "website",
           "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz"
         }
       ],
       "properties": [
@@ -28244,6 +28906,10 @@
         {
           "type": "website",
           "url": "https://undici.nodejs.org"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/undici/-/undici-7.29.1.tgz"
         }
       ],
       "properties": [
@@ -28314,6 +28980,10 @@
         {
           "type": "website",
           "url": "https://github.com/devongovett/unicode-trie"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/unicode-trie/-/unicode-trie-2.0.0.tgz"
         }
       ],
       "properties": [
@@ -28590,7 +29260,12 @@
           "content": "3e9e864b018ffcdacf22bc551402243907b2c3c9457a73878a34169144eb0efac5e002eaca53f60bf28291e4bd76950cdcabd84508676b9bedec82fde7e650f7"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.6.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -28622,6 +29297,10 @@
         {
           "type": "website",
           "url": "https://github.com/TooTallNate/util-deprecate"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz"
         }
       ],
       "properties": [
@@ -28723,6 +29402,10 @@
         {
           "type": "website",
           "url": "https://vite.dev"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/vite/-/vite-8.2.2.tgz"
         }
       ],
       "properties": [
@@ -28756,6 +29439,10 @@
         {
           "type": "website",
           "url": "https://vitest.dev"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/vitest/-/vitest-4.1.11.tgz"
         }
       ],
       "properties": [
@@ -28888,7 +29575,12 @@
           "content": "b1770d707382e75b8f185d0ffc3e0d56dae48d25367cdb26f62a20e19bd926c2f7ae3a030335d98649b6316b75cbe3d476080a01856830021872cefcc09e750b"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/whatwg-mimetype/-/whatwg-mimetype-5.0.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -28916,7 +29608,12 @@
           "content": "d6da38cd70719971d5dc8892484227aeb78896ed36bd43afae1c49247e6f731613043031e7572a66229dc93c6579c74a3528e3f04731181c4d7fa560fbde3983"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/whatwg-url/-/whatwg-url-16.0.1.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -28948,6 +29645,10 @@
         {
           "type": "website",
           "url": "https://github.com/inspect-js/which-boxed-primitive#readme"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/which-boxed-primitive/-/which-boxed-primitive-1.1.1.tgz"
         }
       ],
       "properties": [
@@ -29051,7 +29752,12 @@
           "content": "7ef3b813158c16cab2846dc088f00e6ccb98d65c5aaa061cc5b738f4235d5830c408e24d810cafb0e595c1b65cfaa7f7af346dc688c12be08c12fd0b779098a7"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/which-typed-array/-/which-typed-array-1.1.22.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -29256,7 +29962,12 @@
           "content": "12f18af042770e16877db465113396012e693bd31921379ab87289c9bf30c9a8d47d051e9e4220d8cbcb0d36784ff4e021c9b71d4d1314181659ba00677d141e"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xml-name-validator/-/xml-name-validator-5.0.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -29284,7 +29995,12 @@
           "content": "8218a0d93044fc7d7568e56099a840dcc8629af901afa2486249c7fc385d935d275f075b22a049b1b7ccc69bc53c6f1b030efb80ddbd6905af2a9995a0f96f3d"
         }
       ],
-      "externalReferences": [],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xml-naming/-/xml-naming-0.3.0.tgz"
+        }
+      ],
       "properties": [
         {
           "name": "arctos:scope",
@@ -29551,6 +30267,10 @@
         {
           "type": "website",
           "url": "https://zod.dev"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz"
         }
       ],
       "properties": [
