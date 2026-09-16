@@ -30,11 +30,11 @@
     "xml-crypto": "6.1.2"
   },
   "peerDependencies": {
-    "next": "^16.3.4"
+    "next": "^16.3.5"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.10",
-    "next": "^16.3.4",
+    "next": "^16.3.5",
     "typescript": "^5.7",
     "vitest": "^4.1.5"
   }

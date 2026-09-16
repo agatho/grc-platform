@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-09T17:12:26.437Z",
+    "timestamp": "2026-09-16T09:52:55.756Z",
     "tools": [
       {
         "vendor": "ARCTOS",
@@ -71,11 +71,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40anthropic-ai/sdk@0.124.0",
+      "bom-ref": "pkg:npm/%40anthropic-ai/sdk@0.125.0",
       "name": "@anthropic-ai/sdk",
-      "version": "0.124.0",
+      "version": "0.125.0",
       "description": "The official TypeScript library for the Anthropic API",
-      "purl": "pkg:npm/%40anthropic-ai/sdk@0.124.0",
+      "purl": "pkg:npm/%40anthropic-ai/sdk@0.125.0",
       "licenses": [
         {
           "license": {
@@ -86,13 +86,13 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "70de4ef22f545711de3900338ff5e3b215971bc2a289b243c3d386a47d99fde4779ff441c5da0bc4324e71fa80256be368c0c57c74c1003534e21591255903c8"
+          "content": "1eae706255eea7327d335173aa3a9ade139b72e8a011755926a4980e079918cdf0178aab34444ce59d4e3807a84fdae5a1df1ac09dee6322636d05e9d5c9081a"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@anthropic-ai/sdk/-/sdk-0.124.0.tgz"
+          "url": "https://registry.npmjs.org/@anthropic-ai/sdk/-/sdk-0.125.0.tgz"
         }
       ],
       "properties": [
@@ -1645,6 +1645,43 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.3.3",
+      "name": "@img/sharp-libvips-linuxmusl-x64",
+      "version": "1.3.3",
+      "description": "Prebuilt libvips and dependencies for use with sharp on Linux (musl) x64",
+      "purl": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.3.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7e3f0cbf41c77c3d51afee08ebcfb76a02729f10d6b4116089c4db48e6fd0647baa48c3319c27e457ff21e39a210614c09abd8fddc6f7a6eccc8d68917ec038b"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://sharp.pixelplumbing.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.3.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/%40img/sharp-linux-x64@0.35.4",
       "name": "@img/sharp-linux-x64",
       "version": "0.35.4",
@@ -1671,6 +1708,43 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.4.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40img/sharp-linuxmusl-x64@0.35.4",
+      "name": "@img/sharp-linuxmusl-x64",
+      "version": "0.35.4",
+      "description": "Prebuilt sharp for use with Linux (musl) x64",
+      "purl": "pkg:npm/%40img/sharp-linuxmusl-x64@0.35.4",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7fe79925921034411ddba44f496fbbe9c87039fd57b40d98fcefb9a1c5722e588791e8a1ddefa384b54174d4dddab4b721b3572bcfae83ddd57f9657b45e4bc6"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://sharp.pixelplumbing.com"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.4.tgz"
         }
       ],
       "properties": [
@@ -2166,6 +2240,39 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/%40napi-rs/canvas-linux-x64-musl@1.0.9",
+      "name": "@napi-rs/canvas-linux-x64-musl",
+      "version": "1.0.9",
+      "description": "Canvas for Node.js with skia backend",
+      "purl": "pkg:npm/%40napi-rs/canvas-linux-x64-musl@1.0.9",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c6b1af992defe7986667cea5b3f9012d534c513622a377fa224d038ab79e986f7de157cf030880dd95c0d147f56c1c9cb64077350d527dbf87e5b91d5279f37d"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@napi-rs/canvas-linux-x64-musl/-/canvas-linux-x64-musl-1.0.9.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/%40napi-rs/canvas@1.0.9",
       "name": "@napi-rs/canvas",
       "version": "1.0.9",
@@ -2236,11 +2343,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40next/env@16.3.4",
+      "bom-ref": "pkg:npm/%40next/env@16.3.5",
       "name": "@next/env",
-      "version": "16.3.4",
+      "version": "16.3.5",
       "description": "Next.js dotenv file loading",
-      "purl": "pkg:npm/%40next/env@16.3.4",
+      "purl": "pkg:npm/%40next/env@16.3.5",
       "licenses": [
         {
           "license": {
@@ -2251,13 +2358,13 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "7235999d451aea366ada415a35efd9c89759a27399fd0a0dd1991ada7cff14b3ab7f1d78a50b8cf5ce5169256458caa076de24b203c03163f21d2b3f0b2578f1"
+          "content": "35611754332aa04a3492d994eaed2c136560d0b39cb03ecd9ce4c9368dff7c46937ec83e1756cc231b839906dd6b87b7c93210c15754444176c88b8c3aeb0ab6"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/env/-/env-16.3.4.tgz"
+          "url": "https://registry.npmjs.org/@next/env/-/env-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -2269,10 +2376,10 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.4",
+      "bom-ref": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.5",
       "name": "@next/swc-linux-x64-gnu",
-      "version": "16.3.4",
-      "purl": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.4",
+      "version": "16.3.5",
+      "purl": "pkg:npm/%40next/swc-linux-x64-gnu@16.3.5",
       "licenses": [
         {
           "license": {
@@ -2283,13 +2390,45 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "60884663a7d231f85ae766e75719f373dcda541cc983e72a413383f2d5c8052c787eebf4a553314131343da4b9f5886730e898886d3d20cc312407ff0859bf0f"
+          "content": "347ff1cde8721c41561369e5719a27ed307fd3e1f8b217d60a2ed2d7391af35e5708e8490d8661a1e26d398cb4761d165515800955d2c86345172b6833152146"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.3.4.tgz"
+          "url": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.3.5.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40next/swc-linux-x64-musl@16.3.5",
+      "name": "@next/swc-linux-x64-musl",
+      "version": "16.3.5",
+      "purl": "pkg:npm/%40next/swc-linux-x64-musl@16.3.5",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "955e3e12158c7d2f23702f841f69e7fc29b9727e97b206c4d3b6d4f6d307f1f0a8d2d340aa1cb38b56f9c10fd39fa346153bca0d8eb9c37647f79123c014409d"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -2467,6 +2606,39 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@parcel/watcher-linux-x64-glibc/-/watcher-linux-x64-glibc-2.6.0.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40parcel/watcher-linux-x64-musl@2.6.0",
+      "name": "@parcel/watcher-linux-x64-musl",
+      "version": "2.6.0",
+      "description": "A native C++ Node module for querying and subscribing to filesystem events. Used by Parcel 2.",
+      "purl": "pkg:npm/%40parcel/watcher-linux-x64-musl@2.6.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b640582aded842b8c82566039eda366203bc31192394c4d2368447cec5e29c1a9b2dd78e3372f7db03d926f219c6a68b31f4a54bfe2c5231ffe924d53ff5c32f"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@parcel/watcher-linux-x64-musl/-/watcher-linux-x64-musl-2.6.0.tgz"
         }
       ],
       "properties": [
@@ -4964,6 +5136,41 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/%40swc/core-linux-x64-musl@1.16.2",
+      "name": "@swc/core-linux-x64-musl",
+      "version": "1.16.2",
+      "description": "Super-fast alternative for babel",
+      "purl": "pkg:npm/%40swc/core-linux-x64-musl@1.16.2",
+      "licenses": [
+        {
+          "expression": "Apache-2.0 AND MIT"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3e085726554cd5c82d2df354475bf1168d73f8f0d101ef1c580265659eeca667a237b068b2919783f307520ee8352830497ed9a3ffd82aff4fe720fd6a9b0525"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://swc.rs"
+        },
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@swc/core-linux-x64-musl/-/core-linux-x64-musl-1.16.2.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/%40swc/core@1.16.2",
       "name": "@swc/core",
       "version": "1.16.2",
@@ -5170,6 +5377,38 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.3.3.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:npm/%40tailwindcss/oxide-linux-x64-musl@4.3.3",
+      "name": "@tailwindcss/oxide-linux-x64-musl",
+      "version": "4.3.3",
+      "purl": "pkg:npm/%40tailwindcss/oxide-linux-x64-musl@4.3.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "489c57eb4b26bc781ab19a01cb5d5d5fa6118d7245a2fc1606879d85b40f381ce0156047181f9354f581f41c7347b4d3c54f05419008d80ca2342333166f089a"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.3.3.tgz"
         }
       ],
       "properties": [
@@ -5912,11 +6151,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40types/react@19.2.18",
+      "bom-ref": "pkg:npm/%40types/react@19.3.0",
       "name": "@types/react",
-      "version": "19.2.18",
+      "version": "19.3.0",
       "description": "TypeScript definitions for react",
-      "purl": "pkg:npm/%40types/react@19.2.18",
+      "purl": "pkg:npm/%40types/react@19.3.0",
       "licenses": [
         {
           "license": {
@@ -5927,7 +6166,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "027cdb04446cacb2ad9365d27d36d844b8d03ddcb5d7a4adcb8abe4fe069dc80b897a8cd06fade54f0079a9abdaa15d033b09764f8cb56618cc3db32fa1c50df"
+          "content": "374ac50ae1fd628c46f7f9bad65f4c7e924a7e62ce554d1e9bb8a9233e9346049292f45e2c1f6f2fce4607ecabf01b3995eaa9be0f7a252c05e194b5b38be242"
         }
       ],
       "externalReferences": [
@@ -5937,7 +6176,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@types/react/-/react-19.2.18.tgz"
+          "url": "https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz"
         }
       ],
       "properties": [
@@ -9491,11 +9730,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/icu-minify@4.14.2",
+      "bom-ref": "pkg:npm/icu-minify@4.14.5",
       "name": "icu-minify",
-      "version": "4.14.2",
+      "version": "4.14.5",
       "description": "ICU message format compiler with a <1KB runtime bundle footprint",
-      "purl": "pkg:npm/icu-minify@4.14.2",
+      "purl": "pkg:npm/icu-minify@4.14.5",
       "licenses": [
         {
           "license": {
@@ -9506,7 +9745,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "d9e27da2847cc5759b7b4222bc6e7c4c52fde80529e6db3c149e2a48cce7f184495e92e6b4f35671490867cb778b3d3e79a5731be98dfab74d2228070ef61ad9"
+          "content": "e514397cfe629d1f956514d1e0ac18073cb6d7bb9ae04f65c414fecc51d9709bf47533ad46cf715c40922163101c07e67741ead915d248fd869b2c3fa10418e8"
         }
       ],
       "externalReferences": [
@@ -9516,7 +9755,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/icu-minify/-/icu-minify-4.14.2.tgz"
+          "url": "https://registry.npmjs.org/icu-minify/-/icu-minify-4.14.5.tgz"
         }
       ],
       "properties": [
@@ -10296,6 +10535,39 @@
     },
     {
       "type": "library",
+      "bom-ref": "pkg:npm/lightningcss-linux-x64-musl@1.32.0",
+      "name": "lightningcss-linux-x64-musl",
+      "version": "1.32.0",
+      "description": "A CSS parser, transformer, and minifier written in Rust",
+      "purl": "pkg:npm/lightningcss-linux-x64-musl@1.32.0",
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6d870ba7e55bd1ac2c89783ff34b8245ecc2607360d7f9779add20cc79d657d5cfd56e6c29ae7f4c274659a47fcc13363de17f1dbb10bff8f651134e895bb15a"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.32.0.tgz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "arctos:scope",
+          "value": "production"
+        }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "pkg:npm/lightningcss@1.32.0",
       "name": "lightningcss",
       "version": "1.32.0",
@@ -10917,11 +11189,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/lucide-react@1.43.0",
+      "bom-ref": "pkg:npm/lucide-react@1.46.0",
       "name": "lucide-react",
-      "version": "1.43.0",
+      "version": "1.46.0",
       "description": "A Lucide icon library package for React applications.",
-      "purl": "pkg:npm/lucide-react@1.43.0",
+      "purl": "pkg:npm/lucide-react@1.46.0",
       "licenses": [
         {
           "license": {
@@ -10932,7 +11204,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "b9bb6775ad5f54ae64cb43cd1293a6074c22c21a59532262a25e0ad782829be40abee0a47d4bb9e04b7fac88f2ba9269c222791e0f812d013cebf184b12f8881"
+          "content": "06ff856578193ebc5cfcd0a5d5eec92554052dd882c5883135586aa15ed7d29e88f000c9a3c0f10672b56ae1f47d9cf8026a8e2778e09de2f87f58bc2c941100"
         }
       ],
       "externalReferences": [
@@ -10942,7 +11214,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.43.0.tgz"
+          "url": "https://registry.npmjs.org/lucide-react/-/lucide-react-1.46.0.tgz"
         }
       ],
       "properties": [
@@ -11533,11 +11805,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/next-intl-swc-plugin-extractor@4.14.2",
+      "bom-ref": "pkg:npm/next-intl-swc-plugin-extractor@4.14.5",
       "name": "next-intl-swc-plugin-extractor",
-      "version": "4.14.2",
+      "version": "4.14.5",
       "description": "SWC plugin for extracting inline messages.",
-      "purl": "pkg:npm/next-intl-swc-plugin-extractor@4.14.2",
+      "purl": "pkg:npm/next-intl-swc-plugin-extractor@4.14.5",
       "licenses": [
         {
           "license": {
@@ -11548,7 +11820,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "47e8bd5f0e972b29f5415c7e239203650346401c13efdba01b0cdbb89b9d81e8e86ff2189d75eb44a3252e198cc4b74a1fc8d45a1f769eac0d9e9fb9aed49524"
+          "content": "75ba6c8c79b06ea9fbf79cfb78323b1c72fe8f1caf67908d178d2c6c6c7e9e48cce290acec7753cc642743ce268c5fd65996bfc3da49e8cef8a6b87edef9db19"
         }
       ],
       "externalReferences": [
@@ -11558,7 +11830,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/next-intl-swc-plugin-extractor/-/next-intl-swc-plugin-extractor-4.14.2.tgz"
+          "url": "https://registry.npmjs.org/next-intl-swc-plugin-extractor/-/next-intl-swc-plugin-extractor-4.14.5.tgz"
         }
       ],
       "properties": [
@@ -11570,11 +11842,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/next-intl@4.14.2",
+      "bom-ref": "pkg:npm/next-intl@4.14.5",
       "name": "next-intl",
-      "version": "4.14.2",
+      "version": "4.14.5",
       "description": "Internationalization (i18n) for Next.js",
-      "purl": "pkg:npm/next-intl@4.14.2",
+      "purl": "pkg:npm/next-intl@4.14.5",
       "licenses": [
         {
           "license": {
@@ -11585,7 +11857,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "ac8abc99ed6e39adaa5e7b6d27a7541989c71cbeb7461d450082034c93f96afe4a481994ccd052d7b4008b4ed00eb50c63a2b114d7a809347349944f51cf7b96"
+          "content": "f6c3c987921325b3f6f07679a1bb8500c0b84705bf9a112f1e21951d73d62f4b916c5d91ae31d6cfc3dc5262da1f6a1c6bbf5a9366b2433fae45200b64df714b"
         }
       ],
       "externalReferences": [
@@ -11595,7 +11867,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/next-intl/-/next-intl-4.14.2.tgz"
+          "url": "https://registry.npmjs.org/next-intl/-/next-intl-4.14.5.tgz"
         }
       ],
       "properties": [
@@ -11639,11 +11911,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/next@16.3.4",
+      "bom-ref": "pkg:npm/next@16.3.5",
       "name": "next",
-      "version": "16.3.4",
+      "version": "16.3.5",
       "description": "The React Framework",
-      "purl": "pkg:npm/next@16.3.4",
+      "purl": "pkg:npm/next@16.3.5",
       "licenses": [
         {
           "license": {
@@ -11654,7 +11926,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "fd9b5fe827911fe7a311752b62da88e20912eba785207b92c2a8bad1181ca562a8771159c76fdda9508c281c082df0075d0f85d5bd6f02e7608f79a7c6ab6820"
+          "content": "31db6c4e0cf27c23d12c2eae27598df1aa3b972278041d14e889e19f1de0b5ad5470221d1cadf2c4b1b413c39642d7960fcfd0d2a6fc039a3bc0968bf0cf72db"
         }
       ],
       "externalReferences": [
@@ -11664,7 +11936,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/next/-/next-16.3.4.tgz"
+          "url": "https://registry.npmjs.org/next/-/next-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -11886,11 +12158,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/openai@7.12.1",
+      "bom-ref": "pkg:npm/openai@7.15.0",
       "name": "openai",
-      "version": "7.12.1",
+      "version": "7.15.0",
       "description": "The official TypeScript library for the OpenAI API",
-      "purl": "pkg:npm/openai@7.12.1",
+      "purl": "pkg:npm/openai@7.15.0",
       "licenses": [
         {
           "license": {
@@ -11901,13 +12173,13 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "0f477c35ebc258f7be731139930fd9681461d4e77815f851983e8594d78b3758fde97965e4c6042536da145f7f1777901c900d8eb4aeab69d6042a554fe4e69d"
+          "content": "d832307ac9cf49dbb0ebc305c7b9c0760bec86b82f4bc58e6a7e56f3eb6050c940cbfb58f90e3583cd0f6bec3fbfae2b1c0eabb67f9d91eb5af10bcc57153deb"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/openai/-/openai-7.12.1.tgz"
+          "url": "https://registry.npmjs.org/openai/-/openai-7.15.0.tgz"
         }
       ],
       "properties": [
@@ -12523,11 +12795,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/postal-mime@2.7.5",
+      "bom-ref": "pkg:npm/postal-mime@2.7.6",
       "name": "postal-mime",
-      "version": "2.7.5",
+      "version": "2.7.6",
       "description": "Email parser for Node.js and browser environments",
-      "purl": "pkg:npm/postal-mime@2.7.5",
+      "purl": "pkg:npm/postal-mime@2.7.6",
       "licenses": [
         {
           "license": {
@@ -12538,7 +12810,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "18d1172af5854276e03b9365ac6cd56b41665b3059db83deaec01612bb6d4a0d478e97f4013c53c12e4338c19a3a94c6e9b521e5c4ebef18b48c00fde36c0224"
+          "content": "5149721362a5c66bf0306ab4eb4a2717f556537cc3e9d556df5170a24439bf6ea359ddf97dbb363284c5ce1fa35e73f00325763142cc29770122718e9794cee9"
         }
       ],
       "externalReferences": [
@@ -12548,44 +12820,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/postal-mime/-/postal-mime-2.7.5.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "production"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/postcss@8.5.23",
-      "name": "postcss",
-      "version": "8.5.23",
-      "description": "Tool for transforming styles with JS plugins",
-      "purl": "pkg:npm/postcss@8.5.23",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "839d39f3acebe1b666c0589395f94cbbc1346c34dbe48e607abb60c002a6b1d5254d022166dba7cd4943d564b3c1c5563e8015a6cac0eaf95f083ee85ef47082"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://postcss.org/"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/postcss/-/postcss-8.5.23.tgz"
+          "url": "https://registry.npmjs.org/postal-mime/-/postal-mime-2.7.6.tgz"
         }
       ],
       "properties": [
@@ -12926,11 +13161,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/react-dom@19.2.8",
+      "bom-ref": "pkg:npm/react-dom@19.3.0",
       "name": "react-dom",
-      "version": "19.2.8",
+      "version": "19.3.0",
       "description": "React package for working with the DOM.",
-      "purl": "pkg:npm/react-dom@19.2.8",
+      "purl": "pkg:npm/react-dom@19.3.0",
       "licenses": [
         {
           "license": {
@@ -12941,7 +13176,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "ad5a6b8a67c6046dc347e4ead08406d834f93f12ad8755881839a3e723e6973af86017bbbb213e0eee2856a4c35d948718619746d4c910649278fc9008c06095"
+          "content": "24393c76089fe753a31680c4ef4f8e4fd202c98afeebd1e59a284dc29d7e36c7db9dadede6c22209af59264b43990e3fd5bfeb9f6ea1200476b985c332be6bd1"
         }
       ],
       "externalReferences": [
@@ -12951,7 +13186,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/react-dom/-/react-dom-19.2.8.tgz"
+          "url": "https://registry.npmjs.org/react-dom/-/react-dom-19.3.0.tgz"
         }
       ],
       "properties": [
@@ -13288,11 +13523,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/react@19.2.8",
+      "bom-ref": "pkg:npm/react@19.3.0",
       "name": "react",
-      "version": "19.2.8",
+      "version": "19.3.0",
       "description": "React is a JavaScript library for building user interfaces.",
-      "purl": "pkg:npm/react@19.2.8",
+      "purl": "pkg:npm/react@19.3.0",
       "licenses": [
         {
           "license": {
@@ -13303,7 +13538,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "3d66980352ffabdbb6bbbc58422f98dcbdd87e789eed7c8b79a248095d4c183e8ba6bb01c5c02a1a3632af4798de9f9076c03ec7f22b92de1089ff03eb7f926f"
+          "content": "13c2d471bb415addb46db9766281dfc7864305dc554df38ab42667f5c0d227897afe7ba8029729201723e3bb76c19a155fc836647b8c1db892860091d53e52a2"
         }
       ],
       "externalReferences": [
@@ -13313,7 +13548,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/react/-/react-19.2.8.tgz"
+          "url": "https://registry.npmjs.org/react/-/react-19.3.0.tgz"
         }
       ],
       "properties": [
@@ -13572,11 +13807,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/resend@6.26.0",
+      "bom-ref": "pkg:npm/resend@6.28.1",
       "name": "resend",
-      "version": "6.26.0",
+      "version": "6.28.1",
       "description": "Node.js library for the Resend API",
-      "purl": "pkg:npm/resend@6.26.0",
+      "purl": "pkg:npm/resend@6.28.1",
       "licenses": [
         {
           "license": {
@@ -13587,7 +13822,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "be4ad42e8cd5e67185f28eedcae9ffb74faa160b4fa67f9cc91855a9ea2b84eb0f50d0e249cffda7fa67f00a6b747a89a58693bdfb699d0816bab5bef8590277"
+          "content": "e5558e703896281b7435660a5f0cd8f5627e2dba502d8c3d33a8f50c32583e4ed39681df58e272698e0414aa11fca3cbd0de26e723b7a3dea20e860e5fbbfe18"
         }
       ],
       "externalReferences": [
@@ -13597,7 +13832,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/resend/-/resend-6.26.0.tgz"
+          "url": "https://registry.npmjs.org/resend/-/resend-6.28.1.tgz"
         }
       ],
       "properties": [
@@ -13856,11 +14091,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/scheduler@0.27.0",
+      "bom-ref": "pkg:npm/scheduler@0.28.0",
       "name": "scheduler",
-      "version": "0.27.0",
+      "version": "0.28.0",
       "description": "Cooperative scheduler for the browser environment.",
-      "purl": "pkg:npm/scheduler@0.27.0",
+      "purl": "pkg:npm/scheduler@0.28.0",
       "licenses": [
         {
           "license": {
@@ -13871,7 +14106,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "78dbfe5ab55b2aed5fdef6d8253ff1b62179b320391cf20cb5ff48818fe72a0d2c5aacc0504bea63fc66ece71973fa9a7cbc7f88ef4580e99e480a78bf9b62fd"
+          "content": "8eea2b7c2988908c3cb53fa9e415d29ba3c98d017fc9c11898acb3511088b7f45a64884bf8fba56d0f58bb6cf51dd3890dda834e5c40d7ec4a0661d726c73303"
         }
       ],
       "externalReferences": [
@@ -13881,7 +14116,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz"
+          "url": "https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz"
         }
       ],
       "properties": [
@@ -14144,43 +14379,6 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/standardwebhooks@1.0.0",
-      "name": "standardwebhooks",
-      "version": "1.0.0",
-      "description": "Standard Webhooks for TypeScript",
-      "purl": "pkg:npm/standardwebhooks@1.0.0",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "05b1c63902bda251cf32f40d1d6ba5e8c625ad14c038a9f4deb39ee00f0edc22d684d7f860706aab61c928a0beb1faa9c62058e76a4d79eb03ea32222c3cfc8e"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://github.com/standard-webhooks/standard-webhooks/tree/main/libraries/javascript"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/standardwebhooks/-/standardwebhooks-1.0.0.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "production"
-        }
-      ]
-    },
-    {
-      "type": "library",
       "bom-ref": "pkg:npm/standardwebhooks@1.1.1",
       "name": "standardwebhooks",
       "version": "1.1.1",
@@ -14428,11 +14626,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/tailwind-merge@3.6.0",
+      "bom-ref": "pkg:npm/tailwind-merge@3.7.0",
       "name": "tailwind-merge",
-      "version": "3.6.0",
+      "version": "3.7.0",
       "description": "Merge Tailwind CSS classes without style conflicts",
-      "purl": "pkg:npm/tailwind-merge@3.6.0",
+      "purl": "pkg:npm/tailwind-merge@3.7.0",
       "licenses": [
         {
           "license": {
@@ -14443,7 +14641,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "bb12fba80550ae2a9140f0322b7a63eba56ab245aaa19dfb3d6f788f0393c0d7eaff3f68caed55f9eaab66ab51dbe7c28977583997bf32876df06b6fa8dceefb"
+          "content": "5cf3d4c8073e72fb29cf79474dc47f4203df5b603496fff140d2235f71c684b47e36ada51da2eae4cb537ac1e7f0652bdd6dc382e4f6293e71dcd56046d63098"
         }
       ],
       "externalReferences": [
@@ -14453,7 +14651,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/tailwind-merge/-/tailwind-merge-3.6.0.tgz"
+          "url": "https://registry.npmjs.org/tailwind-merge/-/tailwind-merge-3.7.0.tgz"
         }
       ],
       "properties": [
@@ -15037,11 +15235,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/use-intl@4.14.2",
+      "bom-ref": "pkg:npm/use-intl@4.14.5",
       "name": "use-intl",
-      "version": "4.14.2",
+      "version": "4.14.5",
       "description": "Internationalization (i18n) for React",
-      "purl": "pkg:npm/use-intl@4.14.2",
+      "purl": "pkg:npm/use-intl@4.14.5",
       "licenses": [
         {
           "license": {
@@ -15052,7 +15250,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "5df7ef6c3e2ae2e66345bb8ef0280ae848bc86f627eda7a0a1269dd983e1a356518d812cfa4e1eae162ad2f7e6e6db45e259e36b7ae25c2789aed51d35d406de"
+          "content": "34d19222792cd7c0406ac3e09ccae76a13641194a45a96d613bd087040d63d46704b7f6d56e0c1fd5a3a27715a0e7630c0a8a8477dc97d614ecc416786e25c27"
         }
       ],
       "externalReferences": [
@@ -15062,7 +15260,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/use-intl/-/use-intl-4.14.2.tgz"
+          "url": "https://registry.npmjs.org/use-intl/-/use-intl-4.14.5.tgz"
         }
       ],
       "properties": [
