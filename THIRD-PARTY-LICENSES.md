@@ -7005,7 +7005,7 @@ _Keine Lizenzdatei im veröffentlichten Tarball enthalten; es gilt die Kennung a
 
 </details>
 
-### @types/react@19.2.18
+### @types/react@19.3.0
 
 - Lizenz: `MIT`
 - Homepage: https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react
