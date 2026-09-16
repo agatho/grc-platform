@@ -3,7 +3,7 @@
   "specVersion": "1.5",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-09-09T17:12:26.398Z",
+    "timestamp": "2026-09-16T06:59:30.518Z",
     "tools": [
       {
         "vendor": "ARCTOS",
@@ -4099,11 +4099,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40next/eslint-plugin-next@16.3.4",
+      "bom-ref": "pkg:npm/%40next/eslint-plugin-next@16.3.5",
       "name": "@next/eslint-plugin-next",
-      "version": "16.3.4",
+      "version": "16.3.5",
       "description": "ESLint plugin for Next.js.",
-      "purl": "pkg:npm/%40next/eslint-plugin-next@16.3.4",
+      "purl": "pkg:npm/%40next/eslint-plugin-next@16.3.5",
       "licenses": [
         {
           "license": {
@@ -4114,13 +4114,13 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "b335bdcb602e9aee33f3c6177d3cdc16c814020da4eb8bb36ed70ee4bf5fd40292e30fc650a25c6c596545f951395c8d3e026d18e9ef3718b2a77bfa6fea6b20"
+          "content": "3c67d2788b47275d831fcb7eeac11bb8c7b9f4d139ac08427e0934e902931f69def5550bd4995a5dd61763707c45a885d923b9d2b0d8bdddfd4ee94fe80eb165"
         }
       ],
       "externalReferences": [
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@next/eslint-plugin-next/-/eslint-plugin-next-16.3.4.tgz"
+          "url": "https://registry.npmjs.org/@next/eslint-plugin-next/-/eslint-plugin-next-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -8378,11 +8378,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/%40types/node@22.20.1",
+      "bom-ref": "pkg:npm/%40types/node@22.20.2",
       "name": "@types/node",
-      "version": "22.20.1",
+      "version": "22.20.2",
       "description": "TypeScript definitions for node",
-      "purl": "pkg:npm/%40types/node@22.20.1",
+      "purl": "pkg:npm/%40types/node@22.20.2",
       "licenses": [
         {
           "license": {
@@ -8393,7 +8393,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "10036a38217d405cab6bee297f151c5fd493289a422e331b39b573963209a260164a7b9220402fcb3114e7719a6a36d724481d87488470f2fe0c6be951de24d5"
+          "content": "c65bd67f856cf67d4f1156303f59f8bef1b4ecceb2f1682f276b74bdbad64e68a3b081e9d5c4beb89da430845d6379c764ad270982ab3de0f5ef5f92cc5e3fcf"
         }
       ],
       "externalReferences": [
@@ -8403,7 +8403,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/@types/node/-/node-22.20.1.tgz"
+          "url": "https://registry.npmjs.org/@types/node/-/node-22.20.2.tgz"
         }
       ],
       "properties": [
@@ -14815,11 +14815,11 @@
     },
     {
       "type": "library",
-      "bom-ref": "pkg:npm/eslint-config-next@16.3.4",
+      "bom-ref": "pkg:npm/eslint-config-next@16.3.5",
       "name": "eslint-config-next",
-      "version": "16.3.4",
+      "version": "16.3.5",
       "description": "ESLint configuration used by Next.js.",
-      "purl": "pkg:npm/eslint-config-next@16.3.4",
+      "purl": "pkg:npm/eslint-config-next@16.3.5",
       "licenses": [
         {
           "license": {
@@ -14830,7 +14830,7 @@
       "hashes": [
         {
           "alg": "SHA-512",
-          "content": "df9ffc44cd7486e10bf6f96bf2151930444c10d1c1ae7c87377659905f5e7d283319aa8adf88c8aabcb8e00f79ebfff3ae2521500516d174a4728961aebcaa00"
+          "content": "c0f8eaf4c2d0b96ca41ecf2db26da01fa3894e193a376ecbf137b625ab6568667b8d3d60b601a624aba4ca02f6f313a55ac8392756b56c6cbf3ef2f2402f0e60"
         }
       ],
       "externalReferences": [
@@ -14840,7 +14840,7 @@
         },
         {
           "type": "distribution",
-          "url": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.3.4.tgz"
+          "url": "https://registry.npmjs.org/eslint-config-next/-/eslint-config-next-16.3.5.tgz"
         }
       ],
       "properties": [
@@ -23564,43 +23564,6 @@
         {
           "type": "distribution",
           "url": "https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz"
-        }
-      ],
-      "properties": [
-        {
-          "name": "arctos:scope",
-          "value": "all"
-        }
-      ]
-    },
-    {
-      "type": "library",
-      "bom-ref": "pkg:npm/picomatch@2.3.2",
-      "name": "picomatch",
-      "version": "2.3.2",
-      "description": "Blazing fast and accurate glob matcher written in JavaScript, with no dependencies and full support for standard and extended Bash glob features, including braces, extglobs, POSIX brackets, and regular expressions.",
-      "purl": "pkg:npm/picomatch@2.3.2",
-      "licenses": [
-        {
-          "license": {
-            "id": "MIT"
-          }
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-512",
-          "content": "57bfaf404274e99f9ce6d4b27bc4be9c751f239d71a172178c743df5c42d294910aaa3b590efca08951f657b81e3b87f60194385a8761f785d5065e7f227b4a0"
-        }
-      ],
-      "externalReferences": [
-        {
-          "type": "website",
-          "url": "https://github.com/micromatch/picomatch"
-        },
-        {
-          "type": "distribution",
-          "url": "https://registry.npmjs.org/picomatch/-/picomatch-2.3.2.tgz"
         }
       ],
       "properties": [
